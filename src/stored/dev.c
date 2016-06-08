@@ -570,6 +570,14 @@ bool DEVICE::open(DCR *dcr, int omode)
 
    label_type = B_BAREOS_LABEL;
 
+   /*
+    * We are about to open the device so let any plugin know we are.
+    */
+   if (generate_plugin_event(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
+      Dmsg0(100, "open_dev: bsdEventDeviceOpen failed\n");
+      return false;
+   }
+
    Dmsg1(100, "call open_device mode=%s\n", mode_to_str(omode));
    open_device(dcr, omode);
 
@@ -937,13 +945,13 @@ bool DEVICE::close(DCR *dcr)
    int status;
    Dmsg1(100, "close_dev %s\n", print_name());
 
-   if (!norewindonclose) {
-      offline_or_rewind();
-   }
-
    if (!is_open()) {
       Dmsg2(100, "device %s already closed vol=%s\n", print_name(), VolHdr.VolumeName);
       goto bail_out;                  /* already closed */
+   }
+
+   if (!norewindonclose) {
+      offline_or_rewind();
    }
 
    switch (dev_type) {
@@ -996,6 +1004,13 @@ bool DEVICE::close(DCR *dcr)
       tid = 0;
    }
 
+   /*
+    * We closed the device so let any plugin know we did.
+    */
+   if (dcr) {
+      generate_plugin_event(dcr->jcr, bsdEventDeviceClose, dcr);
+   }
+
 bail_out:
    return retval;
 }
@@ -1021,9 +1036,7 @@ bool DEVICE::mount(DCR *dcr, int timeout)
     * bsdEventDeviceMount plugin event so any plugin
     * that want to do something can do things now.
     */
-   if (retval && generate_plugin_event(dcr->jcr,
-                                       bsdEventDeviceMount,
-                                       dcr) != bRC_OK) {
+   if (retval && generate_plugin_event(dcr->jcr, bsdEventDeviceMount, dcr) != bRC_OK) {
       retval = false;
    }
 
@@ -1059,9 +1072,7 @@ bool DEVICE::unmount(DCR *dcr, int timeout)
     * bsdEventDeviceUnmount plugin event so any plugin
     * that want to do something can do things now.
     */
-   if (dcr && generate_plugin_event(dcr->jcr,
-                                    bsdEventDeviceUnmount,
-                                    dcr) != bRC_OK) {
+   if (dcr && generate_plugin_event(dcr->jcr, bsdEventDeviceUnmount, dcr) != bRC_OK) {
       retval = false;
       goto bail_out;
    }
@@ -1266,7 +1277,6 @@ void init_device_wait_timers(DCR *dcr)
    jcr->wait_sec = jcr->min_wait;
    jcr->rem_wait_sec = jcr->wait_sec;
    jcr->num_wait = 0;
-
 }
 
 void init_jcr_device_wait_timers(JCR *jcr)

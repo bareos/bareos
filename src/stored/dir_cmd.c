@@ -154,7 +154,7 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, slot_number_t slo
 static void label_volume_if_ok(DCR *dcr, char *oldname,
                                char *newname, char *poolname,
                                slot_number_t Slot, bool relabel);
-static bool try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t slot, const char *VolName);
+static int try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t slot, const char *VolName);
 static void send_dir_busy_message(BSOCK *dir, DEVICE *dev);
 
 struct s_cmds {
@@ -706,30 +706,43 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    Dmsg1(100, "Stole device %s lock, writing label.\n", dev->print_name());
 
    Dmsg0(90, "try_autoload_device - looking for volume_info\n");
-   if (!try_autoload_device(dcr->jcr, dcr, slot, volname)) {
-      goto bail_out;                  /* error */
+   switch (try_autoload_device(dcr->jcr, dcr, slot, volname)) {
+   case -1:
+      goto cleanup;
+   case -2:
+      goto bail_out;
+   case 0:
+   default:
+      break;
    }
 
-   /* Ensure that the device is open -- autoload_device() closes it */
+   /*
+    * Ensure that the device is open -- autoload_device() closes it
+    */
    if (dev->is_tape()) {
       mode = OPEN_READ_WRITE;
    } else {
       mode = CREATE_READ_WRITE;
    }
 
-   /* Set old volume name for open if relabeling */
+   /*
+    * Set old volume name for open if relabeling
+    */
    dcr->setVolCatName(volname);
 
    if (!dev->open(dcr, mode)) {
-      dir->fsend(_("3910 Unable to open device \"%s\": ERR=%s\n"),
-                 dev->print_name(), dev->bstrerror());
-      goto bail_out;
+      dir->fsend(_("3910 Unable to open device \"%s\": ERR=%s\n"), dev->print_name(), dev->bstrerror());
+      goto cleanup;
    }
 
-   /* See what we have for a Volume */
+   /*
+    * See what we have for a Volume
+    */
    label_status = read_dev_volume_label(dcr);
 
-   /* Set new volume name */
+   /*
+    * Set new volume name
+    */
    dcr->setVolCatName(newname);
    switch(label_status) {
    case VOL_NAME_ERROR:
@@ -737,29 +750,36 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
    case VOL_LABEL_ERROR:
    case VOL_OK:
       if (!relabel) {
-         dir->fsend(_("3920 Cannot label Volume because it is already labeled: \"%s\"\n"),
-             dev->VolHdr.VolumeName);
-         goto bail_out;
+         dir->fsend(_("3920 Cannot label Volume because it is already labeled: \"%s\"\n"), dev->VolHdr.VolumeName);
+         goto cleanup;
       }
 
-      /* Relabel request. If oldname matches, continue */
+      /*
+       * Relabel request. If oldname matches, continue
+       */
       if (!bstrcmp(oldname, dev->VolHdr.VolumeName)) {
          dir->fsend(_("3921 Wrong volume mounted.\n"));
-         goto bail_out;
+         goto cleanup;
       }
+
       if (dev->label_type != B_BAREOS_LABEL) {
          dir->fsend(_("3922 Cannot relabel an ANSI/IBM labeled Volume.\n"));
-         goto bail_out;
+         goto cleanup;
       }
-      /* Fall through wanted! */
+      /*
+       * Fall through wanted!
+       */
    case VOL_IO_ERROR:
    case VOL_NO_LABEL:
       if (!write_new_volume_label_to_dev(dcr, newname, poolname, relabel)) {
          dir->fsend(_("3912 Failed to label Volume: ERR=%s\n"), dev->bstrerror());
-         goto bail_out;
+         goto cleanup;
       }
       bstrncpy(dcr->VolumeName, newname, sizeof(dcr->VolumeName));
-      /* The following 3000 OK label. string is scanned in ua_label.c */
+
+      /*
+       * The following 3000 OK label. string is scanned in ua_label.c
+       */
       dir->fsend("3000 OK label. VolBytes=%s Volume=\"%s\" Device=%s\n",
                  edit_uint64(dev->VolCatInfo.VolCatBytes, ed1),
                  newname, dev->print_name());
@@ -773,7 +793,7 @@ static void label_volume_if_ok(DCR *dcr, char *oldname,
       break;
    }
 
-bail_out:
+cleanup:
    if (dev->is_open() && !dev->has_cap(CAP_ALWAYSOPEN)) {
       dev->close(dcr);
    }
@@ -781,7 +801,10 @@ bail_out:
       dev->clear_volhdr();
    }
    volume_unused(dcr);                   /* no longer using volume */
+
+bail_out:
    give_back_device_lock(dev, &hold);
+
    return;
 }
 
@@ -1429,8 +1452,13 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, slot_number_t Slo
    dcr->set_dev(dev);
    steal_device_lock(dev, &hold, BST_WRITING_LABEL);
 
-   if (!try_autoload_device(jcr, dcr, Slot, "")) {
-      goto bail_out;                  /* error */
+   switch (try_autoload_device(dcr->jcr, dcr, Slot, "")) {
+   case -1:
+   case -2:
+      goto bail_out;
+   case 0:
+   default:
+      break;
    }
 
    dev->clear_labeled();              /* force read of label */
@@ -1447,20 +1475,27 @@ static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, slot_number_t Slo
 
 bail_out:
    give_back_device_lock(dev, &hold);
+
    return;
 }
 
-static bool try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t slot, const char *VolName)
+/*
+ * Try autoloading a device.
+ *
+ * Returns: 1 on success
+ *          0 on failure (no changer available)
+ *         -1 on error on autochanger
+ *         -2 on error locking the autochanger
+ */
+static int try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t Slot, const char *VolName)
 {
    BSOCK *dir = jcr->dir_bsock;
 
    bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
-   dcr->VolCatInfo.Slot = slot;
-   dcr->VolCatInfo.InChanger = slot > 0;
-   if (autoload_device(dcr, 0, dir) < 0) {    /* autoload if possible */
-      return false;
-   }
-   return true;
+   dcr->VolCatInfo.Slot = Slot;
+   dcr->VolCatInfo.InChanger = Slot > 0;
+
+   return autoload_device(dcr, 0, dir);
 }
 
 static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)

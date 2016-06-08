@@ -49,7 +49,7 @@ bool acquire_device_for_read(DCR *dcr)
 {
    DEVICE *dev;
    JCR *jcr = dcr->jcr;
-   bool ok = false;
+   bool retval = false;
    bool tape_previously_mounted;
    VOL_LIST *vol;
    bool try_autochanger = true;
@@ -93,15 +93,15 @@ bool acquire_device_for_read(DCR *dcr)
 
    /*
     * If the MediaType requested for this volume is not the
-    *  same as the current drive, we attempt to find the same
-    *  device that was used to write the orginal volume.  If
-    *  found, we switch to using that device.
+    * same as the current drive, we attempt to find the same
+    * device that was used to write the orginal volume.  If
+    * found, we switch to using that device.
     *
-    *  N.B. A lot of routines rely on the dcr pointer not changing
-    *    read_records.c even has multiple dcrs cached, so we take care
-    *    here to release all important parts of the dcr and re-acquire
-    *    them such as the block pointer (size may change), but we do
-    *    not release the dcr.
+    * N.B. A lot of routines rely on the dcr pointer not changing
+    * read_records.c even has multiple dcrs cached, so we take care
+    * here to release all important parts of the dcr and re-acquire
+    * them such as the block pointer (size may change), but we do
+    * not release the dcr.
     */
    Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
    if (dcr->media_type[0] && !bstrcmp(dcr->media_type, dev->device->media_type)) {
@@ -144,8 +144,7 @@ bool acquire_device_for_read(DCR *dcr)
 
       if (status == 1) { /* found new device to use */
          /*
-          * Switching devices, so acquire lock on new device,
-          *   then release the old one.
+          * Switching devices, so acquire lock on new device, then release the old one.
           */
          dcr->dev->Lock_read_acquire();      /* lock new one */
          dev->Unlock_read_acquire();         /* release old one */
@@ -153,9 +152,9 @@ bool acquire_device_for_read(DCR *dcr)
          dev->dblock(BST_DOING_ACQUIRE);
 
          dcr->VolumeName[0] = 0;
-         Jmsg(jcr, M_INFO, 0, _("Media Type change.  New read device %s chosen.\n"),
-            dev->print_name());
+         Jmsg(jcr, M_INFO, 0, _("Media Type change.  New read device %s chosen.\n"), dev->print_name());
          Dmsg1(50, "Media Type change.  New read device %s chosen.\n", dev->print_name());
+
          bstrncpy(dcr->VolumeName, vol->VolumeName, sizeof(dcr->VolumeName));
          dcr->setVolCatName(vol->VolumeName);
          bstrncpy(dcr->media_type, vol->MediaType, sizeof(dcr->media_type));
@@ -183,7 +182,8 @@ bool acquire_device_for_read(DCR *dcr)
 
    init_device_wait_timers(dcr);
 
-   tape_previously_mounted = dev->can_read() || dev->can_append() ||
+   tape_previously_mounted = dev->can_read() ||
+                             dev->can_append() ||
                              dev->is_labeled();
 // tape_initially_mounted = tape_previously_mounted;
 
@@ -198,7 +198,7 @@ bool acquire_device_for_read(DCR *dcr)
    }
    dev->set_load();                /* set to load volume */
 
-   for ( ;; ) {
+   while (1) {
       /*
        * If not polling limit retries
        */
@@ -261,7 +261,7 @@ bool acquire_device_for_read(DCR *dcr)
       switch (vol_label_status) {
       case VOL_OK:
          Dmsg0(rdbglvl, "Got correct volume.\n");
-         ok = true;
+         retval = true;
          dev->VolCatInfo = dcr->VolCatInfo;     /* structure assignment */
          break;                    /* got it */
       case VOL_IO_ERROR:
@@ -342,11 +342,10 @@ default_path:
          continue;                    /* try reading again */
       } /* end switch */
       break;
-   } /* end for loop */
+   } /* end while loop */
 
-   if (!ok) {
-      Jmsg1(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s for reading.\n"),
-            dev->print_name());
+   if (!retval) {
+      Jmsg1(jcr, M_FATAL, 0, _("Too many errors trying to mount device %s for reading.\n"), dev->print_name());
       goto get_out;
    }
 
@@ -358,22 +357,25 @@ default_path:
 get_out:
    dev->Lock();
    dcr->clear_reserved();
+
    /*
-    * Normally we are blocked, but in at least one error case above we are not blocked because we
-    * unsuccessfully tried changing devices.
+    * Normally we are blocked, but in at least one error case above we are not blocked
+    * because we unsuccessfully tried changing devices.
     */
    if (dev->is_blocked()) {
       dev->dunblock(DEV_LOCKED);
    } else {
       dev->Unlock();               /* dunblock() unlock the device too */
    }
+
    Dmsg2(rdbglvl, "dcr=%p dev=%p\n", dcr, dcr->dev);
    Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
 
    dev->Unlock_read_acquire();
 
    Leave(rdbglvl);
-   return ok;
+
+   return retval;
 }
 
 /*
@@ -389,7 +391,7 @@ DCR *acquire_device_for_append(DCR *dcr)
 {
    DEVICE *dev = dcr->dev;
    JCR *jcr = dcr->jcr;
-   bool ok = false;
+   bool retval = false;
    bool have_vol = false;
 
    Enter(200);
@@ -412,15 +414,16 @@ DCR *acquire_device_for_append(DCR *dcr)
 
    /*
     * have_vol defines whether or not mount_next_write_volume should
-    *   ask the Director again about what Volume to use.
+    * ask the Director again about what Volume to use.
     */
-   if (dev->can_append() && dcr->is_suitable_volume_mounted() &&
+   if (dev->can_append() &&
+       dcr->is_suitable_volume_mounted() &&
        !bstrcmp(dcr->VolCatInfo.VolCatStatus, "Recycle")) {
       Dmsg0(190, "device already in append.\n");
       /*
        * At this point, the correct tape is already mounted, so
-       *   we do not need to do mount_next_write_volume(), unless
-       *   we need to recycle the tape.
+       * we do not need to do mount_next_write_volume(), unless
+       * we need to recycle the tape.
        */
        if (dev->num_writers == 0) {
           dev->VolCatInfo = dcr->VolCatInfo;   /* structure assignment */
@@ -458,32 +461,32 @@ DCR *acquire_device_for_append(DCR *dcr)
    Dmsg4(100, "=== nwriters=%d nres=%d vcatjob=%d dev=%s\n",
          dev->num_writers, dev->num_reserved(), dev->VolCatInfo.VolCatJobs, dev->print_name());
    dcr->dir_update_volume_info(false, false); /* send Volume info to Director */
-   ok = true;
+   retval = true;
 
 get_out:
-   /* Don't plugin close here, we might have multiple writers */
+   /*
+    * Don't plugin close here, we might have multiple writers
+    */
    dcr->clear_reserved();
    dev->Unlock();
    dev->Unlock_acquire();
    Leave(200);
-   return ok ? dcr : NULL;
+
+   return retval ? dcr : NULL;
 }
 
 /*
- * This job is done, so release the device. From a Unix standpoint,
- *  the device remains open.
+ * This job is done, so release the device. From a Unix standpoint, the device remains open.
  *
  * Note, if we were spooling, we may enter with the device blocked.
- *   We unblock at the end, only if it was us who blocked the
- *   device.
- *
+ * We unblock at the end, only if it was us who blocked the device.
  */
 bool release_device(DCR *dcr)
 {
    utime_t now;
    JCR *jcr = dcr->jcr;
    DEVICE *dev = dcr->dev;
-   bool ok = true;
+   bool retval = true;
    char tbuf[100];
    int was_blocked = BST_NOT_BLOCKED;
 
@@ -510,6 +513,7 @@ bool release_device(DCR *dcr)
 
    if (dev->can_read()) {
       VOLUME_CAT_INFO *vol = &dev->VolCatInfo;
+
       dev->clear_read();              /* clear read bit */
       Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n",
          dev->is_labeled(), vol->VolCatName);
@@ -616,7 +620,7 @@ bool release_device(DCR *dcr)
           * If all reservations are cleared for this device raise an event that SD plugins can register to.
           */
          if (dev->num_reserved() == 0) {
-            generate_plugin_event(jcr, bsdEventDeviceReleased, dcr);
+            generate_plugin_event(jcr, bsdEventDeviceRelease, dcr);
          }
       }
    }
@@ -647,7 +651,7 @@ bool release_device(DCR *dcr)
 
    Dmsg2(100, "Device %s released by JobId=%u\n", dev->print_name(), (uint32_t)jcr->JobId);
 
-   return ok;
+   return retval;
 }
 
 /*
@@ -655,11 +659,13 @@ bool release_device(DCR *dcr)
  */
 bool clean_device(DCR *dcr)
 {
-   bool ok;
+   bool retval;
+
    dcr->keep_dcr = true;                  /* do not free the dcr */
-   ok = release_device(dcr);
+   retval = release_device(dcr);
    dcr->keep_dcr = false;
-   return ok;
+
+   return retval;
 }
 
 /*

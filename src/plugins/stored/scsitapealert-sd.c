@@ -139,7 +139,7 @@ static bRC newPlugin(bpContext *ctx)
                                 bsdEventReadError,
                                 bsdEventWriteError,
                                 bsdEventVolumeUnload,
-                                bsdEventDeviceReleased);
+                                bsdEventDeviceRelease);
 
    return bRC_OK;
 }

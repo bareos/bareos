@@ -161,7 +161,6 @@ void DCR::unreserve_device()
       }
 
       if (dev->num_reserved() == 0 && dev->num_writers == 0) {
-         generate_plugin_event(jcr, bsdEventDeviceClose, this);
          volume_unused(this);
       }
    }
@@ -333,9 +332,6 @@ static bool use_device_cmd(JCR *jcr)
 
          /*
           * Now we look for a drive that may or may not be in use.
-          */
-
-         /*
           * Look for an exact Volume match all drives
           */
          rctx.PreferMountedVols = true;
@@ -527,9 +523,6 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
                } else if (status == 0) {      /* device busy */
                   Dmsg1(dbglvl, "Suitable device=%s, busy: not use\n", device_name);
                } else {
-                  /*
-                   * Otherwise error
-                   */
                   Dmsg0(dbglvl, "No suitable device found.\n");
                }
                rctx.have_volume = false;
@@ -573,9 +566,6 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
          } else if (status == 0) {            /* device busy */
             Dmsg1(dbglvl, "No usable device=%s, busy: not use\n", device_name);
          } else {
-            /*
-             * Otherwise error
-             */
             Dmsg0(dbglvl, "No usable device found.\n");
          }
       }
@@ -603,8 +593,7 @@ int search_res_for_device(RCTX &rctx)
     * Look through Autochangers first
     */
    foreach_res(changer, R_AUTOCHANGER) {
-      Dmsg2(dbglvl, "Try match changer res=%s, wanted %s\n",
-            changer->name(), rctx.device_name);
+      Dmsg2(dbglvl, "Try match changer res=%s, wanted %s\n", changer->name(), rctx.device_name);
       /*
        * Find resource, and make sure we were able to open it
        */
@@ -643,8 +632,7 @@ int search_res_for_device(RCTX &rctx)
     */
    if (!rctx.autochanger_only) {
       foreach_res(rctx.device, R_DEVICE) {
-         Dmsg2(dbglvl, "Try match res=%s wanted %s\n",
-               rctx.device->name(), rctx.device_name);
+         Dmsg2(dbglvl, "Try match res=%s wanted %s\n", rctx.device->name(), rctx.device_name);
 
          /*
           * Find resource, and make sure we were able to open it
@@ -703,11 +691,11 @@ int search_res_for_device(RCTX &rctx)
 }
 
 /*
- *  Try to reserve a specific device.
+ * Try to reserve a specific device.
  *
- *  Returns: 1 -- OK, have DCR
- *           0 -- must wait
- *          -1 -- fatal error
+ * Returns: 1 -- OK, have DCR
+ *          0 -- must wait
+ *         -1 -- fatal error
  */
 static int reserve_device(RCTX &rctx)
 {
@@ -908,7 +896,7 @@ static bool reserve_device_for_read(DCR *dcr)
    /*
     * Note: on failure this returns jcr->errmsg properly edited
     */
-   if (generate_plugin_event(jcr, bsdEventDeviceTryOpen, dcr) != bRC_OK) {
+   if (generate_plugin_event(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
       queue_reserve_message(jcr);
       goto bail_out;
    }
@@ -985,7 +973,7 @@ static bool reserve_device_for_append(DCR *dcr, RCTX &rctx)
    /*
     * Note: on failure this returns jcr->errmsg properly edited
     */
-   if (generate_plugin_event(jcr, bsdEventDeviceTryOpen, dcr) != bRC_OK) {
+   if (generate_plugin_event(jcr, bsdEventDeviceReserve, dcr) != bRC_OK) {
       queue_reserve_message(jcr);
       goto bail_out;
    }
@@ -1013,12 +1001,11 @@ static int is_pool_ok(DCR *dcr)
       Dmsg1(dbglvl, "OK dev: %s num_writers=0, reserved, pool matches\n", dev->print_name());
       return 1;
    } else {
-      /*
-       * Drive Pool not suitable for us
-       */
-      Mmsg(jcr->errmsg, _("3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive %s.\n"),
-           (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
-           dev->num_reserved(), dev->print_name());
+      /* Drive Pool not suitable for us */
+      Mmsg(jcr->errmsg, _(
+            "3608 JobId=%u wants Pool=\"%s\" but have Pool=\"%s\" nreserve=%d on drive %s.\n"),
+            (uint32_t)jcr->JobId, dcr->pool_name, dev->pool_name,
+            dev->num_reserved(), dev->print_name());
       Dmsg1(dbglvl, "Failed: %s", jcr->errmsg);
       queue_reserve_message(jcr);
    }
@@ -1139,12 +1126,11 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
 
       /*
        * Check for exact Volume name match
-       */
-      /*
        * ***FIXME*** for Disk, we can accept any volume that goes with this drive.
        */
       if (rctx.exact_match && rctx.have_volume) {
          bool ok;
+
          Dmsg5(dbglvl, "PrefMnt=%d exact=%d suitable=%d chgronly=%d any=%d\n",
                rctx.PreferMountedVols, rctx.exact_match, rctx.suitable_device,
                rctx.autochanger_only, rctx.any_drive);
@@ -1170,7 +1156,8 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
    /*
     * Check for unused autochanger drive
     */
-   if (rctx.autochanger_only && !dev->is_busy() &&
+   if (rctx.autochanger_only &&
+       !dev->is_busy() &&
        dev->VolHdr.VolumeName[0] == 0) {
       /*
        * Device is available but not yet reserved, reserve it for us
@@ -1253,6 +1240,7 @@ static void queue_reserve_message(JCR *jcr)
       if (!msg) {
          goto bail_out;
       }
+
       /*
        * Comparison based on 4 digit message number
        */

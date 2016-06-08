@@ -52,9 +52,9 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir);
 bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd);
 bool autochanger_transfer_cmd(DCR *dcr, BSOCK *dir,
                               slot_number_t src_slot, slot_number_t dst_slot);
-bool unload_autochanger(DCR *dcr, slot_number_t loaded);
-bool unload_dev(DCR *dcr, DEVICE *dev);
-slot_number_t get_autochanger_loaded_slot(DCR *dcr);
+bool unload_autochanger(DCR *dcr, slot_number_t loaded, bool lock_set = false);
+bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set = false);
+slot_number_t get_autochanger_loaded_slot(DCR *dcr, bool lock_set = false);
 
 /* block.c */
 void dump_block(DEV_BLOCK *b, const char *msg);

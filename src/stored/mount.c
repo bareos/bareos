@@ -136,6 +136,7 @@ mount_next_vol:
    dcr->setVolCatInfo(false);   /* out of date when Vols unlocked */
 
    switch (autoload_device(dcr, true /* writing */, NULL)) {
+   case -2:
    case -1:
       /*
        * -1 => error on autochanger

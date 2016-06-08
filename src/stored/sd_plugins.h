@@ -95,7 +95,7 @@ typedef enum {
    bsdEventDeviceInit = 3,
    bsdEventDeviceMount = 4,
    bsdEventVolumeLoad = 5,
-   bsdEventDeviceTryOpen = 6,
+   bsdEventDeviceReserve = 6,
    bsdEventDeviceOpen = 7,
    bsdEventLabelRead = 8,
    bsdEventLabelVerified = 9,
@@ -110,11 +110,13 @@ typedef enum {
    bsdEventSetupRecordTranslation = 18,
    bsdEventReadRecordTranslation = 19,
    bsdEventWriteRecordTranslation = 20,
-   bsdEventDeviceReleased = 21,
-   bsdEventNewPluginOptions = 22
+   bsdEventDeviceRelease = 21,
+   bsdEventNewPluginOptions = 22,
+   bsdEventChangerLock = 23,
+   bsdEventChangerUnlock = 24
 } bsdEventType;
 
-#define SD_NR_EVENTS bsdEventNewPluginOptions /* keep this updated ! */
+#define SD_NR_EVENTS bsdEventChangerUnlock /* keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;
