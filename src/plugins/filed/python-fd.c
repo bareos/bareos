@@ -2626,7 +2626,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    case bVarSinceTime:
    case bVarAccurate:
    case bVarPrefixLinks: {
-      int value = NULL;
+      int value = 0;
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (bVariable)var, &value) == bRC_OK) {
