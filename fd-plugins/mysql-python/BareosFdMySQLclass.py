@@ -104,6 +104,13 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
                 DebugMessage(context, 10, "Failed mysql command: '%s'" %showDbCommand)
                 return bRCs['bRC_Error'];
 
+        if 'ignore_db' in self.options:
+            DebugMessage(context, 100, "databases in ignore list: %s\n" %(self.options['ignore_db'].split(',')));
+            for ignored_cur in self.options['ignore_db'].split(','):
+                try:
+                    self.databases.remove(ignored_cur)
+                except:
+                    pass
         DebugMessage(context, 100, "databases to backup: %s\n" %(self.databases));
         return bRCs['bRC_OK'];
 
