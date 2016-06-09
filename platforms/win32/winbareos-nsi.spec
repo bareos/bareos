@@ -10,7 +10,7 @@
 
 #!BuildIgnore: post-build-checks
 Name:           winbareos-nsi
-Version:        16.1.0
+Version:        16.2.3
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
