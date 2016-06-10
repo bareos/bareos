@@ -1995,7 +1995,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
    } else if (jcr->HasSelectedJobs) {
       switch (jcr->JobStatus) {
       case JS_Terminated:
-         term_msg = _("%s -- OK");
+         term_msg = _("%s OK");
          break;
       case JS_Warnings:
          term_msg = _("%s OK -- with warnings");
