@@ -330,7 +330,7 @@ Pool {
 #
 Pool {
   Name = Scratch
-  Pool Type = Backup
+  Pool Type = Scratch
 }
 
 #

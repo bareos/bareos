@@ -192,7 +192,7 @@ static struct cmdstruct commands[] = {
    { NT_(".msgs"), dot_msgs_cmd, _("List all message resources"),
      NULL, false, false },
    { NT_(".pools"), dot_pools_cmd, _("List all pool resources"),
-     NULL, true, false },
+     NT_("type=<pooltype>"), true, false },
    { NT_(".profiles"), dot_profiles_cmd, _("List all profile resources"),
      NULL, true, false },
    { NT_(".quit"), quit_cmd, _("Close connection"),

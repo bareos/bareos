@@ -942,15 +942,25 @@ bool dot_msgs_cmd(UAContext *ua, const char *cmd)
 
 bool dot_pools_cmd(UAContext *ua, const char *cmd)
 {
+   int pos, length;
    POOLRES *pool;
+
+   pos = find_arg_with_value(ua, "type");
+   if (pos >= 0) {
+      length = strlen(ua->argv[pos]);
+   } else {
+      length = 0;
+   }
 
    LockRes();
    ua->send->array_start("pools");
    foreach_res(pool, R_POOL) {
       if (acl_access_ok(ua, Pool_ACL, pool->name())) {
-         ua->send->object_start();
-         ua->send->object_key_value("name", pool->name(), "%s\n");
-         ua->send->object_end();
+         if (pos == -1 || bstrncasecmp(pool->pool_type, ua->argv[pos], length)) {
+            ua->send->object_start();
+            ua->send->object_key_value("name", pool->name(), "%s\n");
+            ua->send->object_end();
+         }
       }
    }
    ua->send->array_end("pools");
