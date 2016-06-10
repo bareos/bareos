@@ -1,27 +1,4 @@
 #
-# Default Bareos Director configuration file for disk-only backup
-#
-# Each configuration item has a reference number that shows
-# where this property can be changed in the configuration file.
-# Search for the number to find the correct line.
-#
-# You have to configure the following accoring to your environment:
-#
-# (#01)Email Address for bareos disaster recovery.
-#      Specify a mailaddress outside of your backupserver.
-#      There will be one mail per day.
-#
-# (#02)Email Address for bareos reports. (Mail Command)
-#      This mail address will recieve a report about each backup job.
-#      It will be sent after the backupjob is complete.
-#      Has to be configured twice ("Standard" and "Daemon" Message Ressources)
-#
-# (#03)Email Address for bareos operator. (Operator Command)
-#      This mail address will recieve a mail immediately when the
-#      bareos system needs an operator intervention.
-#      May be the same address as in (#02)
-#
-#
 # This disk-only setup stores all data into @archivedir@
 #
 # The preconfigured backup scheme is as follows:
@@ -48,14 +25,8 @@ Director {                            # define myself
   QueryFile = "@scriptdir@/query.sql"
   Maximum Concurrent Jobs = 10
   Password = "@dir_password@"         # Console password
-  Messages = Daemon
+  Messages = Standard
   Auditing = yes
-
-  # Enable the Heartbeat if you experience connection losses
-  # (eg. because of your router or firewall configuration).
-  # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
-  #
-  # Heartbeat Interval = 1m
 
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@
@@ -73,8 +44,7 @@ JobDefs {
   Type = Backup
   Level = Incremental
   Client = @basename@-fd
-  FileSet = "SelfTest"                     # selftest fileset                            (#13)
-  Schedule = "WeeklyCycle"
+  FileSet = "SelfTest"
   Storage = File
   Messages = Standard
   Pool = Incremental
@@ -132,26 +102,6 @@ Job {
   Where = /tmp/bareos-restores
 }
 
-
-FileSet {
-  Name = "Windows All Drives"
-  Enable VSS = yes
-  Include {
-    Options {
-      Signature = MD5
-      Drive Type = fixed
-      IgnoreCase = yes
-      WildFile = "[A-Z]:/pagefile.sys"
-      WildDir = "[A-Z]:/RECYCLER"
-      WildDir = "[A-Z]:/$RECYCLE.BIN"
-      WildDir = "[A-Z]:/System Volume Information"
-      Exclude = yes
-    }
-    File = /
-  }
-}
-
-
 FileSet {
   Name = "Linux All"
   Include {
@@ -180,32 +130,28 @@ FileSet {
     File = /.journal
     File = /.fsck
   }
-
 }
 
-# fileset just to backup some files for selftest
+FileSet {
+ Name = FS_TESTJOB1
+ Include {
+   Options {
+    Signature = MD5
+   }
+   File=<@tmpdir@/file-list
+ }
+}
+
 FileSet {
   Name = "SelfTest"
   Include {
     Options {
-      Signature = MD5 # calculate md5 checksum per file
+      Signature = MD5
     }
-    File = "@sbindir@"
+    File = "@builddir@"
   }
 }
 
-Schedule {
-  Name = "WeeklyCycle"
-  Run = Full 1st sat at 21:00                   # (#04)
-  Run = Differential 2nd-5th sat at 21:00       # (#07)
-  Run = Incremental mon-fri at 21:00            # (#10)
-}
-
-# This schedule does the catalog. It starts after the WeeklyCycle
-Schedule {
-  Name = "WeeklyCycleAfterBackup"
-  Run = Full mon-fri at 21:10
-}
 
 # This is the backup of the catalog
 FileSet {
@@ -243,8 +189,6 @@ Storage {
 #
 Catalog {
   Name = MyCatalog
-  # Uncomment the following lines if you want the dbi driver
-  @uncomment_dbi@ dbdriver = "dbi:@DEFAULT_DB_TYPE@"; dbaddress = 127.0.0.1; dbport = @db_port@
   #dbdriver = "@DEFAULT_DB_TYPE@"
   dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
   dbname = "@db_name@"
@@ -257,25 +201,8 @@ Catalog {
 #
 Messages {
   Name = Standard
-  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: %t %e of %c %l\" %r"
-  operatorcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos: Intervention needed for %j\" %r"
-  mail = @job_email@ = all, !skipped, !audit # (#02)
-  operator = @job_email@ = mount     # (#03)
   console = all, !skipped, !saved, !audit
-  append = "@logdir@/bareos.log" = all, !skipped, !audit
   catalog = all, !audit
-}
-
-#
-# Message delivery for daemon messages (no job).
-#
-Messages {
-  Name = Daemon
-  mailcommand = "@bindir@/bsmtp -h @smtp_host@ -f \"\(Bareos\) \<%r\>\" -s \"Bareos daemon message\" %r"
-  mail = @job_email@ = all, !skipped, !audit # (#02)
-  console = all, !skipped, !saved, !audit
-  append = "@logdir@/bareos.log" = all, !skipped, !audit
-  append = "@logdir@/bareos-audit.log" = audit
 }
 
 #

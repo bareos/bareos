@@ -82,7 +82,9 @@ Storage {
 Catalog {
   Name = MyCatalog
   
-  dbname = regress; user = root; password = ""
+  dbname = @db_name@
+  dbuser = "@db_user@"
+  dbpassword = "@db_password@"
 }
 
 Messages {

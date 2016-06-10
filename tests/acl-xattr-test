@@ -100,6 +100,7 @@ rm -rf $d
 mkdir -p $d
 mkdir -p $d/acl-dir
 cp ${cwd}/bin/bconsole $d
+ls -la $d
 
 case `uname -s` in
    Linux)
@@ -208,7 +209,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
 @$out ${cwd}/tmp/log1.out
-label volume=TestVolume001 storage=File1 pool=Full slot=1 drive=0
+label volume=TestVolume001 storage=File pool=Full slot=1 drive=0
 @#setdebug level=400 trace=1 client
 @#setdebug level=300 trace=1 director
 @#setdebug level=300 trace=1 storage=File1
@@ -219,7 +220,7 @@ messages
 @# now do a restore
 @#
 @$out ${cwd}/tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores select all done
+restore restorejob=RestoreFiles where=${cwd}/tmp/bareos-restores select all done
 yes
 wait
 messages
@@ -227,7 +228,7 @@ quit
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File1
+check_for_zombie_jobs storage=File
 stop_bareos
 
 rd=$cwd/tmp/bareos-restores$cwd/build/acl

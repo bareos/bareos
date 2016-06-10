@@ -34,9 +34,6 @@ bareos: all
 sed:
 	echo "Doing: scripts/do_sed"
 	scripts/do_sed
-	echo "adapting default fileset for regression tests"
-	cp bin/bareos-dir.conf bin/bareos-dir.conf.orig
-	sed 's#File.*/$$#File = /usr/sbin#g'  < bin/bareos-dir.conf.orig > bin/bareos-dir.conf
 
 # Run all disk tests
 test:

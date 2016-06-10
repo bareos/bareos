@@ -32,9 +32,13 @@ dbengine=`echo ${WHICHDB} | sed -e 's/--with-//' -e 's/=.*//'`
 bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 builddir="${src}"
+hostname="${hostname:-$HOST}"
 
 # Create sed command script
-echo "s%@sbindir@%${bin}%g" >${out}
+>${out}
+echo "s%@archivedir@%${tmp}%g" >>${out}
+echo "s%@bindir@%${bin}%g" >>${out}
+echo "s%@sbindir@%${bin}%g" >>${out}
 echo "s%@scriptdir@%${scripts}%g" >>${out}
 echo "s%@working_dir@%${working}%g" >>${out}
 echo "s%@piddir@%${working}%g" >>${out}
@@ -44,11 +48,11 @@ echo "s%@autochanger@%${AUTOCHANGER}%g" >>${out}
 echo "s%@changer_script@%${AUTOCHANGER_SCRIPT}%g" >>${out}
 echo "s%@tmpdir@%${tmp}%g" >>${out}
 echo "s%@logdir@%${tmp}%g" >>${out}
-echo "s%@hostname@%${HOST}%g" >>${out}
 echo "s%@changer_path@%${AUTOCHANGER_PATH}%g" >>${out}
 echo "s%@tape_drive1@%${TAPE_DRIVE1}%g" >>${out}
 echo "s%@smtp_host@%${SMTP_HOST}%g" >>${out}
 echo "s%@disk_drive@%${tmp}/disk-changer%g" >>${out}
+echo "s%@basename@%${HOST}%g" >>${out}
 echo "s%@hostname@%${hostname}%g" >>${out}
 echo "s%@hostname1@%${hostname1}%g" >>${out}
 echo "s%@hostname2@%${hostname2}%g" >>${out}
@@ -61,6 +65,7 @@ echo "s%@hostname1_password@%${hostname1_password}%g" >>${out}
 echo "s%@hostname2_password@%${hostname2_password}%g" >>${out}
 echo "s%@hostname3_password@%${hostname3_password}%g" >>${out}
 echo "s%@dirport@%${dirport}%g" >>${out}
+echo "s%@dir_port@%${dirport}%g" >>${out}
 echo "s%@sdport@%${sdport}%g" >>${out}
 echo "s%@sdport2@%${sdport2}%g" >>${out}
 echo "s%@fdport@%${fdport}%g" >>${out}
@@ -84,3 +89,4 @@ echo "s%@db_password@%${db_password}%g" >>${out}
 echo "s%@builddir@%${builddir}%g" >>${out}
 echo "s%@BUILD_DIR@%${builddir}%g" >>${out}
 echo "s%@confdir@%${scripts}%g" >>${out}
+echo "s%@uncomment_dbi@%#%g" >>${out}

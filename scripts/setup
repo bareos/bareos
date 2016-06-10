@@ -154,8 +154,3 @@ cd ${cwd}
 #
 bin/bareos start
 bin/bareos stop
-
-#
-# Save Bareos default conf files for later use
-#
-cp -f bin/*.conf scripts

@@ -16,6 +16,8 @@ To set it up, create your personal configuration file, by
 copying prototype.conf to config or simply editing prototype.conf
 directly then copying it to the file config.
 
+cp prototype.conf config
+
 You must end up with a file named config in the main regress
 directory that has all the specifications that correspond to
 your system.
