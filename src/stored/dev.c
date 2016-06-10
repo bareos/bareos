@@ -573,7 +573,7 @@ bool DEVICE::open(DCR *dcr, int omode)
    /*
     * We are about to open the device so let any plugin know we are.
     */
-   if (generate_plugin_event(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
+   if (dcr && generate_plugin_event(dcr->jcr, bsdEventDeviceOpen, dcr) != bRC_OK) {
       Dmsg0(100, "open_dev: bsdEventDeviceOpen failed\n");
       return false;
    }
