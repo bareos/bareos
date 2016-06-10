@@ -631,7 +631,6 @@ ac_includes_default="\
 
 ac_header_list=
 ac_subst_vars='LTLIBOBJS
-INSTALL_SD_CONFS
 BUILD_SD_BACKENDS
 BUILD_DIR_PLUGINS
 BUILD_SD_PLUGINS
@@ -33830,19 +33829,6 @@ fi
 
 
 
-
-
-INSTALL_SD_CONFS="device-fifo.conf device-tape-with-autoloader.conf"
-if test X"$have_glusterfs" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-gluster.conf"
-fi
-if test X"$have_ceph_rados" = "Xyes" ; then
-    INSTALL_SD_CONFS="${INSTALL_SD_CONFS} device-ceph-rados.conf"
-fi
-
-
-
-
 if test "x${subsysdir}" = "x${sbindir}" ; then
    echo " "
    echo " "
@@ -33856,7 +33842,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/plugin-python-ldap.conf src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf src/defaultconfigs/bareos-dir.d/messages/Daemon.conf src/defaultconfigs/bareos-dir.d/messages/Standard.conf src/defaultconfigs/bareos-dir.d/storage/File.conf src/defaultconfigs/bareos-sd.d/device/FileStorage.conf src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf src/defaultconfigs/bareos-fd.d/client/myself.conf src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf src/defaultconfigs/tray-monitor.d/director/Director-local.conf src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -34982,6 +34968,29 @@ do
     "src/qt-console/bat.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.desktop" ;;
     "src/qt-console/bat.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.pro" ;;
     "src/qt-console/install_conf_file") CONFIG_FILES="$CONFIG_FILES src/qt-console/install_conf_file" ;;
+    "src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/messages/Daemon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/messages/Daemon.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/messages/Standard.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/messages/Standard.conf" ;;
+    "src/defaultconfigs/bareos-dir.d/storage/File.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/storage/File.conf" ;;
+    "src/defaultconfigs/bareos-sd.d/device/FileStorage.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-sd.d/device/FileStorage.conf" ;;
+    "src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf" ;;
+    "src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf" ;;
+    "src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf" ;;
+    "src/defaultconfigs/bareos-fd.d/client/myself.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-fd.d/client/myself.conf" ;;
+    "src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf" ;;
+    "src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf" ;;
+    "src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf" ;;
+    "src/defaultconfigs/tray-monitor.d/director/Director-local.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/tray-monitor.d/director/Director-local.conf" ;;
+    "src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf" ;;
+    "src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf" ;;
     "src/dird/Makefile") CONFIG_FILES="$CONFIG_FILES src/dird/Makefile" ;;
     "src/dird/bareos-dir.conf") CONFIG_FILES="$CONFIG_FILES src/dird/bareos-dir.conf" ;;
     "src/lib/Makefile") CONFIG_FILES="$CONFIG_FILES src/lib/Makefile" ;;
@@ -35010,7 +35019,7 @@ do
     "src/tests/Makefile") CONFIG_FILES="$CONFIG_FILES src/tests/Makefile" ;;
     "src/tools/Makefile") CONFIG_FILES="$CONFIG_FILES src/tools/Makefile" ;;
     "src/plugins/filed/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/filed/Makefile" ;;
-    "src/plugins/filed/plugin-python-ldap.conf") CONFIG_FILES="$CONFIG_FILES src/plugins/filed/plugin-python-ldap.conf" ;;
+    "src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example") CONFIG_FILES="$CONFIG_FILES src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example" ;;
     "src/plugins/stored/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/stored/Makefile" ;;
     "src/plugins/dird/Makefile") CONFIG_FILES="$CONFIG_FILES src/plugins/dird/Makefile" ;;
     "po/Makefile.in") CONFIG_FILES="$CONFIG_FILES po/Makefile.in" ;;
