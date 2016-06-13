@@ -418,6 +418,10 @@ RES_ITEM job_items[] = {
    { "DirPluginOptions", CFG_TYPE_ALIST_STR, ITEM(res_job.DirPluginOptions), 0, 0, NULL, NULL, NULL },
    { "Base", CFG_TYPE_ALIST_RES, ITEM(res_job.base), R_JOB, 0, NULL, NULL, NULL },
    { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job.MaxConcurrentCopies), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
+   /* Settings for always incremental */
+   { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job.AlwaysIncremental), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "AlwaysIncrementalInterval", CFG_TYPE_TIME, ITEM(res_job.AlwaysIncrementalInterval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { "AlwaysIncrementalNumber", CFG_TYPE_PINT32, ITEM(res_job.AlwaysIncrementalNumber), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -603,6 +607,7 @@ struct s_jl joblevels[] = {
    { "Differential", L_DIFFERENTIAL, JT_MIGRATE },
    { " ", L_NONE, JT_ADMIN },
    { " ", L_NONE, JT_RESTORE },
+   { " ", L_NONE, JT_CONSOLIDATE },
    { NULL, 0, 0 }
 };
 
@@ -617,6 +622,7 @@ struct s_jt jobtypes[] = {
    { "Restore", JT_RESTORE },
    { "Migrate",JT_MIGRATE },
    { "Copy", JT_COPY },
+   { "Consolidate", JT_CONSOLIDATE },
    { NULL, 0 }
 };
 

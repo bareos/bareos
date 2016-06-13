@@ -431,6 +431,9 @@ const char *job_type_to_str(int type)
    case JT_SCAN:
       str = _("Scan");
       break;
+   case JT_CONSOLIDATE:
+      str = _("Consolidate");
+      break;
    }
    if (!str) {
       str = _("Unknown Type");

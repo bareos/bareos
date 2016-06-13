@@ -21,9 +21,8 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- vbackup.c -- responsible for doing virtual
- *                    backup jobs or in other words, consolidation or synthetic
- *                    backups.
+ * BAREOS Director -- vbackup.c -- responsible for doing virtual backup jobs or
+ *                    in other words, consolidation or synthetic backups.
  *
  * Kern Sibbald, July MMVIII
  *
@@ -68,8 +67,8 @@ bool do_native_vbackup_init(JCR *jcr)
    }
 
    /*
-    * Note, at this point, pool is the pool for this job.  We
-    * transfer it to rpool (read pool), and a bit later,
+    * Note, at this point, pool is the pool for this job.
+    * We transfer it to rpool (read pool), and a bit later,
     * pool will be changed to point to the write pool,
     * which comes from pool->NextPool.
     */
@@ -153,6 +152,7 @@ bool do_native_vbackup(JCR *jcr)
    BSOCK *sd;
    char *jobids;
    char ed1[100];
+   int JobLevel_of_first_job;
 
    if (!jcr->res.rstorage) {
       Jmsg(jcr, M_FATAL, 0, _("No storage for reading given.\n"));
@@ -174,6 +174,10 @@ bool do_native_vbackup(JCR *jcr)
     */
    Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
         edit_uint64(jcr->JobId, ed1), jcr->Job);
+
+   /*
+    * TODO: What do we do with this message?
+    */
    if (!jcr->accurate) {
       Jmsg(jcr, M_WARNING, 0,
            _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n"));
@@ -183,16 +187,65 @@ bool do_native_vbackup(JCR *jcr)
     * See if we already got a list of jobids to use.
     */
    if (jcr->vf_jobids) {
-      Dmsg1(10, "Accurate jobids=%s\n", jcr->vf_jobids);
+      Dmsg1(10, "jobids=%s\n", jcr->vf_jobids);
       jobids = bstrdup(jcr->vf_jobids);
    } else {
       db_list_ctx jobids_ctx;
 
+      /*
+       * If we are doing always incremental, we need to limit the search to
+       * only include incrementals that are older than (now - AlwaysIncrementalInterval)
+       */
+      if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
+         char sdt[50];
+         time_t starttime = time(NULL) - jcr->res.job->AlwaysIncrementalInterval;
+
+         bstrftimes(sdt, sizeof(sdt), starttime);
+         jcr->jr.StartTime = starttime;
+         Jmsg(jcr, M_INFO, 0, _("Always incremental consolidation: consolidating jobs older than %s.\n"), sdt);
+      }
+
       db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
-      Dmsg1(10, "Accurate jobids=%s\n", jobids_ctx.list);
+      Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
+
       if (jobids_ctx.count == 0) {
-         Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
-         return false;
+         if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
+            Jmsg(jcr, M_WARNING, 0, _("Always incremental consolidation: No jobs to consolidate found.\n"));
+            return true;
+         } else {
+            Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
+            return false;
+         }
+      } else if (jobids_ctx.count == 1) {
+         /*
+          * Consolidation of one job does not make sense, we leave it like it is
+          */
+         Jmsg(jcr, M_WARNING, 0, _("Exactly one job selected for consolidation - skipping.\n"));
+         return true;
+      }
+
+      if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalNumber) {
+         int32_t incrementals_total;
+         int32_t incrementals_to_consolidate;
+
+         /*
+          * Calculate limit for query. we specify how many incrementals should be left.
+          * the limit is number of consolidate candidates - number required - 1
+          */
+         incrementals_total = jobids_ctx.count - 1;
+         incrementals_to_consolidate = incrementals_total - jcr->res.job->AlwaysIncrementalNumber;
+
+         Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total, jcr->res.job->AlwaysIncrementalNumber);
+         if ((incrementals_to_consolidate + 1 ) > 1) {
+            jcr->jr.limit = incrementals_to_consolidate + 1;
+            Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, incrementals_to_consolidate, jcr->jr.limit);
+            jobids_ctx.reset();
+            db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+            Dmsg1(10, "consolidate ids after limit: %s.\n", jobids_ctx.list);
+         } else {
+            Jmsg(jcr, M_WARNING, 0, _("not enough incrementals, not consolidating\n"));
+            return true;
+         }
       }
 
       jobids = bstrdup(jobids_ctx.list);
@@ -201,13 +254,40 @@ bool do_native_vbackup(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Consolidating JobIds %s\n"), jobids);
 
    /*
-    * Now we find the last job that ran and store it's info in
-    * the previous_jr record.  We will set our times to the
+    * Find oldest Jobid, get the db record and find its level
+    */
+   p = strchr(jobids, ',');                /* find oldest jobid */
+   if (p) {
+      *p = '\0';
+   }
+
+   memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+   jcr->previous_jr.JobId = str_to_int64(jobids);
+   Dmsg1(10, "Previous JobId=%s\n", jobids);
+
+   /*
+    * See if we need to restore the stripped ','
+    */
+   if (p) {
+      *p = ',';
+   }
+
+   if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), db_strerror(jcr->db));
+      goto bail_out;
+   }
+
+   JobLevel_of_first_job = jcr->previous_jr.JobLevel;
+   Dmsg2(10, "Level of first consolidated job %d: %s\n", jcr->previous_jr.JobId, job_level_to_str(JobLevel_of_first_job));
+
+   /*
+    * Now we find the newest job that ran and store its info in
+    * the previous_jr record. We will set our times to the
     * values from that job so that anything changed after that
     * time will be picked up on the next backup.
     */
-   p = strrchr(jobids, ',');                /* find last jobid */
-   if (p != NULL) {
+   p = strrchr(jobids, ',');                /* find newest jobid */
+   if (p) {
       p++;
    } else {
       p = jobids;
@@ -309,7 +389,18 @@ bool do_native_vbackup(JCR *jcr)
       goto bail_out;
    }
 
-   native_vbackup_cleanup(jcr, jcr->JobStatus);
+   native_vbackup_cleanup(jcr, jcr->JobStatus, JobLevel_of_first_job);
+
+   /*
+    * Remove the successfully consolidated jobids from the database
+    */
+    if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
+      UAContext *ua;
+      ua = new_ua_context(jcr);
+      purge_jobs_from_catalog(ua, jobids);
+      Jmsg(jcr, M_INFO, 0, _("purged JobIds %s as they were consolidated into Job %s\n"), jobids,  edit_uint64(jcr->JobId, ed1) );
+    }
+
    free(jobids);
    return true;
 
@@ -321,7 +412,7 @@ bail_out:
 /*
  * Release resources allocated during backup.
  */
-void native_vbackup_cleanup(JCR *jcr, int TermCode)
+void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel)
 {
    char ec1[30], ec2[30];
    char term_code[100];
@@ -336,7 +427,8 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode)
    switch (jcr->JobStatus) {
    case JS_Terminated:
    case JS_Warnings:
-      jcr->jr.JobLevel = L_FULL;        /* we want this to appear as a Full backup */
+      jcr->jr.JobLevel = JobLevel;      /* We want this to appear as what the first consolidated job was */
+      Jmsg(jcr, M_INFO, 0, _("Joblevel was set to joblevel of first consolidated job: %s\n"), job_level_to_str(JobLevel));
       break;
    default:
       break;

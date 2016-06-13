@@ -382,11 +382,13 @@ public:
    utime_t MaxVFullInterval;          /* Maximum time interval between Virtual Fulls */
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
+   utime_t AlwaysIncrementalInterval; /* Interval where incrementals are not consolidated */
    int64_t spool_size;                /* Size of spool file for this job */
    int64_t max_bandwidth;             /* Speed limit on this job */
    int64_t FileHistSize;              /* Hint about the size of the expected File history */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t MaxConcurrentCopies;       /* Limit number of concurrent jobs one Copy Job spawns */
+   int32_t AlwaysIncrementalNumber;   /* Number of incrementals that are always left and not consolidated */
 
    MSGSRES *messages;                 /* How and where to send messages */
    SCHEDRES *schedule;                /* When -- Automatic schedule */
@@ -433,6 +435,7 @@ public:
    bool PurgeMigrateJob;              /* Purges source job on completion */
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
    bool SaveFileHist;                 /* Ability to disable File history saving for certain protocols */
+   bool AlwaysIncremental;            /* Always incremental with regular consolidation */
 
    runtime_job_status_t *rjs;         /* Runtime Job Status */
 

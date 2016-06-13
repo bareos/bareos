@@ -316,6 +316,21 @@ bool setup_job(JCR *jcr, bool suppress_output)
          goto bail_out;
       }
       break;
+   case JT_CONSOLIDATE:
+      if (!do_consolidate_init(jcr)) {
+         consolidate_cleanup(jcr, JS_ErrorTerminated);
+         goto bail_out;
+      }
+
+      /*
+       * If there is nothing to do the do_consolidation_init() function will set
+       * the termination status to JS_Terminated.
+       */
+      if (job_terminated_successfully(jcr)) {
+         consolidate_cleanup(jcr, jcr->getJobStatus());
+         goto bail_out;
+      }
+      break;
    default:
       Pmsg1(0, _("Unimplemented job type: %d\n"), jcr->getJobType());
       jcr->setJobStatus(JS_ErrorTerminated);
@@ -544,6 +559,17 @@ static void *job_thread(void *arg)
          }
       } else {
          migration_cleanup(jcr, JS_Canceled);
+      }
+      break;
+   case JT_CONSOLIDATE:
+      if (!job_canceled(jcr)) {
+         if (do_consolidate(jcr)) {
+            do_autoprune(jcr);
+         } else {
+            consolidate_cleanup(jcr, JS_ErrorTerminated);
+         }
+      } else {
+         consolidate_cleanup(jcr, JS_Canceled);
       }
       break;
    default:

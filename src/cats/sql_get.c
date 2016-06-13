@@ -1214,6 +1214,9 @@ bool db_get_used_base_jobids(JCR *jcr, B_DB *mdb,
  * If you specify jr->StartTime, it will be used to limit the search
  * in the time. (usually now)
  *
+ * If you specify jr->limit, it will be used to limit the list of jobids
+ * to a that number
+ *
  * TODO: look and merge from ua_restore.c
  */
 bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
@@ -1264,6 +1267,12 @@ bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
       }
 
       /* We just have to take all incremental after the last Full/Diff */
+
+      /*
+       * If we are doing always incremental, we need to limit the search to
+       * only include incrementals that are older than (now - AlwaysIncrementalInterval)
+       * and leave AlwaysIncrementalNumber incrementals
+       */
       Mmsg(query,
 "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, PurgedFiles) "
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
@@ -1284,8 +1293,14 @@ bool db_accurate_get_jobids(JCR *jcr, B_DB *mdb,
       }
    }
 
-   /* build a jobid list ie: 1,2,3,4 */
-   Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
+   /*
+    * Build a jobid list ie: 1,2,3,4
+    */
+   if (jr->limit) {
+      Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate LIMIT %d", jobid, jr->limit);
+   } else {
+      Mmsg(query, "SELECT JobId FROM btemp3%s ORDER by JobTDate", jobid);
+   }
    db_sql_query(mdb, query.c_str(), db_list_handler, jobids);
    Dmsg1(1, "db_accurate_get_jobids=%s\n", jobids->list);
    retval = true;

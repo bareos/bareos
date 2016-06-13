@@ -64,6 +64,7 @@
 #define JT_COPY                       'c' /* Copy Job */
 #define JT_MIGRATE                    'g' /* Migration Job */
 #define JT_SCAN                       'S' /* Scan Job */
+#define JT_CONSOLIDATE                'O' /* Always Incremental Consolidate Job */
 
 /*
  * Job Status. Some of these are stored in the DB

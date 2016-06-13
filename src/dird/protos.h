@@ -78,6 +78,11 @@ void catalog_request(JCR *jcr, BSOCK *bs);
 void catalog_update(JCR *jcr, BSOCK *bs);
 bool despool_attributes_from_file(JCR *jcr, const char *file);
 
+/* consolidate.c */
+bool do_consolidate_init(JCR *jcr);
+bool do_consolidate(JCR *jcr);
+void consolidate_cleanup(JCR *jcr, int TermCode);
+
 /* dird_conf.c */
 bool print_datatype_schema_json(POOL_MEM &buffer, int level, const int type,
                                 RES_ITEM items[], const bool last = false);
@@ -426,7 +431,7 @@ int do_run_cmd(UAContext *ua, const char *cmd);
 /* vbackup.c */
 bool do_native_vbackup_init(JCR *jcr);
 bool do_native_vbackup(JCR *jcr);
-void native_vbackup_cleanup(JCR *jcr, int TermCode);
+void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel = L_FULL);
 
 /* verify.c */
 bool do_verify(JCR *jcr);

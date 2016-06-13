@@ -250,6 +250,8 @@ const char *JCR::get_OperationName()
       return _("Migration");
    case JT_SCAN:
       return _("Scanning");
+   case JT_CONSOLIDATE:
+      return _("Consolidating");
    default:
       return _("Unknown operation");
    }
@@ -275,6 +277,8 @@ const char *JCR::get_ActionName(bool past)
       return (past) ? _("migrated") : _("migrate");
    case JT_SCAN:
       return (past) ? _("scanned") : _("scan");
+   case JT_CONSOLIDATE:
+      return (past) ? _("consolidated") : _("consolidate");
    default:
       return _("unknown action");
    }
