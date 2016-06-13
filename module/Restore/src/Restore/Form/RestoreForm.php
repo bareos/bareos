@@ -181,7 +181,7 @@ class RestoreForm extends Form
             'name' => 'restoreclient',
             'type' => 'select',
             'options' => array(
-               'label' => _('Restore to (another) client'),
+               'label' => _('Restore to client'),
                //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
@@ -198,7 +198,7 @@ class RestoreForm extends Form
             'name' => 'restoreclient',
             'type' => 'select',
             'options' => array(
-               'label' => _('Restore to (another) client'),
+               'label' => _('Restore to client'),
                //'empty_option' => _('Please choose a client'),
                'value_options' => $this->getClientList()
             ),
@@ -397,12 +397,12 @@ class RestoreForm extends Form
          'name' => 'replace',
          'type' => 'select',
          'options' => array(
-            'label' => _('Replace files on client?'),
+            'label' => _('Replace files on client'),
             'value_options' => array(
                   'always' => _('always'),
                   'never' => _('never'),
-                  'ifolder' => _('if older'),
-                  'ifnewer' => _('if newer')
+                  'ifolder' => _('if file being restored is older than existing file'),
+                  'ifnewer' => _('if file being restored is newer than existing file')
                )
             ),
          'attributes' => array(

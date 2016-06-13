@@ -31,7 +31,7 @@ $this->headTitle($title);
 <ul class="nav nav-tabs">
    <li><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
-   <li><a href="<?php echo $this->url('director', array('action'=>'schedule')); ?>"><?php echo $this->translate('Schedule'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'schedule')); ?>"><?php echo $this->translate('Schedules'); ?></a></li>
    <li><a href="<?php echo $this->url('director', array('action'=>'schedulerstatus')); ?>"><?php echo $this->translate('Scheduler status'); ?></a></li>
    <li class="active"><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
 </ul>
@@ -39,7 +39,7 @@ $this->headTitle($title);
 <br />
 
 <pre class="bconsole" id="bconsole" style="font-size: 9pt; padding-left: 5px; overflow: scroll; width: 1080px; height: 650px; background: #000; color: #fff;" onclick="focusScreen();">
-   <p>Non-interactive bconsole, handle with care.</p>
+   <p><?php echo $this->translate("bconsole (batch-mode), please handle with care."); ?><br /><?php echo $this->translate("All commands have to be a one liner, dialogs are not working."); ?><br /><?php echo $this->translate("Type help for a list of commands."); ?></p>
    <div class="prompt"><label> * </label><input type="text" class="cli" id="cli" value ="" size=120 style="display: inline; background: #000; color: #fff; border-color: #000; border-style: hidden; outline: none;"/></div>
 </pre>
 

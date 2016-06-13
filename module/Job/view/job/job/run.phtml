@@ -30,7 +30,7 @@ $this->headTitle($title);
 ?>
 
 <ul class="nav nav-tabs">
-   <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
    <li class="active"><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
 </ul>
 
@@ -43,14 +43,14 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Run jobs</h3>
+<h3 class="panel-title">Job list</h3>
 </div>
 
 <div class="panel-body">
 
 <table class="table table-hover" id="backupjobs">
    <thead class="bg-primary">
-      <th><?php echo $this->translate("Name"); ?></th>
+      <th><?php echo $this->translate("Job name"); ?></th>
       <th><?php echo $this->translate("Actions"); ?></th>
    </thead>
 </table>

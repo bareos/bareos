@@ -48,12 +48,12 @@ class JobForm extends Form
             'options' => array(
                'label' => _('Time period'),
                'value_options' => array(
-                  '1' => _('past 24 hours'),
+                  '1' => _('last 24 hours'),
                   '3' => _('last 3 days'),
                   '7' => _('last week'),
                   '31' => _('last month'),
                   '365' => _('last year'),
-                  'all' => _('all')
+                  'all' => _('unlimited')
                )
             ),
             'attributes' => array(
@@ -75,8 +75,8 @@ class JobForm extends Form
                   'all' => _('all'),
                   'running' => _('running'),
                   'waiting' => _('waiting'),
-                  'unsuccessful' => _('unsuccessful'),
-                  'successful' => _('successful')
+                  'unsuccessful' => _('terminated unsuccessfully'),
+                  'successful' => _('terminated successfully')
                )
             ),
             'attributes' => array(
