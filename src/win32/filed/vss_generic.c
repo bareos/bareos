@@ -33,6 +33,9 @@
 
 #include "bareos.h"
 #include "jcr.h"
+#include "findlib/find.h"
+#define FILE_DAEMON 1
+#include "fd_plugins.h"
 
 #undef setlocale
 
@@ -435,7 +438,6 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    VMP_snapshots = 0;
    HRESULT hr = S_OK;
    CComPtr<IVssAsync> pAsync1;
-   VSS_BACKUP_TYPE backup_type;
    IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
 
    if (!(m_CreateVssBackupComponents && m_VssFreeSnapshotProperties)) {
@@ -519,32 +521,40 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
 
       /*
        * 2. SetBackupState
+       *
+       * Generate a bEventVssSetBackupState event and if none of the plugins
+       * give back a bRC_Skip it means this will not be performed by any plugin
+       * and we should do the generic handling ourself in the core.
        */
-      switch (m_jcr->getJobLevel()) {
-      case L_FULL:
-         backup_type = VSS_BT_FULL;
-         break;
-      case L_DIFFERENTIAL:
-         backup_type = VSS_BT_DIFFERENTIAL;
-         break;
-      case L_INCREMENTAL:
-         backup_type = VSS_BT_INCREMENTAL;
-         break;
-      default:
-         Dmsg1(0, "VSSClientGeneric::Initialize: unknown backup level %d\n", m_jcr->getJobLevel());
-         backup_type = VSS_BT_FULL;
-         break;
-      }
+      if (generate_plugin_event(m_jcr, bEventVssSetBackupState) != bRC_Skip) {
+         VSS_BACKUP_TYPE backup_type;
 
-      /*
-       * FIXME: need to support partial files - make last parameter true when done
-       */
-      hr = pVssObj->SetBackupState(true, true, backup_type, false);
-      if (FAILED(hr)) {
-         Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->SetBackupState returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "SetBackupState");
-         errno = b_errno_win32;
-         return false;
+         switch (m_jcr->getJobLevel()) {
+         case L_FULL:
+            backup_type = VSS_BT_FULL;
+            break;
+         case L_DIFFERENTIAL:
+            backup_type = VSS_BT_DIFFERENTIAL;
+            break;
+         case L_INCREMENTAL:
+            backup_type = VSS_BT_INCREMENTAL;
+            break;
+         default:
+            Dmsg1(0, "VSSClientGeneric::Initialize: unknown backup level %d\n", m_jcr->getJobLevel());
+            backup_type = VSS_BT_FULL;
+            break;
+         }
+
+         /*
+          * FIXME: need to support partial files - make last parameter true when done
+          */
+         hr = pVssObj->SetBackupState(false, false, backup_type, false);
+         if (FAILED(hr)) {
+            Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->SetBackupState returned 0x%08X\n", hr);
+            JmsgVssApiStatus(m_jcr, M_FATAL, hr, "SetBackupState");
+            errno = b_errno_win32;
+            return false;
+         }
       }
 
       /*
@@ -771,6 +781,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    /*
     * PrepareForBackup
     */
+   generate_plugin_event(m_jcr, bEventVssPrepareSnapshot);
    hr = pVssObj->PrepareForBackup(&pAsync1.p);
    if (FAILED(hr)) {
       JmsgVssApiStatus(m_jcr, M_FATAL, hr, "PrepareForBackup");

@@ -222,13 +222,15 @@ typedef enum {
    bEventNewPluginOptions = 20,
    bEventVssInitializeForBackup = 21,
    bEventVssInitializeForRestore = 22,
-   bEventVssBackupAddComponents = 23,
-   bEventVssPrepareSnapshot = 24,
-   bEventVssCreateSnapshots = 25,
-   bEventVssRestoreLoadComponentMetadata = 26,
-   bEventVssRestoreSetComponentsSelected = 27,
-   bEventVssCloseRestore = 28,
-   bEventVssBackupComplete = 29
+   bEventVssSetBackupState = 23,
+   bEventVssPrepareForBackup = 24,
+   bEventVssBackupAddComponents = 25,
+   bEventVssPrepareSnapshot = 26,
+   bEventVssCreateSnapshots = 27,
+   bEventVssRestoreLoadComponentMetadata = 28,
+   bEventVssRestoreSetComponentsSelected = 29,
+   bEventVssCloseRestore = 30,
+   bEventVssBackupComplete = 31
 } bEventType;
 
 #define FD_NR_EVENTS bEventVssBackupComplete /* keep this updated ! */
