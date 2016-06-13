@@ -439,8 +439,6 @@ public:
    uint32_t SDJobFiles;                   /* Number of files written, this job */
    uint64_t SDJobBytes;                   /* Number of bytes processed this job */
    uint32_t SDErrors;                     /* Number of non-fatal errors */
-   POOLMEM *FDSecureEraseCmd;             /* Report: Secure Erase Command  */
-   POOLMEM *SDSecureEraseCmd;             /* Report: Secure Erase Command  */
    volatile int32_t SDJobStatus;          /* Storage Job Status */
    volatile int32_t FDJobStatus;          /* File daemon Job Status */
    uint32_t DumpLevel;                    /* Dump level when doing a NDMP backup */
@@ -448,7 +446,6 @@ public:
    uint32_t MediaId;                      /* DB record IDs associated with this job */
    uint32_t FileIndex;                    /* Last FileIndex processed */
    utime_t MaxRunSchedTime;               /* Max run time in seconds from Initial Scheduled time */
-   POOLMEM *fname;                        /* Name to put into catalog */
    JOB_DBR jr;                            /* Job DB record for current job */
    JOB_DBR previous_jr;                   /* Previous job database record */
    JCR *mig_jcr;                          /* JCR for migration/copy job */
@@ -456,10 +453,15 @@ public:
    char since[MAX_TIME_LENGTH];           /* Since time */
    char PrevJob[MAX_NAME_LENGTH];         /* Previous job name assiciated with since time */
    union {
-      JobId_t RestoreJobId;               /* Restore id specified by UA */
-      JobId_t MigrateJobId;               /* Migration id specified by UA */
+      JobId_t RestoreJobId;               /* Restore JobId specified by UA */
+      JobId_t MigrateJobId;               /* Migration JobId specified by UA */
+      JobId_t VerifyJobId;                /* Verify JobId specified by UA */
    };
+   POOLMEM *fname;                        /* Name to put into catalog */
    POOLMEM *client_uname;                 /* Client uname */
+   POOLMEM *FDSecureEraseCmd;             /* Report: Secure Erase Command  */
+   POOLMEM *SDSecureEraseCmd;             /* Report: Secure Erase Command  */
+   POOLMEM *vf_jobids;                    /* JobIds to use for Virtual Full */
    uint32_t replace;                      /* Replace option */
    int32_t NumVols;                       /* Number of Volume used in pool */
    int32_t reschedule_count;              /* Number of times rescheduled */

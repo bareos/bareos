@@ -1501,6 +1501,7 @@ void dird_free_jcr(JCR *jcr)
    free_and_null_pool_memory(jcr->res.catalog_source);
    free_and_null_pool_memory(jcr->FDSecureEraseCmd);
    free_and_null_pool_memory(jcr->SDSecureEraseCmd);
+   free_and_null_pool_memory(jcr->vf_jobids);
 
    /*
     * Delete lists setup to hold storage pointers

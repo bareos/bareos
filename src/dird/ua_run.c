@@ -977,9 +977,18 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    }
 
    if (rc.jid) {
-      /* Note, this is also MigrateJobId and a VerifyJobId */
-      jcr->RestoreJobId = str_to_int64(rc.jid);
-      rc.jid = 0;
+      if (jcr->is_JobType(JT_BACKUP) && jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+         if (!jcr->vf_jobids) {
+            jcr->vf_jobids = get_pool_memory(PM_MESSAGE);
+         }
+         pm_strcpy(jcr->vf_jobids, rc.jid);
+      } else {
+         /*
+          * Note, this is also MigrateJobId and a VerifyJobId
+          */
+         jcr->RestoreJobId = str_to_int64(rc.jid);
+      }
+      rc.jid = NULL;
    }
 
    if (rc.backup_format) {

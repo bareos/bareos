@@ -139,8 +139,8 @@ bool do_verify(JCR *jcr)
       /*
        * See if user supplied a jobid= as run argument or from menu
        */
-      if (jcr->RestoreJobId) {
-         verify_jobid = jcr->RestoreJobId;
+      if (jcr->VerifyJobId) {
+         verify_jobid = jcr->VerifyJobId;
          Dmsg1(100, "Supplied jobid=%d\n", verify_jobid);
 
       } else {
