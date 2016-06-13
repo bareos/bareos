@@ -606,6 +606,7 @@ struct s_jl joblevels[] = {
    { "Incremental", L_INCREMENTAL, JT_MIGRATE },
    { "Differential", L_DIFFERENTIAL, JT_MIGRATE },
    { " ", L_NONE, JT_ADMIN },
+   { " ", L_NONE, JT_ARCHIVE },
    { " ", L_NONE, JT_RESTORE },
    { " ", L_NONE, JT_CONSOLIDATE },
    { NULL, 0, 0 }
@@ -618,6 +619,7 @@ struct s_jl joblevels[] = {
 struct s_jt jobtypes[] = {
    { "Backup", JT_BACKUP },
    { "Admin", JT_ADMIN },
+   { "Archive", JT_ARCHIVE },
    { "Verify", JT_VERIFY },
    { "Restore", JT_RESTORE },
    { "Migrate",JT_MIGRATE },

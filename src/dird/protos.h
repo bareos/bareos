@@ -29,6 +29,11 @@ bool do_admin_init(JCR *jcr);
 bool do_admin(JCR *jcr);
 void admin_cleanup(JCR *jcr, int TermCode);
 
+/* archive.c */
+bool do_archive_init(JCR *jcr);
+bool do_archive(JCR *jcr);
+void archive_cleanup(JCR *jcr, int TermCode);
+
 /* authenticate.c */
 bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store);
 bool authenticate_with_file_daemon(JCR *jcr);

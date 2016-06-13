@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +19,10 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- admin.c -- responsible for doing admin jobs
+ * BAREOS Director -- archive.c -- responsible for doing archive jobs
  *
- * Kern Sibbald, May MMIII
+ * based on admin.c
+ * Marco van Wieringen, June 2016
  */
 
 #include "bareos.h"
@@ -29,7 +30,7 @@
 
 static const int dbglvl = 100;
 
-bool do_admin_init(JCR *jcr)
+bool do_archive_init(JCR *jcr)
 {
    free_rstorage(jcr);
    if (!allow_duplicate_job(jcr)) {
@@ -43,9 +44,8 @@ bool do_admin_init(JCR *jcr)
  * Returns: false on failure
  *          true  on success
  */
-bool do_admin(JCR *jcr)
+bool do_archive(JCR *jcr)
 {
-
    jcr->jr.JobId = jcr->JobId;
 
    jcr->fname = (char *)get_pool_memory(PM_FNAME);
@@ -53,25 +53,25 @@ bool do_admin(JCR *jcr)
    /*
     * Print Job Start message
     */
-   Jmsg(jcr, M_INFO, 0, _("Start Admin JobId %d, Job=%s\n"), jcr->JobId, jcr->Job);
+   Jmsg(jcr, M_INFO, 0, _("Start Archive JobId %d, Job=%s\n"), jcr->JobId, jcr->Job);
 
    jcr->setJobStatus(JS_Running);
-   admin_cleanup(jcr, JS_Terminated);
+   archive_cleanup(jcr, JS_Terminated);
 
    return true;
 }
 
 /*
- * Release resources allocated during backup.
+ * Release resources allocated during archive.
  */
-void admin_cleanup(JCR *jcr, int TermCode)
+void archive_cleanup(JCR *jcr, int TermCode)
 {
    char sdt[50], edt[50], schedt[50];
    char term_code[100];
    const char *term_msg;
    int msg_type;
 
-   Dmsg0(dbglvl, "Enter admin_cleanup()\n");
+   Dmsg0(dbglvl, "Enter archive_cleanup()\n");
 
    update_job_end(jcr, TermCode);
 
@@ -83,21 +83,22 @@ void admin_cleanup(JCR *jcr, int TermCode)
    msg_type = M_INFO;                 /* by default INFO message */
    switch (jcr->JobStatus) {
    case JS_Terminated:
-      term_msg = _("Admin OK");
+      term_msg = _("Archive OK");
       break;
    case JS_FatalError:
    case JS_ErrorTerminated:
-      term_msg = _("*** Admin Error ***");
+      term_msg = _("*** Archive Error ***");
       msg_type = M_ERROR;          /* Generate error message */
       break;
    case JS_Canceled:
-      term_msg = _("Admin Canceled");
+      term_msg = _("Archive Canceled");
       break;
    default:
       term_msg = term_code;
       sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
       break;
    }
+
    bstrftimes(schedt, sizeof(schedt), jcr->jr.SchedTime);
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);
@@ -117,5 +118,5 @@ void admin_cleanup(JCR *jcr, int TermCode)
         edt,
         term_msg);
 
-   Dmsg0(dbglvl, "Leave admin_cleanup()\n");
+   Dmsg0(dbglvl, "Leave archive_cleanup()\n");
 }

@@ -300,6 +300,12 @@ bool setup_job(JCR *jcr, bool suppress_output)
          goto bail_out;
       }
       break;
+   case JT_ARCHIVE:
+      if (!do_archive_init(jcr)) {
+         archive_cleanup(jcr, JS_ErrorTerminated);
+         goto bail_out;
+      }
+      break;
    case JT_COPY:
    case JT_MIGRATE:
       if (!do_migration_init(jcr)) {
@@ -547,6 +553,17 @@ static void *job_thread(void *arg)
          }
       } else {
          admin_cleanup(jcr, JS_Canceled);
+      }
+      break;
+   case JT_ARCHIVE:
+      if (!job_canceled(jcr)) {
+         if (do_archive(jcr)) {
+            do_autoprune(jcr);
+         } else {
+            archive_cleanup(jcr, JS_ErrorTerminated);
+         }
+      } else {
+         archive_cleanup(jcr, JS_Canceled);
       }
       break;
    case JT_COPY:
@@ -1588,6 +1605,9 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
 
    switch (jcr->getJobType()) {
    case JT_ADMIN:
+      jcr->setJobLevel(L_NONE);
+      break;
+   case JT_ARCHIVE:
       jcr->setJobLevel(L_NONE);
       break;
    default:

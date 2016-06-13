@@ -882,6 +882,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    bstrftime_nc(dt, sizeof(dt), sp->runtime);
    switch (sp->job->JobType) {
    case JT_ADMIN:
+   case JT_ARCHIVE:
    case JT_RESTORE:
       level_ptr = " ";
       break;
@@ -1197,6 +1198,7 @@ static void list_running_jobs(UAContext *ua)
       }
       switch (jcr->getJobType()) {
       case JT_ADMIN:
+      case JT_ARCHIVE:
       case JT_RESTORE:
          bstrncpy(level, "      ", sizeof(level));
          break;
@@ -1266,6 +1268,7 @@ static void list_terminated_jobs(UAContext *ua)
       bstrftime_nc(dt, sizeof(dt), je->end_time);
       switch (je->JobType) {
       case JT_ADMIN:
+      case JT_ARCHIVE:
       case JT_RESTORE:
          bstrncpy(level, "    ", sizeof(level));
          break;

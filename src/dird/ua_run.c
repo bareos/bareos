@@ -1267,6 +1267,40 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       }
       jcr->setJobLevel(L_FULL);
       break;
+   case JT_ARCHIVE:
+      if (ua->api) {
+         ua->signal(BNET_RUN_CMD);
+         ua->send_msg("Type: Archive\n"
+                      "Title: Run Archive Job\n"
+                      "JobName:  %s\n"
+                      "FileSet:  %s\n"
+                      "Client:   %s\n"
+                      "Storage:  %s\n"
+                      "When:     %s\n"
+                      "Priority: %d\n",
+                      job->name(),
+                      jcr->res.fileset->name(),
+                      NPRT(jcr->res.client->name()),
+                      jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+                      bstrutime(dt, sizeof(dt), jcr->sched_time),
+                      jcr->JobPriority);
+      } else {
+         ua->send_msg(_("Run Archive Job\n"
+                        "JobName:  %s\n"
+                        "FileSet:  %s\n"
+                        "Client:   %s\n"
+                        "Storage:  %s\n"
+                        "When:     %s\n"
+                        "Priority: %d\n"),
+                      job->name(),
+                      jcr->res.fileset->name(),
+                      NPRT(jcr->res.client->name()),
+                      jcr->res.wstore ? jcr->res.wstore->name() : _("*None*"),
+                      bstrutime(dt, sizeof(dt), jcr->sched_time),
+                      jcr->JobPriority);
+      }
+      jcr->setJobLevel(L_FULL);
+      break;
    case JT_CONSOLIDATE:
       if (ua->api) {
          ua->signal(BNET_RUN_CMD);
