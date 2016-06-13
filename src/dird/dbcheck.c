@@ -1298,7 +1298,7 @@ static void repair_bad_paths()
 
    printf(_("Checking for Paths without a trailing slash\n"));
    query = "SELECT PathId,Path from Path "
-           "WHERE Path NOT LIKE '%/'";
+           "WHERE Path NOT LIKE '%/' AND NOT NULL";
    if (verbose > 1) {
       printf("%s\n", query);
    }
