@@ -140,8 +140,7 @@ bEventType = dict(
     bEventVssRestoreLoadComponentMetadata=26,
     bEventVssRestoreSetComponentsSelected=27,
     bEventVssCloseRestore=28,
-    bEventVssSetBackupSucceeded=29,
-    bEventVssBackupComplete=30
+    bEventVssBackupComplete=29
 )
 
 bIOPS = dict(

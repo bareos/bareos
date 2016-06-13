@@ -1576,15 +1576,6 @@ static void close_vss_backup_session(JCR *jcr)
     */
    if (jcr->pVSSClient) {
       /*
-       * Generate a bEventVssSetBackupSucceeded event and if none of the plugins
-       * give back a bRC_Skip it means this was not performed before so we do it
-       * ourself.
-       */
-      if (generate_plugin_event(jcr, bEventVssSetBackupSucceeded) != bRC_Skip) {
-         jcr->pVSSClient->SetBackupSucceeded();
-      }
-
-      /*
        * We are about to call the BackupComplete VSS method so let all plugins know
        * that by raising the bEventVssBackupComplete event.
        */

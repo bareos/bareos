@@ -830,19 +830,6 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    return true;
 }
 
-bool VSSClientGeneric::SetBackupSucceeded()
-{
-   bool bRet = false;
-
-   if (!m_pVssObject) {
-      Jmsg(m_jcr, M_FATAL, 0, "VssOject is NULL.\n");
-      errno = ENOSYS;
-      return bRet;
-   }
-
-   return bRet;
-}
-
 bool VSSClientGeneric::CloseBackup()
 {
    bool bRet = false;

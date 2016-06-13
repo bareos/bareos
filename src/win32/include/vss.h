@@ -66,7 +66,6 @@ public:
    virtual void ShowVolumeMountPointStats(JCR *jcr) = 0;
 
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled) = 0;
-   virtual bool SetBackupSucceeded() = 0;
    virtual bool CloseBackup() = 0;
    virtual bool CloseRestore() = 0;
    virtual WCHAR *GetMetadata() = 0;
@@ -128,7 +127,6 @@ public:
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
    virtual void ShowVolumeMountPointStats(JCR *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
-   virtual bool SetBackupSucceeded();
    virtual bool CloseBackup();
    virtual bool CloseRestore();
    virtual WCHAR *GetMetadata();
@@ -154,7 +152,6 @@ public:
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
    virtual void ShowVolumeMountPointStats(JCR *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
-   virtual bool SetBackupSucceeded();
    virtual bool CloseBackup();
    virtual bool CloseRestore();
    virtual WCHAR *GetMetadata();
@@ -180,7 +177,6 @@ public:
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
    virtual void ShowVolumeMountPointStats(JCR *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
-   virtual bool SetBackupSucceeded();
    virtual bool CloseBackup();
    virtual bool CloseRestore();
    virtual WCHAR *GetMetadata();

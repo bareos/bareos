@@ -228,8 +228,7 @@ typedef enum {
    bEventVssRestoreLoadComponentMetadata = 26,
    bEventVssRestoreSetComponentsSelected = 27,
    bEventVssCloseRestore = 28,
-   bEventVssSetBackupSucceeded = 29,
-   bEventVssBackupComplete = 30
+   bEventVssBackupComplete = 29
 } bEventType;
 
 #define FD_NR_EVENTS bEventVssBackupComplete /* keep this updated ! */
