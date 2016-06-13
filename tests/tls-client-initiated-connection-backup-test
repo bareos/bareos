@@ -1,39 +1,37 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
 # Run a simple backup of the Bareos build directory with TLS
 #   communications code enabled then restore it.
 #
 TestName="tls-client-initiated-connection-backup-test"
-JobName=tls
-. scripts/functions
+Client=connectingclient-fd
+JobName=backup-connectingclient-fd
+BackupDirectory="${cwd}/build/autoconf/"
 
-scripts/cleanup
-#scripts/copy-tls-confs
+cleanup
 
-/bin/cp -f configs/tls-client-initiated-connection-backup-test/*.conf bin/
-/bin/cp -f scripts/test-console.conf bin/bconsole.conf
-/bin/cp -f configs/tls/*.pem bin/
+copy_configs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
-change_jobname CompressedTest $JobName
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
 messages
 @$out tmp/log1.out
-@#status all
-@#status all
-messages
-label storage=File volume=TestVolume001 pool=Default
-run job=$JobName storage=File yes
+label storage=File1 volume="TestVolume001" pool=Default
+run job=$JobName storage=File1 yes
 wait
 messages
 @#
 @# now do a restore
 @#
 @$out tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores select storage=File
+restore client=${Client} where=${cwd}/tmp/bareos-restores select storage=File1
 unmark *
 mark *
 done
@@ -44,9 +42,9 @@ quit
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=File1 client=${Client}
 stop_bareos
 
 check_two_logs
-check_restore_diff
+check_restore_diff ${BackupDirectory}
 end_test

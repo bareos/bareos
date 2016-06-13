@@ -1,4 +1,5 @@
 #!/bin/sh
+
 #
 # Script to setup running Bareos regression tests
 #
@@ -74,16 +75,6 @@ fi
 scripts/create_sed
 
 #
-# In default bareos-dir.conf.in, change default file
-# to backup to be build directory
-#
-echo "s%File = @sbindir@%File = @BUILD_DIR@%g" >tmp/t$$
-echo "s%File = \"@sbindir@\"%File = \"@BUILD_DIR@\"%g" >tmp/t$$
-sed -f tmp/t$$ build/src/dird/bareos-dir.conf.in >tmp/o$$
-cp tmp/o$$ build/src/dird/bareos-dir.conf.in
-rm -f tmp/t$$ tmp/o$$
-
-#
 # Now turn on DEVELOPER for regression testing
 #
 echo "s%^.*define DEVELOPER 1.*$%#define DEVELOPER 1%g" >tmp/t$$
@@ -148,9 +139,3 @@ echo "Running database creation scripts"
 ./make_bareos_tables ${DBTYPE}
 ./grant_bareos_privileges ${DBTYPE}
 cd ${cwd}
-
-#
-# Start and stop Bareos to ensure conf files are OK
-#
-bin/bareos start
-bin/bareos stop

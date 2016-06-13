@@ -9,7 +9,8 @@ ${rscripts}/create_sed
 
 # Process .in files with sed script
 for file in ${rscripts}/*.in \
-            ${rconfigs}/*/*.in
+            ${rconfigs}/*/*.in \
+            ${rconfigs}/*/*/*/*.in
 do
   sed -f ${out} ${file} > `echo "${file}" | sed -e 's/.in$//'`
 done

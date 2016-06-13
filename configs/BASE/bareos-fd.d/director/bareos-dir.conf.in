@@ -1,0 +1,10 @@
+Director {
+  Name = bareos-dir
+  Password = "@fd_password@"
+  Description = "Allow the configured Director to access this file daemon."
+  TLS Require = yes
+  TLS Certificate = "@scriptdir@/tls/client1.bareos.org-cert.pem"
+  TLS Key = "@scriptdir@/tls/client1.bareos.org-key.pem"
+  TLS CA Certificate File = "@scriptdir@/tls/bareos-ca.pem"
+  TLS Allowed CN = bareos-dir.bareos.org
+}

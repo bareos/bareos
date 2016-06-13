@@ -1,0 +1,18 @@
+Storage {
+  Name = bareos1-sd
+  Maximum Concurrent Jobs = 20
+
+  # remove comment from "Plugin Directory" to load plugins from specified directory.
+  # if "Plugin Names" is defined, only the specified plugins will be loaded,
+  # otherwise all storage plugins (*-sd.so) from the "Plugin Directory".
+  #
+  # Plugin Directory = @plugindir@
+  # Plugin Names = ""
+
+  TLS Require = yes
+  TLS Certificate = "@scriptdir@/tls/bareos-sd1.bareos.org-cert.pem"
+  TLS Key = "@scriptdir@/tls/bareos-sd1.bareos.org-key.pem"
+  TLS CA Certificate File = "@scriptdir@/tls/bareos-ca.pem"
+  TLS Allowed CN = client1.bareos.org
+}
+

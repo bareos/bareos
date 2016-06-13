@@ -1,15 +1,56 @@
+#!/bin/sh
+
 #
 # A set of useful functions to be sourced in each test
 #
 
+copy_configs()
+{
+    COMPONENTS="bareos-dir bareos-sd bareos-fd bconsole"
+    CONFIGDIRS="BASE ${TestName} $@"
+    FOUND=""
+
+    for component in $COMPONENTS; do
+        # try to find a config file, store the most specific.
+        FOUND=""
+        for directory in $CONFIGDIRS; do
+            if [ -f ${rconfigs}/${directory}/${component}.conf ]; then
+                FOUND=${rconfigs}/${directory}/${component}.conf
+            fi
+        done
+        if [ "$FOUND" ]; then
+            /bin/cp ${FOUND} ${conf}
+        else
+            # copy all config files from subdirectories,
+            # start with the most generic.
+            for directory in $CONFIGDIRS; do
+                if [ -d ${rconfigs}/${directory}/${component}.d ]; then
+                    /bin/cp -r ${rconfigs}/${directory}/${component}.d ${conf}
+                fi
+            done
+        fi
+    done
+
+    # copy certificates
+    for directory in $CONFIGDIRS; do
+        if [ -d ${rconfigs}/${directory}/tls/ ]; then
+            /bin/cp -r ${rconfigs}/${directory}/tls ${conf}
+        fi
+    done
+}
 
 check_encoding()
 {
-   ${bin}/bareos-dir -d50 -t -c ${conf}/bareos-dir.conf 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
+   ${bin}/bareos-dir -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
    if [ $? = 0 ]; then
        echo "Found database encoding problem, please modify the database encoding (SQL_ASCII)"
        exit 1
    fi
+}
+
+cleanup()
+{
+    ${rscripts}/cleanup
 }
 
 start_test()
@@ -19,8 +60,10 @@ start_test()
    outf="${tmp}/sed_tmp"
    echo "s%  mail =%# mail = %g" >${outf}
    echo "s%  operator =%# operator =%g" >>${outf}
-   cp ${conf}/bareos-dir.conf ${tmp}/1
-   sed -f ${outf} ${tmp}/1 > ${conf}/bareos-dir.conf
+   if [ -f ${conf}/bareos-dir.conf ]; then
+      cp ${conf}/bareos-dir.conf ${tmp}/1
+      sed -f ${outf} ${tmp}/1 > ${conf}/bareos-dir.conf
+   fi
    echo " "
    echo " "
    echo " === Starting $TestName at `date +%R:%S` ==="
@@ -34,6 +77,8 @@ start_test()
    bstat=0
    rstat=0
    dstat=0
+   # marker for cleanup()
+   date > ${working}/CLEANUPMARKER
 }
 
 require_root()
@@ -111,6 +156,12 @@ print_debug()
    fi
 }
 
+set_error()
+{
+    estat=9
+    echo "ERROR: $@" >> $tmp/err.log
+}
+
 check_files_written()
 {
     LOG=$1
@@ -161,23 +212,24 @@ run_bareos()
      ${scripts}/bareos-ctl-sd start -m
      ${scripts}/bareos-ctl-fd start -m $1
      ${scripts}/bareos-ctl-dir start -m
-     cat ${tmp}/bconcmds | ${bin}/bconsole -c ${conf}/bconsole.conf
-     return $?
    else
      ${scripts}/bareos start >/dev/null 2>&1
-     cat ${tmp}/bconcmds | ${bin}/bconsole -c ${conf}/bconsole.conf >/dev/null 2>&1
-     return $?
    fi
+   run_bconsole
+   return $?
 }
 
 run_bconsole()
 {
    bconsole_file=${1:-${tmp}/bconcmds}
-   if test "$debug" -eq 1 ; then
-     cat $bconsole_file | ${bin}/bconsole -c ${conf}/bconsole.conf
-   else
-     cat $bconsole_file | ${bin}/bconsole -c ${conf}/bconsole.conf  2>&1 >/dev/null
+   if [ -f $bconsole_file ]; then
+      if test "$debug" -eq 1 ; then
+        cat $bconsole_file | ${bin}/bconsole
+      else
+        cat $bconsole_file | ${bin}/bconsole 2>&1 >/dev/null
+      fi
    fi
+   return $?
 }
 
 run_btape()
@@ -275,11 +327,12 @@ check_two_logs()
 
 check_restore_diff()
 {
+   dest=${1:-$src}
    if test "$debug" -eq 1 ; then
-      $rscripts/diff.pl -s ${src} -d ${tmp}/bareos-restores${src}
-      diff -ur ${src} ${tmp}/bareos-restores${src}
+      $rscripts/diff.pl -s ${dest} -d ${tmp}/bareos-restores/${dest}
+      diff -ur ${dest} ${tmp}/bareos-restores/${dest}
    else
-      diff -ur ${src} ${tmp}/bareos-restores${src} 2>&1 >/dev/null
+      diff -ur ${dest} ${tmp}/bareos-restores/${dest} 2>&1 >/dev/null
    fi
    dstat=$?
 }

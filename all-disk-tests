@@ -95,6 +95,7 @@ rm -f dumps/*
 ./run tests/hardlink-test
 ./run tests/tls-duplicate-job-test
 ./run tests/tls-test
+./run tests/tls-client-initiated-connection-backup-test
 ./run tests/virtual-changer-test
 ./run tests/virtual-backup-test
 ./run tests/quota-softquota-test
@@ -110,6 +111,7 @@ rm -f dumps/*
 ./run tests/lz4hc-test
 ./run tests/lzfast-encrypt-test
 ./run tests/lzfast-test
+./run tests/config-add-client-test
 echo "End non-root disk tests"
 echo "End non-root disk tests" >>test.out
 
