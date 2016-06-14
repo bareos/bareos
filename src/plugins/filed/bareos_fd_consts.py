@@ -152,3 +152,18 @@ bIOPS = dict(
     IO_CLOSE=4,
     IO_SEEK=5
 )
+
+bLevels = dict(
+    L_FULL='F',
+    L_INCREMENTAL='I',
+    L_DIFFERENTIAL='D',
+    L_SINCE='S',
+    L_VERIFY_CATALOG='C',
+    L_VERIFY_INIT='V',
+    L_VERIFY_VOLUME_TO_CATALOG='O',
+    L_VERIFY_DISK_TO_CATALOG='d',
+    L_VERIFY_DATA='A',
+    L_BASE='B',
+    L_NONE=' ',
+    L_VIRTUAL_FULL='f'
+)

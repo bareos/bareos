@@ -2683,6 +2683,15 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
    }
 
    switch (var) {
+   case bVarLevel: {
+      int value = 0;
+
+      value = PyInt_AsLong(pyValue);
+      if (value) {
+         retval = bfuncs->setBareosValue(ctx, (bVariable)var, &value);
+      }
+      break;
+   }
    case bVarFileSeen: {
       char *value;
 

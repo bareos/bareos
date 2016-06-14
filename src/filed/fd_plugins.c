@@ -2142,6 +2142,9 @@ static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
    }
 
    switch (var) {
+   case bVarLevel:
+      jcr->setJobLevel(*(int *)value);
+      break;
    case bVarFileSeen:
       if (!accurate_mark_file_as_seen(jcr, (char *)value)) {
          return bRC_Error;
