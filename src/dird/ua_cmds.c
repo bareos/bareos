@@ -2035,9 +2035,8 @@ static bool delete_job_id_range(UAContext *ua, char *tok)
           */
          if ((j2 - j1) > 25) {
             bsnprintf(buf, sizeof(buf),
-                      _("Are you sure you want to delete %d JobIds ? (yes/no): "),
-                      j2 - j1);
-            if (!get_yesno(ua, buf)) {
+                      _("Are you sure you want to delete %d JobIds ? (yes/no): "), j2 - j1);
+            if (!get_yesno(ua, buf) || !ua->pint32_val) {
                return true;
             }
          }
@@ -2045,8 +2044,7 @@ static bool delete_job_id_range(UAContext *ua, char *tok)
             do_job_delete(ua, j);
          }
       } else {
-         ua->warning_msg(_("Illegal JobId range %s - %s should define increasing JobIds, ignored\n"),
-                         tok, tok2);
+         ua->warning_msg(_("Illegal JobId range %s - %s should define increasing JobIds, ignored\n"), tok, tok2);
       }
    } else {
       ua->warning_msg(_("Illegal JobId range %s - %s, ignored\n"), tok, tok2);
@@ -2087,8 +2085,7 @@ static bool delete_volume(UAContext *ua)
    if (find_arg(ua, "yes") >= 0) {
       ua->pint32_val = 1; /* Have "yes" on command line already" */
    } else {
-      bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Volume \"%s\"? (yes/no): "),
-         mr.VolumeName);
+      bsnprintf(buf, sizeof(buf), _("Are you sure you want to delete Volume \"%s\"? (yes/no): "), mr.VolumeName);
       if (!get_yesno(ua, buf)) {
          return true;
       }

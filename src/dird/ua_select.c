@@ -1535,7 +1535,7 @@ alist *select_jobs(UAContext *ua, const char *reason)
           * Only ask for confirmation when not in batch mode and there is no yes on the cmdline.
           */
          if (!ua->batch && find_arg(ua, NT_("yes")) == -1) {
-            if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
+            if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
                goto bail_out;
             }
          }
@@ -1570,12 +1570,12 @@ alist *select_jobs(UAContext *ua, const char *reason)
                char nbuf[1000];
 
                bsnprintf(nbuf, sizeof(nbuf), _("Cancel: %s\n\n%s"), buf, _("Confirm cancel?"));
-               if (!get_yesno(ua, nbuf) || ua->pint32_val == 0) {
+               if (!get_yesno(ua, nbuf) || !ua->pint32_val) {
                   goto bail_out;
                }
             } else {
                if (njobs == 1) {
-                  if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || ua->pint32_val == 0) {
+                  if (!get_yesno(ua, _("Confirm cancel (yes/no): ")) || !ua->pint32_val) {
                      goto bail_out;
                   }
                }

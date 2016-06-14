@@ -309,7 +309,8 @@ bool rerun_cmd(UAContext *ua, const char *cmd)
       }
       ua->send_msg("\n");
 
-      if (!yes &&  (!get_yesno(ua, _("rerun these jobids? (yes/no): ")) || ua->pint32_val == 0 )) {
+      if (!yes &&
+          (!get_yesno(ua, _("rerun these jobids? (yes/no): ")) || !ua->pint32_val)) {
          goto bail_out;
       }
       /*
@@ -672,7 +673,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
       case 7:
          /* Priority */
          if (get_pint(ua, _("Enter new Priority: "))) {
-            if (ua->pint32_val == 0) {
+            if (!ua->pint32_val) {
                ua->send_msg(_("Priority must be a positive integer.\n"));
             } else {
                jcr->JobPriority = ua->pint32_val;

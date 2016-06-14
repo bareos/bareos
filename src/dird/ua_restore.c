@@ -1109,8 +1109,10 @@ static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
                  "so file selection is not possible.\n"
                  "Most likely your retention policy pruned the files.\n"));
    if (get_yesno(ua, _("\nDo you want to restore all the files? (yes|no): "))) {
-      if (ua->pint32_val == 1)
+      if (ua->pint32_val) {
          return true;
+      }
+
       while (get_cmd(ua, _("\nRegexp matching files to restore? (empty to abort): "))) {
          if (ua->cmd[0] == '\0') {
             break;
@@ -1135,6 +1137,7 @@ static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
          }
       }
    }
+
    return false;
 }
 
@@ -1303,17 +1306,20 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
  */
 static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date)
 {
-   bool ok = false;
-   FILESET_DBR fsr;
+   int i;
    CLIENT_DBR cr;
-   char fileset_name[MAX_NAME_LENGTH];
+   FILESET_DBR fsr;
+   bool ok = false;
    char ed1[50], ed2[50];
    char pool_select[MAX_NAME_LENGTH];
-   int i;
+   char fileset_name[MAX_NAME_LENGTH];
 
-   /* Create temp tables */
+   /*
+    * Create temp tables
+    */
    db_sql_query(ua->db, uar_del_temp);
    db_sql_query(ua->db, uar_del_temp1);
+
    if (!db_sql_query(ua->db, uar_create_temp[db_get_type_index(ua->db)])) {
       ua->error_msg("%s\n", db_strerror(ua->db));
    }
@@ -1338,8 +1344,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    if (i >= 0 && is_name_valid(ua->argv[i], &ua->errmsg)) {
       bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
       if (!db_get_fileset_record(ua->jcr, ua->db, &fsr)) {
-         ua->error_msg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet,
-            db_strerror(ua->db));
+         ua->error_msg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet, db_strerror(ua->db));
          i = -1;
       }
    } else if (i >= 0) {         /* name is invalid */
@@ -1363,7 +1368,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       if (!db_get_fileset_record(ua->jcr, ua->db, &fsr)) {
          ua->warning_msg(_("Error getting FileSet record: %s\n"), db_strerror(ua->db));
          ua->send_msg(_("This probably means you modified the FileSet.\n"
-                     "Continuing anyway.\n"));
+                        "Continuing anyway.\n"));
       }
    }
 
@@ -1373,11 +1378,11 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    pool_select[0] = 0;
    if (rx->pool) {
       POOL_DBR pr;
+
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
       if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
-         bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ",
-            edit_int64(pr.PoolId, ed1));
+         bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ", edit_int64(pr.PoolId, ed1));
       } else {
          ua->warning_msg(_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
       }
@@ -1456,7 +1461,6 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Get the JobIds from that list
     */
    rx->last_jobid[0] = rx->JobIds[0] = 0;
-
    if (!db_sql_query(ua->db, uar_sel_jobid_temp, jobid_handler, (void *)rx)) {
       ua->warning_msg("%s\n", db_strerror(ua->db));
    }
@@ -1467,12 +1471,34 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
           * Display a list of all copies
           */
          db_list_copies_records(ua->jcr, ua->db, "", rx->JobIds, ua->send, HORZ_LIST);
+
+         if (find_arg(ua, NT_("yes")) > 0) {
+            ua->pint32_val == 1;
+         } else {
+            get_yesno(ua, _("\nDo you want to restore from these copies? (yes|no): "));
+         }
+
+         if (ua->pint32_val) {
+            POOL_MEM JobIds(PM_FNAME);
+
+            /*
+             * Change the list of jobs needed to do the restore to the copies of the Job.
+             */
+            pm_strcpy(JobIds, rx->JobIds);
+            rx->last_jobid[0] = rx->JobIds[0] = 0;
+            Mmsg(rx->query, uar_sel_jobid_copies, JobIds.c_str());
+            if (!db_sql_query(ua->db, rx->query, jobid_handler, (void *)rx)) {
+               ua->warning_msg("%s\n", db_strerror(ua->db));
+            }
+         }
       }
 
       /*
        * Display a list of Jobs selected for this restore
        */
-      db_list_sql_query(ua->jcr, ua->db, uar_list_temp, ua->send, HORZ_LIST, true);
+      Mmsg(rx->query, uar_list_jobs_by_idlist, rx->JobIds);
+      db_list_sql_query(ua->jcr, ua->db, rx->query, ua->send, HORZ_LIST, true);
+
       ok = true;
    } else {
       ua->warning_msg(_("No jobs found.\n"));
@@ -1481,6 +1507,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
 bail_out:
    db_sql_query(ua->db, uar_del_temp);
    db_sql_query(ua->db, uar_del_temp1);
+
    return ok;
 }
 

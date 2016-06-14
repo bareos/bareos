@@ -397,8 +397,7 @@ static void label_from_barcodes(UAContext *ua, int drive,
    }
 
    if (!yes &&
-       ( !get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) ||
-         (ua->pint32_val == 0))) {
+      (!get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) || !ua->pint32_val)) {
       goto bail_out;
    }
 
