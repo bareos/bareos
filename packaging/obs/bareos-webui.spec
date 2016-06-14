@@ -16,17 +16,43 @@ BuildArch:     noarch
 BuildRequires: autoconf automake bareos-common
 
 Requires: php >= 5.3.3
-Requires: php-ZendFramework2 >= 2.2.0
-#Requires: php-pdo
-#Requires: php-json
-#Requires: php-pcre
-#Requires: php-gd
-#Requires: php-xml
-# * PHP PDO Extension
-# * PHP intl Extension
-# * PHP PHAR Extension
-# * PHP DATE Extension
-# * PHP OpenSSL Extension
+Requires: php-bz2
+Requires: php-ctype
+Requires: php-curl
+Requires: php-date
+Requires: php-dom
+Requires: php-fileinfo
+Requires: php-filter
+Requires: php-gettext
+Requires: php-gd
+Requires: php-hash
+Requires: php-iconv
+Requires: php-intl
+Requires: php-json
+%if 0%{?suse_version}
+%else
+Requires: php-libxml
+%endif
+Requires: php-mbstring
+Requires: php-mysql
+Requires: php-openssl
+Requires: php-pcre
+Requires: php-pdo
+#Requires: php-pecl
+Requires: php-pgsql
+Requires: php-reflection
+Requires: php-session
+Requires: php-simplexml
+Requires: php-spl
+%if 0%{?fedora} || 0%{?rhel_version} || 0%{?centos_version}
+Requires: php-sqlite3
+%else
+Requires: php-sqlite
+%endif
+Requires: php-xml
+Requires: php-xmlreader
+Requires: php-xmlwriter
+Requires: php-zip
 
 %if 0%{?suse_version}
 BuildRequires: apache2
@@ -53,9 +79,6 @@ BuildRequires: httpd-devel
 Requires:   cronie
 Requires:   httpd
 Requires:   mod_php
-#Requires:   php-pgsql php-mysql
-# not available?
-#php-sqlite
 %endif
 
 #define serverroot #(/usr/sbin/apxs2 -q datadir 2>/dev/null || /usr/sbin/apxs2 -q PREFIX)/htdocs/

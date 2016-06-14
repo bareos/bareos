@@ -1,6 +1,1 @@
 !.gitignore
-bin
-.composer
-composer
-zendframework
-autoload.php

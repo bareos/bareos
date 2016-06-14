@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:noNamespaceSchemaLocation="./vendor/phpunit/phpunit/phpunit.xsd"
+         bootstrap="./test/bootstrap.php"
+         colors="true">
+    <testsuites>
+        <testsuite name="zend-cache Test Suite">
+            <directory>./test/</directory>
+        </testsuite>
+    </testsuites>
+
+    <groups>
+        <exclude>
+            <group>disable</group>
+        </exclude>
+    </groups>
+
+    <filter>
+        <whitelist addUncoveredFilesFromWhitelist="true">
+            <directory suffix=".php">./src</directory>
+        </whitelist>
+    </filter>
+
+    <php>
+        <ini name="date.timezone" value="UTC"/>
+
+        <!-- OB_ENABLED should be enabled for some tests to check if all
+             functionality works as expected. Such tests include those for
+             Zend\Soap and Zend\Session, which require that headers not be sent
+             in order to work. -->
+        <const name="TESTS_ZEND_OB_ENABLED" value="false" />
+
+        <!-- Note: the following is a FULL list of ALL POSSIBLE constants
+             currently in use in ZF2 for ALL COMPONENTS; you should choose the
+             constants appropriate to the component you are migrating. -->
+
+        <const name="TESTS_ZEND_CACHE_APC_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_XCACHE_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_XCACHE_ADMIN_AUTH" value="false" />
+        <const name="TESTS_ZEND_CACHE_XCACHE_ADMIN_USER" value="" />
+        <const name="TESTS_ZEND_CACHE_XCACHE_ADMIN_PASS" value="" />
+        <const name="TESTS_ZEND_CACHE_PLATFORM_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_WINCACHE_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_ZEND_SERVER_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHED_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHED_HOST" value="127.0.0.1" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHED_PORT" value="11211" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHE_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHE_HOST" value="127.0.0.1" />
+        <const name="TESTS_ZEND_CACHE_MEMCACHE_PORT" value="11211" />
+        <const name="TESTS_ZEND_CACHE_MONGODB_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_MONGODB_COLLECTION" value="cache" />
+        <const name="TESTS_ZEND_CACHE_MONGODB_CONNECTSTRING" value="mongodb://localhost/" />
+        <const name="TESTS_ZEND_CACHE_MONGODB_DATABASE" value="zend_test" />
+        <const name="TESTS_ZEND_CACHE_REDIS_ENABLED" value="false" />
+        <const name="TESTS_ZEND_CACHE_REDIS_HOST" value="127.0.0.1" />
+        <const name="TESTS_ZEND_CACHE_REDIS_PORT" value="6379" />
+        <const name="TESTS_ZEND_CACHE_REDIS_PASSWORD" value="" />
+        <const name="TESTS_ZEND_CACHE_REDIS_DATABASE" value="false" />
+
+    </php>
+</phpunit>

@@ -34,7 +34,7 @@ class Bareos(unittest.TestCase):
         driver.find_element_by_id("submit").click()
         driver.find_element_by_link_text("Director").click()
         driver.find_element_by_link_text("Messages").click()
-        driver.find_element_by_link_text("Schedule").click()
+        driver.find_element_by_link_text("Schedules").click()
         driver.find_element_by_link_text("Scheduler status").click()
         driver.find_element_by_link_text("Storages").click()
         driver.find_element_by_link_text("Clients").click()
