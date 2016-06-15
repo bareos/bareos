@@ -233,7 +233,7 @@ const char *uar_del_temp  = "DROP TABLE temp";
 const char *uar_del_temp1 = "DROP TABLE temp1";
 
 const char *uar_last_full =
-   "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
+   "INSERT INTO temp1 SELECT Job.JobId,Job.JobTdate "
    "FROM Job,JobMedia,Media,FileSet "
    "WHERE Job.ClientId=%s "
    "AND Job.StartTime < '%s' "
@@ -247,7 +247,7 @@ const char *uar_last_full =
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *uar_last_full_no_pool =
-   "INSERT INTO temp1 SELECT Job.JobId,JobTdate "
+   "INSERT INTO temp1 SELECT Job.JobId,Job.JobTdate "
    "FROM Job,FileSet "
    "WHERE Job.ClientId=%s "
    "AND Job.StartTime < '%s' "
@@ -257,9 +257,7 @@ const char *uar_last_full_no_pool =
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *uar_full =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,"
-   "Job.ClientId,Job.Level,Job.JobFiles,Job.JobBytes,"
-   "StartTime,VolumeName,JobMedia.StartFile,VolSessionId,VolSessionTime "
+   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.StartTime "
    "FROM temp1,Job,JobMedia,Media "
    "WHERE temp1.JobId=Job.JobId "
    "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
@@ -268,10 +266,7 @@ const char *uar_full =
    "AND JobMedia.MediaId=Media.MediaId";
 
 const char *uar_dif =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
-   "Job.Level,Job.JobFiles,Job.JobBytes,"
-   "Job.StartTime,Media.VolumeName,JobMedia.StartFile,"
-   "Job.VolSessionId,Job.VolSessionTime "
+   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.StartTime "
    "FROM Job,JobMedia,Media,FileSet "
    "WHERE Job.JobTDate>%s AND Job.StartTime<'%s' "
    "AND Job.ClientId=%s "
@@ -285,10 +280,7 @@ const char *uar_dif =
    "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *uar_inc =
-   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.ClientId,"
-   "Job.Level,Job.JobFiles,Job.JobBytes,"
-   "Job.StartTime,Media.VolumeName,JobMedia.StartFile,"
-   "Job.VolSessionId,Job.VolSessionTime "
+   "INSERT INTO temp SELECT Job.JobId,Job.JobTDate,Job.StartTime "
    "FROM Job,JobMedia,Media,FileSet "
    "WHERE Job.JobTDate>%s AND Job.StartTime<'%s' "
    "AND Job.ClientId=%s "
@@ -326,8 +318,9 @@ const char *uar_list_jobs_by_idlist =
 
 /* Select FileSet names for this Client */
 const char *uar_sel_fileset =
-   "SELECT DISTINCT FileSet.FileSet FROM Job,"
-   "Client,FileSet WHERE Job.FileSetId=FileSet.FileSetId "
+   "SELECT DISTINCT FileSet.FileSet "
+   "FROM Job,Client,FileSet "
+   "WHERE Job.FileSetId=FileSet.FileSetId "
    "AND Job.ClientId=%s AND Client.ClientId=%s "
    "ORDER BY FileSet.FileSet";
 
@@ -778,57 +771,25 @@ const char *uar_create_temp[] = {
    "CREATE TEMPORARY TABLE temp ("
    "JobId INTEGER UNSIGNED NOT NULL,"
    "JobTDate BIGINT UNSIGNED,"
-   "ClientId INTEGER UNSIGNED,"
-   "Level CHAR,"
-   "JobFiles INTEGER UNSIGNED,"
-   "JobBytes BIGINT UNSIGNED,"
-   "StartTime TEXT,"
-   "VolumeName TEXT,"
-   "StartFile INTEGER UNSIGNED,"
-   "VolSessionId INTEGER UNSIGNED,"
-   "VolSessionTime INTEGER UNSIGNED)",
+   "StartTime TEXT)",
 
    /* Postgresql */
    "CREATE TEMPORARY TABLE temp ("
    "JobId INTEGER NOT NULL,"
    "JobTDate BIGINT,"
-   "ClientId INTEGER,"
-   "Level CHAR,"
-   "JobFiles INTEGER,"
-   "JobBytes BIGINT,"
-   "StartTime TEXT,"
-   "VolumeName TEXT,"
-   "StartFile INTEGER,"
-   "VolSessionId INTEGER,"
-   "VolSessionTime INTEGER)",
+   "StartTime TEXT)",
 
    /* SQLite3 */
    "CREATE TEMPORARY TABLE temp ("
    "JobId INTEGER UNSIGNED NOT NULL,"
    "JobTDate BIGINT UNSIGNED,"
-   "ClientId INTEGER UNSIGNED,"
-   "Level CHAR,"
-   "JobFiles INTEGER UNSIGNED,"
-   "JobBytes BIGINT UNSIGNED,"
-   "StartTime TEXT,"
-   "VolumeName TEXT,"
-   "StartFile INTEGER UNSIGNED,"
-   "VolSessionId INTEGER UNSIGNED,"
-   "VolSessionTime INTEGER UNSIGNED)",
+   "StartTime TEXT)",
 
    /* Ingres */
    "DECLARE GLOBAL TEMPORARY TABLE temp ("
    "JobId INTEGER NOT NULL,"
    "JobTDate BIGINT,"
-   "ClientId INTEGER,"
-   "Level CHAR(1),"
-   "JobFiles INTEGER,"
-   "JobBytes BIGINT,"
-   "StartTime TIMESTAMP WITHOUT TIME ZONE,"
-   "VolumeName VARBYTE(128),"
-   "StartFile INTEGER,"
-   "VolSessionId INTEGER,"
-   "VolSessionTime INTEGER) "
+   "StartTime TIMESTAMP WITHOUT TIME ZONE) "
    "ON COMMIT PRESERVE ROWS WITH NORECOVERY"
 };
 
