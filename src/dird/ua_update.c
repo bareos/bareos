@@ -713,7 +713,7 @@ static bool update_volume(UAContext *ua)
 
       case 6:                         /* Recycle */
          ua->info_msg(_("Current recycle flag is: %s\n"),
-            mr.Recycle==1?_("yes"):_("no"));
+                      (mr.Recycle == 1) ? _("yes") : _("no"));
          if (!get_yesno(ua, _("Enter new Recycle status: "))) {
             return false;
          }
@@ -730,8 +730,7 @@ static bool update_volume(UAContext *ua)
 
       case 8:                         /* InChanger */
          ua->info_msg(_("Current InChanger flag is: %d\n"), mr.InChanger);
-         bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "),
-            mr.VolumeName);
+         bsnprintf(buf, sizeof(buf), _("Set InChanger flag for Volume \"%s\": yes/no: "), mr.VolumeName);
          if (!get_yesno(ua, buf)) {
             return false;
          }
@@ -760,7 +759,7 @@ static bool update_volume(UAContext *ua)
          VolFiles = ua->pint32_val;
          if (VolFiles != (int)(mr.VolFiles + 1)) {
             ua->warning_msg(_("Normally, you should only increase Volume Files by one!\n"));
-            if (!get_yesno(ua, _("Increase Volume Files? (yes/no): ")) || ua->pint32_val == 0) {
+            if (!get_yesno(ua, _("Increase Volume Files? (yes/no): ")) || !ua->pint32_val) {
                break;
             }
          }

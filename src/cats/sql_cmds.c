@@ -263,8 +263,8 @@ const char *uar_full =
    "FROM temp1,Job,JobMedia,Media "
    "WHERE temp1.JobId=Job.JobId "
    "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
-   "AND Media.Enabled=1 "
    "AND JobMedia.JobId=Job.JobId "
+   "AND Media.Enabled=1 "
    "AND JobMedia.MediaId=Media.MediaId";
 
 const char *uar_dif =
@@ -292,19 +292,13 @@ const char *uar_inc =
    "FROM Job,JobMedia,Media,FileSet "
    "WHERE Job.JobTDate>%s AND Job.StartTime<'%s' "
    "AND Job.ClientId=%s "
-   "AND Media.Enabled=1 "
    "AND JobMedia.JobId=Job.JobId "
+   "AND Media.Enabled=1 "
    "AND JobMedia.MediaId=Media.MediaId "
    "AND Job.Level='I' AND JobStatus IN ('T','W') AND Type='B' "
    "AND Job.FileSetId=FileSet.FileSetId "
    "AND FileSet.FileSet='%s' "
    "%s";
-
-const char *uar_list_temp =
-   "SELECT DISTINCT JobId,Level,JobFiles,JobBytes,StartTime,VolumeName"
-   " FROM temp"
-   " ORDER BY StartTime ASC";
-
 
 const char *uar_sel_jobid_temp =
    "SELECT DISTINCT JobId,StartTime FROM temp ORDER BY StartTime ASC";
@@ -313,7 +307,22 @@ const char *uar_sel_all_temp1 = "SELECT * FROM temp1";
 
 const char *uar_sel_all_temp = "SELECT * FROM temp";
 
+const char *uar_sel_jobid_copies =
+   "SELECT DISTINCT JobId,StartTime "
+   "FROM Job "
+   "WHERE Type = 'C' "
+   "AND (PriorJobId IN (%s)) "
+   "ORDER BY StartTime ASC";
 
+const char *uar_list_jobs_by_idlist =
+   "SELECT DISTINCT Job.JobId,Job.Level,Job.JobFiles,Job.JobBytes,"
+   "Job.StartTime,Media.VolumeName "
+   "FROM Job,JobMedia,Media "
+   "WHERE Job.JobId IN (%s) "
+   "AND JobMedia.JobId=Job.JobId "
+   "AND Media.Enabled=1 "
+   "AND JobMedia.MediaId=Media.MediaId "
+   "ORDER BY StartTime ASC";
 
 /* Select FileSet names for this Client */
 const char *uar_sel_fileset =

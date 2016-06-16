@@ -253,8 +253,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
     */
    if (!client) {
       if (!get_yesno(ua, _("No client restriction given really remove "
-                           "directory for all clients (yes/no): ")) ||
-          ua->pint32_val == 0) {
+                           "directory for all clients (yes/no): ")) || !ua->pint32_val) {
          if (!(client = get_client_resource(ua))) {
             return false;
          }
@@ -338,8 +337,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
     * them anymore.
     */
    if (!client) {
-      if (!get_yesno(ua, _("Cleanup orphaned path records (yes/no):")) ||
-          ua->pint32_val == 0) {
+      if (!get_yesno(ua, _("Cleanup orphaned path records (yes/no):")) || !ua->pint32_val) {
          retval = true;
          goto bail_out;
       }
