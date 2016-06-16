@@ -414,6 +414,7 @@ dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool sc
             break;
          case 'I':
             vl->Type = slot_type_import;
+            vl->Flags |= (can_import | can_export | by_oper);
             break;
          default:
             vl->Type = slot_type_unknown;

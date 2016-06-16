@@ -2529,6 +2529,9 @@ void free_resource(RES *sres, int type)
          delete res->res_store.device;
       }
       if (res->res_store.rss) {
+         if (res->res_store.rss->storage_mappings) {
+            delete res->res_store.rss->storage_mappings;
+         }
          if (res->res_store.rss->vol_list) {
             if (res->res_store.rss->vol_list->contents) {
                vol_list_t *vl;

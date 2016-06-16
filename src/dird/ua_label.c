@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,15 +30,224 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static void label_from_barcodes(UAContext *ua, drive_number_t drive,
-                                bool label_encrypt, bool yes);
-static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
-                               POOL_DBR *pr, bool relabel, bool media_record_exists,
-                               drive_number_t drive);
-static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr);
 
 /* External functions */
-extern DIRRES *director;
+
+static inline bool update_database(UAContext *ua,
+                                   MEDIA_DBR *mr,
+                                   POOL_DBR *pr,
+                                   bool media_record_exists)
+{
+   bool retval = true;
+
+   if (media_record_exists) {
+      /*
+       * Update existing media record.
+       */
+      mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
+      set_storageid_in_mr(ua->jcr->res.wstore, mr);
+      if (!db_update_media_record(ua->jcr, ua->db, mr)) {
+          ua->error_msg("%s", db_strerror(ua->db));
+          retval = false;
+      }
+   } else {
+      /*
+       * Create the media record
+       */
+      set_pool_dbr_defaults_in_media_dbr(mr, pr);
+      mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
+      mr->Enabled = 1;
+      set_storageid_in_mr(ua->jcr->res.wstore, mr);
+
+      if (db_create_media_record(ua->jcr, ua->db, mr)) {
+         ua->info_msg(_("Catalog record for Volume \"%s\", Slot %hd successfully created.\n"),
+         mr->VolumeName, mr->Slot);
+
+         /*
+          * Update number of volumes in pool
+          */
+         pr->NumVols++;
+         if (!db_update_pool_record(ua->jcr, ua->db, pr)) {
+            ua->error_msg("%s", db_strerror(ua->db));
+         }
+      } else {
+         ua->error_msg("%s", db_strerror(ua->db));
+         retval = false;
+      }
+   }
+
+   return retval;
+}
+
+/*
+ * NOTE! This routine opens the SD socket but leaves it open
+ */
+static inline bool native_send_label_request(UAContext *ua,
+                                             MEDIA_DBR *mr,
+                                             MEDIA_DBR *omr,
+                                             POOL_DBR *pr,
+                                             bool relabel,
+                                             drive_number_t drive)
+{
+   BSOCK *sd;
+   char dev_name[MAX_NAME_LENGTH];
+   bool retval = false;
+   uint64_t VolBytes = 0;
+
+   if (!(sd = open_sd_bsock(ua))) {
+      return false;
+   }
+
+   bstrncpy(dev_name, ua->jcr->res.wstore->dev_name(), sizeof(dev_name));
+   bash_spaces(dev_name);
+   bash_spaces(mr->VolumeName);
+   bash_spaces(mr->MediaType);
+   bash_spaces(pr->Name);
+
+   if (relabel) {
+      bash_spaces(omr->VolumeName);
+      sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
+                "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
+                dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
+                mr->MediaType, mr->Slot, drive,
+                 /*
+                  * if relabeling, keep blocksize settings
+                  */
+                omr->MinBlocksize, omr->MaxBlocksize);
+      ua->send_msg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
+                   omr->VolumeName, mr->VolumeName);
+   } else {
+      sd->fsend("label %s VolumeName=%s PoolName=%s MediaType=%s "
+                "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
+                dev_name, mr->VolumeName, pr->Name, mr->MediaType,
+                mr->Slot, drive,
+                 /*
+                  * If labeling, use blocksize defined in pool
+                  */
+                pr->MinBlocksize, pr->MaxBlocksize);
+      ua->send_msg(_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
+                   mr->VolumeName, mr->Slot);
+      Dmsg8(100, "label %s VolumeName=%s PoolName=%s MediaType=%s "
+                 "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
+            dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
+            pr->MinBlocksize, pr->MaxBlocksize);
+   }
+
+   /*
+    * We use bget_dirmsg here and not bnet_recv because as part of
+    * the label request the stored can request catalog information for
+    * any plugin who listens to the bsdEventLabelVerified event.
+    * As we don't want to loose any non protocol data e.g. errors
+    * without a 3xxx prefix we set the allow_any_message of
+    * bget_dirmsg to true and as such is behaves like a normal
+    * bnet_recv for any non protocol messages.
+    */
+   while (bget_dirmsg(sd, true) >= 0) {
+      ua->send_msg("%s", sd->msg);
+      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
+         retval = true;
+      }
+   }
+
+   unbash_spaces(mr->VolumeName);
+   unbash_spaces(mr->MediaType);
+   unbash_spaces(pr->Name);
+   mr->LabelDate = time(NULL);
+   mr->set_label_date = true;
+   mr->VolBytes = VolBytes;
+
+   return retval;
+}
+
+/*
+ * Generate a new encryption key for use in volume encryption.
+ * We don't ask the user for a encryption key but generate a semi
+ * random passphrase of the wanted length which is way stronger.
+ * When the config has a wrap key we use that to wrap the newly
+ * created passphrase using RFC3394 aes wrap and always convert
+ * the passphrase into a base64 encoded string. This key is
+ * stored in the database and is passed to the storage daemon
+ * when needed. The storage daemon has the same wrap key per
+ * director so it can unwrap the passphrase for use.
+ *
+ * Changing the wrap key will render any previously created
+ * crypto keys useless so only change the wrap key after initial
+ * setting when you know what you are doing and always store
+ * the old key somewhere save so you can use bscrypto to
+ * convert them for the new wrap key.
+ */
+static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
+{
+   int length;
+   char *passphrase;
+
+   passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
+   if (!passphrase) {
+      ua->error_msg(_("Failed to generate new encryption passphrase for Volume %s.\n"), mr->VolumeName);
+      return false;
+   }
+
+   /*
+    * See if we need to wrap the passphrase.
+    */
+   if (me->keyencrkey.value) {
+      char *wrapped_passphrase;
+
+      length = DEFAULT_PASSPHRASE_LENGTH + 8;
+      wrapped_passphrase = (char *)malloc(length);
+      memset(wrapped_passphrase, 0, length);
+      aes_wrap((unsigned char *)me->keyencrkey.value,
+               DEFAULT_PASSPHRASE_LENGTH / 8,
+               (unsigned char *)passphrase,
+               (unsigned char *)wrapped_passphrase);
+
+      free(passphrase);
+      passphrase = wrapped_passphrase;
+   } else {
+      length = DEFAULT_PASSPHRASE_LENGTH;
+   }
+
+   /*
+    * The passphrase is always base64 encoded.
+    */
+   bin_to_base64(mr->EncrKey, sizeof(mr->EncrKey), passphrase, length, true);
+
+   free(passphrase);
+   return true;
+}
+
+static bool send_label_request(UAContext *ua,
+                               STORERES *store,
+                               MEDIA_DBR *mr,
+                               MEDIA_DBR *omr,
+                               POOL_DBR *pr,
+                               bool media_record_exists,
+                               bool relabel,
+                               drive_number_t drive,
+                               slot_number_t slot)
+{
+   bool retval;
+
+   switch (store->Protocol) {
+   case APT_NATIVE:
+      retval = native_send_label_request(ua, mr, omr, pr, relabel, drive);
+      break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+   default:
+      retval = false;
+      break;
+   }
+
+   if (retval) {
+      retval = update_database(ua, mr, pr, media_record_exists);
+   } else {
+      ua->error_msg(_("Label command failed for Volume %s.\n"), mr->VolumeName);
+   }
+
+   return retval;
+}
 
 /*
  * Check if this is a cleaning tape by comparing the Volume name
@@ -69,6 +278,155 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
          retval ? "true" : "false");
 
    return retval;
+}
+
+
+/*
+ * Request Storage to send us the slot:barcodes, then wiffle through them all labeling them.
+ */
+static void label_from_barcodes(UAContext *ua, drive_number_t drive,
+                                bool label_encrypt, bool yes)
+{
+   STORERES *store = ua->jcr->res.wstore;
+   POOL_DBR pr;
+   MEDIA_DBR mr;
+   vol_list_t *vl;
+   changer_vol_list_t *vol_list = NULL;
+   bool media_record_exists;
+   char *slot_list;
+   int max_slots;
+
+   memset(&mr, 0, sizeof(mr));
+
+   max_slots = get_num_slots(ua, ua->jcr->res.wstore);
+   if (max_slots <= 0) {
+      ua->warning_msg(_("No slots in changer to scan.\n"));
+      return;
+   }
+
+   slot_list = (char *)malloc(nbytes_for_bits(max_slots));
+   clear_all_bits(max_slots, slot_list);
+   if (!get_user_slot_list(ua, slot_list, "slots", max_slots)) {
+      goto bail_out;
+   }
+
+   vol_list = get_vol_list_from_storage(ua, store, false /* no listall */ , false /* no scan */);
+   if (!vol_list) {
+      ua->warning_msg(_("No Volumes found to label, or no barcodes.\n"));
+      goto bail_out;
+   }
+
+   /*
+    * Display list of Volumes and ask if he really wants to proceed
+    */
+   ua->send_msg(_("The following Volumes will be labeled:\n"
+                  "Slot  Volume\n"
+                  "==============\n"));
+   foreach_dlist(vl, vol_list->contents) {
+      if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
+         continue;
+      }
+      ua->send_msg("%4d  %s\n", vl->Slot, vl->VolName);
+   }
+
+   if (!yes &&
+      (!get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) || !ua->pint32_val)) {
+      goto bail_out;
+   }
+
+   /*
+    * Select a pool
+    */
+   memset(&pr, 0, sizeof(pr));
+   if (!select_pool_dbr(ua, &pr)) {
+      goto bail_out;
+   }
+
+   /*
+    * Fire off the label requests
+    */
+   foreach_dlist(vl, vol_list->contents) {
+      if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
+         continue;
+      }
+      memset(&mr, 0, sizeof(mr));
+      bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
+      media_record_exists = false;
+      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+         if (mr.VolBytes != 0) {
+            ua->warning_msg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
+                            vl->Slot, mr.VolumeName);
+            mr.Slot = vl->Slot;
+            mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
+            set_storageid_in_mr(store, &mr);
+            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
+               ua->error_msg(_("Error setting InChanger: ERR=%s"), db_strerror(ua->db));
+            }
+            continue;
+         }
+         media_record_exists = true;
+      }
+      mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
+      set_storageid_in_mr(store, &mr);
+
+      /*
+       * Deal with creating cleaning tape here.
+       * Normal tapes created in send_label_request() below
+       */
+      if (is_cleaning_tape(ua, &mr, &pr)) {
+         if (media_record_exists) {      /* we update it */
+            mr.VolBytes = 1;             /* any bytes to indicate it exists */
+            bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
+            mr.MediaType[0] = 0;
+            set_storageid_in_mr(store, &mr);
+            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
+                ua->error_msg("%s", db_strerror(ua->db));
+            }
+         } else {                        /* create the media record */
+            if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
+               ua->error_msg(_("Maximum pool Volumes=%d reached.\n"), pr.MaxVols);
+               goto bail_out;
+            }
+            set_pool_dbr_defaults_in_media_dbr(&mr, &pr);
+            bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
+            mr.MediaType[0] = 0;
+            set_storageid_in_mr(store, &mr);
+            if (db_create_media_record(ua->jcr, ua->db, &mr)) {
+               ua->send_msg(_("Catalog record for cleaning tape \"%s\" successfully created.\n"),
+                  mr.VolumeName);
+               pr.NumVols++;          /* this is a bit suspect */
+               if (!db_update_pool_record(ua->jcr, ua->db, &pr)) {
+                  ua->error_msg("%s", db_strerror(ua->db));
+               }
+            } else {
+               ua->error_msg(_("Catalog error on cleaning tape: %s"), db_strerror(ua->db));
+            }
+         }
+         continue;                    /* done, go handle next volume */
+      }
+      bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
+
+      /*
+       * See if we need to generate a new passphrase for hardware encryption.
+       */
+      if (label_encrypt) {
+         if (!generate_new_encryption_key(ua, &mr)) {
+            continue;
+         }
+      }
+
+      mr.Slot = vl->Slot;
+      send_label_request(ua, store, &mr, NULL, &pr, media_record_exists, false, drive, vl->Slot);
+   }
+
+bail_out:
+   free(slot_list);
+   if (vol_list) {
+      storage_release_vol_list(store, vol_list);
+   }
+   close_sd_bsock(ua);
+
+   return;
 }
 
 /*
@@ -144,9 +502,6 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
        */
       if (store.store->paired_storage) {
          store.store = store.store->paired_storage;
-      } else {
-         ua->warning_msg(_("Storage has non-native protocol.\n"));
-         return 1;
       }
       break;
    default:
@@ -281,7 +636,7 @@ checkName:
       }
    }
 
-   ok = send_label_request(ua, &mr, &omr, &pr, relabel, media_record_exists, drive);
+   ok = send_label_request(ua, store.store, &mr, &omr, &pr, relabel, media_record_exists, drive, mr.Slot);
    if (ok) {
       sd = ua->jcr->store_bsock;
       if (relabel) {
@@ -349,153 +704,6 @@ checkName:
 }
 
 /*
- * Request SD to send us the slot:barcodes, then wiffle through them all labeling them.
- */
-static void label_from_barcodes(UAContext *ua, drive_number_t drive,
-                                bool label_encrypt, bool yes)
-{
-   STORERES *store = ua->jcr->res.wstore;
-   POOL_DBR pr;
-   MEDIA_DBR mr;
-   vol_list_t *vl;
-   changer_vol_list_t *vol_list = NULL;
-   bool media_record_exists;
-   char *slot_list;
-   slot_number_t max_slots;
-
-   memset(&mr, 0, sizeof(mr));
-
-   max_slots = get_num_slots(ua, store);
-   if (max_slots <= 0) {
-      ua->warning_msg(_("No slots in changer to scan.\n"));
-      return;
-   }
-
-   slot_list = (char *)malloc(nbytes_for_bits(max_slots));
-   clear_all_bits(max_slots, slot_list);
-   if (!get_user_slot_list(ua, slot_list, "slots", max_slots)) {
-      goto bail_out;
-   }
-
-   vol_list = get_vol_list_from_storage(ua, store, false /* no listall */ , false /*no scan*/);
-   if (!vol_list) {
-      ua->warning_msg(_("No Volumes found to label, or no barcodes.\n"));
-      goto bail_out;
-   }
-
-   /*
-    * Display list of Volumes and ask if he really wants to proceed
-    */
-   ua->send_msg(_("The following Volumes will be labeled:\n"
-                  "Slot  Volume\n"
-                  "==============\n"));
-   foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
-         continue;
-      }
-      ua->send_msg("%4d  %s\n", vl->Slot, vl->VolName);
-   }
-
-   if (!yes &&
-      (!get_yesno(ua, _("Do you want to label these Volumes? (yes|no): ")) || !ua->pint32_val)) {
-      goto bail_out;
-   }
-
-   /*
-    * Select a pool
-    */
-   memset(&pr, 0, sizeof(pr));
-   if (!select_pool_dbr(ua, &pr)) {
-      goto bail_out;
-   }
-
-   /*
-    * Fire off the label requests
-    */
-   foreach_dlist(vl, vol_list->contents) {
-      if (!vl->VolName || !bit_is_set(vl->Slot - 1, slot_list)) {
-         continue;
-      }
-      memset(&mr, 0, sizeof(mr));
-      bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
-      media_record_exists = false;
-      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
-         if (mr.VolBytes != 0) {
-            ua->warning_msg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
-                            vl->Slot, mr.VolumeName);
-            mr.Slot = vl->Slot;
-            mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
-            set_storageid_in_mr(store, &mr);
-            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
-               ua->error_msg(_("Error setting InChanger: ERR=%s"), db_strerror(ua->db));
-            }
-            continue;
-         }
-         media_record_exists = true;
-      }
-      mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
-      set_storageid_in_mr(store, &mr);
-
-      /*
-       * Deal with creating cleaning tape here. Normal tapes created in send_label_request() below
-       */
-      if (is_cleaning_tape(ua, &mr, &pr)) {
-         if (media_record_exists) {      /* we update it */
-            mr.VolBytes = 1;             /* any bytes to indicate it exists */
-            bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
-            mr.MediaType[0] = 0;
-            set_storageid_in_mr(store, &mr);
-            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
-                ua->error_msg("%s", db_strerror(ua->db));
-            }
-         } else {                        /* create the media record */
-            if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
-               ua->error_msg(_("Maximum pool Volumes=%d reached.\n"), pr.MaxVols);
-               goto bail_out;
-            }
-            set_pool_dbr_defaults_in_media_dbr(&mr, &pr);
-            bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
-            mr.MediaType[0] = 0;
-            set_storageid_in_mr(store, &mr);
-            if (db_create_media_record(ua->jcr, ua->db, &mr)) {
-               ua->send_msg(_("Catalog record for cleaning tape \"%s\" successfully created.\n"),
-                  mr.VolumeName);
-               pr.NumVols++;          /* this is a bit suspect */
-               if (!db_update_pool_record(ua->jcr, ua->db, &pr)) {
-                  ua->error_msg("%s", db_strerror(ua->db));
-               }
-            } else {
-               ua->error_msg(_("Catalog error on cleaning tape: %s"), db_strerror(ua->db));
-            }
-         }
-         continue;                    /* done, go handle next volume */
-      }
-      bstrncpy(mr.MediaType, store->media_type, sizeof(mr.MediaType));
-
-      /*
-       * See if we need to generate a new passphrase for hardware encryption.
-       */
-      if (label_encrypt) {
-         if (!generate_new_encryption_key(ua, &mr)) {
-            continue;
-         }
-      }
-
-      mr.Slot = vl->Slot;
-      send_label_request(ua, &mr, NULL, &pr, false, media_record_exists, drive);
-   }
-
-bail_out:
-   free(slot_list);
-   if (vol_list) {
-      storage_release_vol_list(store, vol_list);
-   }
-   close_sd_bsock(ua);
-
-   return;
-}
-
-/*
  * Label a tape
  *
  *   label storage=xxx volume=vvv
@@ -553,171 +761,4 @@ bool is_volume_name_legal(UAContext *ua, const char *name)
       return 0;
    }
    return 1;
-}
-
-/*
- * NOTE! This routine opens the SD socket but leaves it open
- */
-static bool send_label_request(UAContext *ua, MEDIA_DBR *mr, MEDIA_DBR *omr,
-                               POOL_DBR *pr, bool relabel, bool media_record_exists,
-                               drive_number_t drive)
-{
-   BSOCK *sd;
-   char dev_name[MAX_NAME_LENGTH];
-   bool ok = false;
-   uint64_t VolBytes = 0;
-
-   if (!(sd=open_sd_bsock(ua))) {
-      return false;
-   }
-
-   bstrncpy(dev_name, ua->jcr->res.wstore->dev_name(), sizeof(dev_name));
-   bash_spaces(dev_name);
-   bash_spaces(mr->VolumeName);
-   bash_spaces(mr->MediaType);
-   bash_spaces(pr->Name);
-
-   if (relabel) {
-      bash_spaces(omr->VolumeName);
-      sd->fsend("relabel %s OldName=%s NewName=%s PoolName=%s "
-                "MediaType=%s Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
-                dev_name, omr->VolumeName, mr->VolumeName, pr->Name,
-                mr->MediaType, mr->Slot, drive,
-                 /*
-                  * if relabeling, keep blocksize settings
-                  */
-                omr->MinBlocksize, omr->MaxBlocksize);
-      ua->send_msg(_("Sending relabel command from \"%s\" to \"%s\" ...\n"),
-                   omr->VolumeName, mr->VolumeName);
-   } else {
-      sd->fsend("label %s VolumeName=%s PoolName=%s MediaType=%s "
-                "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d",
-                dev_name, mr->VolumeName, pr->Name, mr->MediaType,
-                mr->Slot, drive,
-                 /*
-                  * If labeling, use blocksize defined in pool
-                  */
-                pr->MinBlocksize, pr->MaxBlocksize);
-      ua->send_msg(_("Sending label command for Volume \"%s\" Slot %hd ...\n"),
-                   mr->VolumeName, mr->Slot);
-      Dmsg8(100, "label %s VolumeName=%s PoolName=%s MediaType=%s "
-                 "Slot=%hd drive=%hd MinBlocksize=%d MaxBlocksize=%d\n",
-            dev_name, mr->VolumeName, pr->Name, mr->MediaType, mr->Slot, drive,
-            pr->MinBlocksize, pr->MaxBlocksize);
-   }
-
-   /*
-    * We use bget_dirmsg here and not bnet_recv because as part of
-    * the label request the stored can request catalog information for
-    * any plugin who listens to the bsdEventLabelVerified event.
-    * As we don't want to loose any non protocol data e.g. errors
-    * without a 3xxx prefix we set the allow_any_message of
-    * bget_dirmsg to true and as such is behaves like a normal
-    * bnet_recv for any non protocol messages.
-    */
-   while (bget_dirmsg(sd, true) >= 0) {
-      ua->send_msg("%s", sd->msg);
-      if (sscanf(sd->msg, "3000 OK label. VolBytes=%llu ", &VolBytes) == 1) {
-         ok = true;
-      }
-   }
-
-   unbash_spaces(mr->VolumeName);
-   unbash_spaces(mr->MediaType);
-   unbash_spaces(pr->Name);
-   mr->LabelDate = time(NULL);
-   mr->set_label_date = true;
-
-   if (ok) {
-      if (media_record_exists) {      /* we update it */
-         mr->VolBytes = VolBytes;
-         mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
-         set_storageid_in_mr(ua->jcr->res.wstore, mr);
-         if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-             ua->error_msg("%s", db_strerror(ua->db));
-             ok = false;
-         }
-      } else {                        /* create the media record */
-         set_pool_dbr_defaults_in_media_dbr(mr, pr);
-         mr->VolBytes = VolBytes;
-         mr->InChanger = mr->Slot > 0;  /* if slot give assume in changer */
-         mr->Enabled = VOL_ENABLED;
-         set_storageid_in_mr(ua->jcr->res.wstore, mr);
-         if (db_create_media_record(ua->jcr, ua->db, mr)) {
-            ua->info_msg(_("Catalog record for Volume \"%s\", Slot %hd  successfully created.\n"),
-            mr->VolumeName, mr->Slot);
-            /*
-             * Update number of volumes in pool
-             */
-            pr->NumVols++;
-            if (!db_update_pool_record(ua->jcr, ua->db, pr)) {
-               ua->error_msg("%s", db_strerror(ua->db));
-            }
-         } else {
-            ua->error_msg("%s", db_strerror(ua->db));
-            ok = false;
-         }
-      }
-   } else {
-      ua->error_msg(_("Label command failed for Volume %s.\n"), mr->VolumeName);
-   }
-
-   return ok;
-}
-
-/*
- * Generate a new encryption key for use in volume encryption.
- * We don't ask the user for a encryption key but generate a semi
- * random passphrase of the wanted length which is way stronger.
- * When the config has a wrap key we use that to wrap the newly
- * created passphrase using RFC3394 aes wrap and always convert
- * the passphrase into a base64 encoded string. This key is
- * stored in the database and is passed to the storage daemon
- * when needed. The storage daemon has the same wrap key per
- * director so it can unwrap the passphrase for use.
- *
- * Changing the wrap key will render any previously created
- * crypto keys useless so only change the wrap key after initial
- * setting when you know what you are doing and always store
- * the old key somewhere save so you can use bscrypto to
- * convert them for the new wrap key.
- */
-static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
-{
-   int length;
-   char *passphrase;
-
-   passphrase = generate_crypto_passphrase(DEFAULT_PASSPHRASE_LENGTH);
-   if (!passphrase) {
-      ua->error_msg(_("Failed to generate new encryption passphrase for Volume %s.\n"), mr->VolumeName);
-      return false;
-   }
-
-   /*
-    * See if we need to wrap the passphrase.
-    */
-   if (me->keyencrkey.value) {
-      char *wrapped_passphrase;
-
-      length = DEFAULT_PASSPHRASE_LENGTH + 8;
-      wrapped_passphrase = (char *)malloc(length);
-      memset(wrapped_passphrase, 0, length);
-      aes_wrap((unsigned char *)me->keyencrkey.value,
-               DEFAULT_PASSPHRASE_LENGTH / 8,
-               (unsigned char *)passphrase,
-               (unsigned char *)wrapped_passphrase);
-
-      free(passphrase);
-      passphrase = wrapped_passphrase;
-   } else {
-      length = DEFAULT_PASSPHRASE_LENGTH;
-   }
-
-   /*
-    * The passphrase is always base64 encoded.
-    */
-   bin_to_base64(mr->EncrKey, sizeof(mr->EncrKey), passphrase, length, true);
-
-   free(passphrase);
-   return true;
 }

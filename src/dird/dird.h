@@ -94,6 +94,13 @@ enum e_move_op {
    VOLUME_MOVE
 };
 
+enum e_slot_flag {
+   can_import = 0x01,
+   can_export = 0x02,
+   by_oper = 0x04,
+   by_mte = 0x08
+};
+
 typedef enum {
    VOL_LIST_ALL,
    VOL_LIST_PARTIAL
@@ -103,7 +110,8 @@ typedef enum {
    slot_type_unknown,             /* Unknown slot type */
    slot_type_drive,               /* Drive slot */
    slot_type_normal,              /* Normal slot */
-   slot_type_import               /* Import/export slot */
+   slot_type_import,              /* Import/export slot */
+   slot_type_picker               /* Robotics */
 } slot_type;
 
 typedef enum {
@@ -112,10 +120,18 @@ typedef enum {
    slot_content_full              /* Slot is full */
 } slot_content;
 
-/* Slot list definition */
+enum s_mapping_type {
+   LOGICAL_TO_PHYSICAL,
+   PHYSICAL_TO_LOGICAL
+};
+
+/*
+ * Slot list definition
+ */
 struct vol_list_t {
    dlink link;                    /* Link for list */
    slot_number_t Index;           /* Unique index */
+   slot_flags_t Flags;            /* Slot specific flags see e_slot_flag enum */
    slot_type Type;                /* See slot_type_* */
    slot_content Content;          /* See slot_content_* */
    slot_number_t Slot;            /* Drive number when slot_type_drive or actual slot number */
@@ -130,11 +146,22 @@ struct changer_vol_list_t {
    dlist *contents;               /* Contents of autochanger */
 };
 
+/*
+ * Mapping from logical to physical storage address
+ */
+struct storage_mapping_t {
+   dlink link;                   /* Link for list */
+   slot_type Type;               /* See slot_type_* */
+   slot_number_t Index;          /* Unique index */
+   slot_number_t Slot;           /* Drive number when slot_type_drive or actual slot number */
+};
+
 struct runtime_storage_status_t {
    int32_t NumConcurrentJobs;     /* Number of concurrent jobs running */
    int32_t NumConcurrentReadJobs; /* Number of jobs reading */
    drive_number_t drives;         /* Number of drives in autochanger */
    slot_number_t slots;           /* Number of slots in autochanger */
+   dlist *storage_mappings;       /* Mappings from logical to physical storage address */
    changer_vol_list_t *vol_list;  /* Cached content of autochanger */
    pthread_mutex_t changer_lock;  /* Any access to the autochanger is controlled by this lock */
 };

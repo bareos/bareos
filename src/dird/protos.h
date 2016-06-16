@@ -297,6 +297,9 @@ vol_list_t *vol_is_loaded_in_drive(STORERES *store, changer_vol_list_t *vol_list
 void storage_release_vol_list(STORERES *store, changer_vol_list_t *vol_list);
 void storage_free_vol_list(STORERES *store, changer_vol_list_t *vol_list);
 void invalidate_vol_list(STORERES *store);
+int compare_storage_mapping(void *e1, void *e2);
+slot_number_t lookup_storage_mapping(STORERES *store, slot_type slot_type,
+                                     s_mapping_type map_type, slot_number_t slot);
 
 /* ua_acl.c */
 bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);

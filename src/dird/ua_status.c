@@ -50,6 +50,22 @@ static char OKdotstatus[] =
 static char DotStatusJob[] =
    "JobId=%s JobStatus=%c JobErrors=%d\n";
 
+static void client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+{
+   switch (client->Protocol) {
+   case APT_NATIVE:
+      do_native_client_status(ua, client, cmd);
+      break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      do_ndmp_client_status(ua, client, cmd);
+      break;
+   default:
+      break;
+   }
+}
+
 /*
  * .status command
  */
@@ -105,16 +121,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
             statuscmd = ua->argk[2];
          }
          Dmsg2(200, "Client=%s arg=%s\n", client->name(), NPRT(statuscmd));
-         switch (client->Protocol) {
-         case APT_NDMPV2:
-         case APT_NDMPV3:
-         case APT_NDMPV4:
-            do_ndmp_client_status(ua, client, statuscmd);
-            break;
-         default:
-            do_native_client_status(ua, client, statuscmd);
-            break;
-         }
+         client_status(ua, client, statuscmd);
       }
    } else if (bstrcasecmp(ua->argk[1], "storage")) {
       store = get_storage_resource(ua);
@@ -122,16 +129,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          if (ua->argc == 3) {
             statuscmd = ua->argk[2];
          }
-         switch (store->Protocol) {
-         case APT_NDMPV2:
-         case APT_NDMPV3:
-         case APT_NDMPV4:
-            do_ndmp_storage_status(ua, store, statuscmd);
-            break;
-         default:
-            do_native_storage_status(ua, store, statuscmd);
-            break;
-         }
+         storage_status(ua, store, statuscmd);
       }
    } else {
       ua->send_msg("1900 Bad .status command, wrong argument.\n");
@@ -163,16 +161,7 @@ bool status_cmd(UAContext *ua, const char *cmd)
       } else if (bstrcasecmp(ua->argk[i], NT_("client"))) {
          client = get_client_resource(ua);
          if (client) {
-            switch (client->Protocol) {
-            case APT_NDMPV2:
-            case APT_NDMPV3:
-            case APT_NDMPV4:
-               do_ndmp_client_status(ua, client, NULL);
-               break;
-            default:
-               do_native_client_status(ua, client, NULL);
-               break;
-            }
+            client_status(ua, client, NULL);
          }
          return true;
       } else if (bstrncasecmp(ua->argk[i], NT_("sched"), 5)) {
@@ -193,36 +182,19 @@ bool status_cmd(UAContext *ua, const char *cmd)
 
          if (store) {
             if (find_arg(ua, NT_("slots")) > 0) {
-               switch (store->Protocol) {
-               case APT_NDMPV2:
-               case APT_NDMPV3:
-               case APT_NDMPV4:
+               switch (ua->api) {
+               case API_MODE_OFF:
+                  status_slots(ua, store);
                   break;
-               default:
-                  switch (ua->api) {
-                  case API_MODE_OFF:
-                     status_slots(ua, store);
-                     break;
-                  case API_MODE_ON:
-                     status_content_api(ua, store);
-                     break;
-                  case API_MODE_JSON:
-                     status_content_json(ua, store);
-                     break;
-                  }
+               case API_MODE_ON:
+                  status_content_api(ua, store);
+                  break;
+               case API_MODE_JSON:
+                  status_content_json(ua, store);
                   break;
                }
             } else {
-               switch (store->Protocol) {
-               case APT_NDMPV2:
-               case APT_NDMPV3:
-               case APT_NDMPV4:
-                  do_ndmp_storage_status(ua, store, NULL);
-                  break;
-               default:
-                  do_native_storage_status(ua, store, NULL);
-                  break;
-               }
+               storage_status(ua, store, NULL);
             }
          }
 
@@ -251,31 +223,13 @@ bool status_cmd(UAContext *ua, const char *cmd)
       case 1:
          store = select_storage_resource(ua);
          if (store) {
-            switch (store->Protocol) {
-            case APT_NDMPV2:
-            case APT_NDMPV3:
-            case APT_NDMPV4:
-               do_ndmp_storage_status(ua, store, NULL);
-               break;
-            default:
-               do_native_storage_status(ua, store, NULL);
-               break;
-            }
+            storage_status(ua, store, NULL);
          }
          break;
       case 2:
          client = select_client_resource(ua);
          if (client) {
-            switch (client->Protocol) {
-            case APT_NDMPV2:
-            case APT_NDMPV3:
-            case APT_NDMPV4:
-               do_ndmp_client_status(ua, client, NULL);
-               break;
-            default:
-               do_native_client_status(ua, client, NULL);
-               break;
-            }
+            client_status(ua, client, NULL);
          }
          break;
       case 3:
@@ -330,16 +284,7 @@ static void do_all_status(UAContext *ua)
 
    /* Call each unique Storage daemon */
    for (j = 0; j < i; j++) {
-      switch (unique_store[j]->Protocol) {
-      case APT_NDMPV2:
-      case APT_NDMPV3:
-      case APT_NDMPV4:
-         do_ndmp_storage_status(ua, unique_store[j], NULL);
-         break;
-      default:
-         do_native_storage_status(ua, unique_store[j], NULL);
-         break;
-      }
+      storage_status(ua, unique_store[j], NULL);
    }
    free(unique_store);
 
@@ -373,16 +318,7 @@ static void do_all_status(UAContext *ua)
 
    /* Call each unique File daemon */
    for (j = 0; j < i; j++) {
-      switch (unique_client[j]->Protocol) {
-      case APT_NDMPV2:
-      case APT_NDMPV3:
-      case APT_NDMPV4:
-         do_ndmp_client_status(ua, unique_client[j], NULL);
-         break;
-      default:
-         do_native_client_status(ua, unique_client[j], NULL);
-         break;
-      }
+      client_status(ua, unique_client[j], NULL);
    }
    free(unique_client);
 
@@ -1458,7 +1394,6 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
  */
 static void status_content_api(UAContext *ua, STORERES *store)
 {
-   bool found;
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
    const char *slot_api_drive_full_format="%c|%hd|%hd|%s\n";
@@ -1509,42 +1444,30 @@ static void status_content_api(UAContext *ua, STORERES *store)
              * See if this empty slot is empty because the volume is loaded
              * in one of the drives.
              */
-            found = false;
-            vl2 = (vol_list_t *)vol_list->contents->first();
-            while (!found && vl2) {
-               switch (vl2->Type) {
-               case slot_type_drive:
-                  if (vl1->Slot == vl2->Loaded) {
-                     switch (vl1->Type) {
-                     case slot_type_normal:
-                        content_send_info_api(ua, 'S', vl1->Slot, vl2->VolName);
-                        break;
-                     case slot_type_import:
-                        content_send_info_api(ua, 'I', vl1->Slot, vl2->VolName);
-                        break;
-                     default:
-                        break;
-                     }
-                     found = true;
-                     continue;
-                  }
-                  break;
-               default:
-                  break;
-               }
-               vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
-            }
-            if (!found) {
+            vl2 = vol_is_loaded_in_drive(store, vol_list, vl1->Slot);
+            if (vl2) {
                switch (vl1->Type) {
                case slot_type_normal:
-                  ua->send_msg(slot_api_slot_empty_format, 'S', vl1->Slot);
+                  content_send_info_api(ua, 'S', vl1->Slot, vl2->VolName);
                   break;
                case slot_type_import:
-                  ua->send_msg(slot_api_slot_empty_format, 'I', vl1->Slot);
+                  content_send_info_api(ua, 'I', vl1->Slot, vl2->VolName);
                   break;
                default:
                   break;
                }
+               continue;
+            }
+
+            switch (vl1->Type) {
+            case slot_type_normal:
+               ua->send_msg(slot_api_slot_empty_format, 'S', vl1->Slot);
+               break;
+            case slot_type_import:
+               ua->send_msg(slot_api_slot_empty_format, 'I', vl1->Slot);
+               break;
+            default:
+               break;
             }
             break;
          default:
@@ -1567,7 +1490,6 @@ bail_out:
 
 static void status_content_json(UAContext *ua, STORERES *store)
 {
-   bool found;
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
 
@@ -1622,50 +1544,38 @@ static void status_content_json(UAContext *ua, STORERES *store)
              * See if this empty slot is empty because the volume is loaded
              * in one of the drives.
              */
-            found = false;
-            vl2 = (vol_list_t *)vol_list->contents->first();
-            while (!found && vl2) {
-               switch (vl2->Type) {
-               case slot_type_drive:
-                  if (vl1->Slot == vl2->Loaded) {
-                     switch (vl1->Type) {
-                     case slot_type_normal:
-                        content_send_info_json(ua, "slot", vl1->Slot, vl2->VolName);
-                        break;
-                     case slot_type_import:
-                        content_send_info_json(ua, "import_slot", vl1->Slot, vl2->VolName);
-                        break;
-                     default:
-                        break;
-                     }
-                     found = true;
-                     continue;
-                  }
-                  break;
-               default:
-                  break;
-               }
-               vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
-            }
-            if (!found) {
+            vl2 = vol_is_loaded_in_drive(store, vol_list, vl1->Slot);
+            if (vl2) {
                switch (vl1->Type) {
                case slot_type_normal:
-                  ua->send->object_start();
-                  ua->send->object_key_value("type", "slot", "%s\n");
-                  ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
-                  ua->send->object_key_value("content", "empty", "%s\n");
-                  ua->send->object_end();
+                  content_send_info_json(ua, "slot", vl1->Slot, vl2->VolName);
                   break;
                case slot_type_import:
-                  ua->send->object_start();
-                  ua->send->object_key_value("type", "import_slot", "%s\n");
-                  ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
-                  ua->send->object_key_value("content", "empty", "%s\n");
-                  ua->send->object_end();
+                  content_send_info_json(ua, "import_slot", vl1->Slot, vl2->VolName);
                   break;
                default:
                   break;
                }
+               continue;
+            }
+
+            switch (vl1->Type) {
+            case slot_type_normal:
+               ua->send->object_start();
+               ua->send->object_key_value("type", "slot", "%s\n");
+               ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
+               ua->send->object_key_value("content", "empty", "%s\n");
+               ua->send->object_end();
+               break;
+            case slot_type_import:
+               ua->send->object_start();
+               ua->send->object_key_value("type", "import_slot", "%s\n");
+               ua->send->object_key_value("slotnr", vl1->Slot, "%hd\n");
+               ua->send->object_key_value("content", "empty", "%s\n");
+               ua->send->object_end();
+               break;
+            default:
+               break;
             }
             break;
          default:
@@ -1694,11 +1604,10 @@ static void status_slots(UAContext *ua, STORERES *store)
 {
    POOL_DBR pr;
    MEDIA_DBR mr;
-   slot_number_t max_slots;
    char *slot_list;
    vol_list_t *vl1, *vl2;
+   slot_number_t max_slots;
    changer_vol_list_t *vol_list = NULL;
-   bool is_loaded_in_drive;
 
    /*
     * Slot | Volume | Status | MediaType | Pool
@@ -1737,6 +1646,7 @@ static void status_slots(UAContext *ua, STORERES *store)
     * Slots start numbering at 1.
     */
    foreach_dlist(vl1, vol_list->contents) {
+      vl2 = NULL;
       switch (vl1->Type) {
       case slot_type_drive:
          /*
@@ -1758,8 +1668,6 @@ static void status_slots(UAContext *ua, STORERES *store)
             continue;
          }
 
-         vl2 = NULL;
-         is_loaded_in_drive = false;
          switch (vl1->Content) {
          case slot_content_empty:
             if (vl1->Type == slot_type_normal) {
@@ -1767,21 +1675,8 @@ static void status_slots(UAContext *ua, STORERES *store)
                 * See if this empty slot is empty because the volume is loaded
                 * in one of the drives.
                 */
-               vl2 = (vol_list_t *)vol_list->contents->first();
-               while (!is_loaded_in_drive && vl2) {
-                  switch (vl2->Type) {
-                  case slot_type_drive:
-                     if (vl1->Slot == vl2->Loaded) {
-                        is_loaded_in_drive = true;
-                        continue;
-                     }
-                     break;
-                  default:
-                     break;
-                  }
-                  vl2 = (vol_list_t *)vol_list->contents->next((void *)vl2);
-               }
-               if (!is_loaded_in_drive) {
+               vl2 = vol_is_loaded_in_drive(store, vol_list, vl1->Slot);
+               if (!vl2) {
                   ua->send_msg(slot_hformat,
                                vl1->Slot, '*',
                                "?", "?", "?", "?");
@@ -1844,7 +1739,7 @@ static void status_slots(UAContext *ua, STORERES *store)
                } else {
                   ua->send_msg(slot_hformat,
                                vl1->Slot,
-                               ((vl1->Slot == mr.Slot) ? (is_loaded_in_drive ? '%' : ' ') : '*'),
+                               ((vl1->Slot == mr.Slot) ? (vl2 ? '%' : ' ') : '*'),
                                mr.VolumeName, mr.VolStatus, mr.MediaType, pr.Name);
                }
             } else {

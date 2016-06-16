@@ -838,3 +838,59 @@ void invalidate_vol_list(STORERES *store)
 
    V(store->rss->changer_lock);
 }
+
+/*
+ * Simple comparison function for binary insert of storage_mapping_t
+ */
+int compare_storage_mapping(void *e1, void *e2)
+{
+   storage_mapping_t *m1, *m2;
+
+   m1 = (storage_mapping_t *)e1;
+   m2 = (storage_mapping_t *)e2;
+
+   ASSERT(m1);
+   ASSERT(m2);
+
+   if (m1->Index == m2->Index) {
+      return 0;
+   } else {
+      return (m1->Index < m2->Index) ? -1 : 1;
+   }
+}
+
+/*
+ * Map a slotnr from Logical to Physical or the other way around based on
+ * the s_mapping_type type given.
+ */
+slot_number_t lookup_storage_mapping(STORERES *store, slot_type slot_type,
+                                     s_mapping_type type, slot_number_t slot)
+{
+   slot_number_t retval = -1;
+   storage_mapping_t *mapping;
+
+   if (store->rss->storage_mappings) {
+      mapping = (storage_mapping_t *)store->rss->storage_mappings->first();
+      while (mapping) {
+         switch (type) {
+         case LOGICAL_TO_PHYSICAL:
+            if (mapping->Type == slot_type && mapping->Slot == slot) {
+               retval = mapping->Index;
+               break;
+            }
+            break;
+         case PHYSICAL_TO_LOGICAL:
+            if (mapping->Type == slot_type && mapping->Index == slot) {
+               retval = mapping->Slot;
+               break;
+            }
+            break;
+         default:
+            break;
+         }
+         mapping = (storage_mapping_t *)store->rss->storage_mappings->next(mapping);
+      }
+   }
+
+   return retval;
+}

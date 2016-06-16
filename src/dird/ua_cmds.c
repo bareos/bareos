@@ -2158,16 +2158,6 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
       return;
    }
 
-   switch (store.store->Protocol) {
-   case APT_NDMPV2:
-   case APT_NDMPV3:
-   case APT_NDMPV4:
-      ua->warning_msg(_("Storage has non-native protocol.\n"));
-      return;
-   default:
-      break;
-   }
-
    pm_strcpy(store.store_source, _("unknown source"));
    set_wstorage(ua->jcr, &store);
    if (!do_alldrives) {
