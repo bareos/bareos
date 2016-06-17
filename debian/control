@@ -17,7 +17,6 @@ Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | libapache2-
    php-common | php5-common | php7-common,
    php-date | php5-date | php7-date,
    php-intl | php5-intl | php7-intl,
-   php-openssl | php5-openssl | php7-openssl,
    php-json | php5-json | php7-json,
    php-mysql | php5-mysql | php7-mysql,
    php-pgsql | php5-pgsql | php7-pgsql,
