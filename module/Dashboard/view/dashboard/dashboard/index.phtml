@@ -142,7 +142,8 @@ $this->headTitle($title);
                   { "data": "client" },
                   { "data": "level" },
                   { "data": "starttime" },
-                  { "data": "endtime" }
+                  { "data": "endtime" },
+                  { "data": "jobbytes", "type": "file-size" }
                ],
                "paging": true,
                "ordering": true,
@@ -173,6 +174,12 @@ $this->headTitle($title);
                      "targets": 4,
                      "render": function(data, type, full, meta) {
                         return formatJobLevel(data);
+                     }
+                  },
+                  {
+                     "targets": 7,
+                     "render": function(data, type, full, meta) {
+                        return formatBytes(data);
                      }
                   }
                ]
