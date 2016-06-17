@@ -1,5 +1,5 @@
 ;
-;   BAREOS?? - Backup Archiving REcovery Open Sourced
+;   BAREOS - Backup Archiving REcovery Open Sourced
 ;
 ;   Copyright (C) 2012-2016 Bareos GmbH & Co. KG
 ;
@@ -150,16 +150,16 @@ ${StrRep}
 !insertmacro MUI_PAGE_COMPONENTS
 
 
-; Custom für Abfragen benötigter Parameter für den Client
+; Custom page to get Client parameter
 Page custom getClientParameters
 
-; Custom für Abfragen benötigter Parameter für den Zugriff auf director
+; Custom page to get parameter to access the bareos-director
 Page custom getDirectorParameters
 
-
+; Custom page to get parameter for a local database
 Page custom getDatabaseParameters getDatabaseParametersLeave
 
-; Custom für Abfragen benötigter Parameter für den Storage
+; Custom page to get parameter to for a local bareos-storage
 Page custom getStorageParameters
 
 ; Instfiles page
@@ -375,6 +375,40 @@ skipmsgbox:
   ${EndIf}
 !macroend
 
+
+!macro AllowAccessForAll fname
+  # This is important to have $APPDATA variable
+  # point to ProgramData folder
+  # instead of current user's Roaming folder
+  SetShellVarContext all
+
+    # Disable file access inheritance
+    AccessControl::DisableFileInheritance "${fname}"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # Set file owner to Users
+    AccessControl::SetFileOwner "${fname}" "(S-1-5-32-545)"  # user
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+
+    # Set fullaccess for Users (S-1-5-32-545)
+    AccessControl::SetOnFile "${fname}" "(S-1-5-32-545)" "FullAccess"
+    Pop $R0
+    ${If} $R0 == error
+       Pop $R0
+       DetailPrint `AccessControl error: $R0`
+    ${EndIf}
+!macroend
+
+
+
 Name "${PRODUCT_NAME} ${PRODUCT_VERSION}"
 OutFile "${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
 InstallDir "$PROGRAMFILES\${PRODUCT_NAME}"
@@ -405,103 +439,30 @@ SectionEnd
 
 Section -SetPasswords
   SetShellVarContext all
-  # Write sed file to replace the preconfigured variables by the configured values
-  #
-  # File Daemon and Tray Monitor configs
-  #
-  FileOpen $R1 $PLUGINSDIR\config.sed w
-  #FileOpen $R1 config.sed w
 
-  FileWrite $R1 "s#@VERSION@#${PRODUCT_VERSION}#g$\r$\n"
-  FileWrite $R1 "s#@DATE@#${__DATE__}#g$\r$\n"
-  FileWrite $R1 "s#@DISTNAME@#Windows#g$\r$\n"
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX#$DirectorPassword#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX#$DirectorMonPassword#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX#$ClientPassword#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX#$ClientMonitorPassword#g$\r$\n"
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_HOSTNAME_XXX#$HostName#g$\r$\n"
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-fd#$ClientName#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-mon#$HostName-mon#g$\r$\n"
-
-  #
-  # If we want to be compatible we uncomment the setting for "compatible = yes"
-  #
-  ${If} $ClientCompatible == ${BST_CHECKED}
-    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
-  ${EndIf}
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_SD_MONITOR_PASSWORD_XXX#$StorageMonitorPassword#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX#$StoragePassword#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-sd#$StorageDaemonName#g$\r$\n"
-
-  # Director DB Connection Setup
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DATABASE_DRIVER_XXX#$DbDriver#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PORT_XXX#$DbPort#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#$DbPassword#g$\r$\n"
-  FileWrite $R1 "s#QueryFile = #Working Directory = $\"C:/ProgramData/Bareos/Working$\"\n  QueryFile = #g$\r$\n"
-
-  # backupcatalog backup scripts
-  ${StrRep} '$0' "$APPDATA" '\' '/' # replace \ with / in APPDATA
-  FileWrite $R1 "s#C:/Program Files/Bareos/make_catalog_backup.pl MyCatalog#$0/${PRODUCT_NAME}/scripts/make_catalog_backup.bat#g$\r$\n"
-  FileWrite $R1 "s#C:/Program Files/Bareos/delete_catalog_backup#$0/${PRODUCT_NAME}/scripts/delete_catalog_backup.bat#g$\r$\n"
-
-
-  FileClose $R1
-
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-dir.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-fd.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\bareos-sd.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd-sd.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\config.sed" -i-template "$PLUGINSDIR\tray-monitor.fd-sd-dir.conf"'
-
-  #Delete config.sed
+  # TODO: replace by ConfigureConfiguration ?
 
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#with password '$DbPassword'#g$\r$\n"
+  FileWrite $R1 "s#@db_user@#$DbUser#g$\r$\n"
+  FileWrite $R1 "s#@db_password@#with password '$DbPassword'#g$\r$\n"
   FileClose $R1
+
   #
   # config files for bconsole and bat to access remote director
   #
   FileOpen $R1 $PLUGINSDIR\bconsole.sed w
-
-  FileWrite $R1 "s#XXX_REPLACE_WITH_BASENAME_XXX-dir#$DirectorName#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_HOSTNAME_XXX#$DirectorAddress#g$\r$\n"
-  FileWrite $R1 "s#XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX#$DirectorPassword#g$\r$\n"
-
+  FileWrite $R1 "s#@basename@-dir#$DirectorName#g$\r$\n"
+  FileWrite $R1 "s#@dir_port@#9101#g$\r$\n"
+  FileWrite $R1 "s#@hostname@#$DirectorAddress#g$\r$\n"
+  FileWrite $R1 "s#@dir_password@#$DirectorPassword#g$\r$\n"
   FileClose $R1
-
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bat.conf"'
-
-  #Delete bconsole.sed
-
-#
-#  write client config snippet for director
-#
-#
-#  FileOpen $R1 import_this_file_into_your_director_config.txt w
-#
-#  FileWrite $R1 'Client {$\n'
-#  FileWrite $R1 '  Name = $ClientName$\n'
-#  FileWrite $R1 '  Address = $ClientAddress$\n'
-#  FileWrite $R1 '  Password = "$ClientPassword"$\n'
-#  FileWrite $R1 '  Catalog = "MyCatalog"$\n'
-#  FileWrite $R1 '}$\n'
-#
-#  FileClose $R1
 SectionEnd
 
-
-#; Check if database server is installed only in silent mode
+#
+# Check if database server is installed only in silent mode
 # otherwise this is done in the database dialog
 #
 Section -DataBaseCheck
@@ -539,10 +500,11 @@ SectionIn 1 2 3 4
   #  sleep 3000
   #  nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /remove'
 
-  SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
   CreateDirectory "$SMPROGRAMS\${PRODUCT_NAME}"
   CreateDirectory "$APPDATA\${PRODUCT_NAME}"
+  SetOutPath "$INSTDIR"
+  File "bareos-config-deploy.bat"
   File "bareos-fd.exe"
   File "libbareos.dll"
   File "libbareosfind.dll"
@@ -561,26 +523,42 @@ SectionIn 1 2 3 4
   File "openssl.exe"
   File "sed.exe"
 
-# install unittests
+  # install unittests
   File "test_*.exe"
   File "/oname=cmocka.dll" "libcmocka.dll"
 
-  !insertmacro InstallConfFile bareos-fd.conf
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\bareos-fd.d"
+  File /r config\bareos-fd.d\*.*
+
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
+  File config\tray-monitor.d\client\FileDaemon-local.conf
+  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf"
+
+  SetOutPath "$APPDATA\${PRODUCT_NAME}"
+  File "config\fillup.sed"
+
 SectionEnd
+
+
 
 Section /o "File Daemon Plugins " SEC_FDPLUGINS
 SectionIn 1 2 3 4
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "bpipe-fd.dll"
-  File "mssqlvdi-fd.dll"
+  #File "bpipe-fd.dll"
+  #File "mssqlvdi-fd.dll"
+  #File "python-fd.dll"
+  File "*-fd.dll"
 
-  File "python-fd.dll"
-  File "BareosFd*.py"
-  File "bareos-fd*.py"
-  File "bareos_fd*.py"
+  File "Plugins\BareosFd*.py"
+  File "Plugins\bareos-fd*.py"
+  File "Plugins\bareos_fd*.py"
 SectionEnd
+
+
 
 Section "Open Firewall for File Daemon" SEC_FIREWALL_FD
 SectionIn 1 2 3 4
@@ -622,7 +600,15 @@ SectionIn 2 3
 
   CreateDirectory "C:\bareos-storage"
 
-  !insertmacro InstallConfFile bareos-sd.conf
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\bareos-sd.d"
+  File /r config\bareos-sd.d\*.*
+
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
+  File config\tray-monitor.d\storage\StorageDaemon-local.conf
+  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf"
+
 SectionEnd
 
 Section /o "Storage Daemon Plugins " SEC_SDPLUGINS
@@ -630,12 +616,12 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  File "autoxflate-sd.dll"
-
-  File "python-sd.dll"
-  File "BareosSd*.py"
-  File "bareos-sd*.py"
-  File "bareos_sd*.py"
+  #File "autoxflate-sd.dll"
+  #File "python-sd.dll"
+  File "*-sd.dll"
+  File "Plugins\BareosSd*.py"
+  File "Plugins\bareos-sd*.py"
+  File "Plugins\bareos_sd*.py"
 SectionEnd
 
 
@@ -657,6 +643,8 @@ SectionEnd
 
 SubSectionEnd # Storage Daemon Subsection
 
+
+
 SubSection "Director" SUBSEC_DIR
 
 Section /o "Director" SEC_DIR
@@ -675,7 +663,14 @@ SectionIn 2 3
   File "bwild.exe"
   File "libbareoscats.dll"
 
-  !insertmacro InstallConfFile bareos-dir.conf
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\bareos-dir.d"
+  File /r config\bareos-dir.d\*.*
+
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
+  File config\tray-monitor.d\director\Director-local.conf
+  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\director\Director-local.conf"
 
 SectionEnd
 
@@ -684,6 +679,7 @@ Section /o "Director PostgreSQL Backend Support " SEC_DIR_POSTGRES
 SectionIn 3
   SetShellVarContext all
 
+  SetOutPath "$INSTDIR"
   File "libbareoscats-postgresql.dll"
 
   # edit sql ddl files
@@ -783,6 +779,7 @@ Section /o "Director SQLite Backend Support " SEC_DIR_SQLITE
 SectionIn 2
   SetShellVarContext all
 
+  SetOutPath "$INSTDIR"
   File "sqlite3.exe"
   File "libsqlite3-0.dll"
   File "libbareoscats-sqlite3.dll"
@@ -825,16 +822,18 @@ SectionIn 2
 
 SectionEnd
 
+
 Section /o "Director Plugins" SEC_DIRPLUGINS
 SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
 
-  File "python-dir.dll"
-  File "BareosDir*.py"
-  File "bareos-dir*.py"
-  File "bareos_dir*.py"
+  #File "python-dir.dll"
+  File "*-dir.dll"
+  File "Plugins\BareosDir*.py"
+  File "Plugins\bareos-dir*.py"
+  File "Plugins\bareos_dir*.py"
 SectionEnd
 
 
@@ -854,8 +853,9 @@ SectionIn 2 3
   ${EndIf}
 SectionEnd
 
-
 SubSectionEnd # Director Subsection
+
+
 
 SubSection "Consoles" SUBSEC_CONSOLES
 
@@ -888,18 +888,13 @@ SectionIn 1 2 3
   File "libpng*.dll"
   File "QtCore4.dll"
   File "QtGui4.dll"
-  rename "$PLUGINSDIR\tray-monitor.fd.conf" "$PLUGINSDIR\tray-monitor.conf"
-${If} ${SectionIsSelected} ${SEC_SD}
-  delete "$PLUGINSDIR\tray-monitor.conf"
-  rename "$PLUGINSDIR\tray-monitor.fd-sd.conf" "$PLUGINSDIR\tray-monitor.conf"
-${EndIf}
-${If} ${SectionIsSelected} ${SEC_DIR}
-  delete "$PLUGINSDIR\tray-monitor.conf"
-  rename "$PLUGINSDIR\tray-monitor.fd-sd-dir.conf" "$PLUGINSDIR\tray-monitor.conf"
-${EndIf}
 
-  !insertmacro InstallConfFile "tray-monitor.conf"
+  # install configuration as templates
+  SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
+  File config\tray-monitor.d\monitor\bareos-mon.conf
+  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf"
 SectionEnd
+
 
 Section /o "Qt Console (BAT)" SEC_BAT
 SectionIn 2 3
@@ -1006,6 +1001,98 @@ Section -Post
     nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /install'
   ${EndIf}
 SectionEnd
+
+Section -ConfigureConfiguration
+  SetShellVarContext all
+
+  # copy the existing template file to configure.sed
+  CopyFiles "$APPDATA\${PRODUCT_NAME}\fillup.sed" "$APPDATA\${PRODUCT_NAME}\configure.sed"
+
+  #
+  # path in Bareos readable format (replace \ with /)
+  #
+  Var /GLOBAL BareosAppdata
+  ${StrRep} '$BareosAppdata' "$APPDATA/${PRODUCT_NAME}" '\' '/'
+  Var /GLOBAL BareosInstdir
+  ${StrRep} '$BareosInstdir' "$INSTDIR" '\' '/'
+
+  # open or sed file and append additional rules
+  FileOpen $R1 "$APPDATA\${PRODUCT_NAME}\configure.sed" a
+  # move to end of file
+  FileSeek $R1 0 END
+
+  FileWrite $R1 "s#@basename@-fd#$ClientName#g$\r$\n"
+  FileWrite $R1 "s#@basename@-dir#$DirectorName#g$\r$\n"
+  FileWrite $R1 "s#@basename@-mon#$HostName-mon#g$\r$\n"
+  FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
+
+  FileWrite $R1 "s#XXX_REPLACE_WITH_DATABASE_DRIVER_XXX#$DbDriver#g$\r$\n"
+
+  # add "Working Directory" directive
+  FileWrite $R1 "s#QueryFile = #Working Directory = $\"$BareosAppdata/working$\"\n  QueryFile = #g$\r$\n"
+
+
+  #
+  # catalog backup scripts
+  #
+  FileWrite $R1 "s#make_catalog_backup.pl#make_catalog_backup.bat#g$\r$\n"
+  FileWrite $R1 "s#delete_catalog_backup#delete_catalog_backup.bat#g$\r$\n"
+
+  FileWrite $R1 "s#/tmp/bareos-restores#C:/temp/bareos-restores#g$\r$\n"
+
+  #
+  # If we want to be compatible we uncomment the setting for "compatible = yes"
+  #
+  ${If} $ClientCompatible == ${BST_CHECKED}
+    FileWrite $R1 "s@# compatible@compatible@g$\r$\n"
+  ${EndIf}
+
+  #
+  # generated by
+  # find -type f -exec sed -r -n 's/.*(@.*@).*/  FileWrite $R1 "s#\1##g\$\\r\$\\n"/p' {} \; | sort | uniq
+  #
+
+  FileWrite $R1 "s#@DEFAULT_DB_TYPE@#$DbDriver#g$\r$\n"
+  # FileWrite $R1 "s#@DISTVER@##g$\r$\n"
+  # FileWrite $R1 "s#@TAPEDRIVE@##g$\r$\n"
+  FileWrite $R1 "s#@archivedir@#C:/bareos-storage#g$\r$\n"
+  FileWrite $R1 "s#@backenddir@#$BareosInstdir#g$\r$\n"
+  FileWrite $R1 "s#@basename@#$HostName#g$\r$\n"
+  FileWrite $R1 "s#@bindir@#$BareosInstdir#g$\r$\n"
+  FileWrite $R1 "s#@confdir@#$BareosAppdata#g$\r$\n"
+  # FileWrite $R1 "s#@db_name@##g$\r$\n"
+  FileWrite $R1 "s#@db_password@#$DbPassword#g$\r$\n"
+  FileWrite $R1 "s#@db_port@#$DbPort#g$\r$\n"
+  FileWrite $R1 "s#@db_user@#$DbUser#g$\r$\n"
+  FileWrite $R1 "s#@dir_password@#$DirectorPassword#g$\r$\n"
+  FileWrite $R1 "s#@fd_password@#$ClientPassword#g$\r$\n"
+  FileWrite $R1 "s#@hostname@#$HostName#g$\r$\n"
+  # FileWrite $R1 "s#@job_email@##g$\r$\n"
+  FileWrite $R1 "s#@logdir@#$BareosAppdata/logs#g$\r$\n"
+  FileWrite $R1 "s#@mon_dir_password@#$DirectorMonPassword#g$\r$\n"
+  FileWrite $R1 "s#@mon_fd_password@#$ClientMonitorPassword#g$\r$\n"
+  FileWrite $R1 "s#@mon_sd_password@#StorageMonitorPassword#g$\r$\n"
+  FileWrite $R1 "s#@plugindir@#$BareosInstdir/Plugins#g$\r$\n"
+  FileWrite $R1 "s#@sbindir@#$BareosInstdir#g$\r$\n"
+  FileWrite $R1 "s#@scriptdir@#$BareosAppdata/scripts#g$\r$\n"
+  FileWrite $R1 "s#@sd_password@#$StoragePassword#g$\r$\n"
+  # FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
+  FileWrite $R1 "s#@working_dir@#$BareosAppdata/working#g$\r$\n"
+
+  FileClose $R1
+
+  nsExec::ExecToLog '"$INSTDIR\bareos-config-deploy.bat" "$INSTDIR\defaultconfigs" "$APPDATA\${PRODUCT_NAME}"'
+
+  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$APPDATA\${PRODUCT_NAME}\configure.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
+  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$APPDATA\${PRODUCT_NAME}\configure.sed" -i-template "$PLUGINSDIR\bat.conf"'
+
+  #FileOpen $R1 $PLUGINSDIR\postgres.sed w
+  #FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
+  #FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#with password '$DbPassword'#g$\r$\n"
+  #FileClose $R1
+
+SectionEnd
+
 
 Section -StartDaemon
   nsExec::ExecToLog "net start bareos-fd"
@@ -1121,12 +1208,12 @@ Function .onInit
   IfErrors +3 0
   MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource] $\r$\n\
                     [/CLIENTPASSWORD=Password to access the client]  $\r$\n\
-                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
                     [/CLIENTADDRESS=Network Address of the client] $\r$\n\
                     [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
                     [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
                     $\r$\n\
                     [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
+                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
                     $\r$\n\
                     [/STORAGENAME=Name of the storage ressource] $\r$\n\
@@ -1146,7 +1233,6 @@ Function .onInit
                     [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
                     [/? (this help dialog)] $\r$\n\
                     [/WRITELOGS lets the installer create log files in INSTDIR"
-#                   [/DIRECTORNAME=Name of the Director to be accessed from bconsole/BAT]"
   Abort
 
   # Check if this is Windows NT.
@@ -1242,9 +1328,6 @@ done:
   ${GetOptions} $cmdLineParams "/CLIENTPASSWORD=" $ClientPassword
   ClearErrors
 
-#  ${GetOptions} $cmdLineParams "/CLIENTDIRECTORNAME=" $DirectorName
-#  ClearErrors
-
   ${GetOptions} $cmdLineParams "/CLIENTADDRESS=" $ClientAddress
   ClearErrors
 
@@ -1339,15 +1422,8 @@ done:
   File "/oname=$PLUGINSDIR\libstdc++-6.dll" "libstdc++-6.dll"
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 
-  File "/oname=$PLUGINSDIR\bareos-fd.conf" "bareos-fd.conf"
-  File "/oname=$PLUGINSDIR\bareos-sd.conf" "bareos-sd.conf"
-  File "/oname=$PLUGINSDIR\bareos-dir.conf" "bareos-dir.conf"
-  File "/oname=$PLUGINSDIR\bconsole.conf" "bconsole.conf"
-  File "/oname=$PLUGINSDIR\bat.conf" "bat.conf"
-
-  File "/oname=$PLUGINSDIR\tray-monitor.fd.conf" "tray-monitor.fd.conf"
-  File "/oname=$PLUGINSDIR\tray-monitor.fd-sd.conf" "tray-monitor.fd-sd.conf"
-  File "/oname=$PLUGINSDIR\tray-monitor.fd-sd-dir.conf" "tray-monitor.fd-sd-dir.conf"
+  File "/oname=$PLUGINSDIR\bconsole.conf" "config/bconsole.conf"
+  File "/oname=$PLUGINSDIR\bat.conf" "config/bat.conf"
 
   File "/oname=$PLUGINSDIR\postgresql-create.sql" ".\ddl\creates\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" ".\ddl\drops\postgresql.sql"
@@ -1509,7 +1585,7 @@ ${EndIf}
   StrCpy $ClientAddress "$HostName"
 
   strcmp $DirectorName   "" +1 +2
-  StrCpy $DirectorName  "$HostName-dir"
+  StrCpy $DirectorName  "bareos-dir"
 
   strcmp $DirectorAddress  "" +1 +2
   StrCpy $DirectorAddress  "$HostName"
@@ -1518,7 +1594,7 @@ ${EndIf}
   StrCpy $DirectorPassword "$DirectorPassword"
 
   strcmp $StorageDaemonName     "" +1 +2
-  StrCpy $StorageDaemonName    "$HostName-sd"
+  StrCpy $StorageDaemonName    "bareos-sd"
 
   strcmp $StorageName     "" +1 +2
   StrCpy $StorageName    "File"
@@ -1557,8 +1633,6 @@ ${EndIf}
      LogText "Logging started, INSTDIR is $INSTDIR"
 
 FunctionEnd
-
-
 
 
 
@@ -1819,19 +1893,26 @@ Section Uninstall
     "Do you want to keep the existing configuration files?" /SD IDNO IDYES ConfDeleteSkip
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\bareos-fd.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\bareos-sd.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\bareos-dir.d"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\tray-monitor.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\bconsole.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\bat.d"
 
 ConfDeleteSkip:
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
+  # delete config files *.conf.old and *.conf.new, ...
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.*"
 
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
@@ -1846,24 +1927,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\bextract.exe"
   Delete "$INSTDIR\bscan.exe"
   Delete "$INSTDIR\bconsole.exe"
-  Delete "$INSTDIR\Plugins\bpipe-fd.dll"
-  Delete "$INSTDIR\Plugins\mssqlvdi-fd.dll"
-  Delete "$INSTDIR\Plugins\autoxflate-sd.dll"
-
-  Delete "$INSTDIR\Plugins\python-dir.dll"
-  Delete "$INSTDIR\Plugins\BareosDir*.py"
-  Delete "$INSTDIR\Plugins\bareos-dir*.py"
-  Delete "$INSTDIR\Plugins\bareos_dir*.py"
-
-  Delete "$INSTDIR\Plugins\python-sd.dll"
-  Delete "$INSTDIR\Plugins\BareosSd*.py"
-  Delete "$INSTDIR\Plugins\bareos-sd*.py"
-  Delete "$INSTDIR\Plugins\bareos_sd*.py"
-
-  Delete "$INSTDIR\Plugins\python-fd.dll"
-  Delete "$INSTDIR\Plugins\BareosFd*.py"
-  Delete "$INSTDIR\Plugins\bareos-fd*.py"
-  Delete "$INSTDIR\Plugins\bareos_fd*.py"
+  Delete "$INSTDIR\bareos-config-deploy.bat"
 
   Delete "$INSTDIR\libbareos.dll"
   Delete "$INSTDIR\libbareossd.dll"
@@ -1909,17 +1973,22 @@ ConfDeleteSkip:
   Delete "$INSTDIR\ssleay32.dll"
   Delete "$INSTDIR\libeay32.dll"
 
-# batch scripts and sql files
+  RMDir /r "$INSTDIR\Plugins"
+  RMDir /r "$INSTDIR\defaultconfigs"
+
+  Delete "$APPDATA\${PRODUCT_NAME}\configure.sed"
+  Delete "$APPDATA\${PRODUCT_NAME}\fillup.sed"
+
+  # batch scripts and sql files
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
-# log
-  Delete "$APPDATA\${PRODUCT_NAME}\logs\*.log"
-
-  RMDir "$APPDATA\${PRODUCT_NAME}\logs"
-  RMDir "$APPDATA\${PRODUCT_NAME}\working"
   RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
-  RMDir "$APPDATA\${PRODUCT_NAME}"
 
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\logs"
+  RMDir /r "$APPDATA\${PRODUCT_NAME}\working"
+
+  # removed only if empty, to keep configs
+  RMDir "$APPDATA\${PRODUCT_NAME}"
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"

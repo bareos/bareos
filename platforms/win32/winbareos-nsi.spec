@@ -6,30 +6,43 @@
 %define __os_install_post %{_mingw64_debug_install_post} \
                           %{_mingw64_install_post}
 
+%define addonsdir /bareos-addons/
+
+# flavors:
+#   If name contains debug, enable debug during build.
+#   If name contains prevista, build for windows < vista.
+%define flavors postvista postvista-debug
+
+%define SIGNCERT ia.p12
+%define SIGNPWFILE signpassword
 
 
 #!BuildIgnore: post-build-checks
 Name:           winbareos-nsi
 Version:        16.2.3
 Release:        0
-Summary:        bareos
+Summary:        Bareos Windows NSI package
 License:        LGPLv2+
 Group:          Development/Libraries
-URL:            http://bareos.org
+URL:            http://www.bareos.org
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-
 BuildArch:      noarch
 
-%define addonsdir /bareos-addons/
 BuildRequires:  bareos-addons
 
-%define SIGNCERT ia.p12
-%define SIGNPWFILE signpassword
+BuildRequires:  bc
+BuildRequires:  less
+BuildRequires:  procps
+BuildRequires:  sed
+BuildRequires:  vim
 
+# Bareos sources
+BuildRequires:  mingw-debugsrc-devel = %{version}
+
+BuildRequires:  mingw64-cross-nsis
 
 BuildRequires:  mingw32-filesystem
 BuildRequires:  mingw64-filesystem
-BuildRequires:  mingw64-cross-nsis
 
 BuildRequires:  mingw32-openssl
 BuildRequires:  mingw64-openssl
@@ -39,20 +52,6 @@ BuildRequires:  mingw64-libopenssl
 
 BuildRequires:  mingw32-sed
 BuildRequires:  mingw64-sed
-
-
-BuildRequires:  sed
-BuildRequires:  vim, procps, bc
-
-
-BuildRequires:  mingw32-winbareos-postvista = %{version}
-BuildRequires:  mingw64-winbareos-postvista = %{version}
-
-BuildRequires:  mingw32-winbareos-postvista-debug = %{version}
-BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
-
-BuildRequires:  mingw-debugsrc-devel = %{version}
-
 
 BuildRequires:  mingw32-libgcc
 BuildRequires:  mingw64-libgcc
@@ -69,6 +68,9 @@ BuildRequires:  mingw64-pthreads
 BuildRequires:  mingw32-libqt4
 BuildRequires:  mingw64-libqt4
 
+#BuildRequires:  mingw32-qt4-debug
+#BuildRequires:  mingw64-qt4-debug
+
 BuildRequires:  mingw32-lzo
 BuildRequires:  mingw64-lzo
 
@@ -78,14 +80,20 @@ BuildRequires:  mingw64-libfastlz
 BuildRequires:  mingw32-sqlite
 BuildRequires:  mingw64-sqlite
 
-BuildRequires:  osslsigncode
-BuildRequires:  obs-name-resolution-settings
-
 BuildRequires:  mingw32-cmocka
 BuildRequires:  mingw64-cmocka
 
 BuildRequires:  mingw32-libjansson
 BuildRequires:  mingw64-libjansson
+
+BuildRequires:  mingw32-winbareos-postvista = %{version}
+BuildRequires:  mingw64-winbareos-postvista = %{version}
+
+BuildRequires:  mingw32-winbareos-postvista-debug = %{version}
+BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
+
+BuildRequires:  osslsigncode
+BuildRequires:  obs-name-resolution-settings
 
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
@@ -97,12 +105,12 @@ Source9:         databasedialog.ini
 %define NSISDLLS KillProcWMI.dll AccessControl.dll LogEx.dll
 
 %description
-bareos
+Bareos Windows NSI installer packages for the different variants.
+
 
 %package devel
 Summary:        bareos
 Group:          Development/Libraries
-
 
 %description devel
 bareos
@@ -118,8 +126,10 @@ done
 
 
 %build
-for flavor in postvista postvista-debug;
-do
+for flavor in %{flavors}; do
+
+   WIN_DEBUG=$(echo $flavor | grep debug >/dev/null && echo yes || echo no)
+
    mkdir -p $RPM_BUILD_ROOT/$flavor/nsisplugins
    for dll in %NSISDLLS; do
       cp $dll $RPM_BUILD_ROOT/$flavor/nsisplugins
@@ -132,104 +142,77 @@ do
       cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       # copy the sources over if we create debug package
-      WIN_DEBUG=$(echo $flavor | grep debug >/dev/null && echo yes || echo no)
       cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
-
    done
 
-   # copy over python plugin .py files
-   for file in \
-      /bareos-%version/src/plugins/dird/*.py \
-      /bareos-%version/src/plugins/stored/*.py \
-      /bareos-%version/src/plugins/filed/*.py
-   do
-      cp $file $RPM_BUILD_ROOT/$flavor/release32
-      cp $file $RPM_BUILD_ROOT/$flavor/release64
-   done
+   DESCRIPTION="Bareos - Backup Archiving Recovery Open Sourced"
 
-   for file in \
-      bareos-fd.exe \
-      bareos-sd.exe \
-      bareos-dir.exe \
-      bareos-dbcheck.exe \
-      bconsole.exe \
-      bsmtp.exe \
-      bregex.exe \
-      bwild.exe \
-      btape.exe \
-      bls.exe \
-      bextract.exe \
-      bscan.exe \
-      bareos-tray-monitor.exe \
-      bat.exe \
-      bpipe-fd.dll \
-      mssqlvdi-fd.dll \
-      python-fd.dll \
-      autoxflate-sd.dll \
-      python-sd.dll \
-      python-dir.dll \
-      libbareos.dll \
-      libbareosfind.dll \
-      libbareoslmdb.dll \
-      libbareoscats-postgresql.dll libbareoscats-sqlite3.dll libbareoscats.dll\
-      libbareossd.dll \
-      test_lib.exe \
-      test_findlib.exe ;
-   do
+   for file in %{_mingw32_bindir}/$flavor/*.exe %{_mingw32_bindir}/$flavor/*.dll; do
+      basename=`basename $file`
+      dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
       osslsigncode  sign \
                     -pkcs12 %SIGNCERT \
                     -readpass %SIGNPWFILE \
                     -n "${DESCRIPTION}" \
                     -i http://www.bareos.com/ \
                     -t http://timestamp.comodoca.com/authenticode \
-                    -in  %{_mingw32_bindir}/$flavor/$file \
-                    -out $RPM_BUILD_ROOT/$flavor/release32/$file
+                    -in  $file \
+                    -out $dest
+      osslsigncode verify -in $dest
+   done
 
+   for file in %{_mingw64_bindir}/$flavor/*.exe %{_mingw64_bindir}/$flavor/*.dll; do
+      basename=`basename $file`
+      dest=$RPM_BUILD_ROOT/$flavor/release64/$basename
       osslsigncode  sign \
                     -pkcs12 %SIGNCERT \
                     -readpass %SIGNPWFILE \
                     -n "${DESCRIPTION}" \
                     -i http://www.bareos.com/ \
                     -t http://timestamp.comodoca.com/authenticode \
-                    -in  %{_mingw64_bindir}/$flavor/$file \
-                    -out $RPM_BUILD_ROOT/$flavor/release64/$file
-
-      osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release32/$file
-      osslsigncode verify -in $RPM_BUILD_ROOT/$flavor/release64/$file
+                    -in  $file \
+                    -out $dest
+      osslsigncode verify -in $dest
    done
 
+   cp -av %{_mingw32_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release32/
+   cp -av %{_mingw64_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release64/
+
+# copy python plugins into Plugin directory
+   cp -av %{_mingw32_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release32/
+   cp -av %{_mingw64_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release64/
 
    for file in \
       libcrypto-*.dll \
+      libcmocka.dll \
+      libfastlz.dll \
       libgcc_s_*-1.dll \
       libhistory6.dll \
+      libjansson-4.dll \
+      liblzo2-2.dll \
+      libpng*.dll \
       libreadline6.dll \
       libssl-*.dll \
       libstdc++-6.dll \
+      libsqlite3-0.dll \
       libtermcap-0.dll \
+      openssl.exe \
       pthreadGCE2.dll \
-      zlib1.dll \
       QtCore4.dll \
       QtGui4.dll \
-      liblzo2-2.dll \
-      libfastlz.dll \
-      libjansson-4.dll \
-      libpng*.dll \
-      openssl.exe \
-      libcmocka.dll \
+      sed.exe \
       sqlite3.exe \
-      libsqlite3-0.dll \
-      sed.exe;
-   do
+      zlib1.dll \
+   ; do
       cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
       cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
    done
 
    for BITS in 32 64; do
 
-      for cfg in /etc/$flavor/mingw${BITS}-winbareos/*.conf; do
-         cp $cfg $RPM_BUILD_ROOT/$flavor/release${BITS}
-      done
+      cp -r /etc/$flavor/mingw${BITS}-winbareos/config/ $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      cp /etc/$flavor/mingw${BITS}-winbareos/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
 
       cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 \
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
@@ -241,8 +224,7 @@ done
 
 %install
 
-for flavor in postvista postvista-debug;
-do
+for flavor in %{flavors}; do
    mkdir -p $RPM_BUILD_ROOT%{_mingw32_bindir}
    mkdir -p $RPM_BUILD_ROOT%{_mingw64_bindir}
 
@@ -275,7 +257,7 @@ do
 done
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+#rm -rf $RPM_BUILD_ROOT
 
 
 %files

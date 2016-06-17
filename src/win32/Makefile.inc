@@ -1,3 +1,4 @@
+
 #
 # If no version is forced from the outside set a default.
 #
@@ -13,6 +14,11 @@ ifeq ($(WIN_DEBUG),)
 WIN_DEBUG = no
 endif
 
+# currently not working, missing qt debug packages
+#ifeq ($(WIN_DEBUG),yes)
+#QMAKE_ARGS += "CONFIG+=debug"
+#endif
+
 #
 # If no vistacompat is forced from the outside set a default.
 #
@@ -22,10 +28,10 @@ endif
 
 ifeq ($(WIN_VISTACOMPAT),yes)
 WINDOWS_VERSION = 0x600
-QMAKE_ARGS = "DEFINES+=_WIN32_WINNT=$(WINDOWS_VERSION)"
+QMAKE_ARGS += "DEFINES+=_WIN32_WINNT=$(WINDOWS_VERSION)"
 else
 WINDOWS_VERSION = 0x500
-QMAKE_ARGS = "DEFINES+=_WIN32_WINNT=$(WINDOWS_VERSION)"
+QMAKE_ARGS += "DEFINES+=_WIN32_WINNT=$(WINDOWS_VERSION)"
 endif
 
 MINGW_32_BASE = /usr/i686-w64-mingw32
