@@ -1473,7 +1473,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
          db_list_copies_records(ua->jcr, ua->db, "", rx->JobIds, ua->send, HORZ_LIST);
 
          if (find_arg(ua, NT_("yes")) > 0) {
-            ua->pint32_val == 1;
+            ua->pint32_val = 1;
          } else {
             get_yesno(ua, _("\nDo you want to restore from these copies? (yes|no): "));
          }
