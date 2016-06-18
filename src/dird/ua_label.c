@@ -636,7 +636,7 @@ checkName:
       }
    }
 
-   ok = send_label_request(ua, store.store, &mr, &omr, &pr, relabel, media_record_exists, drive, mr.Slot);
+   ok = send_label_request(ua, store.store, &mr, &omr, &pr, media_record_exists, relabel, drive, mr.Slot);
    if (ok) {
       sd = ua->jcr->store_bsock;
       if (relabel) {
