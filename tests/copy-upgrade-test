@@ -101,7 +101,7 @@ cat<<END_OF_DATA > ${cwd}/tmp/bconcmds.resto
 @#
 @$out ${cwd}/tmp/log2.out
 list volumes
-restore copies where=${cwd}/tmp/bareos-restores select
+restore where=${cwd}/tmp/bareos-restores select
 unmark *
 mark *
 done
