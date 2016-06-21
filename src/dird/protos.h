@@ -332,6 +332,7 @@ SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable);
 bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr);
 bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr);
 bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk = "pool");
+bool select_storage_dbr(UAContext *ua, STORAGE_DBR *pr, const char *argk = "storage");
 bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr);
 
 void start_prompt(UAContext *ua, const char *msg);
@@ -344,6 +345,7 @@ int get_storage_drive(UAContext *ua, STORERES *store);
 int get_storage_slot(UAContext *ua, STORERES *store);
 int get_media_type(UAContext *ua, char *MediaType, int max_media);
 bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk = "pool");
+bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk = "storage");
 bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr);
 POOLRES *get_pool_resource(UAContext *ua);
 JOBRES *get_restore_job(UAContext *ua);
