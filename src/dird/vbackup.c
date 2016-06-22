@@ -175,9 +175,6 @@ bool do_native_vbackup(JCR *jcr)
    Jmsg(jcr, M_INFO, 0, _("Start Virtual Backup JobId %s, Job=%s\n"),
         edit_uint64(jcr->JobId, ed1), jcr->Job);
 
-   /*
-    * TODO: What do we do with this message?
-    */
    if (!jcr->accurate) {
       Jmsg(jcr, M_WARNING, 0,
            _("This Job is not an Accurate backup so is not equivalent to a Full backup.\n"));
@@ -189,63 +186,15 @@ bool do_native_vbackup(JCR *jcr)
    if (jcr->vf_jobids) {
       Dmsg1(10, "jobids=%s\n", jcr->vf_jobids);
       jobids = bstrdup(jcr->vf_jobids);
+
    } else {
       db_list_ctx jobids_ctx;
-
-      /*
-       * If we are doing always incremental, we need to limit the search to
-       * only include incrementals that are older than (now - AlwaysIncrementalInterval)
-       */
-      if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
-         char sdt[50];
-         time_t starttime = time(NULL) - jcr->res.job->AlwaysIncrementalInterval;
-
-         bstrftimes(sdt, sizeof(sdt), starttime);
-         jcr->jr.StartTime = starttime;
-         Jmsg(jcr, M_INFO, 0, _("Always incremental consolidation: consolidating jobs older than %s.\n"), sdt);
-      }
-
       db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
       Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
       if (jobids_ctx.count == 0) {
-         if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
-            Jmsg(jcr, M_WARNING, 0, _("Always incremental consolidation: No jobs to consolidate found.\n"));
-            return true;
-         } else {
-            Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
-            return false;
-         }
-      } else if (jobids_ctx.count == 1) {
-         /*
-          * Consolidation of one job does not make sense, we leave it like it is
-          */
-         Jmsg(jcr, M_WARNING, 0, _("Exactly one job selected for consolidation - skipping.\n"));
-         return true;
-      }
-
-      if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalNumber) {
-         int32_t incrementals_total;
-         int32_t incrementals_to_consolidate;
-
-         /*
-          * Calculate limit for query. we specify how many incrementals should be left.
-          * the limit is number of consolidate candidates - number required - 1
-          */
-         incrementals_total = jobids_ctx.count - 1;
-         incrementals_to_consolidate = incrementals_total - jcr->res.job->AlwaysIncrementalNumber;
-
-         Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total, jcr->res.job->AlwaysIncrementalNumber);
-         if ((incrementals_to_consolidate + 1 ) > 1) {
-            jcr->jr.limit = incrementals_to_consolidate + 1;
-            Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, incrementals_to_consolidate, jcr->jr.limit);
-            jobids_ctx.reset();
-            db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
-            Dmsg1(10, "consolidate ids after limit: %s.\n", jobids_ctx.list);
-         } else {
-            Jmsg(jcr, M_WARNING, 0, _("not enough incrementals, not consolidating\n"));
-            return true;
-         }
+         Jmsg(jcr, M_FATAL, 0, _("No previous Jobs found.\n"));
+         return false;
       }
 
       jobids = bstrdup(jobids_ctx.list);
@@ -394,7 +343,7 @@ bool do_native_vbackup(JCR *jcr)
    /*
     * Remove the successfully consolidated jobids from the database
     */
-    if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalInterval) {
+    if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalJobRetention) {
       UAContext *ua;
       ua = new_ua_context(jcr);
       purge_jobs_from_catalog(ua, jobids);

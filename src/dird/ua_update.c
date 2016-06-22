@@ -952,24 +952,27 @@ static bool update_pool(UAContext *ua)
 }
 
 /*
- * Update a Job record -- allows you to change the
- *  date fields in a Job record. This helps when
- *  providing migration from other vendors.
+ * Update a Job record -- allows to change the fields in a Job record.
  */
 static bool update_job(UAContext *ua)
 {
    int i;
-   char ed1[50], ed2[50];
+   char ed1[50], ed2[50], ed3[50];
    POOL_MEM cmd(PM_MESSAGE);
    JOB_DBR jr;
    CLIENT_DBR cr;
    utime_t StartTime;
    char *client_name = NULL;
+   char *job_name = NULL;
    char *start_time = NULL;
+   DBId_t fileset_id = 0;
    const char *kw[] = {
       NT_("starttime"),                   /* 0 */
       NT_("client"),                      /* 1 */
-      NULL };
+      NT_("filesetid"),                   /* 2 */
+      NT_("jobname"),                     /* 3 */
+      NULL
+   };
 
    Dmsg1(200, "cmd=%s\n", ua->cmd);
    i = find_arg_with_value(ua, NT_("jobid"));
@@ -989,17 +992,23 @@ static bool update_job(UAContext *ua)
       int j;
       if ((j=find_arg_with_value(ua, kw[i])) >= 0) {
          switch (i) {
-         case 0:                         /* start time */
+         case 0:                         /* Start time */
             start_time = ua->argv[j];
             break;
          case 1:                         /* Client name */
             client_name = ua->argv[j];
             break;
+         case 2:                         /* Fileset id */
+            fileset_id = str_to_uint64(ua->argv[j]);
+            break;
+         case 3:                         /* Job name */
+            job_name = ua->argv[j];
+            break;
          }
       }
    }
-   if (!client_name && !start_time) {
-      ua->error_msg(_("Neither Client nor StartTime specified.\n"));
+   if (!client_name && !start_time && !fileset_id && !job_name) {
+      ua->error_msg(_("Neither Client, StartTime, Filesetid nor Name specified.\n"));
       return false;
    }
    if (client_name) {
@@ -1007,6 +1016,12 @@ static bool update_job(UAContext *ua)
          return false;
       }
       jr.ClientId = cr.ClientId;
+   }
+   if (fileset_id) {
+      jr.FileSetId = fileset_id;
+   }
+   if (job_name) {
+      bstrncpy(jr.Name, job_name, MAX_NAME_LENGTH);
    }
    if (start_time) {
       utime_t delta_start;
@@ -1028,14 +1043,16 @@ static bool update_job(UAContext *ua)
       bstrutime(jr.cSchedTime, sizeof(jr.cSchedTime), jr.SchedTime);
       bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
    }
-   Mmsg(cmd, "UPDATE Job SET ClientId=%s,StartTime='%s',SchedTime='%s',"
-             "EndTime='%s',JobTDate=%s WHERE JobId=%s",
+   Mmsg(cmd, "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
+             "EndTime='%s',JobTDate=%s, FileSetId='%s' WHERE JobId=%s",
+             jr.Name,
              edit_int64(jr.ClientId, ed1),
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
              edit_uint64(jr.JobTDate, ed1),
-             edit_int64(jr.JobId, ed2));
+             edit_uint64(jr.FileSetId, ed2),
+             edit_int64(jr.JobId, ed3));
    if (!db_sql_query(ua->db, cmd.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;

@@ -385,7 +385,7 @@ static struct cmdstruct commands[] = {
    { NT_("umount"), unmount_cmd, _("Umount - for old-time Unix guys, see unmount"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
-   { NT_("update"), update_cmd, _("Update volume, pool or stats"),
+   { NT_("update"), update_cmd, _("Update volume, pool, job or stats"),
      NT_("stats\n"
          "\tpool=<pool-name>\n"
          "\tslots storage=<storage-name> scan\n"
@@ -393,7 +393,8 @@ static struct cmdstruct commands[] = {
          "\tpool=<pool-name> recycle=<yes/no> slot=<number>\n"
          "\tinchanger=<yes/no>\n"
          "\tmaxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>\n"
-         "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>"), true, true },
+         "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>\n"
+         "\tjobid=<jobid> jobname=<name> starttime=<time-def> client=<client-name> filesetid=<fileset-id>"), true, true },
    { NT_("use"), use_cmd, _("Use specific catalog"),
      NT_("catalog=<catalog>"), false, true },
    { NT_("var"), var_cmd, _("Does variable expansion"),
