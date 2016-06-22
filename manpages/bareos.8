@@ -16,8 +16,6 @@ Bareos \- Backup Archiving REcovery Open Sourced
 .br
 .B bconsole \- Console to control Bareos
 .br
-.B wx-console \- GUI Console
-.br
 .SH DESCRIPTION
 .LP
 Bareos is a set of computer programs that permits you (or the
@@ -35,19 +33,12 @@ hundreds of computers located over a large network.
 Bareos Director service consists of the program that supervises
 all the backup, restore, verify and archive operations.  The
 system administrator uses the Bareos Director to schedule backups
-and to recover files.  For more details see the Director Services
-Daemon Design Document in the Bareos Developer's Guild.  The
-Director runs as a daemon or a service (i.e.  in the background).
+and to recover files. The Director runs as a daemon or a service
+(i.e. in the background).
 
 .LP
 Bareos Console services is the program that allows the
-administrator or user to communicate with the Bareos Director
-(see above).  Currently, the Bareos Console is available in two
-versions.  The first and simplest is to run the Console program
-in a shell window (i.e.  TTY interface).  Most system
-administrators will find this completely adequate.  The second
-version is a Qt 4.2 GUI interface named bat that has
-more features than the bconsole program.
+administrator or user to communicate with the Bareos Director.
 
 .LP
 Bareos File services (or Client program) is the software program
@@ -56,25 +47,19 @@ to the operating system on which it runs and is responsible for
 providing the file attributes and data when requested by the
 Director.  The File services are also responsible for the file
 system dependent part of restoring the file attributes and data
-during a recovery operation.  For more details see the File
-Services Daemon Design Document in the Bareos Developer's Guide.
+during a recovery operation.
 This program runs as a daemon on the machine to be backed up, and
 in some of the documentation, the File daemon is referred to as
-the Client (for example in Bareos's configuration file).  In
-addition to Unix/Linux File daemons, there is a Windows File
-daemon (normally distributed in binary format).  The Windows File
-daemon runs on all currently known Windows versions (2K, 2003,  XP,
-and Vista).
+the Client (for example in Bareos's configuration file).
 
 .LP
 Bareos Storage services consist of the software programs that
 perform the storage and recovery of the file attributes and data
 to the physical backup media or volumes.  In other words, the
 Storage daemon is responsible for reading and writing your tapes
-(or other storage media, e.g.  files).  For more details see the
-Storage Services Daemon Design Document in the Bareos Developer's
-Guide.  The Storage services runs as a daemon on the machine that
-has the backup device (usually a tape drive).
+(or other storage media, e.g.  files).
+The Storage services runs as a daemon on the machine that
+has the backup device.
 
 .LP
 Catalog services are comprised of the software programs
@@ -85,16 +70,7 @@ file.  The Catalog services sets Bareos apart from simple backup
 programs like tar and bru, because the catalog maintains a record
 of all Volumes used, all Jobs run, and all Files saved,
 permitting efficient restoration and Volume management.  Bareos
-currently supports three different databases, MySQL, PostgreSQL,
-and SQLite3, one of which must be chosen when building Bareos.
-
-.SH OPTIONS
-See the HTML/PDF documentation at:
-.br
- <http://www.bareos.org>
-.br
-for details of the command line options.
-
+supports multiple databases (e.g. MySQL, PostgreSQL, ...).
 
 .SH CONFIGURATION
 Each daemon has its own configuration file which must be
@@ -102,18 +78,14 @@ tailored for each particular installation.  Please see the HTML/PDF
 documentation for the details.
 
 .SH SEE ALSO
-The HTML manual installed on your system (typically found in
-.br
-/usr/share/doc/bareos-<version>) or the online manual at:
-.br
 <http://www.bareos.org>
+.br
+<http://doc.bareos.org>
 
 .SH BUGS
 See <http://bugs.bareos.org>
 
 .SH AUTHOR
-Kern Sibbald
-.SS Current maintainer
 Kern Sibbald
 .SS Contributors
 An enormous list of past and former persons who have devoted

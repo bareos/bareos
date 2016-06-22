@@ -72,8 +72,7 @@ ended by sending the EOF character (Ctrl-D on many systems) on the
 start of a new line, much like many 'mail' commands.
 
 The actual, automated behavior of \fBbsmtp\fR will depend on the
-mail-related configuration of the Director in the \fIMessages\fR resource
-of \fIbareos-dir.conf\fR.
+mail-related configuration of the Director in the \fIMessages\fR resources.
 
 Interactive use of \fBbsmtp\fR is pertinent to manually test and ensure these
 configuration bits are valid. This is highly recommended.
@@ -84,18 +83,16 @@ file.
 
 Messages {
   Name = Standard
-  mailcommand = "/home/bareos/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bareos\\) \\<%r\\>\\"
+  mailcommand = "/usr/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bareos\\) \\<%r\\>\\"
                            \-s \\"Bareos: %t %e of %c %l\\" %r"
-  operatorcommand = "/home/bareos/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bareos\\) \\<%r\\>\\"
+  operatorcommand = "/usr/bin/bsmtp \-h mail.domain.com \-f \\"\\(Bareos\\) \\<%r\\>\\"
                                  \-s \\"Bareos: Intervention needed for %j\\" %r"
   mail = sysadmin@site.domain.com = all, !skipped
   operator = sysop@site.domain.com = mount
   console = all, !skipped, !saved
  }
 
-\fIhome/bareos/bin\fR is replaced with the path to the Bareos
-binary directory, and mail.domain.com is replaced with the fully
-qualified name of an SMTP server, which usually listen on port 25.
+mail.domain.com is replaced with the fully qualified name of an SMTP server, which usually listen on port 25.
 
 .SH ENVIRONMENT
 If the \fB-h\fR option is not specified, \fBbsmtp\fR will use environment variable \fBSMTPSERVER\fR, or 'localhost' if not set.

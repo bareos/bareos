@@ -22,8 +22,8 @@ network backup system: it is responsible for scheduling and
 coordinating backups across the network.
 .SH OPTIONS
 .TP
-.BI \-c\  file
-Specify the configuration file to use.
+.BI \-c\  path
+Specify the configuration file or directory to use.
 .TP
 .BI \-d\  nn
 Set debug level to \fInn\fP.
@@ -47,7 +47,7 @@ Run <job>.
 No signals (for debugging).
 .TP
 .B \-t
-Test the configuration file and report errors.
+Test the configuration and report errors.
 .TP
 .BI \-u\  user
 Set the username/uid to run as.
@@ -60,20 +60,14 @@ Show version and usage of program.
 .SH TCP-WRAPPERS CONFIGURATION
 Tcpwrappers looks for the service name of the bareos daemons in
 .I hosts.allow
-, and the service names of these daemons is configured to be different from the
-binary.
-The service names are configured to be
-.B %hostname%-%component%
-rather than
-.B bareos-dir
-(As defined in the bareos-dir.conf.in file)
-
+The service names are not the names of the binaries, but the configured names of the components, often %hostname%-%component%.
 
 So the hosts.allow entry has to match
 .B %hostname%-%component%
 (servername-dir for example) instead of bareos-%component%
 
 .B WARNING:
+
 This means that if the hosts.allow file has the entry:
 
 .B bareos-dir: ALL

@@ -6,7 +6,7 @@
 .\" Please adjust this date whenever revising the manpage.
 .\"
 .SH NAME
- bscan \- Bareos's 'Scan tape'
+ bscan \- Bareos's 'Scan volumes'
 .SH SYNOPSIS
 .B bscan
 .RI [ options ]
@@ -44,8 +44,8 @@ Specify the database driver name (default NULL) <postgresql|mysql|sqlite3>.
 .BI \-b\  bootstrap
 Specify a bootstrap file.
 .TP
-.BI \-c\  configfile
-Specify storage daemon configuration file.
+.BI \-c\  path
+Specify the Storage configuration file or directory to use.
 .TP
 .BI \-d\  nn
 Set debug level to \fInn\fP.
