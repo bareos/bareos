@@ -538,7 +538,18 @@ static int glob_strcmp( const char *pattern, const char *text, int flags )
       return S_ISDIR( entinfo.st_mode );
     return 0;
   }
+
+GLOB_INLINE
+int GLOB_ISDIR( const char *path, const struct dirent *ent )
+{
+    POOL_MEM fullpath(path);
+
+    path_append(fullpath, ent->d_name);
+    return path_is_directory(fullpath);
+}
 #endif
+
+
 
 #if _DIRENT_HAVE_D_NAMLEN
 /*
@@ -839,7 +850,7 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
 	  /* ...into which we read each entry from the candidate
 	   * directory, in turn, then...
 	   */
-	  if( (((flags & GLOB_DIRONLY) == 0) || GLOB_ISDIR( entry ))
+	  if( (((flags & GLOB_DIRONLY) == 0) || GLOB_ISDIR( *dirp, entry ))
 	    /*
 	     * ...provided we don't require it to be a subdirectory,
 	     * or it actually is one...
