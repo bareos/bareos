@@ -36,7 +36,6 @@ class ClientController extends AbstractActionController
 
    public function indexAction()
    {
-
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
@@ -44,12 +43,37 @@ class ClientController extends AbstractActionController
       }
 
       $clients = $this->getClientModel()->getClients();
+      $action = $this->params()->fromQuery('action');
 
-      return new ViewModel(
-         array(
-            'clients' => $clients,
-         )
-      );
+      if(empty($action)) {
+         return new ViewModel(
+            array(
+               'clients' => $clients
+            )
+         );
+      }
+      elseif($action == "enable") {
+         $clientname = $this->params()->fromQuery('client');
+         $result = $this->getClientModel()->enableClient($clientname);
+
+         return new ViewModel(
+            array(
+               'clients' => $clients,
+               'result' => $result
+            )
+         );
+      }
+      elseif($action == "disable") {
+         $clientname = $this->params()->fromQuery('client');
+         $result = $this->getClientModel()->disableClient($clientname);
+
+         return new ViewModel(
+            array(
+               'clients' => $clients,
+               'result' => $result
+            )
+         );
+      }
    }
 
    public function detailsAction()
@@ -111,5 +135,4 @@ class ClientController extends AbstractActionController
       }
       return $this->clientModel;
    }
-
 }

@@ -60,12 +60,39 @@ $this->headTitle($title);
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
 ?>
 
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Client status</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
 <script>
 
 $(document).ready(function() {
 
    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+   if(result.length > 0) {
+      $("#modal-001").modal();
+   }
 
    var table= $('#clients').DataTable( {
       "ajax": {
@@ -109,7 +136,7 @@ $(document).ready(function() {
          {
             "targets": 2,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
+               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+data+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+data+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
             }
          }
       ]
