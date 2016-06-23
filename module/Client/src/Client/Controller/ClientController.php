@@ -92,6 +92,24 @@ class ClientController extends AbstractActionController
 
    }
 
+   public function statusAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $clientname = $this->params()->fromQuery('client');
+      $result = $this->getClientModel()->statusClient($clientname);
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
+   }
+
    public function getDataAction()
    {
 

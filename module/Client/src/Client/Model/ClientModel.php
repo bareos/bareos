@@ -94,6 +94,19 @@ class ClientModel implements ServiceLocatorAwareInterface
       }
    }
 
+   public function statusClient($name=null)
+   {
+      if(isset($name)) {
+         $cmd = 'status client="'.$name;
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
+
    public function enableClient($name=null)
    {
       if(isset($name)) {
