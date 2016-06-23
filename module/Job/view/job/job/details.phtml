@@ -29,6 +29,13 @@ $this->headTitle($title);
 
 ?>
 
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
+</ul>
+
+<br />
+
 <!-- Job -->
 <div class="row">
 
