@@ -135,7 +135,6 @@ $(document).ready(function() {
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
    var volumes = $('#volumes').DataTable( {
-      "dom": "l<'row'<'col-sm-9'B><'col-sm-3'f>>rtip",
       "ajax": {
          "url": "<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
