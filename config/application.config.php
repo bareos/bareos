@@ -35,6 +35,7 @@ $modules = array(
    'Media',
    'Storage',
    'Client',
+   'Schedule',
    'Job',
    'Restore',
    'Auth',

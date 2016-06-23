@@ -64,22 +64,6 @@ class DirectorModel implements ServiceLocatorAwareInterface
       return $messages['result']['log'];
    }
 
-   public function getDirectorSchedules()
-   {
-      $cmd = 'show schedule';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function getDirectorSchedulerStatus()
-   {
-      $cmd = 'status scheduler';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
    public function sendCommand($cmd=null)
    {
       $this->director = $this->getServiceLocator()->get('director');

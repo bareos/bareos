@@ -7,7 +7,6 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -24,15 +23,16 @@
  *
  */
 
-namespace Director\Controller;
+namespace Schedule\Controller;
 
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
 
-class DirectorController extends AbstractActionController
+class ScheduleController extends AbstractActionController
 {
-   protected $directorModel;
+
+   protected $scheduleModel;
 
    public function indexAction()
    {
@@ -42,12 +42,39 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
 
-      return new ViewModel(array(
-         'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
-      ));
+      $schedules = $this->getScheduleModel()->getSchedules();
+      $action = $this->params()->fromQuery('action');
+
+      if(empty($action)) {
+         return new ViewModel(
+            array(
+               'schedules' => $schedules
+            )
+         );
+      }
+      elseif($action == "enable") {
+         $schedulename = $this->params()->fromQuery('schedule');
+         $result = $this->getScheduleModel()->enableSchedule($schedulename);
+         return new ViewModel(
+            array(
+               'schedules' => $schedules,
+               'result' => $result
+            )
+         );
+      }
+      elseif($action == "disable") {
+         $schedulename = $this->params()->fromQuery('schedule');
+         $result = $this->getScheduleModel()->disableSchedule($schedulename);
+         return new ViewModel(
+            array(
+               'schedules' => $schedules,
+               'result' => $result
+            )
+         );
+      }
    }
 
-   public function messagesAction()
+   public function overviewAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
 
@@ -55,10 +82,16 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
 
-      return new ViewModel();
+      $result = $this->getScheduleModel()->showSchedules();
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
    }
 
-   public function consoleAction()
+   public function statusAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
 
@@ -66,8 +99,31 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
       }
 
-      return new ViewModel(array(
-      ));
+      $result = $this->getScheduleModel()->getFullScheduleStatus();
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
+   }
+
+   public function detailsAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $schedulename = $this->params()->fromQuery('schedule');
+      $result = $this->getScheduleModel()->getScheduleStatus($schedulename);
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
    }
 
    public function getDataAction()
@@ -79,16 +135,13 @@ class DirectorController extends AbstractActionController
       }
 
       $data = $this->params()->fromQuery('data');
-      $limit = $this->params()->fromQuery('limit');
-      $offset = $this->params()->fromQuery('offset');
-      $reverse = $this->params()->fromQuery('reverse');
-      $command = $this->params()->fromPost('command');
+      $schedule = $this->params()->fromQuery('schedule');
 
-      if($data == "messages") {
-         $result = $this->getDirectorModel()->getDirectorMessages($limit);
+      if($data == "all") {
+         $result = $this->getScheduleModel()->getSchedules();
       }
-      elseif($data == "cli") {
-         $result = $this->getDirectorModel()->sendCommand($command);
+      elseif($data == "details" && isset($schedule)) {
+         $result = $this->getScheduleModel()->getSchedule($schedule);
       }
       else {
          $result = null;
@@ -104,12 +157,12 @@ class DirectorController extends AbstractActionController
       return $response;
    }
 
-   public function getDirectorModel()
+   public function getScheduleModel()
    {
-      if(!$this->directorModel) {
+      if(!$this->scheduleModel) {
          $sm = $this->getServiceLocator();
-         $this->directorModel = $sm->get('Director\Model\DirectorModel');
+         $this->scheduleModel = $sm->get('Schedule\Model\ScheduleModel');
       }
-      return $this->directorModel;
+      return $this->scheduleModel;
    }
 }

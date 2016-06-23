@@ -1,0 +1,142 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Schedules');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('schedule', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+   <li><a href="<?php echo $this->url('schedule', array('action'=>'overview')); ?>"><?php echo $this->translate('Overview'); ?></a></li>
+   <li><a href="<?php echo $this->url('schedule', array('action'=>'status')); ?>"><?php echo $this->translate('Scheduler status'); ?></a></li>
+</ul>
+
+<br />
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<div class="row">
+
+<div class="col-md-6">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate('Schedules'); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-hover" id="schedules">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+?>
+
+<script>
+
+$(document).ready(function() {
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+   if(result.length > 0) {
+      $("#modal-001").modal();
+   }
+
+   var table= $('#schedules').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('schedule', array('action' => 'getData'), null) . '?data=all'; ?>",
+         "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+      },
+      "columns": [
+         { "data": "name", "defaultContent": "", "orderable": true },
+         { "data": "name", "defaultContent": "", "orderable": false },
+      ],
+      "paging": true,
+      "ordering": true,
+      "info": true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "order": [[0, 'asc']],
+      "columnDefs": [
+         {
+            "targets": 0,
+            "data": "name",
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/schedule/details?schedule='; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 1,
+            "render": function(data, type, full, meta) {
+               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=enable&schedule='+data+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=disable&schedule='+data+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+            }
+         }
+      ]
+   } );
+
+   $('#schedules tbody').on('mouseover', '#btn-1', function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   })
+
+
+} );
+
+</script>

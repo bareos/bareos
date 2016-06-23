@@ -148,29 +148,17 @@ return array(
             'route' => 'client',
          ),
          array(
+            'label' => _('Schedules'),
+            'route' => 'schedule',
+         ),
+         array(
             'label' => _('Storages'),
             'route' => 'storage',
          ),
-         /*array(
-            'label' => _('Volumes'),
-            'route' => 'media',
-         ),
-         array(
-            'label' => _('Pools'),
-            'route' => 'pool',
-         ),*/
          array(
             'label' => _('Director'),
             'route' => 'director',
          ),
-         /*array(
-            'label' => _('Filesets'),
-            'route' => 'fileset',
-         ),
-         array(
-            'label' => _('Storages'),
-            'route' => 'storage',
-         )*/
       ),
    ),
 );
