@@ -92,10 +92,10 @@ class JobController extends AbstractActionController
       $result = $this->getJobModel()->rerunJob($jobid);
 
       return new ViewModel(
-            array(
-               'bconsoleOutput' => $result,
-               'jobid' => $jobid,
-            )
+         array(
+            'bconsoleOutput' => $result,
+            'jobid' => $jobid,
+         )
       );
    }
 
@@ -111,39 +111,55 @@ class JobController extends AbstractActionController
       $result = $this->getJobModel()->cancelJob($jobid);
 
       return new ViewModel(
-            array(
-               'bconsoleOutput' => $result
-            )
-      );
-   }
-
-   public function runAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
-
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
-      }
-
-      return new ViewModel();
-   }
-
-   public function queueAction()
-   {
-      $this->RequestURIPlugin()->setRequestURI();
-
-      if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
-      }
-
-      $jobname = $this->params()->fromQuery('job');
-      $result = $this->getJobModel()->runJob($jobname);
-
-      return new ViewModel(
          array(
-            'result' => $result
+            'bconsoleOutput' => $result
          )
       );
+   }
+
+   public function actionsAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $action = $this->params()->fromQuery('action');
+
+      if(empty($action)) {
+         return new ViewModel();
+      }
+      elseif($action == "queue") {
+         $jobname = $this->params()->fromQuery('job');
+         $result = $this->getJobModel()->runJob($jobname);
+
+         return new ViewModel(
+            array(
+               'result' => $result
+            )
+         );
+      }
+      elseif($action == "enable") {
+         $jobname = $this->params()->fromQuery('job');
+         $result = $this->getJobModel()->enableJob($jobname);
+
+         return new ViewModel(
+            array(
+               'result' => $result
+            )
+         );
+      }
+      elseif($action == "disable") {
+         $jobname = $this->params()->fromQuery('job');
+         $result = $this->getJobModel()->disableJob($jobname);
+
+         return new ViewModel(
+            array(
+               'result' => $result
+            )
+         );
+      }
    }
 
    public function getDataAction()

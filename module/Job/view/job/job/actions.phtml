@@ -31,10 +31,31 @@ $this->headTitle($title);
 
 <ul class="nav nav-tabs">
    <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
-   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
 </ul>
 
 <br />
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
 
 <div class="row">
 
@@ -43,7 +64,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->translate("Job list"); ?></h3>
+<h3 class="panel-title"><?php echo $this->translate("Job Actions"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -67,11 +88,16 @@ $this->headTitle($title);
 ?>
 
 <script>
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+   if(result.length > 0) {
+      $("#modal-001").modal();
+   }
 
    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-   $('#backupjobs').DataTable( {
+   var table= $('#backupjobs').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
          "dataSrc": ""
@@ -106,7 +132,7 @@ $this->headTitle($title);
             "targets": 1,
             "data": null,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/job/queue?job='; ?>'+data.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Run"); ?>"><span class="glyphicon glyphicon-play-circle"></span></button></a>';
+               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+data.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=enable&job='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=disable&job='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
             }
          }
       ]

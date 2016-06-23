@@ -176,4 +176,30 @@ class JobModel implements ServiceLocatorAwareInterface
          return false;
       }
    }
+
+   public function enableJob($name=null)
+   {
+      if(isset($name)) {
+         $cmd = 'enable job="'.$name.'" yes';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
+
+   public function disableJob($name=null)
+   {
+      if(isset($name)) {
+         $cmd = 'disable job="'.$name.'" yes';
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
 }
