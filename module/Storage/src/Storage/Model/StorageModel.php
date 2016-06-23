@@ -56,9 +56,9 @@ class StorageModel implements ServiceLocatorAwareInterface
       return $storages['result']['storages'];
    }
 
-   public function getStatusStorageSlots($storagename=null)
+   public function getStatusStorageSlots($storage=null)
    {
-      $cmd = 'status storage="' . $storagename . '" slots';
+      $cmd = 'status storage="' . $storage . '" slots';
       $this->director = $this->getServiceLocator()->get('director');
       $result = $this->director->send_command($cmd, 2, null);
       $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
@@ -135,4 +135,16 @@ class StorageModel implements ServiceLocatorAwareInterface
       return $result;
    }
 
+   public function statusStorage($storage=null)
+   {
+      if(isset($storage)) {
+         $cmd = 'status storage="'.$storage;
+         $this->director = $this->getServiceLocator()->get('director');
+         $result = $this->director->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         return false;
+      }
+   }
 }

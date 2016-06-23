@@ -29,6 +29,16 @@ $this->headTitle($title);
 
 ?>
 
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('storage', array('action'=>'index')); ?>"><?php echo $this->translate('Devices'); ?></a></li>
+   <li><a href="<?php echo $this->url('pool', array('action'=>'index')); ?>"><?php echo $this->translate('Pools'); ?></a></li>
+   <li><a href="<?php echo $this->url('media', array('action'=>'index')); ?>"><?php echo $this->translate('Volumes'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+
 <!-- modal-001 start -->
 <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
   <div class="modal-dialog modal-md">

@@ -1,0 +1,34 @@
+<?php
+
+$title = 'Storage Status';
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('storage', array('action'=>'index')); ?>"><?php echo $this->translate('Devices'); ?></a></li>
+   <li><a href="<?php echo $this->url('pool', array('action'=>'index')); ?>"><?php echo $this->translate('Pools'); ?></a></li>
+   <li><a href="<?php echo $this->url('media', array('action'=>'index')); ?>"><?php echo $this->translate('Volumes'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+<div class="col-md-8">
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+   <h3 class="panel-title"><?php echo $this->translate("Storage Status"); ?></h3>
+</div>
+
+<div class="panel-body">
+<pre class="dird-messages" style="height: 500px; font-size: 8pt;">
+<code>
+<?php echo $this->result; ?>
+</code>
+</pre>
+</div>
+
+</div>
+</div>

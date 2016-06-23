@@ -133,6 +133,24 @@ class StorageController extends AbstractActionController
 
    }
 
+   public function statusAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+      }
+
+      $storage = $this->params()->fromQuery('storage');
+      $result = $this->getStorageModel()->statusStorage($storage);
+
+      return new ViewModel(
+         array(
+            'result' => $result
+         )
+      );
+   }
+
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();

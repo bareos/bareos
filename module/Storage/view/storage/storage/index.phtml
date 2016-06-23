@@ -116,10 +116,10 @@ $(document).ready(function() {
             "targets": 2,
             "render": function(data, type, full, meta) {
                if(data.autochanger == "1") {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+data.name+'" title="Manage autochanger" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+data.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/'; ?>'+data.name+'" title="<?php echo $this->translate("Manage autochanger"); ?>" id="btn-1"><span class="glyphicon glyphicon-list-alt"></span></a>';
                }
                else {
-                  return '';
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/storage/status?storage='+data.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
                }
             }
          }
