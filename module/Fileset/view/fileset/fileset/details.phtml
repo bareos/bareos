@@ -69,6 +69,9 @@ $this->headTitle($title);
 
 <script>
 
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
    var tab_fileset = $('#fileset').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=details&fileset='.$this->fileset[0]['filesetid']; ?>",

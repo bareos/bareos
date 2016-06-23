@@ -76,6 +76,9 @@ $this->headTitle($title);
 
 <script>
 
+setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
 var table= $('#pools').DataTable( {
    "ajax": {
       "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",

@@ -60,7 +60,7 @@ $this->headTitle($title);
 
 <div class="panel panel-default">
 <div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->translate("Last successful backups"); ?></h3>
+<h3 class="panel-title"><?php echo $this->translate("Last backups"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -92,6 +92,9 @@ $this->headTitle($title);
 <script>
 
 $(document).ready(function() {
+
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
    $('#tab-client').DataTable( {
       "ajax": {
@@ -137,7 +140,7 @@ $(document).ready(function() {
          {
             "targets": -1,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
             }
          }
       ]
@@ -194,7 +197,7 @@ $(document).ready(function() {
          {
             "targets": 6,
             "render": function(data, type, full, meta) {
-               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="Show Files" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+               return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
             }
          }
       ]

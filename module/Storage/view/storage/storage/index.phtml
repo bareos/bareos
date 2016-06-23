@@ -73,6 +73,9 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
    var table= $('#storagetable').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('storage', array('action' => 'getData'), null) . '?data=all'; ?>",

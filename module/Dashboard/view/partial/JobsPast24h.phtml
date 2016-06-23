@@ -46,11 +46,11 @@
                   <td><span class="badge"><?php echo $this->waitingJobs; ?></span></td>
                </tr>
                <tr>
-                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Successful"); ?></a></td>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'successful'))); ?>"><?php echo $this->translate("Terminated successfully"); ?></a></td>
                   <td><span class="badge"><?php echo $this->successfulJobs; ?></span></td>
                </tr>
                <tr>
-                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Unsuccessful"); ?></a></td>
+                  <td><a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'unsuccessful'))); ?>"><?php echo $this->translate("Terminated unsuccessfully"); ?></a></td>
                   <td><span class="badge"><?php echo $this->unsuccessfulJobs; ?></span></td>
                </tr>
             </table>

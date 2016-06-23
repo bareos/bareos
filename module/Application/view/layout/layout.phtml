@@ -49,6 +49,8 @@ echo $this->doctype();
 
 <!-- Scripts -->
 <?php echo $this->headScript()
+   ->prependFile($this->basePath() . '/js/i_gettext.min.js', 'text/javascript')
+   ->prependFile($this->basePath() . '/js/i_core.min.js', 'text/javascript')
    ->prependFile($this->basePath() . '/js/bootstrap.min.js')
    ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
    ->prependFile($this->basePath() . '/js/excanvas.min.js', 'text/jaavscript')

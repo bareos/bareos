@@ -98,12 +98,12 @@ $this->headTitle($title);
     <div class="modal-content">
    <div class="modal-header">
    <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-   <h4 class="modal-title" id="myModalLabel">Failed to retrieve data from Bareos director</h4>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
       </div>
       <div class="modal-body">
-   <p>Please try to reduce the amount of data to display, e.g. reduce time period.</p>
-   <p>Error message received from director:</p>
-   <p class="text-danger">Failed to send result as json. Maybe result message to long?</p>
+   <p><?php echo $this->translate("Please try to reduce the amount of data to display, e.g. reduce time period."); ?></p>
+   <p><?php echo $this->translate("Error message received from director:"); ?></p>
+   <p class="text-danger"><?php echo $this->translate("Failed to send result as json. Maybe result message to long?"); ?></p>
       </div>
       <div class="modal-footer">
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
@@ -135,23 +135,23 @@ function format( d ) {
 
    return '<table class="table table-bordered">'+
       '<tr>'+
-      '<th>Fileset</th>'+
+      '<th><?php echo $this->translate("Fileset"); ?></th>'+
       '<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+d.filesetid+'">'+ d.fileset +'</a></td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Pool</th>'+
+      '<th><?php echo $this->translate("Pool"); ?></th>'+
       '<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+d.poolname+'">'+ d.poolname +'</a></td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Scheduled</th>'+
+      '<th><?php echo $this->translate("Scheduled"); ?></th>'+
       '<td>'+ d.schedtime +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Start</th>'+
+      '<th><?php echo $this->translate("Start"); ?></th>'+
       '<td>'+ d.starttime +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>End</th>'+
+      '<th><?php echo $this->translate("End"); ?></th>'+
       '<td>'+ d.endtime +'</td>'+
       '</tr>'+
       '</table>';
@@ -184,6 +184,9 @@ function updateQueryParams(k, v)
 }
 
 $(document).ready(function() {
+
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
    var table = $('#jobtable').DataTable( {
       "ajax": {
@@ -258,9 +261,9 @@ $(document).ready(function() {
                   case 'W':
                      switch(data.type) {
                         case 'B':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="Rerun" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="Show Files" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                         case 'C':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="Show Files" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                      }
                   case 'E':
                   case 'e':
@@ -268,7 +271,7 @@ $(document).ready(function() {
                   case 'A':
                      switch(data.type) {
                         case 'B':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="Rerun" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
                      }
                   case 'F':
                   case 'S':
@@ -289,13 +292,13 @@ $(document).ready(function() {
                            switch(data.jobstatus) {
                               case 'R':
                               case 'l':
-                                 return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="Cancel" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                                 return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
                               default:
                                  return '';
                            }
                         case 'B':
                         case 'C':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="Cancel" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
                         default:
                            return '';
                      }

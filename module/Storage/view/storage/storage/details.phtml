@@ -37,7 +37,7 @@ $this->headTitle($title);
          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
             <span aria-hidden="true">&times;</span>
          </button>
-         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+         <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
       </div>
       <div class="modal-body">
          <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
@@ -54,7 +54,7 @@ $this->headTitle($title);
 
    <div class="panel panel-default">
       <div class="panel-heading">
-         <h3 class="panel-title">Import/Export Slots - <?php echo $this->storagename; ?></h3>
+         <h3 class="panel-title"><?php echo $this->translate("Import/Export Slots"); ?> - <?php echo $this->storagename; ?></h3>
       </div>
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-ie-slots">
@@ -72,7 +72,7 @@ $this->headTitle($title);
 
    <div class="panel panel-default">
       <div class="panel-heading">
-         <h3 class="panel-title">Drives - <?php echo $this->storagename; ?></h3>
+         <h3 class="panel-title"><?php echo $this->translate("Drives"); ?> - <?php echo $this->storagename; ?></h3>
       </div>
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-drives">
@@ -95,7 +95,7 @@ $this->headTitle($title);
 
    <div class="panel panel-default">
       <div class="panel-heading">
-         <h3 class="panel-title">Slots - <?php echo $this->storagename; ?></h3>
+         <h3 class="panel-title"><?php echo $this->translate("Slots"); ?> - <?php echo $this->storagename; ?></h3>
       </div>
       <div class="panel-body" style="overflow-y: auto;">
          <table class="table table-hover" id="storage-slots">
@@ -152,6 +152,9 @@ $.fn.DataTable.ext.search.push(
 );
 
 $(document).ready(function() {
+
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
    var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
@@ -246,7 +249,7 @@ $(document).ready(function() {
             "targets": 5,
             "render": function(data, type, full, meta) {
                if(data == '?') {
-                  return '<span class="label label-warning">not in catalog</span>';
+                  return '<span class="label label-warning"><?php echo $this->translate("not in catalog"); ?></span>';
                }
                else {
                   return data;
@@ -282,20 +285,20 @@ $(document).ready(function() {
                   return '';
                }
                else {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=export&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Export" id="btn-1"><span class="glyphicon glyphicon-export"></span></a>';
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=export&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="<?php echo $this->translate("Export"); ?>" id="btn-1"><span class="glyphicon glyphicon-export"></span></a>';
                }
             }
          }
       ],
       "buttons": [
          {
-            "text": '<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>' + ' Update slots',
+            "text": '<span class="glyphicon glyphicon-refresh" aria-hidden="true"></span>' + ' <?php echo $this->translate("Update slots"); ?>',
             "action": function(e, dt, node, conf) {
                window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=updateslots&storage=" . $this->storagename; ?>');
             }
          },
          {
-            "text": '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' Label barcodes',
+            "text": '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' <?php echo $this->translate("Label barcodes"); ?>',
             "action": function(e, dt, node, conf) {
                window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename. "?action=label&storage=" . $this->storagename; ?>');
             }
@@ -341,7 +344,7 @@ $(document).ready(function() {
                   return '';
                }
                else {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=release&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Release" id="btn-1"><span class="glyphicon glyphicon-eject"></span></a>';
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=release&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="<?php echo $this->translate("Release"); ?>" id="btn-1"><span class="glyphicon glyphicon-eject"></span></a>';
                }
             }
          }
@@ -394,14 +397,14 @@ $(document).ready(function() {
                   return '';
                }
                else {
-                  return '<span id="import-action"><a class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=import&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="Import" id="btn-1"><span class="glyphicon glyphicon-import"></span></a></span>';
+                  return '<span id="import-action"><a class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/storage/details/' . $this->storagename . '?action=import&storage=' . $this->storagename . '&srcslots='; ?>' + data.slotnr + '" title="<?php echo $this->translate("Import"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a></span>';
                }
             }
          }
       ],
       "buttons": [
          {
-            "text": '<span class="glyphicon glyphicon-import" aria-hidden="true"></span>' + ' Import all',
+            "text": '<span class="glyphicon glyphicon-import" aria-hidden="true"></span>' + ' <?php echo $this->translate("Import all"); ?>',
             "action": function(e, dt, node, conf) {
                $('#spinner').fadeIn('normal');
                window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename . "?action=import&storage=" . $this->storagename; ?>');

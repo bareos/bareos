@@ -318,7 +318,7 @@ class RestoreForm extends Form
             'name' => 'mergefilesets',
             'type' => 'select',
             'options' => array(
-               'label' => _('Merge all client filesets?'),
+               'label' => _('Merge all client filesets'),
                'value_options' => array(
                      '0' => _('Yes'),
                      '1' => _('No')
@@ -337,7 +337,7 @@ class RestoreForm extends Form
             'name' => 'mergefilesets',
             'type' => 'select',
             'options' => array(
-               'label' => _('Merge all client filesets?'),
+               'label' => _('Merge all client filesets'),
                'value_options' => array(
                      '0' => _('Yes'),
                      '1' => _('No')
@@ -358,7 +358,7 @@ class RestoreForm extends Form
             'name' => 'mergejobs',
             'type' => 'select',
             'options' => array(
-               'label' => _('Merge all related jobs to last full backup of selected backup job?'),
+               'label' => _('Merge all related jobs to last full backup of selected backup job'),
                'value_options' => array(
                      '0' => _('Yes'),
                      '1' => _('No')
@@ -377,7 +377,7 @@ class RestoreForm extends Form
             'name' => 'mergejobs',
             'type' => 'select',
             'options' => array(
-               'label' => _('Merge jobs?'),
+               'label' => _('Merge jobs'),
                'value_options' => array(
                      '0' => _('Yes'),
                      '1' => _('No')

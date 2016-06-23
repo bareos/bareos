@@ -131,6 +131,9 @@ function format( d ) {
 
 $(document).ready(function() {
 
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
    var volumes = $('#volumes').DataTable( {
       "dom": "l<'row'<'col-sm-9'B><'col-sm-3'f>>rtip",
       "ajax": {

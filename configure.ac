@@ -23,5 +23,5 @@ fi
 AC_SUBST(HTTPD_CONF)
 
 AC_CONFIG_SRCDIR([configure.ac])
-AC_CONFIG_FILES(Makefile module/Application/language/Makefile)
+AC_CONFIG_FILES(Makefile module/Application/language/Makefile public/js/locale/Makefile)
 AC_OUTPUT

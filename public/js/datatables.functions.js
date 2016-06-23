@@ -22,44 +22,81 @@
  *
  */
 
+var dt_locale = "";
+var dt_textdomain = "";
+
+function setDtLocale(val) {
+   switch(val) {
+      case 'en':
+      case 'en_EN':
+         dt_locale = 'en_EN';
+         break;
+      case 'fr':
+      case 'fr_FR':
+         dt_locale = 'fr_FR';
+         break;
+      case 'de':
+      case 'de_DE':
+         dt_locale = 'de_DE';
+         break;
+      case 'ru':
+      case 'ru_RU':
+         dt_locale = 'ru_RU';
+         break;
+      default:
+         dt_locale = 'en_EN';
+   }
+   initDTLocale();
+}
+
+function setDtTextDomain(val) {
+   dt_textdomain = val;
+}
+
+function initDTLocale() {
+   iJS.i18n.setlocale(dt_locale);
+   iJS.i18n.bindtextdomain(dt_locale, dt_textdomain, "po");
+   iJS.i18n.try_load_lang();
+}
+
 function formatJobType(data) {
    var output;
    switch(data) {
       case 'B':
-         output = 'Backup';
+         output = iJS._('Backup');
          break;
       case 'M':
-         output = 'Migrated';
+         output = iJS._('Migrated');
          break;
       case 'V':
-         output = 'Verify';
+         output = iJS._('Verify');
          break;
       case 'R':
-         output = 'Restore';
+         output = iJS._('Restore');
          break;
       case 'U':
-         output = 'Console program';
+         output = iJS._('Console program');
          break;
       case 'I':
-         output = 'Internal system job';
+         output = iJS._('Internal system job');
          break;
       case 'D':
-         output = 'Admin';
+         output = iJS._('Admin');
          break;
       case 'A':
-         output = 'Archive';
+         output = iJS._('Archive');
          break;
       case 'C':
-         output = 'Copy of a job';
+         output = iJS._('Copy of a job');
          break;
       case 'c':
-         output = 'Copy job';
+         output = iJS._('Copy job');
          break;
       case 'g':
-         output = 'Migration job';
+         output = iJS._('Migration job');
          break;
       case 'S':
-         output = 'Scan';
+         output = iJS._('Scan');
          break;
       default:
          output = data;
@@ -71,27 +108,27 @@ function formatJobType(data) {
 function formatJobLevel(data) {
    switch(data) {
       case 'F':
-         return 'Full';
+         return iJS._('Full');
       case 'D':
-         return 'Differential';
+         return iJS._('Differential');
       case 'I':
-         return 'Incremental';
+         return iJS._('Incremental');
       case 'f':
-         return 'VirtualFull';
+         return iJS._('VirtualFull');
       case 'B':
-         return 'Base';
+         return iJS._('Base');
       case 'C':
-         return 'Catalog';
+         return iJS._('Catalog');
       case 'V':
-         return 'InitCatalog';
+         return iJS._('InitCatalog');
       case 'O':
-         return 'VolumeToCatalog';
+         return iJS._('VolumeToCatalog');
       case 'd':
-         return 'DiskToCatalog';
+         return iJS._('DiskToCatalog');
       case 'A':
-         return 'Data';
+         return iJS._('Data');
       case ' ':
-         return 'None';
+         return iJS._('None');
       default:
          return data;
    }
@@ -105,12 +142,12 @@ function formatRetention(data) {
       return '-';
    }
    else {
-      return retention + ' day(s)';
+      return retention + ' ' + iJS._('day(s)');
    }
 }
 
 function formatExpiration(volstatus, lastwritten, volretention) {
-   if(volstatus == "Used" || volstatus == "Full") {
+   if(volstatus == iJS._("Used") || volstatus == iJS._("Full")) {
       if(lastwritten == null || lastwritten == "") {
          return '-';
       }
@@ -122,26 +159,26 @@ function formatExpiration(volstatus, lastwritten, volretention) {
          var retention = Math.round(volretention / 60 / 60 / 24);
          var expiration = (retention - interval).toFixed(2);
          if(expiration <= 0) {
-            return '<span class="label label-danger">expired</span>';
+            return '<span class="label label-danger">' + iJS._("expired") + '</span>';
          }
 
          if(expiration > 0 && expiration <= 1) {
-            return '<span class="label label-warning">expires in 1 day</span>';
+            return '<span class="label label-warning">' + iJS._("expires in 1 day") + '</span>';
          }
 
          if(expiration > 1) {
-            return '<span class="label label-warning">expires in ' + Math.ceil(expiration) + ' days</span>';
+            return '<span class="label label-warning">' + iJS._("expires in") + ' ' + Math.ceil(expiration) + ' ' + iJS._("days") + '</span>';
          }
       }
    }
    else {
-      return Math.ceil((volretention / 60 / 60 / 24)) + ' day(s)';
+      return Math.ceil((volretention / 60 / 60 / 24)) + ' ' + iJS._("day(s)");
    }
 }
 
 function formatLastWritten(data) {
    if(data == null || data == '' || data == 0) {
-      return 'never';
+      return iJS._('never');
    }
    else {
       var d = Date.now() / 1000;
@@ -150,16 +187,16 @@ function formatLastWritten(data) {
       var interval = Math.floor( (d - b) / (3600 * 24) );
 
       if(interval < 1) {
-         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">today</span>';
+         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + iJS._("today") + '</span>';
       }
       else if(interval <= 31 && interval >= 1) {
-         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + interval + ' day(s) ago</span>';
+         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + interval + ' ' + iJS._("day(s) ago") + '</span>';
       }
       else if(interval >= 31 && interval <= 365) {
-         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + Math.round(interval / 31) + ' month(s) ago</span>';
+         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + Math.round(interval / 31) + ' ' + iJS._("month(s) ago") + '</span>';
       }
       else if(interval > 365) {
-         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + Math.round(interval / 365) + ' year(s) ago</span>';
+         return '<span id="lastwritten" data-toggle="tooltip" title="' + data + '">' + Math.round(interval / 365) + ' ' + iJS._("year(s) ago") + '</span>';
       }
       else {
          return data;
@@ -192,10 +229,10 @@ function formatFreeBytes(maxvolbytes, volbytes) {
 
 function formatAutoprune(data) {
    if(data == 1) {
-      var a = '<span class="label label-success">enabled</span>';
+      var a = '<span class="label label-success">' + iJS._("enabled") + '</span>';
    }
    else {
-      var a = '<span class="label label-danger">disabled</span>';
+      var a = '<span class="label label-danger">' + iJS._("disabled") + '</span>';
    }
    return a;
 }
@@ -203,10 +240,10 @@ function formatAutoprune(data) {
 function formatRecycle(data) {
    var r;
    if(data == 1) {
-      r = '<span class="label label-success">Yes</span>';
+      r = '<span class="label label-success">' + iJS._("Yes") + '</span>';
    }
    else {
-      r = '<span class="label label-danger">No</span>';
+      r = '<span class="label label-danger">' + iJS._("No") + '</span>';
    }
    return r;
 }
@@ -216,107 +253,107 @@ function formatJobStatus(data) {
    switch(data) {
       // Non-fatal error
       case 'e':
-         output = '<span class="label label-danger">Failure</span>';
+         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
          break;
       // Terminated with errors
       case 'E':
-         output = '<span class="label label-danger">Failure</span>';
+         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
          break;
       // Fatal error
       case 'f':
-         output = '<span class="label label-danger">Failure</span>';
+         output = '<span class="label label-danger">' + iJS._("Failure") + '</span>';
          break;
       // Terminated successful
       case 'T':
-         output = '<span class="label label-success">Success</span>';
+         output = '<span class="label label-success">' + iJS._("Success") + '</span>';
          break;
       // Running
       case 'R':
-         output = '<span class="label label-info">Running</span>';
+         output = '<span class="label label-info">' + iJS._("Running") + '</span>';
          break;
       // Created no yet running
       case 'C':
-         output = '<span class="label label-default">Queued</span>';
+         output = '<span class="label label-default">' + iJS._("Queued") + '</span>';
          break;
       // Blocked
       case 'B':
-         output = '<span class="label label-warning">Blocked</span>';
+         output = '<span class="label label-warning">' + iJS._("Blocked") + '</span>';
          break;
       // Verify found differences
       case 'D':
-         output = '<span class="label label-warning">Verify found differences</span>';
+         output = '<span class="label label-warning">' + iJS._("Verify found differences") + '</span>';
          break;
       // Canceled by user
       case 'A':
-         output = '<span class="label label-warning">Canceled</span>';
+         output = '<span class="label label-warning">' + iJS._("Canceled") + '</span>';
          break;
       // Waiting for client
       case 'F':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for storage daemon
       case 'S':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for new media
       case 'm':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for media mount
       case 'M':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for storage resource
       case 's':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for job resource
       case 'j':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting for client resource
       case 'c':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on maximum jobs
       case 'd':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on starttime
       case 't':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // Waiting on higher priority jobs
       case 'p':
-         output = '<span class="label label-default">Waiting</span>';
+         output = '<span class="label label-default">' + iJS._("Waiting") + '</span>';
          break;
       // SD despooling attributes
       case 'a':
-         output = '<span class="label label-info">SD despooling attributes</span>';
+         output = '<span class="label label-info">' + iJS._("SD despooling attributes") + '</span>';
          break;
       // Doing batch insert file records
       case 'i':
-         output = '<span class="label label-info">Doing batch insert file records</span>';
+         output = '<span class="label label-info">' + iJS._("Doing batch insert file records") + '</span>';
          break;
       // Incomplete
       case 'I':
-         output = '<span class="label label-primary">Incomplete</span>';
+         output = '<span class="label label-primary">' + iJS._("Incomplete") + '</span>';
          break;
       // Committing data
       case 'L':
-         output = '<span class="label label-info">Committing data</span>';
+         output = '<span class="label label-info">' + iJS._("Committing data") + '</span>';
          break;
       // Terminated with warnings
       case 'W':
-         output = '<span class="label label-warning">Warning</span>';
+         output = '<span class="label label-warning">' + iJS._("Warning") + '</span>';
          break;
       // Doing data despooling
       case 'l':
-         output = '<span class="label label-info">Doing data despooling</span>';
+         output = '<span class="label label-info">' + iJS._("Doing data despooling") + '</span>';
          break;
       // Queued waiting for device
       case 'q':
-         output = '<span class="label label-default">Queued waiting for device</span>';
+         output = '<span class="label label-default">' + iJS._("Queued waiting for device") + '</span>';
          break;
       default:
          output = '<span class="label label-primary">' + data + '</span>';
@@ -348,4 +385,3 @@ function getLocale(locale) {
    }
    return lang;
 }
-

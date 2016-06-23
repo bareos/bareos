@@ -43,7 +43,7 @@ $this->headTitle($title);
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Filedaemon"); ?></th>
+   <th><?php echo $this->translate("Version"); ?></th>
    <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 
@@ -64,10 +64,16 @@ $this->headTitle($title);
 
 $(document).ready(function() {
 
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
    var table= $('#clients').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
          {
@@ -103,7 +109,7 @@ $(document).ready(function() {
          {
             "targets": 2,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Restore"><span class="glyphicon glyphicon-import"></span></button></a>';
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
             }
          }
       ]

@@ -37,7 +37,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Job</h3>
+<h3 class="panel-title"><?php echo $this->translate("Job"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -73,7 +73,7 @@ $this->headTitle($title);
 <div class="panel panel-default">
 
 <div class="panel-heading">
-<h3 class="panel-title">Messages</h3>
+<h3 class="panel-title"><?php echo $this->translate("Messages"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -81,8 +81,8 @@ $this->headTitle($title);
 <table class="table table-hover" id="joblog">
 
    <thead class="bg-primary">
-      <th>Timestamp</th>
-      <th>Message</th>
+      <th><?php echo $this->translate("Timestamp"); ?></th>
+      <th><?php echo $this->translate("Message"); ?></th>
    </thead>
 
 </table>
@@ -122,23 +122,23 @@ function format( d ) {
 
    return '<table class="table table-bordered">'+
       '<tr>'+
-      '<th>Fileset</th>'+
+      '<th><?php echo $this->translate("Fileset"); ?></th>'+
       '<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+d.filesetid+'">'+ d.fileset +'</a></td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Pool</th>'+
+      '<th><?php echo $this->translate("Pool"); ?></th>'+
       '<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+d.poolname+'">'+ d.poolname +'</a></td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Scheduled</th>'+
+      '<th><?php echo $this->translate("Scheduled"); ?></th>'+
       '<td>'+ d.schedtime +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>Start</th>'+
+      '<th><?php echo $this->translate("Start"); ?></th>'+
       '<td>'+ d.starttime +'</td>'+
       '</tr>'+
       '<tr>'+
-      '<th>End</th>'+
+      '<th><?php echo $this->translate("End"); ?></th>'+
       '<td>'+ d.endtime +'</td>'+
       '</tr>'+
       '</table>';
@@ -147,10 +147,16 @@ function format( d ) {
 
 $(document).ready(function() {
 
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
    var jobdetails = $('#jobdetails').DataTable( {
       "ajax": {
          "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=details&jobid='.$this->jobid; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns": [
          { "data": null, "orderable": false, "defaultContent": "", "className": "details-control" },
@@ -214,7 +220,7 @@ $(document).ready(function() {
                      case 'e':
                      case 'f':
                      case 'A':
-                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="Rerun" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
                      case 'F':
                      case 'S':
                      case 'm':
@@ -229,12 +235,12 @@ $(document).ready(function() {
                      case 'C':
                      case 'R':
                      case 'l':
-                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="Cancel" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
                   }
                }
                return '';
             }
-         } 
+         }
       ]
    } );
 
@@ -242,6 +248,9 @@ $(document).ready(function() {
       "ajax": {
          "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=logs&jobid='.$this->jobid; ?>",
          "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns": [
          { "data": "time" },

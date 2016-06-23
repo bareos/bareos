@@ -63,8 +63,8 @@ $this->headTitle($title);
       var data = [
          ['<?php echo $this->translate('Running'); ?>', <?php echo $this->runningJobs; ?>],
          ['<?php echo $this->translate('Waiting'); ?>', <?php echo $this->waitingJobs; ?>],
-         ['<?php echo $this->translate('Successful'); ?>', <?php echo $this->successfulJobs; ?>],
-         ['<?php echo $this->translate('Unsuccessful'); ?>', <?php echo $this->unsuccessfulJobs; ?>]
+         ['<?php echo $this->translate('Terminated successfully'); ?>', <?php echo $this->successfulJobs; ?>],
+         ['<?php echo $this->translate('Terminated unsuccessfully'); ?>', <?php echo $this->unsuccessfulJobs; ?>]
       ];
 
       var plot1 = jQuery.jqplot(
@@ -120,6 +120,9 @@ $this->headTitle($title);
    $(document).ready(
 
       function() {
+
+            setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+            setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
             chart1();
 

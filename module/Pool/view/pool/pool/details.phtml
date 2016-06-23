@@ -85,7 +85,7 @@ $this->headTitle($title);
 <thead class="bg-primary">
    <th></th>
    <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Storage"); ?></th>
+   <th><?php echo $this->translate("Storage ID"); ?></th>
    <th><?php echo $this->translate("Type"); ?></th>
    <th><?php echo $this->translate("Last written"); ?></th>
    <th><?php echo $this->translate("Status"); ?></th>
@@ -152,6 +152,9 @@ function format( d ) {
 }
 
 $(document).ready(function() {
+
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
    var tab_pool = $('#pool').DataTable( {
       "ajax": {
