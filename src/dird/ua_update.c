@@ -300,7 +300,7 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
    /*
     * Make sure to use db_update... rather than doing this directly,
-    *   so that any Slot is handled correctly.
+    * so that any Slot is handled correctly.
     */
    set_storageid_in_mr(NULL, mr);
    if (!db_update_media_record(ua->jcr, ua->db, mr)) {
@@ -310,7 +310,9 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-/* Modify the Pool in which this Volume is located */
+/*
+ * Modify the Pool in which this Volume is located
+ */
 void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
 {
    POOL_DBR pr;
@@ -323,8 +325,7 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
       return;
    }
    mr->PoolId = pr.PoolId;            /* set new PoolId */
-   /*
-    */
+
    db_lock(ua->db);
    Mmsg(query, "UPDATE Media SET PoolId=%s WHERE MediaId=%s",
       edit_int64(mr->PoolId, ed1), edit_int64(mr->MediaId, ed2));
@@ -344,7 +345,9 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
    db_unlock(ua->db);
 }
 
-/* Modify the RecyclePool of a Volume */
+/*
+ * Modify the RecyclePool of a Volume
+ */
 void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
 {
    POOL_DBR pr;
@@ -353,17 +356,20 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
    const char *poolname;
 
    if (val && *val) { /* update volume recyclepool="Scratch" */
-      /* If a pool name is given, look up the PoolId */
+      /*
+       * If a pool name is given, look up the PoolId
+       */
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, val, sizeof(pr.Name));
       if (!get_pool_dbr(ua, &pr, NT_("recyclepool"))) {
          return;
       }
-      /* pool = select_pool_resource(ua);  */
       mr->RecyclePoolId = pr.PoolId;            /* get the PoolId */
       poolname = pr.Name;
    } else { /* update volume recyclepool="" */
-      /* If no pool name is given, set the PoolId to 0 (the default) */
+      /*
+       * If no pool name is given, set the PoolId to 0 (the default)
+       */
       mr->RecyclePoolId = 0;
       poolname = _("*None*");
    }
@@ -376,6 +382,32 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
    } else {
       ua->info_msg(_("New RecyclePool is: %s\n"), poolname);
    }
+   db_unlock(ua->db);
+}
+
+/*
+ * Modify the Storage in which this Volume is located
+ */
+void update_vol_storage(UAContext *ua, char *val, MEDIA_DBR *mr)
+{
+   STORAGE_DBR sr;
+   POOL_MEM query(PM_MESSAGE);
+   char ed1[50], ed2[50];
+
+   memset(&sr, 0, sizeof(sr));
+   bstrncpy(sr.Name, val, sizeof(sr.Name));
+   if (!get_storage_dbr(ua, &sr)) {
+      return;
+   }
+   mr->StorageId = sr.StorageId;            /* set new StorageId */
+
+   db_lock(ua->db);
+   Mmsg(query, "UPDATE Media SET StorageId=%s WHERE MediaId=%s",
+      edit_int64(mr->StorageId, ed1), edit_int64(mr->MediaId, ed2));
+   if (!db_sql_query(ua->db, query.c_str())) {
+      ua->error_msg("%s", db_strerror(ua->db));
+   }
+
    db_unlock(ua->db);
 }
 
@@ -532,6 +564,7 @@ static bool update_volume(UAContext *ua)
       NT_("Enabled"),       /* 12 */
       NT_("RecyclePool"),   /* 13 */
       NT_("ActionOnPurge"), /* 14 */
+      NT_("Storage"),       /* 15 */
       NULL
    };
 
@@ -601,6 +634,9 @@ static bool update_volume(UAContext *ua)
          case 14:
             update_vol_actiononpurge(ua, ua->argv[j], &mr);
             break;
+         case 15:
+            update_vol_storage(ua, ua->argv[j], &mr);
+            break;
          }
          done = true;
       }
@@ -615,9 +651,11 @@ static bool update_volume(UAContext *ua)
    for ( ; !done; ) {
       POOL_DBR pr;
       MEDIA_DBR mr;
+      STORAGE_DBR sr;
 
       memset(&pr, 0, sizeof(pr));
       memset(&mr, 0, sizeof(mr));
+      memset(&sr, 0, sizeof(sr));
 
       start_prompt(ua, _("Parameters to modify:\n"));
       add_prompt(ua, _("Volume Status"));              /* 0 */
@@ -637,12 +675,13 @@ static bool update_volume(UAContext *ua)
       add_prompt(ua, _("Enabled")),                    /* 14 */
       add_prompt(ua, _("RecyclePool")),                /* 15 */
       add_prompt(ua, _("Action On Purge")),            /* 16 */
-      add_prompt(ua, _("Done"));                       /* 17 */
+      add_prompt(ua, _("Storage")),                    /* 17 */
+      add_prompt(ua, _("Done"));                       /* 18 */
       i = do_prompt(ua, "", _("Select parameter to modify"), NULL, 0);
 
       /* For All Volumes, All Volumes from Pool, and Done, we don't need
            * a Volume record */
-      if ( i != 12 && i != 13 && i != 17) {
+      if ( i != 12 && i != 13 && i != 18) {
          if (!select_media_dbr(ua, &mr)) {  /* Get Volume record */
             return false;
          }
@@ -833,6 +872,20 @@ static bool update_volume(UAContext *ua)
 
          update_vol_actiononpurge(ua, ua->cmd, &mr);
          break;
+
+      case 17:
+         sr.StorageId = mr.StorageId;
+         if (db_get_storage_record(ua->jcr, ua->db, &sr)) {
+            ua->info_msg(_("Current Storage is: %s\n"), sr.Name);
+         } else {
+            ua->info_msg(_("Warning, could not find current Storage\n"));
+         }
+         if (!select_storage_dbr(ua, &sr, NT_("storage"))) {
+            return false;
+         }
+         update_vol_storage(ua, sr.Name, &mr);
+         ua->info_msg(_("New Storage is: %s\n"), sr.Name);
+         return true;
 
       default:                        /* Done or error */
          ua->info_msg(_("Selection terminated.\n"));

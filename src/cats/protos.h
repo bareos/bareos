@@ -91,6 +91,7 @@ bool db_get_base_file_list(JCR *jcr, B_DB *mdb, bool use_md5,
                            DB_RESULT_HANDLER *result_handler,void *ctx);
 int db_get_path_record(JCR *jcr, B_DB *mdb);
 bool db_get_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pdbr);
+bool db_get_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sdbr);
 bool db_get_job_record(JCR *jcr, B_DB *mdb, JOB_DBR *jr);
 int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM *&VolumeNames);
 bool db_get_file_attributes_record(JCR *jcr, B_DB *mdb, char *fname, JOB_DBR *jr, FILE_DBR *fdbr);
@@ -100,7 +101,8 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb);
 int db_get_num_pool_records(JCR *jcr, B_DB *mdb);
 int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
 bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t **ids);
+int db_get_storage_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t **ids);
 int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS **VolParams);
 bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr);
 bool db_get_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr);

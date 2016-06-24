@@ -146,7 +146,6 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
    return do_prompt(ua, "", msg, NULL, 0);
 }
 
-
 /*
  * Select a Storage resource from prompt list
  */
@@ -537,7 +536,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
  */
 bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
 {
-   uint32_t *ids;
+   DBId_t *ids;
    CLIENT_DBR ocr;
    int num_clients;
    char name[MAX_NAME_LENGTH];
@@ -584,6 +583,35 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
 /*
  * Scan what the user has entered looking for:
  *
+ * argk=<storage-name>
+ *
+ * where argk can be : storage
+ *
+ * If error or not found, put up a list of storage DBRs to choose from.
+ *
+ * returns: false on error
+ *          true  on success and fills in STORAGE_DBR
+ */
+bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
+{
+   if (sr->Name[0]) {                 /* If name already supplied */
+      if (db_get_storage_record(ua->jcr, ua->db, sr) &&
+          acl_access_ok(ua, Pool_ACL, sr->Name)) {
+         return true;
+      }
+      ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name, db_strerror(ua->db));
+   }
+
+   if (!select_storage_dbr(ua, sr, argk)) {  /* try once more */
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ * Scan what the user has entered looking for:
+ *
  * argk=<pool-name>
  *
  * where argk can be : pool, recyclepool, scratchpool, nextpool etc..
@@ -617,7 +645,7 @@ bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
 bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
 {
    POOL_DBR opr;
-   uint32_t *ids;
+   DBId_t *ids;
    int num_pools;
    char name[MAX_NAME_LENGTH];
 
@@ -705,6 +733,81 @@ bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
       ua->error_msg(_("No access to Pool \"%s\"\n"), pr->Name);
       return false;
    }
+
+   return true;
+}
+
+/*
+ * Select a Storage record from catalog
+ * argk can be storage
+ */
+bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
+{
+   STORAGE_DBR osr;
+   DBId_t *ids;
+   int num_storages;
+   char name[MAX_NAME_LENGTH];
+
+   for (int i = 1; i < ua->argc; i++) {
+      if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
+          acl_access_ok(ua, Storage_ACL, ua->argv[i])) {
+         bstrncpy(sr->Name, ua->argv[i], sizeof(sr->Name));
+         if (!db_get_storage_record(ua->jcr, ua->db, sr)) {
+            ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i], db_strerror(ua->db));
+            sr->StorageId = 0;
+            break;
+         }
+         return true;
+      }
+   }
+
+   sr->StorageId = 0;
+   if (!db_get_storage_ids(ua->jcr, ua->db, &num_storages, &ids)) {
+      ua->error_msg(_("Error obtaining storage ids. ERR=%s\n"), db_strerror(ua->db));
+      return 0;
+   }
+
+   if (num_storages <= 0) {
+      ua->error_msg(_("No storages defined. Use the \"create\" command to create one.\n"));
+      return false;
+   }
+
+   start_prompt(ua, _("Defined Storages:\n"));
+   if (bstrcmp(argk, NT_("recyclestorage"))) {
+      add_prompt(ua, _("*None*"));
+   }
+
+   for (int i = 0; i < num_storages; i++) {
+      osr.StorageId = ids[i];
+      if (!db_get_storage_record(ua->jcr, ua->db, &osr) ||
+          !acl_access_ok(ua, Storage_ACL, osr.Name)) {
+         continue;
+      }
+      add_prompt(ua, osr.Name);
+   }
+   free(ids);
+
+   if (do_prompt(ua, _("Storage"),  _("Select the Storage"), name, sizeof(name)) < 0) {
+      return false;
+   }
+
+   memset(&osr, 0, sizeof(osr));
+
+   /*
+    * *None* is only returned when selecting a recyclestorage, and in that case
+    * the calling code is only interested in osr.Name, so then we can leave
+    * sr as all zero.
+    */
+   if (!bstrcmp(name, _("*None*"))) {
+     bstrncpy(osr.Name, name, sizeof(osr.Name));
+
+     if (!db_get_storage_record(ua->jcr, ua->db, &osr)) {
+        ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), name, db_strerror(ua->db));
+        return false;
+     }
+   }
+
+   memcpy(sr, &osr, sizeof(osr));
 
    return true;
 }

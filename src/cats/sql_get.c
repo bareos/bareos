@@ -222,7 +222,7 @@ static int db_get_filename_record(JCR *jcr, B_DB *mdb)
 int db_get_path_record(JCR *jcr, B_DB *mdb)
 {
    SQL_ROW row;
-   uint32_t PathId = 0;
+   DBId_t PathId = 0;
    int num_rows;
 
    mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->pnl+2);
@@ -351,13 +351,13 @@ bail_out:
 
 /**
  * Find VolumeNames for a given JobId
- *  Returns: 0 on error or no Volumes found
- *           number of volumes on success
- *              Volumes are concatenated in VolumeNames
- *              separated by a vertical bar (|) in the order
- *              that they were written.
+ * Returns: 0 on error or no Volumes found
+ *          number of volumes on success
+ *             Volumes are concatenated in VolumeNames
+ *             separated by a vertical bar (|) in the order
+ *             that they were written.
  *
- *  Returns: number of volumes on success
+ * Returns: number of volumes on success
  */
 int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM *&VolumeNames)
 {
@@ -413,11 +413,11 @@ int db_get_job_volume_names(JCR *jcr, B_DB *mdb, JobId_t JobId, POOLMEM *&Volume
 
 /**
  * Find Volume parameters for a give JobId
- *  Returns: 0 on error or no Volumes found
- *           number of volumes on success
- *           List of Volumes and start/end file/blocks (malloced structure!)
+ * Returns: 0 on error or no Volumes found
+ *          number of volumes on success
+ *          List of Volumes and start/end file/blocks (malloced structure!)
  *
- *  Returns: number of volumes on success
+ * Returns: number of volumes on success
  */
 int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS **VolParams)
 {
@@ -460,6 +460,7 @@ int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS 
             } else {
                DBId_t StorageId;
                uint32_t StartBlock, EndBlock, StartFile, EndFile;
+
                bstrncpy(Vols[i].VolumeName, row[0], MAX_NAME_LENGTH);
                bstrncpy(Vols[i].MediaType, row[1], MAX_NAME_LENGTH);
                Vols[i].FirstIndex = str_to_uint64(row[2]);
@@ -498,8 +499,6 @@ int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS 
    return retval;
 }
 
-
-
 /**
  * Get the number of pool records
  *
@@ -519,17 +518,17 @@ int db_get_num_pool_records(JCR *jcr, B_DB *mdb)
 
 /**
  * This function returns a list of all the Pool record ids.
- *  The caller must free ids if non-NULL.
+ * The caller must free ids if non-NULL.
  *
- *  Returns 0: on failure
- *          1: on success
+ * Returns 0: on failure
+ *         1: on success
  */
-int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
+int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids)
 {
    SQL_ROW row;
    int retval = 0;
    int i = 0;
-   uint32_t *id;
+   DBId_t *id;
 
    db_lock(mdb);
    *ids = NULL;
@@ -537,7 +536,7 @@ int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       *num_ids = sql_num_rows(mdb);
       if (*num_ids > 0) {
-         id = (uint32_t *)malloc(*num_ids * sizeof(uint32_t));
+         id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
          while ((row = sql_fetch_row(mdb)) != NULL) {
             id[i++] = str_to_uint64(row[0]);
          }
@@ -555,18 +554,55 @@ int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
 }
 
 /**
- * This function returns a list of all the Client record ids.
+ * This function returns a list of all the Storage record ids.
  *  The caller must free ids if non-NULL.
  *
- *  Returns false: on failure
- *          true: on success
+ *  Returns 0: on failure
+ *          1: on success
  */
-bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
+int db_get_storage_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids)
+{
+   SQL_ROW row;
+   int retval = 0;
+   int i = 0;
+   DBId_t *id;
+
+   db_lock(mdb);
+   *ids = NULL;
+   Mmsg(mdb->cmd, "SELECT StorageId FROM Storage");
+   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
+      *num_ids = sql_num_rows(mdb);
+      if (*num_ids > 0) {
+         id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
+         while ((row = sql_fetch_row(mdb)) != NULL) {
+            id[i++] = str_to_uint64(row[0]);
+         }
+         *ids = id;
+      }
+      sql_free_result(mdb);
+      retval = 1;
+   } else {
+      Mmsg(mdb->errmsg, _("Storage id select failed: ERR=%s\n"), sql_strerror(mdb));
+      Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
+      retval = 0;
+   }
+   db_unlock(mdb);
+   return retval;
+}
+
+/**
+ * This function returns a list of all the Client record ids.
+ * The caller must free ids if non-NULL.
+ *
+ * Returns false: on failure
+ *         true: on success
+ */
+bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids)
 {
    bool retval = false;
    SQL_ROW row;
    int i = 0;
-   uint32_t *id;
+   DBId_t *id;
 
    db_lock(mdb);
    *ids = NULL;
@@ -574,7 +610,7 @@ bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       *num_ids = sql_num_rows(mdb);
       if (*num_ids > 0) {
-         id = (uint32_t *)malloc(*num_ids * sizeof(uint32_t));
+         id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
          while ((row = sql_fetch_row(mdb)) != NULL) {
             id[i++] = str_to_uint64(row[0]);
          }
@@ -593,7 +629,7 @@ bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, uint32_t *ids[])
 /**
  * Get Pool Record
  * If the PoolId is non-zero, we get its record,
- *  otherwise, we search on the PoolName
+ * otherwise, we search on the PoolName
  *
  * Returns: false on failure
  *          true on success
@@ -664,8 +700,8 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 
    if (ok) {
       uint32_t NumVols;
-      Mmsg(mdb->cmd, "SELECT count(*) from Media WHERE PoolId=%s",
-         edit_int64(pdbr->PoolId, ed1));
+
+      Mmsg(mdb->cmd, "SELECT count(*) from Media WHERE PoolId=%s", edit_int64(pdbr->PoolId, ed1));
       NumVols = get_sql_record_max(jcr, mdb);
       Dmsg2(400, "Actual NumVols=%d Pool NumVols=%d\n", NumVols, pdbr->NumVols);
       if (NumVols != pdbr->NumVols) {
@@ -681,9 +717,58 @@ bool db_get_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr)
 }
 
 /**
+ * Get Storage Record
+ * If the StorageId is non-zero, we get its record, otherwise, we search on the StorageName
+ *
+ * Returns: false on failure
+ *          true on success
+ */
+bool db_get_storage_record(JCR *jcr, B_DB *mdb, STORAGE_DBR *sdbr)
+{
+   SQL_ROW row;
+   bool ok = false;
+   char ed1[50];
+   int num_rows;
+   char esc[MAX_ESCAPE_NAME_LENGTH];
+
+   db_lock(mdb);
+   if (sdbr->StorageId != 0) {               /* find by id */
+      Mmsg(mdb->cmd,
+           "SELECT StorageId,Name,AutoChanger FROM Storage WHERE Storage.StorageId=%s",
+           edit_int64(sdbr->StorageId, ed1));
+   } else {                           /* find by name */
+      mdb->db_escape_string(jcr, esc, sdbr->Name, strlen(sdbr->Name));
+      Mmsg(mdb->cmd,
+           "SELECT StorageId,Name,Autochanger FROM Storage WHERE Storage.Name='%s'", esc);
+   }
+   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
+      num_rows = sql_num_rows(mdb);
+      if (num_rows > 1) {
+         char ed1[30];
+         Mmsg1(mdb->errmsg, _("More than one Storage!: %s\n"),
+            edit_uint64(num_rows, ed1));
+         Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
+      } else if (num_rows == 1) {
+         if ((row = sql_fetch_row(mdb)) == NULL) {
+            Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), sql_strerror(mdb));
+            Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
+         } else {
+            sdbr->StorageId = str_to_int64(row[0]);
+            bstrncpy(sdbr->Name, (row[1] != NULL) ? row[1] : "", sizeof(sdbr->Name));
+            sdbr->AutoChanger = str_to_int64(row[2]);
+            ok = true;
+         }
+      }
+      sql_free_result(mdb);
+   }
+
+   db_unlock(mdb);
+   return ok;
+}
+
+/**
  * Get Client Record
- * If the ClientId is non-zero, we get its record,
- *  otherwise, we search on the Client Name
+ * If the ClientId is non-zero, we get its record, otherwise, we search on the Client Name
  *
  * Returns: false on failure
  *          true on success
@@ -699,14 +784,14 @@ bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr)
    db_lock(mdb);
    if (cdbr->ClientId != 0) {               /* find by id */
       Mmsg(mdb->cmd,
-"SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
-"FROM Client WHERE Client.ClientId=%s",
-        edit_int64(cdbr->ClientId, ed1));
+           "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
+           "FROM Client WHERE Client.ClientId=%s",
+           edit_int64(cdbr->ClientId, ed1));
    } else {                           /* find by name */
       mdb->db_escape_string(jcr, esc, cdbr->Name, strlen(cdbr->Name));
       Mmsg(mdb->cmd,
-"SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
-"FROM Client WHERE Client.Name='%s'", esc);
+           "SELECT ClientId,Name,Uname,AutoPrune,FileRetention,JobRetention "
+           "FROM Client WHERE Client.Name='%s'", esc);
    }
 
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
@@ -735,6 +820,7 @@ bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr)
    } else {
       Mmsg(mdb->errmsg, _("Client record not found in Catalog.\n"));
    }
+
    db_unlock(mdb);
    return retval;
 }
@@ -759,7 +845,9 @@ bool db_get_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr)
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       num_rows = sql_num_rows(mdb);
 
-      /* If more than one, report error, but return first row */
+      /*
+       * If more than one, report error, but return first row
+       */
       if (num_rows > 1) {
          Mmsg1(mdb->errmsg, _("More than one Counter!: %d\n"), num_rows);
          Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
@@ -792,7 +880,6 @@ bail_out:
    db_unlock(mdb);
    return retval;
 }
-
 
 /**
  * Get FileSet Record
@@ -874,11 +961,11 @@ int db_get_num_media_records(JCR *jcr, B_DB *mdb)
  * Returns false: on failure
  *         true:  on success
  */
-bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, uint32_t *ids[])
+bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t **ids)
 {
    SQL_ROW row;
    int i = 0;
-   uint32_t *id;
+   DBId_t *id;
    char ed1[50];
    bool ok = false;
    char esc[MAX_NAME_LENGTH * 2 + 1];
@@ -938,7 +1025,7 @@ bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int
    if (QUERY_DB(jcr, mdb, mdb->cmd)) {
       *num_ids = sql_num_rows(mdb);
       if (*num_ids > 0) {
-         id = (uint32_t *)malloc(*num_ids * sizeof(uint32_t));
+         id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
          while ((row = sql_fetch_row(mdb)) != NULL) {
             id[i++] = str_to_uint64(row[0]);
          }
@@ -955,13 +1042,11 @@ bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int
    return ok;
 }
 
-
 /**
- * This function returns a list of all the DBIds that are returned
- *   for the query.
+ * This function returns a list of all the DBIds that are returned for the query.
  *
- *  Returns false: on failure
- *          true:  on success
+ * Returns false: on failure
+ *         true:  on success
  */
 bool db_get_query_dbids(JCR *jcr, B_DB *mdb, POOL_MEM &query, dbid_list &ids)
 {
