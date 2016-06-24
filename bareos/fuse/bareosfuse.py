@@ -2,7 +2,7 @@
 FUSE filesystem on bareos data.
 """
 
-from   bareos.bsock import BSockJson
+from   bareos.bsock import DirectorConsoleJson
 import bareos.bsock
 from   bareos.util  import Path
 from   bareos.fuse.root  import Root
