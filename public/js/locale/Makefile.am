@@ -2,7 +2,7 @@ all: update-pot update-all msgfmt-all
 
 update-pot:
 	@(echo 'Updating webui-datatables.pot ...';)
-	@(find ../../ -regextype posix-egrep -regex '.*(functions.js)$$' | xargs xgettext --keyword=gettext -L JavaScript --from-code=UTF-8 -o webui-datatables.pot;)
+	@(find ../../ -regextype posix-egrep -regex '.*(functions.js)$$' | xargs xgettext --keyword=gettext --from-code=UTF-8 -o webui-datatables.pot;)
 
 update-po: $(PO)
 	@(echo 'Updating $(PO) file ...';)
