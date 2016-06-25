@@ -288,6 +288,8 @@ public:
    char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    char *media_type;                  /* Media Type provided by this Storage */
+   char *changer_device;              /* If DIR controls storage directly changer device used */
+   alist *tape_devices;               /* If DIR controls storage directly tape devices in storage */
    alist *device;                     /* Alternate devices for this Storage */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t MaxConcurrentReadJobs;     /* Maximum concurrent jobs reading */

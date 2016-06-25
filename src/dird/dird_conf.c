@@ -280,6 +280,8 @@ static RES_ITEM store_items[] = {
    { "PairedStorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL, NULL, NULL },
    { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store.collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   { "ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store.changer_device), 0, 0, NULL, NULL, NULL },
+   { "TapeDevice", CFG_TYPE_ALIST_STR, ITEM(res_store.tape_devices), 0, 0, NULL, NULL, NULL },
    TLS_CONFIG(res_store)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
@@ -2525,6 +2527,12 @@ void free_resource(RES *sres, int type)
       if (res->res_store.media_type) {
          free(res->res_store.media_type);
       }
+      if (res->res_store.changer_device) {
+         free(res->res_store.changer_device);
+      }
+      if (res->res_store.tape_devices) {
+         delete res->res_store.tape_devices;
+      }
       if (res->res_store.device) {
          delete res->res_store.device;
       }
@@ -2765,6 +2773,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
       } else {
          int status;
 
+         res->res_store.tape_devices = res_all.res_store.tape_devices;
          res->res_store.paired_storage = res_all.res_store.paired_storage;
          res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
 

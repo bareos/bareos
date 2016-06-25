@@ -235,6 +235,8 @@ static bool send_label_request(UAContext *ua,
    case APT_NDMPV2:
    case APT_NDMPV3:
    case APT_NDMPV4:
+      retval = ndmp_send_label_request(ua, store, mr, omr, pr, relabel, drive, slot);
+      break;
    default:
       retval = false;
       break;

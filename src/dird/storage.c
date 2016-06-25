@@ -617,6 +617,11 @@ changer_vol_list_t *get_vol_list_from_storage(UAContext *ua, STORERES *store, bo
    case APT_NATIVE:
       contents = native_get_vol_list(ua, store, listall, scan);
       break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      contents = ndmp_get_vol_list(ua, store, listall, scan);
+      break;
    default:
       break;
    }
@@ -659,6 +664,11 @@ slot_number_t get_num_slots(UAContext *ua, STORERES *store)
    case APT_NATIVE:
       slots = native_get_num_slots(ua, store);
       break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      slots = ndmp_get_num_slots(ua, store);
+      break;
    default:
       break;
    }
@@ -687,6 +697,11 @@ slot_number_t get_num_drives(UAContext *ua, STORERES *store)
    case APT_NATIVE:
       drives = native_get_num_drives(ua, store);
       break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      drives = ndmp_get_num_drives(ua, store);
+      break;
    default:
       break;
    }
@@ -709,6 +724,11 @@ bool transfer_volume(UAContext *ua, STORERES *store,
    case APT_NATIVE:
       retval = native_transfer_volume(ua, store, src_slot, dst_slot);
       break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      retval = ndmp_transfer_volume(ua, store, src_slot, dst_slot);
+      break;
    default:
       break;
    }
@@ -728,6 +748,11 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store, const char 
    switch (store->Protocol) {
    case APT_NATIVE:
       retval = native_autochanger_volume_operation(ua, store, operation, drive, slot);
+      break;
+   case APT_NDMPV2:
+   case APT_NDMPV3:
+   case APT_NDMPV4:
+      retval = ndmp_autochanger_volume_operation(ua, store, operation, drive, slot);
       break;
    default:
       break;

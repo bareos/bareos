@@ -209,6 +209,16 @@ void ndmp_restore_cleanup(JCR *jcr, int TermCode);
 
 /* ndmp_dma_storage.c */
 void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd);
+dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan);
+slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store);
+drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store);
+bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
+                          slot_number_t src_slot, slot_number_t dst_slot);
+bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const char *operation,
+                                       drive_number_t drive, slot_number_t slot);
+bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
+                             MEDIA_DBR *omr, POOL_DBR *pr, bool relabel,
+                             drive_number_t drive, slot_number_t slot);
 
 /* next_vol.c */
 void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr);
