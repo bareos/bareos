@@ -815,7 +815,7 @@ static inline bool save_disk_info(const char *key, json_t *cbt, uint64_t *absolu
       goto bail_out;
    }
 
-   rdie.absolute_disk_length = json_number_value(object);
+   rdie.absolute_disk_length = json_integer_value(object);
 
    object = json_object_get(cbt, CBT_START_OFFSET);
    if (!object) {
@@ -823,7 +823,7 @@ static inline bool save_disk_info(const char *key, json_t *cbt, uint64_t *absolu
       goto bail_out;
    }
 
-   rdie.absolute_start_offset = json_number_value(object);
+   rdie.absolute_start_offset = json_integer_value(object);
 
    /*
     * Save the absolute offset we should use.
@@ -1179,8 +1179,8 @@ static inline bool process_cbt(const char *key, json_t *cbt)
          continue;
       }
 
-      start_offset = json_number_value(start);
-      offset_length = json_number_value(length);
+      start_offset = json_integer_value(start);
+      offset_length = json_integer_value(length);
 
       if (verbose) {
          fprintf(stderr, "start = %lld\n", start_offset);
