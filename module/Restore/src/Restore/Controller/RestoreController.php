@@ -45,7 +45,7 @@ class RestoreController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       $this->getRestoreParams();
@@ -161,7 +161,7 @@ class RestoreController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       $this->getRestoreParams();

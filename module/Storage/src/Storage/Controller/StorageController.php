@@ -39,7 +39,7 @@ class StorageController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       return new ViewModel(array());
@@ -50,7 +50,7 @@ class StorageController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       $action = $this->params()->fromQuery('action');
@@ -138,7 +138,7 @@ class StorageController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       $storage = $this->params()->fromQuery('storage');
@@ -156,7 +156,7 @@ class StorageController extends AbstractActionController
       $this->RequestURIPlugin()->setRequestURI();
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
-         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI())));
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
       $data = $this->params()->fromQuery('data');

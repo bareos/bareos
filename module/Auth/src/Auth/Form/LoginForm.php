@@ -32,13 +32,15 @@ class LoginForm extends Form
 
    protected $config;
    protected $directors;
+   protected $dird;
    protected $availableLocales;
    protected $locale;
 
-   public function __construct($config=null, $name=null)
+   public function __construct($config=null, $dird=null)
    {
 
       $this->config = $config;
+      $this->dird = $dird;
       $this->directors = $this->getDirectors();
       $this->availableLocales = $this->getAvailableLocales();
       $this->locale = $this->determineLanguage();
@@ -62,19 +64,37 @@ class LoginForm extends Form
          );
       }
       else {
-         $this->add(array(
-                  'name' => 'director',
-                  'type' => 'select',
-                  'options' => array(
-                     'label' => 'Director',
-                     'empty_option' => 'Please choose a director',
-                     'value_options' => $this->directors,
-                  ),
-                  'attributes' => array(
-                     'id' => 'director',
+         if(isset($this->dird)) {
+            $this->add(array(
+                     'name' => 'director',
+                     'type' => 'select',
+                     'options' => array(
+                        'label' => 'Director',
+                        'empty_option' => 'Please choose a director',
+                        'value_options' => $this->directors,
+                     ),
+                     'attributes' => array(
+                        'id' => 'director',
+                        'value' => $this->dird
+                     )
                   )
-               )
-         );
+            );
+         }
+         else {
+            $this->add(array(
+                     'name' => 'director',
+                     'type' => 'select',
+                     'options' => array(
+                        'label' => 'Director',
+                        'empty_option' => 'Please choose a director',
+                        'value_options' => $this->directors,
+                     ),
+                     'attributes' => array(
+                        'id' => 'director',
+                     )
+                  )
+            );
+         }
       }
 
       if(isset($this->locale)) {

@@ -51,8 +51,9 @@ class AuthController extends AbstractActionController
       $this->layout('layout/login');
 
       $config = $this->getServiceLocator()->get('Config');
+      $dird = $this->params()->fromQuery('dird') ? $this->params()->fromQuery('dird') : null;
 
-      $form = new LoginForm($config['directors']);
+      $form = new LoginForm($config['directors'], $dird);
 
       $request = $this->getRequest();
 
