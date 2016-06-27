@@ -6,7 +6,7 @@ LogoDetailPage=bareos-logo-full.svg
 # 2-char Code for this App ID
 Code=BR
 Name=Bareos Backup Server
-Version=@VERSION@
+Version=@MAJOR_VERSION@
 
 EmailRequired=True
 NotifyVendor=True
