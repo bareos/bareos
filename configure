@@ -933,6 +933,7 @@ LIBBAREOSCATS_LT_RELEASE
 LIBBAREOSSQL_LT_RELEASE
 LIBBAREOSCFG_LT_RELEASE
 LIBBAREOS_LT_RELEASE
+MAJOR_VERSION
 BDB_VERSION
 post_host
 BAREOS
@@ -3394,6 +3395,9 @@ VERSION=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.
 DATE=`sed -n -e 's/^.* \t*BDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 LSMDATE=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 BDB_VERSION=`sed -n -e 's/^.*BDB_VERSION \(.*\)$/\1/p' ${srcdir}/src/cats/cats.h`
+
+MAJOR_VERSION=`echo $VERSION | cut -d. -f 1,2`
+
 
 LIBBAREOS_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 LIBBAREOSCFG_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOSCFG_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
@@ -32817,6 +32821,8 @@ debian|ubuntu|univention)
          PFILES="${PFILES} \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
+            platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list \
+            platforms/univention/get_bareos_release_key.sh \
             platforms/univention/Makefile \
             platforms/univention/AppCenter/univention-bareos.ini \
             platforms/univention/AppCenter/LICENSE_AGREEMENT"
