@@ -146,7 +146,7 @@ $(document).ready(function() {
          {
             "targets": -1,
             "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>';
+               return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+data+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
             }
          }
       ]
