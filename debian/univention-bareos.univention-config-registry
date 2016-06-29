@@ -27,3 +27,10 @@ Type: file
 File: etc/bareos/bconsole.conf
 Variables: hostname
 Variables: domainname
+
+Type: file
+File: etc/apt/sources.list.d/60_bareos.list
+Variables: bareos/subscription/username
+Variables: bareos/subscription/password
+Variables: version/version
+

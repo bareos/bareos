@@ -46,6 +46,18 @@ Description[en]=Maximum number of volumes for the full backup pool
 Type=int
 Categories=backup
 
+[bareos/subscription/username]
+Description[de]=Benutzername für den bareos.com Zugang
+Description[en]=Username for accessing bareos.com
+Type=str
+Categories=backup
+
+[bareos/subscription/password]
+Description[de]=Passwort für den bareos.com Zugang
+Description[en]=Password for accessing bareos.com
+Type=str
+Categories=backup
+
 [bareos/webui/console/user1/username]
 Description[de]=Benutzername
 Description[en]=Username

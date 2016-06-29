@@ -4249,6 +4249,8 @@ debian|ubuntu|univention)
          PFILES="${PFILES} \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
+            platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list \
+            platforms/univention/get_bareos_release_key.sh \
             platforms/univention/Makefile \
             platforms/univention/AppCenter/univention-bareos.ini \
             platforms/univention/AppCenter/LICENSE_AGREEMENT"
