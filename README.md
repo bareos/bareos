@@ -26,7 +26,3 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 ### BUGTRACKER
 
 [http://bugs.bareos.org](http://bugs.bareos.org)
-
-### CONTRIBUTE
-
-Translation: [doc/README-TRANSLATION.md](doc/README-TRANSLATION.md)
