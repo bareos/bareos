@@ -36,102 +36,130 @@
  * file.
  */
 
-$file = "/etc/bareos-webui/directors.ini";
-$config = null;
+$directors_ini = "/etc/bareos-webui/directors.ini";
+$configuration_ini = "/etc/bareos-webui/configuration.ini";
 
-if(!file_exists($file)) {
-   echo "Error: Missing configuration file ".$file.".";
+$directors = null;
+$configuration = null;
+
+// Check for existing directors.ini and parse if present
+if(!file_exists($directors_ini)) {
+   echo "Error: Missing configuration file ".$directors_ini.".";
    exit();
 }
 else {
-   $config = parse_ini_file($file, true, INI_SCANNER_NORMAL);
+   $directors = parse_ini_file($directors_ini, true, INI_SCANNER_NORMAL);
 }
 
-function read_dir_config($config, $file)
+// Check for existing configuration.ini and parse if present
+if(!file_exists($configuration_ini)) {
+   echo "Error: Missing configuration file ".$configuration_ini.".";
+   exit();
+}
+else {
+   $configuration = parse_ini_file($configuration_ini, true, INI_SCANNER_NORMAL);
+}
+
+// read configuration.ini
+function read_configuration_ini($configuration, $configuration_ini)
+{
+   $arr = array();
+
+   // TODO
+
+   if( array_key_exists('session', $configuration) && array_key_exists('timeout', $configuration['session']) && isset($configuration['session']['timeout']) ) {
+      $arr['session']['timeout'] = $configuration['session']['timeout'];
+   }
+
+   return $arr;
+}
+
+// read directors.ini
+function read_directors_ini($directors, $directors_ini)
 {
 
    $arr = array();
 
-   foreach($config as $instance) {
+   foreach($directors as $instance) {
 
       if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && strtolower($instance['enabled']) == "yes") {
 
          if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
-            $arr[key($config)] = array();
-            $arr[key($config)]['host'] = $instance['diraddress'];
+            $arr[key($directors)] = array();
+            $arr[key($directors)]['host'] = $instance['diraddress'];
          }
          else {
-            echo "Error: Missing parameter 'diraddress' in ".$file.", section ".key($config).".";
+            echo "Error: Missing parameter 'diraddress' in ".$file.", section ".key($directors).".";
             exit();
          }
 
          if(array_key_exists('dirport', $instance) && isset($instance['dirport'])) {
-            $arr[key($config)]['port'] = $instance['dirport'];
+            $arr[key($directors)]['port'] = $instance['dirport'];
          }
          else {
-            $arr[key($config)]['port'] = 9101;
+            $arr[key($directors)]['port'] = 9101;
          }
 
          if(array_key_exists('tls_verify_peer', $instance) && isset($instance['tls_verify_peer'])) {
-            $arr[key($config)]['tls_verify_peer'] = $instance['tls_verify_peer'];
+            $arr[key($directors)]['tls_verify_peer'] = $instance['tls_verify_peer'];
          }
          else {
-            $arr[key($config)]['tls_verify_peer'] = false;
+            $arr[key($directors)]['tls_verify_peer'] = false;
          }
 
          if(array_key_exists('server_can_do_tls', $instance) && isset($instance['server_can_do_tls'])) {
-            $arr[key($config)]['server_can_do_tls'] = $instance['server_can_do_tls'];
+            $arr[key($directors)]['server_can_do_tls'] = $instance['server_can_do_tls'];
          }
          else {
          }
 
          if(array_key_exists('server_requires_tls', $instance) && isset($instance['server_requires_tls'])) {
-            $arr[key($config)]['server_requires_tls'] = $instance['server_requires_tls'];
+            $arr[key($directors)]['server_requires_tls'] = $instance['server_requires_tls'];
          }
          else {
-            $arr[key($config)]['server_requires_tls'] = false;
+            $arr[key($directors)]['server_requires_tls'] = false;
          }
 
          if(array_key_exists('client_can_do_tls', $instance) && isset($instance['client_can_do_tls'])) {
-            $arr[key($config)]['client_can_do_tls'] = $instance['client_can_do_tls'];
+            $arr[key($directors)]['client_can_do_tls'] = $instance['client_can_do_tls'];
          }
          else {
-            $arr[key($config)]['client_can_do_tls'] = false;
+            $arr[key($directors)]['client_can_do_tls'] = false;
          }
 
          if(array_key_exists('client_requires_tls', $instance) && isset($instance['client_requires_tls'])) {
-            $arr[key($config)]['client_requires_tls'] = $instance['client_requires_tls'];
+            $arr[key($directors)]['client_requires_tls'] = $instance['client_requires_tls'];
          }
          else {
-            $arr[key($config)]['client_requires_tls'] = false;
+            $arr[key($directors)]['client_requires_tls'] = false;
          }
 
          if(array_key_exists('ca_file', $instance) && isset($instance['ca_file'])) {
-            $arr[key($config)]['ca_file'] = $instance['ca_file'];
+            $arr[key($directors)]['ca_file'] = $instance['ca_file'];
          }
          else {
-            $arr[key($config)]['ca_file'] = "";
+            $arr[key($directors)]['ca_file'] = "";
          }
 
          if(array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
-            $arr[key($config)]['cert_file'] = $instance['cert_file'];
+            $arr[key($directors)]['cert_file'] = $instance['cert_file'];
          }
          else {
-            $arr[key($config)]['cert_file'] = "";
+            $arr[key($directors)]['cert_file'] = "";
          }
 
          if(array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
-            $arr[key($config)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
+            $arr[key($directors)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
          }
          else {
-            $arr[key($config)]['cert_file_passphrase'] = "";
+            $arr[key($directors)]['cert_file_passphrase'] = "";
          }
 
          if(array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
-            $arr[key($config)]['allowed_cns'] = $instance['allowed_cns'];
+            $arr[key($directors)]['allowed_cns'] = $instance['allowed_cns'];
          }
          else {
-            $arr[key($config)]['allowed_cns'] = "";
+            $arr[key($directors)]['allowed_cns'] = "";
          }
 
          if(array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
@@ -143,7 +171,7 @@ function read_dir_config($config, $file)
 
       }
 
-      next($config);
+      next($directors);
 
    }
 
@@ -152,7 +180,8 @@ function read_dir_config($config, $file)
 }
 
 return array(
-   'directors' => read_dir_config($config, $file),
+   'directors' => read_directors_ini($directors, $directors_ini),
+   'configuration' => read_configuration_ini($configuration, $configuration_ini),
    'service_manager' => array(
       'factories' => array(
          'Zend\Session\Config\ConfigInterface' => 'Zend\Session\Service\SessionConfigFactory',

@@ -122,6 +122,7 @@ rm -rf $RPM_BUILD_ROOT
 #attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
 %dir /etc/bareos-webui
 %config(noreplace) /etc/bareos-webui/directors.ini
+%config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/webui-consoles.conf
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/webui-profiles.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
