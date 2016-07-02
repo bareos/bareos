@@ -58,13 +58,11 @@ class AuthController extends AbstractActionController
       $request = $this->getRequest();
 
       if($request->isPost()) {
-
          $auth = new Auth();
          $form->setInputFilter($auth->getInputFilter());
          $form->setData($request->getPost());
 
          if($form->isValid()) {
-
             $director = $form->getInputFilter()->getValue('director');
             $username = $form->getInputFilter()->getValue('consolename');
             $password = $form->getInputFilter()->getValue('password');
@@ -86,15 +84,19 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['locale'] = $locale;
                $_SESSION['bareos']['idletime'] = time();
 
+               // Get the datatable settings and push them into the SESSION context.
+               $configuration = $this->getServiceLocator()->get('configuration');
+               $_SESSION['bareos']['dt_lengthmenu'] = $configuration['configuration']['tables']['pagination_values'];
+               $_SESSION['bareos']['dt_pagelength'] = $configuration['configuration']['tables']['pagination_default_value'];
+               $_SESSION['bareos']['dt_statesave'] = ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false';
+
                if($this->params()->fromQuery('req')) {
                   return $this->redirect()->toUrl($this->params()->fromQuery('req'));
                }
                else {
                   return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
                }
-
             } else {
-
                $this->bsock->disconnect();
                session_destroy();
 
@@ -106,11 +108,8 @@ class AuthController extends AbstractActionController
                      'err_msg' => $err_msg,
                   )
                );
-
             }
-
          } else {
-
             // given credentials in login form could not be validated in this case
             $err_msg = "Please provide a director, username and password.";
 
@@ -122,9 +121,7 @@ class AuthController extends AbstractActionController
                      'err_msg' => $err_msg,
                   )
             );
-
          }
-
       }
 
       return new ViewModel(

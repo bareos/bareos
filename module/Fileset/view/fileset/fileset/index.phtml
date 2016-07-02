@@ -79,10 +79,12 @@ $this->headTitle($title);
          { "data": "createtime" },
       ],
       "paging": true,
+      "pagingType": "full_numbers",
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
       "ordering": true,
       "info": true,
-      "pagingType": "full_numbers",
-      "stateSave": true,
       "order": [[0, 'desc']],
       "columnDefs": [
          {

@@ -119,10 +119,12 @@ $(document).ready(function() {
          { "data": "name" }
       ],
       "paging": false,
+      "pagingType": "full_numbers",
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
       "ordering": false,
       "info": false,
-      "pagingType": "full_numbers",
-      "stateSave": true,
       "bFilter": false,
       "columnDefs": [
          {

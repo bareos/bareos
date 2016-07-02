@@ -126,7 +126,6 @@ tr.shown td.details-control:after {
 <script>
 
 function format( d ) {
-
    return '<table class="table table-bordered">'+
       '<tr>'+
       '<th><?php echo $this->translate("Fileset"); ?></th>'+
@@ -149,11 +148,9 @@ function format( d ) {
       '<td>'+ d.endtime +'</td>'+
       '</tr>'+
       '</table>';
-
 }
 
 $(document).ready(function() {
-
    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
@@ -179,10 +176,12 @@ $(document).ready(function() {
          { "data": null, "orderable": false }
       ],
       "paging": false,
+      "pagingType": "full_numbers",
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
       "ordering": false,
       "info": false,
-      "pagingType": "full_numbers",
-      "stateSave": true,
       "bFilter": false,
       "columnDefs": [
          {
@@ -310,7 +309,6 @@ $(document).ready(function() {
    $('#jobdetails tbody').on('mouseover', '#btn-1', function () {
       $('[data-toggle="tooltip"]').tooltip();
    });
-
 } );
 
 </script>

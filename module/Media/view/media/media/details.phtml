@@ -259,7 +259,6 @@ function format( d ) {
 }
 
 $(document).ready(function() {
-
    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
@@ -362,11 +361,12 @@ $(document).ready(function() {
          "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "paging": true,
+      "pagingType": "full_numbers",
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
       "ordering": true,
       "info": true,
-      "pagingType": "full_numbers",
-      "stateSave": true,
-      "ordering": true,
       "order": [[0, 'desc']],
       "searching": true,
       "columns": [
