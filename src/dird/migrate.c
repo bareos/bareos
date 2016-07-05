@@ -1130,7 +1130,7 @@ static int getJob_to_migrate(JCR *jcr)
          break;
       case MT_POOL_TIME:
          ttime = time(NULL) - (time_t)jcr->res.rpool->MigrationTime;
-         (void)localtime_r(&ttime, &tm);
+         blocaltime(&ttime, &tm);
          strftime(dt, sizeof(dt), "%Y-%m-%d %H:%M:%S", &tm);
 
          ids.count = 0;

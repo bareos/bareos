@@ -94,11 +94,6 @@ bool Win32IsCompatible()
 static t_pVSSPathConvert g_pVSSPathConvert;
 static t_pVSSPathConvertW g_pVSSPathConvertW;
 
-/*
- * Forward referenced functions
- */
-static const char *errorString(void);
-
 void SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW)
 {
    g_pVSSPathConvert = pPathConvert;
