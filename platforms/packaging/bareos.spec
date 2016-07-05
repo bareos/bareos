@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2015 Bareos GmbH & Co KG
+#               2013-2016 Bareos GmbH & Co KG
 #
 #   Redesign of the bareos specfile: goals (20110922)
 #
@@ -27,7 +27,7 @@
 # Please submit bugfixes or comments via http://bugs.opensuse.org/
 
 Name: 		bareos
-Version: 	14.2.6
+Version: 	14.2.7
 Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
@@ -36,7 +36,7 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    14.2.6
+%define _libversion    14.2.7
 
 %define library_dir    %{_libdir}/bareos
 %define backend_dir    %{_libdir}/bareos/backends

@@ -1033,6 +1033,9 @@
 /* Define if integer division by zero raises signal SIGFPE. */
 #undef INTDIV0_RAISES_SIGFPE
 
+/* Define to 1 if things are build using the Open Build Service (OBS) */
+#undef IS_BUILD_ON_OBS
+
 /* Where are shared libs stored */
 #undef LIBDIR
 

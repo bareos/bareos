@@ -1,3 +1,9 @@
+bareos (14.2.7-1) unstable; urgency=low
+
+  * Switch version number
+
+ -- Joerg Steffens <joerg.steffens@bareos.com>  Tue, 05 Jul 2016 15:00:00 +0100
+
 bareos (14.2.6-1) unstable; urgency=low
 
   * Switch version number

@@ -2,7 +2,7 @@ Format: 1.0
 Source: bareos
 Binary: bareos, bareos-bat, bareos-bconsole, bareos-client, bareos-common, bareos-database-common, bareos-database-postgresql, bareos-database-mysql, bareos-database-sqlite3, bareos-database-tools, bareos-devel, bareos-director, bareos-director-python-plugin, bareos-filedaemon, bareos-filedaemon-python-plugin, bareos-storage, bareos-storage-python-plugin, bareos-tools, bareos-traymonitor, univention-bareos, univention-bareos-schema
 Architecture: any
-Version: 14.2.6
+Version: 14.2.7
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Homepage: http://www.bareos.org/
 Standards-Version: 3.9.4
