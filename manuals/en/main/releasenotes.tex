@@ -32,7 +32,7 @@ This release contains several bugfixes and enhancements. Excerpt:
  \item Automatic mount of disks by SD
  \item NDMP performance enhancements
  \item Windows: sparse file restore
- \item Director mememory leak caused by frequent bconsole calls 
+ \item Director memory leak caused by frequent bconsole calls
 \end{itemize}
 }
 
@@ -118,6 +118,58 @@ Beta release.
 
 It is known, that \command{drop_database} scripts will not longer work on PostgreSQL $<$ 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL $>=$ 8.4.
 We plan to ensure this in future version of Bareos.
+
+\releasenote{14.2.7}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2016-07-11\\
+Database Version  & 2003 (unchanged)\\
+Release Ticket    & \ticket{584} \\
+Url               & \releaseUrlDownloadBareosCom{14.2} \\
+\end{tabular}
+
+This release contains several bugfixes. Excerpt:
+\begin{itemize}
+    \item bareos-dir
+    \begin{itemize}
+        \item Fixes pretty printing of Fileset options block \\
+            \ticket{591}: config pretty-printer does not print filesets correctly
+        \item run command: fixes changing the pool when changing the backup level in interactive mode \\
+            \ticket{633}: Interactive run doesn't update pool on level change
+        \item Ignore the Fileset option DriveType on non Windows systems \\
+            \ticket{644}: Setting DriveType causes empty backups on Linux
+        \item Suppress already queued jobs for disabled schedules \\
+            \ticket{659}: Suppress already queued jobs for disabled schedules
+    \end{itemize}
+    \item NDMP
+    \begin{itemize}
+        \item Fixes cancel of NDMP jobs\\
+            \ticket{604}: Cancel a NDMP Job causes the sd to crash
+    \end{itemize}
+    \item bpipe-fd plugin
+    \begin{itemize}
+        \item Only take stdout into account, ignore stderr (like earlier versions) \\
+            \ticket{632}: fd-bpipe plugin merges stderr with stdout, which can result in corrupted backups
+    \end{itemize}
+    \item win32
+    \begin{itemize}
+        \item Fix symlink and junction support\\
+            \ticket{575}: charset problem in symlinks/junctions windows restore \\
+            \ticket{615}: symlinks/junctions wrong target path on restore (wide chars)
+        \item Fixes quoting for bmail.exe in bareos-dir.conf \\
+            \ticket{581}: Installer is setting up a wrong path to bmail.exe without quotes / bmail not called
+        \item Fix crash on restore of sparse files \\
+            \ticket{640}: File daemon crashed after restoring sparse file on windows
+    \end{itemize}
+    \item win32 mssql plugin
+    \begin{itemize}
+        \item Allow connecting to non default instance \\
+            \ticket{383}: mssqldvi problem with connection to mssql not default instance
+        \item Fix backup/restore of incremental backups \\
+            \ticket{588}: Incremental MSSQL backup fails when database name contains spaces
+    \end{itemize}
+\end{itemize}
+}
 
 \releasenote{14.2.6}{
 
