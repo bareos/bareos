@@ -144,7 +144,7 @@ public:
    bool is_stop() { return errors || is_terminated(); }
    bool is_error() { errno = b_errno; return errors; }
    void set_data_end(int32_t FileIndex) {
-          if (m_spool != -1 && FileIndex > m_FileIndex) {
+          if (m_spool_fd != -1 && FileIndex > m_FileIndex) {
               m_FileIndex = FileIndex - 1;
               m_data_end = lseek(m_spool_fd, 0, SEEK_CUR);
            }
