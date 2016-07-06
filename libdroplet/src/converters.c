@@ -149,7 +149,7 @@ dpl_canned_acl(char *str)
     return DPL_CANNED_ACL_PUBLIC_READ;
   else if (!strcasecmp(str, "public-read-write"))
     return DPL_CANNED_ACL_PUBLIC_READ_WRITE;
-  else if (!strcasecmp(str, "autenticated-read"))
+  else if (!strcasecmp(str, "authenticated-read"))
     return DPL_CANNED_ACL_AUTHENTICATED_READ;
   else if (!strcasecmp(str, "bucket-owner-read"))
     return DPL_CANNED_ACL_BUCKET_OWNER_READ;
