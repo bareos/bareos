@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,33 +25,14 @@
 
 namespace Dashboard\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
 use Zend\Json\Json;
 
-class DashboardModel implements ServiceLocatorAwareInterface
+class DashboardModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getJobs(&$bsock=null, $status=null, $days=null, $hours=null)
    {
-   }
-
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-   {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getJobs($status=null, $days=null, $hours=null)
-   {
-      if(isset($status)) {
-         $this->director = $this->getServiceLocator()->get('director');
+      if(isset($bsock, $status)) {
          if(isset($days)) {
             $cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
          }
@@ -61,31 +42,39 @@ class DashboardModel implements ServiceLocatorAwareInterface
          else {
             $cmd = 'llist jobs jobstatus='.$status.'';
          }
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getJobsLastStatus()
+   public function getJobsLastStatus(&$bsock=null)
    {
-      $cmd = 'llist jobs last';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $jobs['result']['jobs'];
+      if(isset($bsock)) {
+         $cmd = 'llist jobs last';
+         $result = $bsock->send_command($cmd, 2, null);
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobs['result']['jobs'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function getLastDirectorMessages()
+   public function getLastDirectorMessages(&$bsock=null)
    {
-      $cmd = 'llist log limit=50';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $msg = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $msg['result']['log'];
+      if(isset($bsock)) {
+         $cmd = 'llist log limit=50';
+         $result = $bsock->send_command($cmd, 2, null);
+         $msg = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $msg['result']['log'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
 }

@@ -34,7 +34,7 @@ use Zend\Session\Container;
 class AuthController extends AbstractActionController
 {
 
-   protected $director;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -71,11 +71,13 @@ class AuthController extends AbstractActionController
             $locale = $form->getInputFilter()->getValue('locale');
 
             $config = $this->getServiceLocator()->get('Config');
-            $this->director = $this->getServiceLocator()->get('director');
-            $this->director->set_config($config['directors'][$director]);
-            $this->director->set_user_credentials($username, $password);
 
-            if($this->director->auth($username, $password)) {
+            $this->bsock = $this->getServiceLocator()->get('director');
+
+            $this->bsock->set_config($config['directors'][$director]);
+            $this->bsock->set_user_credentials($username, $password);
+
+            if($this->bsock->auth($username, $password)) {
 
                $_SESSION['bareos']['director'] = $director;
                $_SESSION['bareos']['username'] = $username;
@@ -93,7 +95,9 @@ class AuthController extends AbstractActionController
 
             } else {
 
+               $this->bsock->disconnect();
                session_destroy();
+
                $err_msg = "Sorry, can not authenticate. Wrong username and/or password.";
 
                return new ViewModel(

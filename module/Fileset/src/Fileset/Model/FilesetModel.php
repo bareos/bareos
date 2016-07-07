@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,48 +25,32 @@
 
 namespace Fileset\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class FilesetModel implements ServiceLocatorAwareInterface
+class FilesetModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getFilesets(&$bsock=null)
    {
+      if(isset($bsock)) {
+         $cmd = 'list filesets';
+         $result = $bsock->send_command($cmd, 2, null);
+         $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $filesets['result']['filesets'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   public function getFileset(&$bsock=null, $id)
    {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getFilesets()
-   {
-      $cmd = 'list filesets';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $filesets['result']['filesets'];
-   }
-
-   public function getFileset($id)
-   {
-      if(isset($id)) {
+      if(isset($bsock, $id)) {
          $cmd = 'llist fileset filesetid='.$id.'';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $fileset = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $fileset['result']['filesets'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 }

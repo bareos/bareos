@@ -32,7 +32,8 @@ use Zend\Json\Json;
 class ScheduleController extends AbstractActionController
 {
 
-   protected $scheduleModel;
+   protected $scheduleModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -42,10 +43,20 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $schedules = $this->getScheduleModel()->getSchedules();
+      $result = null;
+
       $action = $this->params()->fromQuery('action');
+      $schedulename = $this->params()->fromQuery('schedule');
 
       if(empty($action)) {
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
          return new ViewModel(
             array(
                'schedules' => $schedules
@@ -53,8 +64,15 @@ class ScheduleController extends AbstractActionController
          );
       }
       elseif($action == "enable") {
-         $schedulename = $this->params()->fromQuery('schedule');
-         $result = $this->getScheduleModel()->enableSchedule($schedulename);
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+            $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
          return new ViewModel(
             array(
                'schedules' => $schedules,
@@ -63,8 +81,15 @@ class ScheduleController extends AbstractActionController
          );
       }
       elseif($action == "disable") {
-         $schedulename = $this->params()->fromQuery('schedule');
-         $result = $this->getScheduleModel()->disableSchedule($schedulename);
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+            $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
          return new ViewModel(
             array(
                'schedules' => $schedules,
@@ -82,7 +107,16 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $result = $this->getScheduleModel()->showSchedules();
+      $result = null;
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getScheduleModel()->showSchedules($this->bsock);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -99,7 +133,16 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $result = $this->getScheduleModel()->getFullScheduleStatus();
+      $result = null;
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getScheduleModel()->getFullScheduleStatus($this->bsock);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -116,8 +159,18 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $schedulename = $this->params()->fromQuery('schedule');
-      $result = $this->getScheduleModel()->getScheduleStatus($schedulename);
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getScheduleModel()->getScheduleStatus($this->bsock, $schedulename);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -134,17 +187,30 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $schedule = $this->params()->fromQuery('schedule');
 
       if($data == "all") {
-         $result = $this->getScheduleModel()->getSchedules();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getScheduleModel()->getSchedules($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "details" && isset($schedule)) {
-         $result = $this->getScheduleModel()->getSchedule($schedule);
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getScheduleModel()->getSchedule($this->bsock, $schedule);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

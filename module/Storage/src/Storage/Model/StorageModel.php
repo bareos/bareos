@@ -25,126 +25,147 @@
 
 namespace Storage\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class StorageModel implements ServiceLocatorAwareInterface
+class StorageModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getStorages(&$bsock=null)
    {
-   }
-
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-   {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getStorages()
-   {
-      $cmd = 'list storages';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $storages['result']['storages'];
-   }
-
-   public function getStatusStorageSlots($storage=null)
-   {
-      $cmd = 'status storage="' . $storage . '" slots';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $slots['result']['contents'];
-   }
-
-   public function importSlots($storage=null, $srcslots=null, $dstslots=null)
-   {
-      if($dstslots == null) {
-         $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots;
+      if(isset($bsock)) {
+         $cmd = 'list storages';
+         $result = $bsock->send_command($cmd, 2, null);
+         $storages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $storages['result']['storages'];
       }
       else {
-         $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+         throw new \Exception('Missing argument.');
       }
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
    }
 
-   public function exportSlots($storage=null, $slots=null)
+   public function getStatusStorageSlots(&$bsock=null, $storage=null)
    {
-      $cmd = 'export storage="' . $storage . '" srcslots=' . $slots;
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
+      if(isset($bsock, $storage)) {
+         $cmd = 'status storage="' . $storage . '" slots';
+         $result = $bsock->send_command($cmd, 2, null);
+         $slots = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $slots['result']['contents'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function mountSlot($storage=null, $slot=null, $drive=null)
+   public function importSlots(&$bsock=null, $storage=null, $srcslots=null, $dstslots=null)
    {
-      $cmd = 'mount storage="' . $storage . '" slot=' . $slot . ' drive=' . $drive;
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function unmountSlot($storage=null, $drive=null)
-   {
-      $cmd = 'unmount storage="' . $storage . '" drive=' . $drive;
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function releaseSlot($storage=null, $drive=null)
-   {
-      $cmd = 'release storage="' . $storage . '" drive=' . $drive;
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function updateSlots($storage=null)
-   {
-      $cmd = 'update slots storage="' . $storage . '"';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function moveSlots($storage=null, $srcslots=null, $dstslots=null)
-   {
-      $cmd = 'move storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      return $result;
-   }
-
-   public function label($storage=null, $pool=null, $drive=null, $slots=null)
-   {
-      // Use Scratch pool by default as long as we don't display a pool selection dialog
-      $cmd = 'label storage="' . $storage . '" pool=Scratch drive=0 barcodes yes';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function statusStorage($storage=null)
-   {
-      if(isset($storage)) {
-         $cmd = 'status storage="'.$storage;
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+      if(isset($bsock, $storage, $srclots)) {
+         if($dstslots == null) {
+            $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots;
+         }
+         else {
+            $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+         }
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function exportSlots(&$bsock=null, $storage=null, $slots=null)
+   {
+      if(isset($bsock, $storage, $slots)) {
+         $cmd = 'export storage="' . $storage . '" srcslots=' . $slots;
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function mountSlot(&$bsock=null, $storage=null, $slot=null, $drive=null)
+   {
+      if(isset($bsock, $storage, $slot, $drive)) {
+         $cmd = 'mount storage="' . $storage . '" slot=' . $slot . ' drive=' . $drive;
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function unmountSlot(&$bsock=null, $storage=null, $drive=null)
+   {
+      if(isset($bsock, $storage, $drive)) {
+         $cmd = 'unmount storage="' . $storage . '" drive=' . $drive;
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function releaseSlot(&$bsock=null, $storage=null, $drive=null)
+   {
+      if(isset($bsock, $storage, $drive)) {
+         $cmd = 'release storage="' . $storage . '" drive=' . $drive;
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function updateSlots(&$bsock=null, $storage=null)
+   {
+      if(isset($bsock, $storage)) {
+         $cmd = 'update slots storage="' . $storage . '"';
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function moveSlots(&$bsock=null, $storage=null, $srcslots=null, $dstslots=null)
+   {
+      if(isset($bsock, $storage, $srcslots, $dstslots)) {
+         $cmd = 'move storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+         $result = $bsock->send_command($cmd, 2, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function label(&$bsock=null, $storage=null, $pool=null, $drive=null, $slots=null)
+   {
+      if(isset($bsock, $storage)) {
+         // TODO
+         // Use Scratch pool by default as long as we don't display a pool selection dialog
+         $cmd = 'label storage="' . $storage . '" pool=Scratch drive=0 barcodes yes';
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function statusStorage(&$bsock=null, $storage=null)
+   {
+      if(isset($bsock, $storage)) {
+         $cmd = 'status storage="'.$storage;
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
       }
    }
 }

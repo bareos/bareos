@@ -32,7 +32,8 @@ use Zend\Json\Json;
 class ClientController extends AbstractActionController
 {
 
-   protected $clientModel;
+   protected $clientModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -42,34 +43,41 @@ class ClientController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $clients = $this->getClientModel()->getClients();
+      $result = null;
+
       $action = $this->params()->fromQuery('action');
 
       if(empty($action)) {
-         return new ViewModel(
-            array(
-               'clients' => $clients
-            )
-         );
+         return new ViewModel();
       }
       elseif($action == "enable") {
          $clientname = $this->params()->fromQuery('client');
-         $result = $this->getClientModel()->enableClient($clientname);
-
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getClientModel()->enableClient($this->bsock, $clientname);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
          return new ViewModel(
             array(
-               'clients' => $clients,
                'result' => $result
             )
          );
       }
       elseif($action == "disable") {
          $clientname = $this->params()->fromQuery('client');
-         $result = $this->getClientModel()->disableClient($clientname);
-
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getClientModel()->disableClient($this->bsock, $clientname);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
          return new ViewModel(
             array(
-               'clients' => $clients,
                'result' => $result
             )
          );
@@ -89,7 +97,6 @@ class ClientController extends AbstractActionController
             'client' => $this->params()->fromRoute('id')
          )
       );
-
    }
 
    public function statusAction()
@@ -100,8 +107,18 @@ class ClientController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $clientname = $this->params()->fromQuery('client');
-      $result = $this->getClientModel()->statusClient($clientname);
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getClientModel()->statusClient($this->bsock, $clientname);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -119,20 +136,40 @@ class ClientController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $client = $this->params()->fromQuery('client');
 
       if($data == "all") {
-         $result = $this->getClientModel()->getClients();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getClientModel()->getClients($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "details" && isset($client)) {
-         $result = $this->getClientModel()->getClient($client);
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getClientModel()->getClient($this->bsock, $client);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "backups" && isset($client)) {
-         $result = $this->getClientModel()->getClientBackups($client, null, 'desc');
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getClientModel()->getClientBackups($this->bsock, $client, null, 'desc');
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

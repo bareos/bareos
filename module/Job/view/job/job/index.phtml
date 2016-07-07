@@ -113,6 +113,27 @@ $this->headTitle($title);
 </div>
 <!-- modal-001 end -->
 
+<!-- modal-002 start -->
+<div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-002 end -->
+
 <style>
 
 td.details-control:after {
@@ -184,9 +205,14 @@ function updateQueryParams(k, v)
 }
 
 $(document).ready(function() {
-
    setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
    setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+   if(result.length > 0) {
+      $("#modal-002").modal();
+   }
 
    var table = $('#jobtable').DataTable( {
       "ajax": {
@@ -261,7 +287,7 @@ $(document).ready(function() {
                   case 'W':
                      switch(data.type) {
                         case 'B':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                         case 'C':
                            return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+data.client+'&jobid='+data.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                      }
@@ -271,7 +297,7 @@ $(document).ready(function() {
                   case 'A':
                      switch(data.type) {
                         case 'B':
-                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/rerun/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
                      }
                   case 'F':
                   case 'S':

@@ -32,7 +32,8 @@ use Zend\Json\Json;
 class StorageController extends AbstractActionController
 {
 
-   protected $storageModel;
+   protected $storageModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -52,6 +53,8 @@ class StorageController extends AbstractActionController
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
+
+      $result = null;
 
       $action = $this->params()->fromQuery('action');
       $storagename = $this->params()->fromRoute('id');
@@ -141,8 +144,18 @@ class StorageController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $storage = $this->params()->fromQuery('storage');
-      $result = $this->getStorageModel()->statusStorage($storage);
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getStorageModel()->statusStorage($this->bsock, $storage);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -159,17 +172,30 @@ class StorageController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $storage = $this->params()->fromQuery('storage');
 
       if($data == "all") {
-         $result = $this->getStorageModel()->getStorages();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getStorageModel()->getStorages($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "statusslots") {
-         $result = $this->getStorageModel()->getStatusStorageSlots($storage);
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getStorageModel()->getStatusStorageSlots($this->bsock, $storage);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

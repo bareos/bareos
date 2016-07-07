@@ -76,59 +76,61 @@ $this->headTitle($title);
 
 <script>
 
-setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+$(document).ready(function() {
+   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-var table= $('#pools').DataTable( {
-   "ajax": {
-      "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",
-      "dataSrc": ""
-   },
-   "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-   },
-   "columns" : [
-      { "data": "name" },
-      { "data": "pooltype" },
-      { "data": "numvols" },
-      { "data": "maxvols" },
-      { "data": "volretention" },
-      { "data": "maxvoljobs" },
-      { "data": "maxvolbytes", "type": "file-size" },
-      { "data": "volretention" }
-   ],
-   "paging": true,
-   "ordering": true,
-   "info": true,
-   "pagingType": "full_numbers",
-   "stateSave": true,
-   "order": [[0, 'asc']],
-   "columnDefs": [
-      {
-         "targets": 0,
-         "render": function(data, type, full, meta) {
-            return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
-         }
+   var table= $('#pools').DataTable( {
+      "ajax": {
+         "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>",
+         "dataSrc": ""
       },
-      {
-         "targets": 4,
-         "orderData": 7,
-         "render": function(data, type, full, meta) {
-            return formatRetention(data);
-         }
+      "language": {
+            "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
-      {
-         "targets": 6,
-         "render": function(data, type, full, meta) {
-            return formatBytes(data);
+      "columns" : [
+         { "data": "name" },
+         { "data": "pooltype" },
+         { "data": "numvols" },
+         { "data": "maxvols" },
+         { "data": "volretention" },
+         { "data": "maxvoljobs" },
+         { "data": "maxvolbytes", "type": "file-size" },
+         { "data": "volretention" }
+      ],
+      "paging": true,
+      "pagingType": "full_numbers",
+      "stateSave": true,
+      "ordering": true,
+      "info": true,
+      "order": [[0, 'asc']],
+      "columnDefs": [
+         {
+            "targets": 0,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 4,
+            "orderData": 7,
+            "render": function(data, type, full, meta) {
+               return formatRetention(data);
+            }
+         },
+         {
+            "targets": 6,
+            "render": function(data, type, full, meta) {
+               return formatBytes(data);
+            }
+         },
+         {
+            "targets": 7,
+            "visible": false,
+            "searchable": false
          }
-      },
-      {
-         "targets": 7,
-         "visible": false,
-         "searchable": false
-      }
-   ]
-} );
+      ]
+   });
+});
 
 </script>

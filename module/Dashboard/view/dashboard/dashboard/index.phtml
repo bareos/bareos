@@ -99,7 +99,6 @@ $this->headTitle($title);
    var lastlogid = 0;
 
    function getDirectorMessages() {
-
       $.ajax({
          url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=dirdmsg'; ?>',
          dataType: 'json',
@@ -114,82 +113,77 @@ $this->headTitle($title);
             }
          }
       });
-
    }
 
    $(document).ready(
-
       function() {
+         setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+         setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-            setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-            setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+         chart1();
 
-            chart1();
+         getDirectorMessages();
 
-            getDirectorMessages();
+         setInterval('getDirectorMessages()', 30000);
 
-            setInterval('getDirectorMessages()', 30000);
-
-            var table_jobs_last_status = $('#jobs-last-status').DataTable({
-               "ajax": {
-                  "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>",
-                  "dataSrc": ""
-               },
-               "language": {
-                  "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-               },
-               "columns" : [
-                  { "data": "name" },
-                  { "data": "jobstatus" },
-                  { "data": "jobid" },
-                  { "data": "client" },
-                  { "data": "level" },
-                  { "data": "starttime" },
-                  { "data": "endtime" },
-                  { "data": "jobbytes", "type": "file-size" }
-               ],
-               "paging": true,
-               "ordering": true,
-               "info": true,
-               "pagingType": "full_numbers",
-               "stateSave": true,
-               "order": [[2, 'desc']],
-               "columnDefs": [
-                  {
-                     "targets": 2,
-                     "render": function(data, type, full, meta) {
-                        return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
-                     }
-                  },
-                  {
-                     "targets": 1,
-                     "render": function(data, type, full, meta) {
-                        return formatJobStatus(data);
-                     }
-                  },
-                  {
-                     "targets": 3,
-                     "render": function(data, type, full, meta) {
-                        return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
-                     }
-                  },
-                  {
-                     "targets": 4,
-                     "render": function(data, type, full, meta) {
-                        return formatJobLevel(data);
-                     }
-                  },
-                  {
-                     "targets": 7,
-                     "render": function(data, type, full, meta) {
-                        return formatBytes(data);
-                     }
+         var table_jobs_last_status = $('#jobs-last-status').DataTable({
+            "ajax": {
+               "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>",
+               "dataSrc": ""
+            },
+            "language": {
+               "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+            },
+            "columns" : [
+               { "data": "name" },
+               { "data": "jobstatus" },
+               { "data": "jobid" },
+               { "data": "client" },
+               { "data": "level" },
+               { "data": "starttime" },
+               { "data": "endtime" },
+               { "data": "jobbytes", "type": "file-size" }
+            ],
+            "paging": true,
+            "ordering": true,
+            "info": true,
+            "pagingType": "full_numbers",
+            "stateSave": true,
+            "order": [[2, 'desc']],
+            "columnDefs": [
+               {
+                  "targets": 2,
+                  "render": function(data, type, full, meta) {
+                     return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
                   }
-               ]
-            });
-
+               },
+               {
+                  "targets": 1,
+                  "render": function(data, type, full, meta) {
+                     return formatJobStatus(data);
+                  }
+               },
+               {
+                  "targets": 3,
+                  "render": function(data, type, full, meta) {
+                     return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+                  }
+               },
+               {
+                  "targets": 4,
+                  "render": function(data, type, full, meta) {
+                     return formatJobLevel(data);
+                  }
+               },
+               {
+                  "targets": 7,
+                  "render": function(data, type, full, meta) {
+                     return formatBytes(data);
+                  }
+               }
+            ]
+         });
       }
-
    );
 
 </script>

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,53 +25,37 @@
 
 namespace Job\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class JobModel implements ServiceLocatorAwareInterface
+class JobModel
 {
-   protected $serviceLocator;
-   protected $director;
-
-   public function __constructor()
+   public function getJobs(&$bsock=null, $status=null, $period=null)
    {
-   }
+      if(isset($bsock)) {
+         if($period == "all") {
+            $cmd = 'llist jobs';
+         }
+         else {
+            $cmd = 'llist jobs days='.$period;
+         }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
-   {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getJobs($status=null, $period=null)
-   {
-      if($period == "all") {
-         $cmd = 'llist jobs';
+         $result = $bsock->send_command($cmd, 2, null);
+         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+            //return false;
+            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $error['result']['error'];
+         }
+         else {
+            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $jobs['result']['jobs'];
+         }
       }
       else {
-         $cmd = 'llist jobs days='.$period;
-      }
-
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-         //return false;
-         $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $error['result']['error'];
-      }
-      else {
-         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $jobs['result']['jobs'];
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getJobsByStatus($status=null, $days=null, $hours=null)
+   public function getJobsByStatus(&$bsock=null, $status=null, $days=null, $hours=null)
    {
-      if(isset($status)) {
+      if(isset($bsock, $status)) {
          if(isset($days)) {
             if($days == "all") {
                $cmd = 'llist jobs jobstatus='.$status.'';
@@ -91,115 +75,111 @@ class JobModel implements ServiceLocatorAwareInterface
          else {
             $cmd = 'llist jobs jobstatus='.$status.'';
          }
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return array_reverse($jobs['result']['jobs']);
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getJob($id=null)
+   public function getJob(&$bsock=null, $id=null)
    {
-      if(isset($id)) {
+      if(isset($bsock, $id)) {
          $cmd = 'llist jobid='.$id.'';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $job['result']['jobs'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getJobLog($id=null)
+   public function getJobLog(&$bsock=null, $id=null)
    {
-      if(isset($id)) {
+      if(isset($bsock, $id)) {
          $cmd = 'list joblog jobid='.$id.'';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $log['result']['joblog'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getBackupJobs()
+   public function getBackupJobs(&$bsock=null)
    {
-      $cmd = '.jobs type=B';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $jobs['result']['jobs'];
+      if(isset($bsock)) {
+         $cmd = '.jobs type=B';
+         $result = $bsock->send_command($cmd, 2, null);
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobs['result']['jobs'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function runJob($name=null)
+   public function runJob(&$bsock=null, $name=null)
    {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'run job="'.$name.'" yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function rerunJob($id=null)
+   public function rerunJob(&$bsock=null, $id=null)
    {
-      if(isset($id)) {
+      if(isset($bsock, $id)) {
          $cmd = 'rerun jobid='.$id.' yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function cancelJob($id=null)
+   public function cancelJob(&$bsock=null, $id=null)
    {
-      if(isset($id)) {
+      if(isset($bsock, $id)) {
          $cmd = 'cancel jobid='.$id.' yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function enableJob($name=null)
+   public function enableJob(&$bsock=null, $name=null)
    {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'enable job="'.$name.'" yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function disableJob($name=null)
+   public function disableJob(&$bsock=null, $name=null)
    {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'disable job="'.$name.'" yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 }

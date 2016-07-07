@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,86 +28,79 @@ namespace Schedule\Model;
 use Zend\ServiceManager\ServiceLocatorAwareInterface;
 use Zend\ServiceManager\ServiceLocatorInterface;
 
-class ScheduleModel implements ServiceLocatorAwareInterface
+class ScheduleModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getSchedules(&$bsock=null)
    {
+      if(isset($bsock)) {
+         $cmd = '.schedule';
+         $result = $bsock->send_command($cmd, 2, null);
+         $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $schedules['result']['schedules'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   public function showSchedules(&$bsock=null)
    {
-      $this->serviceLocator = $serviceLocator;
+      if(isset($bsock)) {
+         $cmd = 'show schedule';
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function getServiceLocator()
+   public function getFullScheduleStatus(&$bsock=null)
    {
-      return $this->serviceLocator;
+      if(isset($bsock)) {
+         $cmd = 'status scheduler';
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function getSchedules()
+   public function getScheduleStatus(&$bsock=null, $name=null)
    {
-      $cmd = '.schedule';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $schedules = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $schedules['result']['schedules'];
-   }
-
-   public function showSchedules()
-   {
-      $cmd = 'show schedule';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function getFullScheduleStatus()
-   {
-      $cmd = 'status scheduler';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function getScheduleStatus($name=null)
-   {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'status scheduler schedule="'.$name;
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function enableSchedule($name=null)
+   public function enableSchedule(&$bsock=null, $name=null)
    {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'enable schedule="'.$name.'" yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function disableSchedule($name=null)
+   public function disableSchedule(&$bsock=null, $name=null)
    {
-      if(isset($name)) {
+      if(isset($bsock, $name)) {
          $cmd = 'disable schedule="'.$name.'" yes';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 0, null);
+         $result = $bsock->send_command($cmd, 0, null);
          return $result;
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 }

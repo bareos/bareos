@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2014-2015 Bareos GmbH & Co. KG
+ * @copyright Copyright (c) 2014-2016 Bareos GmbH & Co. KG
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -930,14 +930,6 @@ class BareosBSock implements BareosBSockInterface
       }
 
       return $result;
-   }
-
-   /**
-    * Destructor
-    */
-   public function __destruct()
-   {
-      self::disconnect();
    }
 
 }

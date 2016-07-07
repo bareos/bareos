@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,62 +25,45 @@
 
 namespace Pool\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class PoolModel implements ServiceLocatorAwareInterface
+class PoolModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getPools(&$bsock=null)
    {
+      if(isset($bsock)) {
+         $cmd = 'llist pools';
+         $result = $bsock->send_command($cmd, 2, null);
+         $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $pools['result']['pools'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   public function getPool(&$bsock=null, $pool=null)
    {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getPools()
-   {
-      $cmd = 'llist pools';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $pools = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $pools['result']['pools'];
-   }
-
-   public function getPool($pool=null)
-   {
-      if(isset($pool)) {
+      if(isset($bsock, $pool)) {
          $cmd = 'llist pool="'.$pool.'"';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $pool = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $pool['result']['pools'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getPoolMedia($pool=null)
+   public function getPoolMedia(&$bsock=null, $pool=null)
    {
-      if(isset($pool)) {
+      if(isset($bsock, $pool)) {
          $cmd = 'llist media pool="'.$pool.'"';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $media['result']['volumes'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 }

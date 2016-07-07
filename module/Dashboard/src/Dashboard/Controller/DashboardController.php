@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,7 +31,8 @@ use Zend\Json\Json;
 
 class DashboardController extends AbstractActionController
 {
-   protected $dashboardModel;
+   protected $dashboardModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -41,67 +42,73 @@ class DashboardController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $running = $this->getJobs("running", 1, null);
+         $waiting = $this->getJobs("waiting", 1, null);
+         $successful = $this->getJobs("successful", 1, null);
+         $unsuccessful = $this->getJobs("unsuccessful", 1, null);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
       return new ViewModel(
          array(
-            'runningJobs' => $this->getJobs("running", 1, null),
-            'waitingJobs' => $this->getJobs("waiting", 1, null),
-            'successfulJobs' => $this->getJobs("successful", 1, null),
-            'unsuccessfulJobs' => $this->getJobs("unsuccessful", 1, null),
+            'runningJobs' => $running,
+            'waitingJobs' => $waiting,
+            'successfulJobs' => $successful,
+            'unsuccessfulJobs' => $unsuccessful,
          )
       );
    }
 
    private function getJobs($status=null, $days=1, $hours=null)
    {
+      $num = null;
+
       if($status != null) {
          if($status == "running") {
-            $jobs_R = $this->getDashboardModel()->getJobs('R', $days, $hours);
-            $jobs_l = $this->getDashboardModel()->getJobs('l', $days, $hours);
+            $jobs_R = $this->getDashboardModel()->getJobs($this->bsock, 'R', $days, $hours);
+            $jobs_l = $this->getDashboardModel()->getJobs($this->bsock, 'l', $days, $hours);
             $num = count($jobs_R) + count($jobs_l);
-            return $num;
          }
          elseif($status == "waiting") {
-            $jobs_F = $this->getDashboardModel()->getJobs('F', $days, $hours);
-            $jobs_S = $this->getDashboardModel()->getJobs('S', $days, $hours);
-            $jobs_s = $this->getDashboardModel()->getJobs('s', $days, $hours);
-            $jobs_m = $this->getDashboardModel()->getJobs('m', $days, $hours);
-            $jobs_M = $this->getDashboardModel()->getJobs('M', $days, $hours);
-            $jobs_j = $this->getDashboardModel()->getJobs('j', $days, $hours);
-            $jobs_c = $this->getDashboardModel()->getJobs('c', $days, $hours);
-            $jobs_C = $this->getDashboardModel()->getJobs('C', $days, $hours);
-            $jobs_d = $this->getDashboardModel()->getJobs('d', $days, $hours);
-            $jobs_t = $this->getDashboardModel()->getJobs('t', $days, $hours);
-            $jobs_p = $this->getDashboardModel()->getJobs('p', $days, $hours);
-            $jobs_q = $this->getDashboardModel()->getJobs('q', $days, $hours);
+            $jobs_F = $this->getDashboardModel()->getJobs($this->bsock, 'F', $days, $hours);
+            $jobs_S = $this->getDashboardModel()->getJobs($this->bsock, 'S', $days, $hours);
+            $jobs_s = $this->getDashboardModel()->getJobs($this->bsock, 's', $days, $hours);
+            $jobs_m = $this->getDashboardModel()->getJobs($this->bsock, 'm', $days, $hours);
+            $jobs_M = $this->getDashboardModel()->getJobs($this->bsock, 'M', $days, $hours);
+            $jobs_j = $this->getDashboardModel()->getJobs($this->bsock, 'j', $days, $hours);
+            $jobs_c = $this->getDashboardModel()->getJobs($this->bsock, 'c', $days, $hours);
+            $jobs_C = $this->getDashboardModel()->getJobs($this->bsock, 'C', $days, $hours);
+            $jobs_d = $this->getDashboardModel()->getJobs($this->bsock, 'd', $days, $hours);
+            $jobs_t = $this->getDashboardModel()->getJobs($this->bsock, 't', $days, $hours);
+            $jobs_p = $this->getDashboardModel()->getJobs($this->bsock, 'p', $days, $hours);
+            $jobs_q = $this->getDashboardModel()->getJobs($this->bsock, 'q', $days, $hours);
             $num = count($jobs_F) + count($jobs_S) +
                count($jobs_s) + count($jobs_m) +
                count($jobs_M) + count($jobs_j) +
                count($jobs_c) + count($jobs_C) +
                count($jobs_d) + count($jobs_t) +
                count($jobs_p) + count($jobs_q);
-            return $num;
          }
          elseif($status == "successful") {
-            $jobs_T = $this->getDashboardModel()->getJobs('T', $days, $hours);
-            $jobs_W = $this->getDashboardModel()->getJobs('W', $days, $hours);
+            $jobs_T = $this->getDashboardModel()->getJobs($this->bsock, 'T', $days, $hours);
+            $jobs_W = $this->getDashboardModel()->getJobs($this->bsock, 'W', $days, $hours);
             $num = count($jobs_T) + count($jobs_W);
-            return $num;
          }
          elseif($status == "unsuccessful") {
-            $jobs_A = $this->getDashboardModel()->getJobs('A', $days, $hours);
-            $jobs_E = $this->getDashboardModel()->getJobs('E', $days, $hours);
-            $jobs_e = $this->getDashboardModel()->getJobs('e', $days, $hours);
-            $jobs_f = $this->getDashboardModel()->getJobs('f', $days, $hours);
+            $jobs_A = $this->getDashboardModel()->getJobs($this->bsock, 'A', $days, $hours);
+            $jobs_E = $this->getDashboardModel()->getJobs($this->bsock, 'E', $days, $hours);
+            $jobs_e = $this->getDashboardModel()->getJobs($this->bsock, 'e', $days, $hours);
+            $jobs_f = $this->getDashboardModel()->getJobs($this->bsock, 'f', $days, $hours);
             $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
-            return $num;
-         }
-         else {
-            return null;
          }
       }
-      else {
-         return null;
-      }
+
+      return $num;
    }
 
    public function getDataAction()
@@ -112,16 +119,29 @@ class DashboardController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
 
       if($data == "jobslaststatus") {
-         $result = $this->getDashboardModel()->getJobsLastStatus();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getDashboardModel()->getJobsLastStatus($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "dirdmsg") {
-         $result = $this->getDashboardModel()->getLastDirectorMessages();
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getDashboardModel()->getLastDirectorMessages($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

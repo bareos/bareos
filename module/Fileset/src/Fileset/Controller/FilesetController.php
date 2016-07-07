@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,7 +32,8 @@ use Zend\Json\Json;
 class FilesetController extends AbstractActionController
 {
 
-   protected $filesetModel;
+   protected $filesetModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -42,7 +43,14 @@ class FilesetController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $filesets = $this->getFilesetModel()->getFilesets();
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $filesets = $this->getFilesetModel()->getFilesets($this->bsock);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -60,7 +68,15 @@ class FilesetController extends AbstractActionController
       }
 
       $filesetid = $this->params()->fromRoute('id', 0);
-      $fileset = $this->getFilesetModel()->getFileset($filesetid);
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $fileset = $this->getFilesetModel()->getFileset($this->bsock, $filesetid);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -77,17 +93,30 @@ class FilesetController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $fileset = $this->params()->fromQuery('fileset');
 
       if($data == "all") {
-         $result = $this->getFilesetModel()->getFilesets();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getFilesetModel()->getFilesets($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "details" && isset($fileset)) {
-         $result = $this->getFilesetModel()->getFileset($fileset);
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getFilesetModel()->getFileset($this->bsock, $fileset);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

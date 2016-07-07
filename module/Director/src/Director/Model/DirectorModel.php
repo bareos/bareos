@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,49 +25,42 @@
 
 namespace Director\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class DirectorModel implements ServiceLocatorAwareInterface
+class DirectorModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getDirectorStatus(&$bsock=null)
    {
+      if(isset($bsock)) {
+         $cmd = 'status director';
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   public function getDirectorMessages(&$bsock=null, $limit=null, $offset=null, $reverse=null)
    {
-      $this->serviceLocator = $serviceLocator;
+      if(isset($bsock, $limit)) {
+         $cmd = 'list log limit='.$limit.' reverse';
+         $result = $bsock->send_command($cmd, 2, null);
+         $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $messages['result']['log'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function getServiceLocator()
+   public function sendCommand(&$bsock=null, $cmd=null)
    {
-      return $this->serviceLocator;
-   }
-
-   public function getDirectorStatus()
-   {
-      $cmd = 'status director';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
-   }
-
-   public function getDirectorMessages($limit=null, $offset=null, $reverse=null)
-   {
-      $cmd = 'list log limit='.$limit.' reverse';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $messages['result']['log'];
-   }
-
-   public function sendCommand($cmd=null)
-   {
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 0, null);
-      return $result;
+      if(isset($bsock, $cmd)) {
+         $result = $bsock->send_command($cmd, 0, null);
+         return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 }

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -25,62 +25,45 @@
 
 namespace Media\Model;
 
-use Zend\ServiceManager\ServiceLocatorAwareInterface;
-use Zend\ServiceManager\ServiceLocatorInterface;
-
-class MediaModel implements ServiceLocatorAwareInterface
+class MediaModel
 {
-   protected $serviceLocator;
-   protected $director;
 
-   public function __construct()
+   public function getVolumes(&$bsock=null)
    {
+      if(isset($bsock)) {
+         $cmd = 'llist volumes all';
+         $result = $bsock->send_command($cmd, 2, null);
+         $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $volumes['result']['volumes'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
    }
 
-   public function setServiceLocator(ServiceLocatorInterface $serviceLocator)
+   public function getVolume(&$bsock=null, $volume=null)
    {
-      $this->serviceLocator = $serviceLocator;
-   }
-
-   public function getServiceLocator()
-   {
-      return $this->serviceLocator;
-   }
-
-   public function getVolumes()
-   {
-      $cmd = 'llist volumes all';
-      $this->director = $this->getServiceLocator()->get('director');
-      $result = $this->director->send_command($cmd, 2, null);
-      $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-      return $volumes['result']['volumes'];
-   }
-
-   public function getVolume($volume=null)
-   {
-      if(isset($volume)) {
+      if(isset($bsock, $volume)) {
          $cmd = 'llist volume="'.$volume.'"';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $volume['result']['volume'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 
-   public function getVolumeJobs($volume=null)
+   public function getVolumeJobs(&$bsock=null, $volume=null)
    {
-      if(isset($volume)) {
+      if(isset($bsock, $volume)) {
          $cmd = 'llist jobs volume="'.$volume.'"';
-         $this->director = $this->getServiceLocator()->get('director');
-         $result = $this->director->send_command($cmd, 2, null);
+         $result = $bsock->send_command($cmd, 2, null);
          $volume = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $volume['result']['jobs'];
       }
       else {
-         return false;
+         throw new \Exception('Missing argument.');
       }
    }
 

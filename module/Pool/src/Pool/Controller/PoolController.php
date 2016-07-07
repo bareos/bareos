@@ -31,7 +31,8 @@ use Zend\Json\Json;
 
 class PoolController extends AbstractActionController
 {
-   protected $poolModel;
+   protected $poolModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -41,7 +42,14 @@ class PoolController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $pools = $this->getPoolModel()->getPools();
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $pools = $this->getPoolModel()->getPools($this->bsock);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -59,7 +67,15 @@ class PoolController extends AbstractActionController
       }
 
       $poolname = $this->params()->fromRoute('id');
-      $pool = $this->getPoolModel()->getPool($poolname);
+
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $pool = $this->getPoolModel()->getPool($this->bsock, $poolname);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
 
       return new ViewModel(
          array(
@@ -76,20 +92,40 @@ class PoolController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $pool = $this->params()->fromQuery('pool');
 
       if($data == "all") {
-         $result = $this->getPoolModel()->getPools();
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getPoolModel()->getPools($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "details" && isset($pool)) {
-         $result = $this->getPoolModel()->getPool($pool);
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getPoolModel()->getPool($this->bsock, $pool);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "volumes" && isset($pool)) {
-         $result = $this->getPoolModel()->getPoolMedia($pool);
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getPoolModel()->getPoolMedia($this->bsock, $pool);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();

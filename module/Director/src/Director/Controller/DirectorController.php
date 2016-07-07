@@ -7,7 +7,6 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -32,7 +31,8 @@ use Zend\Json\Json;
 
 class DirectorController extends AbstractActionController
 {
-   protected $directorModel;
+   protected $directorModel = null;
+   protected $bsock = null;
 
    public function indexAction()
    {
@@ -42,8 +42,17 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+         $result = $this->getDirectorModel()->getDirectorStatus($this->bsock);
+         $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
       return new ViewModel(array(
-         'directorOutput' => $this->getDirectorModel()->getDirectorStatus()
+         'directorOutput' => $result
       ));
    }
 
@@ -66,8 +75,7 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      return new ViewModel(array(
-      ));
+      return new ViewModel();
    }
 
    public function getDataAction()
@@ -78,6 +86,8 @@ class DirectorController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      $result = null;
+
       $data = $this->params()->fromQuery('data');
       $limit = $this->params()->fromQuery('limit');
       $offset = $this->params()->fromQuery('offset');
@@ -85,13 +95,24 @@ class DirectorController extends AbstractActionController
       $command = $this->params()->fromPost('command');
 
       if($data == "messages") {
-         $result = $this->getDirectorModel()->getDirectorMessages($limit);
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
       elseif($data == "cli") {
-         $result = $this->getDirectorModel()->sendCommand($command);
-      }
-      else {
-         $result = null;
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getDirectorModel()->sendCommand($this->bsock, $command);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
       }
 
       $response = $this->getResponse();
