@@ -36,6 +36,10 @@ AC_SUBST(BAREOS)dnl
 AC_SUBST(post_host)dnl
 AC_SUBST(BDB_VERSION)dnl
 
+dnl major version number (first two components)
+MAJOR_VERSION=`echo $VERSION | cut -d. -f 1,2`
+AC_SUBST(MAJOR_VERSION)
+
 dnl src/lib
 dnl can be overwritten by specific values from version.h
 LIBBAREOS_LT_RELEASE=`sed -n -e 's/^#.*LIBBAREOS_LT_RELEASE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
@@ -4264,6 +4268,8 @@ debian|ubuntu|univention)
          PFILES="${PFILES} \
             debian/univention-bareos.install \
             debian/univention-bareos.postinst \
+            platforms/univention/conffiles/etc/apt/sources.list.d/60_bareos.list \
+            platforms/univention/get_bareos_release_key.sh \
             platforms/univention/Makefile \
             platforms/univention/AppCenter/univention-bareos.ini \
             platforms/univention/AppCenter/LICENSE_AGREEMENT"
