@@ -68,17 +68,29 @@ function read_configuration_ini($configuration, $configuration_ini)
    if( array_key_exists('session', $configuration) && array_key_exists('timeout', $configuration['session']) && isset($configuration['session']['timeout']) ) {
       $arr['session']['timeout'] = $configuration['session']['timeout'];
    }
+   else {
+      $arr['session']['timeout'] = 3600;
+   }
 
    if( array_key_exists('tables', $configuration) && array_key_exists('pagination_values', $configuration['tables']) && isset($configuration['tables']['pagination_values']) ) {
       $arr['tables']['pagination_values'] = $configuration['tables']['pagination_values'];
+   }
+   else {
+      $arr['tables']['pagination_values'] = "10,25,50,100";
    }
 
    if( array_key_exists('tables', $configuration) && array_key_exists('pagination_default_value', $configuration['tables']) && isset($configuration['tables']['pagination_default_value']) ) {
       $arr['tables']['pagination_default_value'] = $configuration['tables']['pagination_default_value'];
    }
+   else {
+      $arr['tables']['pagination_default_value'] = 25;
+   }
 
    if( array_key_exists('tables', $configuration) && array_key_exists('save_previous_state', $configuration['tables']) && isset($configuration['tables']['save_previous_state']) ) {
       $arr['tables']['save_previous_state'] = $configuration['tables']['save_previous_state'];
+   }
+   else {
+      $arr['tables']['save_previous_state'] = false;
    }
 
    return $arr;
