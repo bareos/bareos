@@ -89,6 +89,7 @@ return array(
    'view_helpers' => array(
       'invokables' => array (
          //'printExample' => 'Application\View\Helper\Example', // Example ViewHelper
+         'UpdateAlert' => 'Application\View\Helper\UpdateAlert',
       ),
    ),
     'view_manager' => array(

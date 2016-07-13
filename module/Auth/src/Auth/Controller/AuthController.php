@@ -67,11 +67,11 @@ class AuthController extends AbstractActionController
             $username = $form->getInputFilter()->getValue('consolename');
             $password = $form->getInputFilter()->getValue('password');
             $locale = $form->getInputFilter()->getValue('locale');
+            $bareos_updates = $form->getInputFilter()->getValue('bareos_updates');
 
             $config = $this->getServiceLocator()->get('Config');
 
             $this->bsock = $this->getServiceLocator()->get('director');
-
             $this->bsock->set_config($config['directors'][$director]);
             $this->bsock->set_user_credentials($username, $password);
 
@@ -83,6 +83,56 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['authenticated'] = true;
                $_SESSION['bareos']['locale'] = $locale;
                $_SESSION['bareos']['idletime'] = time();
+               $_SESSION['bareos']['product-updates'] = $bareos_updates;
+               $_SESSION['bareos']['dird-update-available'] = false;
+
+               if(isset($bareos_updates) && $bareos_updates != NULL) {
+
+                  $updates = json_decode($bareos_updates, true);
+
+                  try {
+                     $dird_version = $this->getClientModel()->getDirectorVersion($this->bsock);
+                     $this->bsock->disconnect();
+                  }
+                  catch(Exception $e) {
+                     echo $e->getMessage();
+                  }
+                  //$dird_dist = null;
+                  //$dird_arch = null;
+                  //$dird_vers = null;
+
+                  if(array_key_exists('obsdistribution', $dird_version)) {
+                     $dird_dist = $dird_version['obsdistribution'];
+                  }
+
+                  if(array_key_exists('obsarch', $dird_version)) {
+                     $dird_arch = $dird_version['obsarch'];
+                  }
+
+                  if(array_key_exists('version', $dird_version)) {
+                     $dird_vers = $dird_version['version'];
+                  }
+
+                  if(isset($dird_dist) && isset($dird_arch) && isset($dird_vers)) {
+
+                     if(array_key_exists('product', $updates) &&
+                        array_key_exists($dird_dist, $updates['product']['bareos-director']['distribution']) &&
+                        array_key_exists($dird_arch, $updates['product']['bareos-director']['distribution'][$dird_dist])) {
+
+                        foreach($updates['product']['bareos-director']['distribution'][$dird_dist][$dird_arch] as $key => $value) {
+                           if( version_compare($dird_vers, $key, '>=') ) {
+                              $_SESSION['bareos']['dird-update-available'] = false;
+                           }
+                           if( version_compare($dird_vers, $key, '<') ) {
+                              $_SESSION['bareos']['dird-update-available'] = true;
+                           }
+                        }
+
+                     }
+
+                  }
+
+               }
 
                // Get the datatable settings and push them into the SESSION context.
                $configuration = $this->getServiceLocator()->get('configuration');
@@ -135,10 +185,18 @@ class AuthController extends AbstractActionController
    public function logoutAction()
    {
       // todo - ask user if he's really wants to log out!
-
       unset($_SESSION['bareos']);
       session_destroy();
       return $this->redirect()->toRoute('auth', array('action' => 'login'));
+   }
+
+   public function getClientModel()
+   {
+      if(!$this->clientModel) {
+         $sm = $this->getServiceLocator();
+         $this->clientModel = $sm->get('Client\Model\ClientModel');
+      }
+      return $this->clientModel;
    }
 
 }

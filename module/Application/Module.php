@@ -44,6 +44,10 @@ class Module
 
       $translator = $e->getApplication()->getServiceManager()->get('MVCTranslator');
       $translator->setLocale( ( isset( $_SESSION['bareos']['locale'] ) ? $_SESSION['bareos']['locale'] : 'en_EN' ) )->setFallbackLocale('en_EN');
+
+      $viewModel = $e->getApplication()->getMVCEvent()->getViewModel();
+      $viewModel->dirdUpdate = $_SESSION['bareos']['dird-update-available'];
+
    }
 
    public function getConfig()

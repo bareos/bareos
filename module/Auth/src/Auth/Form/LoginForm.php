@@ -152,6 +152,16 @@ class LoginForm extends Form
       );
 
       $this->add(array(
+         'name' => 'bareos_updates',
+         'type' => 'Zend\Form\Element\Hidden',
+         'attributes' => array(
+               'value' => '',
+               'id' => 'bareos_updates'
+            ),
+         )
+      );
+
+      $this->add(array(
          'name' => 'submit',
          'type' => 'submit',
          'attributes' => array(

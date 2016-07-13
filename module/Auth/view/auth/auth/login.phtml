@@ -127,6 +127,18 @@ $this->headTitle($title);
    <div class="form-group">
 
    <?php
+      echo $this->formInput($form->get('bareos_updates')->setAttribute('class','form-control'));
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
       echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
    ?>
 
@@ -150,3 +162,48 @@ $this->headTitle($title);
 
 </diV>
 
+<script>
+
+/*
+
+get latest versions information via ajax call
+
+*/
+
+function getVersions() {
+
+   var update_url = "http://download.bareos.org/bareos/release/json/bareos-release-info.json?callback=jsonCallback";
+
+   var v = $.ajax({
+      method: "GET",
+      url: update_url,
+      jsonpCallback: 'jsonCallback',
+      contenetType: 'application/json',
+      dataType: 'jsonp',
+      timeout: 15000,
+      error: function() {
+         return false;
+      },
+      success: function(result) {
+         return result;
+      },
+      complete: function(result) {
+         return result;
+      }
+   });
+
+   return v;
+
+}
+
+$(document).ready(function() {
+
+   var versions = getVersions();
+
+   $.when(versions).always(function(v) {
+      document.getElementById("bareos_updates").value = JSON.stringify(v);
+   });
+
+});
+
+</script>

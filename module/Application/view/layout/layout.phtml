@@ -81,6 +81,9 @@ echo $this->doctype();
          <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
          <ul class="nav navbar-nav navbar-right">
             <li class="dropdown">
+               <?php echo $this->UpdateAlert($_SESSION['bareos']['dird-update-available']); ?>
+            </li>
+            <li class="dropdown">
                <a href="#"><span class="glyphicon glyphicon-th"></span>&nbsp;<?php echo $_SESSION['bareos']['director']; ?></a>
             </li>
             <li class="dropdown">
@@ -110,6 +113,9 @@ echo $this->doctype();
 
 <script>
    $('#spinner').fadeOut('normal');
+   $(function () {
+      $('[data-toggle="tooltip"]').tooltip();
+   });
 </script>
 
 </body>
