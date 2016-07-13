@@ -106,7 +106,39 @@ make DESTDIR=%{buildroot} install
 # write version to version file
 echo %version | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > %{buildroot}/%_datadir/%name/version.txt
 
+# With the introduction of config subdirectories (bareos-16.2)
+# some config files have been renamed (or even splitted into multiple files).
+# However, bareos is still able to work with the old config files,
+# but rpm renames them to *.rpmsave.
+# To keep the bareos working after updating to bareos-16.2,
+# we implement a workaroung:
+#   * post: if the old config exists, make a copy of it.
+#   * (rpm exchanges files on disk)
+#   * posttrans:
+#       if the old config file don't exists but we have created a backup before,
+#       restore the old config file.
+#       Remove our backup, if it exists.
+
+%define post_backup_file() \
+if [ -f  %1 ]; then \
+      cp -a %1 %1.rpmupdate.%{version}.keep; \
+fi; \
+%nil
+
+%define posttrans_restore_file() \
+if [ ! -e %1 -a -e %1.rpmupdate.%{version}.keep ]; then \
+   mv %1.rpmupdate.%{version}.keep %1; \
+fi; \
+if [ -e %1.rpmupdate.%{version}.keep ]; then \
+   rm %1.rpmupdate.%{version}.keep; \
+fi; \
+%nil
+
 %post
+%post_backup_file /etc/bareos/bareos-dir.d/webui-consoles.conf
+%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-consoles.conf
+%post_backup_file /etc/bareos/bareos-dir.d/webui-profiles.conf
+%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-profiles.conf
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
 a2enmod php5 &> /dev/null || true
@@ -123,7 +155,7 @@ rm -rf $RPM_BUILD_ROOT
 %dir /etc/bareos-webui
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
-%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/webui-consoles.conf
-%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/webui-profiles.conf
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/console/webui-consoles.conf
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-profiles.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 
