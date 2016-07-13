@@ -105,10 +105,12 @@ install: all
 	         $(INSTALL_CONFIG) -D $$CONF/$$i ${DESTDIR}${confdir}/$$i; \
 	      done; \
 	   fi; \
-	done
-	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
-	for i in `find python-ldap-conf.d/ \( -name "*.conf" -o -name "*.conf.example" \) -print | cut -d'/' -f2-`; do \
-	   $(INSTALL_CONFIG) -D python-ldap-conf.d/$$i ${DESTDIR}${confdir}/$$i; \
+		if [ "$$plugin" = "python-fd.la" ]; then \
+			$(CP) *.py *.py.template $(DESTDIR)$(plugindir); \
+			for i in `find python-ldap-conf.d/ \( -name "*.conf" -o -name "*.conf.example" \) -print | cut -d'/' -f2-`; do \
+				$(INSTALL_CONFIG) -D python-ldap-conf.d/$$i ${DESTDIR}${confdir}/$$i; \
+			done; \
+		fi; \
 	done
 
 install-test-plugin: all

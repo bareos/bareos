@@ -97,7 +97,7 @@ Vendor: 	The Bareos Team
 %define python_plugins 0
 %endif
 
-# centos/rhel 5 : segfault when building qt monitor
+# centos/rhel 5: segfault when building qt monitor
 %if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
 %define build_bat 0
 %define build_qt_monitor 0
@@ -652,6 +652,11 @@ This package contains bareos development files.
 %setup
 
 %build
+# Cleanup defined in Fedora Packaging:Guidelines
+# and required repetitive local build of at least CentOS 5.
+if [ "%{?buildroot}" -a "%{?buildroot}" != "/" ]; then
+    rm -rf "%{?buildroot}"
+fi
 %if !0%{?suse_version}
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
 %endif
@@ -1079,7 +1084,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/schedule
 %attr(0750, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/bareos-dir.d/storage
 # tray monitor configurate is installed by the target daemons
+%if 0%{?build_qt_monitor}
 %attr(0755, %{daemon_user}, %{daemon_group}) %dir %{_sysconfdir}/bareos/tray-monitor.d
+%endif
 %endif
 %dir %{backend_dir}
 %{library_dir}/libbareos-*.so
@@ -1370,12 +1377,38 @@ getent passwd %1 > /dev/null || useradd -r --comment "%1" --home %{working_dir} 
 
 %endif
 
+# With the introduction of config subdirectories (bareos-16.2)
+# some config files have been renamed (or even splitted into multiple files).
+# However, bareos is still able to work with the old config files,
+# but rpm renames them to *.rpmsave.
+# To keep the bareos working after updating to bareos-16.2,
+# we implement a workaroung:
+#   * post: if the old config exists, make a copy of it.
+#   * (rpm exchanges files on disk)
+#   * posttrans:
+#       if the old config file don't exists but we have created a backup before,
+#       restore the old config file.
+#       Remove our backup, if it exists.
+# This update helper should be removed with bareos-17.
+
+%define post_backup_file() \
+if [ -f  %1 ]; then \
+      cp -a %1 %1.rpmupdate.%{version}.keep; \
+fi; \
+%nil
+
+%define posttrans_restore_file() \
+if [ ! -e %1 -a -e %1.rpmupdate.%{version}.keep ]; then \
+   mv %1.rpmupdate.%{version}.keep %1; \
+fi; \
+if [ -e %1.rpmupdate.%{version}.keep ]; then \
+   rm %1.rpmupdate.%{version}.keep; \
+fi; \
+%nil
+
+
 %post director
-# bareos-dir.conf has been part of bareos <= 16.2.
-# Keep the old config file.
-if [ -f  /etc/bareos/bareos-dir.conf ]; then
-   cp -a /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep
-fi
+%post_backup_file /etc/bareos/bareos-dir.conf
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %{script_dir}/bareos-config initialize_database_driver
@@ -1387,17 +1420,10 @@ fi
 %endif
 
 %posttrans director
-CFG=/etc/bareos/bareos-dir.conf
-if [ ! -e $CFG -a -e /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep ]; then
-   mv /etc/bareos/bareos-dir.d/bareos-dir.conf.rpmupdate.%{version}.keep $CFG
-fi
+%posttrans_restore_file /etc/bareos/bareos-dir.conf
 
 %post storage
-# bareos-sd.conf has been part of bareos <= 16.2.
-# Keep the old config file.
-if [ -f  /etc/bareos/bareos-sd.conf ]; then
-   cp -a /etc/bareos/bareos-sd.conf /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep
-fi
+%post_backup_file /etc/bareos/bareos-sd.conf
 # pre script has already generated the storage daemon user,
 # but here we add the user to additional groups
 %{script_dir}/bareos-config setup_sd_user
@@ -1411,17 +1437,34 @@ fi
 %endif
 
 %posttrans storage
-CFG=/etc/bareos/bareos-sd.conf
-if [ ! -e $CFG -a -e /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep ]; then
-   mv /etc/bareos/bareos-sd.d/bareos-sd.conf.rpmupdate.%{version}.keep $CFG
-fi
+%posttrans_restore_file /etc/bareos/bareos-sd.conf
+
+
+%if 0%{?ceph}
+%post storage-ceph
+%post_backup_file /etc/bareos/bareos-sd.d/device-ceph-rados.conf
+
+%posttrans storage-ceph
+%posttrans_restore_file /etc/bareos/bareos-sd.d/device-ceph-rados.conf
+%endif
+
+
+%post storage-fifo
+%post_backup_file /etc/bareos/bareos-sd.d/device-fifo.conf
+
+%posttrans storage-fifo
+%posttrans_restore_file /etc/bareos/bareos-sd.d/device-fifo.conf
+
+
+%post storage-tape
+%post_backup_file /etc/bareos/bareos-sd.d/device-tape-with-autoloader.conf
+
+%posttrans storage-tape
+%posttrans_restore_file /etc/bareos/bareos-sd.d/device-tape-with-autoloader.conf
+
 
 %post filedaemon
-# bareos-fd.conf has been part of bareos <= 16.2.
-# Keep the old config file.
-if [ -f  /etc/bareos/bareos-fd.conf ]; then
-   cp -a /etc/bareos/bareos-fd.conf /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep
-fi
+%post_backup_file /etc/bareos/bareos-fd.conf
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %if 0%{?suse_version} >= 1210
@@ -1432,10 +1475,28 @@ fi
 %endif
 
 %posttrans filedaemon
-CFG=/etc/bareos/bareos-fd.conf
-if [ ! -e $CFG -a -e /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep ]; then
-   mv /etc/bareos/bareos-fd.d/bareos-fd.conf.rpmupdate.%{version}.keep $CFG
-fi
+%posttrans_restore_file /etc/bareos/bareos-fd.conf
+
+
+%if 0%{?ceph}
+%post filedaemon-ceph-plugin
+%post_backup_file /etc/bareos/bareos-dir.d/plugin-cephfs.conf
+%post_backup_file /etc/bareos/bareos-dir.d/plugin-rados.conf
+
+%posttrans filedaemon-ceph-plugin
+%posttrans_restore_file /etc/bareos/bareos-dir.d/plugin-cephfs.conf
+%posttrans_restore_file /etc/bareos/bareos-dir.d/plugin-rados.conf
+%endif
+
+
+%if 0%{?python_plugins}
+%post filedaemon-ldap-python-plugin
+%post_backup_file /etc/bareos/bareos-dir.d/plugin-python-ldap.conf
+
+%posttrans filedaemon-ldap-python-plugin
+%posttrans_restore_file /etc/bareos/bareos-dir.d/plugin-python-ldap.conf
+%endif
+
 
 %post bconsole
 %{script_dir}/bareos-config initialize_local_hostname
@@ -1473,30 +1534,26 @@ fi
 /sbin/ldconfig
 %endif
 
+
 %if 0%{?build_qt_monitor}
 
 %post traymonitor
-# tray-monitor.conf has been part of bareos <= 16.2.
-# Keep the old config file.
-if [ -f  /etc/bareos/tray-monitor.conf ]; then
-   cp -a /etc/bareos/tray-monitor.conf /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep
-fi
+%post_backup_file /etc/bareos/tray-monitor.conf
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 
 %posttrans traymonitor
-CFG=/etc/bareos/tray-monitor.conf
-if [ ! -e $CFG -a -e /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep ]; then
-   mv /etc/bareos/tray-monitor.d/tray-monitor.conf.rpmupdate.%{version}.keep $CFG
-fi
+%posttrans_restore_file /etc/bareos/tray-monitor.conf
 
 %endif
+
 
 %if 0%{?build_bat}
 %post bat
 %{script_dir}/bareos-config initialize_local_hostname
 %{script_dir}/bareos-config initialize_passwords
 %endif
+
 
 %pre director
 %create_group %{daemon_group}
