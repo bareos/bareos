@@ -185,10 +185,10 @@ function read_directors_ini($directors, $directors_ini)
          }
 
          if(array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
-            $arr[key($config)]['catalog'] = $instance['catalog'];
+            $arr[key($directors)]['catalog'] = $instance['catalog'];
          }
          else {
-            $arr[key($config)]['catalog'] = "MyCatalog";
+            $arr[key($directors)]['catalog'] = "MyCatalog";
          }
 
       }
