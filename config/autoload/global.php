@@ -134,6 +134,13 @@ function read_dir_config($config, $file)
             $arr[key($config)]['allowed_cns'] = "";
          }
 
+         if(array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
+            $arr[key($config)]['catalog'] = $instance['catalog'];
+         }
+         else {
+            $arr[key($config)]['catalog'] = "MyCatalog";
+         }
+
       }
 
       next($config);

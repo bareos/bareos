@@ -78,6 +78,7 @@ class BareosBSock implements BareosBSockInterface
       'cert_file' => null,
       'cert_file_passphrase' => null,
       'allowed_cns' => null,
+      'catalog' => null,
    );
 
    private $socket = null;
@@ -870,7 +871,7 @@ class BareosBSock implements BareosBSockInterface
             break;
       }
 
-      if(self::send("use")) {
+      if(self::send("use catalog=" . $this->config['catalog'])) {
          $debug = self::receive_message();
       }
 
