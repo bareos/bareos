@@ -56,12 +56,22 @@ class StorageModel
 
    public function importSlots(&$bsock=null, $storage=null, $srcslots=null, $dstslots=null)
    {
-      if(isset($bsock, $storage, $srclots)) {
-         if($dstslots == null) {
-            $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots;
+      if(isset($bsock, $storage)) {
+         if($srcslots == null) {
+            if($dstslots == null) {
+               $cmd = 'import storage="' . $storage;
+            }
+            else {
+               $cmd = 'import storage="' . $storage . '" dstslots=' . $dstslots;
+            }
          }
          else {
-            $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+            if($dstslots == null) {
+               $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots;
+            }
+            else {
+               $cmd = 'import storage="' . $storage . '" srcslots=' . $srcslots . ' dstslots=' . $dstslots;
+            }
          }
          $result = $bsock->send_command($cmd, 0, null);
          return $result;
