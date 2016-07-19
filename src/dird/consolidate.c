@@ -106,7 +106,16 @@ bool do_consolidate(JCR *jcr)
             retval = false;
             goto bail_out;
          }
+
          db_list_ctx jobids_ctx;
+         int32_t incrementals_total;
+
+         /*
+          * first determine the number of total incrementals
+          */
+         db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+         incrementals_total = jobids_ctx.count - 1;
+         Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list);
 
          /*
           * If we are doing always incremental, we need to limit the search to
@@ -131,29 +140,24 @@ bool do_consolidate(JCR *jcr)
             Jmsg(jcr, M_INFO, 0, _("%s: less than two jobs to consolidate found, doing nothing.\n"), job->name());
             continue;
          }
+         int32_t max_incrementals_to_consolidate;
 
-         if (job->AlwaysIncrementalKeepNumber) {
-            int32_t incrementals_total;
-            int32_t incrementals_to_consolidate;
+         /*
+          * Calculate limit for query. We specify how many incrementals should be left.
+          * the limit is total number of incrementals - number required - 1
+          */
+         max_incrementals_to_consolidate = incrementals_total - job->AlwaysIncrementalKeepNumber;
 
-            /*
-             * Calculate limit for query. we specify how many incrementals should be left.
-             * the limit is number of consolidate candidates - number required - 1
-             */
-            incrementals_total = jobids_ctx.count - 1;
-            incrementals_to_consolidate = incrementals_total - job->AlwaysIncrementalKeepNumber;
-
-            Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total, job->AlwaysIncrementalKeepNumber);
-            if ((incrementals_to_consolidate + 1 ) > 1) {
-               jcr->jr.limit = incrementals_to_consolidate + 1;
-               Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, incrementals_to_consolidate, jcr->jr.limit);
-               jobids_ctx.reset();
-               db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
-               Dmsg1(10, "consolidate ids after limit: %s.\n", jobids_ctx.list);
-            } else {
-               Jmsg(jcr, M_INFO, 0, _("%s: less incrementals than required, not consolidating\n"), job->name());
-               continue;
-            }
+         Dmsg2(10, "Incrementals found/required. (%d/%d).\n", incrementals_total, job->AlwaysIncrementalKeepNumber);
+         if ((max_incrementals_to_consolidate + 1 ) > 1) {
+            jcr->jr.limit = max_incrementals_to_consolidate + 1;
+            Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, max_incrementals_to_consolidate, jcr->jr.limit);
+            jobids_ctx.reset();
+            db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+            Dmsg1(10, "consolidate ids after limit: %s.\n", jobids_ctx.list);
+         } else {
+            Jmsg(jcr, M_INFO, 0, _("%s: less incrementals than required, not consolidating\n"), job->name());
+            continue;
          }
 
          /*
