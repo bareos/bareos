@@ -63,77 +63,110 @@ class StorageController extends AbstractActionController
          return new ViewModel(array(
             'storagename' => $storagename
          ));
-      }
-      elseif($action == "import") {
-         $storage = $this->params()->fromQuery('storage');
-         $srcslots = $this->params()->fromQuery('srcslots');
-         $dstslots = $this->params()->fromQuery('dstslots');
-         $result = $this->getStorageModel()->importSlots($storage, $srcslots, $dstslots);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
+      } else {
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
 
-      elseif($action == "export") {
-         $storage = $this->params()->fromQuery('storage');
-         $srcslots = $this->params()->fromQuery('srcslots');
-         $result = $this->getStorageModel()->exportSlots($storage, $srcslots);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
-      elseif($action == "mount") {
-         $storage = $this->params()->fromQuery('storage');
-         $slot = $this->params()->fromQuery('slot');
-         $drive = $this->params()->fromQuery('drive');
-         $result = $this->getStorageModel()->mountSlot($storage, $slot, $drive);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result'=> $result
-         ));
-      }
-      elseif($action == "unmount") {
-         $storage = $this->params()->fromQuery('storage');
-         $drive = $this->params()->fromQuery('drive');
-         $result = $this->getStorageModel()->unmountSlot($storage, $drive);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
-      elseif($action == "release") {
-         $storage = $this->params()->fromQuery('storage');
-         $drive = $this->params()->fromQuery('drive');
-         $result = $this->getStorageModel()->releaseSlot($storage, $drive);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
-      elseif($action == "label") {
-         $storage = $this->params()->fromQuery('storage');
-         $pool = $this->params()->fromQuery('label');
-         $drive = $this->params()->fromQuery('drive');
-         $slots = $this->params()->fromQuery('slots');
-         $result = $this->getStorageModel()->label($storage, $pool, $drive, $slots);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
-      elseif($action == "updateslots") {
-         $storage = $this->params()->fromQuery('storage');
-         $result = $this->getStorageModel()->updateSlots($storage);
-         return new ViewModel(array(
-            'storagename' => $storagename,
-            'result' => $result
-         ));
-      }
-      elseif($action == "labelbarcodes") {
-      }
+         if($action == "import") {
+            $storage = $this->params()->fromQuery('storage');
+            $srcslots = $this->params()->fromQuery('srcslots');
+            $dstslots = $this->params()->fromQuery('dstslots');
 
+            try {
+               $result = $this->getStorageModel()->importSlots($this->bsock, $storage, $srcslots, $dstslots);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "export") {
+            $storage = $this->params()->fromQuery('storage');
+            $srcslots = $this->params()->fromQuery('srcslots');
+
+            try {
+               $result = $this->getStorageModel()->exportSlots($this->bsock, $storage, $srcslots);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "mount") {
+            $storage = $this->params()->fromQuery('storage');
+            $slot = $this->params()->fromQuery('slot');
+            $drive = $this->params()->fromQuery('drive');
+
+            try {
+               $result = $this->getStorageModel()->mountSlot($this->bsock, $storage, $slot, $drive);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "unmount") {
+            $storage = $this->params()->fromQuery('storage');
+            $drive = $this->params()->fromQuery('drive');
+
+            try {
+               $result = $this->getStorageModel()->unmountSlot($this->bsock, $storage, $drive);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "release") {
+            $storage = $this->params()->fromQuery('storage');
+            $drive = $this->params()->fromQuery('drive');
+
+            try {
+               $result = $this->getStorageModel()->releaseSlot($this->bsock, $storage, $drive);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "label") {
+            $storage = $this->params()->fromQuery('storage');
+            $pool = $this->params()->fromQuery('label');
+            $drive = $this->params()->fromQuery('drive');
+            $slots = $this->params()->fromQuery('slots');
+
+            try {
+               $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive, $slots);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "updateslots") {
+            $storage = $this->params()->fromQuery('storage');
+
+            try {
+               $result = $this->getStorageModel()->updateSlots($this->bsock, $storage);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+
+         }
+         elseif($action == "labelbarcodes") {
+         }
+
+         try {
+            $this->bsock->disconnect();
+            }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+
+         return new ViewModel(array(
+            'storagename' => $storagename,
+            'result' => $result
+         ));
+      }
    }
 
    public function statusAction()
