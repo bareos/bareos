@@ -5,7 +5,7 @@
 #
 
 Name: 		bareos
-Version: 	16.2.3
+Version: 	16.2.4
 Release: 	0
 Group: 		Productivity/Archiving/Backup
 License: 	AGPL-3.0
@@ -14,7 +14,7 @@ URL: 		http://www.bareos.org/
 Vendor: 	The Bareos Team
 #Packager: 	{_packager}
 
-%define _libversion    16.2.3
+%define _libversion    16.2.4
 
 %define library_dir    %{_libdir}/bareos
 %define backend_dir    %{_libdir}/bareos/backends
