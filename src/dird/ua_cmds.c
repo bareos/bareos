@@ -394,7 +394,8 @@ static struct cmdstruct commands[] = {
          "\tinchanger=<yes/no>\n"
          "\tmaxvolbytes=<size> maxvolfiles=<nb> maxvoljobs=<nb>\n"
          "\tenabled=<yes/no> recyclepool=<pool-name> actiononpurge=<action>\n"
-         "\tjobid=<jobid> jobname=<name> starttime=<time-def> client=<client-name> filesetid=<fileset-id>"), true, true },
+         "\tjobid=<jobid> jobname=<name> starttime=<time-def> client=<client-name>\n"
+         "\tfilesetid=<fileset-id> jobtype=<job-type>"), true, true },
    { NT_("use"), use_cmd, _("Use specific catalog"),
      NT_("catalog=<catalog>"), false, true },
    { NT_("var"), var_cmd, _("Does variable expansion"),
