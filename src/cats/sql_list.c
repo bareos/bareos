@@ -170,53 +170,59 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
    if (type == VERT_LIST) {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-              "Comment"
-              " FROM Media WHERE Media.VolumeName='%s'", esc);
+                        "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+                        "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+                        "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+                        "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+                        "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+                        "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+                        "Comment "
+                        "FROM Media WHERE Media.VolumeName='%s'", esc);
       } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-              "Comment"
-              " FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
+                        "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+                        "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+                        "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+                        "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+                        "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+                        "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+                        "Comment "
+                        "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
               edit_int64(mdbr->PoolId, ed1));
       } else {
           Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-              "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-              "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-              "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-              "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-              "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-              "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-              "Comment"
-              " FROM Media ORDER BY MediaId");
+                        "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
+                        "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
+                        "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
+                        "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
+                        "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
+                        "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+                        "Comment "
+                        "FROM Media ORDER BY MediaId");
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,Storage.Name AS Storage "
-              "FROM Media,Storage WHERE Media.StorageId=Storage.StorageId "
-              "AND Media.VolumeName='%s'", esc);
+                        "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
+                        "MediaType,LastWritten,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "WHERE VolumeName='%s'", esc);
       } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,Storage.Name AS Storage "
-              "FROM Media,Storage WHERE Media.StorageId=Storage.StorageId "
-              "AND Media.PoolId=%s ORDER BY MediaId",
+                        "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
+                        "MediaType,LastWritten,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "WHERE PoolId=%s ORDER BY MediaId",
               edit_int64(mdbr->PoolId, ed1));
       } else {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-              "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,MediaType,LastWritten,Storage.Name AS Storage "
-              "FROM Media,Storage WHERE Media.StorageId=Storage.StorageId "
-              "ORDER BY MediaId");
+                        "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
+                        "MediaType,LastWritten,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "ORDER BY MediaId");
       }
    }
 

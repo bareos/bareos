@@ -965,12 +965,14 @@ static bool update_job(UAContext *ua)
    char *client_name = NULL;
    char *job_name = NULL;
    char *start_time = NULL;
+   char job_type = '\0';
    DBId_t fileset_id = 0;
    const char *kw[] = {
       NT_("starttime"),                   /* 0 */
       NT_("client"),                      /* 1 */
       NT_("filesetid"),                   /* 2 */
       NT_("jobname"),                     /* 3 */
+      NT_("jobtype"),                     /* 4 */
       NULL
    };
 
@@ -1004,11 +1006,14 @@ static bool update_job(UAContext *ua)
          case 3:                         /* Job name */
             job_name = ua->argv[j];
             break;
+         case 4:                         /* Job Type */
+            job_type = ua->argv[j][0];
+            break;
          }
       }
    }
-   if (!client_name && !start_time && !fileset_id && !job_name) {
-      ua->error_msg(_("Neither Client, StartTime, Filesetid nor Name specified.\n"));
+   if (!client_name && !start_time && !fileset_id && !job_name && !job_type) {
+      ua->error_msg(_("Neither Client, StartTime, Filesetid, JobType nor Name specified.\n"));
       return false;
    }
    if (client_name) {
@@ -1022,6 +1027,9 @@ static bool update_job(UAContext *ua)
    }
    if (job_name) {
       bstrncpy(jr.Name, job_name, MAX_NAME_LENGTH);
+   }
+   if (job_type) {
+      jr.JobType = job_type;
    }
    if (start_time) {
       utime_t delta_start;
@@ -1044,7 +1052,7 @@ static bool update_job(UAContext *ua)
       bstrutime(jr.cEndTime, sizeof(jr.cEndTime), jr.EndTime);
    }
    Mmsg(cmd, "UPDATE Job SET Name='%s', ClientId=%s,StartTime='%s',SchedTime='%s',"
-             "EndTime='%s',JobTDate=%s, FileSetId='%s' WHERE JobId=%s",
+             "EndTime='%s',JobTDate=%s, FileSetId='%s', Type='%c' WHERE JobId=%s",
              jr.Name,
              edit_int64(jr.ClientId, ed1),
              jr.cStartTime,
@@ -1052,6 +1060,7 @@ static bool update_job(UAContext *ua)
              jr.cEndTime,
              edit_uint64(jr.JobTDate, ed1),
              edit_uint64(jr.FileSetId, ed2),
+             jr.JobType,
              edit_int64(jr.JobId, ed3));
    if (!db_sql_query(ua->db, cmd.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
