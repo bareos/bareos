@@ -2051,8 +2051,13 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
+               /*
+                *  Wildbase is WildFile not containing a / or \\
+                *  see  void store_wild() in inc_conf.c
+                *  so we need to translate it back to a Wild File entry
+                */
                for (int k = 0; k < fo->wildbase.size(); k++) {
-                  Mmsg(temp, "Wild Base = \"%c %s\"\n", enhanced_wild ? 'B' : 'F', fo->wildbase.get(k));
+                  Mmsg(temp, "Wild File = \"%s\"\n", fo->wildbase.get(k));
                   indent_config_item(cfg_str, 3, temp.c_str());
                }
 
