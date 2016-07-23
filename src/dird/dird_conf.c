@@ -422,11 +422,11 @@ RES_ITEM job_items[] = {
    { "MaxConcurrentCopies", CFG_TYPE_PINT32, ITEM(res_job.MaxConcurrentCopies), 0, CFG_ITEM_DEFAULT, "100", NULL, NULL },
    /* Settings for always incremental */
    { "AlwaysIncremental", CFG_TYPE_BOOL, ITEM(res_job.AlwaysIncremental), 0, CFG_ITEM_DEFAULT, "false", "16.2.4-",
-         "Enable/disable always incremental backup scheme." },
+     "Enable/disable always incremental backup scheme." },
    { "AlwaysIncrementalJobRetention", CFG_TYPE_TIME, ITEM(res_job.AlwaysIncrementalJobRetention), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
-         "Backup Jobs older than the specified time duration will be merged into a new Virtual Full." },
+     "Backup Jobs older than the specified time duration will be merged into a new Virtual backup." },
    { "AlwaysIncrementalKeepNumber", CFG_TYPE_PINT32, ITEM(res_job.AlwaysIncrementalKeepNumber), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
-         "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."},
+     "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."},
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
