@@ -957,7 +957,7 @@ static bool update_pool(UAContext *ua)
 static bool update_job(UAContext *ua)
 {
    int i;
-   char ed1[50], ed2[50], ed3[50];
+   char ed1[50], ed2[50], ed3[50], ed4[50];
    POOL_MEM cmd(PM_MESSAGE);
    JOB_DBR jr;
    CLIENT_DBR cr;
@@ -1058,10 +1058,10 @@ static bool update_job(UAContext *ua)
              jr.cStartTime,
              jr.cSchedTime,
              jr.cEndTime,
-             edit_uint64(jr.JobTDate, ed1),
-             edit_uint64(jr.FileSetId, ed2),
+             edit_uint64(jr.JobTDate, ed2),
+             edit_uint64(jr.FileSetId, ed3),
              jr.JobType,
-             edit_int64(jr.JobId, ed3));
+             edit_int64(jr.JobId, ed4));
    if (!db_sql_query(ua->db, cmd.c_str())) {
       ua->error_msg("%s", db_strerror(ua->db));
       return false;
