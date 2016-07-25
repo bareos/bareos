@@ -1042,9 +1042,11 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
          Mmsg(daemon_status, _(
               "  SD Errors:              %d\n"
-              "  SD termination status:  %s\n"),
+              "  SD termination status:  %s\n"
+              "  Accurate:               %s\n"),
            jcr->SDErrors,
-           sd_term_msg);
+           sd_term_msg,
+           jcr->accurate ? _("yes") : _("no"));
       } else {
          if (jcr->HasBase) {
             Mmsg(client_options, _(
