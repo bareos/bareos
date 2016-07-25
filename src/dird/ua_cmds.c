@@ -65,6 +65,7 @@ extern bool dot_jobs_cmd(UAContext *ua, const char *cmd);
 extern bool dot_jobstatus_cmd(UAContext *ua, const char *cmd);
 extern bool dot_filesets_cmd(UAContext *ua, const char *cmd);
 extern bool dot_clients_cmd(UAContext *ua, const char *cmd);
+extern bool dot_consoles_cmd(UAContext *ua, const char *cmd);
 extern bool dot_msgs_cmd(UAContext *ua, const char *cmd);
 extern bool dot_pools_cmd(UAContext *ua, const char *cmd);
 extern bool dot_schedule_cmd(UAContext *ua, const char *cmd);
@@ -157,6 +158,8 @@ static struct cmdstruct commands[] = {
    { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
      NULL, false, false },
    { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
+     NULL, true, false },
+   { NT_(".consoles"), dot_consoles_cmd, _("List all console resources"),
      NULL, true, false },
    { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
      NT_("job=<job-name> | client=<client-name> | storage=<storage-name | pool=<pool-name>"), false, false },

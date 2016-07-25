@@ -923,6 +923,23 @@ bool dot_clients_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
+bool dot_consoles_cmd(UAContext *ua, const char *cmd)
+{
+   CONRES *console;
+
+   LockRes();
+   ua->send->array_start("consoles");
+   foreach_res(console, R_CONSOLE) {
+      ua->send->object_start();
+      ua->send->object_key_value("name", console->name(), "%s\n");
+      ua->send->object_end();
+   }
+   ua->send->array_end("consoles");
+   UnlockRes();
+
+   return true;
+}
+
 bool dot_msgs_cmd(UAContext *ua, const char *cmd)
 {
    MSGSRES *msgs = NULL;
