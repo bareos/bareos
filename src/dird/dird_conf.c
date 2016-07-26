@@ -1786,6 +1786,12 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
    POOL_MEM temp;
    const char *p;
 
+   /* escape strings */
+   POOLMEM *buf;
+   int len;
+   buf = get_pool_memory(PM_NAME);
+
+
    Dmsg0(200,"FILESETRES::print_config\n");
 
    Mmsg(temp, "FileSet {\n");
@@ -2105,7 +2111,10 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           */
          if (incexe->name_list.size()) {
             for (int l = 0; l < incexe->name_list.size(); l++) {
-               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(l));
+               len = strlen((char*)incexe->name_list.get(l));
+               buf = check_pool_memory_size(buf, len * 2);
+               escape_string(buf, (char*)incexe->name_list.get(l), len);
+               Mmsg(temp, "File = \"%s\"\n", buf);
                indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
@@ -2115,7 +2124,10 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           */
          if (incexe->plugin_list.size()) {
             for (int l = 0; l < incexe->plugin_list.size(); l++) {
-               Mmsg(temp, "Plugin = %s\n", incexe->plugin_list.get(l));
+               len = strlen((char*)incexe->plugin_list.get(l));
+               buf = check_pool_memory_size(buf, len * 2);
+               escape_string(buf, (char*)incexe->plugin_list.get(l), len);
+               Mmsg(temp, "Plugin = \"%s\"\n", buf);
                indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
@@ -2149,7 +2161,10 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
             indent_config_item(cfg_str, 1, "Exclude {\n");
 
             for (int k = 0; k < incexe->name_list.size(); k++) {
-               Mmsg(temp, "File = \"%s\"\n", incexe->name_list.get(k));
+               len = strlen((char*)incexe->name_list.get(k));
+               buf = check_pool_memory_size(buf, len * 2);
+               escape_string(buf, (char*)incexe->name_list.get(k), len);
+               Mmsg(temp, "File = \"%s\"\n", buf);
                indent_config_item(cfg_str, 2, temp.c_str());
             }
 
@@ -2157,6 +2172,8 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          }
       } /* loop over all exclude blocks */
    }
+
+   free_pool_memory(buf);
 
    pm_strcat(cfg_str, "}\n\n");
    pm_strcat(buff, cfg_str.c_str());

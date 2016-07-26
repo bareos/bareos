@@ -49,6 +49,11 @@ void escape_string(char *snew, char *old, int len)
          *n++ = '\'';
          o++;
          break;
+      case '\\':
+         *n++ = '\\';
+         *n++ = '\\';
+         o++;
+         break;
       case 0:
          *n++ = '\\';
          *n++ = 0;
