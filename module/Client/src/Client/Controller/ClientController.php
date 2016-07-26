@@ -50,32 +50,40 @@ class ClientController extends AbstractActionController
       if(empty($action)) {
          return new ViewModel();
       }
-      elseif($action == "enable") {
-         $clientname = $this->params()->fromQuery('client');
+      else {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getClientModel()->enableClient($this->bsock, $clientname);
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+
+         if($action == "enable") {
+            $clientname = $this->params()->fromQuery('client');
+            try {
+               $result = $this->getClientModel()->enableClient($this->bsock, $clientname);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "disable") {
+            $clientname = $this->params()->fromQuery('client');
+            try {
+               $result = $this->getClientModel()->disableClient($this->bsock, $clientname);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+
+         try {
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
          }
-         return new ViewModel(
-            array(
-               'result' => $result
-            )
-         );
-      }
-      elseif($action == "disable") {
-         $clientname = $this->params()->fromQuery('client');
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getClientModel()->disableClient($this->bsock, $clientname);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
+
          return new ViewModel(
             array(
                'result' => $result

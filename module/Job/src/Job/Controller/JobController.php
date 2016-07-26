@@ -59,13 +59,27 @@ class JobController extends AbstractActionController
             )
          );
       }
-      elseif($action == "rerun") {
-         $jobid = $this->params()->fromQuery('jobid');
-
-         $result = null;
+      else {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+
+         if($action == "rerun") {
+            $jobid = $this->params()->fromQuery('jobid');
+
+            $result = null;
+            try {
+               $result = $this->getJobModel()->rerunJob($this->bsock, $jobid);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+
+         try {
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
@@ -153,48 +167,49 @@ class JobController extends AbstractActionController
       if(empty($action)) {
          return new ViewModel();
       }
-      elseif($action == "queue") {
-         $jobname = $this->params()->fromQuery('job');
+      else {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getJobModel()->runJob($this->bsock, $jobname);
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+
+         if($action == "queue") {
+            $jobname = $this->params()->fromQuery('job');
+            try {
+               $result = $this->getJobModel()->runJob($this->bsock, $jobname);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "enable") {
+            $jobname = $this->params()->fromQuery('job');
+            try {
+               $result = $this->getJobModel()->enableJob($this->bsock, $jobname);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         elseif($action == "disable") {
+            $jobname = $this->params()->fromQuery('job');
+            try {
+               $result = $this->getJobModel()->disableJob($this->bsock, $jobname);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+
+         try {
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
          }
-         return new ViewModel(
-            array(
-               'result' => $result
-            )
-         );
-      }
-      elseif($action == "enable") {
-         $jobname = $this->params()->fromQuery('job');
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getJobModel()->enableJob($this->bsock, $jobname);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-         return new ViewModel(
-            array(
-               'result' => $result
-            )
-         );
-      }
-      elseif($action == "disable") {
-         $jobname = $this->params()->fromQuery('job');
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getJobModel()->disableJob($this->bsock, $jobname);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
+
          return new ViewModel(
             array(
                'result' => $result
@@ -218,11 +233,16 @@ class JobController extends AbstractActionController
       $status = $this->params()->fromQuery('status');
       $period = $this->params()->fromQuery('period');
 
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
       if($data == "jobs" && $status == "all") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getJobModel()->getJobs($this->bsock, $status, $period);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -230,11 +250,9 @@ class JobController extends AbstractActionController
       }
       elseif($data == "jobs" && $status == "successful") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, 'T', $period, null); // Terminated
             $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, 'W', $period, null); // Terminated with warnings
             $result = array_merge($jobs_T, $jobs_W);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -242,13 +260,11 @@ class JobController extends AbstractActionController
       }
       elseif($data == "jobs" && $status == "unsuccessful") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, 'A', $period, null); // Canceled jobs
             $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, 'E', $period, null); //
             $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, 'e', $period, null); //
             $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, 'f', $period, null); //
             $result = array_merge($jobs_A, $jobs_E, $jobs_e, $jobs_f);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -256,11 +272,9 @@ class JobController extends AbstractActionController
       }
       elseif($data == "jobs" && $status == "running") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $jobs_R = $this->getJobModel()->getJobsByStatus($this->bsock, 'R', $period, null);
             $jobs_l = $this->getJobModel()->getJobsByStatus($this->bsock, 'l', $period, null);
             $result = array_merge($jobs_R, $jobs_l);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -268,7 +282,6 @@ class JobController extends AbstractActionController
       }
       elseif($data == "jobs" && $status == "waiting") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $jobs_F = $this->getJobModel()->getJobsByStatus($this->bsock, 'F', $period, null);
             $jobs_S = $this->getJobModel()->getJobsByStatus($this->bsock, 'S', $period, null);
             $jobs_m = $this->getJobModel()->getJobsByStatus($this->bsock, 'm', $period, null);
@@ -286,7 +299,6 @@ class JobController extends AbstractActionController
                $jobs_s,$jobs_j,$jobs_c,$jobs_d,
                $jobs_t,$jobs_p,$jobs_q,$jobs_C
             );
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -294,9 +306,7 @@ class JobController extends AbstractActionController
       }
       elseif($data == "backupjobs") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getJobModel()->getBackupJobs($this->bsock);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -304,9 +314,7 @@ class JobController extends AbstractActionController
       }
       elseif($data == "details") {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getJobModel()->getJob($this->bsock, $jobid);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -314,13 +322,18 @@ class JobController extends AbstractActionController
       }
       elseif($data == "logs" && isset($jobid)) {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $result = $this->getJobModel()->getJobLog($this->bsock, $jobid);
-            $this->bsock->disconnect();
          }
          catch(Exception $e) {
             echo $e->getMessage();
          }
+      }
+
+      try {
+            $this->bsock->disconnect();
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
       }
 
       $response = $this->getResponse();

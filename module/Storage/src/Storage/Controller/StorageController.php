@@ -63,7 +63,8 @@ class StorageController extends AbstractActionController
          return new ViewModel(array(
             'storagename' => $storagename
          ));
-      } else {
+      }
+      else {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
          }

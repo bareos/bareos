@@ -48,9 +48,15 @@ class ScheduleController extends AbstractActionController
       $action = $this->params()->fromQuery('action');
       $schedulename = $this->params()->fromQuery('schedule');
 
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
       if(empty($action)) {
          try {
-            $this->bsock = $this->getServiceLocator()->get('director');
             $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
             $this->bsock->disconnect();
          }
@@ -63,33 +69,33 @@ class ScheduleController extends AbstractActionController
             )
          );
       }
-      elseif($action == "enable") {
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-            $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
-            $this->bsock->disconnect();
+      else {
+         if($action == "enable") {
+            try {
+               $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+               $result = $this->getScheduleModel()->enableSchedule($this->bsock, $schedulename);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
          }
+         elseif($action == "disable") {
+            try {
+               $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
+               $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+
+         try {
+            $this->bsock->disconnect();
+            }
          catch(Exception $e) {
             echo $e->getMessage();
          }
-         return new ViewModel(
-            array(
-               'schedules' => $schedules,
-               'result' => $result
-            )
-         );
-      }
-      elseif($action == "disable") {
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-            $schedules = $this->getScheduleModel()->getSchedules($this->bsock);
-            $result = $this->getScheduleModel()->disableSchedule($this->bsock, $schedulename);
-            $this->bsock->disconnect();
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
+
          return new ViewModel(
             array(
                'schedules' => $schedules,
