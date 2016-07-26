@@ -228,9 +228,15 @@ class RestoreController extends AbstractActionController
       // Get directories
       try {
          if($this->restore_params['type'] == "client") {
-            $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-            $this->restore_params['jobids'] = $jobids;
-            $directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
+            if(empty($this->restore_params['jobid'])) {
+               $this->restore_params['jobids'] = null;
+               $directories = null;
+            }
+            else {
+               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+               $this->restore_params['jobids'] = $jobids;
+               $directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
+            }
          }
          else {
             $directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'],$this->restore_params['id']);
@@ -243,9 +249,15 @@ class RestoreController extends AbstractActionController
       // Get files
       try {
          if($this->restore_params['type'] == "client") {
-            $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-            $this->restore_params['jobids'] = $jobids;
-            $files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
+            if(empty($this->restore_params['jobid'])) {
+               $this->restore_params['jobids'] = null;
+               $files = null;
+            }
+            else {
+               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+               $this->restore_params['jobids'] = $jobids;
+               $files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
+            }
          }
          else {
             $files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'],$this->restore_params['id']);

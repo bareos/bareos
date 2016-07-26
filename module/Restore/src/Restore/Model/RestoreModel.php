@@ -29,7 +29,7 @@ class RestoreModel
 {
 
    public function getDirectories(&$bsock=null, $jobid=null, $pathid=null) {
-      if(isset($bsock, $jobid)) {
+      if(isset($bsock)) {
          if($pathid == null || $pathid== "#") {
             $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=';
          }
@@ -59,7 +59,7 @@ class RestoreModel
    }
 
    public function getFiles(&$bsock=null, $jobid=null, $pathid=null) {
-      if(isset($bsock, $jobid)) {
+      if(isset($bsock)) {
          if($pathid == null || $pathid == "#") {
             $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=';
          }
@@ -170,7 +170,7 @@ class RestoreModel
 
    public function getJobIds(&$bsock=null, $jobid=null, $mergefilesets=0, $mergejobs=0)
    {
-      if(isset($bsock, $jobid)) {
+      if(isset($bsock)) {
          if($mergefilesets == 0 && $mergejobs == 0) {
             $cmd = '.bvfs_get_jobids jobid='.$jobid.' all';
          }
