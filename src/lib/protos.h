@@ -384,7 +384,7 @@ void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 bool get_tls_verify_peer(TLS_CONTEXT *ctx);
 
 /* util.c */
-void escape_string(char *snew, char *old, int len);
+void escape_string(POOL_MEM &snew, char *old, int len);
 bool is_buf_zero(char *buf, int len);
 void lcase(char *str);
 void bash_spaces(char *str);

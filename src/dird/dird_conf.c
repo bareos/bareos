@@ -1231,13 +1231,9 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
    if (bstrcasecmp(item->name, "runscript")) {
       if (list != NULL) {
          foreach_alist(runscript, list) {
-            int len;
-            POOLMEM *cmdbuf;
+            POOL_MEM esc;
 
-            len = strlen(runscript->command);
-            cmdbuf = get_pool_memory(PM_NAME);
-            cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
-            escape_string(cmdbuf, runscript->command, len);
+            escape_string(esc, runscript->command, strlen(runscript->command));
 
             /*
              * Don't print runscript when its inherited from a JobDef.
@@ -1252,28 +1248,28 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
             if (runscript->short_form) {
                if (runscript->when == SCRIPT_Before &&           /* runbeforejob */
                   (bstrcmp(runscript->target, ""))) {
-                     Mmsg(temp, "run before job = \"%s\"\n", cmdbuf);
+                     Mmsg(temp, "run before job = \"%s\"\n", esc.c_str());
                } else if (runscript->when == SCRIPT_After &&     /* runafterjob */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "run after job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "run after job = \"%s\"\n", esc.c_str());
                } else if (runscript->when == SCRIPT_After &&     /* client run after job */
                           runscript->on_success &&
                          !runscript->on_failure &&
                          !runscript->fail_on_error &&
                           !bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "client run after job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "client run after job = \"%s\"\n", esc.c_str());
                } else if (runscript->when == SCRIPT_Before &&      /* client run before job */
                           !bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "client run before job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "client run before job = \"%s\"\n", esc.c_str());
                } else if (runscript->when == SCRIPT_After &&      /* run after failed job */
                           runscript->on_failure &&
                          !runscript->on_success &&
                          !runscript->fail_on_error &&
                           bstrcmp(runscript->target, "")) {
-                  Mmsg(temp, "run after failed job = \"%s\"\n", cmdbuf);
+                  Mmsg(temp, "run after failed job = \"%s\"\n", esc.c_str());
                }
                indent_config_item(cfg_str, 1, temp.c_str());
             } else {
@@ -1285,7 +1281,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
                   cmdstring = (char *)"console";
                }
 
-               Mmsg(temp, "%s = \"%s\"\n", cmdstring, cmdbuf);
+               Mmsg(temp, "%s = \"%s\"\n", cmdstring, esc.c_str());
                indent_config_item(cfg_str, 2, temp.c_str());
 
                /*
@@ -1358,8 +1354,6 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 
                indent_config_item(cfg_str, 1, "}\n");
             }
-
-            free_pool_memory(cmdbuf);
          }
       } /* foreach runscript */
    }
@@ -1786,12 +1780,6 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
    POOL_MEM temp;
    const char *p;
 
-   /* escape strings */
-   POOLMEM *buf;
-   int len;
-   buf = get_pool_memory(PM_NAME);
-
-
    Dmsg0(200,"FILESETRES::print_config\n");
 
    Mmsg(temp, "FileSet {\n");
@@ -2110,11 +2098,13 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           * File = entries.
           */
          if (incexe->name_list.size()) {
+            char *entry;
+            POOL_MEM esc;
+
             for (int l = 0; l < incexe->name_list.size(); l++) {
-               len = strlen((char*)incexe->name_list.get(l));
-               buf = check_pool_memory_size(buf, len * 2);
-               escape_string(buf, (char*)incexe->name_list.get(l), len);
-               Mmsg(temp, "File = \"%s\"\n", buf);
+               entry = (char *)incexe->name_list.get(l);
+               escape_string(esc, entry, strlen(entry));
+               Mmsg(temp, "File = \"%s\"\n", esc.c_str());
                indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
@@ -2123,11 +2113,13 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           * Plugin = entries.
           */
          if (incexe->plugin_list.size()) {
+            char *entry;
+            POOL_MEM esc;
+
             for (int l = 0; l < incexe->plugin_list.size(); l++) {
-               len = strlen((char*)incexe->plugin_list.get(l));
-               buf = check_pool_memory_size(buf, len * 2);
-               escape_string(buf, (char*)incexe->plugin_list.get(l), len);
-               Mmsg(temp, "Plugin = \"%s\"\n", buf);
+               entry = (char *)incexe->plugin_list.get(l);
+               escape_string(esc, entry, strlen(entry));
+               Mmsg(temp, "Plugin = \"%s\"\n", esc.c_str());
                indent_config_item(cfg_str, 2, temp.c_str());
             }
          }
@@ -2158,13 +2150,14 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          INCEXE *incexe = exclude_items[j];
 
          if (incexe->name_list.size()) {
-            indent_config_item(cfg_str, 1, "Exclude {\n");
+            char *entry;
+            POOL_MEM esc;
 
+            indent_config_item(cfg_str, 1, "Exclude {\n");
             for (int k = 0; k < incexe->name_list.size(); k++) {
-               len = strlen((char*)incexe->name_list.get(k));
-               buf = check_pool_memory_size(buf, len * 2);
-               escape_string(buf, (char*)incexe->name_list.get(k), len);
-               Mmsg(temp, "File = \"%s\"\n", buf);
+               entry = (char *)incexe->name_list.get(k);
+               escape_string(esc, entry, strlen(entry));
+               Mmsg(temp, "File = \"%s\"\n", esc.c_str());
                indent_config_item(cfg_str, 2, temp.c_str());
             }
 
@@ -2172,8 +2165,6 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          }
       } /* loop over all exclude blocks */
    }
-
-   free_pool_memory(buf);
 
    pm_strcat(cfg_str, "}\n\n");
    pm_strcat(buff, cfg_str.c_str());
