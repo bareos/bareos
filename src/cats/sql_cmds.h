@@ -27,6 +27,7 @@ extern const char CATS_IMP_EXP *list_jobs;
 extern const char CATS_IMP_EXP *list_jobs_count;
 extern const char CATS_IMP_EXP *list_jobs_long;
 extern const char CATS_IMP_EXP *list_jobs_last;
+extern const char CATS_IMP_EXP *list_jobs_long_last;
 extern const char CATS_IMP_EXP *list_pool;
 extern const char CATS_IMP_EXP *drop_deltabs[];
 extern const char CATS_IMP_EXP *create_delindex;
