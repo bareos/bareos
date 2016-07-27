@@ -1,4 +1,5 @@
 ADD_TEST(disk:reload-test "@regressdir@/tests/reload-test")
+ADD_TEST(disk:always-incremental-test "@regressdir@/tests/always-incremental-test")
 ADD_TEST(disk:secure-erase-test "@regressdir@/tests/secure-erase-test")
 ADD_TEST(disk:migrate-sd-sd-test "@regressdir@/tests/migration-volume-sd-sd-test")
 ADD_TEST(disk:acl-xattr-test "@regressdir@/tests/acl-xattr-test")
