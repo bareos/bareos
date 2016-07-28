@@ -83,9 +83,7 @@ const char *list_pool = "SELECT * FROM Pool WHERE PoolId=%s";
  * JOIN with Media is required for filter to Media.Volumename.
  */
 const char *list_jobs =
-   "SELECT DISTINCT "
-   "Job.JobId,Job.Name, "
-   "Client.Name as Client, "
+   "SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
    "Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
@@ -96,9 +94,31 @@ const char *list_jobs =
    "%s "
    "ORDER BY StartTime%s";
 
+const char *list_jobs_last =
+   "SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
+   "Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "INNER JOIN ( "
+      "SELECT MAX(Job.JobId) as MaxJobId "
+      "FROM Job "
+      "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+      "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+      "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+      "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+      "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+      "WHERE Job.JobId > 0 "
+      "%s "
+      "GROUP BY Job.Name "
+   ") LastJob "
+   "ON Job.JobId = LastJob.MaxJobId "
+   "ORDER BY StartTime%s";
+
 const char *list_jobs_count =
-   "SELECT DISTINCT "
-   "COUNT(DISTINCT Job.JobId) as count "
+   "SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
    "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
@@ -109,17 +129,11 @@ const char *list_jobs_count =
    "%s";
 
 const char *list_jobs_long =
-   "SELECT DISTINCT "
-   "Job.JobId, Job.Job, Job.Name, "
-   "Job.PurgedFiles, Job.Type, Job.Level, "
-   "Job.ClientId, Client.Name as Client, "
-   "Job.JobStatus,"
-   "Job.SchedTime, Job.StartTime, Job.EndTime, Job.RealEndTime, Job.JobTDate, "
-   "Job.VolSessionId, Job.VolSessionTime, "
-   "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, "
-   "Job.PoolId, Pool.Name as PoolName,"
-   "Job.PriorJobId, "
-   "Job.FileSetId, FileSet.FileSet "
+   "SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
+   "Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
+   "Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
+   "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
+   "Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
    "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
@@ -130,21 +144,32 @@ const char *list_jobs_long =
    "%s "
    "ORDER BY StartTime%s";
 
-/*
- * Get the last JobId of each Job.Name matching the given criteria.
- */
-const char *list_jobs_last =
-   "SELECT DISTINCT "
-   "MAX(DISTINCT Job.JobId) as MaxJobId "
+const char *list_jobs_long_last =
+   "SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
+   "Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
+   "Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
+   "Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
+   "Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
    "FROM Job "
    "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
    "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
    "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
    "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
-   "WHERE Job.JobId > 0 "
-   "%s "
-   "GROUP BY Job.Name "
-   "%s";
+   "INNER JOIN ( "
+      "SELECT MAX(Job.JobId) as MaxJobId "
+      "FROM Job "
+      "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+      "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+      "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+      "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+      "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+      "WHERE Job.JobId > 0 "
+      "%s "
+      "GROUP BY Job.Name "
+   ") LastJob "
+   "ON Job.JobId = LastJob.MaxJobId "
+   "ORDER BY StartTime%s";
 
 const char *get_jobstatus_details =
    "SELECT DISTINCT "
