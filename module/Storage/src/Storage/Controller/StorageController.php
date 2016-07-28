@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,8 @@ namespace Storage\Controller;
 use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
+use Storage\Form\StorageForm;
+use Storage\Model\Storage;
 
 class StorageController extends AbstractActionController
 {
@@ -59,19 +61,43 @@ class StorageController extends AbstractActionController
       $action = $this->params()->fromQuery('action');
       $storagename = $this->params()->fromRoute('id');
 
+      try {
+         $this->bsock = $this->getServiceLocator()->get('director');
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+      try {
+         $pools = $this->getStorageModel()->getPools($this->bsock, 'scratch');
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+      try {
+         $slots = $this->getStorageModel()->getSlots($this->bsock, $storagename);
+         $drives = array();
+         foreach($slots as $slot) {
+            if($slot['type'] == 'drive') {
+               array_push($drives, $slot['slotnr']);
+            }
+         }
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+      $form = new StorageForm($storagename, $pools, $drives);
+      $form->setAttribute('method','post');
+
       if(empty($action)) {
          return new ViewModel(array(
-            'storagename' => $storagename
+            'storagename' => $storagename,
+            'form' => $form
          ));
       }
       else {
-         try {
-            $this->bsock = $this->getServiceLocator()->get('director');
-         }
-         catch(Exception $e) {
-            echo $e->getMessage();
-         }
-
          if($action == "import") {
             $storage = $this->params()->fromQuery('storage');
             $srcslots = $this->params()->fromQuery('srcslots');
@@ -130,16 +156,25 @@ class StorageController extends AbstractActionController
             }
          }
          elseif($action == "label") {
-            $storage = $this->params()->fromQuery('storage');
-            $pool = $this->params()->fromQuery('label');
-            $drive = $this->params()->fromQuery('drive');
-            $slots = $this->params()->fromQuery('slots');
-
-            try {
-               $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive, $slots);
-            }
-            catch(Exception $e) {
-               echo $e->getMessage();
+            $request = $this->getRequest();
+            if($request->isPost()) {
+               $s = new Storage();
+               $form->setInputFilter($s->getInputFilter());
+               $form->setData( $request->getPost() );
+               if($form->isValid()) {
+                  $storage = $form->getInputFilter()->getValue('storage');
+                  $pool = $form->getInputFilter()->getValue('pool');
+                  $drive = $form->getInputFilter()->getValue('drive');
+                  try {
+                     $result = $this->getStorageModel()->label($this->bsock, $storage, $pool, $drive);
+                  }
+                  catch(Exception $e) {
+                     echo $e->getMessage();
+                  }
+               }
+               else {
+                  // Form data not valid
+               }
             }
          }
          elseif($action == "updateslots") {
@@ -153,8 +188,6 @@ class StorageController extends AbstractActionController
             }
 
          }
-         elseif($action == "labelbarcodes") {
-         }
 
          try {
             $this->bsock->disconnect();
@@ -165,7 +198,8 @@ class StorageController extends AbstractActionController
 
          return new ViewModel(array(
             'storagename' => $storagename,
-            'result' => $result
+            'result' => $result,
+            'form' => $form
          ));
       }
    }

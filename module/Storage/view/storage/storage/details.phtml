@@ -5,9 +5,8 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -49,7 +48,7 @@ $this->headTitle($title);
          </button>
          <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
       </div>
-      <div class="modal-body">
+      <div class="modal-body" style="height: 250px; overflow-y: scroll">
          <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
       </div>
       <div class="modal-footer">
@@ -59,6 +58,41 @@ $this->headTitle($title);
   </div>
 </div>
 <!-- modal-001 end -->
+
+<!-- modal-002 start -->
+<div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Label barcodes"); ?></h4>
+      </div>
+      <div class="modal-body">
+         <?php
+            $form->prepare();
+            $form->setAttribute('class','form-horizontal');
+            $form->setAttribute('action', $this->url('storage', array('action' => 'details', 'id' => $this->storagename), array('query' => array('action'=> 'label'))));
+            echo $this->form()->openTag($form);
+            echo $this->formRow($form->get('storage'));
+            echo $this->formRow($form->get('pool'));
+            echo '<p class="help-block">'.$this->translate("Assign media to this pool.").'</p>';
+            echo $this->formRow($form->get('drive'));
+            echo '<p class="help-block">'.$this->translate("Use this drive for labeling.").'</p>';
+         ?>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Cancel"); ?></button>
+         <?php
+            echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+            echo $this->form()->closeTag($form);
+         ?>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-002 end -->
 
 <div class="col-xs-6 col-md-4">
 
@@ -310,9 +344,9 @@ $(document).ready(function() {
             }
          },
          {
-            "text": '<span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' <?php echo $this->translate("Label barcodes"); ?>',
+            "text": '<div data-toggle="modal" data-target="#modal-002"><span class="glyphicon glyphicon-barcode" aria-hidden="true"></span>' + ' <?php echo $this->translate("Label barcodes"); ?></div>',
             "action": function(e, dt, node, conf) {
-               window.location.assign('<?php echo $this->basePath() . "/storage/details/" . $this->storagename. "?action=label&storage=" . $this->storagename; ?>');
+               // empty as data-target #modal-002 is called above
             }
          }
       ]

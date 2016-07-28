@@ -155,12 +155,36 @@ class StorageModel
 
    public function label(&$bsock=null, $storage=null, $pool=null, $drive=null, $slots=null)
    {
-      if(isset($bsock, $storage)) {
-         // TODO
-         // Use Scratch pool by default as long as we don't display a pool selection dialog
-         $cmd = 'label storage="' . $storage . '" pool=Scratch drive=0 barcodes yes';
+      if(isset($bsock, $storage, $pool, $drive)) {
+         $cmd = 'label storage="' . $storage . '" pool="'.$pool.'" drive="'.$drive.'" barcodes yes';
          $result = $bsock->send_command($cmd, 0, null);
          return $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function getPools(&$bsock=null, $type=null)
+   {
+      if(isset($bsock, $type)) {
+         $cmd = '.pools type="'.$type.'"';
+         $pools = $bsock->send_command($cmd, 2, null);
+         $result = \Zend\Json\Json::decode($pools, \Zend\Json\Json::TYPE_ARRAY);
+         return $result['result']['pools'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function getSlots(&$bsock=null, $storage=null)
+   {
+      if(isset($bsock, $storage)) {
+         $cmd = 'status storage="'.$storage.'" slots';
+         $slots = $bsock->send_command($cmd, 2, null);
+         $result = \Zend\Json\Json::decode($slots, \Zend\Json\Json::TYPE_ARRAY);
+         return $result['result']['contents'];
       }
       else {
          throw new \Exception('Missing argument.');
