@@ -50,8 +50,7 @@ static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
 
    ua = new_ua_context(jcr);
    ua->batch = true;
-
-   Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull", jobname, jcr->vf_jobids);
+   Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname, jcr->vf_jobids, jcr->accurate ? "accurate=yes" : "accurate=no");
 
    Dmsg1(dbglvl, "=============== consolidate cmd=%s\n", ua->cmd);
    parse_ua_args(ua);                 /* parse command */

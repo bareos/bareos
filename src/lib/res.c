@@ -1416,8 +1416,6 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
 
 bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
 {
-   int len;
-   POOLMEM *cmdbuf;
    POOL_MEM cfg_str;    /* configuration as string  */
    POOL_MEM temp;
    MSGSRES *msgres;
@@ -1429,31 +1427,29 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
    Mmsg(temp, "   %s = \"%s\"\n", "Name", msgres->name());
    pm_strcat(cfg_str, temp.c_str());
 
-   cmdbuf = get_pool_memory(PM_NAME);
    if (msgres->mail_cmd) {
-      len = strlen(msgres->mail_cmd);
-      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
-      escape_string(cmdbuf, msgres->mail_cmd, len);
-      Mmsg(temp, "   MailCommand = \"%s\"\n", cmdbuf);
+      POOL_MEM esc;
+
+      escape_string(esc, msgres->mail_cmd, strlen(msgres->mail_cmd));
+      Mmsg(temp, "   MailCommand = \"%s\"\n", esc.c_str());
       pm_strcat(cfg_str, temp.c_str());
    }
 
    if (msgres->operator_cmd) {
-      len = strlen(msgres->operator_cmd);
-      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
-      escape_string(cmdbuf, msgres->operator_cmd, len);
-      Mmsg(temp, "   OperatorCommand = \"%s\"\n", cmdbuf);
+      POOL_MEM esc;
+
+      escape_string(esc, msgres->operator_cmd, strlen(msgres->operator_cmd));
+      Mmsg(temp, "   OperatorCommand = \"%s\"\n", esc.c_str());
       pm_strcat(cfg_str, temp.c_str());
    }
 
    if (msgres->timestamp_format) {
-      len = strlen(msgres->timestamp_format);
-      cmdbuf = check_pool_memory_size(cmdbuf, len * 2);
-      escape_string(cmdbuf, msgres->timestamp_format, len);
-      Mmsg(temp, "   TimestampFormat = \"%s\"\n", cmdbuf);
+      POOL_MEM esc;
+
+      escape_string(esc, msgres->timestamp_format, strlen(msgres->timestamp_format));
+      Mmsg(temp, "   TimestampFormat = \"%s\"\n", esc.c_str());
       pm_strcat(cfg_str, temp.c_str());
    }
-   free_pool_memory(cmdbuf);
 
    for (d = msgres->dest_chain; d; d = d->next) {
       int nr_set = 0;

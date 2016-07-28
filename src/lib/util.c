@@ -29,24 +29,29 @@
 
 /*
  * Various BAREOS Utility subroutines
- *
  */
 
 /*
- *  Escape special characters in bareos configuration strings
- *  needed for dumping config strings
+ * Escape special characters in bareos configuration strings
+ * needed for dumping config strings
  */
-void escape_string(char *snew, char *old, int len)
+void escape_string(POOL_MEM &snew, char *old, int len)
 {
    char *n, *o;
 
-   n = snew;
+   snew.check_size(len * 2);
+   n = snew.c_str();
    o = old;
    while (len--) {
       switch (*o) {
       case '\'':
          *n++ = '\'';
          *n++ = '\'';
+         o++;
+         break;
+      case '\\':
+         *n++ = '\\';
+         *n++ = '\\';
          o++;
          break;
       case 0:
@@ -70,7 +75,9 @@ void escape_string(char *snew, char *old, int len)
    *n = 0;
 }
 
-/* Return true of buffer has all zero bytes */
+/*
+ * Return true of buffer has all zero bytes
+ */
 bool is_buf_zero(char *buf, int len)
 {
    uint64_t *ip;
@@ -81,7 +88,10 @@ bool is_buf_zero(char *buf, int len)
       return false;
    }
    ip = (uint64_t *)buf;
-   /* Optimize by checking uint64_t for zero */
+
+   /*
+    * Optimize by checking uint64_t for zero
+    */
    len64 = len / sizeof(uint64_t);
    for (i=0; i < len64; i++) {
       if (ip[i] != 0) {
@@ -100,7 +110,9 @@ bool is_buf_zero(char *buf, int len)
 }
 
 
-/* Convert a string in place to lower case */
+/*
+ * Convert a string in place to lower case
+ */
 void lcase(char *str)
 {
    while (*str) {
@@ -111,11 +123,11 @@ void lcase(char *str)
    }
 }
 
-/* Convert spaces to non-space character.
+/*
+ * Convert spaces to non-space character.
  * This makes scanf of fields containing spaces easier.
  */
-void
-bash_spaces(char *str)
+void bash_spaces(char *str)
 {
    while (*str) {
       if (*str == ' ')
@@ -124,11 +136,11 @@ bash_spaces(char *str)
    }
 }
 
-/* Convert spaces to non-space character.
+/*
+ * Convert spaces to non-space character.
  * This makes scanf of fields containing spaces easier.
  */
-void
-bash_spaces(POOL_MEM &pm)
+void bash_spaces(POOL_MEM &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -139,9 +151,10 @@ bash_spaces(POOL_MEM &pm)
 }
 
 
-/* Convert non-space characters (0x1) back into spaces */
-void
-unbash_spaces(char *str)
+/*
+ * Convert non-space characters (0x1) back into spaces
+ */
+void unbash_spaces(char *str)
 {
    while (*str) {
      if (*str == 0x1)
@@ -150,9 +163,10 @@ unbash_spaces(char *str)
    }
 }
 
-/* Convert non-space characters (0x1) back into spaces */
-void
-unbash_spaces(POOL_MEM &pm)
+/*
+ * Convert non-space characters (0x1) back into spaces
+ */
+void unbash_spaces(POOL_MEM &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -204,7 +218,6 @@ bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds)
 
    return true;
 }
-
 
 /*
  * Convert a JobStatus code into a human readable form
@@ -351,7 +364,6 @@ void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen)
    }
 }
 
-
 /*
  * Convert Job Termination Status into a string
  */
@@ -385,7 +397,6 @@ const char *job_status_to_str(int stat)
    }
    return str;
 }
-
 
 /*
  * Convert Job Type into a string
@@ -441,7 +452,8 @@ const char *job_type_to_str(int type)
    return str;
 }
 
-/* Convert ActionOnPurge to string (Truncate, Erase, Destroy)
+/*
+ * Convert ActionOnPurge to string (Truncate, Erase, Destroy)
  */
 char *action_on_purge_to_string(int aop, POOL_MEM &ret)
 {
@@ -533,10 +545,9 @@ const char *volume_status_to_str(const char *status)
 }
 
 
-/***********************************************************************
+/*
  * Encode the mode bits into a 10 character string like LS does
- ***********************************************************************/
-
+ */
 char *encode_mode(mode_t mode, char *buf)
 {
   char *cp = buf;
@@ -584,7 +595,9 @@ int do_shell_expansion(char *name, int name_len)
    BPIPE *bpipe;
    const char *shellcmd;
 
-   /* Check if any meta characters are present */
+   /*
+    * Check if any meta characters are present
+    */
    len = strlen(meta);
    for (i = 0; i < len; i++) {
       if (strchr(name, meta[i])) {
@@ -595,7 +608,9 @@ int do_shell_expansion(char *name, int name_len)
    if (found) {
       cmd = get_pool_memory(PM_FNAME);
       line = get_pool_memory(PM_FNAME);
-      /* look for shell */
+      /*
+       * Look for shell
+       */
       if ((shellcmd = getenv("SHELL")) == NULL) {
          shellcmd = "/bin/sh";
       }
@@ -622,14 +637,14 @@ int do_shell_expansion(char *name, int name_len)
 }
 #endif
 
-
-/*  MAKESESSIONKEY  --  Generate session key with optional start
-                        key.  If mode is TRUE, the key will be
-                        translated to a string, otherwise it is
-                        returned as 16 binary bytes.
-
-    from SpeakFreely by John Walker */
-
+/*
+ * MAKESESSIONKEY  --  Generate session key with optional start
+ *                     key.  If mode is TRUE, the key will be
+ *                     translated to a string, otherwise it is
+ *                     returned as 16 binary bytes.
+ *
+ *  from SpeakFreely by John Walker
+ */
 void make_session_key(char *key, char *seed, int mode)
 {
    int j, k;
@@ -644,13 +659,14 @@ void make_session_key(char *key, char *seed, int mode)
      bstrncat(s, seed, sizeof(s));
    }
 
-   /* The following creates a seed for the session key generator
-     based on a collection of volatile and environment-specific
-     information unlikely to be vulnerable (as a whole) to an
-     exhaustive search attack.  If one of these items isn't
-     available on your machine, replace it with something
-     equivalent or, if you like, just delete it. */
-
+   /*
+    * The following creates a seed for the session key generator
+    * based on a collection of volatile and environment-specific
+    * information unlikely to be vulnerable (as a whole) to an
+    * exhaustive search attack.  If one of these items isn't
+    * available on your machine, replace it with something
+    * equivalent or, if you like, just delete it.
+    */
 #if defined(HAVE_WIN32)
    {
       LARGE_INTEGER     li;

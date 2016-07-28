@@ -415,7 +415,6 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    POOL_MEM temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
-   POOL_MEM selection_last(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
 
    if (jr->JobId > 0) {
@@ -450,31 +449,15 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
       pm_strcat(selection, temp.c_str());
    }
 
-   if (last > 0) {
-      /*
-       * Show only the last run of a job (Job.Name).
-       * Do a subquery to get a list of matching JobIds
-       * to be used in the main query later.
-       *
-       * range: while it might be more efficient,
-       *        to apply the range to the subquery,
-       *        at least mariadb 10 does not support this.
-       *        Therefore range is handled in the main query.
-       */
-      temp.bsprintf("AND Job.JobId IN (%s) ", list_jobs_last);
-      selection_last.bsprintf(temp.c_str(), selection.c_str(), "");
-
-      /*
-       * As the existing selection is handled in the subquery,
-       * overwrite the main query selection
-       * by the newly created selection_last.
-       */
-      pm_strcpy(selection, selection_last.c_str());
-   }
-
    db_lock(mdb);
    if (count > 0) {
       Mmsg(mdb->cmd, list_jobs_count, selection.c_str(), range);
+   } else if (last > 0) {
+      if (type == VERT_LIST) {
+         Mmsg(mdb->cmd, list_jobs_long_last, selection.c_str(), range);
+      } else {
+         Mmsg(mdb->cmd, list_jobs_last, selection.c_str(), range);
+      }
    } else {
       if (type == VERT_LIST) {
          Mmsg(mdb->cmd, list_jobs_long, selection.c_str(), range);
