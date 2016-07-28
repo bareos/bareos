@@ -653,6 +653,8 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
     * Do it only if action on purge = truncate is set
     */
    if (!(mr->ActionOnPurge & ON_PURGE_TRUNCATE)) {
+      ua->error_msg(_("\nThe option \"Action On Purge = Truncate\" was not defined in the Pool resource.\n"
+                      "Unable to truncate volume \"%s\"\n"), mr->VolumeName);
       return;
    }
 
