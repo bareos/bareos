@@ -415,7 +415,6 @@ void db_list_job_records(JCR *jcr, B_DB *mdb, JOB_DBR *jr, const char *range,
    POOL_MEM temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
-   POOL_MEM selection_last(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
 
    if (jr->JobId > 0) {
