@@ -890,6 +890,8 @@ writev_all_ssl(dpl_conn_t *conn,
       free(ptr);
       return DPL_FAILURE;
     }
+
+  free(ptr);
   return DPL_SUCCESS;
 }
 
