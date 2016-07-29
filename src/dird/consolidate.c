@@ -96,12 +96,20 @@ bool do_consolidate(JCR *jcr)
          /*
           * Fake always incremental job as job of current jcr.
           */
-         jcr->res.job = job;
          init_jcr_job_record(jcr);
+         jcr->res.job = job;
+         jcr->res.fileset = job->fileset;
+         jcr->res.client = job->client;
          jcr->jr.JobLevel = L_INCREMENTAL;
 
          if (!get_or_create_fileset_record(jcr)) {
             Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
+            retval = false;
+            goto bail_out;
+         }
+
+         if (!get_or_create_client_record(jcr)) {
+            Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
             retval = false;
             goto bail_out;
          }
@@ -127,6 +135,9 @@ bool do_consolidate(JCR *jcr)
             bstrftimes(sdt, sizeof(sdt), starttime);
             jcr->jr.StartTime = starttime;
             Jmsg(jcr, M_INFO, 0, _("%s: considering jobs older than %s for consolidation.\n"), job->name(), sdt);
+            Dmsg4(10, _("%s: considering jobs with ClientId %d and FilesetId %d older than %s for consolidation.\n"),
+                                       job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
+
          }
 
          db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
