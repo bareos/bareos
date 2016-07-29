@@ -427,6 +427,8 @@ RES_ITEM job_items[] = {
      "Backup Jobs older than the specified time duration will be merged into a new Virtual backup." },
    { "AlwaysIncrementalKeepNumber", CFG_TYPE_PINT32, ITEM(res_job.AlwaysIncrementalKeepNumber), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
      "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."},
+   { "AlwaysIncrementalConsolidateFull", CFG_TYPE_BOOL, ITEM(res_job.AlwaysIncrementalConsolidateFull), 0, CFG_ITEM_DEFAULT, "true", "16.2.4-",
+     "Consolidate jobs also consolidate the full backup. If disabled, only the latest incremental will be consolidated to reduce consolidation volume." },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 

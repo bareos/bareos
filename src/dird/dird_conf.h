@@ -438,6 +438,7 @@ public:
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
    bool SaveFileHist;                 /* Ability to disable File history saving for certain protocols */
    bool AlwaysIncremental;            /* Always incremental with regular consolidation */
+   bool AlwaysIncrementalConsolidateFull; /* Always incremental only consolidates incremental backups and full will be left to reduce volume */
 
    runtime_job_status_t *rjs;         /* Runtime Job Status */
 
