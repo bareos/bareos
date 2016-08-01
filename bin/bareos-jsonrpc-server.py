@@ -1,9 +1,10 @@
 #!/usr/bin/python
 
 import argparse
-import bareos
+import bareos.bsock
 import inspect
 import logging
+# pip install python-jsonrpc
 import pyjsonrpc
 import sys
 from   types import MethodType
@@ -26,11 +27,7 @@ class BconsoleMethods:
 
     def call( self, command ):
         self.logger.debug( command )
-        raw=self.conn.call( command )
-        result = {
-            'raw': raw
-        }
-        return result
+        return self.conn.call_fullresult( command )
 
 def bconsole_methods_to_jsonrpc( bconsole_methods ):
     tuples = inspect.getmembers( bconsole_methods, predicate=inspect.ismethod )
@@ -44,10 +41,12 @@ def bconsole_methods_to_jsonrpc( bconsole_methods ):
 
 def getArguments():
     parser = argparse.ArgumentParser(description='Run Bareos Director JSON-RPC proxy.' )
-    parser.add_argument( '-d', '--debug', action='store_true', help="enable debugging output" )
-    parser.add_argument( '-p', '--password', help="password to authenticate at Bareos Director" )
-    parser.add_argument( 'host', default="localhost", help="Bareos Director host" )
-    parser.add_argument( 'dirname', nargs='?', default=None, help="Bareos Director name" )
+    parser.add_argument('-d', '--debug', action='store_true', help="enable debugging output")
+    parser.add_argument('--name', default="*UserAgent*", help="use this to access a specific Bareos director named console. Otherwise it connects to the default console (\"*UserAgent*\")")
+    parser.add_argument('-p', '--password', help="password to authenticate to a Bareos Director console", required=True)
+    parser.add_argument('--port', default=9101, help="Bareos Director network port")
+    parser.add_argument('--dirname', help="Bareos Director name")
+    parser.add_argument('address', nargs='?', default="localhost", help="Bareos Director network address")
     args = parser.parse_args()
     return args
 
@@ -61,23 +60,28 @@ if __name__ == '__main__':
         logger.setLevel(logging.DEBUG)
 
     try:
-        director = bareos.bconsole( host=args.host, dirname=args.dirname )
+        options = [ 'address', 'port', 'dirname', 'name' ]
+        parameter = {}
+        for i in options:
+            if hasattr(args, i) and getattr(args,i) != None:
+                logger.debug( "%s: %s" %(i, getattr(args,i)))
+                parameter[i] = getattr(args, i)
+            else:
+                logger.debug( '%s: ""' %(i))
+        logger.debug('options: %s' % (parameter))
+        password = bareos.bsock.Password(args.password)
+        parameter['password']=password
+        director = bareos.bsock.DirectorConsoleJson(**parameter)
     except RuntimeError as e:
-        print str(e)
-        sys.exit(1)
-    if not director.login( password=args.password ):
-        print "failed to authenticate"
+        print(str(e))
         sys.exit(1)
     logger.debug( "authentication successful" )
-
-    director.init()
-    director.show_commands()
 
     bconsole_methods = BconsoleMethods( director )
 
     bconsole_methods_to_jsonrpc( bconsole_methods )
 
-    print bconsole_methods.call( "status director" )
+    print bconsole_methods.call("list jobs last")
 
     # Threading HTTP-Server
     http_server = pyjsonrpc.ThreadingHttpServer(
