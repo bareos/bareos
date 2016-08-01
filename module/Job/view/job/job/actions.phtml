@@ -99,7 +99,7 @@ $this->headTitle($title);
 
    var table= $('#backupjobs').DataTable( {
       "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=backupjobs'; ?>",
+         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=runjobs'; ?>",
          "dataSrc": ""
       },
       "language": {

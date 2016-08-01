@@ -304,9 +304,19 @@ class JobController extends AbstractActionController
             echo $e->getMessage();
          }
       }
-      elseif($data == "backupjobs") {
+      elseif($data == "runjobs") {
          try {
-            $result = $this->getJobModel()->getBackupJobs($this->bsock);
+            // Get the different kind of jobs and merge them. Jobs of the following types
+            // cannot nor wanted to be run. M,V,R,U,I,C and S.
+            $jobs_B = $this->getJobModel()->getJobsByType($this->bsock, 'B'); // Backup Job
+            $jobs_D = $this->getJobModel()->getJobsByType($this->bsock, 'D'); // Admin Job
+            $jobs_A = $this->getJobModel()->getJobsByType($this->bsock, 'A'); // Archive Job
+            $jobs_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
+            $jobs_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
+            $jobs_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
+            $result = array_merge(
+               $jobs_B,$jobs_D,$jobs_A,$jobs_c,$jobs_g,$jobs_O
+            );
          }
          catch(Exception $e) {
             echo $e->getMessage();

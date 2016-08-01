@@ -110,10 +110,15 @@ class JobModel
       }
    }
 
-   public function getBackupJobs(&$bsock=null)
+   public function getJobsByType(&$bsock=null, $type=null)
    {
       if(isset($bsock)) {
-         $cmd = '.jobs type=B';
+         if($type == null) {
+            $cmd = '.jobs';
+         }
+         else {
+            $cmd = '.jobs type="'.$type.'"';
+         }
          $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
