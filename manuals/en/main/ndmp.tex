@@ -699,7 +699,7 @@ JobStatus=OK (T)
 The restore location is determined by the \linkResourceDirective{Dir}{Job}{Where} setting of the restore job.
 In NDMP, this parameter works in a special manner, the prefix can be either \bquote{relative} to the filesystem or \bquote{absolute}.
 If a prefix is set in form of a directory (like \directory{/bareos-restores}), it will be a relative prefix and will be added between the filesystem and the filename. This is needed to make sure that the data is restored in a different directory, but  into the same filesystem.
-If the prefix is set with a leading caret (\path|^|), it will be an absolute prefix and will be put at the front of the restore path. This is needed if the restored data should be stored into a different filesystem.
+If the prefix is set with a leading caret (\textasciicircum), it will be an absolute prefix and will be put at the front of the restore path. This is needed if the restored data should be stored into a different filesystem.
 
 Example:
 
@@ -708,7 +708,7 @@ Example:
 original file name &  where &  restored file \\
 \hline
 \path|/ifs/home/admin/.zshrc| & \path|/bareos-restores|           & \path|/ifs/home/bareos-restores/admin/.zshrc| \\
-\path|/ifs/home/admin/.zshrc| & \path|^/ifs/data/bareos-restores| & \path|/ifs/data/bareos-restores/admin/.zshrc| \\
+\path|/ifs/home/admin/.zshrc| & \textasciicircum\path|/ifs/data/bareos-restores| & \path|/ifs/data/bareos-restores/admin/.zshrc| \\
 \hline
 \end{tabular}
 
