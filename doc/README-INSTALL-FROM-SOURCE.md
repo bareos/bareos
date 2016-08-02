@@ -492,6 +492,13 @@ server {
                 # With php5-fpm:
 
                 fastcgi_pass unix:/var/run/php5-fpm.sock;
+                
+                
+                # Set APPLICATION_ENV to either 'production' or 'development'
+
+                fastcgi_param APPLICATION_ENV production;
+                
+                # fastcgi_param APPLICATION_ENV development;
 
         }
 
