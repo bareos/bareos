@@ -20,20 +20,47 @@ class RequestHandler(pyjsonrpc.HttpRequestHandler):
     }
 
 class BconsoleMethods:
-    def __init__(self, bconsole ):
-        self.logger = logging.getLogger()
-        self.logger.debug("init")
-        self.conn = bconsole
+   def __init__(self, bconsole):
+      self.logger = logging.getLogger()
+      self.logger.debug("init")
+      self.conn = bconsole
 
-    def call( self, command ):
-        self.logger.debug( command )
-        return self.conn.call_fullresult( command )
+   def execute(self, command):
+      """
+      Generic function to call any bareos console command.
+      """
+      self.logger.debug(command)
+      return self.conn.call(command)
 
-def bconsole_methods_to_jsonrpc( bconsole_methods ):
-    tuples = inspect.getmembers( bconsole_methods, predicate=inspect.ismethod )
+   def execute_fullresult(self, command):
+      """
+      Generic function to call any bareos console commands,
+      and return the full result (also the pseudo jsonrpc header, not required here).
+      """
+      self.logger.debug(command)
+      return self.conn.call_fullresult(command)
+
+   def list(self, command):
+      """
+      Interface to the Bareos console list command.
+      """
+      return self.execute("list " + command)
+
+   def call(self, command):
+      """
+      legacy function, as call is a suboptimal name.
+      It is used internally by python-jsonrpc.
+      Use execute() instead.
+      """
+      return self.execute(command)
+
+
+
+def bconsole_methods_to_jsonrpc(bconsole_methods):
+    tuples = inspect.getmembers(bconsole_methods, predicate=inspect.ismethod)
     methods = RequestHandler.methods
     for i in tuples:
-        methods[i[0]] = getattr( bconsole_methods, i[0] )
+        methods[i[0]] = getattr(bconsole_methods, i[0])
         print i[0]
     print methods
     RequestHandler.methods=methods

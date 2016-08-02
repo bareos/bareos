@@ -19,10 +19,22 @@ http_client = pyjsonrpc.HttpClient(
 # It is also possible to use the *method* name as *attribute* name.
 #print http_client.add(1, 2)
 
-result = http_client.call( "call", "list jobs last" )
-try:
-    pprint(result['result'])
-except:
-    pprint( result )
-
+# provoke an error
 #print http_client.add(2,"abc")
+
+
+result = http_client.execute_fullresult("list jobs last")
+pprint(result)
+
+result = http_client.execute("list jobs last")
+pprint(result)
+
+result = http_client.list("jobs last")
+pprint(result)
+
+
+#try:
+    #pprint(result['result'])
+#except:
+    #pprint( result )
+
