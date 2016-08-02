@@ -69,7 +69,7 @@ class StorageController extends AbstractActionController
       }
 
       try {
-         $pools = $this->getStorageModel()->getPools($this->bsock, 'scratch');
+         $pools = $this->getStorageModel()->getPools($this->bsock, null);
       }
       catch(Exception $e) {
          echo $e->getMessage();
