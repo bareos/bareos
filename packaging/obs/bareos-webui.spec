@@ -156,6 +156,6 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/bareos-webui/directors.ini
 %config(noreplace) /etc/bareos-webui/configuration.ini
 %config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/console/admin.conf.example
-%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/admin.conf
+%config(noreplace) %attr(644,root,root) /etc/bareos/bareos-dir.d/profile/webui-admin.conf
 %config(noreplace) %{_apache_conf_dir}/bareos-webui.conf
 

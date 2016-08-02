@@ -11,6 +11,6 @@ install: install-am
 	cp -p install/directors.ini $(DESTDIR)/etc/bareos-webui/directors.ini
 	cp -p install/configuration.ini $(DESTDIR)/etc/bareos-webui/configuration.ini
 	$(INSTALL) -m 0640 install/bareos/bareos-dir.d/console/admin.conf.example $(DESTDIR)/etc/bareos/bareos-dir.d/console/
-	$(INSTALL) -m 0640 install/bareos/bareos-dir.d/profile/admin.conf $(DESTDIR)/etc/bareos/bareos-dir.d/profile/
+	$(INSTALL) -m 0640 install/bareos/bareos-dir.d/profile/webui-admin.conf $(DESTDIR)/etc/bareos/bareos-dir.d/profile/
 	$(INSTALL) -m 0640 install/apache/bareos-webui.conf $(DESTDIR)@HTTPD_CONF@/
 

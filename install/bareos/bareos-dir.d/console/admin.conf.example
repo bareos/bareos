@@ -4,5 +4,5 @@
 Console {
   Name = admin
   Password = "admin"
-  Profile = admin
+  Profile = "webui-admin"
 }
