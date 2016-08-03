@@ -332,7 +332,7 @@ The following commands are currently implemented:
 
 \begin{description}
 \item [add]
-   \index[general]{Console!Command!add}
+   \index[general]{Console!Command!add|textbf}
    This command is used to add Volumes to an existing Pool.  That is,
    it creates the Volume name in the catalog and inserts into the Pool
    in the catalog, but does not attempt to access the physical Volume.
@@ -431,7 +431,7 @@ cancel storage=<Storage Daemon> Jobid=<JobId>
    \index[general]{Console!Command!create pool}
    This command is not normally used as the Pool records are automatically
    created by the Director when it starts based on what it finds in
-   the conf file.  If needed, this command can be used,
+   the configuration.  If needed, this command can be used,
    to create a Pool record in the database using the
    Pool resource record defined in the Director's configuration file.  So
    in a sense, this command simply transfers the information from the Pool
@@ -449,11 +449,75 @@ cancel storage=<Storage Daemon> Jobid=<JobId>
 create [pool=<pool-name>]
 \end{bconsole}
 
-
    When starting a Job, if Bareos determines that there is no Pool record
    in the database, but there is a Pool resource of the appropriate name,
    it will create it for you.  If you want the Pool record to appear in the
    database immediately, simply use this command to force it to be created.
+
+\item[configure]
+    \label{sec:bcommandConfigure}
+
+    Configures director resources during runtime.
+    The first configure subcommand \bcommand{configure}{add} is available since Bareos \sinceVersion{console}{configure add}{16.2.4}.
+    Other subcommands may follow in later releases.
+
+    \begin{description}
+    \item[add]
+        \label{sec:bcommandConfigureAdd}
+        \index[general]{Console!Command!configure add}
+
+        This command allows to add resources during runtime.
+        Usage:
+\begin{bconsole}{}
+configure add <resourcetype> name=<resourcename> <directive1>=<value1> <directive2>=<value2> ...
+\end{bconsole}
+
+    The command generates and loads a new, valid resource.
+    As the new resource is also stored at
+
+    \file{<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf}
+
+    (see \nameref{sec:ConfigurationResourceFileConventions}) it is persistent upon reload and restart.
+
+    This feature requires \nameref{sec:ConfigurationSubdirectories}.
+
+    All kinds of resources can be added.
+    When adding a client resource, the \nameref{ClientResourceDirector} for the \bareosFd is also created
+    and stored at:
+
+    \file{<CONFIGDIR>/bareos-dir-export/client/<clientname>/bareos-fd.d/director/<clientname>.conf}
+
+\begin{bconsole}{Example: adding a client and a job resource during runtime}
+*<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
+Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
+Client {
+  Name = client2-fd
+  Address = 192.168.0.2
+  Password = secret
+}
+*<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
+Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
+Job {
+  Name = client2-job
+  Client = client2-fd
+  JobDefs = DefaultJob
+}
+\end{bconsole}
+
+These two commands create three resource configuration files:
+\begin{itemize}
+  \item \file{/etc/bareos/bareos-dir.d/client/client2-fd.conf}
+  \item \file{/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf} (assuming your director resource is named \name{bareos-dir})
+  \item \file{/etc/bareos/bareos-dir.d/job/client2-job.conf}
+\end{itemize}
+
+The files in \directory{bareos-dir-export/client/} directory are not used by the \bareosDir.
+However, they can be copied to new clients to configure these clients for the \bareosDir.
+
+\warning{Don't be confused by the extensive output of \bcommand{help}{configure}. As \bcommand{configure}{add} allows configuring arbitrary resources, the output of \bcommand{help}{configure} lists all the resources, each with all valid directives. The same data is also used for \command{bconsole} command line completion.}
+
+    \end{description}
+
 
 \item [delete]
    \index[general]{Console!Command!delete}
@@ -1655,14 +1719,12 @@ use [catalog=<catalog>]
 
 \item [var]
    \label{var}
-   \index[general]{Console!Command!var name}
-   This command takes a string or quoted string and  does variable expansion on
-   it the same way variable expansion  is done on the {\bf LabelFormat} string.
-   Thus, for the  most part, you can test your LabelFormat strings. The
-   difference  between the {\bf var} command and the actual LabelFormat process
-   is that during the var command, no job is running so "dummy"  values are
-   used in place of Job specific variables. Generally,  however, you will get a
-   good idea of what is going to happen  in the real case.
+   \index[general]{Console!Command!var}
+   This command takes a string or quoted string and does variable expansion on
+   it mostly the same way variable expansion is done on the \linkResourceDirective{Dir}{Pool}{Label Format} string.
+   The difference  between the \bcommand{var}{} command and the actual \linkResourceDirective{Dir}{Pool}{Label Format} process
+   is that during the var command, no job is running so dummy values are
+   used in place of Job specific variables.
 
 \item [version]
    \index[general]{Console!Command!version}

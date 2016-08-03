@@ -1,29 +1,23 @@
-%%
-%%
+\chapter{Customizing the Configuration}
+\label{ConfigureChapter}
+\index[general]{Customizing the Configuration}
 
-
-When each of the Bareos programs starts, it reads a configuration file
-specified on the command line or the default \file{bareos-dir.conf}, 
-\file{bareos-fd.conf}, \file{bareos-sd.conf}, or \file{console.conf} for the Director
-daemon, the File daemon, the Storage daemon, and the Console program
-respectively.
-
-Each service (Director, Client, Storage, Console) has its own configuration
-file containing a set of Resource definitions. These resources are very
+Each Bareos component (Director, Client, Storage, Console) has its own configuration
+containing a set of resource definitions. These resources are very
 similar from one service to another, but may contain different directives
-(records) depending on the service. For example, in the Director's resource
-file, the \nameref{DirectorResourceDirector} defines the name of the Director, a number
+(records) depending on the component. For example, in the Director configuration,
+the \nameref{DirectorResourceDirector} defines the name of the Director, a number
 of global Director parameters and his password. In the File daemon
-configuration file, the \nameref{ClientResourceDirector} specifies which Directors are
+configuration, the \nameref{ClientResourceDirector} specifies which Directors are
 permitted to use the File daemon.
 
-If you install a full Bareos system (Director, Storage and File Daemon) to one system,
-the Bareos packages tries there best to generate a working configuration as a basis for your individual configuration.
+If you install all Bareos daemons (Director, Storage and File Daemon) onto one system,
+the Bareos package tries its best to generate a working configuration as a basis for your individual configuration.
 
 The details of each resource and the directives permitted therein are
 described in the following chapters.
 
-The following configuration files must be defined:
+The following configuration files must be present:
 
 \begin{itemize}
 \item
@@ -32,9 +26,9 @@ The following configuration files must be defined:
    that you use in this configuration file.
 \item
    \nameref{StoredConfChapter} -- to define the resources to
-   be used by each Storage daemon. Normally, you will have  a single Storage
-   daemon that controls your tape drive or tape  drives. However, if you have
-   tape drives on several machines,  you will have at least one Storage daemon
+   be used by each Storage daemon. Normally, you will have a single Storage
+   daemon that controls your disk storage or tape drives. However, if you have
+   tape drives on several machines, you will have at least one Storage daemon
    per machine.
 \item
    \nameref{FiledConfChapter} -- to define the resources for
@@ -47,8 +41,245 @@ Directors are  available so that you may interact with them.
 \end{itemize}
 
 
+\section{Configuration Path Layout}
+\index[general]{Configuration!Directories}
+\index[general]{Configuration!Subdirectories}
 
-\section{Character Sets}
+When a Bareos component starts, it reads its configuration.
+In Bareos $<$ 16.2.2 only configuration files (which optionally can include other files) are supported.
+Since Bareos \sinceVersion{}{Configuration Subdirectories}{16.2.2} also configuration subdirectories are supported.
+
+\subsubsection{Naming}
+
+In this section, the following naming is used:
+
+\begin{itemize}
+    \item \path|$CONFIGDIR|\hide{$} refers to the base configuration directory.
+        Bareos Linux packages use \configPathUnix.
+    \item A component is one of the following Bareos programs:
+    \begin{itemize}
+        \item bareos-dir
+        \item bareos-sd
+        \item bareos-fd
+        \item bareos-traymonitor
+        \item bconsole
+        \item bat (only legacy config file: bat.conf)
+    \end{itemize}
+    \item \path|$COMPONENT|\hide{$} refers to one of the listed components.
+%
+%     \item Legacy config file (still fully supported, with some
+%           limitation when using the configuration API):
+%         \begin{itemize}
+%             \item \path|$CONFIGDIR/$COMPONENT.conf|
+%         \end{itemize}
+\end{itemize}
+
+\subsection{What configuration will be used?}
+\label{sec:ConfigurationFileOrConfigurationSubDirectories}
+
+When starting a Bareos component, it will look for its configuration.
+Bareos components allow the configuration file/directory to be specified as a command line parameter \path|-c $PATH|\hide{$}.
+
+\begin{itemize}
+    \item configuration path parameter is not given (default)
+        \begin{itemize}
+        \item \path|$CONFIGDIR/$COMPONENT.conf| is a file
+            \begin{itemize}
+            \item the configuration is read from the file \path|$CONFIGDIR/$COMPONENT.conf|
+            \end{itemize}
+        \item \path|$CONFIGDIR/$COMPONENT.d/| is a directory
+            \begin{itemize}
+            \item the configuration is read from \path|$CONFIGDIR/$COMPONENT.d/*/*.conf| (subdirectory configuration)
+            \end{itemize}
+        \end{itemize}
+    \item configuration path parameter is given (\path|-c $PATH|)
+        \begin{itemize}
+        \item \path|$PATH| is a file
+            \begin{itemize}
+            \item the configuration is read from the file specified in \path|$PATH|
+            \end{itemize}
+        \item \path|$PATH| is a directory
+            \begin{itemize}
+            \item the configuration is read from \path|$PATH/$COMPONENT.d/*/*.conf| (subdirectory configuration)
+            \end{itemize}
+        \end{itemize}
+\end{itemize}
+
+As the \path|$CONFIGDIR|\hide{$} differs between platforms or is overwritten by the path parameter,
+the documentation will often refer to the configuration without the leading path
+(e.g. \path|$COMPONENT.d/*/*.conf|\hide{$} instead of \path|$CONFIGDIR/$COMPONENT.d/*/*.conf|).
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir bareos-read-configuration}
+\end{center}
+
+
+When subdirectory configuration is used,
+all files matching \path|$PATH/$COMPONENT.d/*/*.conf| will be read, see \nameref{sec:ConfigurationSubdirectories}.
+
+\paragraph{Relation between Bareos components and configuration}
+
+\begin{center}
+\begin{tabular}{ l || l | l }
+Bareos component &
+\shortstack[l]{Configuration File \\ (default path on Unix)} &
+\shortstack[l]{Configuration Directory \\ (default path on Unix) \\ since Bareos $>=$ 16.2.2} \\
+\hline
+\hline
+
+bareos-dir                   & \file{bareos-dir.conf}       & \file{bareos-dir.d} \\
+\nameref{DirectorChapter}    & (\configFileDirUnix)         & (\configDirectoryDirUnix) \\
+\hline
+
+bareos-sd                    & \file{bareos-sd.conf}        & \file{bareos-sd.d} \\
+\nameref{StoredConfChapter}  & (\configFileSdUnix)          & (\configDirectorySdUnix) \\
+\hline
+
+bareos-fd                    & \file{bareos-fd.conf}        & \file{bareos-fd.d} \\
+\nameref{FiledConfChapter}   & (\configFileFdUnix)          & (\configDirectoryFdUnix) \\
+\hline
+
+bconsole                     & \file{bconsole.conf}         & \file{bconsole.d} \\
+\nameref{ConsoleConfChapter} & (\configFileBconsoleUnix)    & (\configDirectoryBconsoleUnix) \\
+\hline
+
+bareos-traymonitor           & \file{tray-monitor.conf}     & \file{tray-monitor.d} \\
+\nameref{sec:MonitorConfig}  & (\configFileTrayMonitorUnix) & (\configDirectoryTrayMonitorUnix) \\
+\hline
+
+bat                          & \file{bat.conf}              & (not supported) \\
+                             & ({\configFileBatUnix})       &  \\
+\end{tabular}
+\end{center}
+
+
+
+\subsection{Configuration Subdirectories}
+\label{sec:ConfigurationSubdirectories}
+% ConfigurationIncludeDirectory is referenced from the Bareos code.
+\label{ConfigurationIncludeDirectory}
+
+If the subdirectory configuration is used, instead of a single configuration file,
+all files matching \path|$COMPONENT.d/*/*.conf|\hide{$} are read as a configuration,
+see \nameref{sec:ConfigurationFileOrConfigurationSubDirectories}.
+
+\subsubsection{Reason for Configuration Subdirectories}
+
+In Bareos $<$ 16.2.2, Bareos uses one configuration file per component.
+
+Most larger Bareos environments split their configuration into separate
+files, making it easier to manage the configuration.
+
+Also some extra packages (bareos-webui, plugins, ...) require a configuration,
+which must be included into the \bareosDir or \bareosSd configuration.
+The subdirectory approach makes it easier to add or modify the configuration resources of different Bareos packages.
+
+The Bareos \ilink{configure}{sec:bcommandConfigure} command
+requires a configuration directory structure, as provided by the subdirectory approach.
+
+From Bareos \sinceVersion{}{Configuration subdirectories are used by default}{16.2.4} on,
+new installations will use configuration subdirectories by default.
+
+
+\subsubsection{Resource file conventions}
+    \label{sec:ConfigurationResourceFileConventions}
+
+\begin{itemize}
+\item Each configuration resource has to use its own configuration file.
+\item The path of a resource file is \path|$COMPONENT.d/$RESOURCETYPE/$RESOURCENAME.conf|.
+\item The name of the configuration file is identical with the resource name:
+    \begin{itemize}
+    \item e.g.
+        \begin{itemize}
+        \item \path|bareos-dir.d/director/bareos-dir.conf|
+        \item \path|bareos-dir.d/pool/Full.conf|
+        \end{itemize}
+    \item Exceptions:
+        \begin{itemize}
+        \item The resource file \path|bareos-fd.d/client/myself.conf| always has the file name \path|myself.conf|,
+                while the name is normally set to the hostname of the system. 
+        \end{itemize}
+    \end{itemize}
+\item Example resource files:
+    \begin{itemize}
+    \item Additional packages can contain configuration files that are automatically included. However, most additional configuration resources require configuration. When a resource file requires configuration, it has to be included as an example file:
+        \begin{itemize}
+        \item \path|$CONFIGDIR/$COMPONENT.d/$RESOURCE/$NAME.conf.example|
+        \item For example, the \bareosWebui entails one config resource and one config resource example for the \bareosDir:
+            \begin{itemize}
+            \item \path|$CONFIGDIR/bareos-director.d/profile/webui-admin.conf|
+            \item \path|$CONFIGDIR/bareos-director.d/console/admin.conf.example|\hide{$}
+            \end{itemize}
+        \end{itemize}
+    \end{itemize}
+\item \hypertarget{sec:deleteConfigurationResourceFiles}Disable/remove configuration resource files:
+    \begin{itemize}
+    \item Normally you should not remove resources that are already in use (jobs, clients, ...). Instead you should disable them by adding the directive \configline{Enable = no}. Otherwise you take the risk that orphaned entries are kept in the Bareos catalog. However, if a resource has not been used or all references have been cleared from the database, they can also be removed from the configuration.
+    \warning{If you want to remove a configuration resource that is part of a Bareos package,
+                    replace the resource configuration file by an empty file.
+                    This prevents the resource from reappearing in the course of a package update.}
+    \end{itemize}
+\end{itemize}
+
+
+
+\subsubsection{Using configuration subdirectories}
+
+\paragraph{New installation}
+
+\begin{itemize}
+    \item Configuration subdirectories are used by default from Bareos \sinceVersion{}{Configuration Subdirectories}{16.2.4} onwards.
+    \item They will be usable immediately after installing a Bareos component.
+    \item If additional packages entail example configuration files (\path|$NAME.conf.example|),
+        copy them to \path|$NAME.conf|, modify it as required and reload or restart the component.
+\end{itemize}
+
+\paragraph{Updates from Bareos $<$ 16.2.4}
+    \label{sec:UpdateToConfigurationSubdirectories}
+
+\begin{itemize}
+\item When updating to a Bareos version containing configuration subdirectories,
+            the existing configuration will not be touched and is still the default configuration.
+    \begin{itemize}
+    \item \warning{Problems can occur if you have implemented an own wildcard mechanism to load your configuration
+            from the same subdirectories as used by the new packages (\path|$CONFIGDIR/$COMPONENT.d/*/*.conf|).
+            In this case, newly installed configuration resource files can alter
+            your current configuration by adding resources.}
+            Best create a copy of your configuration directory before updating Bareos
+            and modify your existing configuration file to use that other directory.
+    \end{itemize}
+\item As long as the old configuration file (\path|$CONFIGDIR/$COMPONENT.conf|) exists, it will be used.
+\item The correct way of migrating to the new configuration scheme would be
+            to split the configuration file into resources,
+            store them in the resource directories and then remove the original configuration file.
+    \begin{itemize}
+    \item This requires effort. \TODO{It is planned to create a program that helps to migrate the settings,
+                however, until now, it is not available.}
+    \item The easy way is:
+        \begin{itemize}
+        \item \path|mkdir $CONFIGDIR/$COMPONENT.d/migrate && mv $CONFIGDIR/$COMPONENT.conf $CONFIGDIR/$COMPONENT.d/migrate|
+        \item Resources defined in both, the new configuration directory scheme
+                    and the old configuration file, must be removed from one of the places,
+                    best from the old configuration file,
+                    after verifying that the settings are identical with the new settings.
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+\section{Configuration File Format}
+
+A configuration file consists of one or more resources (see \nameref{sec:ConfigurationResourceFormat}).
+
+Bareos programs can work with
+\begin{itemize}
+  \item all resources defined in one configuration file
+  \item configuration files that include other configuration files (see \nameref{Includes})
+  \item \nameref{sec:ConfigurationSubdirectories}, where each configuration file contains exactly one resource definition
+\end{itemize}
+
+
+
+\subsection{Character Sets}
 \index[general]{Character Sets}
 Bareos is designed to handle most character sets of the world,
 US ASCII, German, French, Chinese, ...  However, it does this by
@@ -60,94 +291,28 @@ that your locale is set properly before starting Bareos.
 
 \index[general]{Windows!Configuration Files!UTF-8}
 To ensure that Bareos configuration files can be correctly read including
-foreign characters the {\bf LANG} environment variable
+foreign characters, the {\bf LANG} environment variable
 must end in {\bf .UTF-8}. A full example is {\bf en\_US.UTF-8}. The
-exact syntax may vary a bit from OS to OS, and exactly how you define
-it will also vary.  On most newer Win32 machines, you can use \command{notepad}
+exact syntax may vary a bit from OS to OS, so that the way you have to define
+it will differ from the example.  On most newer Win32 machines you can use \command{notepad}
 to edit the conf files, then choose output encoding UTF-8.
 
 Bareos assumes that all filenames are in UTF-8 format on Linux and
-Unix machines. On Win32 they are in Unicode (UTF-16), and will
+Unix machines. On Win32 they are in Unicode (UTF-16) and will hence
 be automatically converted to UTF-8 format.
-
-\section{Resource Directive Format}
-\index[general]{Resource Directive Format}
-
-Although, you won't need to know the details of all the directives a basic
-knowledge of Bareos resource directives is essential. Each directive contained
-within the resource (within the braces) is composed of a keyword followed by
-an equal sign (=) followed by one or more values. The keywords must be one of
-the known Bareos resource record keywords, and it may be composed of upper or
-lower case characters and spaces.
-
-Each resource definition MUST contain a Name directive, and may optionally
-contain a Description directive. The Name directive is used to
-uniquely identify the resource. The Description directive is (will be) used
-during display of the Resource to provide easier human recognition. For
-example:
-
-\begin{bconfig}{Resource example}
-Director {
-  Name = "MyDir"
-  Description = "Main Bareos Director"
-  WorkingDirectory = "$HOME/bareos/bin/working"
-}
-\end{bconfig}
-\hide{$}
-
-Defines the Director resource with the name "MyDir" and a working directory
-\directory{$HOME/bareos/bin/working}.
-\hide{$}
-
-\subsection{Quotes}
-\label{sec:Quotes}
-In general, if you want spaces in a name to the
-right of the first equal sign (=), you must enclose that name within double
-quotes. Otherwise quotes are not generally necessary because once defined,
-quoted strings and unquoted strings are all equal.
-
-However, if the configure directive defines a numbers, the number never has surrounding quotes.
-This is even true if the number is specified together with its unit, like \parameter{365 days}.
-
-Also do not prepend numbers by zeros (0), as these are not parsed in the expected manner (write 1 instead of 01).
 
 \subsection{Comments}
 \label{Comments}
-\index[general]{Comments}
+\index[general]{Configuration!Comments}
 
-When reading the configuration file, blank lines are ignored and everything
-after a hash sign (\#) until the end of the line is taken to be a comment. A
-semicolon (;) is a logical end of line, and anything after the semicolon is
+When reading a configuration, blank lines are ignored and everything
+after a hash sign (\#) until the end of the line is taken to be a comment.
+
+\subsection{Semicolons}
+A semicolon (;) is a logical end of line and anything after the semicolon is
 considered as the next statement. If a statement appears on a line by itself,
 a semicolon is not necessary to terminate it, so generally in the examples in
 this manual, you will not see many semicolons.
-
-
-\subsection{Upper and Lower Case and Spaces}
-\index[general]{Spaces!Upper/Lower Case}
-\index[general]{Upper and Lower Case and Spaces}
-
-Case (upper/lower) and spaces are totally ignored in the resource directive
-keywords (the part before the equal sign).
-
-Within the keyword (i.e. before the equal sign), spaces are not significant.
-Thus the keywords: {\bf name}, {\bf Name}, and {\bf N a m e} are all
-identical.
-
-Spaces after the equal sign and before the first character of the value are
-ignored.
-
-In general, spaces within a value are significant (not ignored), and if the
-value is a name, you must enclose the name in double quotes for the spaces to
-be accepted. Names may contain up to 127 characters. Currently, a name may
-contain any ASCII character. Within a quoted string, any character following a
-backslash (\textbackslash{}) is taken as itself (handy for inserting
-backslashes and double quotes (")).
-
-Please note, however, that Bareos resource names as well as certain other
-names (e.g. Volume names) must contain only letters (including ISO accented
-letters), numbers, and a few special characters (space, underscore, ...).
-All other characters and punctuation are invalid.
 
 \subsection{Including other Configuration Files}
 \label{Includes}
@@ -161,11 +326,11 @@ where \file{filename} is the full path and filename of another file.
 The \configdirective{@filename}
 specification can be given anywhere a primitive token would appear.
 
-\begin{bconfig}{include configuration files}
+\begin{bconfig}{include a configuration file}
 @/etc/bareos/extra/clients.conf
 \end{bconfig}
 
-Since Bareos \sinceVersion{}{Including Configuration files by wildcard}{16.2.1} wildcards in pathes are supported:
+Since Bareos \sinceVersion{}{Including configuration files by wildcard}{16.2.1} wildcards in pathes are supported:
 \begin{bconfig}{include multiple configuration files}
 @/etc/bareos/extra/*.conf
 \end{bconfig}
@@ -182,37 +347,128 @@ Since Bareos \sinceVersion{}{Including Configuration files by wildcard}{16.2.1} 
 % \end{bconfig}
 % \hide{$}
 
-By using \configdirective{@|command} it is also possible to include the output of a script as configuration:
+By using \configdirective{@|command} it is also possible to include the output of a script as a configuration:
 \begin{bconfig}{use the output of a script as configuration}
 @|"/etc/bareos/generate_configuration_to_stdout.sh"
 \end{bconfig}
-or if parameter should be used:
-\begin{bconfig}{use the output of a script with parameter as configuration}
+or if a parameter should be used:
+\begin{bconfig}{use the output of a script with parameter as a configuration}
 @|"sh -c '/etc/bareos/generate_client_configuration_to_stdout.sh clientname=client1.example.com'"
 \end{bconfig}
-The scripts are called at the start of the daemon. You should use them with care.
+The scripts are called at the start of the daemon. You should use this with care.
 
 
-\subsection{Data Types}
+\section{Resource}
+\label{sec:ConfigurationResourceFormat}
+\index[general]{Configuration!Resource}
+
+A resource is defined as the resource type (see \nameref{ResTypes}),
+followed by an open brace (\path|{|), a number of \nameref{sec:ConfigurationResourceDirective}s, and ended by a closing brace (\path|}|)
+
+\hide{
+\begin{bconfig}{Resource}
+$RESOURCETYPE {
+    Name  = $RESOURCENAME
+    $KEY1 = $VALUE1
+    $KEY2 = $VALUE2
+}
+\end{bconfig}
+}
+
+Each resource definition MUST contain a \configdirective{Name} directive.
+It can contain a \configdirective{Description} directive.
+The \configdirective{Name} directive is used to
+uniquely identify the resource.
+The \configdirective{Description} directive can be used
+during the display of the Resource to provide easier human recognition. For
+example:
+
+\begin{bconfig}{Resource example}
+Director {
+  Name = "bareos-dir"
+  Description = "Main Bareos Director"
+  Query File = "/usr/lib/bareos/scripts/query.sql"
+}
+\end{bconfig}
+
+defines the Director resource with the name \parameter{bareos-dir} and a query file \file{/usr/lib/bareos/scripts/query.sql}.
+
+
+\subsection{Resource Directive}
+\label{sec:ConfigurationResourceDirective}
+
+Each directive contained
+within the resource (within the curly braces \path|{}|) is composed of a \nameref{sec:ConfigurationResourceDirectiveKeyword} followed by
+an equal sign (=) followed by a \nameref{sec:ConfigurationResourceDirectiveValue}. The keywords must be one of
+the known Bareos resource record keywords.
+
+
+\subsection{Resource Directive Keyword}
+\label{sec:ConfigurationResourceDirectiveKeyword}
+
+A resource directive keyword is the part before the equal sign (\path|=|) in a \nameref{sec:ConfigurationResourceDirective}.
+The following sections will list all available directives by Bareos component resources.
+
+\subsubsection{Upper and Lower Case and Spaces}
+
+Case (upper/lower) and spaces are ignored in the resource directive
+keywords.
+
+Within the keyword (i.e. before the equal sign), spaces are not significant.
+Thus the keywords: {\bf name}, {\bf Name}, and {\bf N a m e} are all
+identical.
+
+
+\subsection{Resource Directive Value}
+\label{sec:ConfigurationResourceDirectiveValue}
+
+A resource directive value is the part after the equal sign (\path|=|) in a \nameref{sec:ConfigurationResourceDirective}.
+
+\subsubsection{Spaces}
+
+Spaces after the equal sign and before the first character of the value are
+ignored. Other spaces within a value may be significant (not ignored)
+and may require quoting.
+
+
+\subsubsection{Quotes}
+\label{sec:Quotes}
+In general, if you want spaces in a name to the
+right of the first equal sign (=), you must enclose that name within double
+quotes. Otherwise quotes are not generally necessary because once defined,
+quoted strings and unquoted strings are all equal.
+
+ Within a quoted string, any character following a
+backslash (\textbackslash{}) is taken as itself (handy for inserting
+backslashes and double quotes (")).
+
+\warning{If the configure directive is used to define a number, the number is never to be put between surrounding quotes.
+This is even true if the number is specified together with its unit, like \parameter{365 days}}.
+
+\subsubsection{Numbers}
+
+Numbers are not to be quoted, see \nameref{sec:Quotes}.
+Also do not prepend numbers by zeros (0), as these are not parsed in the expected manner (write 1 instead of 01).
+
+\subsubsection{Data Types}
 \index[general]{Configuration!Data Types}
 \index[general]{Data Type}
 \label{DataTypes}
 
 When parsing the resource directives, Bareos classifies the data according to
-the types listed below. The first time you read this, it may appear a bit
-overwhelming, but in reality, it is all pretty logical and straightforward.
+the types listed below.
 
 \begin{description}
 
 \item [acl]
     \index[general]{Data Type!acl}
     \label{DataTypeAcl}
-This directive defines what is permitted to access.
-It does this by a list of strings, separated by \parameter{,}.
+This directive defines what is permitted to be accessed.
+It does this by using a list of strings, separated by commas (\parameter{,}).
 
 The special keyword \parameter{*all*} allows unrestricted access.
 
-Depending on the type of the ACL, the strings can by either resource names, paths or bconsole commands.
+Depending on the type of the ACL, the strings can be either resource names, paths or bconsole commands.
 
 
 \item [auth-type]
@@ -223,11 +479,11 @@ a backup protocol that uses a specific authentication type.
 Currently only used for \nameref{NDMPResource}.
 
 The following values are allowed:
-\begin{enumerate}
-\item None - Use no password
-\item Clear - Use clear text password
-\item MD5 - Use MD5 hashing
-\end{enumerate}
+\begin{description}
+\item[None] - Use no password
+\item[Clear] - Use clear text password
+\item[MD5] - Use MD5 hashing
+\end{description}
 
 
 \item [integer]
@@ -253,17 +509,12 @@ exceed 4 billion and thus  require a 64 bit value.
    A keyword or name consisting of alphanumeric characters, including the
 hyphen, underscore, and dollar  characters. The first character of a {\bf
 name} must be  a letter.  A name has a maximum length currently set to 127
-bytes.  Typically keywords appear on the left side of an equal (i.e.  they are
-Bareos keywords -- i.e. Resource names or  directive names). Keywords may not
-be quoted.
+bytes.
 
-\item [name-string]
-    \index[general]{Data Type!name-string}
-    \label{DataTypeNameString}
-   A name-string is similar to a name,  except that the name may be quoted and
-can thus contain  additional characters including spaces. Name strings  are
-limited to 127 characters in length. Name strings  are typically used on the
-right side of an equal (i.e.  they are values to be associated with a keyword).
+Please note that Bareos resource names as well as certain other
+names (e.g. Volume names) must contain only letters (including ISO accented
+letters), numbers, and a few special characters (space, underscore, ...).
+All other characters and punctuation are invalid.
 
 
 \item [password]
@@ -283,7 +534,7 @@ right side of an equal (i.e.  they are values to be associated with a keyword).
    A path is either a quoted or  non-quoted string. A path will be
 passed to your  standard shell for expansion when it is scanned. Thus
 constructs such as {\bf \$HOME} are interpreted to be  their correct values.
-If can either reference to a file or a directory.
+The path can either reference to a file or a directory.
 
 
 \item [positive integer]
@@ -316,19 +567,23 @@ backslash. Likewise to include a backslash.
 \item [string-list]
     \index[general]{Data Type!string list}
     \label{DataTypeStringList}
-    Multiple strings, specified in multiple directives, or in a single directive, separated by \textbf{,}.
+    Multiple strings, specified in multiple directives, or in a single directive, separated by commas (\textbf{,}).
 
-
+\item [strname]
+    \index[general]{Data Type!strname}
+    \label{DataTypeStrname}
+is similar to a \dtName, except that the name may be quoted and
+can thus contain  additional characters including spaces.
 
 
 \item [net-address]
     \index[general]{Data Type!net-address}
     \label{DataTypeNetAddress}
-Netaddress is either a domain name or an IP address specified as a
+is either a domain name or an IP address specified as a
 dotted quadruple in string or quoted string format.
 This directive only permits a single address to be specified.
-The \dtNetPort must be specific separate.
-If multiple net-addresses are needed, check if it also possible to specify \dtNetAddresses (plural). 
+The \dtNetPort\ must be specificly separated.
+If multiple net-addresses are needed, please assess if it is also possible to specify \dtNetAddresses\ (plural).
 
 
 \item [net-addresses]
@@ -360,10 +615,10 @@ Addresses  = {
 \end{bconfig}
 
 where ip, ip4, ip6, addr, and port are all keywords. Note, that  the address
-can be specified as either a dotted quadruple, or  IPv6 colon notation, or as
-a symbolic name (only in the ip specification).  Also, port can be specified
+can be specified as either a dotted quadruple, or  in IPv6 colon notation, or as
+a symbolic name (only in the ip specification).  Also, the port can be specified
 as a number or as the mnemonic value from  the \file{/etc/services} file.  If a port
-is not specified, the default will be used. If an ip  section is specified,
+is not specified, the default one will be used. If an ip  section is specified,
 the resolution can be made either by IPv4 or  IPv6. If ip4 is specified, then
 only IPv4 resolutions will be permitted,  and likewise with ip6.
 
@@ -431,35 +686,28 @@ permitted:
 
 \item [seconds]
    \index[dir]{seconds}
-   seconds
 
 \item [minutes]
-   \index[dir]{minutes}
-   minutes (60 seconds)
+   \index[dir]{minutes} (60 seconds)
 
 \item [hours]
-   \index[dir]{hours}
-   hours (3600 seconds)
+   \index[dir]{hours} (3600 seconds)
 
 \item [days]
-   \index[dir]{days}
-   days (3600*24 seconds)
+   \index[dir]{days} (3600*24 seconds)
 
 \item [weeks]
-   \index[dir]{weeks}
-   weeks (3600*24*7 seconds)
+   \index[dir]{weeks} (3600*24*7 seconds)
 
 \item [months]
-   \index[dir]{months}
-   months (3600*24*30 seconds)
+   \index[dir]{months} (3600*24*30 seconds)
 
 \item [quarters]
-   \index[dir]{quarters}
-   quarters (3600*24*91 seconds)
+   \index[dir]{quarters} (3600*24*91 seconds)
 
 \item [years]
-   \index[dir]{years}
-   years (3600*24*365 seconds)
+   \index[dir]{years} (3600*24*365 seconds)
+
 \end{description}
 
 Any abbreviation of these modifiers is also permitted (i.e.  {\bf seconds}
@@ -506,40 +754,45 @@ Audit Events = restore
 
 
 
-\subsection{Variable Expansion}
+\subsubsection{Variable Expansion}
     \label{VarsChapter}
 
-Depending on the type of directive, Bareos will expand following variables:
+Depending on the directive, Bareos will expand to the following variables:
 
-\paragraph{Variable Expansion on Media Labels}
+\paragraph{Variable Expansion on Volume Labels}
+\label{sec:VariableExpansionVolumeLabels}
 
-When labeling a new media, following Bareos internal variables can be used:
+When labeling a new volume (see \linkResourceDirective{Dir}{Pool}{Label Format}), following Bareos internal variables can be used:
 
 \begin{tabular}{p{2cm}p{7cm}}
 \textbf{Internal Variable} & \textbf{Description} \\
-\variable{Year} & Year \\
-\variable{Month} & Month: 1-12 \\
-\variable{Day} & Day: 1-31 \\
-\variable{Hour} & Hour: 0-24 \\
-\variable{Minute} & Minute: 0-59 \\
-\variable{Second} & Second: 0-59 \\
-\variable{WeekDay} & Day of the week: 0-6, using 0 for Sunday\\
-\variable{Job} & Name of the Job \\
-\variable{Dir} & Name of the Director \\
-\variable{Level} & Job Level \\
-\variable{Type} & Job Type \\
-\variable{JobId} & JobId \\
-\variable{JobName} & unique name of a job\\
-\variable{Storage} & Name of the Storage Daemon\\
-\variable{Client} &  Name of the Clients \\
-\variable{NumVols} & Numbers of volumes in the pool\\
-\variable{Pool} &  Name of the Pool  \\
-\variable{Catalog} &  Name of the Catalog\\
-\variable{MediaType} &  Type of the media
+\variable{$Year} & Year \\
+\variable{$Month} & Month: 1-12 \\
+\variable{$Day} & Day: 1-31 \\
+\variable{$Hour} & Hour: 0-24 \\
+\variable{$Minute} & Minute: 0-59 \\
+\variable{$Second} & Second: 0-59 \\
+\variable{$WeekDay} & Day of the week: 0-6, using 0 for Sunday\\
+\variable{$Job} & Name of the Job \\
+\variable{$Dir} & Name of the Director \\
+\variable{$Level} & Job Level \\
+\variable{$Type} & Job Type \\
+\variable{$JobId} & JobId \\
+\variable{$JobName} & unique name of a job\\
+\variable{$Storage} & Name of the Storage Daemon\\
+\variable{$Client} &  Name of the Clients \\
+\variable{$NumVols} & Numbers of volumes in the pool\\
+\variable{$Pool} &  Name of the Pool  \\
+\variable{$Catalog} &  Name of the Catalog\\
+\variable{$MediaType} &  Type of the media
 \end{tabular}
 
 Additional, normal environment variables can be used, e.g.
-\variable{HOME} oder \variable{HOSTNAME}.
+\variable{$HOME} oder \variable{$HOSTNAME}.
+
+With the exception of Job specific variables, you can trigger the variable expansion
+by using the \ilink{var command}{var}.
+
 
 \paragraph{Variable Expansion on RunScripts}
 
@@ -568,7 +821,7 @@ At the configuration of RunScripts following variables can be used:
 
 \paragraph{Variable Expansion in Autochanger Commands}
 
-At the configuration of autochanger commands following variables can be used:
+At the configuration of autochanger commands the following variables can be used:
 
 
 \begin{tabular}{p{2cm}p{7cm}}
@@ -588,7 +841,7 @@ At the configuration of autochanger commands following variables can be used:
 
 \paragraph{Variable Expansion in Mount Commands}
 
-At the configuration of mount commands following variables can be used:
+At the configuration of mount commands the following variables can be used:
 
 
 
@@ -609,7 +862,7 @@ At the configuration of mount commands following variables can be used:
 
 \paragraph{Variable Expansion in Mail and Operator Commands}
 
-At the configuration of mail and operator commands following variables can be used:
+At the configuration of mail and operator commands the following variables can be used:
 
 \begin{tabular}{p{2cm}p{7cm}}
 \textbf{Variable} & \textbf{Description} \\
@@ -631,11 +884,12 @@ At the configuration of mail and operator commands following variables can be us
 \end{tabular}
 
 
-
-\section{Resource Types}
+\subsection{Resource Types}
 \index[general]{Types!Resource}
 \index[general]{Resource Types}
 \label{ResTypes}
+
+% TODO: is ths section really useful or should it be removed?
 
 The following table lists all current Bareos resource types. It shows what
 resources must be defined for each service (daemon). The default configuration
@@ -698,22 +952,21 @@ The default configuration files are automatically defined for correct
 authorization with random passwords. If you add to or modify these files, you
 will need to take care to keep them consistent.
 
-Here is sort of a picture of what names/passwords in which files/Resources
+The following image illustrates what names/passwords in which files/Resources
 must match up:
 
 \begin{center}
 \includegraphics[width=0.8\textwidth]{\idir Conf-Diagram}
 \end{center}
 
-In the left column, you will find the Director, Storage, and Client resources,
-with their names and passwords -- these are all in \file{bareos-dir.conf}. In
-the right column are where the corresponding values should be found in the
-Console, Storage daemon (SD), and File daemon (FD) configuration files.
+In the left column, you can see the Director, Storage, and Client resources and their corresponding names and passwords -- these are all in \file{bareos-dir.conf}. In
+the right column the corresponding values in the
+Console, Storage daemon (SD), and File daemon (FD) configuration files are shown.
 
-Please note that the address, \host{fw-sd}, that appears in the Storage
+Please note that the address \host{fw-sd}, that appears in the Storage
 resource of the Director,
 is passed to the File daemon in symbolic form. The File daemon then resolves it
-to an IP address. For this reason, you must use either an IP address or a
+to an IP address. For this reason you must use either an IP address or a
 resolvable fully qualified name. A name such as \host{localhost}, not being a fully
 qualified name, will resolve in the File daemon to the \host{localhost} of the File
 daemon, which is most likely not what is desired. The password used for the

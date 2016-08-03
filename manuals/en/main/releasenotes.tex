@@ -14,6 +14,36 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \warning{While all the source code is published on \elink{GitHub}{https://github.com/bareos/bareos}, the releases of packages on \url{http://download.bareos.org} is limited to the initial versions of a major release. Later maintenance releases are only published on \url{https://download.bareos.com}.}
 
+\section*{Bareos-16.2}
+
+\releasenote{16.2.4}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & TBD\\
+Database Version  & TBD\\
+Release Ticket    & TBD\\
+Url               & TBD\\
+\end{tabular}
+
+\begin{itemize}
+\item Configuration
+     \begin{itemize}
+     \item Bareos packages contain the default configuration in \nameref{sec:ConfigurationSubdirectories}. Please read \nameref{sec:UpdateToConfigurationSubdirectories} before updating (make a copy of your configuration directories for your \bareosDir and \bareosSd before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
+     \item The default configuration does no longer name the \resourcetype{Dir}{Director} and \resourcetype{Sd}{Storage} resources after the systems hostname (\path|$HOSTNAME-dir| resp. \path|$HOSTNAME-sd|) but use \resourcename{Dir}{Director}{bareos-dir} resp. \resourcename{Sd}{Storage}{bareos-sd} as defaults. The prior solution had the disadvantage, that \path|$HOSTNAME-dir|\hide{$} has also been set on \bareosFd not running on the \bareosDir, which almost ever did require changing this setting. Also the new approach aligns better with \nameref{sec:ConfigurationSubdirectories}.
+     \item Due to limitation of the build system, the default resource \resourcename{Dir}{FileSet}{Linux All} have been renamed to \resourcename{Dir}{FileSet}{LinuxAll} (no space between Linux and All).
+    \item The configuration of the \package{bareos-traymonitor} has also been splitted into resource files.
+        Additional, these resource files are now packaged in other packages:
+        \begin{itemize}
+            \item \path|$CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf|: \package{bareos-traymonitor}
+            \item \path|$CONFIGDIR/tray-monitor.d/client/FileDaemon-local.conf|: \package{bareos-filedaemon}
+            \item \path|$CONFIGDIR/tray-monitor.d/storage/StorageDaemon-local.conf|: \package{bareos-storage}
+            \item \path|$CONFIGDIR/tray-monitor.d/director/Director-local.conf|: \file{bareos-director}
+        \end{itemize}
+         This way, the \package{bareos-traymonitor} will be configured automatically for the installed components.
+     \end{itemize}
+\end{itemize}
+}
+
 \section*{Bareos-15.2}
 
 \releasenote{15.2.4}{
