@@ -93,6 +93,10 @@ function read_configuration_ini($configuration, $configuration_ini)
       $arr['tables']['save_previous_state'] = false;
    }
 
+   if( array_key_exists('autochanger', $configuration) && array_key_exists('labelpooltype', $configuration['autochanger']) && isset($configuration['autochanger']['labelpooltype']) ) {
+      $arr['autochanger']['labelpooltype'] = $configuration['autochanger']['labelpooltype'];
+   }
+
    return $arr;
 }
 

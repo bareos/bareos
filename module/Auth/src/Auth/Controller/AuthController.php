@@ -77,7 +77,6 @@ class AuthController extends AbstractActionController
             $this->bsock->set_user_credentials($username, $password);
 
             if($this->bsock->auth($username, $password)) {
-
                $_SESSION['bareos']['director'] = $director;
                $_SESSION['bareos']['username'] = $username;
                $_SESSION['bareos']['password'] = $password;
@@ -88,7 +87,6 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['dird-update-available'] = false;
 
                if(isset($bareos_updates) && $bareos_updates != NULL) {
-
                   $updates = json_decode($bareos_updates, true);
 
                   try {
@@ -98,9 +96,6 @@ class AuthController extends AbstractActionController
                   catch(Exception $e) {
                      echo $e->getMessage();
                   }
-                  //$dird_dist = null;
-                  //$dird_arch = null;
-                  //$dird_vers = null;
 
                   if(array_key_exists('obsdistribution', $dird_version)) {
                      $dird_dist = $dird_version['obsdistribution'];
@@ -128,18 +123,22 @@ class AuthController extends AbstractActionController
                               $_SESSION['bareos']['dird-update-available'] = true;
                            }
                         }
-
                      }
-
                   }
-
                }
 
-               // Get the datatable settings and push them into the SESSION context.
+               // Get the config.
                $configuration = $this->getServiceLocator()->get('configuration');
+
+               // Push the datatable settings into the SESSION context.
                $_SESSION['bareos']['dt_lengthmenu'] = $configuration['configuration']['tables']['pagination_values'];
                $_SESSION['bareos']['dt_pagelength'] = $configuration['configuration']['tables']['pagination_default_value'];
                $_SESSION['bareos']['dt_statesave'] = ($configuration['configuration']['tables']['save_previous_state']) ? 'true' : 'false';
+
+               // Push the autochanger settings into the SESSION context.
+               if(isset($configuration['configuration']['autochanger']['labelpooltype'])) {
+                  $_SESSION['bareos']['ac_labelpooltype'] = $configuration['configuration']['autochanger']['labelpooltype'];
+               }
 
                if($this->params()->fromQuery('req')) {
                   return $this->redirect()->toUrl($this->params()->fromQuery('req'));

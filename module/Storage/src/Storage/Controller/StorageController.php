@@ -70,7 +70,12 @@ class StorageController extends AbstractActionController
       }
 
       try {
-         $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
+         if(isset($_SESSION['bareos']['ac_labelpooltype'])) {
+            $pools = $this->getPoolModel()->getDotPools($this->bsock, $_SESSION['bareos']['ac_labelpooltype']);
+         }
+         else {
+            $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
+         }
       }
       catch(Exception $e) {
          echo $e->getMessage();
