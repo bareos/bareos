@@ -107,7 +107,7 @@ class DirectorController extends AbstractActionController
       elseif($data == "cli") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->sendCommand($this->bsock, $command);
+            $result = $this->getDirectorModel()->sendDirectorCommand($this->bsock, $command);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {

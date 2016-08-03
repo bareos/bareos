@@ -76,7 +76,7 @@ class DirectorModel
       }
    }
 
-   public function sendCommand(&$bsock=null, $cmd=null)
+   public function sendDirectorCommand(&$bsock=null, $cmd=null)
    {
       if(isset($bsock, $cmd)) {
          $result = $bsock->send_command($cmd, 0, null);
