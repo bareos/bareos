@@ -385,6 +385,7 @@ public:
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    utime_t AlwaysIncrementalJobRetention; /* Timeinterval where incrementals are not consolidated */
+   utime_t AlwaysIncrementalMaxFullAge; /* If Full Backup is older than this age the consolidation job will include also the full */
    int64_t spool_size;                /* Size of spool file for this job */
    int64_t max_bandwidth;             /* Speed limit on this job */
    int64_t FileHistSize;              /* Hint about the size of the expected File history */
@@ -438,7 +439,6 @@ public:
    bool IgnoreDuplicateJobChecking;   /* Ignore Duplicate Job Checking */
    bool SaveFileHist;                 /* Ability to disable File history saving for certain protocols */
    bool AlwaysIncremental;            /* Always incremental with regular consolidation */
-   bool AlwaysIncrementalConsolidateFull; /* Always incremental only consolidates incremental backups and full will be left to reduce volume */
 
    runtime_job_status_t *rjs;         /* Runtime Job Status */
 
