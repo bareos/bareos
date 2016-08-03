@@ -31,6 +31,8 @@ use Zend\Json\Json;
 
 class DashboardController extends AbstractActionController
 {
+   protected $directorModel = null;
+   protected $jobModel = null;
    protected $dashboardModel = null;
    protected $bsock = null;
 
@@ -70,23 +72,23 @@ class DashboardController extends AbstractActionController
 
       if($status != null) {
          if($status == "running") {
-            $jobs_R = $this->getDashboardModel()->getJobs($this->bsock, 'R', $days, $hours);
-            $jobs_l = $this->getDashboardModel()->getJobs($this->bsock, 'l', $days, $hours);
+            $jobs_R = $this->getJobModel()->getJobsByStatus($this->bsock, 'R', $days, $hours);
+            $jobs_l = $this->getJobModel()->getJobsByStatus($this->bsock, 'l', $days, $hours);
             $num = count($jobs_R) + count($jobs_l);
          }
          elseif($status == "waiting") {
-            $jobs_F = $this->getDashboardModel()->getJobs($this->bsock, 'F', $days, $hours);
-            $jobs_S = $this->getDashboardModel()->getJobs($this->bsock, 'S', $days, $hours);
-            $jobs_s = $this->getDashboardModel()->getJobs($this->bsock, 's', $days, $hours);
-            $jobs_m = $this->getDashboardModel()->getJobs($this->bsock, 'm', $days, $hours);
-            $jobs_M = $this->getDashboardModel()->getJobs($this->bsock, 'M', $days, $hours);
-            $jobs_j = $this->getDashboardModel()->getJobs($this->bsock, 'j', $days, $hours);
-            $jobs_c = $this->getDashboardModel()->getJobs($this->bsock, 'c', $days, $hours);
-            $jobs_C = $this->getDashboardModel()->getJobs($this->bsock, 'C', $days, $hours);
-            $jobs_d = $this->getDashboardModel()->getJobs($this->bsock, 'd', $days, $hours);
-            $jobs_t = $this->getDashboardModel()->getJobs($this->bsock, 't', $days, $hours);
-            $jobs_p = $this->getDashboardModel()->getJobs($this->bsock, 'p', $days, $hours);
-            $jobs_q = $this->getDashboardModel()->getJobs($this->bsock, 'q', $days, $hours);
+            $jobs_F = $this->getJobModel()->getJobsByStatus($this->bsock, 'F', $days, $hours);
+            $jobs_S = $this->getJobModel()->getJobsByStatus($this->bsock, 'S', $days, $hours);
+            $jobs_s = $this->getJobModel()->getJobsByStatus($this->bsock, 's', $days, $hours);
+            $jobs_m = $this->getJobModel()->getJobsByStatus($this->bsock, 'm', $days, $hours);
+            $jobs_M = $this->getJobModel()->getJobsByStatus($this->bsock, 'M', $days, $hours);
+            $jobs_j = $this->getJobModel()->getJobsByStatus($this->bsock, 'j', $days, $hours);
+            $jobs_c = $this->getJobModel()->getJobsByStatus($this->bsock, 'c', $days, $hours);
+            $jobs_C = $this->getJobModel()->getJobsByStatus($this->bsock, 'C', $days, $hours);
+            $jobs_d = $this->getJobModel()->getJobsByStatus($this->bsock, 'd', $days, $hours);
+            $jobs_t = $this->getJobModel()->getJobsByStatus($this->bsock, 't', $days, $hours);
+            $jobs_p = $this->getJobModel()->getJobsByStatus($this->bsock, 'p', $days, $hours);
+            $jobs_q = $this->getJobModel()->getJobsByStatus($this->bsock, 'q', $days, $hours);
             $num = count($jobs_F) + count($jobs_S) +
                count($jobs_s) + count($jobs_m) +
                count($jobs_M) + count($jobs_j) +
@@ -95,15 +97,15 @@ class DashboardController extends AbstractActionController
                count($jobs_p) + count($jobs_q);
          }
          elseif($status == "successful") {
-            $jobs_T = $this->getDashboardModel()->getJobs($this->bsock, 'T', $days, $hours);
-            $jobs_W = $this->getDashboardModel()->getJobs($this->bsock, 'W', $days, $hours);
+            $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, 'T', $days, $hours);
+            $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, 'W', $days, $hours);
             $num = count($jobs_T) + count($jobs_W);
          }
          elseif($status == "unsuccessful") {
-            $jobs_A = $this->getDashboardModel()->getJobs($this->bsock, 'A', $days, $hours);
-            $jobs_E = $this->getDashboardModel()->getJobs($this->bsock, 'E', $days, $hours);
-            $jobs_e = $this->getDashboardModel()->getJobs($this->bsock, 'e', $days, $hours);
-            $jobs_f = $this->getDashboardModel()->getJobs($this->bsock, 'f', $days, $hours);
+            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, 'A', $days, $hours);
+            $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, 'E', $days, $hours);
+            $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, 'e', $days, $hours);
+            $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, 'f', $days, $hours);
             $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
          }
       }
@@ -126,7 +128,7 @@ class DashboardController extends AbstractActionController
       if($data == "jobslaststatus") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDashboardModel()->getJobsLastStatus($this->bsock);
+            $result = $this->getJobModel()->getJobsLastStatus($this->bsock);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
@@ -136,7 +138,7 @@ class DashboardController extends AbstractActionController
       elseif($data == "dirdmsg") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDashboardModel()->getLastDirectorMessages($this->bsock);
+            $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, 50, null, false);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
@@ -153,6 +155,24 @@ class DashboardController extends AbstractActionController
 
       return $response;
 
+   }
+
+   public function getDirectorModel()
+   {
+      if(!$this->directorModel) {
+         $sm = $this->getServiceLocator();
+         $this->directorModel = $sm->get('Director\Model\DirectorModel');
+      }
+      return $this->directorModel;
+   }
+
+   public function getJobModel()
+   {
+      if(!$this->jobModel) {
+         $sm = $this->getServiceLocator();
+         $this->jobModel = $sm->get('Job\Model\JobModel');
+      }
+      return $this->jobModel;
    }
 
    public function getDashboardModel()

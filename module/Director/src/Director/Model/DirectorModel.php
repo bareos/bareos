@@ -55,7 +55,18 @@ class DirectorModel
    public function getDirectorMessages(&$bsock=null, $limit=null, $offset=null, $reverse=null)
    {
       if(isset($bsock, $limit)) {
-         $cmd = 'list log limit='.$limit.' reverse';
+         if($reverse && $offset == null) {
+            $cmd = 'list log limit='.$limit.' reverse';
+         }
+         else if($reverse && $offset != null) {
+            $cmd = 'list log limit='.$limit.' offset='.$offset.' reverse';
+         }
+         else if(!$reverse && $offset != null) {
+            $cmd = 'list log limit='.$limit.' offset='.$offset;
+         }
+         else if(!$reverse && $offset == null) {
+            $cmd = 'list log limit='.$limit;
+         }
          $result = $bsock->send_command($cmd, 2, null);
          $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $messages['result']['log'];

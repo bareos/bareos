@@ -62,7 +62,7 @@ $this->headTitle($title);
 
 function getDirectorMessages() {
    $.ajax({
-      url : '<?php echo $this->url('director', array('action' => 'getData'), null) . '?data=messages&limit=500'; ?>',
+      url : '<?php echo $this->url('director', array('action' => 'getData'), null) . '?data=messages&limit=500&offset=null&reverse=true'; ?>',
       dataType: 'json',
       timeout: 10000,
       success: function(data) {

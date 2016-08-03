@@ -97,7 +97,7 @@ class DirectorController extends AbstractActionController
       if($data == "messages") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit);
+            $result = $this->getDirectorModel()->getDirectorMessages($this->bsock, $limit, $offset, $reverse);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {

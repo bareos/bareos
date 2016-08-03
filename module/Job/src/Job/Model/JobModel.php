@@ -128,6 +128,19 @@ class JobModel
       }
    }
 
+   public function getJobsLastStatus(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = 'llist jobs last';
+         $result = $bsock->send_command($cmd, 2, null);
+         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobs['result']['jobs'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
    public function runJob(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
