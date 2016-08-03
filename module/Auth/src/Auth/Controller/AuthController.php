@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,6 +34,7 @@ use Zend\Session\Container;
 class AuthController extends AbstractActionController
 {
 
+   protected $directorModel = null;
    protected $bsock = null;
 
    public function indexAction()
@@ -91,7 +92,7 @@ class AuthController extends AbstractActionController
                   $updates = json_decode($bareos_updates, true);
 
                   try {
-                     $dird_version = $this->getClientModel()->getDirectorVersion($this->bsock);
+                     $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
                      $this->bsock->disconnect();
                   }
                   catch(Exception $e) {
@@ -190,13 +191,13 @@ class AuthController extends AbstractActionController
       return $this->redirect()->toRoute('auth', array('action' => 'login'));
    }
 
-   public function getClientModel()
+   public function getDirectorModel()
    {
-      if(!$this->clientModel) {
+      if(!$this->directorModel) {
          $sm = $this->getServiceLocator();
-         $this->clientModel = $sm->get('Client\Model\ClientModel');
+         $this->directorModel = $sm->get('Director\Model\DirectorModel');
       }
-      return $this->clientModel;
+      return $this->directorModel;
    }
 
 }

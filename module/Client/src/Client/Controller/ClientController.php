@@ -33,6 +33,7 @@ class ClientController extends AbstractActionController
 {
 
    protected $clientModel = null;
+   protected $directorModel = null;
    protected $bsock = null;
 
    public function indexAction()
@@ -153,7 +154,7 @@ class ClientController extends AbstractActionController
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $clients = $this->getClientModel()->getClients($this->bsock);
-            $dird_version = $this->getClientModel()->getDirectorVersion($this->bsock);
+            $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {
@@ -317,5 +318,14 @@ class ClientController extends AbstractActionController
          $this->clientModel = $sm->get('Client\Model\ClientModel');
       }
       return $this->clientModel;
+   }
+
+   public function getDirectorModel()
+   {
+      if(!$this->directorModel) {
+         $sm = $this->getServiceLocator();
+         $this->directorModel = $sm->get('Director\Model\DirectorModel');
+      }
+      return $this->directorModel;
    }
 }

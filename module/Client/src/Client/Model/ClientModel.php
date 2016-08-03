@@ -27,7 +27,6 @@ namespace Client\Model;
 
 class ClientModel
 {
-
    public function getClients(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -107,19 +106,6 @@ class ClientModel
          $cmd = 'disable client="'.$name.'" yes';
          $result = $bsock->send_command($cmd, 0, null);
          return $result;
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
-
-   public function getDirectorVersion(&$bsock=null)
-   {
-      if(isset($bsock)) {
-         $cmd = 'version';
-         $result = $bsock->send_command($cmd, 2, null);
-         $version = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $version['result']['version'];
       }
       else {
          throw new \Exception('Missing argument.');
