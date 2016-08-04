@@ -53,4 +53,17 @@ class FilesetModel
          throw new \Exception('Missing argument.');
       }
    }
+
+   public function getDotFilesets(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = '.filesets';
+         $result = $bsock->send_command($cmd, 2, null);
+         $filesets = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $filesets['result']['filesets'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
 }

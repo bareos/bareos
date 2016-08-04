@@ -53,13 +53,28 @@ class ClientModel
       }
    }
 
-   public function getClientBackups(&$bsock=null, $client=null, $limit=null, $order=null)
+   public function getClientBackups(&$bsock=null, $client=null, $fileset=null, $order=null, $limit=null)
    {
       if(isset($bsock, $client)) {
-         if(isset($limit, $order)) {
-            $cmd = 'llist backups client="'.$client.'" limit='.$limit.' order='.$order.'';
+         if($fileset != null && $order != null && $limit != null) {
+            $cmd = 'list backups client="'.$client.'" fileset="'.$fileset.'" order='.$order.' limit='.$limit.'';
          }
-         else {
+         else if($fileset != null && $order != null && $limit == null) {
+            $cmd = 'list backups client="'.$client.'" fileset="'.$fileset.'" order='.$order;
+         }
+         else if($fileset != null && $order == null && $limit != null) {
+            $cmd = 'llist backups client="'.$client.'" fileset="'.$fileset.'" limit='.$limit;
+         }
+         else if($fileset == null && $order != null && $limit != null) {
+            $cmd = 'llist backups client="'.$client.'" order='.$order.' limit='.$limit;
+         }
+         else if($fileset == null && $order == null && $limit != null) {
+            $cmd = 'llist backups client="'.$client.'" limit='.$limit;
+         }
+         else if($fileset == null && $order != null && $limit == null) {
+            $cmd = 'llist backups client="'.$client.'" order='.$order;
+         }
+         else if($fileset == null && $order == null && $limit == null) {
             $cmd = 'llist backups client="'.$client.'"';
          }
          $result = $bsock->send_command($cmd, 2, null);

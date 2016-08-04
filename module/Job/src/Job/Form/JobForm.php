@@ -91,4 +91,3 @@ class JobForm extends Form
    }
 
 }
-

@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -35,6 +35,9 @@ class RestoreController extends AbstractActionController
 {
 
    protected $restoreModel = null;
+   protected $jobModel = null;
+   protected $clientModel = null;
+   protected $filesetModel = null;
    protected $restore_params = null;
    protected $bsock = null;
 
@@ -56,7 +59,7 @@ class RestoreController extends AbstractActionController
 
       if($this->restore_params['client'] == null) {
          try {
-            $clients = $this->getRestoreModel()->getClients($this->bsock);
+            $clients = $this->getClientModel()->getClients($this->bsock);
             $client = array_pop($clients);
             $this->restore_params['client'] = $client['name'];
          }
@@ -67,7 +70,7 @@ class RestoreController extends AbstractActionController
 
       if($this->restore_params['type'] == "client" && $this->restore_params['jobid'] == null) {
          try {
-            $latestbackup = $this->getRestoreModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
+            $latestbackup = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", 1);
             if(empty($latestbackup)) {
                $this->restore_params['jobid'] = null;
             }
@@ -95,7 +98,7 @@ class RestoreController extends AbstractActionController
 
       if($this->restore_params['type'] == "client") {
          try {
-            $backups = $this->getRestoreModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc");
+            $backups = $this->getClientModel()->getClientBackups($this->bsock, $this->restore_params['client'], "any", "desc", null);
          }
          catch(Exception $e) {
             echo $e->getMessage();
@@ -103,10 +106,10 @@ class RestoreController extends AbstractActionController
       }
 
       try {
-         //$jobs = $this->getRestoreModel()->getJobs();
-         $clients = $this->getRestoreModel()->getClients($this->bsock);
-         $filesets = $this->getRestoreModel()->getFilesets($this->bsock);
-         $restorejobs = $this->getRestoreModel()->getRestoreJobs($this->bsock);
+         //$jobs = $this->getJobModel()->getJobs();
+         $clients = $this->getClientModel()->getClients($this->bsock);
+         $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
+         $restorejobs = $this->getJobModel()->getRestoreJobs($this->bsock);
       }
       catch(Exception $e) {
          echo $e->getMessage();
@@ -465,5 +468,32 @@ class RestoreController extends AbstractActionController
          $this->restoreModel = $sm->get('Restore\Model\RestoreModel');
       }
       return $this->restoreModel;
+   }
+
+   public function getJobModel()
+   {
+      if(!$this->jobModel) {
+         $sm = $this->getServiceLocator();
+         $this->jobModel = $sm->get('Job\Model\JobModel');
+      }
+      return $this->jobModel;
+   }
+
+   public function getClientModel()
+   {
+      if(!$this->clientModel) {
+         $sm = $this->getServiceLocator();
+         $this->clientModel = $sm->get('CLient\Model\ClientModel');
+      }
+      return $this->clientModel;
+   }
+
+   public function getFilesetModel()
+   {
+      if(!$this->filesetModel) {
+         $sm = $this->getServiceLocator();
+         $this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
+      }
+      return $this->filesetModel;
    }
 }

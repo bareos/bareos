@@ -242,7 +242,7 @@ class JobController extends AbstractActionController
 
       if($data == "jobs" && $status == "all") {
          try {
-            $result = $this->getJobModel()->getJobs($this->bsock, $status, $period);
+            $result = $this->getJobModel()->getJobs($this->bsock, $period);
          }
          catch(Exception $e) {
             echo $e->getMessage();

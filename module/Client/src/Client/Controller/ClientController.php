@@ -293,7 +293,7 @@ class ClientController extends AbstractActionController
       elseif($data == "backups" && isset($client)) {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
-            $result = $this->getClientModel()->getClientBackups($this->bsock, $client, null, 'desc');
+            $result = $this->getClientModel()->getClientBackups($this->bsock, $client, null, 'desc', null);
             $this->bsock->disconnect();
          }
          catch(Exception $e) {

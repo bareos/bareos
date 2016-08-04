@@ -27,16 +27,15 @@ namespace Job\Model;
 
 class JobModel
 {
-   public function getJobs(&$bsock=null, $status=null, $period=null)
+   public function getJobs(&$bsock=null, $days=null)
    {
       if(isset($bsock)) {
-         if($period == "all") {
+         if($days == "all") {
             $cmd = 'llist jobs';
          }
-         else {
-            $cmd = 'llist jobs days='.$period;
+         else  {
+            $cmd = 'llist jobs days='.$days;
          }
-
          $result = $bsock->send_command($cmd, 2, null);
          if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
             //return false;
@@ -135,6 +134,19 @@ class JobModel
          $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   public function getRestoreJobs(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = '.jobs type=R';
+         $result = $bsock->send_command($cmd, 2, null);
+         $restorejobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $restorejobs['result']['jobs'];
       }
       else {
          throw new \Exception('Missing argument.');
