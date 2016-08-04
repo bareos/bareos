@@ -807,8 +807,9 @@ static bool acquire_resources(JCR *jcr)
    switch (jcr->getJobType()) {
    case JT_MIGRATE:
    case JT_COPY:
+   case JT_CONSOLIDATE:
       /*
-       * Migration/Copy jobs are not counted for client concurrency
+       * Migration/Copy and Consolidation jobs are not counted for client concurrency
        * as they do not touch the client at all
        */
       jcr->IgnoreClientConcurrency = true;

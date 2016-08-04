@@ -76,6 +76,9 @@ bool do_consolidate(JCR *jcr)
    bool retval = true;
    time_t now = time(NULL);
 
+   char *jobids = NULL;
+   char *p;
+
    tmpjob = jcr->res.job; /* Memorize job */
 
    jcr->jr.JobId = jcr->JobId;
@@ -91,13 +94,19 @@ bool do_consolidate(JCR *jcr)
 
    foreach_res(job, R_JOB) {
       if (job->AlwaysIncremental) {
+         db_list_ctx jobids_ctx;
+         int32_t incrementals_total;
+         int32_t incrementals_to_consolidate;
+         int32_t max_incrementals_to_consolidate;
+
          Jmsg(jcr, M_INFO, 0, _("Looking at always incremental job %s\n"), job->name());
 
          /*
           * Fake always incremental job as job of current jcr.
           */
          jcr->res.job = job;
-         init_jcr_job_record(jcr);
+         jcr->res.fileset = job->fileset;
+         jcr->res.client = job->client;
          jcr->jr.JobLevel = L_INCREMENTAL;
 
          if (!get_or_create_fileset_record(jcr)) {
@@ -106,11 +115,14 @@ bool do_consolidate(JCR *jcr)
             goto bail_out;
          }
 
-         db_list_ctx jobids_ctx;
-         int32_t incrementals_total;
+         if (!get_or_create_client_record(jcr)) {
+            Jmsg(jcr, M_FATAL, 0, _("JobId=%d no ClientId\n"), (int)jcr->JobId);
+            retval = false;
+            goto bail_out;
+         }
 
          /*
-          * first determine the number of total incrementals
+          * First determine the number of total incrementals
           */
          db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
          incrementals_total = jobids_ctx.count - 1;
@@ -127,6 +139,9 @@ bool do_consolidate(JCR *jcr)
             bstrftimes(sdt, sizeof(sdt), starttime);
             jcr->jr.StartTime = starttime;
             Jmsg(jcr, M_INFO, 0, _("%s: considering jobs older than %s for consolidation.\n"), job->name(), sdt);
+            Dmsg4(10, _("%s: considering jobs with ClientId %d and FilesetId %d older than %s for consolidation.\n"),
+                                       job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
+
          }
 
          db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
@@ -135,11 +150,10 @@ bool do_consolidate(JCR *jcr)
          /*
           * Consolidation of zero or one job does not make sense, we leave it like it is
           */
-         if (jobids_ctx.count < 2) {
+         if (incrementals_total < 1) {
             Jmsg(jcr, M_INFO, 0, _("%s: less than two jobs to consolidate found, doing nothing.\n"), job->name());
             continue;
          }
-         int32_t max_incrementals_to_consolidate;
 
          /*
           * Calculate limit for query. We specify how many incrementals should be left.
@@ -153,11 +167,82 @@ bool do_consolidate(JCR *jcr)
             Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, max_incrementals_to_consolidate, jcr->jr.limit);
             jobids_ctx.reset();
             db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
-            Dmsg1(10, "consolidate ids after limit: %s.\n", jobids_ctx.list);
+            incrementals_to_consolidate = jobids_ctx.count - 1;
+            Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.count, jobids_ctx.list);
+            if (incrementals_to_consolidate < 1) {
+               Jmsg(jcr, M_INFO, 0, _("%s: After limited query: less incrementals than required, not consolidating\n"), job->name());
+               continue;
+            }
          } else {
             Jmsg(jcr, M_INFO, 0, _("%s: less incrementals than required, not consolidating\n"), job->name());
             continue;
          }
+
+         if (jobids) {
+            free(jobids);
+            jobids = NULL;
+         }
+
+         jobids = bstrdup(jobids_ctx.list);
+         p = jobids;
+
+         /*
+          * Check if we need to skip the first (full) job from consolidation
+          */
+         if (job->AlwaysIncrementalMaxFullAge) {
+            char sdt_allowed[50];
+            char sdt_starttime[50];
+            time_t starttime,
+                   oldest_allowed_starttime;
+
+            if (incrementals_to_consolidate < 2) {
+               Jmsg(jcr, M_INFO, 0, _("%s: less incrementals than required to consolidate without full, not consolidating\n"), job->name());
+               continue;
+            }
+            Jmsg(jcr, M_INFO, 0, _("before ConsolidateFull: jobids: %s\n"), jobids);
+
+            p = strchr(jobids, ',');                /* find oldest jobid and optionally skip it */
+            if (p) {
+               *p = '\0';
+            }
+
+            /*
+             * Get db record of oldest jobid and check its age
+             */
+            memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
+            jcr->previous_jr.JobId = str_to_int64(jobids);
+            Dmsg1(10, "Previous JobId=%s\n", jobids);
+
+            if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
+               Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), db_strerror(jcr->db));
+               goto bail_out;
+            }
+
+            starttime = jcr->previous_jr.JobTDate;
+            oldest_allowed_starttime = now - job->AlwaysIncrementalMaxFullAge;
+            bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
+            bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
+
+            /*
+             * Check if job is older than AlwaysIncrementalMaxFullAge
+             */
+            Jmsg(jcr, M_INFO, 0,  _("check full age: full is %s, allowed is %s\n"),sdt_starttime ,sdt_allowed );
+            if (starttime > oldest_allowed_starttime) {
+               Jmsg(jcr, M_INFO, 0, _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping first jobid %s\n"), jobids);
+
+               if (p) {
+                  *p++ = ','; /* Restore ,*/
+               }
+            } else {
+               Jmsg(jcr, M_INFO, 0, _("Full is older than AlwaysIncrementalMaxFullAge -> also consolidating Full jobid %s\n"), jobids);
+               if (p) {
+                  *p = ',';   /* Restore ,*/
+                  p = jobids; /* Point to full list */
+               }
+            }
+            Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
+         }
+
 
          /*
           * Set the virtualfull jobids to be consolidated
@@ -165,7 +250,7 @@ bool do_consolidate(JCR *jcr)
          if (!jcr->vf_jobids) {
             jcr->vf_jobids = get_pool_memory(PM_MESSAGE);
          }
-         pm_strcpy(jcr->vf_jobids, jobids_ctx.list);
+         pm_strcpy(jcr->vf_jobids, p);
 
          Jmsg(jcr, M_INFO, 0, _("%s: Start new consolidation\n"), job->name());
          start_new_consolidation_job(jcr, job->name());
@@ -179,6 +264,10 @@ bail_out:
    jcr->res.job = tmpjob;
    jcr->setJobStatus(JS_Terminated);
    consolidate_cleanup(jcr, JS_Terminated);
+
+   if (jobids) {
+      free(jobids);
+   }
 
    return retval;
 }

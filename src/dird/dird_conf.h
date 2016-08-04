@@ -385,6 +385,7 @@ public:
    utime_t MaxDiffInterval;           /* Maximum time interval between Diffs */
    utime_t DuplicateJobProximity;     /* Permitted time between duplicicates */
    utime_t AlwaysIncrementalJobRetention; /* Timeinterval where incrementals are not consolidated */
+   utime_t AlwaysIncrementalMaxFullAge; /* If Full Backup is older than this age the consolidation job will include also the full */
    int64_t spool_size;                /* Size of spool file for this job */
    int64_t max_bandwidth;             /* Speed limit on this job */
    int64_t FileHistSize;              /* Hint about the size of the expected File history */
