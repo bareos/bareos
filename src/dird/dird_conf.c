@@ -1877,17 +1877,8 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          if (incexe->num_opts > 0) {
             for (int j = 0; j < incexe->num_opts; j++) {
                FOPTS *fo = incexe->opts_list[j];
-               bool enhanced_wild = false;
 
                indent_config_item(cfg_str, 2, "Options {\n");
-
-               for (int k = 0; fo->opts[k] != '\0'; k++) {
-                  if (fo->opts[k]=='W') {
-                     enhanced_wild = true;
-                     break;
-                  }
-               }
-
                for (p = &fo->opts[0]; *p; p++) {
                   switch (*p) {
                   case '0':                 /* no option */
