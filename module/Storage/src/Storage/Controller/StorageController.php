@@ -35,6 +35,7 @@ class StorageController extends AbstractActionController
 {
 
    protected $storageModel = null;
+   protected $poolModel = null;
    protected $bsock = null;
 
    public function indexAction()
@@ -69,7 +70,7 @@ class StorageController extends AbstractActionController
       }
 
       try {
-         $pools = $this->getStorageModel()->getPools($this->bsock, null);
+         $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
       }
       catch(Exception $e) {
          echo $e->getMessage();
@@ -285,4 +286,12 @@ class StorageController extends AbstractActionController
       return $this->storageModel;
    }
 
+   public function getPoolModel()
+   {
+      if(!$this->poolModel) {
+         $sm = $this->getServiceLocator();
+         $this->poolModel = $sm->get('Pool\Model\PoolModel');
+      }
+      return $this->poolModel;
+   }
 }

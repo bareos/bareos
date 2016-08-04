@@ -165,24 +165,6 @@ class StorageModel
       }
    }
 
-   public function getPools(&$bsock=null, $type=null)
-   {
-      if(isset($bsock)) {
-         if($type == null) {
-            $cmd = '.pools';
-         }
-         else {
-            $cmd = '.pools type="'.$type.'"';
-         }
-         $pools = $bsock->send_command($cmd, 2, null);
-         $result = \Zend\Json\Json::decode($pools, \Zend\Json\Json::TYPE_ARRAY);
-         return $result['result']['pools'];
-      }
-      else {
-         throw new \Exception('Missing argument.');
-      }
-   }
-
    public function getSlots(&$bsock=null, $storage=null)
    {
       if(isset($bsock, $storage)) {
