@@ -164,37 +164,36 @@ function read_directors_ini($directors, $directors_ini)
             $arr[key($directors)]['ca_file'] = $instance['ca_file'];
          }
          else {
-            $arr[key($directors)]['ca_file'] = "";
+            $arr[key($directors)]['ca_file'] = null;
          }
 
          if(array_key_exists('cert_file', $instance) && isset($instance['cert_file'])) {
             $arr[key($directors)]['cert_file'] = $instance['cert_file'];
          }
          else {
-            $arr[key($directors)]['cert_file'] = "";
+            $arr[key($directors)]['cert_file'] = null;
          }
 
          if(array_key_exists('cert_file_passphrase', $instance) && isset($instance['cert_file_passphrase'])) {
             $arr[key($directors)]['cert_file_passphrase'] = $instance['cert_file_passphrase'];
          }
          else {
-            $arr[key($directors)]['cert_file_passphrase'] = "";
+            $arr[key($directors)]['cert_file_passphrase'] = null;
          }
 
          if(array_key_exists('allowed_cns', $instance) && isset($instance['allowed_cns'])) {
             $arr[key($directors)]['allowed_cns'] = $instance['allowed_cns'];
          }
          else {
-            $arr[key($directors)]['allowed_cns'] = "";
+            $arr[key($directors)]['allowed_cns'] = null;
          }
 
          if(array_key_exists('catalog', $instance) && isset($instance['catalog'])) {
             $arr[key($directors)]['catalog'] = $instance['catalog'];
          }
          else {
-            $arr[key($directors)]['catalog'] = "MyCatalog";
+            $arr[key($directors)]['catalog'] = null;
          }
-
       }
 
       next($directors);
