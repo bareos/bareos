@@ -30,7 +30,7 @@ class ClientModel
    public function getClients(&$bsock=null)
    {
       if(isset($bsock)) {
-         $cmd = 'llist clients';
+         $cmd = 'llist clients current';
          $result = $bsock->send_command($cmd, 2, null);
          $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $clients['result']['clients'];
