@@ -188,6 +188,32 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
    return false;
 }
 
+static bool need_to_list_device(const char *devicenames, DEVRES *device)
+{
+   /*
+    * See if we are requested to list an explicit device name.
+    * e.g. this happens when people address one particular device in
+    * a autochanger via its own storage definition or an non autochanger device.
+    */
+   if (!need_to_list_device(devicenames, device->name())) {
+      /*
+       * See if this device is part of an autochanger.
+       */
+      if (device->changer_res) {
+         /*
+          * See if we need to list this particular device part of the given autochanger.
+          */
+         if (!need_to_list_device(devicenames, device->changer_res->name())) {
+            return false;
+         }
+      } else {
+         return false;
+      }
+   }
+
+   return true;
+}
+
 static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
 {
    int len;
@@ -226,28 +252,8 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
    }
 
    foreach_res(device, R_DEVICE) {
-      /*
-       * See if we need to check for devicenames at all.
-       */
-      if (devicenames) {
-         /*
-          * See if this device is part of an autochanger.
-          */
-         if (device->changer_res) {
-            /*
-             * See if we need to list this particular device part of the given autochanger.
-             */
-            if (!need_to_list_device(devicenames, device->changer_res->name())) {
-               continue;
-            }
-         } else {
-            /*
-             * Try matching a non autochanger device.
-             */
-            if (!need_to_list_device(devicenames, device->name())) {
-               continue;
-            }
-         }
+      if (devicenames && !need_to_list_device(devicenames, device)) {
+         continue;
       }
 
       dev = device->dev;
