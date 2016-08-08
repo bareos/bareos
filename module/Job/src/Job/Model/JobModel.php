@@ -130,7 +130,7 @@ class JobModel
    public function getJobsLastStatus(&$bsock=null)
    {
       if(isset($bsock)) {
-         $cmd = 'llist jobs last';
+         $cmd = 'llist jobs last current enabled';
          $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          return $jobs['result']['jobs'];
