@@ -40,6 +40,19 @@ class ClientModel
       }
    }
 
+   public function getDotClients(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = '.clients';
+         $result = $bsock->send_command($cmd, 2, null);
+         $clients = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $clients['result']['clients'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
    public function getClient(&$bsock=null, $client=null)
    {
       if(isset($bsock, $client)) {

@@ -51,6 +51,7 @@ $this->headTitle($title);
    <th><?php echo $this->translate("Name"); ?></th>
    <th><?php echo $this->translate("Version"); ?></th>
    <th></th>
+   <th><?php echo $this->translate("Status"); ?></th>
    <th><?php echo $this->translate("Actions"); ?></th>
    <th></th>
    <th></th>
@@ -119,6 +120,7 @@ $(document).ready(function() {
          { "data": "name", "defaultContent": "", "orderable": true },
          { "data": "uname", "defaultContent": "", "orderable": false },
          { "data": null, "defaultContent": "", "orderable": true },
+         { "data": "enabled", "defaultContent": "", "orderable": true },
          { "data": null, "defaultContent": "", "orderable": false },
          { "data": "installed", "defaultContent": "", "searchable": true, "orderable": true, "visible": false },
          { "data": "available", "defaultContent": "", "searchable": true, "orderable": true, "visible": false }
@@ -213,26 +215,45 @@ $(document).ready(function() {
          },
          {
             "targets": 3,
-            "width": "15%",
+            "width": "10%",
             "render": function(data, type, full, meta) {
-               var rlink = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+data.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-               var ulink = '<a href="'+data.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
-               if(data.update_fd === true) {
-                  return rlink + '&nbsp;' + ulink;
+               if(data) {
+                  return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
                }
                else {
-                  return rlink;
+                  return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
                }
             }
          },
          {
             "targets": 4,
+            "width": "10%",
+            "render": function(data, type, full, meta) {
+               var actions = null;
+               var rlink = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+data.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
+               var ulink = '<a href="'+data.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
+               if(data.enabled) {
+                  actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+               }
+               else {
+                  actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+               }
+               if(data.update_fd === true) {
+                  return actions + '&nbsp;' + ulink;
+               }
+               else {
+                  return actions;
+               }
+            }
+         },
+         {
+            "targets": 5,
             "render": function(data, type, full, meta) {
                return data;
             }
          },
          {
-            "targets": 5,
+            "targets": 6,
             "render": function(data, type, full, meta) {
                return data;
             }

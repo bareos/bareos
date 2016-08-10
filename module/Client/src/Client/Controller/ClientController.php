@@ -150,10 +150,10 @@ class ClientController extends AbstractActionController
       $client = $this->params()->fromQuery('client');
 
       if($data == "all") {
-
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
             $clients = $this->getClientModel()->getClients($this->bsock);
+            $dot_clients = $this->getClientModel()->getDotClients($this->bsock);
             $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
             $this->bsock->disconnect();
          }
@@ -185,9 +185,7 @@ class ClientController extends AbstractActionController
          }
 
          $result = array();
-
          for($i = 0; $i < count($clients); $i++) {
-
             $result[$i]['clientid'] = $clients[$i]['clientid'];
             $result[$i]['uname'] = $clients[$i]['uname'];
             $result[$i]['name'] = $clients[$i]['name'];
@@ -198,6 +196,13 @@ class ClientController extends AbstractActionController
             $result[$i]['available_fd'] = "";
             $result[$i]['installed_dird'] = "";
             $result[$i]['available_dird'] = "";
+            $result[$i]['enabled'] = "";
+
+            for($j = 0; $j < count($dot_clients); $j++) {
+               if($result[$i]['name'] == $dot_clients[$j]['name']) {
+                  $result[$i]['enabled'] = $dot_clients[$j]['enabled'];
+               }
+            }
 
             if(isset($dird_vers)) {
                $result[$i]['installed_dird'] = $dird_vers;
@@ -276,9 +281,7 @@ class ClientController extends AbstractActionController
                $result[$i]['available_fd'] = NULL;
                $result[$i]['update_fd'] = false;
             }
-
          }
-
       }
       elseif($data == "details" && isset($client)) {
          try {
