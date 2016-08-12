@@ -370,7 +370,7 @@ void stats_job_started()
    /*
     * A new Job was started so we need to flush any pending statistics the next run.
     */
-   if (!statistics_initialized) {
+   if (statistics_initialized) {
       need_flush = true;
    }
 }
