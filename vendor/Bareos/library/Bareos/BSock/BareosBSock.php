@@ -871,8 +871,10 @@ class BareosBSock implements BareosBSockInterface
             break;
       }
 
-      if(self::send("use catalog=" . $this->config['catalog'])) {
-         $debug = self::receive_message();
+      if (isset($this->config['catalog'])) {
+         if(self::send("use catalog=" . $this->config['catalog'])) {
+            $debug = self::receive_message();
+         }
       }
 
       if($jobid != null) {
