@@ -13,4 +13,5 @@
 /etc/bareos/bareos-dir.d/schedule
 /etc/bareos/bareos-dir.d/storage
 /etc/bareos/bareos-dir-export/
+/etc/bareos/bareos-dir-export/client
 /usr/lib/bareos

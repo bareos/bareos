@@ -216,6 +216,10 @@ static inline bool configure_create_fd_resource_string(POOL_MEM &resource, const
    return true;
 }
 
+/*
+ * Create a bareos-fd director resource file
+ * that corresponds to our client definition.
+ */
 static inline bool configure_create_fd_resource(UAContext *ua, const char *clientname)
 {
    POOL_MEM resource(PM_MESSAGE);
@@ -223,6 +227,7 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    POOL_MEM filename(PM_FNAME);
    POOL_MEM basedir(PM_FNAME);
    POOL_MEM temp(PM_MESSAGE);
+   const char *dirname = NULL;
    const bool error_if_exists = false;
    const bool create_directories = true;
 
@@ -230,15 +235,21 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
       return false;
    }
 
+   /*
+    * Get the path where the resource should get stored.
+    */
    basedir.bsprintf("bareos-dir-export/client/%s/bareos-fd.d", clientname);
-   if (!my_config->get_path_of_new_resource(filename, temp, basedir.c_str(), "director", clientname,
-                                            error_if_exists, create_directories)) {
+   dirname = GetNextRes(R_DIRECTOR, NULL)->name;
+   if (!my_config->get_path_of_new_resource(filename, temp, basedir.c_str(), "director",
+                                            dirname, error_if_exists, create_directories)) {
       ua->error_msg("%s", temp.c_str());
       return false;
-   } else {
-      filename_tmp.strcpy(temp);
    }
+   filename_tmp.strcpy(temp);
 
+   /*
+    * Write resource to file.
+    */
    if (!configure_write_resource(filename.c_str(), "filedaemon-export", clientname, resource.c_str())) {
       ua->error_msg("failed to write filedaemon config resource file\n");
       return false;
