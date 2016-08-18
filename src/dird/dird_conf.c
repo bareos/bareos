@@ -1019,19 +1019,23 @@ const char *get_configure_usage_string()
     * Only fill the configure_usage_string once. The content is static.
     */
    if (configure_usage_string->strlen() == 0) {
-      configure_usage_string->strcpy("add [");
+      /*
+       * subcommand: add
+       */
       for (int r = 0; resources[r].name; r++) {
          if (resources[r].items) {
+            configure_usage_string->strcat("add ");
             resourcename.strcpy(resources[r].name);
             resourcename.toLower();
             configure_usage_string->strcat(resourcename);
             cmdline_items(configure_usage_string, resources[r].items);
-         }
-         if (resources[r+1].items) {
-            configure_usage_string->strcat("] | [");
+            configure_usage_string->strcat(" |\n");
          }
       }
-      configure_usage_string->strcat("]");
+      /*
+       * subcommand: export
+       */
+      configure_usage_string->strcat("export client=<client>");
    }
 
    return configure_usage_string->c_str();

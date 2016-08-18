@@ -230,6 +230,7 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    const char *dirname = NULL;
    const bool error_if_exists = false;
    const bool create_directories = true;
+   const bool overwrite = true;
 
    if (!configure_create_fd_resource_string(resource, clientname)) {
       return false;
@@ -250,10 +251,19 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    /*
     * Write resource to file.
     */
-   if (!configure_write_resource(filename.c_str(), "filedaemon-export", clientname, resource.c_str())) {
+   if (!configure_write_resource(filename.c_str(), "filedaemon-export", clientname, resource.c_str(), overwrite)) {
       ua->error_msg("failed to write filedaemon config resource file\n");
       return false;
    }
+
+   ua->send->object_start("export");
+   ua->send->object_key_value("clientname", clientname);
+   ua->send->object_key_value("component", "bareos-fd");
+   ua->send->object_key_value("resource", "director");
+   ua->send->object_key_value("name", dirname);
+   ua->send->object_key_value("filename", filename.c_str(), "Exported resource file \"%s\":\n");
+   ua->send->object_key_value("content", resource.c_str(), "%s");
+   ua->send->object_end("export");
 
    return true;
 }
@@ -323,14 +333,12 @@ static inline bool configure_add_resource(UAContext *ua, int first_parameter, RE
       configure_create_fd_resource(ua, name.c_str());
    }
 
-   ua->send->object_start("configure");
    ua->send->object_start("add");
    ua->send->object_key_value("resource", res_table->name);
    ua->send->object_key_value("name", name.c_str());
-   ua->send->object_key_value("filename", filename.c_str(), "Created config file \"%s\":\n");
+   ua->send->object_key_value("filename", filename.c_str(), "Created resource config file \"%s\":\n");
    ua->send->object_key_value("content", resource.c_str(), "%s");
    ua->send->object_end("add");
-   ua->send->object_end("configure");
 
    return true;
 }
@@ -342,10 +350,40 @@ static inline bool configure_add(UAContext *ua, int resource_type_parameter)
 
    res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
    if (res_table) {
+      ua->send->object_start("configure");
       result = configure_add_resource(ua, resource_type_parameter+1, res_table);
+      ua->send->object_end("configure");
    } else {
       ua->error_msg(_("invalid resource type %s.\n"), ua->argk[resource_type_parameter]);
    }
+
+   return result;
+}
+
+static inline void configure_export_usage(UAContext *ua)
+{
+   ua->error_msg(_("usage: configure export client=<clientname>\n"));
+}
+
+static inline bool configure_export(UAContext *ua)
+{
+   bool result = false;
+   int i;
+
+   i = find_arg_with_value(ua, NT_("client"));
+   if (i < 0) {
+      configure_export_usage(ua);
+      return false;
+   }
+
+   if (!GetClientResWithName(ua->argv[i])) {
+      configure_export_usage(ua);
+      return false;
+   }
+
+   ua->send->object_start("configure");
+   result = configure_create_fd_resource(ua, ua->argv[i]);
+   ua->send->object_end("configure");
 
    return result;
 }
@@ -364,12 +402,16 @@ bool configure_cmd(UAContext *ua, const char *cmd)
    }
 
    if (ua->argc < 3) {
-      ua->error_msg(_("usage: configure <subcommand> <resourcetype> ...\n"));
+      ua->error_msg(_("usage:\n"
+                      "  configure add <resourcetype> <key1>=<value1> ...\n"
+                      "  configure export client=<clientname>\n"));
       return false;
    }
 
    if (bstrcasecmp(ua->argk[1], NT_("add"))) {
       result = configure_add(ua, 2);
+   } else if (bstrcasecmp(ua->argk[1], NT_("export"))) {
+      result = configure_export(ua);
    } else {
       ua->error_msg(_("invalid subcommand %s.\n"), ua->argk[1]);
       return false;
