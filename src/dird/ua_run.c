@@ -600,7 +600,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          select_job_level(ua, jcr);
          switch (jcr->getJobType()) {
          case JT_BACKUP:
-            if (!jcr->is_JobLevel(L_VIRTUAL_FULL)) {
+            if (!rc.pool_override && !jcr->is_JobLevel(L_VIRTUAL_FULL)) {
                apply_pool_overrides(jcr, true);
                rc.pool = jcr->res.pool;
                rc.level_override = true;
@@ -691,6 +691,7 @@ int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
             if (rc.pool) {
                jcr->res.pool = rc.pool;
                rc.level_override = false;
+               rc.pool_override = true;
                Dmsg1(100, "Set new pool=%s\n", jcr->res.pool->name());
                goto try_again;
             }
