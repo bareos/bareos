@@ -349,13 +349,19 @@ static inline bool configure_add(UAContext *ua, int resource_type_parameter)
    RES_TABLE *res_table = NULL;
 
    res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
-   if (res_table) {
-      ua->send->object_start("configure");
-      result = configure_add_resource(ua, resource_type_parameter+1, res_table);
-      ua->send->object_end("configure");
-   } else {
+   if (!res_table) {
       ua->error_msg(_("invalid resource type %s.\n"), ua->argk[resource_type_parameter]);
+      return false;
    }
+
+   if (res_table->rcode == R_DIRECTOR) {
+      ua->error_msg(_("Only one Director resource allowed.\n"));
+      return false;
+   }
+
+   ua->send->object_start("configure");
+   result = configure_add_resource(ua, resource_type_parameter+1, res_table);
+   ua->send->object_end("configure");
 
    return result;
 }

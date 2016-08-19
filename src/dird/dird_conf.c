@@ -1023,7 +1023,11 @@ const char *get_configure_usage_string()
        * subcommand: add
        */
       for (int r = 0; resources[r].name; r++) {
-         if (resources[r].items) {
+         /*
+          * Only one Director is allowed.
+          * If the resource have not items, there is no need to add it.
+          */
+         if ((resources[r].rcode != R_DIRECTOR) && (resources[r].items)) {
             configure_usage_string->strcat("add ");
             resourcename.strcpy(resources[r].name);
             resourcename.toLower();

@@ -169,7 +169,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
     * Make two passes. The first builds the name symbol table,
     * and the second picks up the items.
     */
-   Dmsg0(900, "Enter parse_config()\n");
+   Dmsg1(900, "Enter parse_config_file(%s)\n", cf);
    for (pass = 1; pass <= 2; pass++) {
       Dmsg1(900, "parse_config pass %d\n", pass);
       if ((lc = lex_open_file(lc, cf, scan_error, scan_warning)) == NULL) {
