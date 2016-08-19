@@ -2630,9 +2630,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
 
       ctx = PyGetbpContext(pyCtx);
       if (bfuncs->getBareosValue(ctx, (bVariable)var, &value) == bRC_OK) {
-         if (value) {
-            pRetVal = PyInt_FromLong(value);
-         }
+         pRetVal = PyInt_FromLong(value);
       }
       break;
    }
