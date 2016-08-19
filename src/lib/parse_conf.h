@@ -330,6 +330,11 @@ public:
    /* Methods */
    char *name() const;
    bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false);
+   /*
+    * validate can be defined by inherited classes,
+    * when special rules for this resource type must be checked.
+    */
+   bool validate();
 };
 
 inline char *BRSRES::name() const { return this->hdr.name; }
@@ -366,12 +371,12 @@ public:
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
-   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false);
+   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false, bool verbose = false);
 };
 
 typedef void (INIT_RES_HANDLER)(RES_ITEM *item, int pass);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
-typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data);
+typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited);
 
 /*
  * New C++ configuration routines
@@ -473,12 +478,14 @@ RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);
 void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data = false);
+                   void *sock, bool hide_sensitive_data = false, bool verbose = false);
+void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited = false);
 void free_resource(RES *res, int type);
 void init_resource(int type, RES_ITEM *item);
 bool save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
+
 
 #ifdef HAVE_JANSSON
 /*

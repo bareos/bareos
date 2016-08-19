@@ -498,7 +498,7 @@ public:
    bool enable_vss;                   /* Enable Volume Shadow Copy */
 
    /* Methods */
-   bool print_config(POOL_MEM& buff, bool hide_sensitive_data);
+   bool print_config(POOL_MEM& buf, bool hide_sensitive_data = false, bool verbose = false);
 };
 
 /*

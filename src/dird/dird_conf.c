@@ -1295,14 +1295,6 @@ char *CATRES::display(POOLMEM *dst)
    return dst;
 }
 
-static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
-{
-   for (int i = 0; i < level; i++) {
-      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
-   }
-   pm_strcat(cfg_str, config_item);
-}
-
 static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
 {
    POOL_MEM temp;
@@ -1856,7 +1848,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 }
 
-bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
+bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
@@ -2277,7 +2269,7 @@ const char *level_to_str(int level)
  */
 void dump_resource(int type, RES *ures,
                    void sendit(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data)
+                   void *sock, bool hide_sensitive_data, bool verbose)
 {
    URES *res = (URES *)ures;
    bool recurse = true;
@@ -2296,71 +2288,71 @@ void dump_resource(int type, RES *ures,
 
    switch (type) {
    case R_DIRECTOR:
-      res->res_dir.print_config(buf, hide_sensitive_data);
+      res->res_dir.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_PROFILE:
-      res->res_profile.print_config(buf, hide_sensitive_data);
+      res->res_profile.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CONSOLE:
-      res->res_con.print_config(buf, hide_sensitive_data);
+      res->res_con.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_COUNTER:
-      res->res_counter.print_config(buf, hide_sensitive_data);
+      res->res_counter.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
       if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.name())) {
-         res->res_client.print_config(buf, hide_sensitive_data);
+         res->res_client.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_DEVICE:
-      res->res_dev.print_config(buf, hide_sensitive_data);
+      res->res_dev.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
       if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.name())) {
-         res->res_store.print_config(buf, hide_sensitive_data);
+         res->res_store.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_CATALOG:
       if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.name())) {
-         res->res_cat.print_config(buf, hide_sensitive_data);
+         res->res_cat.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_JOBDEFS:
    case R_JOB:
       if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.name())) {
-         res->res_job.print_config(buf, hide_sensitive_data);
+         res->res_job.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_FILESET: {
       if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.name())) {
-         res->res_fs.print_config(buf, hide_sensitive_data);
+         res->res_fs.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    }
    case R_SCHEDULE:
       if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.name())) {
-         res->res_sch.print_config(buf, hide_sensitive_data);
+         res->res_sch.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_POOL:
       if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.name())) {
-        res->res_pool.print_config(buf, hide_sensitive_data);
+        res->res_pool.print_config(buf, hide_sensitive_data, verbose);
         sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_MSGS:
-      res->res_msgs.print_config(buf, hide_sensitive_data);
+      res->res_msgs.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    default:
@@ -2369,7 +2361,7 @@ void dump_resource(int type, RES *ures,
    }
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data);
+      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
 }
 
@@ -3981,7 +3973,7 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for print_config
  * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
  */
-static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data)
+static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited)
 {
    POOL_MEM temp;
 
@@ -3998,7 +3990,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 
          pm_strcpy(res_names, "");
          foreach_alist(res, list) {
@@ -4034,7 +4026,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = items[i].alistvalue[items[i].code];
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          foreach_alist(value, list) {
             if (cnt) {
                Mmsg(temp, ",\"%s\"", value);
@@ -4060,7 +4052,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; jobtypes[j].type_name; j++) {
             if (jobtypes[j].job_type == jobtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4083,7 +4075,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4097,7 +4089,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; migtypes[j].type_name; j++) {
             if (migtypes[j].job_type == migtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4120,7 +4112,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4134,7 +4126,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; joblevels[j].level_name; j++) {
             if (joblevels[j].level == level) {
                Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4148,7 +4140,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; ActionOnPurgeOptions[j].name; j++) {
             if (ActionOnPurgeOptions[j].token == action) {
                Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4162,7 +4154,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; authprotocols[j].name; j++) {
             if (authprotocols[j].token == authprotocol) {
                Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4176,7 +4168,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; authmethods[j].name; j++) {
             if (authprotocols[j].token == authtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4195,7 +4187,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 
          pm_strcpy(audit_events, "");
          foreach_alist(audit_event, list) {

@@ -1347,7 +1347,7 @@ bool get_or_create_fileset_record(JCR *jcr)
        !db_get_fileset_record(jcr, jcr->db, &fsr)) {
       POOL_MEM FileSetText(PM_MESSAGE);
 
-      jcr->res.fileset->print_config(FileSetText, false);
+      jcr->res.fileset->print_config(FileSetText, false, false);
       fsr.FileSetText = FileSetText.c_str();
 
       if (!db_create_fileset_record(jcr, jcr->db, &fsr)) {
