@@ -128,7 +128,15 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
             return bRCs['bRC_Skip']
 
         db = self.databases.pop()
+
+        sizeDbCommand = "mysql %s -B -N -e 'SELECT (SUM(DATA_LENGTH + INDEX_LENGTH)) FROM information_schema.TABLES WHERE TABLE_SCHEMA = \"%s\"'" %(self.mysqlconnect, db)
+        sizeDb = Popen(sizeDbCommand, shell=True, stdout=PIPE, stderr=PIPE)
+        size_curr_db = sizeDb.stdout.read()
+        sizeDb.wait()
+        sizereturnCode = sizeDb.poll()
+
         statp = StatPacket()
+        statp.size = int(size_curr_db)
         savepkt.statp = statp
         savepkt.fname = "/_mysqlbackups_/"+db+".sql"
         savepkt.type = bFileType['FT_REG']
