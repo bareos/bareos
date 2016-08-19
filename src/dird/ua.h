@@ -172,6 +172,7 @@ public:
    int Priority;
    int files;
    bool level_override;
+   bool pool_override;
    bool spool_data;
    bool accurate;
    bool ignoreduplicatecheck;

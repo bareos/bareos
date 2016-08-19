@@ -217,7 +217,7 @@ static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
  */
 static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
 {
-   ssize_t begin_size, end_size, difference;
+   int64_t begin_size, end_size, difference;
 
    /*
     * See if size matching is turned on.
@@ -242,7 +242,7 @@ static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
       /*
        * Calculate the fraction this size is of the wanted size.
        */
-      if ((ssize_t)ff_pkt->statp.st_size > begin_size) {
+      if ((int64_t)ff_pkt->statp.st_size > begin_size) {
          difference = ff_pkt->statp.st_size - begin_size;
       } else {
          difference = begin_size - ff_pkt->statp.st_size;
@@ -253,12 +253,12 @@ static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
        */
       return (difference < (begin_size / 100));
    case size_match_smaller:
-      return (ssize_t)ff_pkt->statp.st_size < begin_size;
+      return (int64_t)ff_pkt->statp.st_size < begin_size;
    case size_match_greater:
-      return (ssize_t)ff_pkt->statp.st_size > begin_size;
+      return (int64_t)ff_pkt->statp.st_size > begin_size;
    case size_match_range:
-      return ((ssize_t)ff_pkt->statp.st_size >= begin_size) &&
-             ((ssize_t)ff_pkt->statp.st_size <= end_size);
+      return ((int64_t)ff_pkt->statp.st_size >= begin_size) &&
+             ((int64_t)ff_pkt->statp.st_size <= end_size);
    default:
       return true;
    }

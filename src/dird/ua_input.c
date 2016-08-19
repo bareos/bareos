@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,7 +48,7 @@ bool get_cmd(UAContext *ua, const char *prompt, bool subprompt)
    if (!subprompt && ua->api) {
       sock->signal(BNET_TEXT_INPUT);
    }
-   sock->fsend("%s", prompt);
+   ua->send_msg("%s", prompt);
    if (!ua->api || subprompt) {
       sock->signal(BNET_SUB_PROMPT);
    }
