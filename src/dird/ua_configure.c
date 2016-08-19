@@ -288,6 +288,7 @@ static inline bool configure_add_resource(UAContext *ua, int first_parameter, RE
    POOL_MEM filename_tmp(PM_FNAME);
    POOL_MEM filename(PM_FNAME);
    POOL_MEM temp(PM_FNAME);
+   JOBRES *res = NULL;
 
    if (!configure_create_resource_string(ua, first_parameter, res_table, name, resource)) {
       return false;
@@ -314,6 +315,24 @@ static inline bool configure_add_resource(UAContext *ua, int first_parameter, RE
       unlink(filename_tmp.c_str());
       my_config->remove_resource(res_table->rcode, name.c_str());
       return false;
+   }
+
+   /*
+    * parse_config_file has already done some validation.
+    * However, it skipped at least some checks for R_JOB
+    * (reason: a job can get values from jobdefs,
+    * and the value propagation happens after reading the full configuration)
+    * therefore we explicitly check the new resource here.
+    */
+   if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
+      res = (JOBRES *)GetResWithName(res_table->rcode, name.c_str());
+      propagate_jobdefs(res_table->rcode, res);
+      if (!validate_resource(res_table->rcode, res_table->items, (BRSRES *)res)) {
+         ua->error_msg("failed to create config resource \"%s\"\n", name.c_str());
+         unlink(filename_tmp.c_str());
+         my_config->remove_resource(res_table->rcode, name.c_str());
+         return false;
+      }
    }
 
    /*
@@ -425,3 +444,4 @@ bool configure_cmd(UAContext *ua, const char *cmd)
 
    return result;
 }
+

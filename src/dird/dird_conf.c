@@ -1256,17 +1256,29 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
    }
 }
 
+
 /*
  * Ensure that all required items are present
  */
-static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type)
+bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
 {
+   if (res_type == R_JOBDEFS) {
+      /*
+       * a jobdef don't have to be fully defined.
+       */
+      return true;
+   } else if (res_type == R_JOB) {
+      if (!((JOBRES *)res)->validate()) {
+         return false;
+      }
+   }
+
    for (int i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res->hdr.item_present)) {
             Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
-                 items[i].name, res_type, res->name());
+                 items[i].name, res_to_str(res_type), res->name());
             return false;
          }
       }
@@ -1275,9 +1287,47 @@ static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_type);
+         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_to_str(res_type));
          return false;
       }
+   }
+
+   return true;
+}
+
+bool JOBRES::validate()
+{
+   /*
+    * For Copy and Migrate we can have Jobs without a client or fileset.
+    * As for a copy we use the original Job as a reference for the Read storage
+    * we also don't need to check if there is an explicit storage definition in
+    * either the Job or the Read pool.
+    */
+   switch (JobType) {
+   case JT_COPY:
+   case JT_MIGRATE:
+      break;
+   default:
+      /*
+       * All others must have a client and fileset.
+       */
+      if (!client) {
+         Jmsg(NULL, M_ERROR, 0,
+              _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), name());
+         return false;
+      }
+
+      if (!fileset) {
+         Jmsg(NULL, M_ERROR, 0,
+              _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), name());
+         return false;
+      }
+
+      if (!storage && !pool->storage) {
+         Jmsg(NULL, M_ERROR, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), name());
+         return false;
+      }
+      break;
    }
 
    return true;
@@ -2958,7 +3008,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(items, &res_all.res_dir, resources[rindex].name)) {
+      if (!validate_resource(type, items, &res_all.res_dir)) {
          return false;
       }
    }
@@ -3008,6 +3058,50 @@ bool save_resource(int type, RES_ITEM *items, int pass)
    return true;
 }
 
+bool propagate_jobdefs(int res_type, JOBRES *res)
+{
+   JOBRES *jobdefs = NULL;
+
+   if (!res->jobdefs) {
+      return true;
+   }
+
+   /*
+    * Don't allow the JobDefs pointing to itself.
+    */
+   if (res->jobdefs == res) {
+      return false;
+   }
+
+   if (res_type == R_JOB) {
+      jobdefs = res->jobdefs;
+
+      /*
+       * Handle RunScripts alists specifically
+       */
+      if (jobdefs->RunScripts) {
+         RUNSCRIPT *rs, *elt;
+
+         if (!res->RunScripts) {
+            res->RunScripts = New(alist(10, not_owned_by_alist));
+         }
+
+         foreach_alist(rs, jobdefs->RunScripts) {
+            elt = copy_runscript(rs);
+            elt->from_jobdef = true;
+            res->RunScripts->append(elt); /* we have to free it */
+         }
+      }
+   }
+
+   /*
+    * Transfer default items from JobDefs Resource
+    */
+   propagate_resource(job_items, res->jobdefs, res);
+
+   return true;
+}
+
 /*
  * Populate Job Defaults (e.g. JobDefs)
  */
@@ -3020,89 +3114,23 @@ static inline bool populate_jobdefs()
     * Propagate the content of a JobDefs to another.
     */
    foreach_res(jobdefs, R_JOBDEFS) {
-      /*
-       * Don't allow the JobDefs pointing to itself.
-       */
-      if (!jobdefs->jobdefs || jobdefs->jobdefs == jobdefs) {
-         continue;
-      }
-
-      propagate_resource(job_items, jobdefs->jobdefs, jobdefs);
+      propagate_jobdefs(R_JOBDEFS, jobdefs);
    }
 
    /*
     * Propagate the content of the JobDefs to the actual Job.
     */
    foreach_res(job, R_JOB) {
-      if (job->jobdefs) {
-         jobdefs = job->jobdefs;
-
-         /*
-          * Handle RunScripts alists specifically
-          */
-         if (jobdefs->RunScripts) {
-            RUNSCRIPT *rs, *elt;
-
-            if (!job->RunScripts) {
-               job->RunScripts = New(alist(10, not_owned_by_alist));
-            }
-
-            foreach_alist(rs, jobdefs->RunScripts) {
-               elt = copy_runscript(rs);
-               elt->from_jobdef = true;
-               job->RunScripts->append(elt); /* we have to free it */
-            }
-         }
-
-         /*
-          * Transfer default items from JobDefs Resource
-          */
-         propagate_resource(job_items, jobdefs, job);
-      }
+      propagate_jobdefs(R_JOB, job);
 
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(job_items, job, "Job")) {
+      if (!validate_resource(R_JOB, job_items, job)) {
          retval = false;
          goto bail_out;
       }
 
-      /*
-       * For Copy and Migrate we can have Jobs without a client or fileset.
-       * As for a copy we use the original Job as a reference for the Read storage
-       * we also don't need to check if there is an explicit storage definition in
-       * either the Job or the Read pool.
-       */
-      switch (job->JobType) {
-      case JT_COPY:
-      case JT_MIGRATE:
-         break;
-      default:
-         /*
-          * All others must have a client and fileset.
-          */
-         if (!job->client) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-
-         if (!job->fileset) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-
-         if (!job->storage && !job->pool->storage) {
-            Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-         break;
-      }
    } /* End loop over Job res */
 
 bail_out:
@@ -3111,15 +3139,7 @@ bail_out:
 
 bool populate_defs()
 {
-   bool retval;
-
-   retval = populate_jobdefs();
-   if (!retval) {
-      goto bail_out;
-   }
-
-bail_out:
-   return retval;
+   return populate_jobdefs();
 }
 
 static void store_pooltype(LEX *lc, RES_ITEM *item, int index, int pass)

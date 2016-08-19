@@ -329,7 +329,7 @@ public:
 
    /* Methods */
    char *name() const;
-   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false);
+   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
@@ -338,6 +338,7 @@ public:
 };
 
 inline char *BRSRES::name() const { return this->hdr.name; }
+inline bool BRSRES::validate() { return true; }
 
 /*
  * Message Resource
@@ -435,7 +436,10 @@ public:
    bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
-   RES_TABLE *get_resource_table(const char *resource_type);
+   const char *get_resource_type_name(int code);
+   int get_resource_code(const char *resource_type);
+   RES_TABLE *get_resource_table(int resource_type);
+   RES_TABLE *get_resource_table(const char *resource_type_name);
    int get_resource_item_index(RES_ITEM *res_table, const char *item);
    RES_ITEM *get_resource_item(RES_ITEM *res_table, const char *item);
    bool get_path_of_resource(POOL_MEM &path, const char *component, const char *resourcetype,
@@ -457,6 +461,7 @@ protected:
    bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
    bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
    bool find_config_path(POOL_MEM &full_path);
+   int  get_resource_table_index(int resource_type);
 };
 
 CONFIG *new_config_parser();

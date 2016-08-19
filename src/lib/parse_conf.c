@@ -352,14 +352,41 @@ bail_out:
    return false;
 }
 
+const char *CONFIG::get_resource_type_name(int code)
+{
+   return res_to_str(code);
+}
 
-RES_TABLE *CONFIG::get_resource_table(const char *resource_type)
+int CONFIG::get_resource_table_index(int resource_type)
+{
+   int rindex = -1;
+
+   if ((resource_type >= m_r_first) && (resource_type <= m_r_last)) {
+      rindex = resource_type = m_r_first;
+   }
+
+   return rindex;
+}
+
+RES_TABLE *CONFIG::get_resource_table(int resource_type)
+{
+   RES_TABLE *result = NULL;
+   int rindex = get_resource_table_index(resource_type);
+
+   if (rindex >= 0) {
+      result = &m_resources[rindex];
+   }
+
+   return result;
+}
+
+RES_TABLE *CONFIG::get_resource_table(const char *resource_type_name)
 {
    RES_TABLE *result = NULL;
    int i;
 
    for (i = 0; m_resources[i].name; i++) {
-      if (bstrcasecmp(m_resources[i].name, resource_type)) {
+      if (bstrcasecmp(m_resources[i].name, resource_type_name)) {
          result = &m_resources[i];
       }
    }
