@@ -765,6 +765,10 @@ start_again:
           */
          LockRes();
          foreach_res(sched, R_SCHEDULE) {
+            if (!schedulegiven && !sched->enabled) {
+               continue;
+            }
+
             if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
                continue;
             }
