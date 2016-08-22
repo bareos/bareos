@@ -3,7 +3,7 @@ cache: apt
 before_install:
     - sudo bash -c 'URL=http://download.bareos.org/bareos/experimental/nightly/xUbuntu_12.04/; wget -q $URL/Release.key -O- | apt-key add -; echo "deb $URL /" >> /etc/apt/sources.list.d/bareos.list'
     - sudo apt-get update -qq
-    - sudo apt-get install -qq make texlive-latex-extra tex4ht imagemagick python bareos bareos-database-sqlite3 pandoc
+    - sudo apt-get install -qq make texlive-latex-extra tex4ht imagemagick graphviz python bareos bareos-database-sqlite3 pandoc
 
 script:
     - make pdf
