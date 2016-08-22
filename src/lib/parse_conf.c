@@ -198,7 +198,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
             cf, be.bstrerror());
          free(lc);
 
-         return 0;
+         return false;
       }
       lex_set_error_handler_error_type(lc, err_type);
       lc->error_counter = 0;
