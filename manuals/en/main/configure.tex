@@ -64,6 +64,7 @@ In this section, the following naming is used:
         \item bareos-traymonitor
         \item bconsole
         \item bat (only legacy config file: bat.conf)
+        \item Bareos tools, like \nameref{sec:VolumeUtilityCommands} and others.
     \end{itemize}
     \item \path|$COMPONENT|\hide{$} refers to one of the listed components.
 %
@@ -123,7 +124,7 @@ all files matching \path|$PATH/$COMPONENT.d/*/*.conf| will be read, see \nameref
 \begin{tabular}{ l || l | l }
 Bareos component &
 \shortstack[l]{Configuration File \\ (default path on Unix)} &
-\shortstack[l]{Configuration Directory \\ (default path on Unix) \\ since Bareos $>=$ 16.2.2} \\
+\shortstack[l]{Subdirectory Configuration Scheme\\ (default path on Unix) \\ since Bareos $>=$ 16.2.2} \\
 \hline
 \hline
 
@@ -149,12 +150,17 @@ bareos-traymonitor           & \file{tray-monitor.conf}     & \file{tray-monitor
 
 bat                          & \file{bat.conf}              & (not supported) \\
                              & ({\configFileBatUnix})       &  \\
+\hline
+
+\nameref{sec:VolumeUtilityCommands} & \file{bareos-sd.conf}        & \file{bareos-sd.d} \\
+(use the bareos-sd configuration)   & (\configFileSdUnix)          & (\configDirectorySdUnix) \\
+
 \end{tabular}
 \end{center}
 
 
 
-\subsection{Configuration Subdirectories}
+\subsection{Subdirectory Configuration Scheme}
 \label{sec:ConfigurationSubdirectories}
 % ConfigurationIncludeDirectory is referenced from the Bareos code.
 \label{ConfigurationIncludeDirectory}
@@ -163,7 +169,7 @@ If the subdirectory configuration is used, instead of a single configuration fil
 all files matching \path|$COMPONENT.d/*/*.conf|\hide{$} are read as a configuration,
 see \nameref{sec:ConfigurationFileOrConfigurationSubDirectories}.
 
-\subsubsection{Reason for Configuration Subdirectories}
+\subsubsection{Reason for the Subdirectory Configuration Scheme}
 
 In Bareos $<$ 16.2.2, Bareos uses one configuration file per component.
 
@@ -223,12 +229,13 @@ new installations will use configuration subdirectories by default.
 
 
 
-\subsubsection{Using configuration subdirectories}
+\subsubsection{Using Subdirectories Configuration Scheme}
 
 \paragraph{New installation}
 
 \begin{itemize}
-    \item Configuration subdirectories are used by default from Bareos \sinceVersion{}{Configuration Subdirectories}{16.2.4} onwards.
+    \item The Subdirectories Configuration Scheme is used 
+            by default from Bareos \sinceVersion{}{Subdirectories Configuration Scheme}{16.2.4} onwards.
     \item They will be usable immediately after installing a Bareos component.
     \item If additional packages entail example configuration files (\path|$NAME.conf.example|),
         copy them to \path|$NAME.conf|, modify it as required and reload or restart the component.
@@ -238,7 +245,7 @@ new installations will use configuration subdirectories by default.
     \label{sec:UpdateToConfigurationSubdirectories}
 
 \begin{itemize}
-\item When updating to a Bareos version containing configuration subdirectories,
+\item When updating to a Bareos version containing the Subdirectories Configuration,
             the existing configuration will not be touched and is still the default configuration.
     \begin{itemize}
     \item \warning{Problems can occur if you have implemented an own wildcard mechanism to load your configuration

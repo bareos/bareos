@@ -556,9 +556,9 @@ delete Job JobId=n,m,o-r,t ...
   This command permits you to disable a Job for automatic scheduling.
   The job may have been previously enabled with the Job resource
   {\bf Enabled} directive or using the console {\bf enable} command.
-  The next time the Director is restarted or the conf file is reloaded,
+  The next time the Director is reloaded or restarted,
   the Enable/Disable state will be set to the value in the Job resource
-  (default enabled) as defined in the bareos-dir.conf file.
+  (default enabled) as defined in the \bareosDir configuration.
 
    The full form of this command is:
 \begin{bconsole}{disable}
@@ -570,9 +570,9 @@ disable job=<job-name>
   This command permits you to enable a Job for automatic scheduling.
   The job may have been previously disabled with the Job resource
   {\bf Enabled} directive or using the console {\bf disable} command.
-  The next time the Director is restarted or the conf file is reloaded,
+  The next time the Director is reloaded or restarted,
   the Enable/Disable state will be set to the value in the Job resource
-  (default enabled) as defined in the bareos-dir.conf file.
+  (default enabled) as defined in the \bareosDir configuration.
 
    The full form of this command is:
 
@@ -828,12 +828,12 @@ For a disk volume, you would manually delete the Volume.
 Then you use the {\bf label} command to add a new label.  However, this could
 leave traces of the old volume in the  catalog.
 
-The preferable method to relabel a Volume is to first {\bf purge}  the volume,
-either automatically, or explicitly with the  {\bf purge} command, then use
-the {\bf relabel} command described  below.
+The preferable method to relabel a Volume is to first purge the volume,
+either automatically, or explicitly with the  \bcommand{purge}{} command,
+then use the \bcommand{relabel}{} command described  below.
 
 If your autochanger has barcode labels, you can label all the Volumes in
-your autochanger one after another by using the {\bf label barcodes}
+your autochanger one after another by using the \bcommand{label}{barcodes}
 command.  For each tape in the changer containing a barcode, Bareos will
 mount the tape and then label it with the same name as the barcode.  An
 appropriate Media record will also be created in the catalog.  Any barcode
@@ -888,12 +888,11 @@ list nextvol job=<job-name>
 list nextvol job=<job-name> days=nnn
 \end{bconsole}
 
-
    What most of the above commands do should be more or less obvious.  In
    general if you do not specify all the command line arguments, the
    command will prompt you for what is needed.
 
-   The {\bf list nextvol} command will print the Volume name to be used by
+   The \bcommand{list}{nextvol} command will print the Volume name to be used by
    the specified job.  You should be aware that exactly what Volume will be
    used depends on a lot of factors including the time and what a prior job
    will do.  It may fill a tape that is not full when you issue this
@@ -905,13 +904,13 @@ list nextvol job=<job-name> days=nnn
    next two days or no volume will be found. You can, however, use the
    {\bf days=nnn} specification to specify up to 50 days. For example,
    if on Friday, you want to see what Volume will be needed on Monday,
-   for job MyJob, you would use {\bf list nextvol job=MyJob days=3}.
+   for job MyJob, you would use \bcommand{list}{nextvol job=MyJob days=3}.
 
    If you wish to add specialized commands that list the contents of the
-   catalog, you can do so by adding them to the {\bf query.sql} file.
+   catalog, you can do so by adding them to the \file{query.sql} file.
    However, this takes some knowledge of programming SQL. Please see the
-   {\bf query} command below for additional information.  See below for
-   listing the full contents of a catalog record with the {\bf llist}
+   \bcommand{query}{} command below for additional information.  See below for
+   listing the full contents of a catalog record with the \bcommand{llist}{}
    command.
 
    As an example, the command {\bf list pools} might produce  the following
