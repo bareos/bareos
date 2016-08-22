@@ -232,11 +232,16 @@ See \nameref{DataEncryption}.
 
 \defDirective{Fd}{Client}{Plugin Directory}{}{}{%
 This directive specifies a directory in which the File Daemon searches for
-plugins with the name {\bf {\textless}pluginname{\textgreater}-fd.so} which it will load at startup.
-Typically on Linux systems, it is set to \path|/usr/lib/bareos/plugins/| or \path|/usr/lib64/bareos/plugins/|.
+plugins with the name \file{<pluginname>-fd.so} which it will load at startup.
+Typically on Linux systems, plugins are installed to \path|/usr/lib/bareos/plugins/| or \path|/usr/lib64/bareos/plugins/|.
 }
 
 \defDirective{Fd}{Client}{Plugin Names}{}{}{%
+If a \linkResourceDirective{Fd}{Client}{Plugin Directory} is specified
+\configdirective{Plugin Names} defines, which \nameref{fdPlugins} get loaded.
+
+If \configdirective{Plugin Names} is not defined, all plugins get loaded,
+otherwise the defined ones.
 }
 
 \defDirective{Fd}{Client}{Scripts Directory}{}{}{%

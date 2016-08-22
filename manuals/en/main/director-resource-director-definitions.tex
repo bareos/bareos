@@ -173,32 +173,21 @@ Directory} as  defined above.
 
 
 \defDirective{Dir}{Director}{Plugin Directory}{}{}{%
-%If a directory is specified, the Bareos Director tries to load 
-%all \ilink{Director plugins}{dirPlugins} that are located in this directory.
-%If \configdirective{Plugin Names} is also specified,
-%only the specified plugins get loaded.
+% auto generated
 }
 
 
 
 \defDirective{Dir}{Director}{Plugin Names}{}{}{%
-If a \linkResourceDirective{Dir}{Director}{Plugin Directory} is specified
-\configdirective{Plugin Names} defines, which \ilink{Director plugins}{dirPlugins} get loaded.
-
-If \configdirective{Plugin Names} is not defined, all plugins get loaded,
-otherwise the defined ones.
-%
-% \begin{bconfig}{Plugin Names}
-% Plugin Names = python:otherplugin
-% \end{bconfig}
+% auto generated
 }
 
 
 
 \defDirective{Dir}{Director}{Query File}{}{}{%
 This directive is required and specifies a directory and file in which
-the Director can find the canned SQL statements for the {\bf Query}
-command of the Console.
+the Director can find the canned SQL statements for the \ilink{query}{sec:bcommandQuery}
+command.
 %
 %Standard shell expansion of the {\bf Path} is
 %done when the configuration file is read so that values such as {\bf

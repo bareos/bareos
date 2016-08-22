@@ -134,10 +134,15 @@ properly expanded.
 
 \defDirective{Sd}{Storage}{Plugin Directory}{}{}{%
 This directive specifies a directory in which the Storage Daemon searches for
-plugins with the name {\bf {\textless}pluginname{\textgreater}-sd.so} which it will load at startup.
+plugins with the name \file{<pluginname>-sd.so} which it will load at startup.
 }
 
 \defDirective{Sd}{Storage}{Plugin Names}{}{}{%
+If a \linkResourceDirective{Sd}{Storage}{Plugin Directory} is specified
+\configdirective{Plugin Names} defines, which \nameref{sdPlugins} get loaded.
+
+If \configdirective{Plugin Names} is not defined, all plugins get loaded,
+otherwise the defined ones.
 }
 
 \defDirective{Sd}{Storage}{Scripts Directory}{}{}{%

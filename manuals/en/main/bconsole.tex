@@ -1088,9 +1088,9 @@ following command in interactive mode or in a RunScript:
 *<input>purge volume action storage=File pool=Default</input>
 \end{bconsole}
 
-This is possible to specify the volume name, the media type, the pool, the
-storage, etc\dots (see \texttt{help purge}) Be sure that your storage device is
-idle when you decide to run this command.
+It is possible to specify the volume name, the media type, the pool, the
+storage, etc\dots (see \bcommand{help}{purge}).
+Be sure that your storage device is idle when you decide to run this command.
 
 \item [resolve]
    \index[general]{Console!Command!resolve}
@@ -1114,6 +1114,7 @@ bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
 
 \item [query]
    \index[general]{Console!Command!query}
+   \label{sec:bcommandQuery}
    This command reads a predefined SQL query from  the query file (the name and
    location of the  query file is defined with the QueryFile resource record in
    the Director's configuration file). You are prompted to select  a query from
