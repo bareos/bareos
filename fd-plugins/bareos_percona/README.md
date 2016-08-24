@@ -81,7 +81,7 @@ By default all found databases are back-uped. You can restrict this using the du
 necessary options. See *xtrabackup* documentation for details.
 
 
-##### restorecommand ##### 
+##### restorecommand
 Command used for restoring, default: 
    xbstream -x -C
 
@@ -113,12 +113,12 @@ The naming scheme is:
 *fromLSN_toLSN_jobid*
 
 Example:
-  
-  /tmp/bareos-restores/_percona/351/
-  ├── 00000000000000000000_00000000000010129154_0000000334
-  ├── 00000000000010129154_00000000000010142295_0000000335
-  ├── 00000000000010142295_00000000000010201260_0000000338
-  
+```
+/tmp/bareos-restores/_percona/351/
+├── 00000000000000000000_00000000000010129154_0000000334
+├── 00000000000010129154_00000000000010142295_0000000335
+├── 00000000000010142295_00000000000010201260_0000000338
+```  
 
 This example shows the restore tree for restore job with ID 351. First subdirectory has all files
 from the first full backup job with ID 334. It starts at LSN 0 and goes until LSN 10129154.
