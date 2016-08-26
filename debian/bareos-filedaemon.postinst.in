@@ -17,33 +17,12 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
-daemon_user=bareos
-daemon_group=bareos
-
-#director_daemon_user=$daemon_user
-#storage_daemon_user=$daemon_user
-file_daemon_user=root
-#storage_daemon_group=$daemon_group
-
 DEFCONFIGDIR="@configtemplatedir@/bareos-fd.d/"
 CONFIGDIR="/etc/bareos/bareos-fd.d/"
 
-
-
-permissions()
-{
-  chown ${file_daemon_user}:${daemon_group} ${CONFIGDIR}
-  chmod 750 ${CONFIGDIR}
-}
-
 case "$1" in
     configure)
-        if ! /usr/lib/bareos/scripts/bareos-config has_config "bareos-fd"; then
-            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
-            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
-            /usr/lib/bareos/scripts/bareos-config initialize_passwords
-        fi
-        permissions
+        /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR" || true
         # on Univention distributions the ucr command allows to open the firewall
         if [ -x "/etc/init.d/univention-firewall" ] && which ucr >/dev/null 2>&1; then
             ucr set \

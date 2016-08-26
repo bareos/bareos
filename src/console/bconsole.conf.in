@@ -3,8 +3,8 @@
 #
 
 Director {
-  Name = @basename@-dir
-  DIRport = @dir_port@
-  address = @hostname@
+  Name = bareos-dir
+  address = localhost
   Password = "@dir_password@"
+  Description = "Bareos Console credentials for local Director"
 }

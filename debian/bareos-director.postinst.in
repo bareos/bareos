@@ -25,18 +25,13 @@ CONFIGDIR="/etc/bareos/bareos-dir.d/"
 
 permissions()
 {
-  for dir in ${CONFIGDIR} /etc/bareos/bareos-dir-export/; do
-    chown ${daemon_user}:${daemon_group} ${dir}
-    chmod 750 ${dir}
-  done
+   chown ${daemon_user}:${daemon_group} /etc/bareos/bareos-dir-export/
+   chmod 750 /etc/bareos/bareos-dir-export/
 }
 
 case "$1" in
     configure)
-        if ! /usr/lib/bareos/scripts/bareos-config has_config "bareos-dir"; then
-            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
-            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
-            /usr/lib/bareos/scripts/bareos-config initialize_passwords
+        if /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"; then
             /usr/lib/bareos/scripts/bareos-config initialize_database_driver
             /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
         fi

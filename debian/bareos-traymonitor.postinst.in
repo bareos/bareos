@@ -25,17 +25,13 @@ CONFIGDIR="/etc/bareos/tray-monitor.d/"
 
 permissions()
 {
-  chown root:${daemon_group} ${CONFIGDIR}
-  chmod 755 ${CONFIGDIR}
+  chown -R root:${daemon_group} ${CONFIGDIR}
+  chmod -R 755 ${CONFIGDIR}
 }
 
 case "$1" in
     configure)
-        if ! /usr/lib/bareos/scripts/bareos-config has_config "tray-monitor"; then
-            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
-            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
-            /usr/lib/bareos/scripts/bareos-config initialize_passwords
-        fi
+        /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR" || true
         permissions
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
