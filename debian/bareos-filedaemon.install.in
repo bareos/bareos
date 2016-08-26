@@ -2,7 +2,7 @@
 @confdir@/bareos-fd.d/director/bareos-dir.conf  @configtemplatedir@/bareos-fd.d/director/
 @confdir@/bareos-fd.d/director/bareos-mon.conf  @configtemplatedir@/bareos-fd.d/director/
 @confdir@/bareos-fd.d/messages/Standard.conf    @configtemplatedir@/bareos-fd.d/messages/
-@confdir@/tray-monitor.d/client/FileDaemon-local*.conf
+@confdir@/tray-monitor.d/client/FileDaemon-local*.conf @configtemplatedir@/tray-monitor.d/client/
 /usr/sbin/bareos-fd
 @plugindir@/bpipe-fd.so
 /usr/share/man/man8/bareos-fd.8.gz
