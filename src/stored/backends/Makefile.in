@@ -61,6 +61,8 @@ BUILD_BACKENDS = @BUILD_SD_BACKENDS@
 
 CONF_EXTRA_DIR = config.d
 
+STORED_RESTYPES = autochanger device director ndmp messages storage
+
 .SUFFIXES:	.c .o .lo
 .PHONY:
 .DONTCARE:
@@ -177,28 +179,30 @@ libtool-install: all
 
 install-config:
 	# copy configuration resource files to directory structure
-	@SRCCONFDIR=$(CONF_EXTRA_DIR)/bareos-sd.d/; \
-	DESTCONFDIR=${DESTDIR}${confdir}/bareos-sd.d/; \
-	echo "installing configuration resource files to $$DESTCONFDIR"; \
-	$(MKDIR) $$DESTCONFDIR; \
-	for RESTYPE in autochanger device director ndmp messages storage; do \
-		$(MKDIR) "$$DESTCONFDIR/$$RESTYPE"; \
-		for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
-			if test -e "$$f"; then \
-				RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
-				RES=`basename "$$f"`; \
-				if test -f "$$RESDIR/$$RES"; then \
-					destconf="$$RESDIR/$$RES.new"; \
-					echo "    $$RESTYPE/$$RES as \"$$destconf\" (keep existing)"; \
-				else \
-					destconf="$$RESDIR/$$RES"; \
-					echo "    $$RESTYPE/$$RES as \"$$destconf\""; \
+	@for COMPONENT in bareos-dir.d bareos-sd.d; do \
+		SRCCONFDIR=$(CONF_EXTRA_DIR)/$$COMPONENT/; \
+		DESTCONFDIR=${DESTDIR}${confdir}/$$COMPONENT/; \
+		echo "installing configuration resource files to $$DESTCONFDIR"; \
+		$(MKDIR) $$DESTCONFDIR; \
+		for RESTYPE in $(STORED_RESTYPES); do \
+			for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
+				if test -e "$$f"; then \
+					RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
+					$(MKDIR) "$$RESDIR"; \
+					RES=`basename "$$f"`; \
+					if test -f "$$RESDIR/$$RES"; then \
+						destconf="$$RESDIR/$$RES.new"; \
+						echo "    $$RESTYPE/$$RES as \"$$destconf\" (keep existing)"; \
+					else \
+						destconf="$$RESDIR/$$RES"; \
+						echo "    $$RESTYPE/$$RES as \"$$destconf\""; \
+					fi; \
+					${INSTALL_CONFIG} "$$f" "$$destconf"; \
+					if test "x${sd_group}" != "x"; then \
+						chgrp -f ${sd_group} $$destconf || true; \
+					fi; \
 				fi; \
-				${INSTALL_CONFIG} "$$f" "$$destconf"; \
-				if test "x${sd_group}" != "x"; then \
-					chgrp -f ${sd_group} $$destconf || true; \
-				fi; \
-			fi; \
+			done; \
 		done; \
 	done
 

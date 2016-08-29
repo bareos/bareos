@@ -170,7 +170,7 @@ install: all
 	      fi; \
 	   done; \
 	done
-	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir-export/bareos-fd.d/director/
+	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir-export/client/
 	@if  test -f ${DESTDIR}${scriptdir}/query.sql; then \
 	   echo "  ==> Saving existing query.sql to query.sql.old"; \
 	   $(MV) -f ${DESTDIR}${scriptdir}/query.sql ${DESTDIR}${scriptdir}/query.sql.old; \

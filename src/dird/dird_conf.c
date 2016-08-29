@@ -1019,19 +1019,27 @@ const char *get_configure_usage_string()
     * Only fill the configure_usage_string once. The content is static.
     */
    if (configure_usage_string->strlen() == 0) {
-      configure_usage_string->strcpy("add [");
+      /*
+       * subcommand: add
+       */
       for (int r = 0; resources[r].name; r++) {
-         if (resources[r].items) {
+         /*
+          * Only one Director is allowed.
+          * If the resource have not items, there is no need to add it.
+          */
+         if ((resources[r].rcode != R_DIRECTOR) && (resources[r].items)) {
+            configure_usage_string->strcat("add ");
             resourcename.strcpy(resources[r].name);
             resourcename.toLower();
             configure_usage_string->strcat(resourcename);
             cmdline_items(configure_usage_string, resources[r].items);
-         }
-         if (resources[r+1].items) {
-            configure_usage_string->strcat("] | [");
+            configure_usage_string->strcat(" |\n");
          }
       }
-      configure_usage_string->strcat("]");
+      /*
+       * subcommand: export
+       */
+      configure_usage_string->strcat("export client=<client>");
    }
 
    return configure_usage_string->c_str();
@@ -1248,17 +1256,29 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
    }
 }
 
+
 /*
  * Ensure that all required items are present
  */
-static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type)
+bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
 {
+   if (res_type == R_JOBDEFS) {
+      /*
+       * a jobdef don't have to be fully defined.
+       */
+      return true;
+   } else if (res_type == R_JOB) {
+      if (!((JOBRES *)res)->validate()) {
+         return false;
+      }
+   }
+
    for (int i = 0; items[i].name; i++) {
       if (items[i].flags & CFG_ITEM_REQUIRED) {
          if (!bit_is_set(i, res->hdr.item_present)) {
             Jmsg(NULL, M_ERROR, 0,
                  _("\"%s\" directive in %s \"%s\" resource is required, but not found.\n"),
-                 items[i].name, res_type, res->name());
+                 items[i].name, res_to_str(res_type), res->name());
             return false;
          }
       }
@@ -1267,9 +1287,47 @@ static bool validate_resource(RES_ITEM *items, BRSRES *res, const char *res_type
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_type);
+         Emsg1(M_ERROR, 0, _("Too many items in %s resource\n"), res_to_str(res_type));
          return false;
       }
+   }
+
+   return true;
+}
+
+bool JOBRES::validate()
+{
+   /*
+    * For Copy and Migrate we can have Jobs without a client or fileset.
+    * As for a copy we use the original Job as a reference for the Read storage
+    * we also don't need to check if there is an explicit storage definition in
+    * either the Job or the Read pool.
+    */
+   switch (JobType) {
+   case JT_COPY:
+   case JT_MIGRATE:
+      break;
+   default:
+      /*
+       * All others must have a client and fileset.
+       */
+      if (!client) {
+         Jmsg(NULL, M_ERROR, 0,
+              _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), name());
+         return false;
+      }
+
+      if (!fileset) {
+         Jmsg(NULL, M_ERROR, 0,
+              _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), name());
+         return false;
+      }
+
+      if (!storage && !pool->storage) {
+         Jmsg(NULL, M_ERROR, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), name());
+         return false;
+      }
+      break;
    }
 
    return true;
@@ -1285,14 +1343,6 @@ char *CATRES::display(POOLMEM *dst)
         NPRTB(db_address), db_port, NPRTB(db_socket));
 
    return dst;
-}
-
-static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
-{
-   for (int i = 0; i < level; i++) {
-      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
-   }
-   pm_strcat(cfg_str, config_item);
 }
 
 static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
@@ -1848,7 +1898,7 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 }
 
-bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
+bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
@@ -2269,7 +2319,7 @@ const char *level_to_str(int level)
  */
 void dump_resource(int type, RES *ures,
                    void sendit(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data)
+                   void *sock, bool hide_sensitive_data, bool verbose)
 {
    URES *res = (URES *)ures;
    bool recurse = true;
@@ -2288,71 +2338,71 @@ void dump_resource(int type, RES *ures,
 
    switch (type) {
    case R_DIRECTOR:
-      res->res_dir.print_config(buf, hide_sensitive_data);
+      res->res_dir.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_PROFILE:
-      res->res_profile.print_config(buf, hide_sensitive_data);
+      res->res_profile.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CONSOLE:
-      res->res_con.print_config(buf, hide_sensitive_data);
+      res->res_con.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_COUNTER:
-      res->res_counter.print_config(buf, hide_sensitive_data);
+      res->res_counter.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
       if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.name())) {
-         res->res_client.print_config(buf, hide_sensitive_data);
+         res->res_client.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_DEVICE:
-      res->res_dev.print_config(buf, hide_sensitive_data);
+      res->res_dev.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
       if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.name())) {
-         res->res_store.print_config(buf, hide_sensitive_data);
+         res->res_store.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_CATALOG:
       if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.name())) {
-         res->res_cat.print_config(buf, hide_sensitive_data);
+         res->res_cat.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_JOBDEFS:
    case R_JOB:
       if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.name())) {
-         res->res_job.print_config(buf, hide_sensitive_data);
+         res->res_job.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_FILESET: {
       if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.name())) {
-         res->res_fs.print_config(buf, hide_sensitive_data);
+         res->res_fs.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    }
    case R_SCHEDULE:
       if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.name())) {
-         res->res_sch.print_config(buf, hide_sensitive_data);
+         res->res_sch.print_config(buf, hide_sensitive_data, verbose);
          sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_POOL:
       if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.name())) {
-        res->res_pool.print_config(buf, hide_sensitive_data);
+        res->res_pool.print_config(buf, hide_sensitive_data, verbose);
         sendit(sock, "%s", buf.c_str());
       }
       break;
    case R_MSGS:
-      res->res_msgs.print_config(buf, hide_sensitive_data);
+      res->res_msgs.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    default:
@@ -2361,7 +2411,7 @@ void dump_resource(int type, RES *ures,
    }
 
    if (recurse && res->res_dir.hdr.next) {
-      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data);
+      dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }
 }
 
@@ -2958,7 +3008,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(items, &res_all.res_dir, resources[rindex].name)) {
+      if (!validate_resource(type, items, &res_all.res_dir)) {
          return false;
       }
    }
@@ -3008,6 +3058,50 @@ bool save_resource(int type, RES_ITEM *items, int pass)
    return true;
 }
 
+bool propagate_jobdefs(int res_type, JOBRES *res)
+{
+   JOBRES *jobdefs = NULL;
+
+   if (!res->jobdefs) {
+      return true;
+   }
+
+   /*
+    * Don't allow the JobDefs pointing to itself.
+    */
+   if (res->jobdefs == res) {
+      return false;
+   }
+
+   if (res_type == R_JOB) {
+      jobdefs = res->jobdefs;
+
+      /*
+       * Handle RunScripts alists specifically
+       */
+      if (jobdefs->RunScripts) {
+         RUNSCRIPT *rs, *elt;
+
+         if (!res->RunScripts) {
+            res->RunScripts = New(alist(10, not_owned_by_alist));
+         }
+
+         foreach_alist(rs, jobdefs->RunScripts) {
+            elt = copy_runscript(rs);
+            elt->from_jobdef = true;
+            res->RunScripts->append(elt); /* we have to free it */
+         }
+      }
+   }
+
+   /*
+    * Transfer default items from JobDefs Resource
+    */
+   propagate_resource(job_items, res->jobdefs, res);
+
+   return true;
+}
+
 /*
  * Populate Job Defaults (e.g. JobDefs)
  */
@@ -3020,89 +3114,23 @@ static inline bool populate_jobdefs()
     * Propagate the content of a JobDefs to another.
     */
    foreach_res(jobdefs, R_JOBDEFS) {
-      /*
-       * Don't allow the JobDefs pointing to itself.
-       */
-      if (!jobdefs->jobdefs || jobdefs->jobdefs == jobdefs) {
-         continue;
-      }
-
-      propagate_resource(job_items, jobdefs->jobdefs, jobdefs);
+      propagate_jobdefs(R_JOBDEFS, jobdefs);
    }
 
    /*
     * Propagate the content of the JobDefs to the actual Job.
     */
    foreach_res(job, R_JOB) {
-      if (job->jobdefs) {
-         jobdefs = job->jobdefs;
-
-         /*
-          * Handle RunScripts alists specifically
-          */
-         if (jobdefs->RunScripts) {
-            RUNSCRIPT *rs, *elt;
-
-            if (!job->RunScripts) {
-               job->RunScripts = New(alist(10, not_owned_by_alist));
-            }
-
-            foreach_alist(rs, jobdefs->RunScripts) {
-               elt = copy_runscript(rs);
-               elt->from_jobdef = true;
-               job->RunScripts->append(elt); /* we have to free it */
-            }
-         }
-
-         /*
-          * Transfer default items from JobDefs Resource
-          */
-         propagate_resource(job_items, jobdefs, job);
-      }
+      propagate_jobdefs(R_JOB, job);
 
       /*
        * Ensure that all required items are present
        */
-      if (!validate_resource(job_items, job, "Job")) {
+      if (!validate_resource(R_JOB, job_items, job)) {
          retval = false;
          goto bail_out;
       }
 
-      /*
-       * For Copy and Migrate we can have Jobs without a client or fileset.
-       * As for a copy we use the original Job as a reference for the Read storage
-       * we also don't need to check if there is an explicit storage definition in
-       * either the Job or the Read pool.
-       */
-      switch (job->JobType) {
-      case JT_COPY:
-      case JT_MIGRATE:
-         break;
-      default:
-         /*
-          * All others must have a client and fileset.
-          */
-         if (!job->client) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"client\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-
-         if (!job->fileset) {
-            Jmsg(NULL, M_ERROR_TERM, 0,
-                 _("\"fileset\" directive in Job \"%s\" resource is required, but not found.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-
-         if (!job->storage && !job->pool->storage) {
-            Jmsg(NULL, M_FATAL, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), job->name());
-            retval = false;
-            goto bail_out;
-         }
-         break;
-      }
    } /* End loop over Job res */
 
 bail_out:
@@ -3111,15 +3139,7 @@ bail_out:
 
 bool populate_defs()
 {
-   bool retval;
-
-   retval = populate_jobdefs();
-   if (!retval) {
-      goto bail_out;
-   }
-
-bail_out:
-   return retval;
+   return populate_jobdefs();
 }
 
 static void store_pooltype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3973,7 +3993,7 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for print_config
  * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
  */
-static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data)
+static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited)
 {
    POOL_MEM temp;
 
@@ -3990,7 +4010,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 
          pm_strcpy(res_names, "");
          foreach_alist(res, list) {
@@ -4026,7 +4046,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = items[i].alistvalue[items[i].code];
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          foreach_alist(value, list) {
             if (cnt) {
                Mmsg(temp, ",\"%s\"", value);
@@ -4052,7 +4072,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; jobtypes[j].type_name; j++) {
             if (jobtypes[j].job_type == jobtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, jobtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4075,7 +4095,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, backupprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4089,7 +4109,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; migtypes[j].type_name; j++) {
             if (migtypes[j].job_type == migtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, migtypes[j].type_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4112,7 +4132,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
                }
 
                Mmsg(temp, "%s = %s\n", items[i].name, ReplaceOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4126,7 +4146,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; joblevels[j].level_name; j++) {
             if (joblevels[j].level == level) {
                Mmsg(temp, "%s = %s\n", items[i].name, joblevels[j].level_name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4140,7 +4160,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; ActionOnPurgeOptions[j].name; j++) {
             if (ActionOnPurgeOptions[j].token == action) {
                Mmsg(temp, "%s = %s\n", items[i].name, ActionOnPurgeOptions[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4154,7 +4174,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; authprotocols[j].name; j++) {
             if (authprotocols[j].token == authprotocol) {
                Mmsg(temp, "%s = %s\n", items[i].name, authprotocols[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4168,7 +4188,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; authmethods[j].name; j++) {
             if (authprotocols[j].token == authtype) {
                Mmsg(temp, "%s = %s\n", items[i].name, authmethods[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -4187,7 +4207,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       list = *(items[i].alistvalue);
       if (list != NULL) {
          Mmsg(temp, "%s = ", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 
          pm_strcpy(audit_events, "");
          foreach_alist(audit_event, list) {

@@ -68,8 +68,8 @@ static void usage()
    fprintf(stderr, _(
 PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
-"Usage: bareos-sd [options] [-c config_file] [config_file]\n"
-"        -c <file>   use <file> as configuration file\n"
+"Usage: bareos-sd [options]\n"
+"        -c <path>   use <path> as configuration file or directory\n"
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -f          run in foreground (for debugging)\n"

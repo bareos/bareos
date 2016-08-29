@@ -329,10 +329,16 @@ public:
 
    /* Methods */
    char *name() const;
-   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false);
+   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false, bool verbose = false);
+   /*
+    * validate can be defined by inherited classes,
+    * when special rules for this resource type must be checked.
+    */
+   bool validate();
 };
 
 inline char *BRSRES::name() const { return this->hdr.name; }
+inline bool BRSRES::validate() { return true; }
 
 /*
  * Message Resource
@@ -366,12 +372,12 @@ public:
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
-   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false);
+   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false, bool verbose = false);
 };
 
 typedef void (INIT_RES_HANDLER)(RES_ITEM *item, int pass);
 typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
-typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data);
+typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited);
 
 /*
  * New C++ configuration routines
@@ -430,7 +436,10 @@ public:
    bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
-   RES_TABLE *get_resource_table(const char *resource_type);
+   const char *get_resource_type_name(int code);
+   int get_resource_code(const char *resource_type);
+   RES_TABLE *get_resource_table(int resource_type);
+   RES_TABLE *get_resource_table(const char *resource_type_name);
    int get_resource_item_index(RES_ITEM *res_table, const char *item);
    RES_ITEM *get_resource_item(RES_ITEM *res_table, const char *item);
    bool get_path_of_resource(POOL_MEM &path, const char *component, const char *resourcetype,
@@ -452,6 +461,7 @@ protected:
    bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
    bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
    bool find_config_path(POOL_MEM &full_path);
+   int  get_resource_table_index(int resource_type);
 };
 
 CONFIG *new_config_parser();
@@ -473,12 +483,14 @@ RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);
 void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
-                   void *sock, bool hide_sensitive_data = false);
+                   void *sock, bool hide_sensitive_data = false, bool verbose = false);
+void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited = false);
 void free_resource(RES *res, int type);
 void init_resource(int type, RES_ITEM *item);
 bool save_resource(int type, RES_ITEM *item, int pass);
 bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
 const char *res_to_str(int rcode);
+
 
 #ifdef HAVE_JANSSON
 /*

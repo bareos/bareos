@@ -443,6 +443,7 @@ public:
    runtime_job_status_t *rjs;         /* Runtime Job Status */
 
    /* Methods */
+   bool validate();
 };
 
 #undef  MAX_FOPTS
@@ -498,7 +499,7 @@ public:
    bool enable_vss;                   /* Enable Volume Shadow Copy */
 
    /* Methods */
-   bool print_config(POOL_MEM& buff, bool hide_sensitive_data);
+   bool print_config(POOL_MEM& buf, bool hide_sensitive_data = false, bool verbose = false);
 };
 
 /*
@@ -621,6 +622,8 @@ union URES {
 };
 
 void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
+bool propagate_jobdefs(int res_type, JOBRES *res);
+bool validate_resource(int type, RES_ITEM *items, BRSRES *res);
 
 #define GetPoolResWithName(x) ((POOLRES *)GetResWithName(R_POOL, (x)))
 #define GetStoreResWithName(x) ((STORERES *)GetResWithName(R_STORAGE, (x)))

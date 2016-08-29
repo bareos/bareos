@@ -32,19 +32,13 @@ CONFIGDIR="/etc/bareos/bareos-sd.d/"
 
 permissions()
 {
-  chown ${storage_daemon_user}:${daemon_group} ${CONFIGDIR}
-  chmod 750 ${CONFIGDIR}
   chown ${storage_daemon_user}:${daemon_group} /var/lib/bareos/storage/
   chmod 750 /var/lib/bareos/storage/
 }
 
 case "$1" in
     configure)
-        if ! /usr/lib/bareos/scripts/bareos-config has_config "bareos-sd"; then
-            /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"
-            /usr/lib/bareos/scripts/bareos-config initialize_local_hostname
-            /usr/lib/bareos/scripts/bareos-config initialize_passwords
-        fi
+        /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR" || true
         permissions
         /usr/lib/bareos/scripts/bareos-config setup_sd_user
         # on Univention distributions the ucr command allows to open the firewall

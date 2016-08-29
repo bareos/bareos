@@ -279,7 +279,7 @@ const char *lex_tok_to_str(int token);
 int lex_get_token(LEX *lf, int expect);
 void lex_set_default_error_handler(LEX *lf);
 void lex_set_default_warning_handler(LEX *lf);
-int lex_set_error_handler_error_type(LEX *lf, int err_type);
+void lex_set_error_handler_error_type(LEX *lf, int err_type);
 
 /* message.c */
 void my_name_is(int argc, char *argv[], const char *name);

@@ -5,6 +5,6 @@
 @confdir@/bareos-sd.d/director/bareos-mon.conf  @configtemplatedir@/bareos-sd.d/director/
 @confdir@/bareos-sd.d/messages/Standard.conf    @configtemplatedir@/bareos-sd.d/messages/
 @confdir@/bareos-sd.d/storage/bareos-sd.conf    @configtemplatedir@/bareos-sd.d/storage/
-@confdir@/tray-monitor.d/storage/StorageDaemon-local*.conf
+@confdir@/tray-monitor.d/storage/StorageDaemon-local*.conf @configtemplatedir@/tray-monitor.d/storage/
 /usr/sbin/bareos-sd
 /usr/share/man/man8/bareos-sd.8.gz

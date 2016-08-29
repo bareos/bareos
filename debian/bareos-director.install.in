@@ -22,10 +22,11 @@
 @confdir@/bareos-dir.d/pool/Full.conf                        @configtemplatedir@/bareos-dir.d/pool/
 @confdir@/bareos-dir.d/pool/Incremental.conf                 @configtemplatedir@/bareos-dir.d/pool/
 @confdir@/bareos-dir.d/pool/Scratch.conf                     @configtemplatedir@/bareos-dir.d/pool/
+@confdir@/bareos-dir.d/profile/operator.conf                 @configtemplatedir@/bareos-dir.d/profile/
 @confdir@/bareos-dir.d/schedule/WeeklyCycleAfterBackup.conf  @configtemplatedir@/bareos-dir.d/schedule/
 @confdir@/bareos-dir.d/schedule/WeeklyCycle.conf             @configtemplatedir@/bareos-dir.d/schedule/
 @confdir@/bareos-dir.d/storage/File.conf                     @configtemplatedir@/bareos-dir.d/storage/
-@confdir@/tray-monitor.d/director/Director-local*.conf
+@confdir@/tray-monitor.d/director/Director-local*.conf       @configtemplatedir@/tray-monitor.d/director/
 /usr/sbin/bareos-dir
 /usr/share/man/man8/bareos-dir.8.gz
 /usr/share/man/man8/bareos.8.gz

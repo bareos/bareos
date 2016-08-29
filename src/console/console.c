@@ -115,7 +115,7 @@ PROG_COPYRIGHT
 "Usage: bconsole [-s] [-c config_file] [-d debug_level]\n"
 "        -D <dir>    select a Director\n"
 "        -l          list Directors defined\n"
-"        -c <file>   set configuration file to file\n"
+"        -c <path>   specify configuration file or directory\n"
 "        -d <nn>     set debug level to <nn>\n"
 "        -dt         print timestamp in debug output\n"
 "        -n          no conio\n"

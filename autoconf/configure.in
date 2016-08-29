@@ -4241,13 +4241,9 @@ debian|ubuntu|univention)
       debian/bareos-filedaemon.postinst \
       debian/bareos-filedaemon.preinst \
       debian/bareos-storage-ceph.install \
-      debian/bareos-storage-ceph.postinst \
       debian/bareos-storage-glusterfs.install \
-      debian/bareos-storage-glusterfs.postinst \
-      debian/bareos-storage-fifo.postinst \
       debian/bareos-storage-fifo.install \
       debian/bareos-storage-python-plugin.install \
-      debian/bareos-storage-tape.postinst \
       debian/bareos-storage-tape.install \
       debian/bareos-storage.bareos-sd.init \
       debian/bareos-storage.install \

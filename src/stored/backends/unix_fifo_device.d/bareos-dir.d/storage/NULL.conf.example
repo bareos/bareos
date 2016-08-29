@@ -1,0 +1,8 @@
+Storage {
+  Name = NULL
+  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
+  Password = "Replace this by the Bareos Storage Daemon director password"
+  Device = NULL
+  Media Type = null
+}
+

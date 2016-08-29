@@ -169,7 +169,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
     * Make two passes. The first builds the name symbol table,
     * and the second picks up the items.
     */
-   Dmsg0(900, "Enter parse_config()\n");
+   Dmsg1(900, "Enter parse_config_file(%s)\n", cf);
    for (pass = 1; pass <= 2; pass++) {
       Dmsg1(900, "parse_config pass %d\n", pass);
       if ((lc = lex_open_file(lc, cf, scan_error, scan_warning)) == NULL) {
@@ -198,7 +198,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
             cf, be.bstrerror());
          free(lc);
 
-         return 0;
+         return false;
       }
       lex_set_error_handler_error_type(lc, err_type);
       lc->error_counter = 0;
@@ -352,14 +352,41 @@ bail_out:
    return false;
 }
 
+const char *CONFIG::get_resource_type_name(int code)
+{
+   return res_to_str(code);
+}
 
-RES_TABLE *CONFIG::get_resource_table(const char *resource_type)
+int CONFIG::get_resource_table_index(int resource_type)
+{
+   int rindex = -1;
+
+   if ((resource_type >= m_r_first) && (resource_type <= m_r_last)) {
+      rindex = resource_type = m_r_first;
+   }
+
+   return rindex;
+}
+
+RES_TABLE *CONFIG::get_resource_table(int resource_type)
+{
+   RES_TABLE *result = NULL;
+   int rindex = get_resource_table_index(resource_type);
+
+   if (rindex >= 0) {
+      result = &m_resources[rindex];
+   }
+
+   return result;
+}
+
+RES_TABLE *CONFIG::get_resource_table(const char *resource_type_name)
 {
    RES_TABLE *result = NULL;
    int i;
 
    for (i = 0; m_resources[i].name; i++) {
-      if (bstrcasecmp(m_resources[i].name, resource_type)) {
+      if (bstrcasecmp(m_resources[i].name, resource_type_name)) {
          result = &m_resources[i];
       }
    }

@@ -69,7 +69,7 @@ PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: bextract <options> <bareos-archive-device-name> <directory-to-store-files>\n"
 "       -b <file>       specify a bootstrap file\n"
-"       -c <file>       specify a Storage configuration file\n"
+"       -c <path>       specify a Storage configuration file or directory\n"
 "       -D <director>   specify a director name specified in the Storage\n"
 "                       configuration file for the Key Encryption Key selection\n"
 "       -d <nn>         set debug level to <nn>\n"

@@ -373,9 +373,9 @@ static struct cmdstruct commands[] = {
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
      NT_("jobdefs=<job-defaults> | job=<job-name> | pool=<pool-name> | fileset=<fileset-name> |\n"
-         "\tschedule=<schedule-name> | client=<client-name> | message=<message-resource-name> |\n"
-         "\tprofile=<profile-name> | jobdefs | jobs | pools | filesets | schedules | clients |\n"
-         "\tmessages | profiles | consoles | disabled | all"), true, true },
+         "schedule=<schedule-name> | client=<client-name> | message=<message-resource-name> |\n"
+         "profile=<profile-name> | jobdefs | jobs | pools | filesets | schedules | clients |\n"
+         "messages | profiles | consoles | disabled [ clients | jobs | schedules ] | all [verbose]"), true, true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false, true },
    { NT_("time"), time_cmd, _("Print current time"),

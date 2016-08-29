@@ -24,7 +24,7 @@ Device {
 
     # arbitrary string that descripes the the storage media.
     # Bareos uses this to determine, which device can be handle what media.
-    MediaType = lto
+    MediaType = LTO
 
     # enable "Check Labels" if tapes with ANSI/IBM labels
     # should be preserved

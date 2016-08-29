@@ -3009,7 +3009,7 @@ PROG_COPYRIGHT
 "\nVersion: %s (%s)\n\n"
 "Usage: btape <options> <device_name>\n"
 "       -b <file>     specify bootstrap file\n"
-"       -c <file>     set Storage configuration file to file\n"
+"       -c <path>     specify Storage configuration file or directory\n"
 "       -D <director> specify a director name specified in the Storage\n"
 "                     configuration file for the Key Encryption Key selection\n"
 "       -d <nn>       set debug level to <nn>\n"

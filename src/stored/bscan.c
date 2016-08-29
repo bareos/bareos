@@ -104,7 +104,7 @@ PROG_COPYRIGHT
 "Usage: bscan [ options ] <device-name>\n"
 "       -B <drivername>   specify the database driver name (default NULL) <postgresql|mysql|sqlite3>\n"
 "       -b <bootstrap>    specify a bootstrap file\n"
-"       -c <file>         specify storage daemon configuration file\n"
+"       -c <path>         specify a Storage configuration file or directory\n"
 "       -d <nnn>          set debug level to <nnn>\n"
 "       -dt               print timestamp in debug output\n"
 "       -m                update media info in database\n"

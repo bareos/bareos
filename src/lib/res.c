@@ -1305,17 +1305,19 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    return true;
 }
 
-static void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item)
+void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited)
 {
-   int i;
-
-   for (i = 0; i < level; i++) {
+   for (int i = 0; i < level; i++) {
+      pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
+   }
+   if (inherited) {
+      pm_strcat(cfg_str, "#");
       pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
    }
    pm_strcat(cfg_str, config_item);
 }
 
-static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
+static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str, bool inherited)
 {
    POOL_MEM temp;
    POOL_MEM volspec;   /* vol specification string*/
@@ -1358,10 +1360,10 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 
    Mmsg(temp, "%s = %s\n", item->name, volspec.c_str());
-   indent_config_item(cfg_str, 1, temp.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 }
 
-static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
+static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str, bool inherited)
 {
    POOL_MEM temp;
    POOL_MEM timespec;
@@ -1411,10 +1413,10 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 
    Mmsg(temp, "%s = %s\n", item->name, timespec.c_str());
-   indent_config_item(cfg_str, 1, temp.c_str());
+   indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 }
 
-bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
+bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
 {
    POOL_MEM cfg_str;    /* configuration as string  */
    POOL_MEM temp;
@@ -1496,13 +1498,112 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
    return true;
 }
 
-bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
+bool has_default_value(RES_ITEM *item)
+{
+   bool is_default = false;
+
+   if (item->flags & CFG_ITEM_DEFAULT) {
+            /*
+             * Check for default values.
+             */
+            switch (item->type) {
+            case CFG_TYPE_STR:
+            case CFG_TYPE_DIR:
+            case CFG_TYPE_NAME:
+            case CFG_TYPE_STRNAME:
+               is_default = bstrcmp(*(item->value), item->default_value);
+               break;
+            case CFG_TYPE_INT16:
+               is_default = (*(item->i16value) == (int16_t)str_to_int32(item->default_value));
+               break;
+            case CFG_TYPE_PINT16:
+               is_default = (*(item->ui16value) == (uint16_t)str_to_int32(item->default_value));
+               break;
+            case CFG_TYPE_INT32:
+               is_default = (*(item->i32value) == str_to_int32(item->default_value));
+               break;
+            case CFG_TYPE_PINT32:
+               is_default = (*(item->ui32value) == (uint32_t)str_to_int32(item->default_value));
+               break;
+            case CFG_TYPE_INT64:
+               is_default = (*(item->i64value) == str_to_int64(item->default_value));
+               break;
+            case CFG_TYPE_SPEED:
+               is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+               break;
+            case CFG_TYPE_SIZE64:
+               is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+               break;
+            case CFG_TYPE_SIZE32:
+               is_default = (*(item->ui32value) != (uint32_t)str_to_int32(item->default_value));
+               break;
+            case CFG_TYPE_TIME:
+               is_default = (*(item->ui64value) == (uint64_t)str_to_int64(item->default_value));
+               break;
+            case CFG_TYPE_BOOL: {
+               bool default_value = bstrcasecmp(item->default_value, "true") ||
+                                    bstrcasecmp(item->default_value, "yes");
+
+               is_default = (*item->boolvalue == default_value);
+               break;
+            }
+            default:
+               break;
+            }
+   } else {
+            switch (item->type) {
+            case CFG_TYPE_STR:
+            case CFG_TYPE_DIR:
+            case CFG_TYPE_NAME:
+            case CFG_TYPE_STRNAME:
+               is_default = (*(item->value) == NULL);
+               break;
+            case CFG_TYPE_INT16:
+               is_default = (*(item->i16value) == 0);
+               break;
+            case CFG_TYPE_PINT16:
+               is_default = (*(item->ui16value) == 0);
+               break;
+            case CFG_TYPE_INT32:
+               is_default = (*(item->i32value) == 0);
+               break;
+            case CFG_TYPE_PINT32:
+               is_default = (*(item->ui32value) == 0);
+               break;
+            case CFG_TYPE_INT64:
+               is_default = (*(item->i64value) == 0);
+               break;
+            case CFG_TYPE_SPEED:
+               is_default = (*(item->ui64value) == 0);
+               break;
+            case CFG_TYPE_SIZE64:
+               is_default = (*(item->ui64value) == 0);
+               break;
+            case CFG_TYPE_SIZE32:
+               is_default = (*(item->ui32value) == 0);
+               break;
+            case CFG_TYPE_TIME:
+               is_default = (*(item->ui64value) == 0);
+               break;
+            case CFG_TYPE_BOOL:
+               is_default = (*item->boolvalue == false);
+               break;
+            default:
+               break;
+            }
+   }
+
+   return is_default;
+}
+
+bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
 {
    POOL_MEM cfg_str;
    POOL_MEM temp;
    RES_ITEM *items;
    int i = 0;
    int rindex;
+   bool inherited = false;
 
    /*
     * If entry is not used, then there is nothing to print.
@@ -1529,6 +1630,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
 
    for (i = 0; items[i].name; i++) {
       bool print_item = false;
+      inherited = bit_is_set(i, this->hdr.inherit_content);
 
       /*
        * If this is an alias for another config keyword suppress it.
@@ -1537,119 +1639,31 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          continue;
       }
 
+      if ((!verbose) && inherited) {
+         /*
+          * If not in verbose mode, skip inherited directives.
+          */
+         continue;
+      }
+
       if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
          /*
           * Always print required items or if my_config->m_omit_defaults is false
           */
          print_item = true;
-      } else if (items[i].flags & CFG_ITEM_DEFAULT) {
-         /*
-          * See if the item has inherited content from somewhere.
-          * If that is true there is no need to check the whole default setting.
-          */
-         if (!bit_is_set(i, this->hdr.inherit_content)) {
-            /*
-             * Check for default values.
-             */
-            switch (items[i].type) {
-            case CFG_TYPE_STR:
-            case CFG_TYPE_DIR:
-            case CFG_TYPE_NAME:
-            case CFG_TYPE_STRNAME:
-               print_item = !bstrcmp(*(items[i].value), items[i].default_value);
-               break;
-            case CFG_TYPE_INT16:
-               print_item = (*(items[i].i16value) != (int16_t)str_to_int32(items[i].default_value));
-               break;
-            case CFG_TYPE_PINT16:
-               print_item = (*(items[i].ui16value) != (uint16_t)str_to_int32(items[i].default_value));
-               break;
-            case CFG_TYPE_INT32:
-               print_item = (*(items[i].i32value) != str_to_int32(items[i].default_value));
-               break;
-            case CFG_TYPE_PINT32:
-               print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
-               break;
-            case CFG_TYPE_INT64:
-               print_item = (*(items[i].i64value) != str_to_int64(items[i].default_value));
-               break;
-            case CFG_TYPE_SPEED:
-               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-               break;
-            case CFG_TYPE_SIZE64:
-               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-               break;
-            case CFG_TYPE_SIZE32:
-               print_item = (*(items[i].ui32value) != (uint32_t)str_to_int32(items[i].default_value));
-               break;
-            case CFG_TYPE_TIME:
-               print_item = (*(items[i].ui64value) != (uint64_t)str_to_int64(items[i].default_value));
-               break;
-            case CFG_TYPE_BOOL: {
-               bool default_value = bstrcasecmp(items[i].default_value, "true") ||
-                                    bstrcasecmp(items[i].default_value, "yes");
-
-               print_item = (*items[i].boolvalue != default_value);
-               break;
-            }
-            default:
-               break;
-            }
-         }
-      } else {
-         /*
-          * See if the item has inherited content from somewhere.
-          * If that is true there is no need to check the whole default setting.
-          */
-         if (!bit_is_set(i, this->hdr.inherit_content)) {
-            switch (items[i].type) {
-            case CFG_TYPE_STR:
-            case CFG_TYPE_DIR:
-            case CFG_TYPE_NAME:
-            case CFG_TYPE_STRNAME:
-               print_item = *(items[i].value) != NULL;
-               break;
-            case CFG_TYPE_INT16:
-               print_item = (*(items[i].i16value) > 0);
-               break;
-            case CFG_TYPE_PINT16:
-               print_item = (*(items[i].ui16value) > 0);
-               break;
-            case CFG_TYPE_INT32:
-               print_item = (*(items[i].i32value) > 0);
-               break;
-            case CFG_TYPE_PINT32:
-               print_item = (*(items[i].ui32value) > 0);
-               break;
-            case CFG_TYPE_INT64:
-               print_item = (*(items[i].i64value) > 0);
-               break;
-            case CFG_TYPE_SPEED:
-               print_item = (*(items[i].ui64value) > 0);
-               break;
-            case CFG_TYPE_SIZE64:
-               print_item = (*(items[i].ui64value) > 0);
-               break;
-            case CFG_TYPE_SIZE32:
-               print_item = (*(items[i].ui32value) > 0);
-               break;
-            case CFG_TYPE_TIME:
-               print_item = (*(items[i].ui64value) > 0);
-               break;
-            case CFG_TYPE_BOOL:
-               print_item = (*items[i].boolvalue != false);
-               break;
-            default:
-               break;
-            }
-         }
       }
 
-      /*
-       * See if the item has inherited content from somewhere.
-       */
-      if (bit_is_set(i, this->hdr.inherit_content)) {
-         continue;
+      if (!has_default_value(&items[i])) {
+            print_item = true;
+      } else {
+         if ((items[i].flags & CFG_ITEM_DEFAULT) && verbose) {
+            /*
+             * If value has a expliciet default value and verbose mode is on,
+             * display directive as inherited.
+             */
+            print_item = true;
+            inherited = true;
+         }
       }
 
       switch (items[i].type) {
@@ -1660,7 +1674,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          if (print_item && *(items[i].value) != NULL) {
             Dmsg2(200, "%s = \"%s\"\n", items[i].name, *(items[i].value));
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, *(items[i].value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_MD5PASSWORD:
@@ -1688,7 +1702,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                      break;
                   }
                }
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
             }
          }
          break;
@@ -1705,7 +1719,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                }
 
                Mmsg(temp, "%s = \"%s\"\n", items[i].name, tapelabels[j].name);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
                break;
             }
          }
@@ -1713,48 +1727,48 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
       case CFG_TYPE_INT16:
          if (print_item) {
             Mmsg(temp, "%s = %hd\n", items[i].name, *(items[i].i16value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_PINT16:
          if (print_item) {
             Mmsg(temp, "%s = %hu\n", items[i].name, *(items[i].ui16value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_INT32:
          if (print_item) {
             Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i32value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_PINT32:
          if (print_item) {
             Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui32value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_INT64:
          if (print_item) {
             Mmsg(temp, "%s = %d\n", items[i].name, *(items[i].i64value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_SPEED:
          if (print_item) {
             Mmsg(temp, "%s = %u\n", items[i].name, *(items[i].ui64value));
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_SIZE64:
       case CFG_TYPE_SIZE32:
          if (print_item) {
-            print_config_size(&items[i], cfg_str);
+            print_config_size(&items[i], cfg_str, inherited);
          }
          break;
       case CFG_TYPE_TIME:
          if (print_item) {
-            print_config_time(&items[i], cfg_str);
+            print_config_time(&items[i], cfg_str, inherited);
          }
          break;
       case CFG_TYPE_BOOL:
@@ -1764,7 +1778,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
             } else {
                Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
             }
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       case CFG_TYPE_ALIST_STR:
@@ -1788,7 +1802,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
                   }
                }
                Mmsg(temp, "%s = \"%s\"\n", items[i].name, value);
-               indent_config_item(cfg_str, 1, temp.c_str());
+               indent_config_item(cfg_str, 1, temp.c_str(), inherited);
             }
          }
          break;
@@ -1805,7 +1819,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          list = *(items[i].alistvalue);
          if (list != NULL) {
             Mmsg(temp, "%s = ", items[i].name);
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 
             pm_strcpy(res_names, "");
             foreach_alist(res, list) {
@@ -1829,7 +1843,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          res = *(items[i].resvalue);
          if (res != NULL && res->name != NULL) {
             Mmsg(temp, "%s = \"%s\"\n", items[i].name, res->name);
-            indent_config_item(cfg_str, 1, temp.c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
       }
@@ -1839,7 +1853,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          } else {
             Mmsg(temp, "%s = %s\n", items[i].name, NT_("no"));
          }
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          break;
       case CFG_TYPE_MSGS:
          /*
@@ -1851,7 +1865,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
          IPADDR *adr;
 
          Mmsg(temp, "%s = {\n", items[i].name);
-         indent_config_item(cfg_str, 1, temp.c_str());
+         indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          foreach_dlist(adr, addrs) {
             char tmp[1024];
 
@@ -1878,7 +1892,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data)
           * This is a non-generic type call back to the daemon to get things printed.
           */
          if (my_config->m_print_res) {
-            my_config->m_print_res(items, i, cfg_str, hide_sensitive_data);
+            my_config->m_print_res(items, i, cfg_str, hide_sensitive_data, inherited);
          }
          break;
       }

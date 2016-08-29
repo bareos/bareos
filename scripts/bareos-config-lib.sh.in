@@ -15,7 +15,10 @@ STORAGE_DAEMON_USER="@sd_user@"
 STORAGE_DAEMON_GROUP="@sd_group@"
 DIRECTOR_DAEMON_USER="@dir_user@"
 DIRECTOR_DAEMON_GROUP="@dir_group@"
+DAEMON_USER="$DIRECTOR_DAEMON_USER"
+DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 
+DB_NAME="@DB_NAME@"
 DB_VERSION="@BDB_VERSION@"
 SQL_DDL_DIR="@scriptdir@/ddl"
 SQLITE_BINDIR="@SQLITE_BINDIR@"
@@ -105,6 +108,16 @@ get_user_dir()
 get_group_dir()
 {
     echo "${DIRECTOR_DAEMON_GROUP}"
+}
+
+get_bareos_user()
+{
+   echo "${DAEMON_USER}"
+}
+
+get_bareos_dir()
+{
+   echo "${DAEMON_GROUP}"
 }
 
 get_working_dir()
@@ -338,15 +351,37 @@ has_config()
 
 deploy_config()
 {
+    #
+    # Copy configuration from SOURCE to DEST and apply settings.
+    # Only copies new files. It does not overwrite existing files.
+    #
+    # Returns:
+    #   0: if new config files have been copied
+    #   1: otherwise (on error or if no new config files are available)
+    #
+
     SOURCE=${1:-}
     DEST=${2:-}
+
+    local RC=1
 
     [ -d "$SOURCE" ] || return 1
     [ -d "$DEST" ] || return 1
 
-    # copy all files, but do not overwrite existing file.
-    cp --recursive --no-clobber "$SOURCE/." "$DEST/."
-    true
+    #
+    # Copy all files, but do not overwrite existing file.
+    # Use verbose to detect, when new files have been copied.
+    #
+    OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
+    if [ "$OUT" ]; then
+      initialize_local_hostname
+      initialize_passwords
+      chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
+      chmod -R 750 "$DEST"
+      RC=0
+    fi
+
+    return $RC
 }
 
 get_config_param()
@@ -824,7 +859,7 @@ apply_dbconfig_settings()
             #   as ${dbc_basepath}/${dbc_dbname}.db
             # Therefore a link is created.
             if [ -r "${dbc_basepath}/${dbc_dbname}" ]; then
-                BAREOS_SQLITE_DB="`get_working_dir`/`get_database_name`.db"
+                BAREOS_SQLITE_DB="`get_working_dir`/`get_database_name $DB_NAME`.db"
                 if [ ! -f $BAREOS_SQLITE_DB ]; then
                     ln -s "${dbc_basepath}/${dbc_dbname}" "$BAREOS_SQLITE_DB"
                     ls -a `get_working_dir`/bareos* || true
@@ -881,10 +916,10 @@ initialize_local_hostname()
     # Replace all XXX_REPLACE_WITH_LOCAL_HOSTNAME by the local hostname.
     #
     hname=`get_local_hostname`
-    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-dir" "${hname}-dir"
+    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-dir" "${hname}-dir"
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-fd" "${hname}-fd"
-    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
-    replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
+    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-sd" "${hname}-sd"
+    #replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX-mon" "${hname}-mon"
     replace "XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" "${hname}"
 }
 

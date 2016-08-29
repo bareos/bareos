@@ -1,4 +1,5 @@
 @backenddir@/libbareossd-rados*.so
 @backenddir@/libbareossd-cephfs*.so
+@confdir@/bareos-dir.d/storage/Rados.conf.example
 @confdir@/bareos-sd.d/device/RadosStorage.conf.example
 

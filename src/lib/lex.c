@@ -163,13 +163,14 @@ void lex_set_default_warning_handler(LEX *lf)
 
 /*
  * Set err_type used in error_handler
- * return the old value
  */
-int lex_set_error_handler_error_type(LEX *lf, int err_type)
+void lex_set_error_handler_error_type(LEX *lf, int err_type)
 {
-   int old = lf->err_type;
-   lf->err_type = err_type;
-   return old;
+   LEX *lex = lf;
+   while (lex) {
+      lex->err_type = err_type;
+      lex = lex->next;
+   }
 }
 
 /*
@@ -255,7 +256,7 @@ static inline LEX *lex_add(LEX *lf,
       lf->options = nf->options;      /* preserve user options */
       /*
        * preserve err_type to prevent bareos exiting on 'reload'
-       * if config is invalid. Fixes bug #877
+       * if config is invalid.
        */
       lf->err_type = nf->err_type;
    } else {

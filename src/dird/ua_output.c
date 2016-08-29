@@ -223,6 +223,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
    int recurse;
    char *res_name;
    RES *res = NULL;
+   bool verbose = false;
    bool hide_sensitive_data;
 
    Dmsg1(20, "show: %s\n", ua->UA_sock->msg);
@@ -233,8 +234,19 @@ bool show_cmd(UAContext *ua, const char *cmd)
     */
    hide_sensitive_data = !acl_access_ok(ua, Command_ACL, "configure", false);
 
+   if (find_arg(ua, NT_("verbose")) > 0) {
+      verbose = true;
+   }
+
    LockRes();
    for (i = 1; i < ua->argc; i++) {
+      /*
+       * skip verbose keyword, already handled earlier.
+       */
+      if (bstrcasecmp(ua->argk[i], NT_("verbose"))) {
+         continue;
+      }
+
       if (bstrcasecmp(ua->argk[i], _("disabled"))) {
          if (((i + 1) < ua->argc) &&
              bstrcasecmp(ua->argk[i + 1], NT_("jobs"))) {
@@ -303,7 +315,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
             default:
                if (my_config->m_res_head[j - my_config->m_r_first]) {
                   dump_resource(j, my_config->m_res_head[j - my_config->m_r_first],
-                                bsendmsg, ua, hide_sensitive_data);
+                                bsendmsg, ua, hide_sensitive_data, verbose);
                }
                break;
             }
@@ -322,7 +334,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
          ua->error_msg(_("Resource %s not found\n"), res_name);
          goto bail_out;
       default:
-         dump_resource(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data);
+         dump_resource(recurse ? type : -type, res, bsendmsg, ua, hide_sensitive_data, verbose);
          break;
       }
    }
