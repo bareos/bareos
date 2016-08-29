@@ -18,6 +18,20 @@ More about xtrabackup: https://www.percona.com/software/mysql-database/percona-x
 
 You will also need the package *bareos-filedaemon-python-plugin* installed on your client.
 
+## Compatibility
+
+There are different versions of _xtrabackup_ available. Older versions required an extra binary called _innobackupex_, especially when dealing with myISAM tables. In newer versions, _innobackupex_ is just a sysmbolic link to _xtrabackup_.
+
+We've tested some versions of xtrabackup together with the plugin:
+
+| xtrabackup version | Status | Remarks |
+| -----------------: |:------:| -------:|
+|2.0.8| - | InnoDB only seems to work |
+|2.3.5| + | |
+|2.4.4| + | |
+
+We've used the official Percona rpms on Centos 6 for testing.
+
 ## Installation ##
 
 1. Make sure you have met the prerequisites.
