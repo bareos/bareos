@@ -61,6 +61,8 @@ BUILD_BACKENDS = @BUILD_SD_BACKENDS@
 
 CONF_EXTRA_DIR = config.d
 
+STORED_RESTYPES = autochanger device director ndmp messages storage
+
 .SUFFIXES:	.c .o .lo
 .PHONY:
 .DONTCARE:
@@ -182,7 +184,7 @@ install-config:
 		DESTCONFDIR=${DESTDIR}${confdir}/$$COMPONENT/; \
 		echo "installing configuration resource files to $$DESTCONFDIR"; \
 		$(MKDIR) $$DESTCONFDIR; \
-		for RESTYPE in autochanger device director ndmp messages storage; do \
+		for RESTYPE in $(STORED_RESTYPES); do \
 			for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
 				if test -e "$$f"; then \
 					RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
