@@ -235,11 +235,17 @@ static inline bool trigger_plugin_event(JCR *jcr, bEventType eventType,
 
    if (!is_event_enabled(ctx, eventType)) {
       Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
+      if (rc) {
+         *rc = bRC_OK;
+      }
       goto bail_out;
    }
 
    if (is_plugin_disabled(ctx)) {
-      return bRC_OK;
+      if (rc) {
+         *rc = bRC_OK;
+      }
+      goto bail_out;
    }
 
    if (eventType == bEventEndRestoreJob) {

@@ -392,6 +392,7 @@ public:
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    int32_t MaxConcurrentCopies;       /* Limit number of concurrent jobs one Copy Job spawns */
    int32_t AlwaysIncrementalKeepNumber;/* Number of incrementals that are always left and not consolidated */
+   int32_t MaxFullConsolidations;     /* Number of consolidate jobs to be started that will include a full */
 
    MSGSRES *messages;                 /* How and where to send messages */
    SCHEDRES *schedule;                /* When -- Automatic schedule */

@@ -71,18 +71,23 @@ static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
  */
 bool do_consolidate(JCR *jcr)
 {
+   char *p;
    JOBRES *job;
    JOBRES *tmpjob;
    bool retval = true;
-   time_t now = time(NULL);
-
    char *jobids = NULL;
-   char *p;
+   time_t now = time(NULL);
+   int32_t fullconsolidations_started = 0;
+   int32_t max_full_consolidations = 0;
 
    tmpjob = jcr->res.job; /* Memorize job */
 
-   jcr->jr.JobId = jcr->JobId;
+   /*
+    * Get Value for MaxFullConsolidations from Consolidation job
+    */
+   max_full_consolidations = jcr->res.job->MaxFullConsolidations;
 
+   jcr->jr.JobId = jcr->JobId;
    jcr->fname = (char *)get_pool_memory(PM_FNAME);
 
    /*
@@ -108,6 +113,8 @@ bool do_consolidate(JCR *jcr)
          jcr->res.fileset = job->fileset;
          jcr->res.client = job->client;
          jcr->jr.JobLevel = L_INCREMENTAL;
+         jcr->jr.limit = 0;
+         jcr->jr.StartTime = 0;
 
          if (!get_or_create_fileset_record(jcr)) {
             Jmsg(jcr, M_FATAL, 0, _("JobId=%d no FileSet\n"), (int)jcr->JobId);
@@ -134,14 +141,12 @@ bool do_consolidate(JCR *jcr)
           */
          if (job->AlwaysIncrementalJobRetention) {
             char sdt[50];
-            time_t starttime = now - job->AlwaysIncrementalJobRetention;
 
-            bstrftimes(sdt, sizeof(sdt), starttime);
-            jcr->jr.StartTime = starttime;
+            jcr->jr.StartTime = now - job->AlwaysIncrementalJobRetention;
+            bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
             Jmsg(jcr, M_INFO, 0, _("%s: considering jobs older than %s for consolidation.\n"), job->name(), sdt);
             Dmsg4(10, _("%s: considering jobs with ClientId %d and FilesetId %d older than %s for consolidation.\n"),
-                                       job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
-
+                  job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
          }
 
          db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
@@ -226,23 +231,32 @@ bool do_consolidate(JCR *jcr)
             /*
              * Check if job is older than AlwaysIncrementalMaxFullAge
              */
-            Jmsg(jcr, M_INFO, 0,  _("check full age: full is %s, allowed is %s\n"),sdt_starttime ,sdt_allowed );
-            if (starttime > oldest_allowed_starttime) {
-               Jmsg(jcr, M_INFO, 0, _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping first jobid %s\n"), jobids);
+            Jmsg(jcr, M_INFO, 0,  _("check full age: full is %s, allowed is %s\n"), sdt_starttime, sdt_allowed);
 
+            if (starttime > oldest_allowed_starttime) {
+               Jmsg(jcr, M_INFO, 0, _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping first jobid %s because of age\n"), jobids);
                if (p) {
-                  *p++ = ','; /* Restore ,*/
+                  *p++ = ','; /* Restore , and point to rest of list */
                }
+
+            } else if (max_full_consolidations &&
+                       fullconsolidations_started >= max_full_consolidations) {
+               Jmsg(jcr, M_INFO, 0, _("%d AlwaysIncrementalFullConsolidations reached -> skipping first jobid %s independent of age\n"),
+                       max_full_consolidations, jobids);
+               if (p) {
+                  *p++ = ','; /* Restore , and point to rest of list */
+               }
+
             } else {
                Jmsg(jcr, M_INFO, 0, _("Full is older than AlwaysIncrementalMaxFullAge -> also consolidating Full jobid %s\n"), jobids);
                if (p) {
                   *p = ',';   /* Restore ,*/
                   p = jobids; /* Point to full list */
                }
+               fullconsolidations_started++;
             }
             Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
          }
-
 
          /*
           * Set the virtualfull jobids to be consolidated
@@ -277,10 +291,10 @@ bail_out:
  */
 void consolidate_cleanup(JCR *jcr, int TermCode)
 {
-   char sdt[50], edt[50], schedt[50];
+   int msg_type;
    char term_code[100];
    const char *term_msg;
-   int msg_type;
+   char sdt[50], edt[50], schedt[50];
 
    Dmsg0(dbglvl, "Enter backup_cleanup()\n");
 

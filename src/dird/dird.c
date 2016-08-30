@@ -833,6 +833,27 @@ static bool check_resources()
    }
 
    /*
+    * Loop over Jobs
+    */
+   foreach_res(job, R_JOB) {
+      if (job->MaxFullConsolidations && job->JobType != JT_CONSOLIDATE) {
+         Jmsg(NULL, M_FATAL, 0, _("MaxFullConsolidations configured in job %s which is not of job type \"consolidate\" in file %s\n"), job->name(), configfile);
+         OK = false;
+         goto bail_out;
+      }
+
+      if (job->JobType != JT_BACKUP &&
+          (job->AlwaysIncremental ||
+           job->AlwaysIncrementalJobRetention ||
+           job->AlwaysIncrementalKeepNumber ||
+           job->AlwaysIncrementalMaxFullAge)) {
+         Jmsg(NULL, M_FATAL, 0, _("AlwaysIncremental configured in job %s which is not of job type \"backup\" in file %s\n"), job->name(), configfile);
+         OK = false;
+         goto bail_out;
+      }
+   }
+
+   /*
     * Loop over Consoles
     */
    CONRES *cons;
