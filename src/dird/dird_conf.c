@@ -429,6 +429,8 @@ RES_ITEM job_items[] = {
      "Guarantee that at least the specified number of Backup Jobs will persist, even if they are older than \"Always Incremental Job Retention\"."},
    { "AlwaysIncrementalMaxFullAge", CFG_TYPE_TIME, ITEM(res_job.AlwaysIncrementalMaxFullAge), 0, 0, NULL, "16.2.4-",
      "If \"AlwaysIncrementalMaxFullAge\" is set, during consolidations only incremental backups will be considered while the Full Backup remains to reduce the amount of data being consolidated. Only if the Full Backup is older than \"AlwaysIncrementalMaxFullAge\", the Full Backup will be part of the consolidation to avoid the Full Backup becoming too old ." },
+   { "MaxFullConsolidations", CFG_TYPE_PINT32, ITEM(res_job.MaxFullConsolidations), 0, CFG_ITEM_DEFAULT, "0", "16.2.4-",
+     "If \"AlwaysIncrementalMaxFullAge\" is configured, do not run more than \"MaxFullConsolidations\" consolidation jobs that include the Full backup."},
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
