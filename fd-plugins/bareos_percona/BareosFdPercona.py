@@ -238,9 +238,9 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         if IOP.func == bIOPS['IO_OPEN']:
             DebugMessage(context, 100, "plugin_io called with IO_OPEN\n")
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
-                self.stream = Popen(self.restorecommand, shell=True, stdin=PIPE, stderr=PIPE)
+                self.stream = Popen(self.restorecommand, shell=True, stdin=PIPE, stderr=None)
             else:
-                self.stream = Popen(self.dumpcommand, shell=True, stdout=PIPE, stderr=PIPE)
+                self.stream = Popen(self.dumpcommand, shell=True, stdout=PIPE, stderr=None)
             return bRCs['bRC_OK']
 
         elif IOP.func == bIOPS['IO_READ']:
