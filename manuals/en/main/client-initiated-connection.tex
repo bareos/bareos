@@ -12,6 +12,8 @@ However, there are setups where this can cause problems, as this means that:
 
 To circumvent these problems, since Bareos \sinceVersion{Dir}{Client Initiated Connection}{16.2.2} it is possible to let the \bareosFd initiate the network connection to the \bareosDir.
 
+Which address the client connects to reach the \bareosDir is configured in the \linkResourceDirective{Fd}{Director}{Address} directive.
+
 To additional allow this connection direction use:
 \begin{itemize}
   \item \linkResourceDirective{Dir}{Client}{Connection From Client To Director} = yes
