@@ -13,8 +13,8 @@
 #   If name contains prevista, build for windows < vista.
 %define flavors postvista postvista-debug
 
-%define SIGNCERT ia.p12
-%define SIGNPWFILE signpassword
+%define SIGNCERT %{_builddir}/ia.p12
+%define SIGNPWFILE %{_builddir}/signpassword
 
 
 #!BuildIgnore: post-build-checks
@@ -36,6 +36,7 @@ BuildRequires:  procps
 BuildRequires:  sed
 BuildRequires:  vim
 
+BuildRequires:  unzip
 # Bareos sources
 BuildRequires:  mingw-debugsrc-devel = %{version}
 
@@ -104,6 +105,13 @@ Source9:         databasedialog.ini
 
 %define NSISDLLS KillProcWMI.dll AccessControl.dll LogEx.dll
 
+%define NSSM_VERSION 2.24
+%define PHP_VERSION 5.6.25
+Source11:        http://windows.php.net/downloads/releases/php-%PHP_VERSION-Win32-VC11-x86.zip
+Source12:        https://nssm.cc/release/nssm-%NSSM_VERSION.zip
+Source13:        https://github.com/bareos/bareos-webui/archive/master.tar.gz
+
+
 %description
 Bareos Windows NSI installer packages for the different variants.
 
@@ -132,11 +140,56 @@ for flavor in %{flavors}; do
 
    mkdir -p $RPM_BUILD_ROOT/$flavor/nsisplugins
    for dll in %NSISDLLS; do
-      cp $dll $RPM_BUILD_ROOT/$flavor/nsisplugins
+      cp %{_builddir}/$dll $RPM_BUILD_ROOT/$flavor/nsisplugins
    done
 
    for BITS in 32 64; do
       mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
+      pushd    $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      echo "The installer may contain the following software:" >> %_sourcedir/LICENSE
+      echo "" >> %_sourcedir/LICENSE
+
+      # nssm
+      unzip %SOURCE12;
+      cp nssm-%NSSM_VERSION/win${BITS}/nssm.exe $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      echo "" >> %_sourcedir/LICENSE
+      echo "NSSM - the Non-Sucking Service Manager: https://nssm.cc/" >> %_sourcedir/LICENSE
+      echo "##### LICENSE FILE OF NSSM START #####" >> %_sourcedir/LICENSE
+      cat nssm-%NSSM_VERSION/README.txt >> %_sourcedir/LICENSE
+      echo "##### LICENSE FILE OF NSSM END #####" >> %_sourcedir/LICENSE
+      echo "" >> %_sourcedir/LICENSE
+
+      rm -rvf nssm-%NSSM_VERSION
+
+      # bareos-webui
+      tar xzvf %SOURCE13
+      mv bareos-webui-* bareos-webui  # rename subdirectory  bareos-webui-Release-15.2.2 -> bareos-webui
+      pushd bareos-webui
+      cp install/directors.ini $RPM_BUILD_ROOT/$flavor/release${BITS}
+      cp install/*/*.conf $RPM_BUILD_ROOT/$flavor/release${BITS}
+      echo "" >> %_sourcedir/LICENSE
+      echo "##### LICENSE FILE OF BAREOS_WEBUI START #####" >> %_sourcedir/LICENSE
+      cat LICENSE >> %_sourcedir/LICENSE # append bareos-webui license file to LICENSE
+      echo "##### LICENSE FILE OF BAREOS_WEBUI END #####" >> %_sourcedir/LICENSE
+      echo "" >> %_sourcedir/LICENSE
+
+
+      # php has no subdir in zipfile
+      mkdir php;
+      pushd php;
+      unzip %SOURCE11
+      cp php.ini-production $RPM_BUILD_ROOT/$flavor/release${BITS}/php.ini
+      echo "" >> %_sourcedir/LICENSE
+      echo "PHP: http://php.net/" >> %_sourcedir/LICENSE
+      echo "##### LICENSE FILE OF PHP START #####" >> %_sourcedir/LICENSE
+      cat license.txt >> %_sourcedir/LICENSE
+      echo "##### LICENSE FILE OF PHP END #####" >> %_sourcedir/LICENSE
+      echo "" >> %_sourcedir/LICENSE
+
+      popd
+
 
       # copy the sql ddls over
       cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
