@@ -215,7 +215,7 @@ static void build_path_hierarchy(JCR *jcr, B_DB *mdb,
    bstrncpy(pathid, org_pathid, sizeof(pathid));
 
    /* Does the ppathid exist for this ? we use a memory cache...  In order to
-    * avoid the full loop, we consider that if a dir is allready in the
+    * avoid the full loop, we consider that if a dir is already in the
     * PathHierarchy table, then there is no need to calculate all the
     * hierarchy
     */
@@ -235,7 +235,7 @@ static void build_path_hierarchy(JCR *jcr, B_DB *mdb,
          if (sql_num_rows(mdb) > 0) {
             ppathid_cache.insert(pathid);
             /* This dir was in the db ...
-             * It means we can leave, the tree has allready been built for
+             * It means we can leave, the tree has already been built for
              * this dir
              */
             goto bail_out;
@@ -243,6 +243,12 @@ static void build_path_hierarchy(JCR *jcr, B_DB *mdb,
             /* search or create parent PathId in Path table */
             mdb->path = bvfs_parent_dir(path);
             mdb->pnl = strlen(mdb->path);
+
+            /* Don't add an empty path to the db */
+            if (!mdb->pnl) {
+               goto bail_out;
+            }
+
             if (!db_create_path_record(jcr, mdb, &parent)) {
                goto bail_out;
             }
@@ -262,7 +268,7 @@ static void build_path_hierarchy(JCR *jcr, B_DB *mdb,
          }
       } else {
          /* It's already in the cache.  We can leave, no time to waste here,
-          * all the parent dirs have allready been done
+          * all the parent dirs have already been done
           */
          goto bail_out;
       }
