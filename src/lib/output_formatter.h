@@ -51,6 +51,15 @@ typedef struct json_t json_t;
 #endif
 
 /*
+ * Filtering states.
+ */
+typedef enum of_filter_state {
+   OF_FILTER_STATE_SHOW,
+   OF_FILTER_STATE_SUPPRESS,
+   OF_FILTER_STATE_UNKNOWN
+} of_filter_state;
+
+/*
  * Filtering types.
  */
 typedef enum of_filter_type {
@@ -93,7 +102,7 @@ public:
     * Typedefs.
     */
    typedef bool (SEND_HANDLER)(void *ctx, const char *msg);
-   typedef bool (FILTER_HANDLER)(void *ctx, void *data, of_filter_tuple *tuple);
+   typedef of_filter_state (FILTER_HANDLER)(void *ctx, void *data, of_filter_tuple *tuple);
 
 private:
    /*

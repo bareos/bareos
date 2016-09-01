@@ -1548,11 +1548,11 @@ bool messages_cmd(UAContext *ua, const char *cmd)
 /*
  * Callback routine for "filtering" database listing.
  */
-bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
+of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
 {
-   bool retval = true;
    char **row = (char **)data;
    UAContext *ua = (UAContext *)ctx;
+   of_filter_state retval = OF_FILTER_STATE_SHOW;
 
    switch (tuple->type) {
    case OF_FILTER_LIMIT:
@@ -1562,27 +1562,33 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
          tuple->u.limit_filter.limit--;
       } else {
          Dmsg0(200, "filterit: limit filter reached don't display entry\n");
-         retval = false;
+         retval = OF_FILTER_STATE_SUPPRESS;
       }
       goto bail_out;
    case OF_FILTER_ACL:
-      if (row[tuple->u.acl_filter.column] &&
-          strlen(row[tuple->u.acl_filter.column]) &&
-          !ua->acl_access_ok(tuple->u.acl_filter.acltype,
-                             row[tuple->u.acl_filter.column], false)) {
-         Dmsg2(200, "filterit: Filter on acl_type %d value %s, suppress output\n",
-               tuple->u.acl_filter.acltype, row[tuple->u.acl_filter.column]);
-         retval = false;
+      if (!row[tuple->u.acl_filter.column] ||
+          strlen(row[tuple->u.acl_filter.column]) == 0) {
+         retval = OF_FILTER_STATE_UNKNOWN;
+      } else {
+         if (!ua->acl_access_ok(tuple->u.acl_filter.acltype,
+                                row[tuple->u.acl_filter.column], false)) {
+            Dmsg2(200, "filterit: Filter on acl_type %d value %s, suppress output\n",
+                  tuple->u.acl_filter.acltype, row[tuple->u.acl_filter.column]);
+            retval = OF_FILTER_STATE_SUPPRESS;
+         }
       }
       goto bail_out;
    case OF_FILTER_RESOURCE:
-      if (row[tuple->u.res_filter.column] &&
-          strlen(row[tuple->u.res_filter.column]) &&
-          !GetResWithName(tuple->u.res_filter.restype,
-                          row[tuple->u.res_filter.column], false)) {
-         Dmsg2(200, "filterit: Filter on resource_type %d value %s, suppress output\n",
-               tuple->u.res_filter.restype, row[tuple->u.res_filter.column]);
-         retval = false;
+      if (!row[tuple->u.res_filter.column] ||
+          strlen(row[tuple->u.res_filter.column]) == 0) {
+         retval = OF_FILTER_STATE_UNKNOWN;
+      } else {
+         if (!GetResWithName(tuple->u.res_filter.restype,
+                             row[tuple->u.res_filter.column], false)) {
+            Dmsg2(200, "filterit: Filter on resource_type %d value %s, suppress output\n",
+                  tuple->u.res_filter.restype, row[tuple->u.res_filter.column]);
+            retval = OF_FILTER_STATE_SUPPRESS;
+         }
       }
       goto bail_out;
    case OF_FILTER_ENABLED:
@@ -1591,6 +1597,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
 
       if (!row[tuple->u.res_filter.column] ||
           strlen(row[tuple->u.res_filter.column]) == 0) {
+         retval = OF_FILTER_STATE_UNKNOWN;
          goto bail_out;
       }
 
@@ -1606,7 +1613,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
          if (!client || client->enabled != enabled) {
             Dmsg2(200, "filterit: Filter on Client, %s is not %sabled\n",
                   row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
-            retval = false;
+            retval = OF_FILTER_STATE_SUPPRESS;
          }
          goto bail_out;
       }
@@ -1617,7 +1624,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
          if (!job || job->enabled != enabled) {
             Dmsg2(200, "filterit: Filter on Job, %s is not %sabled\n",
                   row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
-            retval = false;
+            retval = OF_FILTER_STATE_SUPPRESS;
          }
          goto bail_out;
       }
@@ -1628,7 +1635,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
          if (!store || store->enabled != enabled) {
             Dmsg2(200, "filterit: Filter on Storage, %s is not %sabled\n",
                   row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
-            retval = false;
+            retval = OF_FILTER_STATE_SUPPRESS;
          }
          goto bail_out;
       }
@@ -1639,7 +1646,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
          if (!schedule || schedule->enabled != enabled) {
             Dmsg2(200, "filterit: Filter on Schedule, %s is not %sabled\n",
                   row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
-            retval = false;
+            retval = OF_FILTER_STATE_SUPPRESS;
          }
          goto bail_out;
       }
@@ -1649,7 +1656,7 @@ bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
       break;
    }
    default:
-      retval = false;
+      retval = OF_FILTER_STATE_SUPPRESS;
    }
 
 bail_out:

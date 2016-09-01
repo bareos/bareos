@@ -349,7 +349,7 @@ void update_inchanger_for_export(UAContext *ua, STORERES *store, changer_vol_lis
 
 /* ua_output.c */
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
-bool filterit(void *ctx, void *data, of_filter_tuple *tuple);
+of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple);
 bool printit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool);
 RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);

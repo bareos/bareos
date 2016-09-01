@@ -514,7 +514,10 @@ bool OUTPUT_FORMATTER::has_acl_filters()
 
 bool OUTPUT_FORMATTER::filter_data(void *data)
 {
+   of_filter_state state;
    of_filter_tuple *tuple;
+   int acl_filter_show = 0,
+       acl_filter_unknown = 0;
 
    /*
     * See if a filtering function is registered.
@@ -522,10 +525,36 @@ bool OUTPUT_FORMATTER::filter_data(void *data)
     */
    if (filter_func && filters && !filters->empty()) {
       foreach_alist(tuple, filters) {
-         if (!filter_func(filter_ctx, data, tuple)) {
+         state = filter_func(filter_ctx, data, tuple);
+
+         Dmsg1(800, "filter_state %d\n", state);
+         switch (state) {
+         case OF_FILTER_STATE_SHOW:
+            if (tuple->type == OF_FILTER_ACL) {
+               acl_filter_show++;
+            }
+            break;
+         case OF_FILTER_STATE_SUPPRESS:
             return false;
+         case OF_FILTER_STATE_UNKNOWN:
+            if (tuple->type == OF_FILTER_ACL) {
+               acl_filter_unknown++;
+            }
+            break;
          }
       }
+   }
+
+   /*
+    * If we have multiple ACL filters and none gave an
+    * explicit show state we suppress the entry just to
+    * be sure we do not show to much information if we
+    * are not sure if we should show the item.
+    */
+   if (acl_filter_unknown > 0 && acl_filter_show == 0) {
+      Dmsg2(200, "tri-state filtering acl_filter_unknown %d, acl_filter_show %d\n",
+            acl_filter_unknown, acl_filter_show);
+      return false;
    }
 
    return true;
