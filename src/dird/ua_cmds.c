@@ -1038,6 +1038,8 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
       job->enabled = setting;
       ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting ? "en" : "dis");
    }
+
+   ua->warning_msg(_("%sabling is a temporary operation until the director reloads\n"), setting ? "En" : "Dis");
 }
 
 static bool enable_cmd(UAContext *ua, const char *cmd)
