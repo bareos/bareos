@@ -457,6 +457,82 @@ static bool bvfs_parse_arg(UAContext *ua,
 }
 
 /*
+ * This checks to see if the JobId given is allowed under the current
+ * ACLs e.g. comparing the JobName against the Job_ACL and the client
+ * against the Client_ACL.
+ */
+static inline bool bvfs_validate_jobid(UAContext *ua, const char *jobid, bool audit_event)
+{
+   JOB_DBR jr;
+   CLIENT_DBR cr;
+   bool retval = false;
+
+   memset(&jr, 0, sizeof(jr));
+   jr.JobId = str_to_int64(jobid);
+
+   if (db_get_job_record(ua->jcr, ua->db, &jr)) {
+      if (!acl_access_ok(ua, Job_ACL, jr.Name, audit_event)) {
+         goto bail_out;
+      }
+
+      if (jr.ClientId) {
+         cr.ClientId = jr.ClientId;
+         if (db_get_client_record(ua->jcr, ua->db, &cr)) {
+            if (!acl_access_ok(ua, Client_ACL, cr.Name, audit_event)) {
+               goto bail_out;
+            }
+         }
+      }
+
+      retval = true;
+   }
+
+bail_out:
+   return retval;
+}
+
+/*
+ * This returns in filtered_jobids the list of allowed jobids in the
+ * jobids variable under the current ACLs e.g. using bvfs_validate_jobid().
+ */
+static bool bvfs_validate_jobids(UAContext *ua, const char *jobids, POOL_MEM &filtered_jobids, bool audit_event)
+{
+   int cnt = 0;
+   char *cur_id, *bp;
+   POOL_MEM temp(PM_FNAME);
+
+   pm_strcpy(temp, jobids);
+   pm_strcpy(filtered_jobids, "");
+
+   cur_id = temp.c_str();
+   while (cur_id && strlen(cur_id)) {
+      bp = strchr(cur_id, ',');
+      if (bp) {
+         *bp++ = '\0';
+      }
+
+      /*
+       * See if this JobId is allowed under the current ACLs.
+       */
+      if (bvfs_validate_jobid(ua, cur_id, audit_event)) {
+         if (!cnt) {
+            pm_strcpy(filtered_jobids, cur_id);
+         } else {
+            pm_strcat(filtered_jobids, ",");
+            pm_strcat(filtered_jobids, cur_id);
+         }
+         cnt++;
+      } else {
+         Dmsg1(200, "Removing jobid from list, %s\n", cur_id);
+      }
+
+      cur_id = bp;
+   }
+
+   return (cnt > 0) ? true : false;
+}
+
+/*
  * .bvfs_cleanup path=b2XXXXX
  */
 static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
@@ -470,6 +546,7 @@ static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
       Bvfs fs(ua->jcr, ua->db);
       fs.drop_restore_list(ua->argv[i]);
    }
+
    return true;
 }
 
@@ -479,20 +556,26 @@ static bool dot_bvfs_cleanup(UAContext *ua, const char *cmd)
 static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
+   char *empty = (char *)"";
    int limit = 2000, offset = 0, i;
    char *path = NULL, *jobid = NULL, *username = NULL;
-   char *empty = (char *)"";
    char *fileid, *dirid, *hardlink;
-   fileid = dirid = hardlink = empty;
+   POOL_MEM filtered_jobids(PM_FNAME);
 
+   fileid = dirid = hardlink = empty;
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
    }
 
+   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+      ua->error_msg(_("Unauthorized command from this console.\n"));
+      return false;
+   }
+
    Bvfs fs(ua->jcr, ua->db);
    fs.set_username(username);
-   fs.set_jobids(jobid);
+   fs.set_jobids(filtered_jobids.c_str());
 
    if ((i = find_arg_with_value(ua, "fileid")) >= 0) {
       fileid = ua->argv[i];
@@ -509,6 +592,7 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
    } else {
       ua->error_msg("Can't create restore list\n");
    }
+
    return true;
 }
 
@@ -518,15 +602,21 @@ static bool dot_bvfs_restore(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 {
+   int i;
    DBId_t pathid = 0;
+   char *pattern = NULL;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL, *username = NULL;
-   char *pattern = NULL;
-   int i;
+   POOL_MEM filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
       return false;             /* not enough param */
+   }
+
+   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+      ua->error_msg(_("Unauthorized command from this console.\n"));
+      return false;
    }
 
    if ((i = find_arg_with_value(ua, "pattern")) >= 0) {
@@ -539,7 +629,7 @@ static bool dot_bvfs_lsfiles(UAContext *ua, const char *cmd)
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_username(username);
-   fs.set_jobids(jobid);
+   fs.set_jobids(filtered_jobids.c_str());
    fs.set_handler(bvfs_result_handler, ua);
    fs.set_limit(limit);
    if (pattern) {
@@ -570,10 +660,16 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
    DBId_t pathid = 0;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL, *username = NULL;
+   POOL_MEM filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &username, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
       return true;              /* not enough param */
+   }
+
+   if (!bvfs_validate_jobids(ua, jobid, filtered_jobids, true)) {
+      ua->error_msg(_("Unauthorized command from this console.\n"));
+      return false;
    }
 
    if (!ua->guid) {
@@ -582,7 +678,7 @@ static bool dot_bvfs_lsdirs(UAContext *ua, const char *cmd)
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_username(username);
-   fs.set_jobids(jobid);
+   fs.set_jobids(filtered_jobids.c_str());
    fs.set_limit(limit);
    fs.set_handler(bvfs_result_handler, ua);
 
@@ -622,6 +718,11 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
       return true;              /* not enough param */
    }
 
+   if (!acl_access_ok(ua, Client_ACL, client)) {
+      ua->error_msg(_("Unauthorized command from this console.\n"));
+      return false;
+   }
+
    if (!ua->guid) {
       ua->guid = new_guid_list();
    }
@@ -649,12 +750,13 @@ static bool dot_bvfs_versions(UAContext *ua, const char *cmd)
  */
 static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
 {
-   JOB_DBR jr;
-   db_list_ctx jobids, tempids;
    int pos;
+   JOB_DBR jr;
    char ed1[50];
-   POOL_MEM query;
    dbid_list ids;               /* Store all FileSetIds for this client */
+   POOL_MEM query;
+   db_list_ctx jobids, tempids;
+   POOL_MEM filtered_jobids(PM_FNAME);
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -682,6 +784,8 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
    if (jr.JobLevel == L_BASE) {
       jobids.add(edit_int64(jr.JobId, ed1));
    } else {
+      FILESET_DBR fs;
+
       /*
        * If we have the "all" option, we do a search on all defined fileset for this client
        */
@@ -700,7 +804,27 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
        * Foreach different FileSet, we build a restore jobid list
        */
       for (int i = 0; i < ids.num_ids; i++) {
-         jr.FileSetId = ids.DBId[i];
+         memset(&fs, 0, sizeof(fs));
+
+         /*
+          * Lookup the FileSet.
+          */
+         fs.FileSetId = ids.DBId[i];
+         if (!db_get_fileset_record(ua->jcr, ua->db, &fs)) {
+            continue;
+         }
+
+         /*
+          * Make sure the FileSet is allowed under the current ACLs.
+          */
+         if (!acl_access_ok(ua, FileSet_ACL, fs.FileSet, false)) {
+            continue;
+         }
+
+         /*
+          * Lookup the actual JobIds for the given fileset.
+          */
+         jr.FileSetId = fs.FileSetId;
          if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
             return true;
          }
@@ -708,12 +832,13 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
       }
    }
 
+   bvfs_validate_jobids(ua, jobids.list, filtered_jobids, false);
    switch (ua->api) {
    case API_MODE_JSON: {
       char *cur_id, *bp;
 
       ua->send->array_start("jobids");
-      cur_id = jobids.list;
+      cur_id = filtered_jobids.c_str();
       while (cur_id && strlen(cur_id)) {
          bp = strchr(cur_id, ',');
          if (bp) {
@@ -730,7 +855,7 @@ static bool dot_bvfs_get_jobids(UAContext *ua, const char *cmd)
       break;
    }
    default:
-      ua->send_msg("%s\n", jobids.list);
+      ua->send_msg("%s\n", filtered_jobids.c_str());
       break;
    }
 
