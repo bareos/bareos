@@ -171,11 +171,12 @@ Page custom displayDirconfSnippet
 
 Function LaunchLink
   ExecShell "open" "http://www.bareos.com"
+  ExecShell "open" "http://localhost:9100"
 FunctionEnd
 
 !define MUI_FINISHPAGE_RUN
 #!define MUI_FINISHPAGE_RUN_NOTCHECKED
-!define MUI_FINISHPAGE_RUN_TEXT "Open www.bareos.com"
+!define MUI_FINISHPAGE_RUN_TEXT "Open www.bareos.com and bareos-webui"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
 
 !insertmacro MUI_PAGE_FINISH
@@ -191,7 +192,9 @@ FunctionEnd
 
 ; MUI end ------
 
-
+!macro "CreateURLShortCut" "URLFile" "URLSite" "URLDesc"
+  WriteINIStr "${URLFile}.URL" "InternetShortcut" "URL" "${URLSite}"
+!macroend
 
 # check if postgres is installed and set the postgres variables if so
 !macro getPostgresVars
@@ -459,6 +462,28 @@ Section -SetPasswords
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bat.conf"'
+
+  # Configure webui
+
+  FileOpen $R1 $PLUGINSDIR\webui.sed w
+
+  FileWrite $R1 "s#/etc/bareos-webui/directors.ini#C:/ProgramData/Bareos/directors.ini#g$\r$\n"
+  FileWrite $R1 "s#/etc/bareos-webui/configuration.ini#C:/ProgramData/Bareos/configuration.ini#g$\r$\n"
+  FileWrite $R1 "s#;include_path = $\".;c.*#include_path = $\".;c:/php/includes;C:/Program Files/Bareos/bareos-webui/vendor/ZendFramework$\"#g$\r$\n"
+  FileWrite $R1 "s#; extension_dir = $\"ext$\"#extension_dir = $\"ext$\"#g$\r$\n"
+  FileWrite $R1 "s#;extension=php_gettext.dll#extension=php_gettext.dll#g$\r$\n"
+
+  # set username/password to bareos/bareos
+  FileWrite $R1 "s#user1#bareos#g$\r$\n"
+  FileWrite $R1 "s#CHANGEME#bareos#g$\r$\n"
+
+  FileClose $R1
+
+
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\php.ini"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\global.php"'
+  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\webui.sed" -i-template "$PLUGINSDIR\admin.conf"'
+
 SectionEnd
 
 #
@@ -646,6 +671,85 @@ SubSectionEnd # Storage Daemon Subsection
 
 
 SubSection "Director" SUBSEC_DIR
+
+Section Webinterface SEC_WEBINTERFACE
+   SectionIn 2 3
+   SetShellVarContext all
+   SetOutPath "$INSTDIR"
+   SetOverwrite ifnewer
+   #File /r "php"
+   File /r "nssm.exe"
+   File /r "bareos-webui"
+
+   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (32 Bit)
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+check_for_vc_redist:
+   ${If} $R1 == ""
+      ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+      MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
+                                 It is needed by the bareos-webui service.$\r$\n\
+                                 Please install vcredist_x86.exe from $\r$\n\
+                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
+                                 and click OK when done." /SD IDOK
+   ${EndIf}
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ${If} $R1 == ""
+      goto check_for_vc_redist
+   ${EndIf}
+
+   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
+   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
+
+   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
+   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
+   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
+
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
+   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
+   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
+
+#   Rename  "$PLUGINSDIR\webui-admin.conf" "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\profile\webui-admin.conf"
+#   Rename  "$PLUGINSDIR\admin.conf" "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\console\admin.conf"
+
+   #!insertmacro InstallConfFile php.ini
+   #!insertmacro InstallConfFile directors.ini
+   #!insertmacro InstallConfFile configuration.ini
+   #!insertmacro InstallConfFile webui-admin.conf
+   #!insertmacro InstallConfFile admin.conf
+
+
+   #FileOpen  $R1 "$PLUGINSDIR\bareos-dir.conf" a
+   #FileSeek $R1 0 END
+   #FileWrite $R1 "@$APPDATA\${PRODUCT_NAME}\webui-admin.conf$\n"
+   #FileWrite $R1 "@$APPDATA\${PRODUCT_NAME}\admin.conf$\n"
+   FileClose $R1
+
+   ExecWait '$INSTDIR\nssm.exe install Bareos-webui $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+   ExecWait '$INSTDIR\nssm.exe set Bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
+   # see https://nssm.cc/usage -> quoting issues
+   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppParameters \
+      -S 127.0.0.1:9100 \
+      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
+      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+
+   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
+                     "Description" "Bareos Webui php service"
+
+   nsExec::ExecToLog "net start Bareos-webui"
+
+   # Shortcuts
+   !insertmacro "CreateURLShortCut" "bareos-webui" "http://localhost:9100" "Bareos Backup Server Web Interface"
+   #CreateShortCut "$DESKTOP\bareos-webui.lnk" "http://localhost:9100"
+   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://localhost:9100"
+
+SectionEnd
 
 Section /o "Director" SEC_DIR
 SectionIn 2 3
@@ -1432,6 +1536,13 @@ done:
 
   File "/oname=$PLUGINSDIR\sqlite3.sql" ".\ddl\creates\sqlite3.sql"
 
+  # webui
+  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini-production"
+  File "/oname=$PLUGINSDIR\global.php" ".\bareos-webui\config\autoload\global.php"
+  File "/oname=$PLUGINSDIR\directors.ini" ".\bareos-webui\install\directors.ini"
+  File "/oname=$PLUGINSDIR\configuration.ini" ".\bareos-webui\install\configuration.ini"
+  File "/oname=$PLUGINSDIR\webui-admin.conf" ".\bareos-webui/install/bareos/bareos-dir.d/profile/webui-admin.conf"
+  File "/oname=$PLUGINSDIR\admin.conf" ".\bareos-webui/install/bareos/bareos-dir.d/console/admin.conf.example"
 
   # make first section mandatory
   SectionSetFlags ${SEC_FD} 17 # SF_SELECTED & SF_RO
@@ -1439,6 +1550,7 @@ done:
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
+  SectionSetFlags ${SEC_WEBINTERFACE} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
 
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
@@ -1875,6 +1987,8 @@ Section Uninstall
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
 
+  ExecWait '$INSTDIR\nssm.exe stop Bareos-webui'
+  ExecWait '$INSTDIR\nssm.exe remove Bareos-webui confirm'
 
   # kill tray monitor
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
@@ -1903,7 +2017,12 @@ Section Uninstall
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
   RMDir /r "$APPDATA\${PRODUCT_NAME}\bconsole.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bat.conf"
-  RMDir /r "$APPDATA\${PRODUCT_NAME}\bat.d"
+
+  Delete "$APPDATA\${PRODUCT_NAME}\php.ini"
+  Delete "$APPDATA\${PRODUCT_NAME}\directors.ini"
+  Delete "$APPDATA\${PRODUCT_NAME}\configuration.ini"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\profile\webui-admin.conf"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\console\admin.conf"
 
 ConfDeleteSkip:
   # delete config files *.conf.old and *.conf.new, ...
@@ -1973,6 +2092,9 @@ ConfDeleteSkip:
   Delete "$INSTDIR\ssleay32.dll"
   Delete "$INSTDIR\libeay32.dll"
 
+# logs
+  Delete "$INSTDIR\*.log"
+
   RMDir /r "$INSTDIR\Plugins"
   RMDir /r "$INSTDIR\defaultconfigs"
 
@@ -2004,6 +2126,10 @@ ConfDeleteSkip:
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk"
   # traymon autostart
   Delete "$SMSTARTUP\bareos-tray-monitor.lnk"
+
+  Delete "$INSTDIR\nssm.exe"
+  RMDir /r "$INSTDIR\bareos-webui"
+
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"

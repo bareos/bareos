@@ -39,16 +39,18 @@
 JCR *new_control_jcr(const char *base_name, int job_type)
 {
    JCR *jcr;
+
    jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+
    /*
-    * The job and defaults are not really used, but
-    *  we set them up to ensure that everything is correctly
-    *  initialized.
+    * The job and defaults are not really used, but we set them up to ensure that
+    * everything is correctly initialized.
     */
    LockRes();
    jcr->res.job = (JOBRES *)GetNextRes(R_JOB, NULL);
    set_jcr_defaults(jcr, jcr->res.job);
    UnlockRes();
+
    jcr->sd_auth_key = bstrdup("dummy"); /* dummy Storage daemon key */
    create_unique_job_name(jcr, base_name);
    jcr->sched_time = jcr->start_time;
@@ -95,7 +97,7 @@ void *handle_UA_client_request(BSOCK *user)
          dequeue_messages(ua->jcr);
 
          if (!ua->quit) {
-            if (console_msg_pending && acl_access_ok(ua, Command_ACL, "messages")) {
+            if (console_msg_pending && ua->acl_access_ok(Command_ACL, "messages")) {
                if (ua->auto_display_messages) {
                   pm_strcpy(ua->cmd, "messages");
                   dot_messages_cmd(ua, ua->cmd);
@@ -150,7 +152,7 @@ UAContext *new_ua_context(JCR *jcr)
    ua->errmsg = get_pool_memory(PM_FNAME);
    ua->verbose = true;
    ua->automount = true;
-   ua->send = New(OUTPUT_FORMATTER(printit, ua));
+   ua->send = New(OUTPUT_FORMATTER(printit, ua, filterit, ua));
 
    return ua;
 }

@@ -1,7 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2016 Planets Communications B.V.
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -32,6 +33,8 @@
 #define MSG_TYPE_WARNING "warning"
 #define MSG_TYPE_ERROR   "error"
 
+#define OF_MAX_NR_HIDDEN_COLUMNS 64
+
 #if HAVE_JANSSON
 #define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
 #define UA_JSON_FLAGS_COMPACT JSON_COMPACT
@@ -47,15 +50,112 @@ typedef struct json_t json_t;
 #endif
 #endif
 
+/*
+ * Filtering states.
+ */
+typedef enum of_filter_state {
+   OF_FILTER_STATE_SHOW,
+   OF_FILTER_STATE_SUPPRESS,
+   OF_FILTER_STATE_UNKNOWN
+} of_filter_state;
+
+/*
+ * Filtering types.
+ */
+typedef enum of_filter_type {
+   OF_FILTER_LIMIT,
+   OF_FILTER_ACL,
+   OF_FILTER_RESOURCE,
+   OF_FILTER_ENABLED,
+   OF_FILTER_DISABLED
+} of_filter_type;
+
+typedef struct of_limit_filter_tuple {
+   int limit;                         /* Filter output to a maximum of limit entries */
+} of_limit_filter_tuple;
+
+typedef struct of_acl_filter_tuple {
+   int column;                        /* Filter resource is located in this column */
+   int acltype;                       /* Filter resource based on this ACL type */
+} of_acl_filter_tuple;
+
+typedef struct of_res_filter_tuple {
+   int column;                        /* Filter resource is located in this column */
+   int restype;                       /* Filter resource based on this resource type */
+} of_res_filter_tuple;
+
+typedef struct of_filter_tuple {
+   of_filter_type type;
+   union {
+      of_limit_filter_tuple limit_filter;
+      of_acl_filter_tuple acl_filter;
+      of_res_filter_tuple res_filter;
+   } u;
+} of_filter_tuple;
+
+/*
+ * Actual output formatter class.
+ */
 class OUTPUT_FORMATTER : public SMARTALLOC {
 public:
-   typedef bool (SEND_HANDLER)(void *, const char *);
+   /*
+    * Typedefs.
+    */
+   typedef bool (SEND_HANDLER)(void *ctx, const char *msg);
+   typedef of_filter_state (FILTER_HANDLER)(void *ctx, void *data, of_filter_tuple *tuple);
 
-   OUTPUT_FORMATTER(SEND_HANDLER *send_func, void *send_ctx, int api_mode = API_MODE_OFF);
+private:
+   /*
+    * Members
+    */
+   int api;
+   bool compact;
+   SEND_HANDLER *send_func;
+   FILTER_HANDLER *filter_func;
+   void *send_ctx;
+   void *filter_ctx;
+   alist *filters;
+   char *hidden_columns;
+   POOL_MEM *result_message_plain;
+#if HAVE_JANSSON
+   json_t *result_json;
+   alist *result_stack_json;
+   json_t *message_object_json;
+#endif
+
+private:
+   /*
+    * Methods
+    */
+   void create_new_res_filter(of_filter_type type, int column, int restype);
+   bool process_text_buffer();
+
+   /*
+    * reformat string.
+    * remove newlines and replace tabs with a single space.
+    * wrap < 0: no modification
+    * wrap = 0: reformat to single line
+    * wrap > 0: if api==0: wrap after x characters, else no modifications
+    */
+   void rewrap(POOL_MEM &string, int wrap);
+
+#if HAVE_JANSSON
+   bool json_send_error_message(const char *message);
+#endif
+
+public:
+   /*
+    * Methods
+    */
+   OUTPUT_FORMATTER(SEND_HANDLER *send_func,
+                    void *send_ctx,
+                    FILTER_HANDLER *filter_func,
+                    void *filter_ctx,
+                    int api_mode = API_MODE_OFF);
    ~OUTPUT_FORMATTER();
 
    void set_mode(int mode) { api = mode; };
-   int  get_mode() { return api; };
+   int get_mode() { return api; };
 
    /*
     * Allow to set compact output mode. Only used for json api mode.
@@ -95,6 +195,26 @@ public:
     */
    void send_buffer();
 
+   /*
+    * Filtering.
+    */
+   void add_limit_filter_tuple(int limit);
+   void add_acl_filter_tuple(int column, int acltype);
+   void add_res_filter_tuple(int column, int restype);
+   void add_enabled_filter_tuple(int column, int restype);
+   void add_disabled_filter_tuple(int column, int restype);
+   void clear_filters();
+   bool has_filters() { return filters && !filters->empty(); };
+   bool has_acl_filters();
+   bool filter_data(void *data);
+
+   /*
+    * Hidden columns.
+    */
+   void add_hidden_column(int column);
+   bool is_hidden_column(int column);
+   void clear_hidden_columns();
+
    void message(const char *type, POOL_MEM &message);
 
    void finalize_result(bool result);
@@ -107,32 +227,6 @@ public:
    void json_add_message(const char *type, POOL_MEM &message);
    bool json_has_error_message();
    void json_finalize_result(bool result);
-#endif
-
-private:
-   int api;
-   bool compact;
-   SEND_HANDLER *send_func;
-   void *send_ctx;
-   POOL_MEM *result_message_plain;
-
-   /*
-    * reformat string.
-    * remove newlines and replace tabs with a single space.
-    * wrap < 0: no modification
-    * wrap = 0: reformat to single line
-    * wrap > 0: if api==0: wrap after x characters, else no modifications
-    */
-   void rewrap(POOL_MEM &string, int wrap);
-
-   bool process_text_buffer();
-
-#if HAVE_JANSSON
-   json_t *result_json;
-   alist *result_stack_json;
-   json_t *message_object_json;
-
-   bool json_send_error_message(const char *message);
 #endif
 };
 

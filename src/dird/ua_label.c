@@ -253,8 +253,7 @@ static bool send_label_request(UAContext *ua,
 
 /*
  * Check if this is a cleaning tape by comparing the Volume name
- *  with the Cleaning Prefix. If they match, this is a cleaning
- *  tape.
+ * with the Cleaning Prefix. If they match, this is a cleaning tape.
  */
 static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
 {
@@ -263,7 +262,7 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
    /*
     * Find Pool resource
     */
-   ua->jcr->res.pool = (POOLRES *)GetResWithName(R_POOL, pr->Name);
+   ua->jcr->res.pool = ua->GetPoolResWithName(pr->Name, false);
    if (!ua->jcr->res.pool) {
       ua->error_msg(_("Pool \"%s\" resource not found for volume \"%s\"!\n"),
                     pr->Name, mr->VolumeName);

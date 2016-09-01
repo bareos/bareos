@@ -461,7 +461,7 @@ protected:
    bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
    bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
    bool find_config_path(POOL_MEM &full_path);
-   int  get_resource_table_index(int resource_type);
+   int get_resource_table_index(int resource_type);
 };
 
 CONFIG *new_config_parser();
@@ -478,7 +478,7 @@ const char *datatype_to_description(int type);
 /*
  * Resource routines
  */
-RES *GetResWithName(int rcode, const char *name);
+RES *GetResWithName(int rcode, const char *name, bool lock = true);
 RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);

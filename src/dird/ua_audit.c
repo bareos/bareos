@@ -32,7 +32,7 @@
 /*
  * See if we need to audit this event.
  */
-bool audit_event_wanted(UAContext *ua, bool audit_event_enabled)
+bool UAContext::audit_event_wanted(bool audit_event_enabled)
 {
    if (!me->audit_events) {
       return audit_event_enabled;
@@ -42,7 +42,7 @@ bool audit_event_wanted(UAContext *ua, bool audit_event_enabled)
       const char *event;
 
       foreach_alist(event, me->audit_events) {
-         if (bstrcasecmp(event, ua->argk[0])) {
+         if (bstrcasecmp(event, argk[0])) {
             return true;
          }
       }
@@ -105,28 +105,28 @@ static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg,
    Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
 }
 
-void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item)
+void UAContext::log_audit_event_acl_failure(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
    }
 
-   log_audit_event_acl_msg(ua, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
+   log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
-void log_audit_event_acl_success(UAContext *ua, int acl, const char *item)
+void UAContext::log_audit_event_acl_success(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
    }
 
-   log_audit_event_acl_msg(ua, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
+   log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
 /*
  * Log an audit event
  */
-void log_audit_event_cmdline(UAContext *ua)
+void UAContext::log_audit_event_cmdline()
 {
    const char *console_name;
    const char *host;
@@ -135,8 +135,8 @@ void log_audit_event_cmdline(UAContext *ua)
       return;
    }
 
-   console_name = (ua->cons) ? ua->cons->name() : "default";
-   host = (ua->UA_sock) ? ua->UA_sock->host() : "unknown";
+   console_name = cons ? cons->name() : "default";
+   host = UA_sock ? UA_sock->host() : "unknown";
 
-   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name, host, ua->cmd);
+   Emsg3(M_AUDIT, 0, _("Console [%s] from [%s] cmdline %s\n"), console_name, host, cmd);
 }

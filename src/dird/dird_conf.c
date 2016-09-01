@@ -2323,9 +2323,9 @@ void dump_resource(int type, RES *ures,
                    void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
-   URES *res = (URES *)ures;
-   bool recurse = true;
    POOL_MEM buf;
+   bool recurse = true;
+   URES *res = (URES *)ures;
    UAContext *ua = (UAContext *)sock;
 
    if (!res) {
@@ -2336,6 +2336,10 @@ void dump_resource(int type, RES *ures,
    if (type < 0) { /* no recursion */
       type = -type;
       recurse = false;
+   }
+
+   if (ua && !ua->is_res_allowed(ures)) {
+      goto bail_out;
    }
 
    switch (type) {
@@ -2356,52 +2360,37 @@ void dump_resource(int type, RES *ures,
       sendit(sock, "%s", buf.c_str());
       break;
    case R_CLIENT:
-      if (!ua || acl_access_ok(ua, Client_ACL, res->res_client.name())) {
-         res->res_client.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+      res->res_client.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_DEVICE:
       res->res_dev.print_config(buf, hide_sensitive_data, verbose);
       sendit(sock, "%s", buf.c_str());
       break;
    case R_STORAGE:
-      if (!ua || acl_access_ok(ua, Storage_ACL, res->res_store.name())) {
-         res->res_store.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+      res->res_store.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_CATALOG:
-      if (!ua || acl_access_ok(ua, Catalog_ACL, res->res_cat.name())) {
-         res->res_cat.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+      res->res_cat.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_JOBDEFS:
    case R_JOB:
-      if (!ua || acl_access_ok(ua, Job_ACL, res->res_job.name())) {
-         res->res_job.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+      res->res_job.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
-   case R_FILESET: {
-      if (!ua || acl_access_ok(ua, FileSet_ACL, res->res_fs.name())) {
-         res->res_fs.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+   case R_FILESET:
+      res->res_fs.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
-   }
    case R_SCHEDULE:
-      if (!ua || acl_access_ok(ua, Schedule_ACL, res->res_sch.name())) {
-         res->res_sch.print_config(buf, hide_sensitive_data, verbose);
-         sendit(sock, "%s", buf.c_str());
-      }
+      res->res_sch.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_POOL:
-      if (!ua || acl_access_ok(ua, Pool_ACL, res->res_pool.name())) {
-        res->res_pool.print_config(buf, hide_sensitive_data, verbose);
-        sendit(sock, "%s", buf.c_str());
-      }
+      res->res_pool.print_config(buf, hide_sensitive_data, verbose);
+      sendit(sock, "%s", buf.c_str());
       break;
    case R_MSGS:
       res->res_msgs.print_config(buf, hide_sensitive_data, verbose);
@@ -2412,6 +2401,7 @@ void dump_resource(int type, RES *ures,
       break;
    }
 
+bail_out:
    if (recurse && res->res_dir.hdr.next) {
       dump_resource(type, res->res_dir.hdr.next, sendit, sock, hide_sensitive_data, verbose);
    }

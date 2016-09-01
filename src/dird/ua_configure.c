@@ -187,17 +187,20 @@ static inline bool configure_create_resource_string(UAContext *ua, int first_par
    return true;
 }
 
-static inline bool configure_create_fd_resource_string(POOL_MEM &resource, const char *clientname)
+static inline bool configure_create_fd_resource_string(UAContext *ua, POOL_MEM &resource, const char *clientname)
 {
-   POOL_MEM temp(PM_MESSAGE);
-   char *directorname = NULL;
+   CLIENTRES *client;
    s_password *password;
+   POOL_MEM temp(PM_MESSAGE);
 
-   directorname = GetNextRes(R_DIRECTOR, NULL)->name;
-   password = &GetClientResWithName(clientname)->password;
+   client = ua->GetClientResWithName(clientname);
+   if (!client) {
+      return false;
+   }
+   password = &client->password;
 
    resource.strcat("Director {\n");
-   config_add_directive(NULL, NULL, "Name", directorname, resource);
+   config_add_directive(NULL, NULL, "Name", me->name(), resource);
 
    switch (password->encoding) {
    case p_encoding_clear:
@@ -232,7 +235,7 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    const bool create_directories = true;
    const bool overwrite = true;
 
-   if (!configure_create_fd_resource_string(resource, clientname)) {
+   if (!configure_create_fd_resource_string(ua, resource, clientname)) {
       return false;
    }
 
@@ -401,7 +404,7 @@ static inline bool configure_export(UAContext *ua)
       return false;
    }
 
-   if (!GetClientResWithName(ua->argv[i])) {
+   if (!ua->GetClientResWithName(ua->argv[i])) {
       configure_export_usage(ua);
       return false;
    }

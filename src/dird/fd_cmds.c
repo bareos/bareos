@@ -1198,10 +1198,10 @@ void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
    CLIENTRES *client_resource;
    CONNECTION *connection = NULL;
 
-   client_resource = GetClientResWithName(client_name);
+   client_resource = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
    if (!client_resource) {
       Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
-                          "but no matching resource is definied.\n", client_name);
+                          "but no matching resource is defined.\n", client_name);
       goto getout;
    }
 

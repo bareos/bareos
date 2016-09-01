@@ -51,11 +51,7 @@ bool open_client_db(UAContext *ua, bool use_private)
     */
    i = find_arg_with_value(ua, NT_("catalog"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Catalog_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Catalog \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      catalog = GetCatalogResWithName(ua->argv[i]);
+      catalog = ua->GetCatalogResWithName(ua->argv[i]);
       if (catalog) {
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);
@@ -70,17 +66,13 @@ bool open_client_db(UAContext *ua, bool use_private)
     */
    i = find_arg_with_value(ua, NT_("client"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Client_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Client \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      client = GetClientResWithName(ua->argv[i]);
+      client = ua->GetClientResWithName(ua->argv[i]);
       if (client) {
          catalog = client->catalog;
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);
          }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
+         if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
             ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }
@@ -94,17 +86,13 @@ bool open_client_db(UAContext *ua, bool use_private)
     */
    i = find_arg_with_value(ua, NT_("job"));
    if (i >= 0) {
-      if (!acl_access_ok(ua, Job_ACL, ua->argv[i], true)) {
-         ua->error_msg(_("No authorization for Job \"%s\"\n"), ua->argv[i]);
-         return false;
-      }
-      job = GetJobResWithName(ua->argv[i]);
+      job = ua->GetJobResWithName(ua->argv[i]);
       if (job && job->client) {
          catalog = job->client->catalog;
          if (ua->catalog && ua->catalog != catalog) {
             close_db(ua);
          }
-         if (!acl_access_ok(ua, Catalog_ACL, catalog->name(), true)) {
+         if (!ua->acl_access_ok(Catalog_ACL, catalog->name(), true)) {
             ua->error_msg(_("No authorization for Catalog \"%s\"\n"), catalog->name());
             return false;
          }

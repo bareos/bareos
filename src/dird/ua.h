@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,9 @@
 
 class UAContext {
 public:
+   /*
+    * Members
+    */
    BSOCK *UA_sock;
    BSOCK *sd;
    JCR *jcr;
@@ -66,9 +69,50 @@ public:
    int64_t int64_val;                 /* Big int */
    OUTPUT_FORMATTER *send;            /* object instance to handle output */
 
+private:
+   /*
+    * Methods
+    */
+   bool acl_access_ok(int acl, const char *item, int len, bool audit_event = false);
+   int rcode_to_acltype(int rcode);
+   void log_audit_event_acl_failure(int acl, const char *item);
+   void log_audit_event_acl_success(int acl, const char *item);
+
+public:
+   /*
+    * Methods
+    */
    void signal(int sig) { UA_sock->signal(sig); };
 
-   /* The below are in ua_output.c */
+   /*
+    * ACL check method.
+    */
+   bool acl_access_ok(int rcode, const char *item, bool audit_event = false);
+   bool acl_no_restrictions(int acl);
+   bool acl_has_restrictions(int acl) { return !acl_no_restrictions(acl); };
+
+   /*
+    * Resource retrieval methods including check on ACL.
+    */
+   bool is_res_allowed(RES *res);
+   RES *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
+   POOLRES *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
+   STORERES *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
+   CLIENTRES *GetClientResWithName(const char *name, bool audit_event = true, bool lock = true);
+   JOBRES *GetJobResWithName(const char *name, bool audit_event = true, bool lock = true);
+   FILESETRES *GetFileSetResWithName(const char *name, bool audit_event = true, bool lock = true);
+   CATRES *GetCatalogResWithName(const char *name, bool audit_event = true, bool lock = true);
+   SCHEDRES *GetScheduleResWithName(const char *name, bool audit_event = true, bool lock = true);
+
+   /*
+    * Audit event methods.
+    */
+   bool audit_event_wanted(bool audit_event_enabled);
+   void log_audit_event_cmdline();
+
+   /*
+    * The below are in ua_output.c
+    */
    void send_msg(const char *fmt, ...);
    void error_msg(const char *fmt, ...);
    void warning_msg(const char *fmt, ...);
