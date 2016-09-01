@@ -37,6 +37,41 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event)
 }
 
 /*
+ * Check if this is a regular expresion.
+ * A regexp uses the following chars:
+ * ., (, ), [, ], |, ^, $, +, ?, *
+ */
+static inline bool is_regex(const char *regexp)
+{
+   const char *p;
+   bool retval = false;
+
+   p = regexp;
+   while (p) {
+      switch (*p++) {
+      case '.':
+      case '(':
+      case ')':
+      case '[':
+      case ']':
+      case '|':
+      case '^':
+      case '$':
+      case '+':
+      case '?':
+      case '*':
+         retval = true;
+         goto bail_out;
+      default:
+         break;
+      }
+   }
+
+bail_out:
+   return retval;
+}
+
+/*
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
@@ -44,7 +79,9 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
 {
    int rc;
    regex_t preg;
+   int nmatch = 1;
    bool retval = false;
+   regmatch_t pmatch[1];
    const char *list_value;
 
    /*
@@ -83,22 +120,33 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
          /*
           * If we didn't get an exact match see if we can use the pattern as a regex.
           */
-         rc = regcomp(&preg, list_value + 1, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-         if (rc != 0) {
-            /*
-             * Not a valid regular expression so skip it.
-             */
-            Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
-            continue;
-         }
+         if (is_regex(list_value + 1)) {
+            int match_length;
 
-         if (regexec(&preg, item, 0, NULL, 0) == 0) {
-            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
+            match_length = strlen(item);
+            rc = regcomp(&preg, list_value + 1, REG_EXTENDED | REG_ICASE);
+            if (rc != 0) {
+               /*
+                * Not a valid regular expression so skip it.
+                */
+               Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
+               continue;
+            }
+
+            if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
+               /*
+                * Make sure its not a partial match but a full match.
+                */
+               Dmsg2(1400, "Found match start offset %d end offset %d\n", pmatch[0].rm_so, pmatch[0].rm_eo);
+               if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
+                  Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
+                  regfree(&preg);
+                  goto bail_out;
+               }
+            }
+
             regfree(&preg);
-            goto bail_out;
          }
-
-         regfree(&preg);
       } else {
          /*
           * Special case *all* gives full access
@@ -118,23 +166,34 @@ static inline bool find_in_acl_list(alist *list, int acl, const char *item, int 
          /*
           * If we didn't get an exact match see if we can use the pattern as a regex.
           */
-         rc = regcomp(&preg, list_value, REG_EXTENDED | REG_ICASE | REG_NOSUB);
-         if (rc != 0) {
-            /*
-             * Not a valid regular expression so skip it.
-             */
-            Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
-            continue;
-         }
+         if (is_regex(list_value)) {
+            int match_length;
 
-         if (regexec(&preg, item, 0, NULL, 0) == 0) {
-            Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
-            retval = true;
+            match_length = strlen(item);
+            rc = regcomp(&preg, list_value, REG_EXTENDED | REG_ICASE);
+            if (rc != 0) {
+               /*
+                * Not a valid regular expression so skip it.
+                */
+               Dmsg1(1400, "Not a valid regex %s, ignoring for regex compare\n", list_value);
+               continue;
+            }
+
+            if (regexec(&preg, item, nmatch, pmatch, 0) == 0) {
+               /*
+                * Make sure its not a partial match but a full match.
+                */
+               Dmsg2(1400, "Found match start offset %d end offset %d\n", pmatch[0].rm_so, pmatch[0].rm_eo);
+               if ((pmatch[0].rm_eo - pmatch[0].rm_so) >= match_length) {
+                  Dmsg3(1400, "ACL found %s in %d using regex %s\n", item, acl, list_value);
+                  retval = true;
+                  regfree(&preg);
+                  goto bail_out;
+               }
+            }
+
             regfree(&preg);
-            goto bail_out;
          }
-
-         regfree(&preg);
       }
    }
 
