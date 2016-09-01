@@ -1498,7 +1498,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    return true;
 }
 
-bool has_default_value(RES_ITEM *item)
+static inline bool has_default_value(RES_ITEM *item)
 {
    bool is_default = false;
 

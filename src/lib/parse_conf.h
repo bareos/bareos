@@ -461,7 +461,7 @@ protected:
    bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
    bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
    bool find_config_path(POOL_MEM &full_path);
-   int  get_resource_table_index(int resource_type);
+   int get_resource_table_index(int resource_type);
 };
 
 CONFIG *new_config_parser();
