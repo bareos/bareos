@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2010-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -31,8 +31,6 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
 
 /*
  * Get a non-pooled connection used when either sql pooling is
@@ -79,10 +77,9 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
       return NULL;
    }
 
-   if (!db_open_database(jcr, mdb)) {
-      Mmsg2(mdb->errmsg, _("Could not open database \"%s\": ERR=%s\n"), db_name, db_strerror(mdb));
-      Jmsg(jcr, M_FATAL, 0, "%s", mdb->errmsg);
-      db_close_database(jcr, mdb);
+   if (!mdb->open_database(jcr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", mdb->strerror());
+      mdb->close_database(jcr);
       return NULL;
    }
 
@@ -104,8 +101,8 @@ static void destroy_pool_descriptor(SQL_POOL_DESCRIPTOR *spd, bool flush_only)
       spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
       if (!flush_only || spe->reference_count == 0) {
          Dmsg3(100, "db_sql_pool_destroy destroy db pool connection %d to %s, backend type %s\n",
-               spe->id, spe->db_handle->get_db_name(), spe->db_handle->db_get_type());
-         db_close_database(NULL, spe->db_handle);
+               spe->id, spe->db_handle->get_db_name(), spe->db_handle->get_type());
+         spe->db_handle->close_database(NULL);
          if (flush_only) {
             spd->pool_entries->remove(spe);
             free(spe);
@@ -214,11 +211,9 @@ bool db_sql_pool_initialize(const char *db_drivername,
          goto bail_out;
       }
 
-      if (!db_open_database(NULL, mdb)) {
-         Mmsg2(mdb->errmsg, _("Could not open database \"%s\": ERR=%s\n"),
-               db_name, db_strerror(mdb));
-         Jmsg(NULL, M_FATAL, 0, "%s", mdb->errmsg);
-         db_close_database(NULL, mdb);
+      if (!mdb->open_database(NULL)) {
+         Jmsg(NULL, M_FATAL, 0, "%s", mdb->strerror());
+         mdb->close_database(NULL);
          goto bail_out;
       }
 
@@ -363,11 +358,11 @@ static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
          /*
           * Get a new non-pooled connection to the database.
           * We want to add a non pooled connection to the pool as otherwise
-          * we are creating a deadlock as db_clone_database_connection will
+          * we are creating a deadlock as clone_database_connection will
           * call sql_pool_get_connection which means a recursive enter into
           * the pooling code and as such the mutex will deadlock.
           */
-         mdb = db_clone_database_connection(db_handle, NULL, true, false);
+         mdb = db_handle->clone_database_connection(NULL, true, false);
          if (mdb == NULL) {
             Jmsg(NULL, M_FATAL, 0, "%s", _("Could not init database connection"));
             break;
@@ -384,7 +379,7 @@ static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
          spd->pool_entries->append(spe);
       }
       Dmsg3(100, "sql_pool_grow created %d connections to database %s, backend type %s\n",
-            cnt, spe->db_handle->get_db_name(), spe->db_handle->db_get_type());
+            cnt, spe->db_handle->get_db_name(), spe->db_handle->get_type());
       spd->last_update = now;
    } else {
       Dmsg0(100, "sql_pool_grow unable to determine first entry on pool list\n");
@@ -435,7 +430,7 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
    spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
    if (spe) {
       Dmsg3(100, "sql_pool_shrink shrinking connection pool with %d connections to database %s, backend type %s\n",
-            cnt, spe->db_handle->get_db_name(), spe->db_handle->db_get_type());
+            cnt, spe->db_handle->get_db_name(), spe->db_handle->get_type());
    }
 
    /*
@@ -451,7 +446,7 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
         */
       if (spe->reference_count == 0 && ((now - spe->last_update) >= spd->idle_timeout)) {
          spd->pool_entries->remove(spe);
-         db_close_database(NULL, spe->db_handle);
+         spe->db_handle->close_database(NULL);
          free(spe);
          spd->nr_connections--;
          cnt--;
@@ -490,8 +485,7 @@ static inline SQL_POOL_DESCRIPTOR *sql_find_pool_descriptor(const char *db_drive
    foreach_dlist(spd, db_pooling_descriptors) {
       if (spd->active) {
          foreach_dlist(spe, spd->pool_entries) {
-            if (spe->db_handle->db_match_database(db_drivername, db_name,
-                                                  db_address, db_port)) {
+            if (spe->db_handle->match_database(db_drivername, db_name, db_address, db_port)) {
                return spd;
             }
          }
@@ -606,12 +600,12 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
              * See if the connection match needs validation.
              */
             if ((now - use_connection->last_update) >= wanted_pool->validate_timeout) {
-               if (!db_validate_connection(use_connection->db_handle)) {
+               if (!use_connection->db_handle->validate_connection()) {
                   /*
                    * Connection seems to be dead kill it from the pool.
                    */
                   wanted_pool->pool_entries->remove(use_connection);
-                  db_close_database(jcr, use_connection->db_handle);
+                  use_connection->db_handle->close_database(jcr);
                   free(use_connection);
                   wanted_pool->nr_connections--;
                   continue;
@@ -707,7 +701,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
     * See if pooling is enabled.
     */
    if (!db_pooling_descriptors) {
-      db_close_database(jcr, mdb);
+      mdb->close_database(jcr);
       return;
    }
 
@@ -737,7 +731,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
                /*
                 * End any active transactions.
                 */
-               db_end_transaction(jcr, mdb);
+               mdb->end_transaction(jcr);
 
                /*
                 * Decrement reference count and update last update field.
@@ -746,7 +740,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
                time(&spe->last_update);
 
                Dmsg3(100, "db_sql_close_pooled_connection decrementing reference count of connection %d now %d, backend type %s\n",
-                     spe->id, spe->reference_count, spe->db_handle->db_get_type());
+                     spe->id, spe->reference_count, spe->db_handle->get_type());
 
                /*
                 * Clear the is_private flag if this is a free connection again.
@@ -760,15 +754,15 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
                 */
                if (!spd->active && spe->reference_count == 0) {
                   spd->pool_entries->remove(spe);
-                  db_close_database(jcr, spe->db_handle);
+                  spe->db_handle->close_database(jcr);
                   free(spe);
                   spd->nr_connections--;
                }
             } else {
                Dmsg3(100, "db_sql_close_pooled_connection aborting connection to database %s reference count %d, backend type %s\n",
-                     spe->db_handle->get_db_name(), spe->reference_count, spe->db_handle->db_get_type());
+                     spe->db_handle->get_db_name(), spe->reference_count, spe->db_handle->get_type());
                spd->pool_entries->remove(spe);
-               db_close_database(jcr, spe->db_handle);
+               spe->db_handle->close_database(jcr);
                free(spe);
                spd->nr_connections--;
             }
@@ -815,7 +809,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
     * this connection and we just close the connection.
     */
    if (!found) {
-      db_close_database(jcr, mdb);
+      mdb->close_database(jcr);
    }
 
    V(mutex);
@@ -897,11 +891,11 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
 
 /*
  * Put a connection back onto the pool for reuse.
- * For non pooling we just do a db_close_database.
+ * For non pooling we just do a close_database.
  */
 void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
 {
-   db_close_database(jcr, mdb);
+   mdb->close_database(jcr);
 }
 
 #endif /* HAVE_SQL_POOLING */

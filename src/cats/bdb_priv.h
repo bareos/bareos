@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -26,23 +27,11 @@
 #error "Illegal inclusion of catalog private interface"
 #endif
 
-/*
- * Generic definition of a sql_row.
- */
-typedef char ** SQL_ROW;
-
-/*
- * Generic definition of a a sql_field.
- */
-typedef struct sql_field {
-   char *name;                        /* name of column */
-   int max_length;                    /* max length */
-   uint32_t type;                     /* type */
-   uint32_t flags;                    /* flags */
-} SQL_FIELD;
-
 class CATS_IMP_EXP B_DB_PRIV: public B_DB {
 protected:
+   /*
+    * Members
+    */
    int m_status;                      /* Status */
    int m_num_rows;                    /* Number of rows returned by last query */
    int m_num_fields;                  /* Number of fields returned by last query */
@@ -55,17 +44,17 @@ protected:
    bool m_allow_transactions;         /* Transactions allowed ? */
    bool m_transaction;                /* Transaction started ? */
 
-public:
-   /* methods */
-   B_DB_PRIV() {};
-   virtual ~B_DB_PRIV() {};
-
+private:
+   /*
+    * Methods
+    */
    int sql_num_rows(void) { return m_num_rows; };
    void sql_field_seek(int field) { m_field_number = field; };
    int sql_num_fields(void) { return m_num_fields; };
    virtual void sql_free_result(void) = 0;
    virtual SQL_ROW sql_fetch_row(void) = 0;
-   virtual bool sql_query(const char *query, int flags = 0) = 0;
+   virtual bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual bool sql_query_without_handler(const char *query, int flags = 0) = 0;
    virtual const char *sql_strerror(void) = 0;
    virtual void sql_data_seek(int row) = 0;
    virtual int sql_affected_rows(void) = 0;
@@ -76,6 +65,12 @@ public:
    virtual bool sql_batch_start(JCR *jcr) = 0;
    virtual bool sql_batch_end(JCR *jcr, const char *error) = 0;
    virtual bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar) = 0;
-};
 
+public:
+   /*
+    * Methods
+    */
+   B_DB_PRIV() {};
+   virtual ~B_DB_PRIV() {};
+};
 #endif /* __BDB_PRIV_H_ */

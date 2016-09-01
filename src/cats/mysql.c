@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,6 @@
 #ifdef HAVE_MYSQL
 
 #include "cats.h"
-#include "bdb_priv.h"
 #include <mysql.h>
 #include <errmsg.h>
 #include <bdb_mysql.h>
@@ -143,7 +142,7 @@ B_DB_MYSQL::~B_DB_MYSQL()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_MYSQL::db_open_database(JCR *jcr)
+bool B_DB_MYSQL::open_database(JCR *jcr)
 {
    bool retval = false;
    int errstat;
@@ -213,7 +212,7 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
    }
 
    m_connected = true;
-   if (!check_tables_version(jcr, this)) {
+   if (!check_tables_version(jcr)) {
       goto bail_out;
    }
 
@@ -222,8 +221,8 @@ bool B_DB_MYSQL::db_open_database(JCR *jcr)
    /*
     * Set connection timeout to 8 days specialy for batch mode
     */
-   sql_query("SET wait_timeout=691200");
-   sql_query("SET interactive_timeout=691200");
+   sql_query_without_handler("SET wait_timeout=691200");
+   sql_query_without_handler("SET interactive_timeout=691200");
 
    retval = true;
 
@@ -232,10 +231,10 @@ bail_out:
    return retval;
 }
 
-void B_DB_MYSQL::db_close_database(JCR *jcr)
+void B_DB_MYSQL::close_database(JCR *jcr)
 {
    if (m_connected) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    P(mutex);
    m_ref_count--;
@@ -291,7 +290,7 @@ void B_DB_MYSQL::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_MYSQL::db_validate_connection(void)
+bool B_DB_MYSQL::validate_connection(void)
 {
    bool retval;
    unsigned long mysql_threadid;
@@ -333,7 +332,7 @@ bail_out:
  *  closes the database.  Thus the msgchan must call here
  *  to cleanup any thread specific data that it created.
  */
-void B_DB_MYSQL::db_thread_cleanup(void)
+void B_DB_MYSQL::thread_cleanup(void)
 {
 #ifndef HAVE_WIN32
    mysql_thread_end();
@@ -347,7 +346,7 @@ void B_DB_MYSQL::db_thread_cleanup(void)
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void B_DB_MYSQL::db_escape_string(JCR *jcr, char *snew, char *old, int len)
+void B_DB_MYSQL::escape_string(JCR *jcr, char *snew, char *old, int len)
 {
    mysql_real_escape_string(m_db_handle, snew, old, len);
 }
@@ -356,7 +355,7 @@ void B_DB_MYSQL::db_escape_string(JCR *jcr, char *snew, char *old, int len)
  * Escape binary object so that MySQL is happy
  * Memory is stored in B_DB struct, no need to free it
  */
-char *B_DB_MYSQL::db_escape_object(JCR *jcr, char *old, int len)
+char *B_DB_MYSQL::escape_object(JCR *jcr, char *old, int len)
 {
    esc_obj = check_pool_memory_size(esc_obj, len*2+1);
    mysql_real_escape_string(m_db_handle, esc_obj, old, len);
@@ -366,8 +365,8 @@ char *B_DB_MYSQL::db_escape_object(JCR *jcr, char *old, int len)
 /*
  * Unescape binary object so that MySQL is happy
  */
-void B_DB_MYSQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                    POOLMEM *&dest, int32_t *dest_len)
+void B_DB_MYSQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                                 POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
       dest[0] = '\0';
@@ -380,7 +379,7 @@ void B_DB_MYSQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
    dest[expected_len] = '\0';
 }
 
-void B_DB_MYSQL::db_start_transaction(JCR *jcr)
+void B_DB_MYSQL::start_transaction(JCR *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
@@ -390,12 +389,12 @@ void B_DB_MYSQL::db_start_transaction(JCR *jcr)
    }
 }
 
-void B_DB_MYSQL::db_end_transaction(JCR *jcr)
+void B_DB_MYSQL::end_transaction(JCR *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!db_create_attributes_record(jcr, this, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!create_attributes_record(jcr, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
    }
@@ -405,7 +404,7 @@ void B_DB_MYSQL::db_end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_MYSQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool B_DB_MYSQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    int status;
    SQL_ROW row;
@@ -413,7 +412,7 @@ bool B_DB_MYSQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handl
    bool retry = true;
    bool retval = false;
 
-   Dmsg1(500, "db_sql_query starts with %s\n", query);
+   Dmsg1(500, "sql_query_with_handler starts with %s\n", query);
 
    db_lock(this);
 
@@ -460,11 +459,11 @@ retry_query:
       /* FALL THROUGH */
    default:
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "db_sql_query failed\n");
+      Dmsg0(500, "sql_query_with_handler failed\n");
       goto bail_out;
    }
 
-   Dmsg0(500, "db_sql_query succeeded. checking handler\n");
+   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
       if ((m_result = mysql_use_result(m_db_handle)) != NULL) {
@@ -488,7 +487,7 @@ retry_query:
       }
    }
 
-   Dmsg0(500, "db_sql_query finished\n");
+   Dmsg0(500, "sql_query_with_handler finished\n");
    retval = true;
 
 bail_out:
@@ -496,13 +495,13 @@ bail_out:
    return retval;
 }
 
-bool B_DB_MYSQL::sql_query(const char *query, int flags)
+bool B_DB_MYSQL::sql_query_without_handler(const char *query, int flags)
 {
    int status;
    bool retry = true;
    bool retval = true;
 
-   Dmsg1(500, "sql_query starts with '%s'\n", query);
+   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
 
    /*
     * We are starting a new query. reset everything.
@@ -742,10 +741,10 @@ bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    char ed1[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   db_escape_string(jcr, esc_name, fname, fnl);
+   escape_string(jcr, esc_name, fname, fnl);
 
    esc_path = check_pool_memory_size(esc_path, pnl*2+1);
-   db_escape_string(jcr, esc_path, path, pnl);
+   escape_string(jcr, esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = "0";
@@ -840,7 +839,7 @@ B_DB *db_init_database(JCR *jcr,
             continue;
          }
 
-         if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
             goto bail_out;

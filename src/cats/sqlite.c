@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,6 @@
 #if HAVE_SQLITE3
 
 #include "cats.h"
-#include "bdb_priv.h"
 #include <sqlite3.h>
 #include "bdb_sqlite.h"
 
@@ -139,7 +138,7 @@ B_DB_SQLITE::~B_DB_SQLITE()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_SQLITE::db_open_database(JCR *jcr)
+bool B_DB_SQLITE::open_database(JCR *jcr)
 {
    bool retval = false;
    char *db_path;
@@ -206,10 +205,10 @@ bool B_DB_SQLITE::db_open_database(JCR *jcr)
    sqlite3_busy_handler(m_db_handle, sqlite_busy_handler, NULL);
 
 #if defined(SQLITE3_INIT_QUERY)
-   sql_query(SQLITE3_INIT_QUERY);
+   sql_query_without_handler(SQLITE3_INIT_QUERY);
 #endif
 
-   if (!check_tables_version(jcr, this)) {
+   if (!check_tables_version(jcr)) {
       goto bail_out;
    }
 
@@ -220,10 +219,10 @@ bail_out:
    return retval;
 }
 
-void B_DB_SQLITE::db_close_database(JCR *jcr)
+void B_DB_SQLITE::close_database(JCR *jcr)
 {
    if (m_connected) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    P(mutex);
    m_ref_count--;
@@ -261,12 +260,12 @@ void B_DB_SQLITE::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_SQLITE::db_validate_connection(void)
+bool B_DB_SQLITE::validate_connection(void)
 {
    bool retval;
 
    db_lock(this);
-   if (sql_query("SELECT 1", true)) {
+   if (sql_query_without_handler("SELECT 1", true)) {
       sql_free_result();
       retval = true;
       goto bail_out;
@@ -280,7 +279,7 @@ bail_out:
    return retval;
 }
 
-void B_DB_SQLITE::db_thread_cleanup(void)
+void B_DB_SQLITE::thread_cleanup(void)
 {
    sqlite3_thread_cleanup();
 }
@@ -290,7 +289,7 @@ void B_DB_SQLITE::db_thread_cleanup(void)
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_SQLITE::db_start_transaction(JCR *jcr)
+void B_DB_SQLITE::start_transaction(JCR *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
@@ -308,22 +307,22 @@ void B_DB_SQLITE::db_start_transaction(JCR *jcr)
     * Allow only 10,000 changes per transaction
     */
    if (m_transaction && changes > 10000) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    if (!m_transaction) {
-      sql_query("BEGIN");  /* begin transaction */
+      sql_query_without_handler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start SQLite transaction\n");
       m_transaction = true;
    }
    db_unlock(this);
 }
 
-void B_DB_SQLITE::db_end_transaction(JCR *jcr)
+void B_DB_SQLITE::end_transaction(JCR *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!db_create_attributes_record(jcr, this, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!create_attributes_record(jcr, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
    }
@@ -334,7 +333,7 @@ void B_DB_SQLITE::db_end_transaction(JCR *jcr)
 
    db_lock(this);
    if (m_transaction) {
-      sql_query("COMMIT"); /* end transaction */
+      sql_query_without_handler("COMMIT"); /* end transaction */
       m_transaction = false;
       Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
    }
@@ -356,8 +355,9 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
 {
    struct rh_data *rh_data = (struct rh_data *)arh_data;
 
-   /* The db_sql_query doesn't have access to m_results, so if we wan't to get
-    * fields information, we need to use col_names
+   /*
+    * The sql_query_with_handler doesn't have access to m_results,
+    * so if we wan't to get fields information, we need to use col_names
     */
    if (!rh_data->initialized) {
       rh_data->mdb->set_column_names(col_names, num_fields);
@@ -372,15 +372,15 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
 
 /*
  * Submit a general SQL command (cmd), and for each row returned,
- *  the result_handler is called with the ctx.
+ * the result_handler is called with the ctx.
  */
-bool B_DB_SQLITE::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool B_DB_SQLITE::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = false;
    int status;
    struct rh_data rh_data;
 
-   Dmsg1(500, "db_sql_query starts with '%s'\n", query);
+   Dmsg1(500, "sql_query_with_handler starts with '%s'\n", query);
 
    db_lock(this);
    if (m_lowlevel_errmsg) {
@@ -399,7 +399,7 @@ bool B_DB_SQLITE::db_sql_query(const char *query, DB_RESULT_HANDLER *result_hand
 
    if (status != SQLITE_OK) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "db_sql_query finished\n");
+      Dmsg0(500, "sql_query_with_handler finished\n");
       goto bail_out;
    }
    Dmsg0(500, "db_sql_query finished\n");
@@ -414,12 +414,12 @@ bail_out:
 /*
  * Submit a sqlite query and retrieve all the data
  */
-bool B_DB_SQLITE::sql_query(const char *query, int flags)
+bool B_DB_SQLITE::sql_query_without_handler(const char *query, int flags)
 {
    int status;
    bool retval = false;
 
-   Dmsg1(500, "sql_query starts with '%s'\n", query);
+   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
 
    sql_free_result();
    if (m_lowlevel_errmsg) {
@@ -433,9 +433,9 @@ bool B_DB_SQLITE::sql_query(const char *query, int flags)
    m_row_number = 0;               /* no row fetched */
    if (status != 0) {                   /* something went wrong */
       m_num_rows = m_num_fields = 0;
-      Dmsg0(500, "sql_query finished\n");
+      Dmsg0(500, "sql_query_without_handler finished\n");
    } else {
-      Dmsg0(500, "sql_query finished\n");
+      Dmsg0(500, "sql_query_without_handler finished\n");
       retval = true;
    }
    return retval;
@@ -492,7 +492,7 @@ uint64_t B_DB_SQLITE::sql_insert_autokey_record(const char *query, const char *t
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query(query)) {
+   if (!sql_query_without_handler(query)) {
       return 0;
    }
 
@@ -596,14 +596,14 @@ bool B_DB_SQLITE::sql_batch_start(JCR *jcr)
    bool retval;
 
    db_lock(this);
-   retval = sql_query("CREATE TEMPORARY TABLE batch ("
-                              "FileIndex integer,"
-                              "JobId integer,"
-                              "Path blob,"
-                              "Name blob,"
-                              "LStat tinyblob,"
-                              "MD5 tinyblob,"
-                              "DeltaSeq integer)");
+   retval = sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+                                      "FileIndex integer,"
+                                      "JobId integer,"
+                                      "Path blob,"
+                                      "Name blob,"
+                                      "LStat tinyblob,"
+                                      "MD5 tinyblob,"
+                                      "DeltaSeq integer)");
    db_unlock(this);
 
    return retval;
@@ -631,10 +631,10 @@ bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    char ed1[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   db_escape_string(jcr, esc_name, fname, fnl);
+   escape_string(jcr, esc_name, fname, fnl);
 
    esc_path = check_pool_memory_size(esc_path, pnl*2+1);
-   db_escape_string(jcr, esc_path, path, pnl);
+   escape_string(jcr, esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = "0";
@@ -647,7 +647,7 @@ bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
         ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
         esc_name, ar->attr, digest, ar->DeltaSeq);
 
-   return sql_query(cmd);
+   return sql_query_without_handler(cmd);
 }
 
 /*
@@ -697,7 +697,7 @@ B_DB *db_init_database(JCR *jcr,
             continue;
          }
 
-         if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(300, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
             goto bail_out;

@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -205,8 +205,8 @@ bool complete_bsr(UAContext *ua, RBSR *bsr)
       JOB_DBR jr;
       memset(&jr, 0, sizeof(jr));
       jr.JobId = bsr->JobId;
-      if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
-         ua->error_msg(_("Unable to get Job record. ERR=%s\n"), db_strerror(ua->db));
+      if (!ua->db->get_job_record(ua->jcr, &jr)) {
+         ua->error_msg(_("Unable to get Job record. ERR=%s\n"), ua->db->strerror());
          return false;
       }
       bsr->VolSessionId = jr.VolSessionId;
@@ -215,9 +215,9 @@ bool complete_bsr(UAContext *ua, RBSR *bsr)
          bsr->VolCount = 0;        /*   there are no volumes */
          continue;
       }
-      if ((bsr->VolCount=db_get_job_volume_parameters(ua->jcr, ua->db, bsr->JobId,
+      if ((bsr->VolCount = ua->db->get_job_volume_parameters(ua->jcr, bsr->JobId,
            &(bsr->VolParams))) == 0) {
-         ua->error_msg(_("Unable to get Job Volume Parameters. ERR=%s\n"), db_strerror(ua->db));
+         ua->error_msg(_("Unable to get Job Volume Parameters. ERR=%s\n"), ua->db->strerror());
          if (bsr->VolParams) {
             free(bsr->VolParams);
             bsr->VolParams = NULL;

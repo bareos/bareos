@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -293,7 +293,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
       len++;
    }
    prune_topdir = (char *)malloc(len * 2 + 1);
-   db_escape_string(ua->jcr, ua->db, prune_topdir, temp.c_str(), len);
+   ua->db->escape_string(ua->jcr, prune_topdir, temp.c_str(), len);
 
    /*
     * Remove all files in particular directory.
@@ -315,7 +315,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
 
       memset(&cr, 0, sizeof(cr));
       bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
-      if (!db_create_client_record(ua->jcr, ua->db, &cr)) {
+      if (!ua->db->create_client_record(ua->jcr, &cr)) {
          goto bail_out;
       }
 
@@ -328,7 +328,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
    }
 
    db_lock(ua->db);
-   db_sql_query(ua->db, query.c_str());
+   ua->db->sql_query(query.c_str());
    db_unlock(ua->db);
 
    /*
@@ -351,7 +351,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client)
       }
 
       db_lock(ua->db);
-      db_sql_query(ua->db, query.c_str());
+      ua->db->sql_query(query.c_str());
       db_unlock(ua->db);
    }
 
@@ -376,9 +376,8 @@ static bool prune_stats(UAContext *ua, utime_t retention)
    utime_t now = (utime_t)time(NULL);
 
    db_lock(ua->db);
-   Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s",
-        edit_int64(now - retention, ed1));
-   db_sql_query(ua->db, query.c_str());
+   Mmsg(query, "DELETE FROM JobHisto WHERE JobTDate < %s", edit_int64(now - retention, ed1));
+   ua->db->sql_query(query.c_str());
    db_unlock(ua->db);
 
    ua->info_msg(_("Pruned Jobs from JobHisto in catalog.\n"));
@@ -387,14 +386,14 @@ static bool prune_stats(UAContext *ua, utime_t retention)
 
    db_lock(ua->db);
    Mmsg(query, "DELETE FROM DeviceStats WHERE SampleTime < '%s'", dt);
-   db_sql_query(ua->db, query.c_str());
+   ua->db->sql_query(query.c_str());
    db_unlock(ua->db);
 
    ua->info_msg(_("Pruned Statistics from DeviceStats in catalog.\n"));
 
    db_lock(ua->db);
    Mmsg(query, "DELETE FROM JobStats WHERE SampleTime < '%s'", dt);
-   db_sql_query(ua->db, query.c_str());
+   ua->db->sql_query(query.c_str());
    db_unlock(ua->db);
 
    ua->info_msg(_("Pruned Statistics from JobStats in catalog.\n"));
@@ -423,16 +422,14 @@ static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
 
    db_lock(ua->db);
    if (client) {
-      db_escape_string(ua->jcr, ua->db, ed2,
-                       client->name(), strlen(client->name()));
+      ua->db->escape_string(ua->jcr, ed2, client->name(), strlen(client->name()));
       Mmsg(tmp, " AND Client.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       pm_strcat(*add_from, " JOIN Client USING (ClientId) ");
    }
 
    if (pool) {
-      db_escape_string(ua->jcr, ua->db, ed2,
-                       pool->name(), strlen(pool->name()));
+      ua->db->escape_string(ua->jcr, ed2, pool->name(), strlen(pool->name()));
       Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       /* Use ON() instead of USING for some old SQLite */
@@ -493,8 +490,8 @@ bool prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
    cnt.count = 0;
-   if (!db_sql_query(ua->db, query.c_str(), del_count_handler, (void *)&cnt)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(query.c_str(), del_count_handler, (void *)&cnt)) {
+      ua->error_msg("%s", ua->db->strerror());
       Dmsg0(050, "Count failed\n");
       goto bail_out;
    }
@@ -519,7 +516,7 @@ bool prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    Mmsg(query, "SELECT JobId FROM Job %s WHERE PurgedFiles=0 %s",
         sql_from.c_str(), sql_where.c_str());
    Dmsg1(050, "select sql=%s\n", query.c_str());
-   db_sql_query(ua->db, query.c_str(), file_delete_handler, (void *)&del);
+   ua->db->sql_query(query.c_str(), file_delete_handler, (void *)&del);
 
    purge_files_from_job_list(ua, del);
 
@@ -537,19 +534,19 @@ bail_out:
 
 static void drop_temp_tables(UAContext *ua)
 {
-   db_sql_query(ua->db, drop_deltabs[db_get_type_index(ua->db)]);
+   ua->db->sql_query(drop_deltabs[ua->db->get_type_index()]);
 }
 
 static bool create_temp_tables(UAContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!db_sql_query(ua->db, create_deltabs[db_get_type_index(ua->db)])) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(create_deltabs[ua->db->get_type_index()])) {
+      ua->error_msg("%s", ua->db->strerror());
       Dmsg0(050, "create DelTables table failed\n");
       return false;
    }
-   if (!db_sql_query(ua->db, create_delindex)) {
-       ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(create_delindex)) {
+       ua->error_msg("%s", ua->db->strerror());
        Dmsg0(050, "create DelInx1 index failed\n");
        return false;
    }
@@ -689,9 +686,9 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
         sql_from.c_str(), sql_where.c_str());
 
    Dmsg1(050, "select sql=%s\n", query.c_str());
-   if (!db_sql_query(ua->db, query.c_str())) {
+   if (!ua->db->sql_query(query.c_str())) {
       if (ua->verbose) {
-         ua->error_msg("%s", db_strerror(ua->db));
+         ua->error_msg("%s", ua->db->strerror());
       }
       goto bail_out;
    }
@@ -718,8 +715,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
     * in the configuration file. Interesting ClientId/FileSetId will be
     * added to jobids_check.
     */
-   if (!db_sql_query(ua->db, query.c_str(), job_select_handler, jobids_check)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(query.c_str(), job_select_handler, jobids_check)) {
+      ua->error_msg("%s", ua->db->strerror());
    }
 
    /*
@@ -736,7 +733,7 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    foreach_alist(elt, jobids_check) {
       jr.ClientId = elt->ClientId;   /* should be always the same */
       jr.FileSetId = elt->FileSetId;
-      db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids);
+      ua->db->accurate_get_jobids(ua->jcr, &jr, &tempids);
       jobids.add(tempids);
    }
 
@@ -752,8 +749,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
          "ORDER BY JobTDate DESC LIMIT 1",
         sql_from.c_str(), sql_where.c_str());
 
-   if (!db_sql_query(ua->db, query.c_str(), db_list_handler, &jobids)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(query.c_str(), db_list_handler, &jobids)) {
+      ua->error_msg("%s", ua->db->strerror());
    }
 
    /* If we found jobs to exclude from the DelCandidates list, we should
@@ -762,7 +759,7 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    if (jobids.count > 0) {
       Dmsg1(60, "jobids to exclude before basejobs = %s\n", jobids.list);
       /* We also need to exclude all basejobs used */
-      db_get_used_base_jobids(ua->jcr, ua->db, jobids.list, &jobids);
+      ua->db->get_used_base_jobids(ua->jcr, jobids.list, &jobids);
 
       /* Removing useful jobs from the DelCandidates list */
       Mmsg(query, "DELETE FROM DelCandidates "
@@ -770,8 +767,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
                      "AND JobFiles!=0",          /* Discard when JobFiles=0 */
            jobids.list);
 
-      if (!db_sql_query(ua->db, query.c_str())) {
-         ua->error_msg("%s", db_strerror(ua->db));
+      if (!ua->db->sql_query(query.c_str())) {
+         ua->error_msg("%s", ua->db->strerror());
          goto bail_out;         /* Don't continue if the list isn't clean */
       }
       Dmsg1(60, "jobids to exclude = %s\n", jobids.list);
@@ -781,8 +778,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    Mmsg(query,
         "SELECT DISTINCT DelCandidates.JobId,DelCandidates.PurgedFiles "
           "FROM DelCandidates");
-   if (!db_sql_query(ua->db, query.c_str(), job_delete_handler, (void *)&del)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->sql_query(query.c_str(), job_delete_handler, (void *)&del)) {
+      ua->error_msg("%s", ua->db->strerror());
    }
 
    purge_job_list_from_catalog(ua, del);
@@ -887,9 +884,9 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
       ed2);
 
    Dmsg1(050, "Query=%s\n", query.c_str());
-   if (!db_sql_query(ua->db, query.c_str(), file_delete_handler, (void *)del)) {
+   if (!ua->db->sql_query(query.c_str(), file_delete_handler, (void *)del)) {
       if (ua->verbose) {
-         ua->error_msg("%s", db_strerror(ua->db));
+         ua->error_msg("%s", ua->db->strerror());
       }
       Dmsg0(050, "Count failed\n");
       goto bail_out;

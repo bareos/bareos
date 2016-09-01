@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2015 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -214,14 +214,14 @@ int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
 
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
-   if (db_get_pool_record(jcr, db, &pr)) {
+   if (db->get_pool_record(jcr, &pr)) {
       /*
        * Pool Exists
        */
       if (op == POOL_OP_UPDATE) {  /* update request */
          set_pooldbr_from_poolres(&pr, pool, op);
          set_pooldbr_references(jcr, db, &pr, pool);
-         db_update_pool_record(jcr, db, &pr);
+         db->update_pool_record(jcr, &pr);
       }
       return 0;                       /* exists */
    }
@@ -229,7 +229,7 @@ int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
    set_pooldbr_from_poolres(&pr, pool, op);
    set_pooldbr_references(jcr, db, &pr, pool);
 
-   if (!db_create_pool_record(jcr, db, &pr)) {
+   if (!db->create_pool_record(jcr, &pr)) {
       return -1;                      /* error */
    }
    return 1;
@@ -270,7 +270,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
       memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->RecyclePool->name(), sizeof(rpool.Name));
-      if (db_get_pool_record(jcr, db, &rpool)) {
+      if (db->get_pool_record(jcr, &rpool)) {
         pr->RecyclePoolId = rpool.PoolId;
       } else {
         Jmsg(jcr, M_WARNING, 0,
@@ -288,7 +288,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
       memset(&rpool, 0, sizeof(rpool));
 
       bstrncpy(rpool.Name, pool->ScratchPool->name(), sizeof(rpool.Name));
-      if (db_get_pool_record(jcr, db, &rpool)) {
+      if (db->get_pool_record(jcr, &rpool)) {
         pr->ScratchPoolId = rpool.PoolId;
       } else {
         Jmsg(jcr, M_WARNING, 0,
@@ -367,7 +367,7 @@ int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)
    memset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool->name(), sizeof(pr.Name));
 
-   if (!db_get_pool_record(jcr, db, &pr)) {
+   if (!db->get_pool_record(jcr, &pr)) {
       return -1;                       /* not exists in database */
    }
 
@@ -377,7 +377,7 @@ int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)
       return -1;                      /* error */
    }
 
-   if (!db_update_pool_record(jcr, db, &pr)) {
+   if (!db->update_pool_record(jcr, &pr)) {
       return -1;                      /* error */
    }
    return true;

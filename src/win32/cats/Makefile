@@ -31,7 +31,7 @@ LDLIBS = ../lib/libbareos.dll
 
 LIBBAREOSCATS_SRCS = bvfs.c cats.c cats_backends.c sql.c sql_cmds.c \
                      sql_create.c sql_delete.c sql_find.c sql_get.c \
-                     sql_glue.c sql_list.c sql_pooling.c sql_update.c
+                     sql_list.c sql_pooling.c sql_update.c
 LIBBAREOSCATS_OBJS = $(LIBBAREOSCATS_SRCS:.c=.o)
 
 DEFINES += -D_BDB_PRIV_INTERFACE_

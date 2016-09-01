@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1300,9 +1300,9 @@ static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_
    memset(&mr, 0, sizeof(mr));
 
    bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
-   if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+   if (ua->db->get_media_record(ua->jcr, &mr)) {
       pr.PoolId = mr.PoolId;
-      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+      if (!ua->db->get_pool_record(ua->jcr, &pr)) {
          strcpy(pr.Name, "?");
       }
       ua->send_msg(slot_api_full_format, type,
@@ -1327,9 +1327,9 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
    memset(&mr, 0, sizeof(mr));
 
    bstrncpy(mr.VolumeName, vol_name, sizeof(mr.VolumeName));
-   if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+   if (ua->db->get_media_record(ua->jcr, &mr)) {
       pr.PoolId = mr.PoolId;
-      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+      if (!ua->db->get_pool_record(ua->jcr, &pr)) {
          strcpy(pr.Name, "?");
       }
 
@@ -1726,10 +1726,10 @@ static void status_slots(UAContext *ua, STORERES *store)
                bstrncpy(mr.VolumeName, vl2->VolName, sizeof(mr.VolumeName));
             }
 
-            if (mr.VolumeName[0] && db_get_media_record(ua->jcr, ua->db, &mr)) {
+            if (mr.VolumeName[0] && ua->db->get_media_record(ua->jcr, &mr)) {
                memset(&pr, 0, sizeof(pr));
                pr.PoolId = mr.PoolId;
-               if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
+               if (!ua->db->get_pool_record(ua->jcr, &pr)) {
                   strcpy(pr.Name, "?");
                }
 

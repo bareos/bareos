@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,7 +37,6 @@
 #ifdef HAVE_INGRES
 
 #include "cats.h"
-#include "bdb_priv.h"
 #include "myingres.h"
 #include "bdb_ingres.h"
 #include "lib/breg.h"
@@ -233,7 +232,7 @@ B_DB_INGRES::~B_DB_INGRES()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_INGRES::db_open_database(JCR *jcr)
+bool B_DB_INGRES::open_database(JCR *jcr)
 {
    bool retval = false;
    int errstat;
@@ -280,10 +279,10 @@ bail_out:
    return retval;
 }
 
-void B_DB_INGRES::db_close_database(JCR *jcr)
+void B_DB_INGRES::close_database(JCR *jcr)
 {
    if (m_connected) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    P(mutex);
    m_ref_count--;
@@ -330,7 +329,7 @@ void B_DB_INGRES::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_INGRES::db_validate_connection(void)
+bool B_DB_INGRES::validate_connection(void)
 {
    bool retval;
 
@@ -338,7 +337,7 @@ bool B_DB_INGRES::db_validate_connection(void)
     * Perform a null query to see if the connection is still valid.
     */
    db_lock(this);
-   if (!sql_query("SELECT 1", true)) {
+   if (!sql_query_without_handler("SELECT 1", true)) {
       retval = false;
       goto bail_out;
    }
@@ -356,7 +355,7 @@ bail_out:
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_INGRES::db_start_transaction(JCR *jcr)
+void B_DB_INGRES::start_transaction(JCR *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
@@ -372,22 +371,22 @@ void B_DB_INGRES::db_start_transaction(JCR *jcr)
    db_lock(this);
    /* Allow only 25,000 changes per transaction */
    if (m_transaction && changes > 25000) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    if (!m_transaction) {
-      sql_query("BEGIN");  /* begin transaction */
+      sql_query_without_handler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start Ingres transaction\n");
       m_transaction = true;
    }
    db_unlock(this);
 }
 
-void B_DB_INGRES::db_end_transaction(JCR *jcr)
+void B_DB_INGRES::end_transaction(JCR *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!db_create_attributes_record(jcr, this, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!create_attributes_record(jcr, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
    }
@@ -398,7 +397,7 @@ void B_DB_INGRES::db_end_transaction(JCR *jcr)
 
    db_lock(this);
    if (m_transaction) {
-      sql_query("COMMIT"); /* end transaction */
+      sql_query_without_handler("COMMIT"); /* end transaction */
       m_transaction = false;
       Dmsg1(400, "End Ingres transaction changes=%d\n", changes);
    }
@@ -410,32 +409,32 @@ void B_DB_INGRES::db_end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  *  the result_handler is called with the ctx.
  */
-bool B_DB_INGRES::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool B_DB_INGRES::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = true;
 
-   Dmsg1(500, "db_sql_query starts with %s\n", query);
+   Dmsg1(500, "sql_query_with_handler starts with %s\n", query);
 
    db_lock(this);
-   if (!sql_query(query, QF_STORE_RESULT)) {
+   if (!sql_query_without_handler(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "db_sql_query failed\n");
+      Dmsg0(500, "sql_query_with_handler failed\n");
       retval = false;
       goto bail_out;
    }
 
    if (result_handler != NULL) {
-      Dmsg0(500, "db_sql_query invoking handler\n");
+      Dmsg0(500, "sql_query_with_handler invoking handler\n");
       while ((row = sql_fetch_row()) != NULL) {
-         Dmsg0(500, "db_sql_query sql_fetch_row worked\n");
+         Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
          if (result_handler(ctx, m_num_fields, row))
             break;
       }
       sql_free_result();
    }
 
-   Dmsg0(500, "db_sql_query finished\n");
+   Dmsg0(500, "sql_query_with_handler finished\n");
 
 bail_out:
    db_unlock(this);
@@ -450,7 +449,7 @@ bail_out:
  *            false on failure
  *
  */
-bool B_DB_INGRES::sql_query(const char *query, int flags)
+bool B_DB_INGRES::sql_query_without_handler(const char *query, int flags)
 {
    int cols;
    char *cp, *bp;
@@ -535,7 +534,7 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
    }
 
    if (start_of_transaction) {
-      Dmsg0(500,"sql_query: Start of transaction\n");
+      Dmsg0(500,"sql_query_without_handler: Start of transaction\n");
       m_explicit_commit = false;
    }
 
@@ -567,7 +566,7 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
          *cp++ = '\0';
       }
 
-      Dmsg1(500, "sql_query after rewrite continues with '%s'\n", bp);
+      Dmsg1(500, "sql_query_without_handler after rewrite continues with '%s'\n", bp);
 
       /*
        * See if we got a store_result hint which could mean we are running a select.
@@ -582,27 +581,27 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
 
       if (cols <= 0) {
          if (cols < 0 ) {
-            Dmsg0(500,"sql_query: neg.columns: no DML stmt!\n");
+            Dmsg0(500,"sql_query_without_handler: neg.columns: no DML stmt!\n");
             retval = false;
             goto bail_out;
          }
-         Dmsg0(500,"sql_query (non SELECT) starting...\n");
+         Dmsg0(500,"sql_query_without_handler (non SELECT) starting...\n");
          /*
           * non SELECT
           */
          m_num_rows = INGexec(m_db_handle, bp, m_explicit_commit);
          if (m_num_rows == -1) {
-           Dmsg0(500,"sql_query (non SELECT) went wrong\n");
+           Dmsg0(500,"sql_query_without_handler (non SELECT) went wrong\n");
            retval = false;
            goto bail_out;
          } else {
-           Dmsg0(500,"sql_query (non SELECT) seems ok\n");
+           Dmsg0(500,"sql_query_without_handler (non SELECT) seems ok\n");
          }
       } else {
          /*
           * SELECT
           */
-         Dmsg0(500,"sql_query (SELECT) starting...\n");
+         Dmsg0(500,"sql_query_without_handler (SELECT) starting...\n");
          m_result = INGquery(m_db_handle, bp, m_explicit_commit);
          if (m_result != NULL) {
             Dmsg0(500, "we have a result\n");
@@ -627,13 +626,13 @@ bool B_DB_INGRES::sql_query(const char *query, int flags)
 
 bail_out:
    if (end_of_transaction) {
-      Dmsg0(500,"sql_query: End of transaction, commiting work\n");
+      Dmsg0(500,"sql_query_without_handler: End of transaction, commiting work\n");
       m_explicit_commit = true;
       INGcommit(m_db_handle);
    }
 
    free(dup_query);
-   Dmsg0(500, "sql_query finishing\n");
+   Dmsg0(500, "sql_query_without_handler finishing\n");
 
    return retval;
 }
@@ -946,15 +945,15 @@ bool B_DB_INGRES::sql_batch_start(JCR *jcr)
    bool ok;
 
    db_lock(this);
-   ok = sql_query("DECLARE GLOBAL TEMPORARY TABLE batch ("
-                           "FileIndex INTEGER,"
-                           "JobId INTEGER,"
-                           "Path VARBYTE(32000),"
-                           "Name VARBYTE(32000),"
-                           "LStat VARBYTE(255),"
-                           "MD5 VARBYTE(255),"
-                           "DeltaSeq SMALLINT)"
-                           " ON COMMIT PRESERVE ROWS WITH NORECOVERY");
+   ok = sql_query_without_handler("DECLARE GLOBAL TEMPORARY TABLE batch ("
+                                  "FileIndex INTEGER,"
+                                  "JobId INTEGER,"
+                                  "Path VARBYTE(32000),"
+                                  "Name VARBYTE(32000),"
+                                  "LStat VARBYTE(255),"
+                                  "MD5 VARBYTE(255),"
+                                  "DeltaSeq SMALLINT)"
+                                  " ON COMMIT PRESERVE ROWS WITH NORECOVERY");
    db_unlock(this);
    return ok;
 }
@@ -980,10 +979,10 @@ bool B_DB_INGRES::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    char ed1[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
-   db_escape_string(jcr, esc_name, fname, fnl);
+   escape_string(jcr, esc_name, fname, fnl);
 
    esc_path = check_pool_memory_size(esc_path, pnl*2+1);
-   db_escape_string(jcr, esc_path, path, pnl);
+   escape_string(jcr, esc_path, path, pnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = "0";
@@ -996,7 +995,7 @@ bool B_DB_INGRES::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
                    ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                    esc_name, ar->attr, digest, ar->DeltaSeq);
 
-   return sql_query(cmd);
+   return sql_query_without_handler(cmd);
 }
 
 /*

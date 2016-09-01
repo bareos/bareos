@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2015-2015 Planets Communications B.V.
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Planets Communications B.V.
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -43,8 +43,8 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
    ar = jcr->ar;
    if (jcr->cached_attribute) {
       Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-      if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), db_strerror(jcr->db));
+      if (!jcr->db->create_attributes_record(jcr, ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
          return;
       }
       jcr->cached_attribute = false;
@@ -60,8 +60,8 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
    jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
    jcr->ar->FileType = FileType;
 
-   if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-      Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), db_strerror(jcr->db));
+   if (!jcr->db->create_attributes_record(jcr, ar)) {
+      Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
       return;
    }
 }
@@ -77,17 +77,8 @@ void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    memset(&statp, 0, sizeof(statp));
 
    Dmsg11(100, "ftype:%d mtime:%lu atime:%lu ctime:%lu uid:%lu gid:%lu mode:%lu size:%llu links:%lu node:%llu fh_info:%llu \n",
-            fstat->ftype,
-            fstat->mtime.value,
-            fstat->atime.value,
-            fstat->ctime.value,
-            fstat->uid.value,
-            fstat->gid.value,
-            fstat->mode.value,
-            fstat->size.value,
-            fstat->links.value,
-            fstat->node.value,
-            fstat->fh_info.value);
+          fstat->ftype, fstat->mtime.value, fstat->atime.value, fstat->ctime.value, fstat->uid.value, fstat->gid.value,
+          fstat->mode.value, fstat->size.value, fstat->links.value, fstat->node.value, fstat->fh_info.value);
 
    /*
     * If we got a valid mode of the file fill the UNIX stat struct.

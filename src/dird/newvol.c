@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,7 +60,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
     */
    db_lock(jcr->db);
    pr.PoolId = mr->PoolId;
-   if (!db_get_pool_record(jcr, jcr->db, &pr)) {
+   if (!jcr->db->get_pool_record(jcr, &pr)) {
       goto bail_out;
    }
    if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
@@ -101,14 +101,14 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
       pr.NumVols++;
       mr->Enabled = VOL_ENABLED;
       set_storageid_in_mr(store, mr);
-      if (db_create_media_record(jcr, jcr->db, mr) &&
-         db_update_pool_record(jcr, jcr->db, &pr)) {
+      if (jcr->db->create_media_record(jcr, mr) &&
+         jcr->db->update_pool_record(jcr, &pr)) {
          Jmsg(jcr, M_INFO, 0, _("Created new Volume \"%s\" in catalog.\n"), mr->VolumeName);
          Dmsg1(90, "Created new Volume=%s\n", mr->VolumeName);
          retval = true;
          goto bail_out;
       } else {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       }
    }
 
@@ -131,8 +131,8 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
    ctx.value = 0;
    Mmsg(query, "SELECT MAX(MediaId) FROM Media,Pool WHERE Pool.PoolId=%s",
         edit_int64(pr->PoolId, ed1));
-   if (!db_sql_query(jcr->db, query.c_str(), db_int64_handler, (void *)&ctx)) {
-      Jmsg(jcr, M_WARNING, 0, _("SQL failed, but ignored. ERR=%s\n"), db_strerror(jcr->db));
+   if (!jcr->db->sql_query(query.c_str(), db_int64_handler, (void *)&ctx)) {
+      Jmsg(jcr, M_WARNING, 0, _("SQL failed, but ignored. ERR=%s\n"), jcr->db->strerror());
       ctx.value = pr->NumVols+1;
    }
    for (int i=(int)ctx.value+1; i<(int)ctx.value+100; i++) {
@@ -142,7 +142,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
       sprintf(num, "%04d", i);
       bstrncpy(tmr.VolumeName, name.c_str(), sizeof(tmr.VolumeName));
       bstrncat(tmr.VolumeName, num, sizeof(tmr.VolumeName));
-      if (db_get_media_record(jcr, jcr->db, &tmr)) {
+      if (jcr->db->get_media_record(jcr, &tmr)) {
          Jmsg(jcr, M_WARNING, 0,
              _("Wanted to create Volume \"%s\", but it already exists. Trying again.\n"),
              tmr.VolumeName);

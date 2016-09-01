@@ -45,7 +45,6 @@
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 
 /* Forward referenced functions */
 static void *do_batch(void *);
@@ -224,12 +223,12 @@ int main (int argc, char *argv[])
                                  false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
-      if (!db_open_database(NULL, db)) {
-         Emsg0(M_ERROR_TERM, 0, db_strerror(db));
+      if (!db->open_database(NULL)) {
+         Emsg0(M_ERROR_TERM, 0, db->strerror());
       }
 
       start = get_current_btime();
-      db_get_file_list(NULL, db, restore_list, false, false, list_handler, &nb_file);
+      db->get_file_list(NULL, restore_list, false, false, list_handler, &nb_file);
       end = get_current_btime();
 
       Pmsg3(0, _("Computing file list for jobid=%s files=%lld secs=%d\n"),
@@ -283,8 +282,8 @@ int main (int argc, char *argv[])
                                  false)) == NULL) {
          Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
       }
-      if (!db_open_database(NULL, db)) {
-         Emsg0(M_ERROR_TERM, 0, db_strerror(db));
+      if (!db->open_database(NULL)) {
+         Emsg0(M_ERROR_TERM, 0, db->strerror());
       }
       Dmsg0(200, "Database opened\n");
       if (verbose) {
@@ -355,12 +354,12 @@ static void *do_batch(void *jcr)
          printf("\r%i", lineno);
       }
       fill_attr(&ar, data);
-      if (!db_create_attributes_record(bjcr, bjcr->db, &ar)) {
+      if (!bjcr->db->create_attributes_record(bjcr, &ar)) {
          Emsg0(M_ERROR_TERM, 0, _("Error while inserting file\n"));
       }
    }
    fclose(fd);
-   db_write_batch_file_records(bjcr);
+   bjcr->db->write_batch_file_records(bjcr);
    btime_t end = get_current_btime();
 
    P(mutex);

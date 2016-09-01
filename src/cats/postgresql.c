@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,7 +35,6 @@
 #ifdef HAVE_POSTGRESQL
 
 #include "cats.h"
-#include "bdb_priv.h"
 #include "libpq-fe.h"
 #include "postgres_ext.h"       /* needed for NAMEDATALEN */
 #include "pg_config_manual.h"   /* get NAMEDATALEN on version 8.3 or later */
@@ -145,19 +144,19 @@ B_DB_POSTGRESQL::~B_DB_POSTGRESQL()
 /*
  * Check that the database correspond to the encoding we want
  */
-static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
+bool B_DB_POSTGRESQL::check_database_encoding(JCR *jcr)
 {
    SQL_ROW row;
    bool retval = false;
 
-   if (!mdb->sql_query("SELECT getdatabaseencoding()", QF_STORE_RESULT)) {
-      Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
+   if (!sql_query_without_handler("SELECT getdatabaseencoding()", QF_STORE_RESULT)) {
+      Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
       return false;
    }
 
-   if ((row = mdb->sql_fetch_row()) == NULL) {
-      Mmsg1(mdb->errmsg, _("error fetching row: %s\n"), mdb->sql_strerror());
-      Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", mdb->errmsg);
+   if ((row = sql_fetch_row()) == NULL) {
+      Mmsg1(errmsg, _("error fetching row: %s\n"), errmsg);
+      Jmsg(jcr, M_ERROR, 0, "Can't check database encoding %s", errmsg);
    } else {
       retval = bstrcmp(row[0], "SQL_ASCII");
 
@@ -165,16 +164,14 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
          /*
           * If we are in SQL_ASCII, we can force the client_encoding to SQL_ASCII too
           */
-         mdb->sql_query("SET client_encoding TO 'SQL_ASCII'");
+         sql_query_without_handler("SET client_encoding TO 'SQL_ASCII'");
       } else {
          /*
           * Something is wrong with database encoding
           */
-         Mmsg(mdb->errmsg,
-              _("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"),
-              mdb->get_db_name(), row[0]);
-         Jmsg(jcr, M_WARNING, 0, "%s", mdb->errmsg);
-         Dmsg1(50, "%s", mdb->errmsg);
+         Mmsg(errmsg, _("Encoding error for database \"%s\". Wanted SQL_ASCII, got %s\n"), get_db_name(), row[0]);
+         Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
+         Dmsg1(50, "%s", errmsg);
       }
    }
 
@@ -186,7 +183,7 @@ static bool pgsql_check_database_encoding(JCR *jcr, B_DB_POSTGRESQL *mdb)
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
+bool B_DB_POSTGRESQL::open_database(JCR *jcr)
 {
    bool retval = false;
    int errstat;
@@ -248,24 +245,24 @@ bool B_DB_POSTGRESQL::db_open_database(JCR *jcr)
    }
 
    m_connected = true;
-   if (!check_tables_version(jcr, this)) {
+   if (!check_tables_version(jcr)) {
       goto bail_out;
    }
 
-   sql_query("SET datestyle TO 'ISO, YMD'");
-   sql_query("SET cursor_tuple_fraction=1");
+   sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
+   sql_query_without_handler("SET cursor_tuple_fraction=1");
 
    /*
     * Tell PostgreSQL we are using standard conforming strings
     * and avoid warnings such as:
     *  WARNING:  nonstandard use of \\ in a string literal
     */
-   sql_query("SET standard_conforming_strings=on");
+   sql_query_without_handler("SET standard_conforming_strings=on");
 
    /*
     * Check that encoding is SQL_ASCII
     */
-   pgsql_check_database_encoding(jcr, this);
+   check_database_encoding(jcr);
 
    retval = true;
 
@@ -274,10 +271,10 @@ bail_out:
    return retval;
 }
 
-void B_DB_POSTGRESQL::db_close_database(JCR *jcr)
+void B_DB_POSTGRESQL::close_database(JCR *jcr)
 {
    if (m_connected) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    P(mutex);
    m_ref_count--;
@@ -328,7 +325,7 @@ void B_DB_POSTGRESQL::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_POSTGRESQL::db_validate_connection(void)
+bool B_DB_POSTGRESQL::validate_connection(void)
 {
    bool retval = false;
 
@@ -336,7 +333,7 @@ bool B_DB_POSTGRESQL::db_validate_connection(void)
     * Perform a null query to see if the connection is still valid.
     */
    db_lock(this);
-   if (!sql_query("SELECT 1", true)) {
+   if (!sql_query_without_handler("SELECT 1", true)) {
       /*
        * Try resetting the connection.
        */
@@ -345,14 +342,14 @@ bool B_DB_POSTGRESQL::db_validate_connection(void)
          goto bail_out;
       }
 
-      sql_query("SET datestyle TO 'ISO, YMD'");
-      sql_query("SET cursor_tuple_fraction=1");
-      sql_query("SET standard_conforming_strings=on");
+      sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
+      sql_query_without_handler("SET cursor_tuple_fraction=1");
+      sql_query_without_handler("SET standard_conforming_strings=on");
 
       /*
        * Retry the null query.
        */
-      if (!sql_query("SELECT 1", true)) {
+      if (!sql_query_without_handler("SELECT 1", true)) {
          goto bail_out;
       }
    }
@@ -372,7 +369,7 @@ bail_out:
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void B_DB_POSTGRESQL::db_escape_string(JCR *jcr, char *snew, char *old, int len)
+void B_DB_POSTGRESQL::escape_string(JCR *jcr, char *snew, char *old, int len)
 {
    int error;
 
@@ -389,7 +386,7 @@ void B_DB_POSTGRESQL::db_escape_string(JCR *jcr, char *snew, char *old, int len)
  * Escape binary so that PostgreSQL is happy
  *
  */
-char *B_DB_POSTGRESQL::db_escape_object(JCR *jcr, char *old, int len)
+char *B_DB_POSTGRESQL::escape_object(JCR *jcr, char *old, int len)
 {
    size_t new_len;
    unsigned char *obj;
@@ -412,8 +409,8 @@ char *B_DB_POSTGRESQL::db_escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object so that PostgreSQL is happy
  *
  */
-void B_DB_POSTGRESQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                         POOLMEM *&dest, int32_t *dest_len)
+void B_DB_POSTGRESQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                                      POOLMEM *&dest, int32_t *dest_len)
 {
    size_t new_len;
    unsigned char *obj;
@@ -445,7 +442,7 @@ void B_DB_POSTGRESQL::db_unescape_object(JCR *jcr, char *from, int32_t expected_
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_POSTGRESQL::db_start_transaction(JCR *jcr)
+void B_DB_POSTGRESQL::start_transaction(JCR *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
@@ -467,22 +464,22 @@ void B_DB_POSTGRESQL::db_start_transaction(JCR *jcr)
     * Allow only 25,000 changes per transaction
     */
    if (m_transaction && changes > 25000) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    if (!m_transaction) {
-      sql_query("BEGIN");  /* begin transaction */
+      sql_query_without_handler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start PosgreSQL transaction\n");
       m_transaction = true;
    }
    db_unlock(this);
 }
 
-void B_DB_POSTGRESQL::db_end_transaction(JCR *jcr)
+void B_DB_POSTGRESQL::end_transaction(JCR *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!db_create_attributes_record(jcr, this, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!create_attributes_record(jcr, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
    }
@@ -493,7 +490,7 @@ void B_DB_POSTGRESQL::db_end_transaction(JCR *jcr)
 
    db_lock(this);
    if (m_transaction) {
-      sql_query("COMMIT"); /* end transaction */
+      sql_query_without_handler("COMMIT"); /* end transaction */
       m_transaction = false;
       Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
    }
@@ -505,19 +502,17 @@ void B_DB_POSTGRESQL::db_end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
-                                       DB_RESULT_HANDLER *result_handler,
-                                       void *ctx)
+bool B_DB_POSTGRESQL::big_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = false;
    bool in_transaction = m_transaction;
 
-   Dmsg1(500, "db_big_sql_query starts with '%s'\n", query);
+   Dmsg1(500, "big_sql_query starts with '%s'\n", query);
 
    /* This code handles only SELECT queries */
    if (!bstrncasecmp(query, "SELECT", 6)) {
-      return db_sql_query(query, result_handler, ctx);
+      return sql_query_with_handler(query, result_handler, ctx);
    }
 
    if (!result_handler) {       /* no need of big_query without handler */
@@ -527,19 +522,19 @@ bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
    db_lock(this);
 
    if (!in_transaction) {       /* CURSOR needs transaction */
-      sql_query("BEGIN");
+      sql_query_without_handler("BEGIN");
    }
 
    Mmsg(m_buf, "DECLARE _bac_cursor CURSOR FOR %s", query);
 
-   if (!sql_query(m_buf)) {
+   if (!sql_query_without_handler(m_buf)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), m_buf, sql_strerror());
-      Dmsg0(50, "db_sql_query failed\n");
+      Dmsg0(50, "sql_query_without_handler failed\n");
       goto bail_out;
    }
 
    do {
-      if (!sql_query("FETCH 100 FROM _bac_cursor")) {
+      if (!sql_query_without_handler("FETCH 100 FROM _bac_cursor")) {
          goto bail_out;
       }
       while ((row = sql_fetch_row()) != NULL) {
@@ -552,15 +547,15 @@ bool B_DB_POSTGRESQL::db_big_sql_query(const char *query,
 
    } while (m_num_rows > 0);
 
-   sql_query("CLOSE _bac_cursor");
+   sql_query_without_handler("CLOSE _bac_cursor");
 
-   Dmsg0(500, "db_big_sql_query finished\n");
+   Dmsg0(500, "big_sql_query finished\n");
    sql_free_result();
    retval = true;
 
 bail_out:
    if (!in_transaction) {
-      sql_query("COMMIT");  /* end transaction */
+      sql_query_without_handler("COMMIT");  /* end transaction */
    }
 
    db_unlock(this);
@@ -571,34 +566,34 @@ bail_out:
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_POSTGRESQL::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool B_DB_POSTGRESQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = true;
 
-   Dmsg1(500, "db_sql_query starts with '%s'\n", query);
+   Dmsg1(500, "sql_query_with_handler starts with '%s'\n", query);
 
    db_lock(this);
-   if (!sql_query(query, QF_STORE_RESULT)) {
+   if (!sql_query_without_handler(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "db_sql_query failed\n");
+      Dmsg0(500, "sql_query_with_handler failed\n");
       retval = false;
       goto bail_out;
    }
 
-   Dmsg0(500, "db_sql_query succeeded. checking handler\n");
+   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
-      Dmsg0(500, "db_sql_query invoking handler\n");
+      Dmsg0(500, "sql_query_with_handler invoking handler\n");
       while ((row = sql_fetch_row()) != NULL) {
-         Dmsg0(500, "db_sql_query sql_fetch_row worked\n");
+         Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
          if (result_handler(ctx, m_num_fields, row))
             break;
       }
       sql_free_result();
    }
 
-   Dmsg0(500, "db_sql_query finished\n");
+   Dmsg0(500, "sql_query_with_handler finished\n");
 
 bail_out:
    db_unlock(this);
@@ -613,13 +608,13 @@ bail_out:
  * Returns:  true  on success
  *           false on failure
  */
-bool B_DB_POSTGRESQL::sql_query(const char *query, int flags)
+bool B_DB_POSTGRESQL::sql_query_without_handler(const char *query, int flags)
 {
    int i;
    bool retry = true;
    bool retval = false;
 
-   Dmsg1(500, "sql_query starts with '%s'\n", query);
+   Dmsg1(500, "sql_query_without_handler starts with '%s'\n", query);
 
    /*
     * We are starting a new query. reset everything.
@@ -706,7 +701,7 @@ retry_query:
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query finishing\n");
+   Dmsg0(500, "sql_query_without_handler finishing\n");
    goto ok_out;
 
 bail_out:
@@ -820,7 +815,7 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query(query)) {
+   if (!sql_query_without_handler(query)) {
       return 0;
    }
 
@@ -1021,14 +1016,14 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
 
    Dmsg0(500, "sql_batch_start started\n");
 
-   if (!sql_query("CREATE TEMPORARY TABLE batch ("
-                          "FileIndex int,"
-                          "JobId int,"
-                          "Path varchar,"
-                          "Name varchar,"
-                          "LStat varchar,"
-                          "Md5 varchar,"
-                          "DeltaSeq smallint)")) {
+   if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+                                  "FileIndex int,"
+                                  "JobId int,"
+                                  "Path varchar,"
+                                  "Name varchar,"
+                                  "LStat varchar,"
+                                  "Md5 varchar,"
+                                  "DeltaSeq smallint)")) {
       Dmsg0(500, "sql_batch_start failed\n");
       return false;
    }
@@ -1219,7 +1214,7 @@ B_DB *db_init_database(JCR *jcr,
             continue;
          }
 
-         if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
             goto bail_out;

@@ -105,12 +105,12 @@ bool dot_bvfs_update_cmd(UAContext *ua, const char *cmd)
    }
    pos = find_arg_with_value(ua, "jobid");
    if (pos != -1 && is_a_number_list(ua->argv[pos])) {
-      if (!bvfs_update_path_hierarchy_cache(ua->jcr, ua->db, ua->argv[pos])) {
+      if (!ua->db->bvfs_update_path_hierarchy_cache(ua->jcr, ua->argv[pos])) {
          ua->error_msg("ERROR: BVFS reported a problem for %s\n", ua->argv[pos]);
       }
    } else {
       /* update cache for all jobids */
-      bvfs_update_cache(ua->jcr, ua->db);
+      ua->db->bvfs_update_cache(ua->jcr);
    }
 
    return true;
@@ -318,14 +318,14 @@ static inline bool bvfs_validate_jobid(UAContext *ua, const char *jobid, bool au
    memset(&jr, 0, sizeof(jr));
    jr.JobId = str_to_int64(jobid);
 
-   if (db_get_job_record(ua->jcr, ua->db, &jr)) {
+   if (ua->db->get_job_record(ua->jcr, &jr)) {
       if (!ua->acl_access_ok(Job_ACL, jr.Name, audit_event)) {
          goto bail_out;
       }
 
       if (jr.ClientId) {
          cr.ClientId = jr.ClientId;
-         if (db_get_client_record(ua->jcr, ua->db, &cr)) {
+         if (ua->db->get_client_record(ua->jcr, &cr)) {
             if (!ua->acl_access_ok(Client_ACL, cr.Name, audit_event)) {
                goto bail_out;
             }
@@ -618,9 +618,9 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
       return false;
    }
 
-   if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+   if (!ua->db->get_job_record(ua->jcr, &jr)) {
       ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-                    ua->argv[pos], db_strerror(ua->db));
+                    ua->argv[pos], ua->db->strerror());
       return false;
    }
 
@@ -638,7 +638,7 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
       if (find_arg(ua, "all") > 0) {
          edit_int64(jr.ClientId, ed1);
          Mmsg(query, uar_sel_filesetid, ed1);
-         db_get_query_dbids(ua->jcr, ua->db, query, ids);
+         ua->db->get_query_dbids(ua->jcr, query, ids);
       } else {
          ids.num_ids = 1;
          ids.DBId[0] = jr.FileSetId;
@@ -656,7 +656,7 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
           * Lookup the FileSet.
           */
          fs.FileSetId = ids.DBId[i];
-         if (!db_get_fileset_record(ua->jcr, ua->db, &fs)) {
+         if (!ua->db->get_fileset_record(ua->jcr, &fs)) {
             continue;
          }
 
@@ -671,7 +671,7 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
           * Lookup the actual JobIds for the given fileset.
           */
          jr.FileSetId = fs.FileSetId;
-         if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &tempids)) {
+         if (!ua->db->accurate_get_jobids(ua->jcr, &jr, &tempids)) {
             return true;
          }
          jobids.add(tempids);
@@ -1001,7 +1001,7 @@ bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
    }
 
    ua->send->array_start("jobstatus");
-   retval = db_list_sql_query(ua->jcr, ua->db, select.c_str(), ua->send, HORZ_LIST, false);
+   retval = ua->db->list_sql_query(ua->jcr, select.c_str(), ua->send, HORZ_LIST, false);
    ua->send->array_end("jobstatus");
 
    return retval;
@@ -1302,19 +1302,19 @@ bool dot_sql_cmd(UAContext *ua, const char *cmd)
       /*
        * BAT uses the ".sql" command and expects this format
        */
-      retval = db_sql_query(ua->db, ua->argv[pos], sql_handler, (void *)ua);
+      retval = ua->db->sql_query(ua->argv[pos], sql_handler, (void *)ua);
       break;
    default:
       /*
        * General format
        */
-      retval = db_list_sql_query(ua->jcr, ua->db, ua->argv[pos], ua->send, HORZ_LIST, false);
+      retval = ua->db->list_sql_query(ua->jcr, ua->argv[pos], ua->send, HORZ_LIST, false);
       break;
    }
 
    if (!retval) {
-      Dmsg1(100, "Query failed: ERR=%s", db_strerror(ua->db));
-      ua->error_msg(_("Query failed: %s. ERR=%s"), ua->cmd, db_strerror(ua->db));
+      Dmsg1(100, "Query failed: ERR=%s", ua->db->strerror());
+      ua->error_msg(_("Query failed: %s. ERR=%s"), ua->cmd, ua->db->strerror());
    }
 
    return retval;
@@ -1338,10 +1338,8 @@ bool dot_mediatypes_cmd(UAContext *ua, const char *cmd)
    }
 
    ua->send->array_start("mediatypes");
-   if (!db_sql_query(ua->db,
-                     "SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType",
-                     one_handler, (void *)ua)) {
-      ua->error_msg(_("List MediaType failed: ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->sql_query("SELECT DISTINCT MediaType FROM MediaType ORDER BY MediaType", one_handler, (void *)ua)) {
+      ua->error_msg(_("List MediaType failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->array_end("mediatypes");
 
@@ -1355,10 +1353,8 @@ bool dot_media_cmd(UAContext *ua, const char *cmd)
    }
 
    ua->send->array_start("media");
-   if (!db_sql_query(ua->db,
-                     "SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName",
-                     one_handler, (void *)ua)) {
-      ua->error_msg(_("List Media failed: ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->sql_query("SELECT DISTINCT Media.VolumeName FROM Media ORDER BY VolumeName", one_handler, (void *)ua)) {
+      ua->error_msg(_("List Media failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->array_end("media");
 
@@ -1404,10 +1400,8 @@ bool dot_locations_cmd(UAContext *ua, const char *cmd)
    }
 
    ua->send->array_start("locations");
-   if (!db_sql_query(ua->db,
-                     "SELECT DISTINCT Location FROM Location ORDER BY Location",
-                     one_handler, (void *)ua)) {
-      ua->error_msg(_("List Location failed: ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->sql_query( "SELECT DISTINCT Location FROM Location ORDER BY Location", one_handler, (void *)ua)) {
+      ua->error_msg(_("List Location failed: ERR=%s\n"), ua->db->strerror());
    }
    ua->send->array_end("locations");
 

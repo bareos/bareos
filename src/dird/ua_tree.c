@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -408,7 +408,7 @@ static int set_extract(UAContext *ua, TREE_NODE *node, TREE_CTX *tree, bool extr
                fdbr.FileId = 0;
                fdbr.JobId = node->JobId;
 
-               if (node->hard_link && db_get_file_attributes_record(ua->jcr, ua->db, cwd, NULL, &fdbr)) {
+               if (node->hard_link && ua->db->get_file_attributes_record(ua->jcr, cwd, NULL, &fdbr)) {
                   int32_t LinkFI;
                   struct stat statp;
 
@@ -865,7 +865,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
           * Strip / from soft links to directories.
           *
           * This is because soft links to files have a trailing slash
-          * when returned from tree_getpath, but db_get_file_attr...
+          * when returned from tree_getpath, but get_file_attr...
           * treats soft links as files, so they do not have a trailing
           * slash like directory names.
           */
@@ -880,7 +880,7 @@ static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
             pcwd = cwd;
          }
 
-         if (db_get_file_attributes_record(ua->jcr, ua->db, pcwd, NULL, &fdbr)) {
+         if (ua->db->get_file_attributes_record(ua->jcr, pcwd, NULL, &fdbr)) {
             int32_t LinkFI;
             decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
          } else {
@@ -936,7 +936,7 @@ static int estimatecmd(UAContext *ua, TREE_CTX *tree)
             fdbr.FileId = 0;
             fdbr.JobId = node->JobId;
 
-            if (db_get_file_attributes_record(ua->jcr, ua->db, cwd, NULL, &fdbr)) {
+            if (ua->db->get_file_attributes_record(ua->jcr, cwd, NULL, &fdbr)) {
                int32_t LinkFI;
                decode_stat(fdbr.LStat, &statp, sizeof(statp), &LinkFI); /* decode stat pkt */
                if (S_ISREG(statp.st_mode) && statp.st_size > 0) {

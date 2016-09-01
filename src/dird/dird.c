@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -155,13 +155,13 @@ static bool dir_db_log_insert(JCR *jcr, utime_t mtime, char *msg)
    }
    length = strlen(msg);
    esc_msg.check_size(length * 2 + 1);
-   db_escape_string(jcr, jcr->db, esc_msg.c_str(), msg, length);
+   jcr->db->escape_string(jcr, esc_msg.c_str(), msg, length);
 
    bstrutime(dt, sizeof(dt), mtime);
    Mmsg(query, "INSERT INTO Log (JobId, Time, LogText) VALUES (%s,'%s','%s')",
         edit_int64(jcr->JobId, ed1), dt, esc_msg.c_str());
 
-   return db_sql_query(jcr->db, query.c_str());
+   return jcr->db->sql_query(query.c_str());
 }
 
 static void usage()
@@ -1145,29 +1145,29 @@ static bool check_catalog(cat_op mode)
                             catalog->try_reconnect,
                             catalog->exit_on_fatal);
 
-      if (!db || !db_open_database(NULL, db)) {
+      if (!db || !db->open_database(NULL)) {
          Pmsg2(000, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
          Jmsg(NULL, M_FATAL, 0, _("Could not open Catalog \"%s\", database \"%s\".\n"),
               catalog->name(), catalog->db_name);
          if (db) {
-            Jmsg(NULL, M_FATAL, 0, _("%s"), db_strerror(db));
-            Pmsg1(000, "%s", db_strerror(db));
-            db_close_database(NULL, db);
+            Jmsg(NULL, M_FATAL, 0, _("%s"), db->strerror());
+            Pmsg1(000, "%s", db->strerror());
+            db->close_database(NULL);
          }
          OK = false;
          goto bail_out;
       }
 
       /* Display a message if the db max_connections is too low */
-      if (!db_check_max_connections(NULL, db, me->MaxConcurrentJobs)) {
+      if (!db->check_max_connections(NULL, me->MaxConcurrentJobs)) {
          Pmsg1(000, "Warning, settings problem for Catalog=%s\n", catalog->name());
-         Pmsg1(000, "%s", db_strerror(db));
+         Pmsg1(000, "%s", db->strerror());
       }
 
       /* we are in testing mode, so don't touch anything in the catalog */
       if (mode == CHECK_CONNECTION) {
-         db_close_database(NULL, db);
+         db->close_database(NULL);
          continue;
       }
 
@@ -1210,7 +1210,7 @@ static bool check_catalog(cat_op mode)
                client->catalog->name(), client->name());
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
-         db_create_client_record(NULL, db, &cr);
+         db->create_client_record(NULL, &cr);
       }
 
       /* Ensure basic storage record is in DB */
@@ -1223,13 +1223,13 @@ static bool check_catalog(cat_op mode)
          if (store->media_type) {
             bstrncpy(mtr.MediaType, store->media_type, sizeof(mtr.MediaType));
             mtr.ReadOnly = 0;
-            db_create_mediatype_record(NULL, db, &mtr);
+            db->create_mediatype_record(NULL, &mtr);
          } else {
             mtr.MediaTypeId = 0;
          }
          bstrncpy(sr.Name, store->name(), sizeof(sr.Name));
          sr.AutoChanger = store->autochanger;
-         if (!db_create_storage_record(NULL, db, &sr)) {
+         if (!db->create_storage_record(NULL, &sr)) {
             Jmsg(NULL, M_FATAL, 0, _("Could not create storage record for %s\n"),
                  store->name());
             OK = false;
@@ -1238,7 +1238,7 @@ static bool check_catalog(cat_op mode)
          store->StorageId = sr.StorageId;   /* set storage Id */
          if (!sr.created) {                 /* if not created, update it */
             sr.AutoChanger = store->autochanger;
-            if (!db_update_storage_record(NULL, db, &sr)) {
+            if (!db->update_storage_record(NULL, &sr)) {
                Jmsg(NULL, M_FATAL, 0, _("Could not update storage record for %s\n"),
                     store->name());
                OK = false;
@@ -1263,7 +1263,7 @@ static bool check_catalog(cat_op mode)
             } else {
                cr.WrapCounter[0] = 0;  /* empty string */
             }
-            if (db_create_counter_record(NULL, db, &cr)) {
+            if (db->create_counter_record(NULL, &cr)) {
                counter->CurrentValue = cr.CurrentValue;
                counter->created = true;
                Dmsg2(100, "Create counter %s val=%d\n", counter->name(), counter->CurrentValue);
@@ -1275,14 +1275,14 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
-         db_sql_query(db, cleanup_created_job);
-         db_sql_query(db, cleanup_running_job);
+         db->sql_query(cleanup_created_job);
+         db->sql_query(cleanup_running_job);
       }
 
       /* Set type in global for debugging */
-      set_db_type(db_get_type(db));
+      set_db_type(db->get_type());
 
-      db_close_database(NULL, db);
+      db->close_database(NULL);
    }
 
 bail_out:

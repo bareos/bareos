@@ -1,8 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,7 @@ static inline int native_to_ndmp_level(JCR *jcr, char *filesystem)
 {
    int level = -1;
 
-   if (!db_create_ndmp_level_mapping(jcr, jcr->db, &jcr->jr, filesystem)) {
+   if (!jcr->db->create_ndmp_level_mapping(jcr, &jcr->jr, filesystem)) {
       return -1;
    }
 
@@ -105,7 +105,7 @@ static inline int native_to_ndmp_level(JCR *jcr, char *filesystem)
       level = 1;
       break;
    case L_INCREMENTAL:
-      level = db_get_ndmp_level_mapping(jcr, jcr->db, &jcr->jr, filesystem);
+      level = jcr->db->get_ndmp_level_mapping(jcr, &jcr->jr, filesystem);
       break;
    default:
       Jmsg(jcr, M_FATAL, 0, _("Illegal Job Level %c for NDMP Job\n"), jcr->getJobLevel());
@@ -339,8 +339,7 @@ static inline bool extract_post_backup_stats(JCR *jcr,
     */
    ndm_ee = sess->control_acb->job.result_env_tab.head;
    while (ndm_ee) {
-      if (!db_create_ndmp_environment_string(jcr, jcr->db, &jcr->jr,
-                                             ndm_ee->pval.name, ndm_ee->pval.value)) {
+      if (!jcr->db->create_ndmp_environment_string(jcr, &jcr->jr, ndm_ee->pval.name, ndm_ee->pval.value)) {
          break;
       }
       ndm_ee = ndm_ee->next;
@@ -350,8 +349,7 @@ static inline bool extract_post_backup_stats(JCR *jcr,
     * If we are doing a backup type that uses dumplevels save the last used dump level.
     */
    if (nbf_options && nbf_options->uses_level) {
-      db_update_ndmp_level_mapping(jcr, jcr->db, &jcr->jr,
-                                   filesystem, sess->control_acb->job.bu_level);
+      jcr->db->update_ndmp_level_mapping(jcr, &jcr->jr, filesystem, sess->control_acb->job.bu_level);
    }
 
    return retval;
@@ -375,8 +373,8 @@ bool do_ndmp_backup_init(JCR *jcr)
 
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
@@ -444,8 +442,8 @@ bool do_ndmp_backup(JCR *jcr)
 
    jcr->setJobStatus(JS_Running);
    Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->jr.JobId, jcr->jr.JobLevel);
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
@@ -702,7 +700,9 @@ bool do_ndmp_backup(JCR *jcr)
    if (jcr->store_bsock) {
       jcr->store_bsock->fsend("finish");
       wait_for_storage_daemon_termination(jcr);
-      db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+      if (jcr->batch_started) {
+         jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
+      }
    }
 
    /*
@@ -793,16 +793,14 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
 
    update_job_end(jcr, TermCode);
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!db_get_client_record(jcr, jcr->db, &cr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->get_client_record(jcr, &cr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"), jcr->db->strerror());
    }
 
    update_bootstrap_file(jcr);

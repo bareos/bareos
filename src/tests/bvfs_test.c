@@ -27,7 +27,6 @@
 #include "bareos.h"
 #include "jcr.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
 
@@ -236,10 +235,10 @@ int main (int argc, char *argv[])
                               false)) == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
-   Dmsg1(0, "db_type=%s\n", db_get_type(db));
+   Dmsg1(0, "db_type=%s\n", db->get_type());
 
-   if (!db_open_database(NULL, db)) {
-      Emsg0(M_ERROR_TERM, 0, db_strerror(db));
+   if (!db->open_database(NULL)) {
+      Emsg0(M_ERROR_TERM, 0, db->strerror());
    }
    Dmsg0(200, "Database opened\n");
    if (verbose) {
@@ -250,10 +249,10 @@ int main (int argc, char *argv[])
 
    if (clean) {
       Pmsg0(0, "Clean old table\n");
-      db_sql_query(db, "DELETE FROM PathHierarchy", NULL, NULL);
-      db_sql_query(db, "UPDATE Job SET HasCache=0", NULL, NULL);
-      db_sql_query(db, "DELETE FROM PathVisibility", NULL, NULL);
-      bvfs_update_cache(bjcr, db);
+      db->sql_query("DELETE FROM PathHierarchy", NULL, NULL);
+      db->sql_query("UPDATE Job SET HasCache=0", NULL, NULL);
+      db->sql_query("DELETE FROM PathVisibility", NULL, NULL);
+      db->bvfs_update_cache(bjcr);
    }
 
    Bvfs fs(bjcr, db);

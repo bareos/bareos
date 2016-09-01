@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -84,8 +84,8 @@ bool do_native_vbackup_init(JCR *jcr)
 
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
    /*
@@ -189,7 +189,7 @@ bool do_native_vbackup(JCR *jcr)
 
    } else {
       db_list_ctx jobids_ctx;
-      db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+      jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
       Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
       if (jobids_ctx.count == 0) {
@@ -221,8 +221,8 @@ bool do_native_vbackup(JCR *jcr)
       *p = ',';
    }
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), jcr->db->strerror());
       goto bail_out;
    }
 
@@ -246,9 +246,8 @@ bool do_native_vbackup(JCR *jcr)
    jcr->previous_jr.JobId = str_to_int64(p);
    Dmsg1(10, "Previous JobId=%s\n", p);
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for previous Job: ERR=%s"),
-           db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for previous Job: ERR=%s"), jcr->db->strerror());
       goto bail_out;
    }
 
@@ -299,8 +298,8 @@ bool do_native_vbackup(JCR *jcr)
    /*
     * Update job start record
     */
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
 
@@ -333,7 +332,9 @@ bool do_native_vbackup(JCR *jcr)
     */
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
-   db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+   if (jcr->batch_started) {
+      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
+   }
    if (!jcr->is_JobStatus(JS_Terminated)) {
       goto bail_out;
    }
@@ -401,21 +402,21 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel)
         jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
         edit_uint64(jcr->previous_jr.JobTDate, ec1),
         edit_uint64(jcr->JobId, ec2));
-   db_sql_query(jcr->db, query.c_str());
+   jcr->db->sql_query(query.c_str());
 
    /*
     * Get the fully updated job record
     */
-   if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-           db_strerror(jcr->db));
+           jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!db_get_client_record(jcr, jcr->db, &cr)) {
+   if (!jcr->db->get_client_record(jcr, &cr)) {
       Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
-           db_strerror(jcr->db));
+           jcr->db->strerror());
    }
 
    update_bootstrap_file(jcr);
@@ -491,15 +492,15 @@ static bool create_bootstrap_file(JCR *jcr, char *jobids)
    ua = new_ua_context(jcr);
    rx.JobIds = jobids;
 
-   if (!db_open_batch_connection(jcr, jcr->db)) {
+   if (!jcr->db->open_batch_connection(jcr)) {
       Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connexion");
       return false;
    }
 
-   if (!db_get_file_list(jcr, jcr->db_batch, jobids, false /* don't use md5 */,
+   if (!jcr->db_batch->get_file_list(jcr, jobids, false /* don't use md5 */,
                          true /* use delta */,
                          insert_bootstrap_handler, (void *)rx.bsr)) {
-      Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db_batch));
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->db_batch->strerror());
    }
 
    complete_bsr(ua, rx.bsr);

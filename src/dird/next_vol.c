@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -84,7 +84,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
       set_storageid_in_mr(store, mr);
 
       bstrncpy(mr->VolStatus, "Append", sizeof(mr->VolStatus));
-      ok = db_find_next_volume(jcr, jcr->db, index, InChanger, mr, unwanted_volumes);
+      ok = jcr->db->find_next_volume(jcr, index, InChanger, mr, unwanted_volumes);
       if (!ok) {
          /*
           * No volume found, apply algorithm
@@ -155,7 +155,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
              * Find oldest volume to recycle
              */
             set_storageid_in_mr(store, mr);
-            ok = db_find_next_volume(jcr, jcr->db, -1, InChanger, mr, unwanted_volumes);
+            ok = jcr->db->find_next_volume(jcr, -1, InChanger, mr, unwanted_volumes);
             set_storageid_in_mr(store, mr);
             Dmsg1(dbglvl, "Find oldest=%d Volume\n", ok);
             if (ok && prune) {
@@ -275,9 +275,9 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
        */
       Dmsg1(dbglvl, "Vol=%s has expired update media record\n", mr->VolumeName);
       set_storageid_in_mr(NULL, mr);
-      if (!db_update_media_record(jcr, jcr->db, mr)) {
+      if (!jcr->db->update_media_record(jcr, mr)) {
          Jmsg(jcr, M_ERROR, 0, _("Catalog error updating volume \"%s\". ERR=%s"),
-              mr->VolumeName, db_strerror(jcr->db));
+              mr->VolumeName, jcr->db->strerror());
       }
    }
    Dmsg2(dbglvl, "Vol=%s expired=%d\n", mr->VolumeName, expired);
@@ -400,7 +400,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
    /*
     * Get Pool record for Scratch Pool
     * choose between ScratchPoolId and Scratch
-    * db_get_pool_record will first try ScratchPoolId,
+    * get_pool_record will first try ScratchPoolId,
     * and then try the pool named Scratch
     */
    memset(&smr, 0, sizeof(smr));
@@ -408,7 +408,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
 
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
    spr.PoolId = mr->ScratchPoolId;
-   if (db_get_pool_record(jcr, jcr->db, &spr)) {
+   if (jcr->db->get_pool_record(jcr, &spr)) {
       smr.PoolId = spr.PoolId;
       if (InChanger) {
          smr.StorageId = mr->StorageId;  /* want only Scratch Volumes in changer */
@@ -422,7 +422,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
        * then try to take the oldest volume.
        */
       set_storageid_in_mr(store, &smr);  /* put StorageId in new record */
-      if (db_find_next_volume(jcr, jcr->db, 1, InChanger, &smr, NULL)) {
+      if (jcr->db->find_next_volume(jcr, 1, InChanger, &smr, NULL)) {
          found = true;
       } else if (find_recycled_volume(jcr, InChanger, &smr, store, NULL)) {
          found = true;
@@ -439,9 +439,8 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
 
-         if (!db_get_pool_record(jcr, jcr->db, &pr)) {
-            Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"),
-                 db_strerror(jcr->db));
+         if (!jcr->db->get_pool_record(jcr, &pr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Unable to get Pool record: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
 
@@ -469,8 +468,8 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
          bstrncpy(mr->VolStatus, smr.VolStatus, sizeof(smr.VolStatus));
          mr->RecyclePoolId = smr.RecyclePoolId;
 
-         if (!db_update_media_record(jcr, jcr->db, mr)) {
-            Jmsg(jcr, M_WARNING, 0, _("Failed to move Scratch Volume. ERR=%s\n"), db_strerror(jcr->db));
+         if (!jcr->db->update_media_record(jcr, mr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Failed to move Scratch Volume. ERR=%s\n"), jcr->db->strerror());
             goto bail_out;
          }
 

@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -46,8 +46,8 @@ static inline bool update_database(UAContext *ua,
        */
       mr->InChanger = mr->Slot > 0;  /* If slot give assume in changer */
       set_storageid_in_mr(ua->jcr->res.wstore, mr);
-      if (!db_update_media_record(ua->jcr, ua->db, mr)) {
-          ua->error_msg("%s", db_strerror(ua->db));
+      if (!ua->db->update_media_record(ua->jcr, mr)) {
+          ua->error_msg("%s", ua->db->strerror());
           retval = false;
       }
    } else {
@@ -59,7 +59,7 @@ static inline bool update_database(UAContext *ua,
       mr->Enabled = 1;
       set_storageid_in_mr(ua->jcr->res.wstore, mr);
 
-      if (db_create_media_record(ua->jcr, ua->db, mr)) {
+      if (ua->db->create_media_record(ua->jcr, mr)) {
          ua->info_msg(_("Catalog record for Volume \"%s\", Slot %hd successfully created.\n"),
          mr->VolumeName, mr->Slot);
 
@@ -67,11 +67,11 @@ static inline bool update_database(UAContext *ua,
           * Update number of volumes in pool
           */
          pr->NumVols++;
-         if (!db_update_pool_record(ua->jcr, ua->db, pr)) {
-            ua->error_msg("%s", db_strerror(ua->db));
+         if (!ua->db->update_pool_record(ua->jcr, pr)) {
+            ua->error_msg("%s", ua->db->strerror());
          }
       } else {
-         ua->error_msg("%s", db_strerror(ua->db));
+         ua->error_msg("%s", ua->db->strerror());
          retval = false;
       }
    }
@@ -353,15 +353,15 @@ static void label_from_barcodes(UAContext *ua, drive_number_t drive,
       memset(&mr, 0, sizeof(mr));
       bstrncpy(mr.VolumeName, vl->VolName, sizeof(mr.VolumeName));
       media_record_exists = false;
-      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+      if (ua->db->get_media_record(ua->jcr, &mr)) {
          if (mr.VolBytes != 0) {
             ua->warning_msg(_("Media record for Slot %hd Volume \"%s\" already exists.\n"),
                             vl->Slot, mr.VolumeName);
             mr.Slot = vl->Slot;
             mr.InChanger = mr.Slot > 0;  /* if slot give assume in changer */
             set_storageid_in_mr(store, &mr);
-            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
-               ua->error_msg(_("Error setting InChanger: ERR=%s"), db_strerror(ua->db));
+            if (!ua->db->update_media_record(ua->jcr, &mr)) {
+               ua->error_msg(_("Error setting InChanger: ERR=%s"), ua->db->strerror());
             }
             continue;
          }
@@ -380,8 +380,8 @@ static void label_from_barcodes(UAContext *ua, drive_number_t drive,
             bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
             mr.MediaType[0] = 0;
             set_storageid_in_mr(store, &mr);
-            if (!db_update_media_record(ua->jcr, ua->db, &mr)) {
-                ua->error_msg("%s", db_strerror(ua->db));
+            if (!ua->db->update_media_record(ua->jcr, &mr)) {
+                ua->error_msg("%s", ua->db->strerror());
             }
          } else {                        /* create the media record */
             if (pr.MaxVols > 0 && pr.NumVols >= pr.MaxVols) {
@@ -392,15 +392,15 @@ static void label_from_barcodes(UAContext *ua, drive_number_t drive,
             bstrncpy(mr.VolStatus, "Cleaning", sizeof(mr.VolStatus));
             mr.MediaType[0] = 0;
             set_storageid_in_mr(store, &mr);
-            if (db_create_media_record(ua->jcr, ua->db, &mr)) {
+            if (ua->db->create_media_record(ua->jcr, &mr)) {
                ua->send_msg(_("Catalog record for cleaning tape \"%s\" successfully created.\n"),
                   mr.VolumeName);
                pr.NumVols++;          /* this is a bit suspect */
-               if (!db_update_pool_record(ua->jcr, ua->db, &pr)) {
-                  ua->error_msg("%s", db_strerror(ua->db));
+               if (!ua->db->update_pool_record(ua->jcr, &pr)) {
+                  ua->error_msg("%s", ua->db->strerror());
                }
             } else {
-               ua->error_msg(_("Catalog error on cleaning tape: %s"), db_strerror(ua->db));
+               ua->error_msg(_("Catalog error on cleaning tape: %s"), ua->db->strerror());
             }
          }
          continue;                    /* done, go handle next volume */
@@ -528,10 +528,10 @@ static int do_label(UAContext *ua, const char *cmd, bool relabel)
       i = find_arg_with_value(ua, "oldvolume");
       if (i >= 0) {
          bstrncpy(omr.VolumeName, ua->argv[i], sizeof(omr.VolumeName));
-         if (db_get_media_record(ua->jcr, ua->db, &omr)) {
+         if (ua->db->get_media_record(ua->jcr, &omr)) {
             goto checkVol;
          }
-         ua->error_msg("%s", db_strerror(ua->db));
+         ua->error_msg("%s", ua->db->strerror());
       }
       /*
        * No keyword or Vol not found, ask user to select
@@ -582,7 +582,7 @@ checkName:
       /*
        * If VolBytes are zero the Volume is not labeled
        */
-      if (db_get_media_record(ua->jcr, ua->db, &mr)) {
+      if (ua->db->get_media_record(ua->jcr, &mr)) {
          if (mr.VolBytes != 0) {
              ua->error_msg(_("Media record for new Volume \"%s\" already exists.\n"),
                 mr.VolumeName);
@@ -644,9 +644,9 @@ checkName:
          /*
           * Delete the old media record
           */
-         if (!db_delete_media_record(ua->jcr, ua->db, &omr)) {
+         if (!ua->db->delete_media_record(ua->jcr, &omr)) {
             ua->error_msg(_("Delete of Volume \"%s\" failed. ERR=%s"),
-               omr.VolumeName, db_strerror(ua->db));
+               omr.VolumeName, ua->db->strerror());
          } else {
             ua->info_msg(_("Old volume \"%s\" deleted from catalog.\n"),
                omr.VolumeName);
@@ -654,8 +654,8 @@ checkName:
              * Update the number of Volumes in the pool
              */
             pr.NumVols--;
-            if (!db_update_pool_record(ua->jcr, ua->db, &pr)) {
-               ua->error_msg("%s", db_strerror(ua->db));
+            if (!ua->db->update_pool_record(ua->jcr, &pr)) {
+               ua->error_msg("%s", ua->db->strerror());
             }
          }
       }

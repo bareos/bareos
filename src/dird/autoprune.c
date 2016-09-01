@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -109,7 +109,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
     */
    memset(&spr, 0, sizeof(spr));
    bstrncpy(spr.Name, "Scratch", sizeof(spr.Name));
-   if (db_get_pool_record(jcr, jcr->db, &spr)) {
+   if (jcr->db->get_pool_record(jcr, &spr)) {
       edit_int64(spr.PoolId, ed2);
       bstrncat(ed2, ",", sizeof(ed2));
    } else {
@@ -148,8 +148,8 @@ void prune_volumes(JCR *jcr, bool InChanger,
    }
 
    Dmsg1(100, "query=%s\n", query.c_str());
-   if (!db_get_query_dbids(ua->jcr, ua->db, query, ids)) {
-      Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->get_query_dbids(ua->jcr, query, ids)) {
+      Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
 
@@ -162,8 +162,8 @@ void prune_volumes(JCR *jcr, bool InChanger,
       memset(&lmr, 0, sizeof(lmr));
       lmr.MediaId = ids.DBId[i];
       Dmsg1(100, "Get record MediaId=%d\n", (int)lmr.MediaId);
-      if (!db_get_media_record(jcr, jcr->db, &lmr)) {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+      if (!jcr->db->get_media_record(jcr, &lmr)) {
+         Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
          continue;
       }
       Dmsg1(100, "Examine vol=%s\n", lmr.VolumeName);

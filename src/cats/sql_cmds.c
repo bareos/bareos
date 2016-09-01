@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -565,13 +565,14 @@ const char *select_recent_version[] = {
  */
 static const char *create_temp_accurate_jobids_default =
    "CREATE TABLE btemp3%s AS "
-      "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
-        "FROM Job JOIN FileSet USING (FileSetId) "
-       "WHERE ClientId = %s "
-         "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
-         "AND StartTime<'%s' "
-         "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
-       "ORDER BY Job.JobTDate DESC LIMIT 1";
+   "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
+   "FROM Job "
+   "JOIN FileSet USING (FileSetId) "
+   "WHERE ClientId = %s "
+   "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
+   "AND StartTime<'%s' "
+   "AND FileSet.FileSetId = %s "
+   "ORDER BY Job.JobTDate DESC LIMIT 1";
 
 const char *create_temp_accurate_jobids[] = {
    /* Mysql */
@@ -590,7 +591,7 @@ const char *create_temp_accurate_jobids[] = {
    "WHERE ClientId = %s "
    "AND Level='F' AND JobStatus IN ('T','W') AND Type='B' "
    "AND StartTime<'%s' "
-   "AND FileSet.FileSet=(SELECT FileSet FROM FileSet WHERE FileSetId = %s) "
+   "AND FileSet.FileSetId = %s "
    "ORDER BY Job.JobTDate DESC FETCH FIRST 1 ROW ONLY "
    "ON COMMIT PRESERVE ROWS WITH NORECOVERY"
 };
@@ -1191,16 +1192,16 @@ const char *update_counter_values[] = {
    update_counter_values_default
 };
 
-static const char *get_quota_jobbytes_default =
+static const char *select_quota_jobbytes_default =
    "SELECT SUM(JobBytes) "
    "FROM Job "
    "WHERE ClientId = %s "
    "AND JobId != %s "
    "AND SchedTime > '%s'";
 
-const char *get_quota_jobbytes[] = {
+const char *select_quota_jobbytes[] = {
    /* Mysql */
-   get_quota_jobbytes_default,
+   select_quota_jobbytes_default,
 
    /* Postgresql */
    "SELECT SUM(JobBytes) "
@@ -1210,13 +1211,13 @@ const char *get_quota_jobbytes[] = {
    "AND SchedTime > TIMESTAMP '%s'",
 
    /* SQLite3 */
-   get_quota_jobbytes_default,
+   select_quota_jobbytes_default,
 
    /* Ingres */
-   get_quota_jobbytes_default
+   select_quota_jobbytes_default
 };
 
-static const char *get_quota_jobbytes_nofailed_default =
+static const char *select_quota_jobbytes_nofailed_default =
    "SELECT SUM(JobBytes) "
    "FROM Job "
    "WHERE ClientId = %s "
@@ -1224,9 +1225,9 @@ static const char *get_quota_jobbytes_nofailed_default =
    "AND SchedTime > '%s' "
    "AND JobStatus NOT IN ('E','f','A')";
 
-const char *get_quota_jobbytes_nofailed[] = {
+const char *select_quota_jobbytes_nofailed[] = {
    /* Mysql */
-   get_quota_jobbytes_nofailed_default,
+   select_quota_jobbytes_nofailed_default,
 
    /* Postgresql */
    "SELECT SUM(JobBytes) "
@@ -1237,8 +1238,8 @@ const char *get_quota_jobbytes_nofailed[] = {
    "AND JobStatus NOT IN ('E','f','A')",
 
    /* SQLite3 */
-   get_quota_jobbytes_nofailed_default,
+   select_quota_jobbytes_nofailed_default,
 
    /* Ingres */
-   get_quota_jobbytes_nofailed_default
+   select_quota_jobbytes_nofailed_default
 };

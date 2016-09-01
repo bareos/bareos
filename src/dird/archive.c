@@ -75,8 +75,8 @@ void archive_cleanup(JCR *jcr, int TermCode)
 
    update_job_end(jcr, TermCode);
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 

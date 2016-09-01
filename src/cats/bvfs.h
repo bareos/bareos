@@ -2,6 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Planets Communications B.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -77,7 +79,7 @@ public:
    void set_pattern(char *p) {
       uint32_t len = strlen(p);
       pattern = check_pool_memory_size(pattern, len * 2 + 1);
-      db_escape_string(jcr, db, pattern, p, len);
+      db->escape_string(jcr, pattern, p, len);
    }
 
    /* Get the root point */
@@ -178,16 +180,12 @@ private:
 #define bvfs_is_file(row) ((row)[BVFS_Type][0] == BVFS_FILE_RECORD)
 #define bvfs_is_version(row) ((row)[BVFS_Type][0] == BVFS_FILE_VERSION)
 
-
-bool bvfs_update_path_hierarchy_cache(JCR *jcr, B_DB *mdb, char *jobids);
-void bvfs_update_cache(JCR *jcr, B_DB *mdb);
 char *bvfs_parent_dir(char *path);
 
-/* Return the basename of the with the trailing /  (update the given string)
- * TODO: see in the rest of bareos if we don't have
- * this function already
+/*
+ * Return the basename of the with the trailing / (update the given string)
+ * TODO: see in the rest of bareos if we don't have this function already
  */
 char *bvfs_basename_dir(char *path);
-
 
 #endif /* __BVFS_H_ */

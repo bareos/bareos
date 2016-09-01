@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -89,5 +89,5 @@ extern const char CATS_IMP_EXP *match_query[];
 extern const char CATS_IMP_EXP *insert_counter_values[];
 extern const char CATS_IMP_EXP *select_counter_values[];
 extern const char CATS_IMP_EXP *update_counter_values[];
-extern const char CATS_IMP_EXP *get_quota_jobbytes[];
-extern const char CATS_IMP_EXP *get_quota_jobbytes_nofailed[];
+extern const char CATS_IMP_EXP *select_quota_jobbytes[];
+extern const char CATS_IMP_EXP *select_quota_jobbytes_nofailed[];

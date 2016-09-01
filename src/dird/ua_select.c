@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -494,10 +494,10 @@ SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
 bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
 {
    if (cr->Name[0]) {                 /* If name already supplied */
-      if (db_get_client_record(ua->jcr, ua->db, cr)) {
+      if (ua->db->get_client_record(ua->jcr, cr)) {
          return true;
       }
-      ua->error_msg(_("Could not find Client %s: ERR=%s"), cr->Name, db_strerror(ua->db));
+      ua->error_msg(_("Could not find Client %s: ERR=%s"), cr->Name, ua->db->strerror());
    }
 
    for (int i = 1; i < ua->argc; i++) {
@@ -507,9 +507,9 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
             break;
          }
          bstrncpy(cr->Name, ua->argv[i], sizeof(cr->Name));
-         if (!db_get_client_record(ua->jcr, ua->db, cr)) {
+         if (!ua->db->get_client_record(ua->jcr, cr)) {
             ua->error_msg(_("Could not find Client \"%s\": ERR=%s"), ua->argv[i],
-                     db_strerror(ua->db));
+                     ua->db->strerror());
             cr->ClientId = 0;
             break;
          }
@@ -538,8 +538,8 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    char name[MAX_NAME_LENGTH];
 
    cr->ClientId = 0;
-   if (!db_get_client_ids(ua->jcr, ua->db, &num_clients, &ids)) {
-      ua->error_msg(_("Error obtaining client ids. ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->get_client_ids(ua->jcr, &num_clients, &ids)) {
+      ua->error_msg(_("Error obtaining client ids. ERR=%s\n"), ua->db->strerror());
       return false;
    }
 
@@ -551,7 +551,7 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    start_prompt(ua, _("Defined Clients:\n"));
    for (int i = 0; i < num_clients; i++) {
       ocr.ClientId = ids[i];
-      if (!db_get_client_record(ua->jcr, ua->db, &ocr) ||
+      if (!ua->db->get_client_record(ua->jcr, &ocr) ||
           !ua->acl_access_ok(Client_ACL, ocr.Name)) {
          continue;
       }
@@ -566,8 +566,8 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    memset(&ocr, 0, sizeof(ocr));
    bstrncpy(ocr.Name, name, sizeof(ocr.Name));
 
-   if (!db_get_client_record(ua->jcr, ua->db, &ocr)) {
-      ua->error_msg(_("Could not find Client \"%s\": ERR=%s"), name, db_strerror(ua->db));
+   if (!ua->db->get_client_record(ua->jcr, &ocr)) {
+      ua->error_msg(_("Could not find Client \"%s\": ERR=%s"), name, ua->db->strerror());
       return false;
    }
 
@@ -591,11 +591,11 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
 bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
 {
    if (sr->Name[0]) {                 /* If name already supplied */
-      if (db_get_storage_record(ua->jcr, ua->db, sr) &&
+      if (ua->db->get_storage_record(ua->jcr, sr) &&
           ua->acl_access_ok(Pool_ACL, sr->Name)) {
          return true;
       }
-      ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name, db_strerror(ua->db));
+      ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), sr->Name, ua->db->strerror());
    }
 
    if (!select_storage_dbr(ua, sr, argk)) {  /* try once more */
@@ -620,11 +620,11 @@ bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
 bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
 {
    if (pr->Name[0]) {                 /* If name already supplied */
-      if (db_get_pool_record(ua->jcr, ua->db, pr) &&
+      if (ua->db->get_pool_record(ua->jcr, pr) &&
           ua->acl_access_ok(Pool_ACL, pr->Name)) {
          return true;
       }
-      ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), pr->Name, db_strerror(ua->db));
+      ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), pr->Name, ua->db->strerror());
    }
 
    if (!select_pool_dbr(ua, pr, argk)) {  /* try once more */
@@ -649,8 +649,8 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
       if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
           ua->acl_access_ok(Pool_ACL, ua->argv[i])) {
          bstrncpy(pr->Name, ua->argv[i], sizeof(pr->Name));
-         if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
-            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i], db_strerror(ua->db));
+         if (!ua->db->get_pool_record(ua->jcr, pr)) {
+            ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), ua->argv[i], ua->db->strerror());
             pr->PoolId = 0;
             break;
          }
@@ -659,8 +659,8 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    }
 
    pr->PoolId = 0;
-   if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
-      ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->get_pool_ids(ua->jcr, &num_pools, &ids)) {
+      ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
       return 0;
    }
 
@@ -676,7 +676,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
 
    for (int i = 0; i < num_pools; i++) {
       opr.PoolId = ids[i];
-      if (!db_get_pool_record(ua->jcr, ua->db, &opr) ||
+      if (!ua->db->get_pool_record(ua->jcr, &opr) ||
           !ua->acl_access_ok(Pool_ACL, opr.Name)) {
          continue;
       }
@@ -698,8 +698,8 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    if (!bstrcmp(name, _("*None*"))) {
      bstrncpy(opr.Name, name, sizeof(opr.Name));
 
-     if (!db_get_pool_record(ua->jcr, ua->db, &opr)) {
-        ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), name, db_strerror(ua->db));
+     if (!ua->db->get_pool_record(ua->jcr, &opr)) {
+        ua->error_msg(_("Could not find Pool \"%s\": ERR=%s"), name, ua->db->strerror());
         return false;
      }
    }
@@ -720,8 +720,8 @@ bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
 
    memset(pr, 0, sizeof(POOL_DBR));
    pr->PoolId = mr->PoolId;
-   if (!db_get_pool_record(ua->jcr, ua->db, pr)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->get_pool_record(ua->jcr, pr)) {
+      ua->error_msg("%s", ua->db->strerror());
       return false;
    }
 
@@ -748,8 +748,8 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
       if (bstrcasecmp(ua->argk[i], argk) && ua->argv[i] &&
           ua->acl_access_ok(Storage_ACL, ua->argv[i])) {
          bstrncpy(sr->Name, ua->argv[i], sizeof(sr->Name));
-         if (!db_get_storage_record(ua->jcr, ua->db, sr)) {
-            ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i], db_strerror(ua->db));
+         if (!ua->db->get_storage_record(ua->jcr, sr)) {
+            ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), ua->argv[i], ua->db->strerror());
             sr->StorageId = 0;
             break;
          }
@@ -758,8 +758,8 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    }
 
    sr->StorageId = 0;
-   if (!db_get_storage_ids(ua->jcr, ua->db, &num_storages, &ids)) {
-      ua->error_msg(_("Error obtaining storage ids. ERR=%s\n"), db_strerror(ua->db));
+   if (!ua->db->get_storage_ids(ua->jcr, &num_storages, &ids)) {
+      ua->error_msg(_("Error obtaining storage ids. ERR=%s\n"), ua->db->strerror());
       return 0;
    }
 
@@ -775,7 +775,7 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
 
    for (int i = 0; i < num_storages; i++) {
       osr.StorageId = ids[i];
-      if (!db_get_storage_record(ua->jcr, ua->db, &osr) ||
+      if (!ua->db->get_storage_record(ua->jcr, &osr) ||
           !ua->acl_access_ok(Storage_ACL, osr.Name)) {
          continue;
       }
@@ -797,8 +797,8 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    if (!bstrcmp(name, _("*None*"))) {
      bstrncpy(osr.Name, name, sizeof(osr.Name));
 
-     if (!db_get_storage_record(ua->jcr, ua->db, &osr)) {
-        ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), name, db_strerror(ua->db));
+     if (!ua->db->get_storage_record(ua->jcr, &osr)) {
+        ua->error_msg(_("Could not find Storage \"%s\": ERR=%s"), name, ua->db->strerror());
         return false;
      }
    }
@@ -840,7 +840,7 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
       }
 
       mr->PoolId = pr.PoolId;
-      db_list_media_records(ua->jcr, ua->db, mr, ua->send, HORZ_LIST);
+      ua->db->list_media_records(ua->jcr, mr, ua->send, HORZ_LIST);
 
       if (!get_cmd(ua, _("Enter *MediaId or Volume name: "))) {
          goto bail_out;
@@ -855,8 +855,8 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
       }
    }
 
-   if (!db_get_media_record(ua->jcr, ua->db, mr)) {
-      pm_strcpy(err, db_strerror(ua->db));
+   if (!ua->db->get_media_record(ua->jcr, mr)) {
+      pm_strcpy(err, ua->db->strerror());
       goto bail_out;
    }
    retval = true;
@@ -923,14 +923,14 @@ POOLRES *get_pool_resource(UAContext *ua)
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
 {
-   db_list_job_records(ua->jcr, ua->db, jr, "", NULL, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
+   ua->db->list_job_records(ua->jcr, jr, "", NULL, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
       return 0;
    }
 
    jr->JobId = ua->int64_val;
-   if (!db_get_job_record(ua->jcr, ua->db, jr)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->get_job_record(ua->jcr, jr)) {
+      ua->error_msg("%s", ua->db->strerror());
       return 0;
    }
 
@@ -962,9 +962,9 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr)
       } else {
          continue;
       }
-      if (!db_get_job_record(ua->jcr, ua->db, jr)) {
+      if (!ua->db->get_job_record(ua->jcr, jr)) {
          ua->error_msg(_("Could not find Job \"%s\": ERR=%s"), ua->argv[i],
-                  db_strerror(ua->db));
+                  ua->db->strerror());
          jr->JobId = 0;
          break;
       }

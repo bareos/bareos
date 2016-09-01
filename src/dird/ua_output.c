@@ -393,6 +393,12 @@ static int get_jobid_from_cmdline(UAContext *ua)
    i = find_arg_with_value(ua, NT_("ujobid"));
    if (i >= 0) {
       bstrncpy(jr.Job, ua->argv[i], MAX_NAME_LENGTH);
+      jr.JobId = 0;
+      if (ua->db->get_job_record(ua->jcr, &jr)) {
+         jobid = jr.JobId;
+      } else {
+         return -1;
+      }
    } else {
       i = find_arg_with_value(ua, NT_("jobid"));
       if (i >= 0) {
@@ -403,7 +409,7 @@ static int get_jobid_from_cmdline(UAContext *ua)
       }
    }
 
-   if (db_get_job_record(ua->jcr, ua->db, &jr)) {
+   if (ua->db->get_job_record(ua->jcr, &jr)) {
       jobid = jr.JobId;
    } else {
       Dmsg1(200, "get_jobid_from_cmdline: Failed to get job record for JobId %d\n", jr.JobId);
@@ -419,7 +425,7 @@ static int get_jobid_from_cmdline(UAContext *ua)
 
    if (jr.ClientId) {
       cr.ClientId = jr.ClientId;
-      if (db_get_client_record(ua->jcr, ua->db, &cr)) {
+      if (ua->db->get_client_record(ua->jcr, &cr)) {
          if (!ua->acl_access_ok(Client_ACL, cr.Name, true)) {
             Dmsg1(200, "get_jobid_from_cmdline: No access to Client %s\n", cr.Name);
             jobid = -1;
@@ -662,14 +668,13 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, last, count,
-                          ua->send, llist);
+      ua->db->list_job_records(ua->jcr, &jr, query_range.c_str(), clientname,
+                               jobstatus, volumename, schedtime, last, count, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
        */
-      db_list_job_totals(ua->jcr, ua->db, &jr, ua->send);
+      ua->db->list_job_totals(ua->jcr, &jr, ua->send);
    } else if ((bstrcasecmp(ua->argk[1], NT_("jobid")) ||
                bstrcasecmp(ua->argk[1], NT_("ujobid"))) && ua->argv[1]) {
       /*
@@ -696,8 +701,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
             set_query_range(query_range, ua, &jr);
 
-            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                                jobstatus, volumename, schedtime, last, count, ua->send, llist);
+            ua->db->list_job_records(ua->jcr, &jr, query_range.c_str(), clientname,
+                                     jobstatus, volumename, schedtime, last, count, ua->send, llist);
          }
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
@@ -706,7 +711,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
-         db_list_base_files_for_job(ua->jcr, ua->db, jobid, ua->send);
+         ua->db->list_base_files_for_job(ua->jcr, jobid, ua->send);
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
@@ -716,7 +721,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
-         db_list_files_for_job(ua->jcr, ua->db, jobid, ua->send);
+         ua->db->list_files_for_job(ua->jcr, jobid, ua->send);
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
@@ -743,7 +748,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
          set_query_range(query_range, ua, &jr);
 
-         db_list_filesets(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+         ua->db->list_filesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
       } else {
          ua->error_msg(_("missing parameter: jobid or filesetid\n"));
       }
@@ -758,14 +763,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_filesets(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
+      ua->db->list_filesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
       /*
        * List JOBMEDIA
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid >= 0) {
-         db_list_jobmedia_records(ua->jcr, ua->db, jobid, ua->send, llist);
+         ua->db->list_jobmedia_records(ua->jcr, jobid, ua->send, llist);
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
@@ -775,7 +780,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid >= 0) {
-         db_list_joblog_records(ua->jcr, ua->db, jobid, ua->send, llist);
+         ua->db->list_joblog_records(ua->jcr, jobid, ua->send, llist);
       } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
@@ -804,7 +809,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_log_records(ua->jcr, ua->db, clientname, query_range.c_str(), reverse, ua->send, llist);
+      ua->db->list_log_records(ua->jcr, clientname, query_range.c_str(), reverse,  ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("pool")) ||
               bstrcasecmp(ua->argk[1], NT_("pools"))) {
       POOL_DBR pr;
@@ -824,7 +829,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_pool_records(ua->jcr, ua->db, &pr, ua->send, llist);
+      ua->db->list_pool_records(ua->jcr, &pr, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("clients"))) {
       /*
        * List CLIENTS
@@ -842,7 +847,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_client_records(ua->jcr, ua->db, NULL, ua->send, llist);
+      ua->db->list_client_records(ua->jcr, NULL, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
       /*
        * List CLIENT=xxx
@@ -860,7 +865,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_client_records(ua->jcr, ua->db, ua->argv[1], ua->send, llist);
+      ua->db->list_client_records(ua->jcr, ua->argv[1], ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("storages"))) {
       /*
        * List STORAGES
@@ -878,7 +883,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
       set_query_range(query_range, ua, &jr);
 
-      db_list_storage_records(ua->jcr, ua->db, ua->send, llist);
+      ua->db->list_sql_query(ua->jcr, "SELECT * FROM Storage", ua->send, llist, "storages");
    } else if (bstrcasecmp(ua->argk[1], NT_("media")) ||
               bstrcasecmp(ua->argk[1], NT_("volume")) ||
               bstrcasecmp(ua->argk[1], NT_("volumes"))) {
@@ -891,7 +896,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          POOLMEM *VolumeName;
 
          VolumeName = get_pool_memory(PM_FNAME);
-         count = db_get_job_volume_names(ua->jcr, ua->db, jobid, VolumeName);
+         count = ua->db->get_job_volume_names(ua->jcr, jobid, VolumeName);
          ua->send_msg(_("Jobid %d used %d Volume(s): %s\n"), jobid, count, VolumeName);
          free_pool_memory(VolumeName);
       } else if (jobid == 0) {
@@ -901,7 +906,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (ua->argv[1]) {
             bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
             ua->send->object_start("volume");
-            db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+            ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
             ua->send->object_end("volume");
          } else {
             /*
@@ -919,7 +924,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
                mr.PoolId = pr.PoolId;
                ua->send->array_start("volumes");
-               db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+               ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
                ua->send->array_end("volumes");
                return true;
             } else {
@@ -935,14 +940,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   if (current) {
                      set_res_filter(ua, 1, R_POOL); /* PoolName */
                   }
-                  db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+                  ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
                   ua->send->array_end("volumes");
                } else {
                   /*
                    * List Volumes in all pools
                    */
-                  if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
-                     ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
+                  if (!ua->db->get_pool_ids(ua->jcr, &num_pools, &ids)) {
+                     ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), ua->db->strerror());
                      return true;
                   }
 
@@ -953,12 +958,12 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   ua->send->object_start("volumes");
                   for (i = 0; i < num_pools; i++) {
                      pr.PoolId = ids[i];
-                     if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
+                     if (ua->db->get_pool_record(ua->jcr, &pr)) {
                         if (ua->acl_access_ok(Pool_ACL, pr.Name, false)) {
                            ua->send->decoration( "Pool: %s\n", pr.Name );
                            ua->send->array_start(pr.Name);
                            mr.PoolId = ids[i];
-                           db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+                           ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
                            ua->send->array_end(pr.Name);
                         }
                      }
@@ -996,10 +1001,10 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       i = find_arg_with_value(ua, NT_("jobid"));
       if (i >= 0) {
          if (is_a_number_list(ua->argv[i])) {
-            db_list_copies_records(ua->jcr, ua->db, query_range.c_str(), ua->argv[i], ua->send, llist);
+            ua->db->list_copies_records(ua->jcr, query_range.c_str(), ua->argv[i], ua->send, llist);
          }
       } else {
-         db_list_copies_records(ua->jcr, ua->db, query_range.c_str(), NULL, ua->send, llist);
+         ua->db->list_copies_records(ua->jcr, query_range.c_str(), NULL, ua->send, llist);
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("backups"))) {
       if (parse_list_backups_cmd(ua, query_range.c_str(), llist)) {
@@ -1032,7 +1037,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             break;
          }
 
-         db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, llist, "backups");
+         ua->db->list_sql_query(ua->jcr, ua->cmd, ua->send, llist, "backups");
       }
    } else {
       ua->error_msg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
@@ -1307,7 +1312,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
       }
       memset(&pr, 0, sizeof(pr));
       pr.PoolId = jcr->jr.PoolId;
-      if (!db_get_pool_record(jcr, jcr->db, &pr)) {
+      if (!ua->db->get_pool_record(jcr, &pr)) {
          bstrncpy(pr.Name, "*UnknownPool*", sizeof(pr.Name));
       }
       mr.PoolId = jcr->jr.PoolId;
@@ -1468,11 +1473,10 @@ bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
       return false;
    }
    bstrncpy(pr.Name, jcr->res.pool->name(), sizeof(pr.Name));
-   while (!db_get_pool_record(jcr, jcr->db, &pr)) { /* get by Name */
+   while (!jcr->db->get_pool_record(jcr, &pr)) { /* get by Name */
       /* Try to create the pool */
       if (create_pool(jcr, jcr->db, jcr->res.pool, POOL_OP_CREATE) < 0) {
-         Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s"), pr.Name,
-            db_strerror(jcr->db));
+         Jmsg(jcr, M_FATAL, 0, _("Pool %s not in database. %s"), pr.Name, jcr->db->strerror());
          if (jcr->db) {
             db_sql_close_pooled_connection(jcr, jcr->db);
             jcr->db = NULL;
