@@ -534,22 +534,24 @@ bail_out:
 
 static void drop_temp_tables(UAContext *ua)
 {
-   ua->db->sql_query(drop_deltabs[ua->db->get_type_index()]);
+   ua->db->sql_query(12);
 }
 
 static bool create_temp_tables(UAContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!ua->db->sql_query(create_deltabs[ua->db->get_type_index()])) {
+   if (!ua->db->sql_query(13)) {
       ua->error_msg("%s", ua->db->strerror());
       Dmsg0(050, "create DelTables table failed\n");
       return false;
    }
-   if (!ua->db->sql_query(create_delindex)) {
+
+   if (!ua->db->sql_query(14)) {
        ua->error_msg("%s", ua->db->strerror());
        Dmsg0(050, "create DelInx1 index failed\n");
        return false;
    }
+
    return true;
 }
 
@@ -561,10 +563,10 @@ static bool grow_del_list(struct del_ctx *del)
 
    if (del->num_ids == del->max_ids) {
       del->max_ids = (del->max_ids * 3) / 2;
-      del->JobId = (JobId_t *)brealloc(del->JobId, sizeof(JobId_t) *
-         del->max_ids);
+      del->JobId = (JobId_t *)brealloc(del->JobId, sizeof(JobId_t) * del->max_ids);
       del->PurgedFiles = (char *)brealloc(del->PurgedFiles, del->max_ids);
    }
+
    return true;
 }
 
@@ -875,15 +877,13 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
    /*
     * Now add to the  list of JobIds for Jobs written to this Volume
     */
-   edit_int64(mr->MediaId, ed1);
    period = mr->VolRetention;
    now = (utime_t)time(NULL);
-   edit_int64(now-period, ed2);
-   Mmsg(query, sel_JobMedia, ed1, ed2);
-   Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period,
-      ed2);
+   ua->db->fill_query(query, 11, edit_int64(mr->MediaId, ed1), edit_int64(now-period, ed2));
 
+   Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period, ed2);
    Dmsg1(050, "Query=%s\n", query.c_str());
+
    if (!ua->db->sql_query(query.c_str(), file_delete_handler, (void *)del)) {
       if (ua->verbose) {
          ua->error_msg("%s", ua->db->strerror());

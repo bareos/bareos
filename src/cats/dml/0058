@@ -1,0 +1,3 @@
+UPDATE Counters
+   SET MinValue = %d, MaxValue = %d, CurrentValue = %d, WrapCounter = '%s'
+ WHERE Counter  = '%s'

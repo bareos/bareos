@@ -917,11 +917,11 @@ static bool update_stats(UAContext *ua)
  */
 static bool update_pool(UAContext *ua)
 {
-   POOL_DBR pr;
    int id;
-   POOLRES *pool;
-   POOLMEM *query;
+   POOL_DBR pr;
    char ed1[50];
+   POOLRES *pool;
+   POOL_MEM query(PM_MESSAGE);
 
    pool = get_pool_resource(ua);
    if (!pool) {
@@ -941,11 +941,10 @@ static bool update_pool(UAContext *ua)
    if (id <= 0) {
       ua->error_msg(_("update_pool_record returned %d. ERR=%s\n"), id, ua->db->strerror());
    }
-   query = get_pool_memory(PM_MESSAGE);
-   Mmsg(query, list_pool, edit_int64(pr.PoolId, ed1));
-   ua->db->list_sql_query(ua->jcr, query, ua->send, HORZ_LIST, true);
-   free_pool_memory(query);
+   ua->db->fill_query(query, 5, edit_int64(pr.PoolId, ed1));
+   ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    ua->info_msg(_("Pool DB record updated from resource.\n"));
+
    return true;
 }
 

@@ -1,0 +1,6 @@
+SELECT SUM(JobBytes)
+  FROM Job
+ WHERE ClientId  =  %s
+   AND Job.JobId != %s
+   AND SchedTime >  TIMESTAMP '%s'
+   AND JobStatus NOT IN ('E','f','A')

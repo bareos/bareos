@@ -1,0 +1,3 @@
+SELECT MinValue, MaxValue, CurrentValue, WrapCounter
+  FROM Counters
+ WHERE Counter = '%s'

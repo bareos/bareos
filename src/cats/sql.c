@@ -154,21 +154,27 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
  */
 bool B_DB::check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs)
 {
+   POOL_MEM query(PM_MESSAGE);
    struct max_connections_context context;
 
-   /* Without Batch insert, no need to verify max_connections */
+   /*
+    * Without Batch insert, no need to verify max_connections
+    */
    if (!batch_insert_available())
       return true;
 
    context.db = this;
    context.nr_connections = 0;
 
-   /* Check max_connections setting */
-   if (!sql_query_with_handler(sql_get_max_connections[get_type_index()],
-                               db_max_connections_handler, &context)) {
+   /*
+    * Check max_connections setting
+    */
+   fill_query(query, 46);
+   if (!sql_query_with_handler(query.c_str(), db_max_connections_handler, &context)) {
       Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
       return false;
    }
+
    if (context.nr_connections && max_concurrent_jobs && max_concurrent_jobs > context.nr_connections) {
       Mmsg(errmsg,
            _("Potential performance problem:\n"

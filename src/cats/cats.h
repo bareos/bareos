@@ -859,7 +859,6 @@ struct SQL_POOL_DESCRIPTOR {
 
 #include "protos.h"
 #include "jcr.h"
-#include "sql_cmds.h"
 
 /*
  * Object used in db_list_xxx function

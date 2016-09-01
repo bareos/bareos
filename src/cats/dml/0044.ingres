@@ -1,0 +1,10 @@
+# Query to get all files in a directory -- no recursing
+SELECT Job.JobId, File.FileIndex
+  FROM Job, File, Path, Filename, Client
+ WHERE Job.JobId IN (%s)
+   AND Job.JobId           = File.JobId
+   AND Path.Path           = '%s'
+   AND Client.Name         = '%s'
+   AND Job.ClientId        = Client.ClientId
+   AND Path.PathId         = File.Pathid
+   AND Filename.FilenameId = File.FilenameId

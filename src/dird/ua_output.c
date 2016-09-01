@@ -1263,9 +1263,9 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type
    pm_strcat(criteria, range);
 
    if (llist == VERT_LIST) {
-      Mmsg(ua->cmd, list_jobs_long, selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, 7, selection.c_str(), criteria.c_str());
    } else {
-      Mmsg(ua->cmd, list_jobs, selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, 6, selection.c_str(), criteria.c_str());
    }
 
    return true;

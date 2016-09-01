@@ -123,11 +123,11 @@ int B_DB::update_stats(JCR *jcr, utime_t age)
    char ed1[30];
    int rows;
    utime_t now = (utime_t)time(NULL);
-   edit_uint64(now - age, ed1);
 
    db_lock(this);
 
-   Mmsg(cmd, fill_jobhisto, ed1);
+   edit_uint64(now - age, ed1);
+   fill_query(4, ed1);
    if (QUERY_DB(jcr, cmd)) {
       rows = sql_affected_rows();
    } else {
@@ -237,13 +237,11 @@ bool B_DB::update_counter_record(JCR *jcr, COUNTER_DBR *cr)
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
    db_lock(this);
-   escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
-   Mmsg(cmd,
-        update_counter_values[get_type_index()],
-        cr->MinValue, cr->MaxValue, cr->CurrentValue,
-        cr->WrapCounter, esc);
 
+   escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
+   fill_query(58,  cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
    retval = UPDATE_DB(jcr, cmd);
+
    db_unlock(this);
    return retval;
 }

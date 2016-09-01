@@ -23,7 +23,7 @@ dummy:
 #
 # include files installed when using libtool
 #
-INCLUDE_FILES = cats.h protos.h sql_cmds.h
+INCLUDE_FILES = cats.h protos.h
 
 MYSQL_INCLUDE = @MYSQL_INCLUDE@
 MYSQL_LIBS = @MYSQL_LIBS@
@@ -57,9 +57,8 @@ SQLITE_LOBJS = $(SQLITE_SRCS:.c=.lo)
 
 DB_LIBS=@DB_LIBS@
 
-LIBBAREOSSQL_SRCS = bvfs.c cats.c sql.c sql_cmds.c sql_create.c sql_delete.c \
-		    sql_find.c sql_get.c sql_list.c sql_pooling.c sql_query.c \
-		    sql_update.c
+LIBBAREOSSQL_SRCS = bvfs.c cats.c sql.c sql_create.c sql_delete.c sql_find.c \
+		    sql_get.c sql_list.c sql_pooling.c sql_query.c sql_update.c
 LIBBAREOSSQL_OBJS = $(LIBBAREOSSQL_SRCS:.c=.o)
 LIBBAREOSSQL_LOBJS = $(LIBBAREOSSQL_SRCS:.c=.lo)
 LIBBAREOSSQL_LT_RELEASE = @LIBBAREOSSQL_LT_RELEASE@

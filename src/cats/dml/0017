@@ -1,0 +1,8 @@
+SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName
+  FROM Job
+  JOIN JobMedia
+ USING (JobId)
+  JOIN Media
+ USING (MediaId)
+ WHERE JobId IN (%s)
+ ORDER BY StartTime ASC

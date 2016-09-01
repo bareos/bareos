@@ -1,0 +1,7 @@
+#
+# For ua_update.c
+# list_pool
+#
+SELECT *
+  FROM Pool
+ WHERE PoolId = %s

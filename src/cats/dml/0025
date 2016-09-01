@@ -1,0 +1,7 @@
+SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName
+  FROM Job, JobMedia, Media
+ WHERE Job.JobId IN (%s)
+   AND JobMedia.JobId   = Job.JobId
+   AND Media.Enabled    = 1
+   AND JobMedia.MediaId = Media.MediaId
+ ORDER BY StartTime ASC

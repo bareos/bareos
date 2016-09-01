@@ -376,8 +376,8 @@ retry_fetch:
                 "ORDER BY LastWritten LIMIT %d",
            edit_int64(mr->PoolId, ed1), esc_type, item);
    } else {
-      POOL_MEM changer(PM_FNAME);
-      const char *order;
+      POOL_MEM changer(PM_MESSAGE);
+      POOL_MEM order(PM_MESSAGE);
 
       /*
        * Find next available volume
@@ -388,9 +388,9 @@ retry_fetch:
 
       if (bstrcmp(mr->VolStatus, "Recycle") ||
           bstrcmp(mr->VolStatus, "Purged")) {
-         order = "AND Recycle=1 ORDER BY LastWritten ASC,MediaId";  /* take oldest that can be recycled */
+         pm_strcpy(order, "AND Recycle=1 ORDER BY LastWritten ASC,MediaId"); /* Take oldest that can be recycled */
       } else {
-         order = sql_media_order_most_recently_written[get_type_index()];    /* take most recently written */
+         fill_query(order, 45);                                              /* Take most recently written */
       }
 
       Mmsg(cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"
@@ -406,7 +406,7 @@ retry_fetch:
                      "%s "
                      "%s LIMIT %d",
            edit_int64(mr->PoolId, ed1), esc_type,
-           esc_status, changer.c_str(), order, item);
+           esc_status, changer.c_str(), order.c_str(), item);
    }
 
    Dmsg1(100, "fnextvol=%s\n", cmd);

@@ -1,0 +1,3 @@
+SELECT DISTINCT JobId, StartTime
+  FROM temp
+ ORDER BY StartTime ASC

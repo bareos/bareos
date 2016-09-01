@@ -1276,8 +1276,8 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
-         db->sql_query(cleanup_created_job);
-         db->sql_query(cleanup_running_job);
+         db->sql_query(2);
+         db->sql_query(3);
       }
 
       /* Set type in global for debugging */

@@ -523,13 +523,16 @@ char *bvfs_basename_dir(char *path)
 DBId_t Bvfs::get_dir_filenameid()
 {
    uint32_t id;
+   POOL_MEM query(PM_MESSAGE);
+
    if (dir_filenameid) {
       return dir_filenameid;
    }
-   POOL_MEM q;
-   Mmsg(q, "SELECT FilenameId FROM Filename WHERE Name = ''");
-   db->sql_query(q.c_str(), db_int_handler, &id);
+
+   Mmsg(query, "SELECT FilenameId FROM Filename WHERE Name = ''");
+   db->sql_query(query.c_str(), db_int_handler, &id);
    dir_filenameid = id;
+
    return dir_filenameid;
 }
 
@@ -557,17 +560,17 @@ bool Bvfs::ch_dir(const char *path)
  */
 void Bvfs::get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client)
 {
-   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid,
-         (uint64_t)fnid, client);
    char ed1[50], ed2[50];
-   POOL_MEM q;
-   if (see_copies) {
-      Mmsg(q, " AND Job.Type IN ('C', 'B') ");
-   } else {
-      Mmsg(q, " AND Job.Type = 'B' ");
-   }
+   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM filter(PM_MESSAGE);
 
-   POOL_MEM query;
+   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid, (uint64_t)fnid, client);
+
+   if (see_copies) {
+      Mmsg(filter, " AND Job.Type IN ('C', 'B') ");
+   } else {
+      Mmsg(filter, " AND Job.Type = 'B' ");
+   }
 
    Mmsg(query,//    1           2              3
 "SELECT 'V', File.PathId, File.FilenameId,  File.Md5, "
@@ -586,9 +589,11 @@ void Bvfs::get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client)
   "AND Job.ClientId = Client.ClientId "
   "AND Client.Name = '%s' "
   "%s ORDER BY FileId LIMIT %d OFFSET %d"
-        ,edit_uint64(fnid, ed1), edit_uint64(pathid, ed2), client, q.c_str(),
+        ,edit_uint64(fnid, ed1), edit_uint64(pathid, ed2), client, filter.c_str(),
         limit, offset);
-   Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
+
+   Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
+
    db->sql_query(query.c_str(), list_entries, user_data);
 }
 
@@ -622,11 +627,16 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
  */
 void Bvfs::ls_special_dirs()
 {
-   Dmsg1(dbglevel, "ls_special_dirs(%lld)\n", (uint64_t)pwd_id);
    char ed1[50], ed2[50];
+   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM query2(PM_MESSAGE);
+
+   Dmsg1(dbglevel, "ls_special_dirs(%lld)\n", (uint64_t)pwd_id);
+
    if (*jobids == 0) {
       return;
    }
+
    if (!dir_filenameid) {
       get_dir_filenameid();
    }
@@ -634,7 +644,6 @@ void Bvfs::ls_special_dirs()
    /* Will fetch directories  */
    *prev_dir = 0;
 
-   POOL_MEM query;
    Mmsg(query,
 "(SELECT PPathId AS PathId, '..' AS Path "
     "FROM  PathHierarchy "
@@ -643,7 +652,6 @@ void Bvfs::ls_special_dirs()
  "SELECT %s AS PathId, '.' AS Path)",
         edit_uint64(pwd_id, ed1), ed1);
 
-   POOL_MEM query2;
    Mmsg(query2,// 1      2     3        4     5       6
 "SELECT 'D', tmp.PathId, 0, tmp.Path, JobId, LStat, FileId "
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
@@ -663,8 +671,8 @@ void Bvfs::ls_special_dirs()
 bool Bvfs::ls_dirs()
 {
    char ed1[50], ed2[50];
-   POOL_MEM filter;
-   POOL_MEM query;
+   POOL_MEM filter(PM_MESSAGE);
+   POOL_MEM query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_dirs(%lld)\n", (uint64_t)pwd_id);
    if (*jobids == 0) {
@@ -672,8 +680,7 @@ bool Bvfs::ls_dirs()
    }
 
    if (*pattern) {
-      Mmsg(filter, " AND Path2.Path %s '%s' ",
-           match_query[db->get_type_index()], pattern);
+      db->fill_query(filter, 54, pattern);
    }
 
    if (!dir_filenameid) {
@@ -731,27 +738,25 @@ bool Bvfs::ls_dirs()
    return nb_record == limit;
 }
 
-void build_ls_files_query(B_DB *db, POOL_MEM &query,
-                          const char *JobId, const char *PathId,
-                          const char *filter, int64_t limit, int64_t offset)
+static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,
+                                 const char *JobId, const char *PathId,
+                                 const char *filter, int64_t limit, int64_t offset)
 {
    if (db->get_type_index() == SQL_TYPE_POSTGRESQL) {
-      Mmsg(query, sql_bvfs_list_files[db->get_type_index()],
-           JobId, PathId, JobId, PathId,
-           filter, limit, offset);
+      db->fill_query(query, 48, JobId, PathId, JobId, PathId, filter, limit, offset);
    } else {
-      Mmsg(query, sql_bvfs_list_files[db->get_type_index()],
-           JobId, PathId, JobId, PathId,
-           limit, offset, filter, JobId, JobId);
+      db->fill_query(query, 48, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
    }
 }
 
-/* Returns true if we have files to read */
+/*
+ * Returns true if we have files to read
+ */
 bool Bvfs::ls_files()
 {
    char pathid[50];
-   POOL_MEM filter;
-   POOL_MEM query;
+   POOL_MEM filter(PM_MESSAGE);
+   POOL_MEM query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_files(%lld)\n", (uint64_t)pwd_id);
    if (*jobids == 0) {
@@ -764,11 +769,10 @@ bool Bvfs::ls_files()
 
    edit_uint64(pwd_id, pathid);
    if (*pattern) {
-      Mmsg(filter, " AND Filename.Name %s '%s' ",
-           match_query[db->get_type_index()], pattern);
+      db->fill_query(filter, 55, pattern);
    }
 
-   build_ls_files_query(db, query, jobids, pathid, filter.c_str(), limit, offset);
+   build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit, offset);
    nb_record = db->bvfs_build_ls_file_query(query, list_entries, user_data);
 
    return nb_record == limit;
@@ -832,7 +836,7 @@ void Bvfs::clear_cache()
 
 bool Bvfs::drop_restore_list(char *output_table)
 {
-   POOL_MEM query;
+   POOL_MEM query(PM_MESSAGE);
    if (check_temp(output_table)) {
       Mmsg(query, "DROP TABLE %s", output_table);
       db->sql_query(query.c_str());
@@ -843,8 +847,8 @@ bool Bvfs::drop_restore_list(char *output_table)
 
 bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char *output_table)
 {
-   POOL_MEM query;
-   POOL_MEM tmp, tmp2;
+   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM tmp(PM_MESSAGE), tmp2(PM_MESSAGE);
    int64_t id, jobid, prev_jobid;
    bool init = false;
    bool retval = false;
@@ -980,8 +984,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
       goto bail_out;
    }
 
-   Mmsg(query, sql_bvfs_select[db->get_type_index()],
-        output_table, output_table, output_table);
+   db->fill_query(query, 47, output_table, output_table, output_table);
 
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());

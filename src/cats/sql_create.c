@@ -691,9 +691,7 @@ bool B_DB::create_counter_record(JCR *jcr, COUNTER_DBR *cr)
    /*
     * Must create it
     */
-   Mmsg(cmd, insert_counter_values[get_type_index()],
-        esc, cr->MinValue, cr->MaxValue, cr->CurrentValue,
-        cr->WrapCounter);
+   fill_query(56, esc, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
 
    if (!INSERT_DB(jcr, cmd)) {
       Mmsg2(errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), cmd, sql_strerror());
@@ -835,18 +833,18 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
-   if (!sql_query(batch_lock_path_query[get_type_index()])) {
+   if (!sql_query(49)) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query(batch_fill_path_query[get_type_index()])) {
+   if (!sql_query(52)) {
       Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n",errmsg);
-      sql_query(batch_unlock_tables_query[get_type_index()]);
+      sql_query(51);
       goto bail_out;
    }
 
-   if (!sql_query(batch_unlock_tables_query[get_type_index()])) {
+   if (!sql_query(51)) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
       goto bail_out;
    }
@@ -854,18 +852,18 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
-   if (!sql_query(batch_lock_filename_query[get_type_index()])) {
+   if (!sql_query(50)) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query(batch_fill_filename_query[get_type_index()])) {
+   if (!sql_query(53)) {
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n", errmsg);
-      sql_query(batch_unlock_tables_query[get_type_index()]);
+      sql_query(51);
       goto bail_out;
    }
 
-   if (!sql_query(batch_unlock_tables_query[get_type_index()])) {
+   if (!sql_query(51)) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", errmsg);
       goto bail_out;
    }
@@ -1189,13 +1187,14 @@ bool B_DB::commit_base_file_attributes_record(JCR *jcr)
  * 1) Get all files with jobid in list (F subquery)
  * 2) Take only the last version of each file (Temp subquery) => accurate list is ok
  * 3) Put the result in a temporary table for the end of job
+ *
  * Returns: false on failure
  *          true on success
  */
 bool B_DB::create_base_file_list(JCR *jcr, char *jobids)
 {
    bool retval = false;
-   POOL_MEM buf;
+   POOL_MEM buf(PM_MESSAGE);
 
    db_lock(this);
 
@@ -1204,12 +1203,13 @@ bool B_DB::create_base_file_list(JCR *jcr, char *jobids)
       goto bail_out;
    }
 
-   Mmsg(cmd, create_temp_basefile[get_type_index()], (uint64_t) jcr->JobId);
+   fill_query(38, (uint64_t) jcr->JobId);
    if (!sql_query(cmd)) {
       goto bail_out;
    }
-   Mmsg(buf, select_recent_version[get_type_index()], jobids, jobids);
-   Mmsg(cmd, create_temp_new_basefile[get_type_index()], (uint64_t)jcr->JobId, buf.c_str());
+
+   fill_query(buf, 36, jobids, jobids);
+   fill_query(39, (uint64_t)jcr->JobId, buf.c_str());
 
    retval = sql_query(cmd);
 

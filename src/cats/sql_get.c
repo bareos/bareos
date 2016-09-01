@@ -841,7 +841,7 @@ bool B_DB::get_counter_record(JCR *jcr, COUNTER_DBR *cr)
    db_lock(this);
    escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-   Mmsg(cmd, select_counter_values[get_type_index()], esc);
+   fill_query(57, esc);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
 
@@ -1229,8 +1229,8 @@ static void strip_md5(char *q)
 bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
                          DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_FNAME);
-   POOL_MEM query2(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM query2(PM_MESSAGE);
 
    if (!*jobids) {
       db_lock(this);
@@ -1240,12 +1240,9 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
    }
 
    if (use_delta) {
-      Mmsg(query2, select_recent_version_with_basejob_and_delta[get_type_index()],
-           jobids, jobids, jobids, jobids);
-
+      fill_query(query2, 35, jobids, jobids, jobids, jobids);
    } else {
-      Mmsg(query2, select_recent_version_with_basejob[get_type_index()],
-           jobids, jobids, jobids, jobids);
+      fill_query(query2, 34, jobids, jobids, jobids, jobids);
    }
 
    /*
@@ -1277,7 +1274,7 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
  */
 bool B_DB::get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result)
 {
-   POOL_MEM query(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
 
    Mmsg(query,
  "SELECT DISTINCT BaseJobId "
@@ -1306,7 +1303,7 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
    bool retval = false;
    char clientid[50], jobid[50], filesetid[50];
    char date[MAX_TIME_LENGTH];
-   POOL_MEM query(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
 
    /* Take the current time as upper limit if nothing else specified */
    utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
@@ -1314,19 +1311,20 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
    bstrutime(date, sizeof(date),  StartTime + 1);
    jobids->reset();
 
-   /* First, find the last good Full backup for this job/client/fileset */
-   Mmsg(query, create_temp_accurate_jobids[get_type_index()],
-        edit_uint64(jcr->JobId, jobid),
-        edit_uint64(jr->ClientId, clientid),
-        date,
-        edit_uint64(jr->FileSetId, filesetid));
+   /*
+    * First, find the last good Full backup for this job/client/fileset
+    */
+   fill_query(query, 37, edit_uint64(jcr->JobId, jobid),
+              edit_uint64(jr->ClientId, clientid), date, edit_uint64(jr->FileSetId, filesetid));
 
    if (!sql_query(query.c_str())) {
       goto bail_out;
    }
 
    if (jr->JobLevel == L_INCREMENTAL || jr->JobLevel == L_VIRTUAL_FULL) {
-      /* Now, find the last differential backup after the last full */
+      /*
+       * Now, find the last differential backup after the last full
+       */
       Mmsg(query,
 "INSERT INTO btemp3%s (JobId, StartTime, EndTime, JobTDate, PurgedFiles) "
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
@@ -1347,9 +1345,9 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
          goto bail_out;
       }
 
-      /* We just have to take all incremental after the last Full/Diff */
-
       /*
+       * We just have to take all incremental after the last Full/Diff
+       *
        * If we are doing always incremental, we need to limit the search to
        * only include incrementals that are older than (now - AlwaysIncrementalInterval)
        * and leave AlwaysIncrementalNumber incrementals
@@ -1395,7 +1393,7 @@ bail_out:
 
 bool B_DB::get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
 
    Mmsg(query,
  "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5 "
@@ -1410,7 +1408,7 @@ bool B_DB::get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_
 
 bool B_DB::get_base_jobid(JCR *jcr, JOB_DBR *jr, JobId_t *jobid)
 {
-   POOL_MEM query(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
    utime_t StartTime;
    db_int64_ctx lctx;
    char date[MAX_TIME_LENGTH];
@@ -1504,11 +1502,7 @@ bool B_DB::get_quota_jobbytes(JCR *jcr, JOB_DBR *jr, utime_t JobRetention)
 
    db_lock(this);
 
-   Mmsg(cmd,
-        select_quota_jobbytes[get_type_index()],
-        edit_uint64(jr->ClientId, ed1),
-        edit_uint64(jr->JobId, ed2), dt);
-
+   fill_query(59, edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
       if (num_rows == 1) {
@@ -1560,11 +1554,7 @@ bool B_DB::get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetenti
 
    db_lock(this);
 
-   Mmsg(cmd,
-        select_quota_jobbytes_nofailed[get_type_index()],
-        edit_uint64(jr->ClientId, ed1),
-        edit_uint64(jr->JobId, ed2), dt);
-
+   fill_query(60, edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
       if (num_rows == 1) {
@@ -1686,7 +1676,7 @@ bail_out:
  */
 bool B_DB::get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_FNAME);
+   POOL_MEM query(PM_MESSAGE);
    char ed1[50], ed2[50];
    db_int64_ctx lctx;
    JobId_t JobId;

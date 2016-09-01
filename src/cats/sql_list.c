@@ -89,7 +89,7 @@ bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
 
    db_lock(this);
 
-   fill_query(jcr, query, hash_key);
+   fill_query(query, hash_key);
    if (!sql_query(query.c_str(), QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
       if (verbose) {
@@ -474,11 +474,11 @@ void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char
                             OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
+   char dt[MAX_TIME_LENGTH];
    char esc[MAX_ESCAPE_NAME_LENGTH];
    POOL_MEM temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
-   char dt[MAX_TIME_LENGTH];
 
    if (jr->JobId > 0) {
       temp.bsprintf("AND Job.JobId=%s", edit_int64(jr->JobId, ed1));
@@ -515,18 +515,18 @@ void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char
    db_lock(this);
 
    if (count) {
-      Mmsg(cmd, list_jobs_count, selection.c_str(), range);
+      fill_query(8, selection.c_str(), range);
    } else if (last) {
       if (type == VERT_LIST) {
-         Mmsg(cmd, list_jobs_long_last, selection.c_str(), range);
+         fill_query(10, selection.c_str(), range);
       } else {
-         Mmsg(cmd, list_jobs_last, selection.c_str(), range);
+         fill_query(9, selection.c_str(), range);
       }
    } else {
       if (type == VERT_LIST) {
-         Mmsg(cmd, list_jobs_long, selection.c_str(), range);
+         fill_query(7, selection.c_str(), range);
       } else {
-         Mmsg(cmd, list_jobs, selection.c_str(), range);
+         fill_query(6, selection.c_str(), range);
       }
    }
 
@@ -555,7 +555,7 @@ void B_DB::list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit)
     * List by Job
     */
    Mmsg(cmd, "SELECT count(*) AS Jobs,sum(JobFiles) "
-        "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
+             "AS Files,sum(JobBytes) AS Bytes,Name AS Job FROM Job GROUP BY Name");
 
    if (!QUERY_DB(jcr, cmd)) {
       goto bail_out;
@@ -571,7 +571,7 @@ void B_DB::list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit)
     * Do Grand Total
     */
    Mmsg(cmd, "SELECT COUNT(*) AS Jobs,sum(JobFiles) "
-        "AS Files,sum(JobBytes) As Bytes FROM Job");
+             "AS Files,sum(JobBytes) As Bytes FROM Job");
 
    if (!QUERY_DB(jcr, cmd)) {
       goto bail_out;

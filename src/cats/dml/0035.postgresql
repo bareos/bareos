@@ -1,0 +1,17 @@
+# The DISTINCT ON () permits to avoid extra join
+SELECT DISTINCT
+    ON (FilenameId, PathId, DeltaSeq) JobTDate, JobId, FileId, FileIndex, PathId, FilenameId, LStat, MD5, DeltaSeq
+  FROM (
+      SELECT FileId, JobId, PathId, FilenameId, FileIndex, LStat, MD5, DeltaSeq
+        FROM File
+       WHERE JobId IN (%s)
+       UNION ALL
+      SELECT File.FileId, File.JobId, PathId, FilenameId, File.FileIndex, LStat, MD5, DeltaSeq
+        FROM BaseFiles
+        JOIN File
+       USING (FileId)
+       WHERE BaseFiles.JobId IN (%s)
+       ) AS T
+  JOIN Job
+ USING (JobId)
+ ORDER BY FilenameId, PathId, DeltaSeq, JobTDate DESC

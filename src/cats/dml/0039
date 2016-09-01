@@ -1,0 +1,9 @@
+CREATE TEMPORARY TABLE new_basefile%lld AS
+SELECT Path.Path AS Path, Filename.Name AS Name, Temp.FileIndex AS FileIndex, Temp.JobId AS JobId, Temp.LStat AS LStat,
+       Temp.FileId AS FileId, Temp.MD5 AS MD5
+  FROM ( %s ) AS Temp
+  JOIN Filename
+ USING (FilenameId)
+  JOIN Path
+ USING (PathId)
+ WHERE Temp.FileIndex > 0
