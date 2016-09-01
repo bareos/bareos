@@ -576,33 +576,39 @@ struct accurate_check_ctx {
    DBId_t FileSetId;                  /* Id of FileSet */
 };
 
-/* row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type */
+/*
+ * row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
+ */
 static int job_select_handler(void *ctx, int num_fields, char **row)
 {
    alist *lst = (alist *)ctx;
    struct accurate_check_ctx *res;
    ASSERT(num_fields == 6);
 
-   /* Quick fix for #5507, avoid locking res_head after db_lock() */
-
-#ifdef bug5507
-   /* If this job doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_JOB, row[0]) == NULL) {
+   /*
+    * If this job doesn't exist anymore in the configuration, delete it.
+    */
+   if (GetResWithName(R_JOB, row[0], false) == NULL) {
       return 0;
    }
 
-   /* If this fileset doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_FILESET, row[1]) == NULL) {
+   /*
+    * If this fileset doesn't exist anymore in the configuration, delete it.
+    */
+   if (GetResWithName(R_FILESET, row[1], false) == NULL) {
       return 0;
    }
 
-   /* If this client doesn't exist anymore in the configuration, delete it */
-   if (GetResWithName(R_CLIENT, row[2]) == NULL) {
+   /*
+    * If this client doesn't exist anymore in the configuration, delete it.
+    */
+   if (GetResWithName(R_CLIENT, row[2], false) == NULL) {
       return 0;
    }
-#endif
 
-   /* Don't compute accurate things for Verify jobs */
+   /*
+    * Don't compute accurate things for Verify jobs
+    */
    if (*row[5] == 'V') {
       return 0;
    }
@@ -672,7 +678,7 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
 
    /*
     * Select all files that are older than the JobRetention period
-    *  and add them into the "DeletionCandidates" table.
+    * and add them into the "DeletionCandidates" table.
     */
    Mmsg(query,
         "INSERT INTO DelCandidates "
@@ -690,7 +696,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
       goto bail_out;
    }
 
-   /* Now, for the selection, we discard some of them in order to be always
+   /*
+    * Now, for the selection, we discard some of them in order to be always
     * able to restore files. (ie, last full, last diff, last incrs)
     * Note: The DISTINCT could be more useful if we don't get FileSetId
     */
@@ -706,20 +713,25 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
    "AND Job.JobStatus IN ('T', 'W') "     /* Look only useful jobs */
       );
 
-   /* The job_select_handler will skip jobs or filesets that are no longer
+   /*
+    * The job_select_handler will skip jobs or filesets that are no longer
     * in the configuration file. Interesting ClientId/FileSetId will be
-    * added to jobids_check (currently disabled in 6.0.7b)
+    * added to jobids_check.
     */
    if (!db_sql_query(ua->db, query.c_str(), job_select_handler, jobids_check)) {
       ua->error_msg("%s", db_strerror(ua->db));
    }
 
-   /* For this selection, we exclude current jobs used for restore or
+   /*
+    * For this selection, we exclude current jobs used for restore or
     * accurate. This will prevent to prune the last full backup used for
     * current backup & restore
     */
    memset(&jr, 0, sizeof(jr));
-   /* To find useful jobs, we do like an incremental */
+
+   /*
+    * To find useful jobs, we do like an incremental
+    */
    jr.JobLevel = L_INCREMENTAL;
    foreach_alist(elt, jobids_check) {
       jr.ClientId = elt->ClientId;   /* should be always the same */
@@ -728,7 +740,8 @@ static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
       jobids.add(tempids);
    }
 
-   /* Discard latest Verify level=InitCatalog job
+   /*
+    * Discard latest Verify level=InitCatalog job
     * TODO: can have multiple fileset
     */
    Mmsg(query,

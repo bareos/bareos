@@ -478,7 +478,7 @@ const char *datatype_to_description(int type);
 /*
  * Resource routines
  */
-RES *GetResWithName(int rcode, const char *name);
+RES *GetResWithName(int rcode, const char *name, bool lock = true);
 RES *GetNextRes(int rcode, RES *res);
 void b_LockRes(const char *file, int line);
 void b_UnlockRes(const char *file, int line);

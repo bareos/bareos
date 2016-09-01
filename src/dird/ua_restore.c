@@ -145,14 +145,14 @@ bool restore_cmd(UAContext *ua, const char *cmd)
    /* TODO: add acl for regexwhere ? */
 
    if (rx.RegexWhere) {
-      if (!acl_access_ok(ua, Where_ACL, rx.RegexWhere, true)) {
+      if (!ua->acl_access_ok(Where_ACL, rx.RegexWhere, true)) {
          ua->error_msg(_("\"RegexWhere\" specification not authorized.\n"));
          goto bail_out;
       }
    }
 
    if (rx.where) {
-      if (!acl_access_ok(ua, Where_ACL, rx.where, true)) {
+      if (!ua->acl_access_ok(Where_ACL, rx.where, true)) {
          ua->error_msg(_("\"where\" specification not authorized.\n"));
          goto bail_out;
       }
@@ -449,7 +449,7 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
          ua->error_msg("%s argument: %s", ua->argk[i], ua->errmsg);
          return false;
       }
-      if (!GetClientResWithName(ua->argv[i])) {
+      if (!ua->GetClientResWithName(ua->argv[i])) {
          ua->error_msg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
          return false;
       }
@@ -607,14 +607,9 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          if (!has_value(ua, i)) {
             return 0;
          }
-         rx->pool = (POOLRES *)GetResWithName(R_POOL, ua->argv[i]);
+         rx->pool = ua->GetPoolResWithName(ua->argv[i]);
          if (!rx->pool) {
             ua->error_msg(_("Error: Pool resource \"%s\" does not exist.\n"), ua->argv[i]);
-            return 0;
-         }
-         if (!acl_access_ok(ua, Pool_ACL, ua->argv[i], true)) {
-            rx->pool = NULL;
-            ua->error_msg(_("Error: Pool resource \"%s\" access not allowed.\n"), ua->argv[i]);
             return 0;
          }
          break;
@@ -652,7 +647,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       case -1:                        /* error or cancel */
          return 0;
       case 0:                         /* list last 20 Jobs run */
-         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), true)) {
+         if (!ua->acl_access_ok(Command_ACL, NT_("sqlquery"), true)) {
             ua->error_msg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -687,7 +682,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          pm_strcpy(rx->JobIds, ua->cmd);
          break;
       case 3:                         /* Enter an SQL list command */
-         if (!acl_access_ok(ua, Command_ACL, NT_("sqlquery"), true)) {
+         if (!ua->acl_access_ok(Command_ACL, NT_("sqlquery"), true)) {
             ua->error_msg(_("SQL query not authorized.\n"));
             return 0;
          }
@@ -882,7 +877,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          free_pool_memory(JobIds);
          return 0;
       }
-      if (!acl_access_ok(ua, Job_ACL, jr.Name, true)) {
+      if (!ua->acl_access_ok(Job_ACL, jr.Name, true)) {
          ua->error_msg(_("Access to JobId=%s (Job \"%s\") not authorized. Not selected.\n"),
             edit_int64(JobId, ed1), jr.Name);
          continue;
@@ -1606,7 +1601,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
    LockRes();
    foreach_res(store, R_STORAGE) {
       if (bstrcmp(Storage, store->name())) {
-         if (acl_access_ok(ua, Storage_ACL, store->name())) {
+         if (ua->acl_access_ok(Storage_ACL, store->name())) {
             rx.store = store;
          }
          break;
@@ -1623,14 +1618,10 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
       store = NULL;
       i = find_arg_with_value(ua, "storage");
       if (i > 0) {
-         store = (STORERES *)GetResWithName(R_STORAGE, ua->argv[i]);
-         if (store && !acl_access_ok(ua, Storage_ACL, store->name(), true)) {
-            store = NULL;
-         }
+         store = ua->GetStoreResWithName(ua->argv[i]);
       }
       if (store && (store != rx.store)) {
-         ua->info_msg(_("Warning default storage overridden by \"%s\" on command line.\n"),
-                      store->name());
+         ua->info_msg(_("Warning default storage overridden by \"%s\" on command line.\n"), store->name());
          rx.store = store;
          Dmsg1(200, "Set store=%s\n", rx.store->name());
       }
@@ -1644,7 +1635,7 @@ void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *
       LockRes();
       foreach_res(store, R_STORAGE) {
          if (bstrcmp(MediaType, store->media_type)) {
-            if (acl_access_ok(ua, Storage_ACL, store->name())) {
+            if (ua->acl_access_ok(Storage_ACL, store->name())) {
                rx.store = store;
                Dmsg1(200, "Set store=%s\n", rx.store->name());
                if (Storage == NULL) {

@@ -1110,10 +1110,8 @@ bool do_migration_init(JCR *jcr)
       Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
             (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
 
-      LockRes();
       job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
       prev_job = (JOBRES *)GetResWithName(R_JOB, jcr->previous_jr.Name);
-      UnlockRes();
 
       if (!job) {
          Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);

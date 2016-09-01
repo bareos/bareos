@@ -124,8 +124,8 @@ bool db_get_ndmp_environment_string(JCR *jcr, B_DB *mdb, JOB_DBR *jr,
 void db_list_pool_records(JCR *jcr, B_DB *db, POOL_DBR *pr,
                           OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_job_records(JCR *jcr, B_DB *db, JOB_DBR *jr, const char *range,
-                         const char* clientname, int jobstatus, const char* volumename,
-                         utime_t since_time, int last, int count,
+                         const char *clientname, int jobstatus, const char *volumename,
+                         utime_t since_time, bool last, bool count,
                          OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_job_totals(JCR *jcr, B_DB *db, JOB_DBR *jr,
                         OUTPUT_FORMATTER *sendit);
@@ -139,8 +139,8 @@ void db_list_jobmedia_records(JCR *jcr, B_DB *mdb, JobId_t JobId,
                               OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_joblog_records(JCR *jcr, B_DB *mdb, JobId_t JobId,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
-void db_list_log_records(JCR *jcr, B_DB *mdb, const char *range, bool reverse,
-                         OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_log_records(JCR *jcr, B_DB *mdb, const char *clientname, const char *range,
+                         bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        OUTPUT_FORMATTER *sendit, e_list_type type,
                        bool verbose);
@@ -149,7 +149,9 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        const char *description, bool verbose = false);
 void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
-void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, char *jobids,
+void db_list_storage_records(JCR *jcr, B_DB *mdb,
+                             OUTPUT_FORMATTER *sendit, e_list_type type);
+void db_list_copies_records(JCR *jcr, B_DB *mdb, const char *range, const char *jobids,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_base_files_for_job(JCR *jcr, B_DB *mdb, JobId_t jobid,
                                 OUTPUT_FORMATTER *sendit);

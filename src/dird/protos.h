@@ -311,16 +311,6 @@ int compare_storage_mapping(void *e1, void *e2);
 slot_number_t lookup_storage_mapping(STORERES *store, slot_type slot_type,
                                      s_mapping_type map_type, slot_number_t slot);
 
-/* ua_acl.c */
-bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event = false);
-bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event = false);
-
-/* ua_audit.c */
-bool audit_event_wanted(UAContext *ua, bool audit_event_enabled);
-void log_audit_event_acl_failure(UAContext *ua, int acl, const char *item);
-void log_audit_event_acl_success(UAContext *ua, int acl, const char *item);
-void log_audit_event_cmdline(UAContext *ua);
-
 /* ua_cmds.c */
 bool do_a_command(UAContext *ua);
 bool dot_messages_cmd(UAContext *ua, const char *cmd);
@@ -359,6 +349,7 @@ void update_inchanger_for_export(UAContext *ua, STORERES *store, changer_vol_lis
 
 /* ua_output.c */
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
+bool filterit(void *ctx, void *data, of_filter_tuple *tuple);
 bool printit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool);
 RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays);

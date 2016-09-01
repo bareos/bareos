@@ -2,7 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Planets Communications B.V.
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,9 +32,9 @@
 /*
  * Check if access is permitted to item in acl
  */
-bool acl_access_ok(UAContext *ua, int acl, const char *item, bool audit_event)
+bool UAContext::acl_access_ok(int acl, const char *item, bool audit_event)
 {
-   return acl_access_ok(ua, acl, item, strlen(item), audit_event);
+   return acl_access_ok(acl, item, strlen(item), audit_event);
 }
 
 /*
@@ -204,7 +205,7 @@ bail_out:
 /*
  * This version expects the length of the item which we must check.
  */
-bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit_event)
+bool UAContext::acl_access_ok(int acl, const char *item, int len, bool audit_event)
 {
    bool retval = false;
 
@@ -226,21 +227,21 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit
    /*
     * If no console resource => default console and all is permitted
     */
-   if (!ua->cons) {
+   if (!cons) {
       Dmsg0(1400, "Root cons access OK.\n");
       retval = true;
       goto bail_out;
    }
 
-   retval = find_in_acl_list(ua->cons->ACL_lists[acl], acl, item, len);
+   retval = find_in_acl_list(cons->ACL_lists[acl], acl, item, len);
 
    /*
     * If we didn't find a matching ACL try to use the profiles this console is connected to.
     */
-   if (!retval && ua->cons->profiles && ua->cons->profiles->size()) {
+   if (!retval && cons->profiles && cons->profiles->size()) {
       PROFILERES *profile;
 
-      foreach_alist(profile, ua->cons->profiles) {
+      foreach_alist(profile, cons->profiles) {
          retval = find_in_acl_list(profile->ACL_lists[acl], acl, item, len);
 
          /*
@@ -254,8 +255,170 @@ bool acl_access_ok(UAContext *ua, int acl, const char *item, int len, bool audit
 
 bail_out:
    if (audit_event && !retval) {
-      log_audit_event_acl_failure(ua, acl, item);
+      log_audit_event_acl_failure(acl, item);
    }
 
    return retval;
+}
+
+/*
+ * This function returns if the authentication has any acl restrictions for a certain acltype.
+ */
+bool UAContext::acl_no_restrictions(int acl)
+{
+   const char *list_value;
+   PROFILERES *profile;
+
+   /*
+    * If no console resource => default console and all is permitted
+    */
+   if (!cons) {
+      return true;
+   }
+
+   for (int i = 0; i < cons->ACL_lists[acl]->size(); i++) {
+      list_value = (char *)cons->ACL_lists[acl]->get(i);
+
+      if (*list_value == '!') {
+         return false;
+      }
+
+      if (bstrcasecmp("*all*", list_value)) {
+         return true;
+      }
+   }
+
+   foreach_alist(profile, cons->profiles) {
+      for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
+         list_value = (char *)profile->ACL_lists[acl]->get(i);
+
+         if (*list_value == '!') {
+            return false;
+         }
+
+         if (bstrcasecmp("*all*", list_value)) {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
+int UAContext::rcode_to_acltype(int rcode)
+{
+   int acl = -1;
+
+   switch (rcode) {
+   case R_CLIENT:
+      acl = Client_ACL;
+      break;
+   case R_JOBDEFS:
+   case R_JOB:
+      acl = Job_ACL;
+      break;
+   case R_STORAGE:
+      acl = Storage_ACL;
+      break;
+   case R_CATALOG:
+      acl = Catalog_ACL;
+      break;
+   case R_SCHEDULE:
+      acl = Schedule_ACL;
+      break;
+   case R_FILESET:
+      acl = FileSet_ACL;
+      break;
+   case R_POOL:
+      acl = Pool_ACL;
+      break;
+   default:
+      break;
+   }
+
+   return acl;
+}
+
+/*
+ * This checks the right ACL if the UA has access to the wanted resource.
+ */
+bool UAContext::is_res_allowed(RES *res)
+{
+   int acl;
+
+   acl = rcode_to_acltype(res->rcode);
+   if (acl == -1) {
+      /*
+       * For all resources for which we don't know an explicit mapping
+       * to the right ACL we check if the Command ACL has access to the
+       * configure command just as we do for suppressing sensitive data.
+       */
+      return acl_access_ok(Command_ACL, "configure", false);
+   }
+
+   return acl_access_ok(acl, res->name, false);
+}
+
+/*
+ * Try to get a resource and make sure the current ACL allows it to be retrieved.
+ */
+RES *UAContext::GetResWithName(int rcode, const char *name, bool audit_event, bool lock)
+{
+   int acl;
+
+   acl = rcode_to_acltype(rcode);
+   if (acl == -1) {
+      /*
+       * For all resources for which we don't know an explicit mapping
+       * to the right ACL we check if the Command ACL has access to the
+       * configure command just as we do for suppressing sensitive data.
+       */
+      if (!acl_access_ok(Command_ACL, "configure", false)) {
+         goto bail_out;
+      }
+   } else {
+      if (!acl_access_ok(acl, name, audit_event)) {
+         goto bail_out;
+      }
+   }
+
+   return ::GetResWithName(rcode, name, lock);
+
+bail_out:
+   return NULL;
+}
+
+POOLRES *UAContext::GetPoolResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (POOLRES *)GetResWithName(R_POOL, name, audit_event, lock);
+}
+
+STORERES *UAContext::GetStoreResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (STORERES *)GetResWithName(R_STORAGE, name, audit_event, lock);
+}
+
+CLIENTRES *UAContext::GetClientResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (CLIENTRES *)GetResWithName(R_CLIENT, name, audit_event, lock);
+}
+
+JOBRES *UAContext::GetJobResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (JOBRES *)GetResWithName(R_JOB, name, audit_event, lock);
+}
+
+FILESETRES *UAContext::GetFileSetResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (FILESETRES *)GetResWithName(R_FILESET, name, audit_event, lock);
+}
+
+CATRES *UAContext::GetCatalogResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (CATRES *)GetResWithName(R_CATALOG, name, audit_event, lock);
+}
+
+SCHEDRES *UAContext::GetScheduleResWithName(const char *name, bool audit_event, bool lock)
+{
+   return (SCHEDRES *)GetResWithName(R_SCHEDULE, name, audit_event, lock);
 }

@@ -421,7 +421,7 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
    if (!db_get_pool_record(ua->jcr, ua->db, &pr) ||
-       !acl_access_ok(ua, Pool_ACL, pr.Name, true)) {
+       !ua->acl_access_ok(Pool_ACL, pr.Name, true)) {
       return;
    }
    set_pool_dbr_defaults_in_media_dbr(mr, &pr);
@@ -483,7 +483,7 @@ static void update_all_vols(UAContext *ua)
       /*
        * Check access to pool.
        */
-      if (!acl_access_ok(ua, Pool_ACL, pr.Name, false)) {
+      if (!ua->acl_access_ok(Pool_ACL, pr.Name, false)) {
          continue;
       }
 

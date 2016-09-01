@@ -1,6 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2016-2016 Planets Communications B.V.
    Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -41,12 +42,17 @@ const char *json_error_message_template = "{ "
 "}\n";
 
 OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
-                                   void *send_ctx_arg, int api_mode)
+                                   void *send_ctx_arg,
+                                   FILTER_HANDLER *filter_func_arg,
+                                   void *filter_ctx_arg,
+                                   int api_mode)
 {
    initialize_json();
 
    send_func = send_func_arg;
+   filter_func = filter_func_arg;
    send_ctx = send_ctx_arg;
+   filter_ctx = filter_ctx_arg;
    api = api_mode;
    compact = false;
 
@@ -61,6 +67,12 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
 
 OUTPUT_FORMATTER::~OUTPUT_FORMATTER()
 {
+   if (hidden_columns) {
+      free(hidden_columns);
+   }
+   if (filters) {
+      delete filters;
+   }
    delete result_message_plain;
 #if HAVE_JANSSON
    json_object_clear(result_json);
@@ -412,6 +424,144 @@ void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
    string.strcpy(rewrap_string);
 }
 
+void OUTPUT_FORMATTER::create_new_res_filter(of_filter_type type, int column, int restype)
+{
+   of_filter_tuple *tuple;
+
+   if (!filters) {
+      filters = New(alist(10, true));
+   }
+
+   tuple = (of_filter_tuple *)malloc(sizeof(of_filter_tuple));
+   tuple->type = type;
+   tuple->u.res_filter.column = column;
+   tuple->u.res_filter.restype = restype;
+
+   filters->append(tuple);
+}
+
+void OUTPUT_FORMATTER::add_limit_filter_tuple(int limit)
+{
+   of_filter_tuple *tuple;
+
+   if (!filters) {
+      filters = New(alist(10, true));
+   }
+
+   tuple = (of_filter_tuple *)malloc(sizeof(of_filter_tuple));
+   tuple->type = OF_FILTER_LIMIT;
+   tuple->u.limit_filter.limit = limit;
+
+   filters->append(tuple);
+}
+
+void OUTPUT_FORMATTER::add_acl_filter_tuple(int column, int acltype)
+{
+   of_filter_tuple *tuple;
+
+   if (!filters) {
+      filters = New(alist(10, true));
+   }
+
+   tuple = (of_filter_tuple *)malloc(sizeof(of_filter_tuple));
+   tuple->type = OF_FILTER_ACL;
+   tuple->u.acl_filter.column = column;
+   tuple->u.acl_filter.acltype = acltype;
+
+   filters->append(tuple);
+}
+
+void OUTPUT_FORMATTER::add_res_filter_tuple(int column, int restype)
+{
+   create_new_res_filter(OF_FILTER_RESOURCE, column, restype);
+}
+
+void OUTPUT_FORMATTER::add_enabled_filter_tuple(int column, int restype)
+{
+   create_new_res_filter(OF_FILTER_ENABLED, column, restype);
+}
+
+void OUTPUT_FORMATTER::add_disabled_filter_tuple(int column, int restype)
+{
+   create_new_res_filter(OF_FILTER_DISABLED, column, restype);
+}
+
+void OUTPUT_FORMATTER::clear_filters()
+{
+   if (filters) {
+      if (!filters->empty()) {
+         filters->destroy();
+      }
+      delete filters;
+      filters = NULL;
+   }
+}
+
+bool OUTPUT_FORMATTER::has_acl_filters()
+{
+   of_filter_tuple *tuple;
+
+   if (filters) {
+      foreach_alist(tuple, filters) {
+         if (tuple->type == OF_FILTER_ACL) {
+            return true;
+         }
+      }
+   }
+
+   return false;
+}
+
+bool OUTPUT_FORMATTER::filter_data(void *data)
+{
+   of_filter_tuple *tuple;
+
+   /*
+    * See if a filtering function is registered.
+    * See if there are any filters.
+    */
+   if (filter_func && filters && !filters->empty()) {
+      foreach_alist(tuple, filters) {
+         if (!filter_func(filter_ctx, data, tuple)) {
+            return false;
+         }
+      }
+   }
+
+   return true;
+}
+
+void OUTPUT_FORMATTER::add_hidden_column(int column)
+{
+   if (column >= 0 && column <= OF_MAX_NR_HIDDEN_COLUMNS) {
+      /*
+       * See if the bitmap was already allocated.
+       */
+      if (!hidden_columns) {
+         hidden_columns = (char *)malloc(nbytes_for_bits(OF_MAX_NR_HIDDEN_COLUMNS));
+         clear_all_bits(OF_MAX_NR_HIDDEN_COLUMNS, hidden_columns);
+      }
+
+      set_bit(column, hidden_columns);
+   }
+}
+
+bool OUTPUT_FORMATTER::is_hidden_column(int column)
+{
+   if (!hidden_columns || column < 0 || column > OF_MAX_NR_HIDDEN_COLUMNS) {
+      return false;
+   }
+
+   return bit_is_set(column, hidden_columns);
+}
+
+void OUTPUT_FORMATTER::clear_hidden_columns()
+{
+   if (hidden_columns) {
+      clear_all_bits(OF_MAX_NR_HIDDEN_COLUMNS, hidden_columns);
+   }
+}
+
 bool OUTPUT_FORMATTER::process_text_buffer()
 {
    bool retval = false;
@@ -466,8 +616,6 @@ void OUTPUT_FORMATTER::send_buffer()
    }
 }
 
-
-
 void OUTPUT_FORMATTER::finalize_result(bool result)
 {
    switch (api) {
@@ -480,6 +628,16 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
       process_text_buffer();
       break;
    }
+
+   /*
+    * Clear any pending filters.
+    */
+   clear_filters();
+
+   /*
+    * Clear any pending hidden columns.
+    */
+   clear_hidden_columns();
 }
 
 #if HAVE_JANSSON

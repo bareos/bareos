@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -108,7 +108,7 @@ static void show_disabled_jobs(UAContext *ua)
    bool first = true;
 
    foreach_res(job, R_JOB) {
-      if (!acl_access_ok(ua, Job_ACL, job->name())) {
+      if (!ua->acl_access_ok(Job_ACL, job->name(), false)) {
          continue;
       }
 
@@ -135,7 +135,7 @@ static void show_disabled_clients(UAContext *ua)
    bool first = true;
 
    foreach_res(client, R_CLIENT) {
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!ua->acl_access_ok(Client_ACL, client->name(), false)) {
          continue;
       }
 
@@ -162,7 +162,7 @@ static void show_disabled_schedules(UAContext *ua)
    bool first = true;
 
    foreach_res(sched, R_SCHEDULE) {
-      if (!acl_access_ok(ua, Schedule_ACL, sched->name())) {
+      if (!ua->acl_access_ok(Schedule_ACL, sched->name(), false)) {
          continue;
       }
 
@@ -205,7 +205,6 @@ static struct showstruct avail_resources[] = {
    { NULL, 0 }
 };
 
-
 /*
  *  Displays Resources
  *
@@ -232,7 +231,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
     * When the console has no access to the configure cmd then any show cmd
     * will suppress all sensitive information like for instance passwords.
     */
-   hide_sensitive_data = !acl_access_ok(ua, Command_ACL, "configure", false);
+   hide_sensitive_data = !ua->acl_access_ok(Command_ACL, "configure", false);
 
    if (find_arg(ua, NT_("verbose")) > 0) {
       verbose = true;
@@ -294,7 +293,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
          for (j = 0; avail_resources[j].res_name; j++) {
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
-               res = (RES *)GetResWithName(type, ua->argv[i]);
+               res = (RES *)ua->GetResWithName(type, ua->argv[i], true);
                if (!res) {
                   type = -3;
                }
@@ -387,47 +386,164 @@ static int get_jobid_from_cmdline(UAContext *ua)
 {
    int i, jobid;
    JOB_DBR jr;
+   CLIENT_DBR cr;
 
-   jobid = 0;
    memset(&jr, 0, sizeof(jr));
+
    i = find_arg_with_value(ua, NT_("ujobid"));
    if (i >= 0) {
       bstrncpy(jr.Job, ua->argv[i], MAX_NAME_LENGTH);
-      jr.JobId = 0;
-      if (db_get_job_record(ua->jcr, ua->db, &jr)) {
-         jobid = jr.JobId;
-      } else {
-         return -1;
-      }
    } else {
       i = find_arg_with_value(ua, NT_("jobid"));
       if (i >= 0) {
-         jobid = str_to_int64(ua->argv[i]);
+         jr.JobId = str_to_int64(ua->argv[i]);
+      } else {
+         jobid = 0;
+         goto bail_out;
       }
    }
 
+   if (db_get_job_record(ua->jcr, ua->db, &jr)) {
+      jobid = jr.JobId;
+   } else {
+      Dmsg1(200, "get_jobid_from_cmdline: Failed to get job record for JobId %d\n", jr.JobId);
+      jobid = -1;
+      goto bail_out;
+   }
+
+   if (!ua->acl_access_ok(Job_ACL, jr.Name, true)) {
+      Dmsg1(200, "get_jobid_from_cmdline: No access to Job %s\n", jr.Name);
+      jobid = -1;
+      goto bail_out;
+   }
+
+   if (jr.ClientId) {
+      cr.ClientId = jr.ClientId;
+      if (db_get_client_record(ua->jcr, ua->db, &cr)) {
+         if (!ua->acl_access_ok(Client_ACL, cr.Name, true)) {
+            Dmsg1(200, "get_jobid_from_cmdline: No access to Client %s\n", cr.Name);
+            jobid = -1;
+            goto bail_out;
+         }
+      } else {
+         Dmsg1(200, "get_jobid_from_cmdline: Failed to get client record for ClientId %d\n", jr.ClientId);
+         jobid = -1;
+         goto bail_out;
+      }
+   }
+
+bail_out:
    return jobid;
+}
+
+/*
+ * Filter convience functions that abstract the actions needed to
+ * perform a certain type of acl or resource filtering.
+ */
+static inline void set_acl_filter(UAContext *ua, int column, int acltype)
+{
+   if (ua->acl_has_restrictions(acltype)) {
+      ua->send->add_acl_filter_tuple(column, acltype);
+   }
+}
+
+static inline void set_res_filter(UAContext *ua, int column, int restype)
+{
+   ua->send->add_res_filter_tuple(column, restype);
+}
+
+static inline void set_enabled_filter(UAContext *ua, int column, int restype)
+{
+   ua->send->add_enabled_filter_tuple(column, restype);
+}
+
+static inline void set_disabled_filter(UAContext *ua, int column, int restype)
+{
+   ua->send->add_disabled_filter_tuple(column, restype);
+}
+
+static inline void set_hidden_column_acl_filter(UAContext *ua, int column, int acltype)
+{
+   ua->send->add_hidden_column(column);
+   if (ua->acl_has_restrictions(acltype)) {
+      ua->send->add_acl_filter_tuple(column, acltype);
+   }
+}
+
+static inline void set_hidden_column(UAContext *ua, int column)
+{
+   ua->send->add_hidden_column(column);
+}
+
+static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
+{
+   int i;
+
+   /*
+    * See if this is a second call to set_query_range() if so and any acl
+    * filters have been set we setup a new query_range filter including a
+    * limit filter.
+    */
+   if (query_range.strlen()) {
+      if (!ua->send->has_acl_filters()) {
+         return;
+      }
+      pm_strcpy(query_range, "");
+   }
+
+   /*
+    * Apply any limit
+    */
+   i = find_arg_with_value(ua, NT_("limit"));
+   if (i >= 0) {
+      POOL_MEM temp(PM_MESSAGE);
+
+      jr->limit = atoi(ua->argv[i]);
+
+      /*
+       * When any acl filters are set create a limit filter using the filter framework
+       * and increase the database LIMIT clause to 10 * the limit. The filter framework
+       * will make sure the end-user will only see the wanted limit.
+       */
+      if (ua->send->has_acl_filters()) {
+         ua->send->add_limit_filter_tuple(jr->limit);
+         jr->limit = jr->limit * 10;
+      }
+      temp.bsprintf(" LIMIT %d", jr->limit);
+      pm_strcat(query_range, temp.c_str());
+
+      /*
+       * offset is only valid, if limit is given
+       */
+      i = find_arg_with_value(ua, NT_("offset"));
+      if (i >= 0) {
+         temp.bsprintf(" OFFSET %d", atoi(ua->argv[i]));
+         pm_strcat(query_range, temp.c_str());
+      }
+   }
 }
 
 static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 {
    JOB_DBR jr;
    POOL_DBR pr;
+   utime_t now;
    MEDIA_DBR mr;
-   POOL_MEM query_range(PM_MESSAGE);
-   int i, d, h, jobid;
    int days = 0,
        hours = 0,
        jobstatus = 0;
-   int count = -1;
-   int last_run = -1;
+   bool count,
+        last,
+        current,
+        enabled,
+        disabled;
+   int i, d, h, jobid;
    time_t schedtime = 0;
-   const int secs_in_day = 86400;
-   const int secs_in_hour = 3600;
    char *clientname = NULL;
    char *volumename = NULL;
-   utime_t now;
-   bool reverse;
+   const int secs_in_day = 86400;
+   const int secs_in_hour = 3600;
+   POOL_MEM query_range(PM_MESSAGE);
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -442,7 +558,6 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    /*
     * days or hours given?
     */
-
    d = find_arg_with_value(ua, NT_("days"));
    h = find_arg_with_value(ua, NT_("hours"));
 
@@ -457,25 +572,22 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       schedtime = now - secs_in_hour * hours; /* Hours in the past */
    }
 
-   /*
-    * Apply any limit
-    */
+   current = find_arg(ua, NT_("current")) >= 0;
+   enabled = find_arg(ua, NT_("enabled")) >= 0;
+   disabled = find_arg(ua, NT_("disabled")) >= 0;
+   count = find_arg(ua, NT_("count")) >= 0;
+   last = find_arg(ua, NT_("last")) >= 0;
+
    pm_strcpy(query_range, "");
-   i = find_arg_with_value(ua, NT_("limit"));
+   set_query_range(query_range, ua, &jr);
+
+   i = find_arg_with_value(ua, NT_("client"));
    if (i >= 0) {
-      POOL_MEM temp(PM_MESSAGE);
-
-      jr.limit = atoi(ua->argv[i]);
-      temp.bsprintf(" LIMIT %d", atoi(ua->argv[i]));
-      pm_strcat(query_range, temp.c_str());
-
-      /*
-       * offset is only valid, if limit is given
-       */
-      i = find_arg_with_value(ua, NT_("offset"));
-      if (i >= 0) {
-         temp.bsprintf(" OFFSET %d", atoi(ua->argv[i]));
-         pm_strcat(query_range, temp.c_str());
+      if (ua->GetClientResWithName(ua->argv[i])) {
+         clientname = ua->argv[i];
+      } else {
+         ua->error_msg(_("invalid client parameter\n"));
+         return false;
       }
    }
 
@@ -503,53 +615,91 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          jr.JobId = 0;
          bstrncpy(jr.Name, ua->argv[i], MAX_NAME_LENGTH);
       }
-      i = find_arg_with_value(ua, NT_("client"));
-      if (i >= 0) {
-         if (GetClientResWithName(ua->argv[i])) {
-            clientname = ua->argv[i];
-         } else {
-            ua->error_msg(_("invalid client parameter\n"));
-            return false;
-         }
-      }
 
       i = find_arg_with_value(ua, NT_("volume"));
       if (i >= 0) {
          volumename = ua->argv[i];
       }
 
-      last_run = find_arg(ua, NT_("last"));
-      count = find_arg(ua, NT_("count"));
+      switch (llist) {
+      case VERT_LIST:
+         if (!count) {
+            set_acl_filter(ua, 2, Job_ACL); /* JobName */
+            set_acl_filter(ua, 7, Client_ACL); /* ClientName */
+            set_acl_filter(ua, 21, Pool_ACL); /* PoolName */
+            set_acl_filter(ua, 24, FileSet_ACL); /* FilesetName */
+         }
+         if (current) {
+            set_res_filter(ua, 2, R_JOB); /* JobName */
+            set_res_filter(ua, 7, R_CLIENT); /* ClientName */
+            set_res_filter(ua, 21, R_POOL); /* PoolName */
+            set_res_filter(ua, 24, R_FILESET); /* FilesetName */
+         }
+         if (enabled) {
+            set_enabled_filter(ua, 2, R_JOB); /* JobName */
+         }
+         if (disabled) {
+            set_disabled_filter(ua, 2, R_JOB); /* JobName */
+         }
+         break;
+      default:
+         if (!count) {
+            set_acl_filter(ua, 1, Job_ACL); /* JobName */
+            set_acl_filter(ua, 2, Client_ACL); /* ClientName */
+         }
+         if (current) {
+            set_res_filter(ua, 1, R_JOB); /* JobName */
+            set_res_filter(ua, 2, R_CLIENT); /* ClientName */
+         }
+         if (enabled) {
+            set_enabled_filter(ua, 1, R_JOB); /* JobName */
+         }
+         if (disabled) {
+            set_disabled_filter(ua, 1, R_JOB); /* JobName */
+         }
+         break;
+      }
+
+      set_query_range(query_range, ua, &jr);
+
       db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, last_run, count,
+                          jobstatus, volumename, schedtime, last, count,
                           ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
        */
       db_list_job_totals(ua->jcr, ua->db, &jr, ua->send);
-   } else if (bstrcasecmp(ua->argk[1], NT_("jobid"))) {
+   } else if ((bstrcasecmp(ua->argk[1], NT_("jobid")) ||
+               bstrcasecmp(ua->argk[1], NT_("ujobid"))) && ua->argv[1]) {
       /*
        * List JOBID=nn
-       */
-      if (ua->argv[1]) {
-         jobid = str_to_int64(ua->argv[1]);
-         if (jobid > 0) {
-            jr.JobId = jobid;
-            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                                jobstatus, volumename, schedtime, last_run, count,
-                                ua->send, llist);
-         }
-      }
-  } else if (bstrcasecmp(ua->argk[1], NT_("ujobid")) && ua->argv[1]) {
-      /*
        * List UJOBID=xxx
        */
-      bstrncpy(jr.Job, ua->argv[1], MAX_NAME_LENGTH);
-      jr.JobId = 0;
-      db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
-                          jobstatus, volumename, schedtime, last_run, count,
-                          ua->send, llist);
+      if (ua->argv[1]) {
+         jobid = get_jobid_from_cmdline(ua);
+         if (jobid > 0) {
+            jr.JobId = jobid;
+
+            set_acl_filter(ua, 1, Job_ACL); /* JobName */
+            set_acl_filter(ua, 2, Client_ACL); /* ClientName */
+            if (current) {
+               set_res_filter(ua, 1, R_JOB); /* JobName */
+               set_res_filter(ua, 2, R_CLIENT); /* ClientName */
+            }
+            if (enabled) {
+               set_enabled_filter(ua, 1, R_JOB); /* JobName */
+            }
+            if (disabled) {
+               set_disabled_filter(ua, 1, R_JOB); /* JobName */
+            }
+
+            set_query_range(query_range, ua, &jr);
+
+            db_list_job_records(ua->jcr, ua->db, &jr, query_range.c_str(), clientname,
+                                jobstatus, volumename, schedtime, last, count, ua->send, llist);
+         }
+      }
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
       /*
        * List BASEFILES
@@ -557,7 +707,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
          db_list_base_files_for_job(ua->jcr, ua->db, jobid, ua->send);
-       } else {
+      } else {
          ua->error_msg(_("missing parameter: jobid\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("files"))) {
@@ -585,6 +735,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (jobid > 0 || filesetid > 0) {
          jr.JobId = jobid;
          jr.FileSetId = filesetid;
+
+         set_acl_filter(ua, 1, FileSet_ACL); /* FilesetName */
+         if (current) {
+            set_res_filter(ua, 1, R_FILESET); /* FilesetName */
+         }
+
+         set_query_range(query_range, ua, &jr);
+
          db_list_filesets(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
       } else {
          ua->error_msg(_("missing parameter: jobid or filesetid\n"));
@@ -593,6 +751,13 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       /*
        * List FILESETs
        */
+      set_acl_filter(ua, 1, FileSet_ACL); /* FilesetName */
+      if (current) {
+         set_res_filter(ua, 1, R_FILESET); /* FilesetName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
       db_list_filesets(ua->jcr, ua->db, &jr, query_range.c_str(), ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobmedia"))) {
       /*
@@ -615,16 +780,31 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          ua->error_msg(_("missing parameter: jobid\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("log"))) {
+      bool reverse;
+
       /*
        * List last <limit> LOG entries
        * default is DEFAULT_LOG_LINES entries
        */
-      reverse = (find_arg(ua, NT_("reverse")) != -1);
+      reverse = find_arg(ua, NT_("reverse")) >= 0;
 
       if (strlen(query_range.c_str()) == 0) {
          Mmsg(query_range, " LIMIT %d", DEFAULT_LOG_LINES);
       }
-      db_list_log_records(ua->jcr, ua->db, query_range.c_str(), reverse,  ua->send, llist);
+
+      if (ua->api != API_MODE_JSON) {
+         set_hidden_column(ua, 0); /* LogId */
+         set_hidden_column_acl_filter(ua, 1, Job_ACL); /* JobName */
+         set_hidden_column_acl_filter(ua, 2, Client_ACL); /* ClientName */
+         set_hidden_column(ua, 3); /* LogTime */
+      } else {
+         set_acl_filter(ua, 1, Job_ACL); /* JobName */
+         set_acl_filter(ua, 2, Client_ACL); /* ClientName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
+      db_list_log_records(ua->jcr, ua->db, clientname, query_range.c_str(), reverse, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("pool")) ||
               bstrcasecmp(ua->argk[1], NT_("pools"))) {
       POOL_DBR pr;
@@ -636,22 +816,69 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (ua->argv[1]) {
          bstrncpy(pr.Name, ua->argv[1], sizeof(pr.Name));
       }
+
+      set_acl_filter(ua, 1, Pool_ACL); /* PoolName */
+      if (current) {
+         set_res_filter(ua, 1, R_POOL); /* PoolName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
       db_list_pool_records(ua->jcr, ua->db, &pr, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("clients"))) {
       /*
        * List CLIENTS
        */
+      set_acl_filter(ua, 1, Client_ACL); /* ClientName */
+      if (current) {
+         set_res_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+      if (enabled) {
+         set_enabled_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+      if (disabled) {
+         set_disabled_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
       db_list_client_records(ua->jcr, ua->db, NULL, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("client")) && ua->argv[1]) {
       /*
        * List CLIENT=xxx
        */
+      set_acl_filter(ua, 1, Client_ACL); /* ClientName */
+      if (current) {
+         set_res_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+      if (enabled) {
+         set_enabled_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+      if (disabled) {
+         set_disabled_filter(ua, 1, R_CLIENT); /* ClientName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
       db_list_client_records(ua->jcr, ua->db, ua->argv[1], ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("storages"))) {
       /*
        * List STORAGES
        */
-       db_list_sql_query(ua->jcr, ua->db, "SELECT * FROM Storage", ua->send, llist, "storages");
+      set_acl_filter(ua, 1, Storage_ACL); /* StorageName */
+      if (current) {
+         set_res_filter(ua, 1, R_STORAGE); /* StorageName */
+      }
+      if (enabled) {
+         set_enabled_filter(ua, 1, R_STORAGE); /* StorageName */
+      }
+      if (disabled) {
+         set_disabled_filter(ua, 1, R_STORAGE); /* StorageName */
+      }
+
+      set_query_range(query_range, ua, &jr);
+
+      db_list_storage_records(ua->jcr, ua->db, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("media")) ||
               bstrcasecmp(ua->argk[1], NT_("volume")) ||
               bstrcasecmp(ua->argk[1], NT_("volumes"))) {
@@ -684,6 +911,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             i = find_arg_with_value(ua, NT_("pool"));
             if (i >= 0) {
                bstrncpy(pr.Name, ua->argv[i], sizeof(pr.Name));
+
                if (!get_pool_dbr(ua, &pr)) {
                   ua->error_msg(_("Pool %s doesn't exist.\n"), ua->argv[i]);
                   return true;
@@ -703,6 +931,10 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                 */
                if (find_arg(ua, NT_("all")) > 0) {
                   ua->send->array_start("volumes");
+                  set_acl_filter(ua, 1, Pool_ACL); /* PoolName */
+                  if (current) {
+                     set_res_filter(ua, 1, R_POOL); /* PoolName */
+                  }
                   db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
                   ua->send->array_end("volumes");
                } else {
@@ -710,8 +942,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                    * List Volumes in all pools
                    */
                   if (!db_get_pool_ids(ua->jcr, ua->db, &num_pools, &ids)) {
-                     ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"),
-                           db_strerror(ua->db));
+                     ua->error_msg(_("Error obtaining pool ids. ERR=%s\n"), db_strerror(ua->db));
                      return true;
                   }
 
@@ -723,11 +954,13 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   for (i = 0; i < num_pools; i++) {
                      pr.PoolId = ids[i];
                      if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
-                        ua->send->decoration( "Pool: %s\n", pr.Name );
-                        ua->send->array_start(pr.Name);
-                        mr.PoolId = ids[i];
-                        db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
-                        ua->send->array_end(pr.Name);
+                        if (ua->acl_access_ok(Pool_ACL, pr.Name, false)) {
+                           ua->send->decoration( "Pool: %s\n", pr.Name );
+                           ua->send->array_start(pr.Name);
+                           mr.PoolId = ids[i];
+                           db_list_media_records(ua->jcr, ua->db, &mr, ua->send, llist);
+                           ua->send->array_end(pr.Name);
+                        }
                      }
                   }
                   ua->send->object_end("volumes");
@@ -736,6 +969,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             }
          }
       }
+
       return true;
    } else if (bstrcasecmp(ua->argk[1], NT_("nextvol")) ||
               bstrcasecmp(ua->argk[1], NT_("nextvolume"))) {
@@ -769,6 +1003,35 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("backups"))) {
       if (parse_list_backups_cmd(ua, query_range.c_str(), llist)) {
+         switch (llist) {
+         case VERT_LIST:
+            set_acl_filter(ua, 2, Job_ACL); /* JobName */
+            set_acl_filter(ua, 21, Pool_ACL); /* PoolName */
+            if (current) {
+               set_res_filter(ua, 2, R_JOB); /* JobName */
+               set_res_filter(ua, 21, R_POOL); /* PoolName */
+            }
+            if (enabled) {
+               set_enabled_filter(ua, 2, R_JOB); /* JobName */
+            }
+            if (disabled) {
+               set_disabled_filter(ua, 2, R_JOB); /* JobName */
+            }
+            break;
+         default:
+            set_acl_filter(ua, 1, Job_ACL); /* JobName */
+            if (current) {
+               set_res_filter(ua, 1, R_JOB); /* JobName */
+            }
+            if (enabled) {
+               set_enabled_filter(ua, 1, R_JOB); /* JobName */
+            }
+            if (disabled) {
+               set_disabled_filter(ua, 1, R_JOB); /* JobName */
+            }
+            break;
+         }
+
          db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, llist, "backups");
       }
    } else {
@@ -917,7 +1180,7 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
 
       LockRes();
       foreach_res(fs, R_FILESET) {
-         if (!acl_access_ok(ua, FileSet_ACL, fs->name(), false)) {
+         if (!ua->acl_access_ok(FileSet_ACL, fs->name(), false)) {
             continue;
          }
          if (selection.strlen() == 0) {
@@ -930,7 +1193,7 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
       pm_strcat(selection, ") ");
       UnlockRes();
    } else if (fileset >= 0) {
-      if (!acl_access_ok(ua, FileSet_ACL, ua->argv[fileset], true)) {
+      if (!ua->acl_access_ok(FileSet_ACL, ua->argv[fileset], true)) {
          ua->error_msg(_("Access to specified FileSet not allowed.\n"));
          return false;
       } else {
@@ -954,7 +1217,7 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type
       return false;
    }
 
-   if (!acl_access_ok(ua, Client_ACL, ua->argv[client], true)) {
+   if (!ua->acl_access_ok(Client_ACL, ua->argv[client], true)) {
       ua->error_msg(_("Access to specified Client not allowed.\n"));
       return false;
    }
@@ -1023,7 +1286,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
          return false;
       }
    } else {
-      job = (JOBRES *)GetResWithName(R_JOB, ua->argv[i]);
+      job = ua->GetJobResWithName(ua->argv[i]);
       if (!job) {
          Jmsg(ua->jcr, M_ERROR, 0, _("%s is not a job name.\n"), ua->argv[i]);
          if ((job = select_job_resource(ua)) == NULL) {
@@ -1033,7 +1296,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
    }
 
    jcr = new_jcr(sizeof(JCR), dird_free_jcr);
-   for (run=NULL; (run = find_next_run(run, job, runtime, ndays)); ) {
+   for (run = NULL; (run = find_next_run(run, job, runtime, ndays)); ) {
       if (!complete_jcr_for_job(jcr, job, run->pool)) {
          found = false;
          goto get_out;
@@ -1263,7 +1526,9 @@ void do_messages(UAContext *ua, const char *cmd)
 
 bool dot_messages_cmd(UAContext *ua, const char *cmd)
 {
-   if (console_msg_pending && ua->auto_display_messages) {
+   if (console_msg_pending &&
+       ua->acl_no_restrictions(Command_ACL) &&
+       ua->auto_display_messages) {
       do_messages(ua, cmd);
    }
    return true;
@@ -1271,7 +1536,8 @@ bool dot_messages_cmd(UAContext *ua, const char *cmd)
 
 bool messages_cmd(UAContext *ua, const char *cmd)
 {
-   if (console_msg_pending) {
+   if (console_msg_pending &&
+       ua->acl_no_restrictions(Command_ACL)) {
       do_messages(ua, cmd);
    } else {
       ua->send->decoration(_("You have no messages.\n"));
@@ -1280,7 +1546,118 @@ bool messages_cmd(UAContext *ua, const char *cmd)
 }
 
 /*
- * Callback routine for "printing" database file listing
+ * Callback routine for "filtering" database listing.
+ */
+bool filterit(void *ctx, void *data, of_filter_tuple *tuple)
+{
+   bool retval = true;
+   char **row = (char **)data;
+   UAContext *ua = (UAContext *)ctx;
+
+   switch (tuple->type) {
+   case OF_FILTER_LIMIT:
+      if (tuple->u.limit_filter.limit > 0) {
+         Dmsg1(200, "filterit: limit filter still %d entries to display\n",
+               tuple->u.limit_filter.limit);
+         tuple->u.limit_filter.limit--;
+      } else {
+         Dmsg0(200, "filterit: limit filter reached don't display entry\n");
+         retval = false;
+      }
+      goto bail_out;
+   case OF_FILTER_ACL:
+      if (row[tuple->u.acl_filter.column] &&
+          strlen(row[tuple->u.acl_filter.column]) &&
+          !ua->acl_access_ok(tuple->u.acl_filter.acltype,
+                             row[tuple->u.acl_filter.column], false)) {
+         Dmsg2(200, "filterit: Filter on acl_type %d value %s, suppress output\n",
+               tuple->u.acl_filter.acltype, row[tuple->u.acl_filter.column]);
+         retval = false;
+      }
+      goto bail_out;
+   case OF_FILTER_RESOURCE:
+      if (row[tuple->u.res_filter.column] &&
+          strlen(row[tuple->u.res_filter.column]) &&
+          !GetResWithName(tuple->u.res_filter.restype,
+                          row[tuple->u.res_filter.column], false)) {
+         Dmsg2(200, "filterit: Filter on resource_type %d value %s, suppress output\n",
+               tuple->u.res_filter.restype, row[tuple->u.res_filter.column]);
+         retval = false;
+      }
+      goto bail_out;
+   case OF_FILTER_ENABLED:
+   case OF_FILTER_DISABLED: {
+      bool enabled = true;
+
+      if (!row[tuple->u.res_filter.column] ||
+          strlen(row[tuple->u.res_filter.column]) == 0) {
+         goto bail_out;
+      }
+
+      if (tuple->type == OF_FILTER_DISABLED) {
+         enabled = false;
+      }
+
+      switch (tuple->u.res_filter.restype) {
+      case R_CLIENT: {
+         CLIENTRES *client;
+
+         client = ua->GetClientResWithName(row[tuple->u.res_filter.column], false, false);
+         if (!client || client->enabled != enabled) {
+            Dmsg2(200, "filterit: Filter on Client, %s is not %sabled\n",
+                  row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
+            retval = false;
+         }
+         goto bail_out;
+      }
+      case R_JOB: {
+         JOBRES *job;
+
+         job = ua->GetJobResWithName(row[tuple->u.res_filter.column], false, false);
+         if (!job || job->enabled != enabled) {
+            Dmsg2(200, "filterit: Filter on Job, %s is not %sabled\n",
+                  row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
+            retval = false;
+         }
+         goto bail_out;
+      }
+      case R_STORAGE: {
+         STORERES *store;
+
+         store = ua->GetStoreResWithName(row[tuple->u.res_filter.column], false, false);
+         if (!store || store->enabled != enabled) {
+            Dmsg2(200, "filterit: Filter on Storage, %s is not %sabled\n",
+                  row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
+            retval = false;
+         }
+         goto bail_out;
+      }
+      case R_SCHEDULE: {
+         SCHEDRES *schedule;
+
+         schedule = ua->GetScheduleResWithName(row[tuple->u.res_filter.column], false, false);
+         if (!schedule || schedule->enabled != enabled) {
+            Dmsg2(200, "filterit: Filter on Schedule, %s is not %sabled\n",
+                  row[tuple->u.res_filter.column], (enabled) ? "En" : "Dis");
+            retval = false;
+         }
+         goto bail_out;
+      }
+      default:
+         goto bail_out;
+      }
+      break;
+   }
+   default:
+      retval = false;
+   }
+
+bail_out:
+   return retval;
+}
+
+/*
+ * Callback routine for "printing" database listing
  */
 bool printit(void *ctx, const char *msg)
 {
@@ -1293,6 +1670,7 @@ bool printit(void *ctx, const char *msg)
       Jmsg(ua->jcr, M_INFO, 0, "%s", msg);
       retval = true;
    }
+
    return retval;
 }
 

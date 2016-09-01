@@ -54,17 +54,19 @@ static int res_locked = 0;            /* resource chain lock count -- for debug 
 void b_LockRes(const char *file, int line)
 {
    int errstat;
+
 #ifdef TRACE_RES
    Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n",
          res_locked, my_config->m_res_lock.w_active, file, line);
+
     if (res_locked) {
-       Pmsg2(000, "LockRes writerid=%d myid=%d\n", my_config->m_res_lock.writer_id,
-          pthread_self());
+       Pmsg2(000, "LockRes writerid=%d myid=%d\n",
+             my_config->m_res_lock.writer_id, pthread_self());
      }
 #endif
    if ((errstat = rwl_writelock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
-           file, line, strerror(errstat));
+            file, line, strerror(errstat));
    }
    res_locked++;
 }
@@ -72,9 +74,10 @@ void b_LockRes(const char *file, int line)
 void b_UnlockRes(const char *file, int line)
 {
    int errstat;
+
    if ((errstat = rwl_writeunlock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writeunlock failure at %s:%d:. ERR=%s\n"),
-           file, line, strerror(errstat));
+            file, line, strerror(errstat));
    }
    res_locked--;
 #ifdef TRACE_RES
@@ -86,12 +89,15 @@ void b_UnlockRes(const char *file, int line)
 /*
  * Return resource of type rcode that matches name
  */
-RES *GetResWithName(int rcode, const char *name)
+RES *GetResWithName(int rcode, const char *name, bool lock)
 {
    RES *res;
    int rindex = rcode - my_config->m_r_first;
 
-   LockRes();
+   if (lock) {
+      LockRes();
+   }
+
    res = my_config->m_res_head[rindex];
    while (res) {
       if (bstrcmp(res->name, name)) {
@@ -99,9 +105,12 @@ RES *GetResWithName(int rcode, const char *name)
       }
       res = res->next;
    }
-   UnlockRes();
-   return res;
 
+   if (lock) {
+      UnlockRes();
+   }
+
+   return res;
 }
 
 /*
@@ -119,6 +128,7 @@ RES *GetNextRes(int rcode, RES *res)
    } else {
       nres = res->next;
    }
+
    return nres;
 }
 

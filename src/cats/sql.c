@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -429,21 +429,20 @@ static int max_length(int max_length)
  */
 static void list_dashes(B_DB *mdb, OUTPUT_FORMATTER *send)
 {
-   SQL_FIELD *field;
-   int i, j;
    int len;
    int num_fields;
+   SQL_FIELD *field;
 
    sql_field_seek(mdb, 0);
    send->decoration("+");
    num_fields = sql_num_fields(mdb);
-   for (i = 0; i < num_fields; i++) {
+   for (int i = 0; i < num_fields; i++) {
       field = sql_fetch_field(mdb);
       if (!field) {
          break;
       }
       len = max_length(field->max_length + 2);
-      for (j = 0; j < len; j++) {
+      for (int j = 0; j < len; j++) {
          send->decoration("-");
       }
       send->decoration("+");
@@ -451,29 +450,37 @@ static void list_dashes(B_DB *mdb, OUTPUT_FORMATTER *send)
    send->decoration("\n");
 }
 
-/* Small handler to print the last line of a list xxx command */
 /*
-static void last_line_handler(void *vctx, const char *str)
-{
-   LIST_CTX *ctx = (LIST_CTX *)vctx;
-   bstrncat(ctx->line, str, sizeof(ctx->line));
-}
-*/
-
+ * List result handler used by queries done with db_big_sql_query()
+ */
 int list_result(void *vctx, int nb_col, char **row)
 {
-   SQL_FIELD *field;
-   int i, col_len, max_len = 0;
-   int num_fields;
+   JCR *jcr;
+   B_DB *mdb;
    char ewc[30];
    POOL_MEM key;
    POOL_MEM value;
-
+   int num_fields;
+   SQL_FIELD *field;
+   e_list_type type;
+   OUTPUT_FORMATTER *send;
+   int col_len, max_len = 0;
    LIST_CTX *pctx = (LIST_CTX *)vctx;
-   OUTPUT_FORMATTER *send = pctx->send;
-   e_list_type type = pctx->type;
-   B_DB *mdb = pctx->mdb;
-   JCR *jcr = pctx->jcr;
+
+   /*
+    * Get pointers from context.
+    */
+   type = pctx->type;
+   send = pctx->send;
+   mdb = pctx->mdb;
+   jcr = pctx->jcr;
+
+   /*
+    * See if this row must be filtered.
+    */
+   if (send->has_filters() && !send->filter_data(row)) {
+      return 0;
+   }
 
    send->object_start();
 
@@ -496,12 +503,22 @@ int list_result(void *vctx, int nb_col, char **row)
           * Determine column display widths
           */
          sql_field_seek(mdb, 0);
-         for (i = 0; i < num_fields; i++) {
+         for (int i = 0; i < num_fields; i++) {
             Dmsg1(800, "list_result processing field %d\n", i);
+
             field = sql_fetch_field(mdb);
             if (!field) {
                break;
             }
+
+            /*
+             * See if this is a hidden column.
+             */
+            if (send->is_hidden_column(i)) {
+               Dmsg1(800, "list_result field %d is hidden\n", i);
+               continue;
+            }
+
             col_len = cstrlen(field->name);
             if (type == VERT_LIST) {
                if (col_len > max_len) {
@@ -537,12 +554,22 @@ int list_result(void *vctx, int nb_col, char **row)
 
          send->decoration("|");
          sql_field_seek(mdb, 0);
-         for (i = 0; i < num_fields; i++) {
+         for (int i = 0; i < num_fields; i++) {
             Dmsg1(800, "list_result looking at field %d\n", i);
+
             field = sql_fetch_field(mdb);
             if (!field) {
                break;
             }
+
+            /*
+             * See if this is a hidden column.
+             */
+            if (send->is_hidden_column(i)) {
+               Dmsg1(800, "list_result field %d is hidden\n", i);
+               continue;
+            }
+
             max_len = max_length(field->max_length);
             send->decoration(" %-*s |", max_len, field->name);
          }
@@ -559,11 +586,20 @@ int list_result(void *vctx, int nb_col, char **row)
    case RAW_LIST:
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
-      for (i = 0; i < num_fields; i++) {
+      for (int i = 0; i < num_fields; i++) {
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
+
+         /*
+          * See if this is a hidden column.
+          */
+         if (send->is_hidden_column(i)) {
+            Dmsg1(800, "list_result field %d is hidden\n", i);
+            continue;
+         }
+
          if (row[i] == NULL) {
             value.bsprintf("%s", "NULL");
          } else {
@@ -579,10 +615,18 @@ int list_result(void *vctx, int nb_col, char **row)
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
       send->decoration("|");
-      for (i = 0; i < num_fields; i++) {
+      for (int i = 0; i < num_fields; i++) {
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
+         }
+
+         /*
+          * See if this is a hidden column.
+          */
+         if (send->is_hidden_column(i)) {
+            Dmsg1(800, "list_result field %d is hidden\n", i);
+            continue;
          }
 
          max_len = max_length(field->max_length);
@@ -604,11 +648,20 @@ int list_result(void *vctx, int nb_col, char **row)
    case VERT_LIST:
       Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
       sql_field_seek(mdb, 0);
-      for (i = 0; i < num_fields; i++) {
+      for (int i = 0; i < num_fields; i++) {
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
+
+         /*
+          * See if this is a hidden column.
+          */
+         if (send->is_hidden_column(i)) {
+            Dmsg1(800, "list_result field %d is hidden\n", i);
+            continue;
+         }
+
          if (row[i] == NULL) {
             key.bsprintf(" %*s: ", max_len, field->name);
             value.bsprintf("%s\n", "NULL");
@@ -631,23 +684,25 @@ int list_result(void *vctx, int nb_col, char **row)
       break;
    }
    send->object_end();
+
    return 0;
 }
 
 /*
- * If full_list is set, we list vertically, otherwise, we
- *  list on one line horizontally.
+ * If full_list is set, we list vertically, otherwise, we list on one line horizontally.
+ *
  * Return number of rows
  */
 int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 {
-   SQL_FIELD *field;
    SQL_ROW row;
-   int i, col_len, max_len = 0;
-   int num_fields;
    char ewc[30];
    POOL_MEM key;
    POOL_MEM value;
+   int num_fields;
+   SQL_FIELD *field;
+   bool filters_enabled;
+   int col_len, max_len = 0;
 
    Dmsg0(800, "list_result starts\n");
    if (sql_num_rows(mdb) == 0) {
@@ -660,8 +715,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
    case NF_LIST:
    case RAW_LIST:
       /*
-       * No need to calculate things like column widths for
-       * unformated or raw output.
+       * No need to calculate things like column widths for unformated or raw output.
        */
       break;
    case HORZ_LIST:
@@ -671,12 +725,22 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
        * Determine column display widths
        */
       sql_field_seek(mdb, 0);
-      for (i = 0; i < num_fields; i++) {
+      for (int i = 0; i < num_fields; i++) {
          Dmsg1(800, "list_result processing field %d\n", i);
+
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
+
+         /*
+          * See if this is a hidden column.
+          */
+         if (send->is_hidden_column(i)) {
+            Dmsg1(800, "list_result field %d is hidden\n", i);
+            continue;
+         }
+
          col_len = cstrlen(field->name);
          if (type == VERT_LIST) {
             if (col_len > max_len) {
@@ -700,18 +764,41 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 
    Dmsg0(800, "list_result finished first loop\n");
 
+   /*
+    * See if filters are enabled for this list function.
+    * We use this to shortcut for calling the filter_data() method in the
+    * OUTPUT_FORMATTER class.
+    */
+   filters_enabled = send->has_filters();
+
    switch (type) {
    case NF_LIST:
    case RAW_LIST:
       Dmsg1(800, "list_result starts second loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         /*
+          * See if we should allow this under the current filtering.
+          */
+         if (filters_enabled && !send->filter_data(row)) {
+            continue;
+         }
+
          send->object_start();
          sql_field_seek(mdb, 0);
-         for (i = 0; i < num_fields; i++) {
+         for (int i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
             if (!field) {
                break;
             }
+
+            /*
+             * See if this is a hidden column.
+             */
+            if (send->is_hidden_column(i)) {
+               Dmsg1(800, "list_result field %d is hidden\n", i);
+               continue;
+            }
+
             if (row[i] == NULL) {
                value.bsprintf("%s", "NULL");
             } else {
@@ -730,12 +817,22 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
       list_dashes(mdb, send);
       send->decoration("|");
       sql_field_seek(mdb, 0);
-      for (i = 0; i < num_fields; i++) {
+      for (int i = 0; i < num_fields; i++) {
          Dmsg1(800, "list_result looking at field %d\n", i);
+
          field = sql_fetch_field(mdb);
          if (!field) {
             break;
          }
+
+         /*
+          * See if this is a hidden column.
+          */
+         if (send->is_hidden_column(i)) {
+            Dmsg1(800, "list_result field %d is hidden\n", i);
+            continue;
+         }
+
          max_len = max_length(field->max_length);
          send->decoration(" %-*s |", max_len, field->name);
       }
@@ -744,14 +841,30 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 
       Dmsg1(800, "list_result starts third loop looking at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         /*
+          * See if we should allow this under the current filtering.
+          */
+         if (filters_enabled && !send->filter_data(row)) {
+            continue;
+         }
+
          send->object_start();
          sql_field_seek(mdb, 0);
          send->decoration("|");
-         for (i = 0; i < num_fields; i++) {
+         for (int i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
             if (!field) {
                break;
             }
+
+            /*
+             * See if this is a hidden column.
+             */
+            if (send->is_hidden_column(i)) {
+               Dmsg1(800, "list_result field %d is hidden\n", i);
+               continue;
+            }
+
             max_len = max_length(field->max_length);
             if (row[i] == NULL) {
                value.bsprintf(" %-*s |", max_len, "NULL");
@@ -763,7 +876,10 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
             if (i == num_fields-1) {
                value.strcat("\n");
             }
-            /* use value format string to send preformated value */
+
+            /*
+             * Use value format string to send preformated value
+             */
             send->object_key_value(field->name, row[i], value.c_str());
          }
          send->object_end();
@@ -773,13 +889,29 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
    case VERT_LIST:
       Dmsg1(800, "list_result starts vertical list at %d fields\n", num_fields);
       while ((row = sql_fetch_row(mdb)) != NULL) {
+         /*
+          * See if we should allow this under the current filtering.
+          */
+         if (filters_enabled && !send->filter_data(row)) {
+            continue;
+         }
+
          send->object_start();
          sql_field_seek(mdb, 0);
-         for (i = 0; i < num_fields; i++) {
+         for (int i = 0; i < num_fields; i++) {
             field = sql_fetch_field(mdb);
             if (!field) {
                break;
             }
+
+            /*
+             * See if this is a hidden column.
+             */
+            if (send->is_hidden_column(i)) {
+               Dmsg1(800, "list_result field %d is hidden\n", i);
+               continue;
+            }
+
             if (row[i] == NULL) {
                key.bsprintf(" %*s: ", max_len, field->name);
                value.bsprintf("%s\n", "NULL");
@@ -790,7 +922,10 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
                key.bsprintf(" %*s: ", max_len, field->name);
                value.bsprintf("%s\n", row[i]);
             }
-            /* use value format string to send preformated value */
+
+            /*
+             * Use value format string to send preformated value
+             */
             send->object_key_value(field->name, key.c_str(), row[i], value.c_str());
          }
          send->decoration("\n");
@@ -798,12 +933,12 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
       }
       break;
    }
+
    return sql_num_rows(mdb);
 }
 
 /*
- * Open a new connexion to mdb catalog. This function is used
- * by batch and accurate mode.
+ * Open a new connexion to mdb catalog. This function is used by batch and accurate mode.
  */
 bool db_open_batch_connection(JCR *jcr, B_DB *mdb)
 {

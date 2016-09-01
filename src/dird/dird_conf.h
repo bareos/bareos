@@ -625,11 +625,3 @@ union URES {
 void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
 bool propagate_jobdefs(int res_type, JOBRES *res);
 bool validate_resource(int type, RES_ITEM *items, BRSRES *res);
-
-#define GetPoolResWithName(x) ((POOLRES *)GetResWithName(R_POOL, (x)))
-#define GetStoreResWithName(x) ((STORERES *)GetResWithName(R_STORAGE, (x)))
-#define GetClientResWithName(x) ((CLIENTRES *)GetResWithName(R_CLIENT, (x)))
-#define GetJobResWithName(x) ((JOBRES *)GetResWithName(R_JOB, (x)))
-#define GetFileSetResWithName(x) ((FILESETRES *)GetResWithName(R_FILESET, (x)))
-#define GetCatalogResWithName(x) ((CATRES *)GetResWithName(R_CATALOG, (x)))
-#define GetScheduleResWithName(x) ((SCHEDRES *)GetResWithName(R_SCHEDULE, (x)))

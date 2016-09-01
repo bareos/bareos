@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -158,7 +158,7 @@ static struct cmdstruct commands[] = {
    { NT_(".catalogs"), dot_catalogs_cmd, _("List all catalog resources"),
      NULL, false, false },
    { NT_(".clients"), dot_clients_cmd, _("List all client resources"),
-     NULL, true, false },
+     NT_("[enabled | disabled]"), true, false },
    { NT_(".consoles"), dot_consoles_cmd, _("List all console resources"),
      NULL, true, false },
    { NT_(".defaults"), dot_defaults_cmd, _("Get default settings"),
@@ -177,10 +177,10 @@ static struct cmdstruct commands[] = {
      NULL, false, false },
    { NT_(".help"), dot_help_cmd, _("Print parsable information about a command"),
      NT_("[ all | item=cmd ]"), false, false },
-   { NT_(".jobdefs"), dot_jobdefs_cmd, _("List add JobDef resources"),
+   { NT_(".jobdefs"), dot_jobdefs_cmd, _("List all job defaults resources"),
      NULL, true, false },
-   { NT_(".jobs"), dot_jobs_cmd, _("List job resources"),
-     NT_("type=<jobtype>"), true, false },
+   { NT_(".jobs"), dot_jobs_cmd, _("List all job resources"),
+     NT_("[type=<jobtype>] | [enabled | disabled]"), true, false },
    { NT_(".jobstatus"), dot_jobstatus_cmd, _("List jobstatus information"),
      NT_("[ =<jobstatus> ]"), true, false },
    { NT_(".levels"), dot_levels_cmd, _("List all backup levels"),
@@ -203,14 +203,14 @@ static struct cmdstruct commands[] = {
    { NT_(".sql"), dot_sql_cmd, _("Send an arbitary SQL command"),
      NT_("query=<sqlquery>"), false, true },
    { NT_(".schedule"), dot_schedule_cmd, _("List all schedule resources"),
-     NULL, false, false },
+     NT_("[enabled | disabled]"), false, false },
    { NT_(".status"), dot_status_cmd, _("Report status"),
      NT_("dir ( current | last | header | scheduled | running | terminated ) |\n"
          "storage=<storage> [ header | waitreservation | devices | volumes | spooling | running | terminated ] |\n"
          "client=<client> [ header | terminated | running ]"),
      false, true },
    { NT_(".storages"), dot_storage_cmd, _("List all storage resources"),
-     NULL, true, false },
+     NT_("[enabled | disabled]"), true, false },
    { NT_(".types"), dot_types_cmd, _("List all job types"),
      NULL, false, false },
    { NT_(".volstatus"), dot_volstatus_cmd, _("List all volume status"),
@@ -291,6 +291,7 @@ static struct cmdstruct commands[] = {
          "storages |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
          "volume=<volume-name> |\n"
+         "[ current ] | [ enabled ] | [disabled] |\n"
          "[ limit=<number> [ offset=<number> ] ]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
@@ -313,6 +314,7 @@ static struct cmdstruct commands[] = {
          "pool=<pool-name> |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
          "volume=<volume-name> |\n"
+         "[ current ] | [ enabled ] | [disabled] |\n"
          "[ limit=<num> [ offset=<number> ] ]"), true, true },
    { NT_("messages"), messages_cmd, _("Display pending messages"),
      NT_(""), false, false },
@@ -438,7 +440,7 @@ bool do_a_command(UAContext *ua)
           * Check if command permitted, but "quit" is always OK
           */
          if (!bstrcmp(ua->argk[0], NT_("quit")) &&
-             !acl_access_ok(ua, Command_ACL, ua->argk[0], len, true)) {
+             !ua->acl_access_ok(Command_ACL, ua->argk[0], true)) {
             break;
          }
 
@@ -453,8 +455,8 @@ bool do_a_command(UAContext *ua)
          /*
           * If we need to audit this event do it now.
           */
-         if (audit_event_wanted(ua, commands[i].audit_event)) {
-            log_audit_event_cmdline(ua);
+         if (ua->audit_event_wanted(commands[i].audit_event)) {
+            ua->log_audit_event_cmdline();
          }
 
          /*
@@ -951,17 +953,10 @@ static bool setip_cmd(UAContext *ua, const char *cmd)
    CLIENTRES *client;
    char buf[1024];
 
-   if (!ua->cons || !acl_access_ok(ua, Client_ACL, ua->cons->name(), true)) {
-      ua->error_msg(_("Unauthorized command from this console.\n"));
-      return true;
-   }
-
-   LockRes();
-   client = GetClientResWithName(ua->cons->name());
-
+   client = ua->GetClientResWithName(ua->cons->name());
    if (!client) {
       ua->error_msg(_("Client \"%s\" not found.\n"), ua->cons->name());
-      goto get_out;
+      return false;
    }
 
    if (client->address) {
@@ -972,8 +967,6 @@ static bool setip_cmd(UAContext *ua, const char *cmd)
    client->address = bstrdup(buf);
    ua->send_msg(_("Client \"%s\" address set to %s\n"), client->name(), client->address);
 
-get_out:
-   UnlockRes();
    return true;
 }
 
@@ -988,9 +981,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
    if (i >= 0) {
       i = find_arg_with_value(ua, NT_("schedule"));
       if (i >= 0) {
-         LockRes();
-         sched = GetScheduleResWithName(ua->argv[i]);
-         UnlockRes();
+         sched = ua->GetScheduleResWithName(ua->argv[i]);
       } else {
          sched = select_enable_disable_schedule_resource(ua, setting);
          if (!sched) {
@@ -1007,9 +998,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
       if (i >= 0) {
          i = find_arg_with_value(ua, NT_("client"));
          if (i >= 0) {
-            LockRes();
-            client = GetClientResWithName(ua->argv[i]);
-            UnlockRes();
+            client = ua->GetClientResWithName(ua->argv[i]);
          } else {
             client = select_enable_disable_client_resource(ua, setting);
             if (!client) {
@@ -1024,9 +1013,7 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
       } else {
          i = find_arg_with_value(ua, NT_("job"));
          if (i >= 0) {
-            LockRes();
-            job = GetJobResWithName(ua->argv[i]);
-            UnlockRes();
+            job = ua->GetJobResWithName(ua->argv[i]);
          } else {
             job = select_enable_disable_job_resource(ua, setting);
             if (!job) {
@@ -1042,27 +1029,12 @@ static void do_en_disable_cmd(UAContext *ua, bool setting)
    }
 
    if (sched) {
-      if (!acl_access_ok(ua, Schedule_ACL, sched->name(), true)) {
-         ua->error_msg(_("Unauthorized command from this console.\n"));
-         return;
-      }
-
       sched->enabled = setting;
       ua->send_msg(_("Schedule \"%s\" %sabled\n"), sched->name(), setting ? "en" : "dis");
    } else if (client) {
-      if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
-         ua->error_msg(_("Unauthorized command from this console.\n"));
-         return;
-      }
-
       client->enabled = setting;
       ua->send_msg(_("Client \"%s\" %sabled\n"), client->name(), setting ? "en" : "dis");
    } else if (job) {
-      if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
-         ua->error_msg(_("Unauthorized command from this console.\n"));
-         return;
-      }
-
       job->enabled = setting;
       ua->send_msg(_("Job \"%s\" %sabled\n"), job->name(), setting ? "en" : "dis");
    }
@@ -1372,7 +1344,7 @@ static bool setdebug_cmd(UAContext *ua, const char *cmd)
           bstrcasecmp(ua->argk[i], "fd")) {
          client = NULL;
          if (ua->argv[i]) {
-            client = GetClientResWithName(ua->argv[i]);
+            client = ua->GetClientResWithName(ua->argv[i]);
             if (client) {
                do_client_setdebug(ua, client, level, trace_flag, hangup_flag, timestamp_flag);
                return true;
@@ -1390,7 +1362,7 @@ static bool setdebug_cmd(UAContext *ua, const char *cmd)
           bstrcasecmp(ua->argk[i], NT_("sd"))) {
          store = NULL;
          if (ua->argv[i]) {
-            store = GetStoreResWithName(ua->argv[i]);
+            store = ua->GetStoreResWithName(ua->argv[i]);
             if (store) {
                do_storage_setdebug(ua, store, level, trace_flag, timestamp_flag);
                return true;
@@ -1473,14 +1445,9 @@ static bool resolve_cmd(UAContext *ua, const char *cmd)
       if (bstrcasecmp(ua->argk[i], NT_("client")) ||
           bstrcasecmp(ua->argk[i], NT_("fd"))) {
          if (ua->argv[i]) {
-            client = GetClientResWithName(ua->argv[i]);
+            client = ua->GetClientResWithName(ua->argv[i]);
             if (!client) {
                ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
-               return true;
-            }
-
-            if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
-               ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
                return true;
             }
 
@@ -1492,14 +1459,9 @@ static bool resolve_cmd(UAContext *ua, const char *cmd)
          }
       } else if (bstrcasecmp(ua->argk[i], NT_("storage")))  {
          if (ua->argv[i]) {
-            storage = GetStoreResWithName(ua->argv[i]);
+            storage = ua->GetStoreResWithName(ua->argv[i]);
             if (!storage) {
                ua->error_msg(_("Storage \"%s\" not found.\n"), ua->argv[i]);
-               return true;
-            }
-
-            if (!acl_access_ok(ua, Storage_ACL, storage->name(), true)) {
-               ua->error_msg(_("No authorization for Storage \"%s\"\n"), storage->name());
                return true;
             }
 
@@ -1601,13 +1563,9 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
       if (bstrcasecmp(ua->argk[i], NT_("client")) ||
           bstrcasecmp(ua->argk[i], NT_("fd"))) {
          if (ua->argv[i]) {
-            client = GetClientResWithName(ua->argv[i]);
+            client = ua->GetClientResWithName(ua->argv[i]);
             if (!client) {
                ua->error_msg(_("Client \"%s\" not found.\n"), ua->argv[i]);
-               return false;
-            }
-            if (!acl_access_ok(ua, Client_ACL, client->name(), true)) {
-               ua->error_msg(_("No authorization for Client \"%s\"\n"), client->name());
                return false;
             }
             continue;
@@ -1619,13 +1577,9 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
 
       if (bstrcasecmp(ua->argk[i], NT_("job"))) {
          if (ua->argv[i]) {
-            job = GetJobResWithName(ua->argv[i]);
+            job = ua->GetJobResWithName(ua->argv[i]);
             if (!job) {
                ua->error_msg(_("Job \"%s\" not found.\n"), ua->argv[i]);
-               return false;
-            }
-            if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
-               ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
                return false;
             }
             continue;
@@ -1638,13 +1592,9 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
 
       if (bstrcasecmp(ua->argk[i], NT_("fileset"))) {
          if (ua->argv[i]) {
-            fileset = GetFileSetResWithName(ua->argv[i]);
+            fileset = ua->GetFileSetResWithName(ua->argv[i]);
             if (!fileset) {
                ua->error_msg(_("Fileset \"%s\" not found.\n"), ua->argv[i]);
-               return false;
-            }
-            if (!acl_access_ok(ua, FileSet_ACL, fileset->name(), true)) {
-               ua->error_msg(_("No authorization for FileSet \"%s\"\n"), fileset->name());
                return false;
             }
             continue;
@@ -1693,14 +1643,9 @@ static bool estimate_cmd(UAContext *ua, const char *cmd)
    }
 
    if (!job) {
-      job = GetJobResWithName(ua->argk[1]);
+      job = ua->GetJobResWithName(ua->argk[1]);
       if (!job) {
          ua->error_msg(_("No job specified.\n"));
-         return false;
-      }
-
-      if (!acl_access_ok(ua, Job_ACL, job->name(), true)) {
-         ua->error_msg(_("No authorization for Job \"%s\"\n"), job->name());
          return false;
       }
    }
@@ -2453,12 +2398,12 @@ static bool help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key, "  %-18s");
             ua->send->object_key_value("description", commands[i].help, " %s\n\n");
             ua->send->object_key_value("arguments", "Arguments:\n\t", commands[i].usage, "%s\n", 40);
-            ua->send->object_key_value_bool("permission", acl_access_ok(ua, Command_ACL, commands[i].key));
+            ua->send->object_key_value_bool("permission", ua->acl_access_ok(Command_ACL, commands[i].key));
             ua->send->object_end(commands[i].key);
             break;
          }
       } else {
-         if (acl_access_ok(ua, Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
+         if (ua->acl_access_ok(Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
             ua->send->object_start(commands[i].key);
             ua->send->object_key_value("command", commands[i].key, "  %-18s");
             ua->send->object_key_value("description", commands[i].help, " %s\n");
@@ -2496,7 +2441,7 @@ static bool dot_help_cmd(UAContext *ua, const char *cmd)
             ua->send->object_key_value("command", commands[i].key);
             ua->send->object_key_value("description", commands[i].help);
             ua->send->object_key_value("arguments", commands[i].usage, "%s\n", 0);
-            ua->send->object_key_value_bool("permission", acl_access_ok(ua, Command_ACL, commands[i].key));
+            ua->send->object_key_value_bool("permission", ua->acl_access_ok(Command_ACL, commands[i].key));
             ua->send->object_end(commands[i].key);
             break;
          }
@@ -2510,7 +2455,7 @@ static bool dot_help_cmd(UAContext *ua, const char *cmd)
        * Want to display only user commands (except dot commands)
        */
       for (i = 0; i < comsize; i++) {
-         if (acl_access_ok(ua, Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
+         if (ua->acl_access_ok(Command_ACL, commands[i].key) && (!is_dot_command(commands[i].key))) {
             ua->send->object_start(commands[i].key);
             ua->send->object_key_value("command", commands[i].key, "%s\n");
             ua->send->object_key_value("description", commands[i].help);
@@ -2524,7 +2469,7 @@ static bool dot_help_cmd(UAContext *ua, const char *cmd)
        * Want to display everything
        */
       for (i = 0; i < comsize; i++) {
-         if (acl_access_ok(ua, Command_ACL, commands[i].key)) {
+         if (ua->acl_access_ok(Command_ACL, commands[i].key)) {
             ua->send->object_start(commands[i].key);
             ua->send->object_key_value("command", commands[i].key, "%s ");
             ua->send->object_key_value("description", commands[i].help, "%s -- ");

@@ -89,7 +89,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
       if (bstrcasecmp(ua->argk[2], "current")) {
          ua->send_msg(OKdotstatus, ua->argk[2]);
          foreach_jcr(njcr) {
-            if (njcr->JobId != 0 && acl_access_ok(ua, Job_ACL, njcr->res.job->name())) {
+            if (njcr->JobId != 0 && ua->acl_access_ok(Job_ACL, njcr->res.job->name())) {
                ua->send_msg(DotStatusJob, edit_int64(njcr->JobId, ed1), njcr->JobStatus, njcr->JobErrors);
             }
          }
@@ -98,7 +98,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
          ua->send_msg(OKdotstatus, ua->argk[2]);
          if ((last_jobs) && (last_jobs->size() > 0)) {
             job = (s_last_job*)last_jobs->last();
-            if (acl_access_ok(ua, Job_ACL, job->Job)) {
+            if (ua->acl_access_ok(Job_ACL, job->Job)) {
                ua->send_msg(DotStatusJob, edit_int64(job->JobId, ed1), job->JobStatus, job->Errors);
             }
          }
@@ -265,7 +265,7 @@ static void do_all_status(UAContext *ua)
    i = 0;
    foreach_res(store, R_STORAGE) {
       found = false;
-      if (!acl_access_ok(ua, Storage_ACL, store->name())) {
+      if (!ua->acl_access_ok(Storage_ACL, store->name())) {
          continue;
       }
       for (j = 0; j < i; j++) {
@@ -299,7 +299,7 @@ static void do_all_status(UAContext *ua)
    i = 0;
    foreach_res(client, R_CLIENT) {
       found = false;
-      if (!acl_access_ok(ua, Client_ACL, client->name())) {
+      if (!ua->acl_access_ok(Client_ACL, client->name())) {
          continue;
       }
       for (j = 0; j < i; j++) {
@@ -588,7 +588,7 @@ static void do_scheduler_status(UAContext *ua)
     */
    i = find_arg_with_value(ua, NT_("job"));
    if (i >= 0) {
-      job = GetJobResWithName(ua->argv[i]);
+      job = ua->GetJobResWithName(ua->argv[i]);
 
       /*
        * If a bogus jobname was given ask for it interactively.
@@ -610,7 +610,7 @@ static void do_scheduler_status(UAContext *ua)
          continue;
       }
 
-      if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+      if (!ua->acl_access_ok(Schedule_ACL, sched->hdr.name)) {
          continue;
       }
 
@@ -629,7 +629,7 @@ static void do_scheduler_status(UAContext *ua)
          }
       } else {
          foreach_res(job, R_JOB) {
-            if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+            if (!ua->acl_access_ok(Job_ACL, job->hdr.name)) {
                continue;
             }
 
@@ -687,7 +687,7 @@ start_again:
          } else {
             LockRes();
             foreach_res(job, R_JOB) {
-               if (!acl_access_ok(ua, Job_ACL, job->hdr.name)) {
+               if (!ua->acl_access_ok(Job_ACL, job->hdr.name)) {
                   continue;
                }
 
@@ -713,7 +713,7 @@ start_again:
                continue;
             }
 
-            if (!acl_access_ok(ua, Schedule_ACL, sched->hdr.name)) {
+            if (!ua->acl_access_ok(Schedule_ACL, sched->hdr.name)) {
                continue;
             }
 
@@ -901,7 +901,7 @@ static void list_scheduled_jobs(UAContext *ua)
     */
    LockRes();
    foreach_res(job, R_JOB) {
-      if (!acl_access_ok(ua, Job_ACL, job->name()) ||
+      if (!ua->acl_access_ok(Job_ACL, job->name()) ||
           !job->enabled ||
           (job->client && !job->client->enabled)) {
          continue;
@@ -983,7 +983,7 @@ static void list_running_jobs(UAContext *ua)
       ua->send_msg(_("======================================================================\n"));
    }
    foreach_jcr(jcr) {
-      if (jcr->JobId == 0 || !acl_access_ok(ua, Job_ACL, jcr->res.job->name())) {
+      if (jcr->JobId == 0 || !ua->acl_access_ok(Job_ACL, jcr->res.job->name())) {
          continue;
       }
       njobs++;
@@ -1201,7 +1201,7 @@ static void list_terminated_jobs(UAContext *ua)
          }
       }
 
-      if (!acl_access_ok(ua, Job_ACL, JobName)) {
+      if (!ua->acl_access_ok(Job_ACL, JobName)) {
          continue;
       }
 
