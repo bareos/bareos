@@ -374,11 +374,12 @@ int main (int argc, char *argv[])
    char *backend_dir;
 
    foreach_alist(backend_dir, me->backend_directories) {
-        Dmsg1(100, "backend path: %s\n", backend_dir);
+      Dmsg1(100, "backend path: %s\n", backend_dir);
    }
 
    db_set_backend_dirs(me->backend_directories);
 #endif
+   db_set_query_dirs(me->backend_query_directories);
 
    load_dir_plugins(me->plugin_directory, me->plugin_names);
 

@@ -74,6 +74,7 @@ static ATTR *attr;
 static time_t lasttime = 0;
 
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+static const char *backend_query_directory = _PATH_BAREOS_BACKENDQUERYDIR;
 static const char *db_driver = "NULL";
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
@@ -110,6 +111,7 @@ PROG_COPYRIGHT
 "       -D <director>     specify a director name specified in the storage daemon\n"
 "                         configuration file for the Key Encryption Key selection\n"
 "       -a <directory>    specify the database backend directory (default %s)\n"
+"       -q <directory>    specify the query backend directory (default %s)\n"
 "       -n <name>         specify the database name (default bareos)\n"
 "       -u <user>         specify database user name (default bareos)\n"
 "       -P <password>     specify database password (default none)\n"
@@ -124,7 +126,8 @@ PROG_COPYRIGHT
 "       -w <directory>    specify working directory (default from configuration file)\n"
 "       -?                print this message\n\n"
 "example:\n"
-"bscan -B postgresql -V Full-0001 FileStorage\n"), 2001, VERSION, BDATE, backend_directory);
+"bscan -B postgresql -V Full-0001 FileStorage\n"),
+            2001, VERSION, BDATE, backend_directory, backend_query_directory);
    exit(1);
 }
 
@@ -139,6 +142,7 @@ int main (int argc, char *argv[])
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    alist *backend_directories = NULL;
 #endif
+   alist *backend_query_directories = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -151,7 +155,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:q:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
       case 'a':
          backend_directory = optarg;
@@ -206,16 +210,16 @@ int main (int argc, char *argv[])
          db_name = optarg;
          break;
 
-      case 'u':
-         db_user = optarg;
-         break;
-
       case 'P':
          db_password = optarg;
          break;
 
       case 'p':
          forge_on = true;
+         break;
+
+      case 'q':
+         backend_query_directory = optarg;
          break;
 
       case 'r':
@@ -228,6 +232,10 @@ int main (int argc, char *argv[])
 
       case 's':
          update_db = true;
+         break;
+
+      case 'u':
+         db_user = optarg;
          break;
 
       case 'V':                    /* Volume name */
@@ -318,6 +326,10 @@ int main (int argc, char *argv[])
 
    db_set_backend_dirs(backend_directories);
 #endif
+   backend_query_directories = New(alist(10, owned_by_alist));
+   backend_query_directories->append((char *)backend_query_directory);
+
+   db_set_query_dirs(backend_query_directories);
 
    db = db_init_database(NULL,
                          db_driver,

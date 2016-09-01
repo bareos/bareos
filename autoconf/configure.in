@@ -1482,6 +1482,21 @@ AC_ARG_WITH(scriptdir,
 
 AC_SUBST(scriptdir)
 
+dnl ------------------------------------------
+dnl Where to place query files
+dnl ------------------------------------------
+backendquerydir=`eval echo ${scriptdir}/dml`
+AC_ARG_WITH(backendquerydir,
+   AC_HELP_STRING([--with-backendquerydir=PATH], [specify path of Bareos backend query directory]),
+   [
+       if test "x$withval" != "xno" ; then
+	  backendquerydir=$withval
+       fi
+   ]
+)
+
+AC_DEFINE_UNQUOTED(_PATH_BAREOS_BACKENDQUERYDIR, "$backendquerydir", [Directory for backend query files])
+AC_SUBST(backendquerydir)
 
 # ------------------------------------------
 # Where to place backenddir (backend library files)
@@ -2145,6 +2160,43 @@ if test x$build_client_only != xyes; then
          done
          ;;
    esac
+
+   dnl -------------------------------------------
+   dnl See what database backends are enabled and
+   dnl built a list of loadable query table files
+   dnl to create
+   dnl -------------------------------------------
+   DBI_BACKENDS="sqlite3 mysql postgresql"
+   BACKEND_QUERY_FILES=""
+   for backend in ${DB_BACKENDS}
+   do
+      case ${backend} in
+         dbi)
+            dnl -------------------------------------------
+            dnl See what DBI backend queryfiles we are missing
+            dnl -------------------------------------------
+            for dbi_backend in ${DBI_BACKENDS}
+             do
+               found=0
+               for defined_queryfile in ${BACKEND_QUERY_FILES}
+               do
+                  if test ${defined_queryfile} = ${dbi_backend}; then
+                     found=1
+                     break
+                  fi
+               done
+               if test ${found} = 0; then
+                  test -z "${BACKEND_QUERY_FILES}" ] && BACKEND_QUERY_FILES="${dbi_backend}" || \
+                                                        BACKEND_QUERY_FILES="${BACKEND_QUERY_FILES} ${dbi_backend}"
+               fi
+             done
+             ;;
+         *)
+            test -z "${BACKEND_QUERY_FILES}" && BACKEND_QUERY_FILES="${backend}" || \
+                                                BACKEND_QUERY_FILES="${BACKEND_QUERY_FILES} ${backend}"
+            ;;
+       esac
+   done
 fi
 
 dnl -------------------------------------------
@@ -2169,6 +2221,7 @@ fi
 
 AC_SUBST(uncomment_dbi)
 AC_SUBST(DB_BACKENDS)
+AC_SUBST(BACKEND_QUERY_FILES)
 AC_SUBST(DB_LIBS)
 AC_SUBST(DEFAULT_DB_TYPE)
 AC_SUBST(LIBTOOL_INSTALL_DEFAULT_BACKEND_TARGET)
@@ -4663,6 +4716,7 @@ src/cats/drop_bareos_tables \
 src/cats/drop_bareos_database \
 src/cats/install-default-backend \
 src/cats/ddl/versions.map \
+src/cats/dml/Makefile \
 src/findlib/Makefile \
 src/findlib/unittests/Makefile \
 src/lmdb/Makefile \

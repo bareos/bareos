@@ -146,34 +146,6 @@ void B_DB::_unlock_db(const char *file, int line)
    }
 }
 
-bool B_DB::sql_query(const char *query, int flags)
-{
-   bool retval;
-
-   db_lock(this);
-   retval = sql_query_without_handler(query, flags);
-   if (!retval) {
-      Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-   }
-   db_unlock(this);
-
-   return retval;
-}
-
-bool B_DB::sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
-{
-   bool retval;
-
-   db_lock(this);
-   retval = sql_query_with_handler(query, result_handler, ctx);
-   if (!retval) {
-      Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-   }
-   db_unlock(this);
-
-   return retval;
-}
-
 void B_DB::print_lock_info(FILE *fp)
 {
    if (m_lock.valid == RWLOCK_VALID) {

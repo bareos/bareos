@@ -501,6 +501,12 @@ typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 class pathid_cache;
 
 /*
+ * Initial size of query hash table and hint for number of pages.
+ */
+#define QUERY_INITIAL_HASH_SIZE 1024
+#define QUERY_HTABLE_PAGES 128
+
+/*
  * Current database version number for all drivers
  */
 #define BDB_VERSION 2004
@@ -521,6 +527,22 @@ typedef struct sql_field {
    uint32_t flags;                    /* flags */
 } SQL_FIELD;
 #endif
+
+/*
+ * Dynamic loaded query from a query table.
+ */
+struct BDB_QUERY {
+   char *query_text;                      /* Query text as loaded from the loadable query table with leading and trailing spaces removed */
+   hlink link;                            /* List management */
+};
+
+/*
+ * Dynamic loaded query table.
+ */
+struct BDB_QUERY_TABLE {
+   htable *table;                         /* Dynamic loaded query table */
+   brwlock_t lock;                        /* Transaction lock */
+};
 
 class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:
@@ -543,6 +565,7 @@ protected:
    char *m_db_address;                    /* Host name address */
    char *m_db_socket;                     /* Socket for local access */
    char *m_db_password;                   /* Database password */
+   char *m_last_query_text;               /* Last query text obtained from query table */
    int m_db_port;                         /* Port for host name address */
    int cached_path_len;                   /* Length of cached path */
    int changes;                           /* Changes during transaction */
@@ -551,6 +574,7 @@ protected:
    bool m_disabled_batch_insert;          /* Explicitly disabled batch insert mode ? */
    bool m_is_private;                     /* Private connection ? */
    uint32_t cached_path_id;               /* Cached path id */
+   uint32_t m_last_hash_key;              /* Last hash key lookup on query table */
    POOLMEM *fname;                        /* Filename only */
    POOLMEM *path;                         /* Path only */
    POOLMEM *cached_path;                  /* Cached path name */
@@ -559,6 +583,7 @@ protected:
    POOLMEM *esc_obj;                      /* Escaped restore object */
    POOLMEM *cmd;                          /* SQL command string */
    POOLMEM *errmsg;                       /* Nicely edited error message */
+   BDB_QUERY_TABLE *m_query_table;        /* Dynamic loaded query table */
 
 private:
    /*
@@ -572,6 +597,7 @@ private:
    void cleanup_base_file(JCR *jcr);
    void build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache, char *org_pathid, char *path);
    bool update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, JobId_t JobId);
+   char *lookup_query(uint32_t hash_key);
 
 public:
    /*
@@ -586,10 +612,6 @@ public:
    bool is_private(void) { return m_is_private; };
    void set_private(bool is_private) { m_is_private = is_private; };
    void increment_refcount(void) { m_ref_count++; };
-
-   /* cats.c */
-   bool sql_query(const char *query, int flags = 0);
-   bool sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
 
    /* bvfs.c */
    bool bvfs_update_path_hierarchy_cache(JCR *jcr, char *jobids);
@@ -698,11 +720,22 @@ public:
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,
+                       const char *description, bool verbose = false);
+   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose = false);
    void list_client_records(JCR *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_copies_records(JCR *jcr, const char *range, const char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit);
+
+   /* sql_query.c */
+   void fill_query(uint32_t hash_key, ...);
+   void fill_query(POOLMEM *&query, uint32_t hash_key, ...);
+   void fill_query(POOL_MEM &query, uint32_t hash_key, ...);
+   bool sql_query(uint32_t hash_key, ...);
+   bool sql_query(const char *query, int flags = 0);
+   bool sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
 
    /* sql_update.c */
    bool update_job_start_record(JCR *jcr, JOB_DBR *jr);

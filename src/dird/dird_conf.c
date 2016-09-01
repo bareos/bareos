@@ -114,6 +114,7 @@ static RES_ITEM dir_items[] = {
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    { "BackendDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDDIR, NULL, NULL },
 #endif
+   { "BackendQueryDirectory", CFG_TYPE_ALIST_DIR, ITEM(res_dir.backend_query_directories), 0, CFG_ITEM_DEFAULT | CFG_ITEM_PLATFORM_SPECIFIC, _PATH_BAREOS_BACKENDQUERYDIR, NULL, NULL },
    { "Subscriptions", CFG_TYPE_PINT32, ITEM(res_dir.subscriptions), 0, CFG_ITEM_DEFAULT, "0", "12.4.4-", NULL },
    { "SubSysDirectory", CFG_TYPE_DIR, ITEM(res_dir.subsys_directory), 0, CFG_ITEM_DEPRECATED, NULL, "-12.4.0", NULL },
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_dir.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
@@ -2495,6 +2496,9 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.backend_directories) {
          delete res->res_dir.backend_directories;
       }
+      if (res->res_dir.backend_query_directories) {
+         delete res->res_dir.backend_query_directories;
+      }
       if (res->res_dir.password.value) {
          free(res->res_dir.password.value);
       }
@@ -2814,6 +2818,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
          res->res_dir.plugin_names = res_all.res_dir.plugin_names;
          res->res_dir.messages = res_all.res_dir.messages;
          res->res_dir.backend_directories = res_all.res_dir.backend_directories;
+         res->res_dir.backend_query_directories = res_all.res_dir.backend_query_directories;
          res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
       }
       break;

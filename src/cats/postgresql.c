@@ -54,6 +54,8 @@ static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
+static BDB_QUERY_TABLE *pgsql_query_table = NULL;
+
 B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
                                  const char *db_driver,
                                  const char *db_name,
@@ -121,6 +123,9 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    m_is_private = need_private;
    m_try_reconnect = try_reconnect;
    m_exit_on_fatal = exit_on_fatal;
+   m_query_table = pgsql_query_table;
+   m_last_hash_key = 0;
+   m_last_query_text = NULL;
 
    /*
     * Initialize the private members.
@@ -1205,6 +1210,13 @@ B_DB *db_init_database(JCR *jcr,
    }
    P(mutex);                          /* lock DB queue */
 
+   if (!pgsql_query_table) {
+      pgsql_query_table = load_query_table("postgresql");
+      if (!pgsql_query_table) {
+         goto bail_out;
+      }
+   }
+
    /*
     * Look to see if DB already open
     */
@@ -1247,6 +1259,10 @@ extern "C" void CATS_IMP_EXP flush_backend(void)
 void db_flush_backends(void)
 #endif
 {
+   if (pgsql_query_table) {
+      unload_query_table(pgsql_query_table);
+      pgsql_query_table = NULL;
+   }
 }
 
 #endif /* HAVE_POSTGRESQL */

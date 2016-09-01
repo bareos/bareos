@@ -113,6 +113,7 @@ public:
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
    alist *backend_directories;        /* Backend Directories */
+   alist *backend_query_directories;  /* Backend Query Directories */
    MSGSRES *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxConnections;           /* Max concurrent connections */

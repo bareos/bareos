@@ -48,13 +48,49 @@ bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
+bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
+                          e_list_type type, bool verbose)
+{
+   return list_sql_query(jcr, hash_key, sendit, type, "query", verbose);
+}
+
 bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    bool retval = false;
 
    db_lock(this);
+
    if (!sql_query(query, QF_STORE_RESULT)) {
+      Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
+      if (verbose) {
+         sendit->decoration(errmsg);
+      }
+      goto bail_out;
+   }
+
+   sendit->array_start(description);
+   list_result(jcr, sendit, type);
+   sendit->array_end(description);
+   sql_free_result();
+   retval = true;
+
+bail_out:
+   db_unlock(this);
+   return retval;
+}
+
+bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
+                          e_list_type type, const char *description, bool verbose)
+{
+   bool retval = false;
+   POOL_MEM query(PM_MESSAGE);
+
+
+   db_lock(this);
+
+   fill_query(jcr, query, hash_key);
+   if (!sql_query(query.c_str(), QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
       if (verbose) {
          sendit->decoration(errmsg);
