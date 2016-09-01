@@ -86,13 +86,13 @@ void B_DB::list_pool_records(JCR *jcr, POOL_DBR *pdbr, OUTPUT_FORMATTER *sendit,
               "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
               "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
               "RecyclePoolId,LabelType "
-              " FROM Pool WHERE Name='%s'", esc);
+              "FROM Pool WHERE Name='%s'", esc);
       } else {
          Mmsg(cmd, "SELECT PoolId,Name,NumVols,MaxVols,UseOnce,UseCatalog,"
               "AcceptAnyVolume,VolRetention,VolUseDuration,MaxVolJobs,MaxVolBytes,"
               "AutoPrune,Recycle,PoolType,LabelFormat,Enabled,ScratchPoolId,"
               "RecyclePoolId,LabelType "
-              " FROM Pool ORDER BY PoolId");
+              "FROM Pool ORDER BY PoolId");
       }
    } else {
       if (pdbr->Name[0] != 0) {

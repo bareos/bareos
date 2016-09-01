@@ -818,7 +818,7 @@ static void eliminate_duplicate_paths()
 static void eliminate_orphaned_jobmedia_records()
 {
    const char *query = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
-                "LEFT OUTER JOIN Job ON (JobMedia.JobId=Job.JobId) "
+                "LEFT OUTER JOIN Job USING(JobId) "
                 "WHERE Job.JobId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned JobMedia entries.\n"));
@@ -861,7 +861,7 @@ static void eliminate_orphaned_jobmedia_records()
 static void eliminate_orphaned_file_records()
 {
    const char *query = "SELECT File.FileId,Job.JobId FROM File "
-                "LEFT OUTER JOIN Job ON (File.JobId=Job.JobId) "
+                "LEFT OUTER JOIN Job USING (JobId) "
                "WHERE Job.JobId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned File entries. This may take some time!\n"));
@@ -928,7 +928,7 @@ static void eliminate_orphaned_path_records()
    }
 
    const char *query = "SELECT DISTINCT Path.PathId,File.PathId FROM Path "
-               "LEFT OUTER JOIN File ON (Path.PathId=File.PathId) "
+               "LEFT OUTER JOIN File USING(PathId) "
                "WHERE File.PathId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned Path entries. This may take some time!\n"));
@@ -986,7 +986,7 @@ static void eliminate_orphaned_filename_records()
    }
 
    const char *query = "SELECT Filename.FilenameId,File.FilenameId FROM Filename "
-                "LEFT OUTER JOIN File ON (Filename.FilenameId=File.FilenameId) "
+                "LEFT OUTER JOIN File USING(FilenameId) "
                 "WHERE File.FilenameId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned Filename entries. This may take some time!\n"));
@@ -1035,7 +1035,7 @@ static void eliminate_orphaned_fileset_records()
 
    printf(_("Checking for orphaned FileSet entries. This takes some time!\n"));
    query = "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
-           "LEFT OUTER JOIN Job ON (FileSet.FileSetId=Job.FileSetId) "
+           "LEFT OUTER JOIN Job USING(FileSetId) "
            "WHERE Job.FileSetId IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1077,7 +1077,7 @@ static void eliminate_orphaned_client_records()
     *   i.e. Job.Client is NULL
     */
    query = "SELECT Client.ClientId,Client.Name FROM Client "
-           "LEFT OUTER JOIN Job ON (Client.ClientId=Job.ClientId) "
+           "LEFT OUTER JOIN Job USING(ClientId) "
            "WHERE Job.ClientId IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1119,7 +1119,7 @@ static void eliminate_orphaned_job_records()
     *   i.e. Client.Name is NULL
     */
    query = "SELECT Job.JobId,Job.Name FROM Job "
-           "LEFT OUTER JOIN Client ON (Job.ClientId=Client.ClientId) "
+           "LEFT OUTER JOIN Client USING(ClientId) "
            "WHERE Client.Name IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);

@@ -283,7 +283,7 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
                 "JOIN  PathVisibility AS p ON (h.PathId=p.PathId) "
                 "WHERE p.JobId=%s) AS a "
                 "LEFT JOIN PathVisibility AS b "
-                "ON (b.JobId=%s and a.PathId = b.PathId) "
+                "ON (b.JobId=%s AND a.PathId = b.PathId) "
                 "WHERE b.PathId IS NULL",
            jobid, jobid, jobid);
    }

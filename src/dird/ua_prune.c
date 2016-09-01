@@ -433,7 +433,7 @@ static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
       Mmsg(tmp, " AND Pool.Name = '%s' ", ed2);
       pm_strcat(*add_where, tmp.c_str());
       /* Use ON() instead of USING for some old SQLite */
-      pm_strcat(*add_from, " JOIN Pool ON (Job.PoolId = Pool.PoolId) ");
+      pm_strcat(*add_from, " JOIN Pool USING(PoolId) ");
    }
    Dmsg2(150, "f=%s w=%s\n", add_from->c_str(), add_where->c_str());
    db_unlock(ua->db);
