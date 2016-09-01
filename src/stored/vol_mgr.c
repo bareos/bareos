@@ -38,7 +38,13 @@ static dlist *read_vol_list = NULL;
 static bthread_mutex_t read_vol_lock = BTHREAD_MUTEX_PRIORITY(PRIO_SD_READ_VOL_LIST);
 
 /* Global static variables */
+#ifdef SD_DEBUG_LOCK
 int vol_list_lock_count = 0;
+int read_vol_list_lock_count = 0;
+#else
+static int vol_list_lock_count = 0;
+static int read_vol_list_lock_count = 0;
+#endif
 
 /* Forward referenced functions */
 static void free_vol_item(VOLRES *vol);
@@ -93,7 +99,7 @@ void init_vol_list_lock()
 {
    int errstat;
 
-   if ((errstat=rwl_init(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
+   if ((errstat = rwl_init(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
       berrno be;
       Emsg1(M_ABORT, 0, _("Unable to initialize volume list lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -113,10 +119,10 @@ void _lock_volumes(const char *file, int line)
    int errstat;
 
    vol_list_lock_count++;
-   if ((errstat=rwl_writelock_p(&vol_list_lock, file, line)) != 0) {
+   if ((errstat = rwl_writelock_p(&vol_list_lock, file, line)) != 0) {
       berrno be;
       Emsg2(M_ABORT, 0, "rwl_writelock failure. stat=%d: ERR=%s\n",
-           errstat, be.bstrerror(errstat));
+            errstat, be.bstrerror(errstat));
    }
 }
 
@@ -125,21 +131,22 @@ void _unlock_volumes()
    int errstat;
 
    vol_list_lock_count--;
-   if ((errstat=rwl_writeunlock(&vol_list_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&vol_list_lock)) != 0) {
       berrno be;
       Emsg2(M_ABORT, 0, "rwl_writeunlock failure. stat=%d: ERR=%s\n",
-           errstat, be.bstrerror(errstat));
+            errstat, be.bstrerror(errstat));
    }
 }
 
-#define lock_read_volumes() lock_read_volumes_p(__FILE__, __LINE__)
-static void lock_read_volumes_p(const char *file, int line)
+void _lock_read_volumes(const char *file, int line)
 {
+   read_vol_list_lock_count++;
    bthread_mutex_lock_p(&read_vol_lock, file, line);
 }
 
-static void unlock_read_volumes()
+void _unlock_read_volumes()
 {
+   read_vol_list_lock_count--;
    bthread_mutex_unlock(&read_vol_lock);
 }
 
@@ -259,51 +266,6 @@ static void debug_list_volumes(const char *imsg)
       Dmsg1(dbglvl, "%s", msg.c_str());
    }
    endeach_vol(vol);
-}
-
-/*
- * List Volumes -- this should be moved to status.c
- */
-void list_volumes(void sendit(const char *msg, int len, void *sarg), void *arg)
-{
-   VOLRES *vol;
-   POOL_MEM msg(PM_MESSAGE);
-   int len;
-
-   foreach_vol(vol) {
-      DEVICE *dev = vol->dev;
-      if (dev) {
-         len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
-         sendit(msg.c_str(), len, arg);
-         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      } else {
-         len = Mmsg(msg, "Volume %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      }
-   }
-   endeach_vol(vol);
-
-   lock_read_volumes();
-   foreach_dlist(vol, read_vol_list) {
-      DEVICE *dev = vol->dev;
-      if (dev) {
-         len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name, dev->print_name());
-         sendit(msg.c_str(), len, arg);
-         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use(), vol->get_jobid());
-         sendit(msg.c_str(), len, arg);
-      } else {
-         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      }
-   }
-   unlock_read_volumes();
 }
 
 /*
@@ -947,4 +909,9 @@ void free_temp_vol_list(dlist *temp_vol_list)
 {
    free_volume_list("temp_vol_list", temp_vol_list);
    delete temp_vol_list;
+}
+
+dlist *get_read_vol_list()
+{
+   return read_vol_list;
 }
