@@ -385,6 +385,36 @@ bail_out:
    return false;
 }
 
+static inline bool validate_client(JCR *jcr)
+{
+   switch (jcr->res.client->Protocol) {
+   case APT_NATIVE:
+      return true;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Client %s has illegal backup protocol %s for Native restore\n"),
+           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
+      return false;
+   }
+}
+
+static inline bool validate_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   foreach_alist(store, jcr->res.rstorage) {
+      switch (store->Protocol) {
+      case APT_NATIVE:
+         continue;
+      default:
+         Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for Native restore\n"),
+              store->name(), auth_protocol_to_str(store->Protocol));
+         return false;
+      }
+   }
+
+   return true;
+}
+
 /**
  * Do a restore initialization.
  *
@@ -394,6 +424,13 @@ bail_out:
 bool do_native_restore_init(JCR *jcr)
 {
    free_wstorage(jcr);                /* we don't write */
+
+   /*
+    * Validate that we have a native client and storage(s).
+    */
+   if (!validate_client(jcr) || !validate_storage(jcr)) {
+      return false;
+   }
 
    return true;
 }
