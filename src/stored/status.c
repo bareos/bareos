@@ -373,7 +373,6 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
 {
    int len;
    VOLRES *vol;
-   dlist *read_vol_list;
    POOL_MEM msg(PM_MESSAGE);
 
    foreach_vol(vol) {
@@ -398,9 +397,7 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
    }
    endeach_vol(vol);
 
-   lock_read_volumes();
-   read_vol_list = get_read_vol_list();
-   foreach_dlist(vol, read_vol_list) {
+   foreach_read_vol(vol) {
       DEVICE *dev = vol->dev;
 
       if (dev) {
@@ -420,7 +417,7 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
          sendit(msg.c_str(), len, sp);
       }
    }
-   unlock_read_volumes();
+   endeach_read_vol(vol);
 }
 
 static void list_status_header(STATUS_PKT *sp)

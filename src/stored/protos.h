@@ -308,7 +308,6 @@ bool free_volume(DEVICE *dev);
 bool is_vol_list_empty();
 dlist *dup_vol_list(JCR *jcr);
 void free_temp_vol_list(dlist *temp_vol_list);
-dlist *get_read_vol_list();
 bool volume_unused(DCR *dcr);
 void create_volume_lists();
 void free_volume_lists();

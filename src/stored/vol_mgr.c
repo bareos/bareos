@@ -48,6 +48,7 @@ static int read_vol_list_lock_count = 0;
 
 /* Forward referenced functions */
 static void free_vol_item(VOLRES *vol);
+static void free_read_vol_item(VOLRES *vol);
 static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName);
 static void debug_list_volumes(const char *imsg);
 
@@ -172,7 +173,7 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
    lock_read_volumes();
    vol = (VOLRES *)read_vol_list->binary_insert(nvol, read_compare);
    if (vol != nvol) {
-      free_vol_item(nvol);
+      free_read_vol_item(nvol);
       Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
    } else {
       Dmsg2(dbglvl, "add read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
@@ -201,7 +202,7 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
    }
    if (fvol) {
       read_vol_list->remove(fvol);
-      free_vol_item(fvol);
+      free_read_vol_item(fvol);
    }
    unlock_read_volumes();
 // pthread_cond_broadcast(&wait_next_vol);
@@ -291,6 +292,28 @@ static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName)
 }
 
 static void free_vol_item(VOLRES *vol)
+{
+   DEVICE *dev = NULL;
+
+   vol->dec_use_count();
+   vol->Lock();
+   if (vol->use_count() > 0) {
+      vol->Unlock();
+      return;
+   }
+   vol->Unlock();
+   free(vol->vol_name);
+   if (vol->dev) {
+      dev = vol->dev;
+   }
+   vol->destroy_mutex();
+   free(vol);
+   if (dev) {
+      dev->vol = NULL;
+   }
+}
+
+static void free_read_vol_item(VOLRES *vol)
 {
    DEVICE *dev = NULL;
 
@@ -623,6 +646,72 @@ void vol_walk_end(VOLRES *vol)
 }
 
 /*
+ * Start walk of vol chain
+ * The proper way to walk the vol chain is:
+ *
+ * VOLRES *vol;
+ * foreach_read_vol(vol) {
+ *    ...
+ * }
+ * endeach_read_vol(vol);
+ *
+ * It is possible to leave out the endeach_read_vol(vol), but in that case,
+ * the last vol referenced must be explicitly released with:
+ *
+ * free_read_vol_item(vol);
+ */
+VOLRES *read_vol_walk_start()
+{
+   VOLRES *vol;
+   lock_read_volumes();
+   vol = (VOLRES *)read_vol_list->first();
+   if (vol) {
+      vol->inc_use_count();
+      Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+   }
+   unlock_read_volumes();
+
+   return vol;
+}
+
+/*
+ * Get next vol from chain, and release current one
+ */
+VOLRES *read_vol_walk_next(VOLRES *prev_vol)
+{
+   VOLRES *vol;
+
+   lock_read_volumes();
+   vol = (VOLRES *)read_vol_list->next(prev_vol);
+   if (vol) {
+      vol->inc_use_count();
+      Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+   }
+   if (prev_vol) {
+      free_read_vol_item(prev_vol);
+   }
+   unlock_read_volumes();
+
+   return vol;
+}
+
+/*
+ * Release last vol referenced
+ */
+void read_vol_walk_end(VOLRES *vol)
+{
+   if (vol) {
+      lock_read_volumes();
+      Dmsg2(dbglvl, "Free walk_end use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+      free_read_vol_item(vol);
+      unlock_read_volumes();
+   }
+}
+
+/*
  * Search for a Volume name in the Volume list.
  *
  * Returns: VOLRES entry on success
@@ -909,9 +998,4 @@ void free_temp_vol_list(dlist *temp_vol_list)
 {
    free_volume_list("temp_vol_list", temp_vol_list);
    delete temp_vol_list;
-}
-
-dlist *get_read_vol_list()
-{
-   return read_vol_list;
 }
