@@ -452,9 +452,9 @@ set_config_param()
     fi
 
     if [ -d "${CONFIG_PATH}" ]; then
-        set_config_param_in_directory "${CONFIG_PATH}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+        set_config_param_in_directory "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
     else
-        set_config_param_in_file "${CONFIG_PATH}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+        set_config_param_in_file "${CONFIG_PATH}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
     fi
 
     return
@@ -478,7 +478,7 @@ set_config_param_in_directory()
     if ! [ -f "${FILE}" ]; then
         printf "%s {\n  Name = %s\n}\n" "${SECTION}" "${NAME}" > "${FILE}"
     fi
-    set_config_param_in_file "${FILE}" ${SECTION} ${NAME} ${PARAM} ${VALUE}
+    set_config_param_in_file "${FILE}" "${SECTION}" "${NAME}" "${PARAM}" "${VALUE}"
     return $?
 }
 
