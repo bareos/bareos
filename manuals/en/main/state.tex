@@ -56,8 +56,8 @@
    \begin{itemize}
    \item Catalog database facility for remembering Volumes, Pools, Jobs,  and
       Files backed up.
-   \item Support for MySQL, PostgreSQL, and SQLite Catalog databases.
-   \item User extensible queries to the MySQL, PostgreSQL and SQLite databases.
+   \item Support for PostgreSQL, MySQL and SQLite Catalog databases.
+   \item User extensible queries to the PostgreSQL, MySQL and SQLite databases.
    \end{itemize}
 
 \item Advanced Volume and Pool Management
@@ -131,25 +131,12 @@
 \subsection{Advantages Over Other Backup Programs}
 
 \begin{itemize}
-\item Since there is a client for each machine, you can backup
-   and restore clients of any type ensuring that all attributes
-   of files are properly saved and restored.
-\item It is also possible to backup clients without any client
-   software by using NFS or CIFS.  However, if possible, we
-   recommend running a Client File daemon on each machine to be
-   backed up.
 \item Bareos handles multi-volume backups.
 \item A full comprehensive SQL standard database of all files backed up.  This
    permits online viewing of files saved on any particular  Volume.
 \item Automatic pruning of the database (removal of old records) thus
    simplifying database administration.
-\item Any SQL database engine can be used making Bareos very flexible.
-      Drivers currently exist for MySQL, PostgreSQL, and SQLite.
 \item The modular but integrated design makes Bareos very scalable.
-\item Since Bareos uses client file servers, any database or
-   other application can be properly shutdown by Bareos using the
-   native tools of the system, backed up, then restarted (all
-   within a Bareos Job).
 \item Bareos has a built-in Job scheduler.
 \item The Volume format is documented and there are simple C programs to
    read/write it.
@@ -180,7 +167,7 @@
 %    Normally this can happen only if you manually enter specific
 %    JobIds to be restored in a single restore Job.
 \item \label{MultipleCatalogs} It is possible to configure the Bareos Director to use multiple Catalogs.
-   However, this is neither adviced, nor supported.
+   However, this is neither advised, nor supported.
    Multiple catalogs require more management because in general
    you must know what catalog contains what data, e.g. currently, all Pools are defined in each catalog.
 \item Bareos can generally restore any backup made from one client

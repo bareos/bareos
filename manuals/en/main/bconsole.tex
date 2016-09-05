@@ -345,20 +345,20 @@ The following commands are currently implemented:
    The full form of this command is:
 
 \begin{bconsole}{add}
-add [pool=<pool-name> storage=<storage> jobid=<JobId>
+add [pool=<pool-name>] [storage=<storage>] [jobid=<JobId>]
 \end{bconsole}
 
 
-   Normally, the {\bf label} command is used rather than this command
-   because the {\bf label} command labels the physical media (tape, disk,
-   DVD, ...) and does the equivalent of the {\bf add} command.  The {\bf
-   add} command affects only the Catalog and not the physical media (data
+   Normally, the \bcommand{label}{} command is used rather than this command
+   because the \bcommand{label}{} command labels the physical media (tape, disk,
+   DVD, ...) and does the equivalent of the {\bf add} command.
+   The \bcommand{add}{} command affects only the Catalog and not the physical media (data
    on Volumes).  The physical media must exist and be labeled before use
-   (usually with the {\bf label} command).  This command can, however, be
+   (usually with the \bcommand{label}{} command).  This command can, however, be
    useful if you wish to add a number of Volumes to the Pool that will be
    physically labeled at a later time.  It can also be useful if you are
-   importing a tape from another site.  Please see the {\bf label} command
-   below for the list of legal characters in a Volume name.
+   importing a tape from another site.  Please see the \bcommand{label}{} command
+   for the list of legal characters in a Volume name.
 
 \item [autodisplay]
    \index[general]{Console!Command!autodisplay on/off}

@@ -161,6 +161,7 @@ bat                          & \file{bat.conf}              & (not supported) \\
 
 
 \subsection{Subdirectory Configuration Scheme}
+\label{sec:SubdirectoryConfigurationScheme}
 \label{sec:ConfigurationSubdirectories}
 % ConfigurationIncludeDirectory is referenced from the Bareos code.
 \label{ConfigurationIncludeDirectory}
@@ -260,11 +261,38 @@ new installations will use configuration subdirectories by default.
             to split the configuration file into resources,
             store them in the resource directories and then remove the original configuration file.
     \begin{itemize}
-    \item This requires effort. \TODO{It is planned to create a program that helps to migrate the settings,
-                however, until now, it is not available.}
-    \item The easy way is:
+    \item For migrating the \bareosDir configuration, the script \bareosMigrateConfigSh exists.
+        Being called, it connects via \command{bconsole} to a running \bareosDir and creates subdirectories with the resource configuration files.
+        \begin{commands}{\bareosMigrateConfigSh}
+# prepare temporary directory
+mkdir /tmp/baroes-dir.d
+cd /tmp/baroes-dir.d
+
+# download migration script
+wget https://raw.githubusercontent.com/bareos/bareos-contrib/master/misc/bareos-migrate-config/bareos-migrate-config.sh
+
+# execute the script
+bash bareos-migrate-config.sh
+
+# backup old configuration
+mv /etc/bareos/bareos-dir.conf /etc/bareos/bareos-dir.conf.bak
+mv /etc/bareos/bareos-dir.d /etc/bareos/bareos-dir.d.bak
+
+# make sure, that all packaged configuration resources exists,
+# otherwise they will be added when updating Bareos.
+for i in `find  /etc/bareos/bareos-dir.d.bak/ -name *.conf -type f -printf "%P\n"`; do touch "$i"; done
+
+# install newly generated configuration
+cp -a /tmp/bareos-dir.d /etc/bareos/
+        \end{commands}
+        Restart the \bareosDir and verify your configuration.
+        Also make sure, that all resource configuration files coming from Bareos packages exists, in doubt as empty files, see \hyperlink{sec:deleteConfigurationResourceFiles}{remove configuration resource files}.
+
+    \item Another way, without splitting the configuration into resource files is:
         \begin{itemize}
-        \item \path|mkdir $CONFIGDIR/$COMPONENT.d/migrate && mv $CONFIGDIR/$COMPONENT.conf $CONFIGDIR/$COMPONENT.d/migrate|
+        \item \begin{commands}{move configuration to subdirectory}
+mkdir $CONFIGDIR/$COMPONENT.d/migrate && mv $CONFIGDIR/$COMPONENT.conf $CONFIGDIR/$COMPONENT.d/migrate
+        \end{commands}
         \item Resources defined in both, the new configuration directory scheme
                     and the old configuration file, must be removed from one of the places,
                     best from the old configuration file,
@@ -399,6 +427,16 @@ Director {
 \end{bconfig}
 
 defines the Director resource with the name \parameter{bareos-dir} and a query file \file{/usr/lib/bareos/scripts/query.sql}.
+
+\index[general]{Configuration!Naming Convention}
+
+When naming resources, for some resource types naming conventions should be applied:
+\begin{description}
+    \item[Client] names should be postfixed with \name{-fd}
+    \item[Storage] names should be postfixed with \name{-sd}
+    \item[Director] names should be postfixed with \name{-dir}
+\end{description}
+These conventions helps a lot when reading log messages.
 
 
 \subsection{Resource Directive}

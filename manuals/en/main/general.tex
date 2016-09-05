@@ -66,7 +66,8 @@ Director, Console, File, Storage, and Monitor services.
 
 \subsection*{Bareos Director}
    \label{DirDef}
-   The Bareos Director service is the program that supervises
+   The Director is the central control program for all the other daemons.
+   It schedules and supervises
    all the backup, restore, verify and archive operations.  The system
    administrator uses the Bareos Director to schedule backups and to
    recover files. The Director runs as a daemon
@@ -74,37 +75,38 @@ Director, Console, File, Storage, and Monitor services.
    \label{UADef}
 
 \subsection*{Bareos Console}
-   The Bareos Console service is the program that allows the
-   administrator or user to communicate with the Bareos Director.
-   Currently, the Bareos Console is available in two versions:
-   a text-based console and a QT-based GUI interface.
-   The first and simplest is to run the Console program in a shell window
-   (i.e.  TTY interface).  Most system administrators will find this
-   completely adequate.  The second version is a GUI interface that
-   is far from complete, but quite functional as it has most the
-   capabilities of the shell Console. For more
-   details see the \nameref{sec:bconsole}.
+   The Bareos Console (\command{bconsole}) is the program that allows the
+   administrator or user to communicate with the \bareosDir.
+   It runs in a shell window (i.e.  TTY interface).
+   Most system administrators will find this completely adequate.
+   For more details see the \nameref{sec:bconsole}.
 
 \subsection*{Bareos File Daemon}
    \label{FDDef}
-   The Bareos File service (also known as the Client program) is the software
-   program that is installed on the machine to be backed up.
-   It is specific to the
-   operating system on which it runs and is responsible for providing the
-   file attributes and data when requested by the Director.  The File
-   services are also responsible for the file system dependent part of
+   The \bareosFd is a program that must be installed on each (Client) machine that should be backed up.
+   At the request of the \bareosDir, it finds the files to be backed up and sends them (their
+   data) to the \bareosSd.
+
+   It is specific to the operating system on which it runs and is responsible for providing the
+   file attributes and data when requested by the \bareosDir.
+
+   The \bareosFd is also responsible for the file system dependent part of
    restoring the file attributes and data during a recovery operation.
    This program runs as a daemon on the machine to be backed up.
 
 \subsection*{Bareos Storage Daemon}
-   \label{SDDef}
-   The Bareos Storage services consist of the software programs that
-   perform the storage and recovery of the file attributes and data to the
-   physical backup media or volumes.  In other words, the Storage daemon is
-   responsible for reading and writing your tapes (or other storage media,
-   e.g.  files). The Storage services runs as
-   a daemon on the machine that has the backup device (such as a tape
-   drive).
+    \label{SDDef}
+    The \bareosSd is responsible, at the \bareosDir request, for accepting
+    data from a \bareosFd and storing the
+    file attributes and data to the physical backup media or volumes.
+    In the case of a restore request,
+    it is responsible to find the data and send it to the \bareosFd.
+
+    There can be multiple \bareosSd in your environment, all controlled by the same \bareosDir.
+
+    The Storage services runs as
+    a daemon on the machine that has the backup device (such as a tape
+    drive).
 
 \subsection*{Catalog}
    \label{DBDefinition}

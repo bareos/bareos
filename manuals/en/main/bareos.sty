@@ -166,6 +166,9 @@
 \elink{Bareos Whitepaper Tape Speed Tuning}{http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html}\xspace%
 }
 
+\newcommand{\bareosMigrateConfigSh}{%
+\elink{bareos-migrate-config.sh}{https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh}\xspace%
+}
 
 
 %
@@ -197,8 +200,10 @@
 \newcommand{\directory}[1]{\path|#1|}
 \newcommand{\email}[1]{\url{#1}}
 \newcommand{\file}[1]{\path|#1|}
+\newcommand{\fileset}[1]{\resourcename{Dir}{FileSet}{#1}}
 \newcommand{\group}[1]{\path|#1|}
 \newcommand{\host}[1]{\path|#1|}
+\newcommand{\job}[1]{\resourcename{Dir}{Job}{#1}}
 \newcommand{\name}[1]{\textbf{#1}}
 \newcommand{\user}[1]{\path|#1|}
 \newcommand{\package}[1]{%
@@ -226,6 +231,9 @@
     \path|#1 #2|\index[general]{Platform!#1!#2}%
 }}
 
+\newcommand{\mysql}{MySQL/MariaDB\xspace}
+\newcommand{\postgresql}{PostgreSQL\xspace}
+\newcommand{\sqlite}{Sqlite\xspace}
 \newcommand{\vmware}{VMware\registered}
 \newcommand{\vSphere}{VMware vSphere\registered}
 

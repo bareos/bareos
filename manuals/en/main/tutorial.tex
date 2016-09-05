@@ -7,60 +7,41 @@
 
 This chapter will guide you through running Bareos. To do so, we assume you
 have installed Bareos.
-However, we assume that you have not changed the .conf files. If you have
-modified the .conf files, please go back and uninstall Bareos, then reinstall
-it, but do not make any changes. The examples in this chapter use the default
-configuration files, and will write the volumes to disk in your \path|/var/lib/bareos/storage/|
-directory, in addition, the data backed up will be the source directory where
-you built Bareos. As a consequence, you can run all the Bareos daemons for
-these tests as non-root. Please note, in production, your File daemon(s) must
-run as root. See the Security chapter for more information on this subject.
+However, we assume that you have not modified the configuration.
+The examples in this chapter use the default configuration files
+and will write the volumes to disk in your \path|/var/lib/bareos/storage/|
+directory.
 
 The general flow of running Bareos is:
 
 \begin{enumerate}
-\item Start the Database (if using MySQL or PostgreSQL)
+\item Start the Database (if using \postgresql or \mysql)
+\item \nameref{InstallChapter}
 \item Start the Bareos Daemons
-\item Start the Console program to interact with the Director
+\item Start the Console program to interact with the \bareosDir
 \item Run a job
-\item When the Volume fills, unmount the Volume, if it is a  tape, label a new
-   one, and continue running. In this  chapter, we will write only to disk files
-   so you won't  need to worry about tapes for the moment.
+%\item When the Volume fills, unmount the Volume, if it is a  tape, label a new
+%   one, and continue running. In this  chapter, we will write only to disk files
+%   so you won't  need to worry about tapes for the moment.
 \item Test recovering some files from the Volume just written to  ensure the
    backup is good and that you know how to recover.  Better test before disaster
    strikes
 \item Add a second client.
-   \end{enumerate}
+\end{enumerate}
 
 Each of these steps is described in more detail below.
 
 
-\section{Installing Bareos}
-
-For installing Bareos, follow the instructions from the \ilink{Installing Bareos}{InstallChapter} chapter.
-
-% \section{Before Running Bareos}
-% \index[general]{Bareos!Before Running}
-% 
-% Before running Bareos for the first time in production, we recommend that you
-% run the {\bf test} command in the {\bf btape} program as described in the
-% \ilink{Utility Program Chapter}{btape} of this manual. This will
-% help ensure that Bareos functions correctly with your tape drive. If you have
-% a modern HP, Sony, Tandberg Data or Quantum LTO tape drive running on Linux or
-% Solaris, you can probably skip this test as Bareos is well tested with these
-% drives and systems. For all other cases, you are {\bf strongly} encouraged to
-% run the test before continuing. {\bf btape} also has a {\bf fill} command that
-% attempts to duplicate what Bareos does when filling a tape and writing on the
-% next tape. You should consider trying this command as well, but be forewarned,
-% it can take hours (about four hours on my drive) to fill a large capacity tape.
-
 \section{Starting the Database}
 
-If you are using MySQL or PostgreSQL as the Bareos database, you should start
-it before you attempt to run a job to avoid getting error messages from Bareos
-when it starts.
-If you are using SQLite you need do nothing. SQLite is automatically
-started by {\bf Bareos}.
+If you are using \postgresql or \mysql as the Bareos database, you should start
+it before you install Bareos.
+If you are using \sqlite you need do nothing. \sqlite is automatically
+started by the \bareosDir.
+
+\section{Installing Bareos}
+
+For installing Bareos, follow the instructions from the \nameref{InstallChapter} chapter.
 
 \section{Starting the Daemons}
 \label{StartDaemon}
@@ -76,55 +57,22 @@ service bareos-sd start
 service bareos-fd start
 \end{verbatim}
 
-The {\bf bareos} script starts the Storage daemon, the File daemon, and the
-Director daemon, which all normally run as daemons in the background. If you
-are using the autostart feature of Bareos, your daemons will either be
-automatically started on reboot, or you can control them individually with the
-files {\bf bareos-dir}, {\bf bareos-fd}, and {\bf bareos-sd}, which are
-usually located in {\bf /etc/init.d}, though the actual location is system
-dependent.
-Some distributions may do this differently.
-
-Note, on Windows, currently only the File daemon is ported, and it must be
-started differently. Please see the
-\ilink{Windows Version of Bareos}{Win32Chapter} chapter of this
-manual.
-
-The rpm packages configure the daemons to run as user=root and group=bareos.
-The rpm installation also creates the group \group{bareos} if it does not exist on the
-system. Any users that you add to the group \group{bareos} will have access to files
-created by the daemons. To disable or alter this behavior edit the daemon
-startup scripts:
-
-\begin{itemize}
-\item /etc/init.d/bareos-dir
-\item /etc/init.d/bareos-sd
-\item /etc/init.d/bareos-fd
-\end{itemize}
-
-and then restart as noted above.
-
-The
-\ilink{installation chapter}{InstallChapter} of this manual
-explains how you can install scripts that will automatically restart the
-daemons when the system starts.
-
 \section{Using the Director to Query and Start Jobs}
 
 \label{sec:TuturialBconsole}
 
-To communicate with the director and to query the state of Bareos or run jobs,
+To communicate with the \bareosDir and to query the state of Bareos or run jobs,
 from the top level directory, simply enter:
 
 \command{bconsole}
 
-For simplicity, here we will describe only the \command{bconsole} program,
-also there is also a graphical interface called \command{BAT}.
+For simplicity, here we will describe only the \command{bconsole} program.
+For most purposes, also the \ilink{\bareosWebui}{sec:webui} can be used.
 
-The {\bf bconsole} runs the Bareos Console program, which connects to the
-Director daemon. Since Bareos is a network program, you can run the Console
+The \command{bconsole} runs the Bareos Console program, which connects to the
+\bareosDir. Since Bareos is a network program, you can run the Console
 program anywhere on your network. Most frequently, however, one runs it on the
-same machine as the Director. Normally, the Console program will print
+same machine as the \bareosDir. Normally, the Console program will print
 something similar to the following:
 
 \begin{commands}{bconsole}
@@ -136,10 +84,10 @@ Enter a period to cancel a command.
 
 the asterisk is the console command prompt.
 
-Type {\bf help} to see a list of available commands:
+Type \bcommand{help}{} to see a list of available commands:
 
 \begin{bconsole}{help}
-* <input>help</input>
+*<input>help</input>
   Command       Description
   =======       ===========
   add           Add media to a pool
@@ -201,20 +149,20 @@ Details of the console program's commands are explained in the
 At this point, we assume you have done the following:
 
 \begin{itemize}
-\item Installed Bareos
 \item Started the Database
+\item Installed Bareos
 \item Prepared the database for Bareos
 \item Started Bareos Director, Storage Daemon and File Daemon
-\item Invoked the Console program with {\bf bconsole}
+\item Invoked the Console program with \command{bconsole}
 \end{itemize}
 
 Furthermore, we assume for the moment you are using the default configuration
 files.
 
-At this point, enter the \bcommand{show filesets}{} and you should get something similar this:
+At this point, enter the \bcommand{show}{filesets} and you should get something similar this:
 
 \begin{bconsole}{show filesets}
-* <input>show filesets</input>
+*<input>show filesets</input>
 ...
 FileSet {
   Name = "SelfTest"
@@ -239,20 +187,20 @@ FileSet {
 ...
 \end{bconsole}
 
-One of the FileSets is the pre-defined SelfTest FileSet
+One of the FileSets is the pre-defined \fileset{SelfTest} FileSet
 that will backup the \path|/usr/sbin| directory.
 For testing purposes, we have chosen a directory of moderate
 size (about 30 Megabytes) and complexity without being too big. The FileSet
-{\bf Catalog} is used for backing up Bareos's catalog and is not of interest
-to us for the moment. You can change what is backed up by editing \file{bareos-dir.conf}
-and changing the {\bf File =} line in the {\bf FileSet} resource.
+\fileset{Catalog} is used for backing up Bareos's catalog and is not of interest
+to us for the moment. You can change what is backed up by editing the configuration
+and changing the \path|File =| line in the \resourcetype{Dir}{FileSet} resource.
 
 Now is the time to run your first backup job. We are going to backup your
 Bareos source directory to a File Volume in your \path|/var/lib/bareos/storage/|
  directory just to show you how easy it is. Now enter:
 
 \begin{bconsole}{status dir}
-* <input>status dir</input>
+*<input>status dir</input>
 bareos-dir Version: 13.2.0 (09 April 2013) x86_64-pc-linux-gnu debian Debian GNU/Linux 6.0 (squeeze)
 Daemon started 23-May-13 13:17. Jobs: run=0, running=0 mode=0
  Heap: heap=270,336 smbytes=59,285 max_bytes=59,285 bufs=239 max_bufs=239
@@ -271,16 +219,18 @@ No Jobs running.
 \end{bconsole}
 
 where the times and the Director's name will be different according to your
-setup. This shows that an Incremental job is scheduled to run for the Job {\bf
-BackupClient1} at 1:05am and that at 1:10, a {\bf BackupCatalog} is scheduled to
-run. Note, you should probably change the name {\bf BackupClient1} to be the name of
-your machine, if not, when you add additional clients, it will be very
-confusing.
+setup. This shows that an Incremental job is scheduled to run for the Job
+\resourcename{Dir}{Job}{BackupClient1} at 1:05am and that at 1:10,
+a \resourcename{Dir}{Job}{BackupCatalog} is scheduled to
+run.
+%Note, you should probably change the name \resourcename{Dir}{Job}{BackupClient1} to be the name of
+%your machine, if not, when you add additional clients, it will be very
+%confusing.
 
 Now enter:
 
 \begin{bconsole}{status client}
-* <input>status client</input>
+*<input>status client</input>
 Automatically selected Client: bareos-fd
 Connecting to Client bareos-fd at bareos:9102
 
@@ -295,14 +245,14 @@ No Jobs running.
 ====
 \end{bconsole}
 
-In this case, the client is named {\bf bareos-fd} your name will be different,
-but the line beginning with {\bf bareos-fd Version ...} is printed by your File
+In this case, the client is named \resourcename{Dir}{Client}{bareos-fd} your name might be different,
+but the line beginning with \path|bareos-fd Version ...| is printed by your File
 daemon, so we are now sure it is up and running.
 
-Finally do the same for your Storage daemon with:
+Finally do the same for your \bareosSd with:
 
 \begin{bconsole}{status storage}
-* <input>status storage</input>
+*<input>status storage</input>
 Automatically selected Storage: File
 Connecting to Storage daemon File at bareos:9103
 
@@ -327,8 +277,8 @@ Used Volume status:
 ====
 \end{bconsole}
 
-You will notice that the default Storage daemon device is named {\bf File} and
-that it will use device {\bf /var/lib/bareos/storage}, which is not currently open.
+You will notice that the default \bareosSd device is named \resourcename{Dir}{Storage}{File} and
+that it will use device \directory{/var/lib/bareos/storage}, which is not currently open.
 
 Now, let's actually run a job with:
 
@@ -363,8 +313,8 @@ JobName:  BackupClient1
 Level:    Incremental
 Client:   bareos-fd
 Format:   Native
-FileSet:  Full Set
-Pool:     File (From Job resource)
+FileSet:  SelfTest
+Pool:     Full (From Job resource)
 NextPool: *None* (From unknown source)
 Storage:  File (From Job resource)
 When:     2013-05-23 14:50:04
@@ -374,85 +324,88 @@ OK to run? (yes/mod/no):
 \normalsize
 
 At this point, take some time to look carefully at what is printed and
-understand it. It is asking you if it is OK to run a job named {\bf BackupClient1}
-with FileSet {\bf Full Set} (we listed above) as an Incremental job on your
-Client (your client name will be different), and to use Storage {\bf File} and
-Pool {\bf Default}, and finally, it wants to run it now (the current time
+understand it. It is asking you if it is OK to run a job named \job{BackupClient1}
+with FileSet \fileset{SelfTest} as an Incremental job on your
+Client, and to use Storage \resourcename{Dir}{Storage}{File} and
+Pool \pool{Full}, and finally, it wants to run it now (the current time
 should be displayed by your console).
 
 Here we have the choice to run ({\bf yes}), to modify one or more of the above
 parameters ({\bf mod}), or to not run the job ({\bf no}). Please enter {\bf
 yes}, at which point you should immediately get the command prompt (an
-asterisk). If you wait a few seconds, then enter the command {\bf messages}
+asterisk).
+
+If you wait a few seconds, then enter the command \bcommand{messages}{}
 you will get back something like:
+
+
+% \footnotesize
+% \begin{verbatim}
+% 28-Apr-2003 14:22 bareos-dir: Last FULL backup time not found. Doing
+%                   FULL backup.
+% 28-Apr-2003 14:22 bareos-dir: Start Backup JobId 1,
+%                   Job=Client1.2003-04-28_14.22.33
+% 28-Apr-2003 14:22 bareos-sd: Job Client1.2003-04-28_14.22.33 waiting.
+%                   Cannot find any appendable volumes.
+% Please use the "label"  command to create a new Volume for:
+%     Storage:      FileStorage
+%     Media type:   File
+%     Pool:         Default
+% \end{verbatim}
+% \normalsize
+% 
+% The first message, indicates that no previous Full backup was done, so Bareos
+% is upgrading our Incremental job to a Full backup (this is normal). The second
+% message indicates that the job started with JobId 1., and the third message
+% tells us that Bareos cannot find any Volumes in the Pool for writing the
+% output. This is normal because we have not yet created (labeled) any Volumes.
+% Bareos indicates to you all the details of the volume it needs.
+% 
+% At this point, the job is BLOCKED waiting for a Volume. You can check this if
+% you want by doing a {\bf status dir}. In order to continue, we must create a
+% Volume that Bareos can write on. We do so with:
+% 
+% \footnotesize
+% \begin{verbatim}
+% label
+% \end{verbatim}
+% \normalsize
+% 
+% and Bareos will print:
+% 
+% \footnotesize
+% \begin{verbatim}
+% The defined Storage resources are:
+%      1: File
+% Item 1 selected automatically.
+% Enter new Volume name:
+% \end{verbatim}
+% \normalsize
+% 
+% at which point, you should enter some name beginning with a letter and
+% containing only letters and numbers (period, hyphen, and underscore) are also
+% permitted. For example, enter {\bf TestVolume001}, and you should get back:
+% 
+% \footnotesize
+% \begin{verbatim}
+% Defined Pools:
+%      1: Default
+% Item 1 selected automatically.
+% Connecting to Storage daemon File at bareos:8103 ...
+% Sending label command for Volume "TestVolume001" Slot 0 ...
+% 3000 OK label. Volume=TestVolume001 Device=/var/lib/bareos/storage
+% Catalog record for Volume "TestVolume002", Slot 0  successfully created.
+% Requesting mount FileStorage ...
+% 3001 OK mount. Device=/var/lib/bareos/storage
+% \end{verbatim}
+% \normalsize
+%
+% Finally, enter {\bf messages} and you should get something like:
 
 \TODO{Replace bconsole output by current version of Bareos.}
 
-\footnotesize
-\begin{verbatim}
-28-Apr-2003 14:22 bareos-dir: Last FULL backup time not found. Doing
-                  FULL backup.
-28-Apr-2003 14:22 bareos-dir: Start Backup JobId 1,
-                  Job=Client1.2003-04-28_14.22.33
-28-Apr-2003 14:22 bareos-sd: Job Client1.2003-04-28_14.22.33 waiting.
-                  Cannot find any appendable volumes.
-Please use the "label"  command to create a new Volume for:
-    Storage:      FileStorage
-    Media type:   File
-    Pool:         Default
-\end{verbatim}
-\normalsize
-
-The first message, indicates that no previous Full backup was done, so Bareos
-is upgrading our Incremental job to a Full backup (this is normal). The second
-message indicates that the job started with JobId 1., and the third message
-tells us that Bareos cannot find any Volumes in the Pool for writing the
-output. This is normal because we have not yet created (labeled) any Volumes.
-Bareos indicates to you all the details of the volume it needs.
-
-At this point, the job is BLOCKED waiting for a Volume. You can check this if
-you want by doing a {\bf status dir}. In order to continue, we must create a
-Volume that Bareos can write on. We do so with:
-
-\footnotesize
-\begin{verbatim}
-label
-\end{verbatim}
-\normalsize
-
-and Bareos will print:
-
-\footnotesize
-\begin{verbatim}
-The defined Storage resources are:
-     1: File
-Item 1 selected automatically.
-Enter new Volume name:
-\end{verbatim}
-\normalsize
-
-at which point, you should enter some name beginning with a letter and
-containing only letters and numbers (period, hyphen, and underscore) are also
-permitted. For example, enter {\bf TestVolume001}, and you should get back:
-
-\footnotesize
-\begin{verbatim}
-Defined Pools:
-     1: Default
-Item 1 selected automatically.
-Connecting to Storage daemon File at bareos:8103 ...
-Sending label command for Volume "TestVolume001" Slot 0 ...
-3000 OK label. Volume=TestVolume001 Device=/var/lib/bareos/storage
-Catalog record for Volume "TestVolume002", Slot 0  successfully created.
-Requesting mount FileStorage ...
-3001 OK mount. Device=/var/lib/bareos/storage
-\end{verbatim}
-\normalsize
-
-Finally, enter {\bf messages} and you should get something like:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{run}
+*<input>messages</input>
 28-Apr-2003 14:30 bareos-sd: Wrote label to prelabeled Volume
    "TestVolume001" on device /var/lib/bareos/storage
 28-Apr-2003 14:30 rufus-dir: Bareos 1.30 (28Apr03): 28-Apr-2003 14:30
@@ -479,30 +432,28 @@ Termination:            Backup OK
 28-Apr-2003 14:30 rufus-dir: Begin pruning Files.
 28-Apr-2003 14:30 rufus-dir: No Files found to prune.
 28-Apr-2003 14:30 rufus-dir: End auto prune.
-\end{verbatim}
-\normalsize
+\end{bconsole}
 
-If you don't see the output immediately, you can keep entering {\bf messages}
+If you don't see the output immediately, you can keep entering \bcommand{messages}{}
 until the job terminates.
 
-Instead of typing \command{messages} multiple times, 
+Instead of typing \bcommand{messages}{} multiple times,
 you can also ask bconsole to wait, until a specific job is finished:
-\footnotesize
-\begin{verbatim}
-wait jobid=1
-\end{verbatim}
-\normalsize
-or just \command{wait}, which waits for all running jobs to finish.
 
-Another useful command is {\bf autodisplay on}. 
+\begin{bconsole}{wait}
+*<input>wait jobid=1</input>
+\end{bconsole}
+or just \bcommand{wait}{}, which waits for all running jobs to finish.
+
+Another useful command is \bcommand{autodisplay}{on}.
 With autodisplay activated, messages will automatically be displayed as soon as they are ready.
 
-If you do an {\bf ls -l} of your {\bf /var/lib/bareos/storage} directory, you will see that you
+If you do an \command{ls -l} of your \directory{/var/lib/bareos/storage} directory, you will see that you
 have the following item:
 
 \footnotesize
 \begin{verbatim}
--rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 TestVolume001
+-rw-r-----    1 bareos bareos   39072153 Apr 28 14:30 Full-001
 \end{verbatim}
 \normalsize
 
@@ -510,12 +461,12 @@ This is the file Volume that you just wrote and it contains all the data of
 the job just run. If you run additional jobs, they will be appended to this
 Volume unless you specify otherwise.
 
-You might ask yourself if you have to label all the Volumes that Bareos is
-going to use. The answer for disk Volumes, like the one we used, is no. It is
-possible to have Bareos automatically label volumes. For tape Volumes, you
-will most likely have to label each of the Volumes you want to use.
+% You might ask yourself if you have to label all the Volumes that Bareos is
+% going to use. The answer for disk Volumes, like the one we used, is no. It is
+% possible to have Bareos automatically label volumes. For tape Volumes, you
+% will most likely have to label each of the Volumes you want to use.
 
-If you would like to stop here, you can simply enter {\bf quit} in the Console
+If you would like to stop here, you can simply enter \bcommand{quit}{} in the Console
 program.
 
 % To clean up, simply
@@ -541,20 +492,12 @@ following section.
 \index[general]{Files!Restoring Your}
 \index[general]{Restoring Your Files}
 
-If you have run the default configuration and run the job as demonstrated above, 
+If you have run the default configuration and run the job as demonstrated above,
 you can restore the backed up files in the Console
 program by entering:
 
-\footnotesize
-\begin{verbatim}
-restore all
-\end{verbatim}
-\normalsize
-
-where you will get:
-
-\footnotesize
-\begin{verbatim}
+\begin{bconsole}{restore}
+*<input>restore all</input>
 First you select one or more JobIds that contain files
 to be restored. You will be presented several methods
 of specifying the JobIds. Then you will be allowed to
@@ -574,9 +517,9 @@ To select the JobIds, you have the following choices:
     11: Enter a list of directories to restore for found JobIds
     12: Select full restore to a specified Job date
     13: Cancel
-Select item:  (1-13): 
-\end{verbatim}
-\normalsize
+Select item:  (1-13):
+\end{bconsole}
+
 
 As you can see, there are a number of options, but for the current
 demonstration, please enter {\bf 5} to do a restore of the last backup you
@@ -624,12 +567,13 @@ Then Bareos produced a listing containing all the jobs that
 form the current backup, in this case, there is only one, and the Storage
 daemon was also automatically chosen. Bareos then took all the files that were
 in Job number 1 and entered them into a {\bf directory tree} (a sort of in
-memory representation of your filesystem). At this point, you can use the {\bf
-cd} and {\bf ls} or {\bf dir} commands to walk up and down the directory tree
-and view what files will be restored. For example, if I enter {\bf cd
-/usr/sbin} and then enter {\bf dir} I will get a listing
-of all the files in the Bareos source directory. On your system, the path might
-be somewhat different. For more information on this, please refer to the
+memory representation of your filesystem). At this point, you can use the 
+\bcommand{cd}{} and \bcommand{ls}{} or \bcommand{dir}{} commands to walk up and down the directory tree
+and view what files will be restored. For example, if you enter \bcommand{cd}{/usr/sbin}
+and then enter \bcommand{dir}{} you will get a listing
+of all the files in the \directory{/usr/sbin/} directory.
+On your system, the path might be somewhat different.
+For more information on this, please refer to the
 \ilink{Restore Command Chapter}{RestoreChapter} of this manual for
 more details.
 
@@ -669,7 +613,7 @@ The job will require the following
    Volume(s)                 Storage(s)                SD Device(s)
 ===========================================================================
    
-    TestVolume001             File                      FileStorage              
+    TestVolume001             File                      FileStorage
 
 Volumes marked with "*" are online.
 
@@ -694,11 +638,11 @@ OK to run? (yes/mod/no):
 \end{verbatim}
 \normalsize
 
-If you answer {\bf yes} your files will be restored to {\bf
-/tmp/bareos-restores}. If you want to restore the files to their original
+If you answer {\bf yes} your files will be restored to
+\directory{/tmp/bareos-restores}. If you want to restore the files to their original
 locations, you must use the {\bf mod} option and explicitly set {\bf Where:}
 to nothing (or to /). We recommend you go ahead and answer {\bf yes} and after
-a brief moment, enter {\bf messages}, at which point you should get a listing
+a brief moment, enter \bcommand{messages}{}, at which point you should get a listing
 of all the files that were restored as well as a summary of the job that looks
 similar to this:
 
@@ -726,33 +670,32 @@ similar to this:
 \end{verbatim}
 \normalsize
 
-After exiting the Console program, you can examine the files in {\bf
-/tmp/bareos-restores}, which will contain a small directory tree with all the
+After exiting the Console program, you can examine the files in \directory{/tmp/bareos-restores},
+which will contain a small directory tree with all the
 files. Be sure to clean up at the end with:
 
-\footnotesize
-\begin{verbatim}
-rm -rf /tmp/bareos-restore
-\end{verbatim}
-\normalsize
+\begin{commands}{remove restore directory}
+<command>rm</command> -rf /tmp/bareos-restore
+\end{commands}
 
 \section{Quitting the Console Program}
 \index[general]{Program!Quitting the Console}
 \index[general]{Quitting the Console Program}
 
-Simply enter the command {\bf quit}.
-\label{SecondClient}
+Simply enter the command \bcommand{quit}{}.
 
-\section{Adding a Second Client}
+\section{Adding a Client}
+\label{SecondClient}
+\label{sec:AddAClient}
 \index[general]{Client!Adding a Second}
-\index[general]{Adding a Second Client}
+\index[general]{Adding a Client}
 
 \subsection*{Changes on the Client}
 
 If you have gotten the example shown above to work on your system, you may be
 ready to add a second Client (File daemon). That is you have a second machine
 that you would like backed up. The only part you need installed on the other
-machine is the {\bf bareos-filedaemon}. 
+machine is the {\bf bareos-filedaemon}.
 
 This packages installs also its configuration file \path|/etc/bareos/bareos-fd.conf|
 and sets its hostname + \path|-fd| as FileDaemon name.
@@ -795,7 +738,7 @@ Then you need to
 make some additions to your Director's configuration file to define the new
 File Daemon (Client).
 
- Starting from our original example which should be
+Starting from our original example which should be
 installed on your system, you should add the following lines (essentially
 copies of the existing data but with the names changed) to your Director's
 configuration file {\bf bareos-dir.conf}.
@@ -832,7 +775,7 @@ Job {
 Check if the configuration file is correct by
 \footnotesize
 \begin{verbatim}
-root@bareos:~ # bareos-dir -t -c /etc/bareos/bareos-dir.conf
+root@bareos:~ # su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
 \end{verbatim}
 \normalsize
 

@@ -5,35 +5,29 @@
 \index[general]{Director!Configuring the}
 \index[general]{Configuring the Director}
 
-Of all the configuration files needed to run {\bf Bareos}, the Director's is
-the most complicated, and the one that you will need to modify the most often
+Of all the configuration files needed to run {Bareos}, the Director's is
+the most complicated and the one that you will need to modify the most often
 as you add clients or modify the FileSets.
 
 For a general discussion of configuration files and resources including the
-data types recognized by {\bf Bareos}. Please see the
-\ilink{Configuration}{ConfigureChapter} chapter of this manual.
+recognized data types see \nameref{ConfigureChapter}.
 
 %\section{Director Resource Types}
 \index[general]{Types!Director Resource}
 \index[general]{Director!Resource Types}
 \index[dir]{Resource Types}
 
-Director resource type may be one of the following:
-
-Job, JobDefs, Client, Storage, Catalog, Schedule, FileSet, Pool, Director,  or
-Messages. We present them here in the most logical order for defining them:
-
-Note, everything revolves around a job and is tied to a job in one
+Everything revolves around a job and is tied to a job in one
 way or another.
+
+The \bareosDir knows about following resource types:
 
 \begin{itemize}
 \item
    \nameref{DirectorResourceDirector} -- to  define the Director's
    name and its access password used for authenticating the Console program.
    Only a single  Director resource definition may appear in the Director's
-   configuration file.  If you have either {\bf /dev/random} or  {\bf bc} on your
-   machine, Bareos will generate a random password during the configuration
-   process, otherwise it will  be left blank.
+   configuration file.
 \item
    \nameref{DirectorResourceJob} -- to define the backup/restore Jobs
    and to tie together the Client, FileSet and Schedule resources to  be used
@@ -93,7 +87,7 @@ resource is allowed.
 
 The following is an example of a valid Director resource definition:
 
-\begin{bconfig}{Director Ressource example}
+\begin{bconfig}{Director Resource example}
 Director {
   Name = bareos-dir
   Password = secretpassword
