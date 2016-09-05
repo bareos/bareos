@@ -53,7 +53,7 @@ void test_sellist(void **state) {
 
    msg = sl.get_errmsg();
 
-   printf("%s", msg);
+   //printf("%s", msg);
 
    assert_null(msg);
    c = 0;
