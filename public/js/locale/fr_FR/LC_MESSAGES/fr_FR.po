@@ -20,7 +20,7 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:66
 msgid "Backup"
-msgstr "Sauvegarder"
+msgstr "Sauvegarde"
 
 #: ../../js/datatables.functions.js:69
 msgid "Migrated"
@@ -28,11 +28,11 @@ msgstr "Migré"
 
 #: ../../js/datatables.functions.js:72
 msgid "Verify"
-msgstr "Vérifier"
+msgstr "Vérification"
 
 #: ../../js/datatables.functions.js:75
 msgid "Restore"
-msgstr "Restaurer"
+msgstr "Restauration"
 
 #: ../../js/datatables.functions.js:78
 msgid "Console program"
@@ -52,15 +52,15 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:90
 msgid "Copy of a job"
-msgstr ""
+msgstr "Copie d'un job"
 
 #: ../../js/datatables.functions.js:93
 msgid "Copy job"
-msgstr ""
+msgstr "Job de copie"
 
 #: ../../js/datatables.functions.js:96
 msgid "Migration job"
-msgstr ""
+msgstr "Job de migration"
 
 #: ../../js/datatables.functions.js:99
 msgid "Scan"
@@ -68,19 +68,19 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:111 ../../js/datatables.functions.js:150
 msgid "Full"
-msgstr "Complète"
+msgstr "Complet"
 
 #: ../../js/datatables.functions.js:113
 msgid "Differential"
-msgstr "Différentielle"
+msgstr "Différentiel"
 
 #: ../../js/datatables.functions.js:115
 msgid "Incremental"
-msgstr "Incrémentielle"
+msgstr "Incrémentiel"
 
 #: ../../js/datatables.functions.js:117
 msgid "VirtualFull"
-msgstr "Complète virtuelle"
+msgstr "Virtuel complet"
 
 #: ../../js/datatables.functions.js:119
 msgid "Base"
@@ -209,19 +209,19 @@ msgstr "En attente"
 
 #: ../../js/datatables.functions.js:332
 msgid "SD despooling attributes"
-msgstr ""
+msgstr "SD envoi des attributs"
 
 #: ../../js/datatables.functions.js:336
 msgid "Doing batch insert file records"
-msgstr ""
+msgstr "Insertion batch des enregistrements de fichiers"
 
 #: ../../js/datatables.functions.js:340
 msgid "Incomplete"
-msgstr "Incomplêt"
+msgstr "Incomplet"
 
 #: ../../js/datatables.functions.js:344
 msgid "Committing data"
-msgstr ""
+msgstr "Insertion des données"
 
 #: ../../js/datatables.functions.js:348
 msgid "Warning"
@@ -229,7 +229,7 @@ msgstr "Attention"
 
 #: ../../js/datatables.functions.js:352
 msgid "Doing data despooling"
-msgstr ""
+msgstr "Déspoulage des données en cours"
 
 #: ../../js/datatables.functions.js:356
 msgid "Queued waiting for device"
