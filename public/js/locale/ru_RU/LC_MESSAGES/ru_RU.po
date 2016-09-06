@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2016-06-23 12:54+0200\n"
-"PO-Revision-Date: 2016-06-22 14:31+0200\n"
+"PO-Revision-Date: 2016-09-05 14:31+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
-"Language: de\n"
+"Language: ru\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.5\n"
+"X-Generator: Poedit 1.8.8\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../../js/datatables.functions.js:66
@@ -108,96 +108,96 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:131
 msgid "None"
-msgstr ""
+msgstr "ничто"
 
 #: ../../js/datatables.functions.js:145 ../../js/datatables.functions.js:175
 msgid "day(s)"
-msgstr ""
+msgstr "день(дни)"
 
 #: ../../js/datatables.functions.js:150
 msgid "Used"
-msgstr ""
+msgstr "Использовано"
 
 #: ../../js/datatables.functions.js:162
 msgid "expired"
-msgstr ""
+msgstr "срок действия истек"
 
 #: ../../js/datatables.functions.js:166
 msgid "expires in 1 day"
-msgstr ""
+msgstr "истекает через 1 день"
 
 #: ../../js/datatables.functions.js:170
 msgid "expires in"
-msgstr ""
+msgstr "Истекает через"
 
 #: ../../js/datatables.functions.js:170
 msgid "days"
-msgstr ""
+msgstr "дней"
 
 #: ../../js/datatables.functions.js:181
 msgid "never"
-msgstr ""
+msgstr "никогда"
 
 #: ../../js/datatables.functions.js:190
 msgid "today"
-msgstr ""
+msgstr "сегодня"
 
 #: ../../js/datatables.functions.js:193
 msgid "day(s) ago"
-msgstr ""
+msgstr "день (-ей) назад"
 
 #: ../../js/datatables.functions.js:196
 msgid "month(s) ago"
-msgstr ""
+msgstr "месяц (-ев) назад"
 
 #: ../../js/datatables.functions.js:199
 msgid "year(s) ago"
-msgstr ""
+msgstr "год (лет) назад"
 
 #: ../../js/datatables.functions.js:232
 msgid "enabled"
-msgstr ""
+msgstr "Включено"
 
 #: ../../js/datatables.functions.js:235
 msgid "disabled"
-msgstr ""
+msgstr "выключено"
 
 #: ../../js/datatables.functions.js:243
 msgid "Yes"
-msgstr ""
+msgstr "Да"
 
 #: ../../js/datatables.functions.js:246
 msgid "No"
-msgstr ""
+msgstr "Нет"
 
 #: ../../js/datatables.functions.js:256 ../../js/datatables.functions.js:260
 #: ../../js/datatables.functions.js:264
 msgid "Failure"
-msgstr ""
+msgstr "Сбой!"
 
 #: ../../js/datatables.functions.js:268
 msgid "Success"
-msgstr ""
+msgstr "Успешно"
 
 #: ../../js/datatables.functions.js:272
 msgid "Running"
-msgstr ""
+msgstr "Выполнение"
 
 #: ../../js/datatables.functions.js:276
 msgid "Queued"
-msgstr ""
+msgstr "В очереди"
 
 #: ../../js/datatables.functions.js:280
 msgid "Blocked"
-msgstr ""
+msgstr "Заблокировано"
 
 #: ../../js/datatables.functions.js:284
 msgid "Verify found differences"
-msgstr ""
+msgstr "Проверка найденных различий"
 
 #: ../../js/datatables.functions.js:288
 msgid "Canceled"
-msgstr ""
+msgstr "Отменено"
 
 #: ../../js/datatables.functions.js:292 ../../js/datatables.functions.js:296
 #: ../../js/datatables.functions.js:300 ../../js/datatables.functions.js:304
@@ -205,7 +205,7 @@ msgstr ""
 #: ../../js/datatables.functions.js:316 ../../js/datatables.functions.js:320
 #: ../../js/datatables.functions.js:324 ../../js/datatables.functions.js:328
 msgid "Waiting"
-msgstr ""
+msgstr "Ожидание"
 
 #: ../../js/datatables.functions.js:332
 msgid "SD despooling attributes"
@@ -217,7 +217,7 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:340
 msgid "Incomplete"
-msgstr ""
+msgstr "Незавершенный"
 
 #: ../../js/datatables.functions.js:344
 msgid "Committing data"
@@ -225,7 +225,7 @@ msgstr ""
 
 #: ../../js/datatables.functions.js:348
 msgid "Warning"
-msgstr ""
+msgstr "Предупреждение"
 
 #: ../../js/datatables.functions.js:352
 msgid "Doing data despooling"
