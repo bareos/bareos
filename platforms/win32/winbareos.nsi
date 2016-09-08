@@ -89,6 +89,8 @@ Var InstallStorage
 Var InstallWebUI
 Var WebUIListenAddress
 Var WebUIListenPort
+Var WebUILogin
+Var WebUIPassword
 
 # Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
@@ -481,6 +483,15 @@ Section -SetPasswords
   # set username/password to bareos/bareos
   FileWrite $R1 "s#user1#bareos#g$\r$\n"
   FileWrite $R1 "s#CHANGEME#bareos#g$\r$\n"
+
+  # configure webui login
+  #  Name = admin
+  #  Password = "admin"
+  #
+  FileWrite $R1 "s#Name = admin#Name = $WebUILogin#g$\r$\n"
+  FileWrite $R1 "s#Password = $\"admin$\"#Password = $WebUIPassword#g$\r$\n"
+
+
 
   FileClose $R1
 
@@ -1187,6 +1198,7 @@ Section -ConfigureConfiguration
   # FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
   FileWrite $R1 "s#@working_dir@#$BareosAppdata/working#g$\r$\n"
 
+
   FileClose $R1
 
   nsExec::ExecToLog '"$INSTDIR\bareos-config-deploy.bat" "$INSTDIR\defaultconfigs" "$APPDATA\${PRODUCT_NAME}"'
@@ -1333,6 +1345,8 @@ Function .onInit
                     [/INSTALLWEBUI Installs Bareos WebUI Components, REQUIRES Visual C++ Redistributable for Visual Studio 2012 x86, implicitly sets /INSTALLDIRECTOR $\r$\n\
                     [/WEBUILISTENADDRESS=webui listen address, default 127.0.0.1]  $\r$\n\
                     [/WEBUILISTENPORT=webui listen port, default 9100 ]  $\r$\n\
+                    [/WEBUILOGIN=Login Name for WebUI, default admin ] $\r$\n\
+                    [/WEBUIPASSWORD=Password for WebUI, default admin ]  $\r$\n\
                     [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]  $\r$\n\
                     [/DBADMINUSER=Database Admin User (not needed for sqlite3)]  $\r$\n\
                     [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]  $\r$\n\
@@ -1484,6 +1498,13 @@ done:
 
   ${GetOptions} $cmdLineParams "/WEBUILISTENPORT=" $WebUIListenPort
   ClearErrors
+
+  ${GetOptions} $cmdLineParams "/WEBUILOGIN=" $WebUILogin
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/WEBUIPASSWORD=" $WebUIPassword
+  ClearErrors
+
 
   ${GetOptions} $cmdLineParams "/DBDRIVER=" $DbDriver
   ClearErrors
@@ -1754,6 +1775,12 @@ ${EndIf}
 
   strcmp $WebUIListenPort "" +1 +2
   StrCpy $WebUIListenPort "9100"
+
+  strcmp $WebUILogin "" +1 +2
+  StrCpy $WebUILogin "admin"
+
+  strcmp $WebUIPassword "" +1 +2
+  StrCpy $WebUIPassword "$\"admin$\""
 
   strcmp $DbEncoding "" +1 +2
   StrCpy $DbEncoding "ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
