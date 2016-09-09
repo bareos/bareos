@@ -98,6 +98,9 @@ function formatJobType(data) {
       case 'S':
          output = iJS._('Scan');
          break;
+      case 'O':
+         output = iJS._('Consolidate');
+         break;
       default:
          output = data;
          break;

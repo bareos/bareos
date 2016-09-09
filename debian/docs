@@ -1,5 +1,6 @@
 README.md
-doc/*
+doc/README-TRANSLATION.md
+tests/selenium
 LICENSE
 AGPL-3.0.txt
 AUTHORS

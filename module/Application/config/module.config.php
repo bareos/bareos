@@ -155,6 +155,28 @@ return array(
          array(
             'label' => _('Storages'),
             'route' => 'storage',
+            'pages' => array(
+               array(
+                  'label' => _('Pool'),
+                  'route' => 'pool',
+                  'action' => 'index'
+               ),
+               array(
+                  'label' => _('Pool'),
+                  'route' => 'pool',
+                  'action' => 'details'
+               ),
+               array(
+                  'label' => _('Volumes'),
+                  'route' => 'media',
+                  'action' => 'index'
+               ),
+               array(
+                  'label' => _('Volumes'),
+                  'route' => 'media',
+                  'action' => 'details'
+               ),
+            ),
          ),
          array(
             'label' => _('Director'),
