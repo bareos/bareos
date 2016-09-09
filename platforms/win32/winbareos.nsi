@@ -85,6 +85,11 @@ Var DbAdminUser
 Var InstallDirector
 Var InstallStorage
 
+# Install the webui (cmdline setting)
+Var InstallWebUI
+Var WebUIListenAddress
+Var WebUIListenPort
+
 # Generated configuration snippet for bareos director config (client ressource)
 Var ConfigSnippet
 
@@ -171,7 +176,7 @@ Page custom displayDirconfSnippet
 
 Function LaunchLink
   ExecShell "open" "http://www.bareos.com"
-  ExecShell "open" "http://localhost:9100"
+  ExecShell "open" "http://$WebUIListenAddress:$WebUIListenPort"
 FunctionEnd
 
 !define MUI_FINISHPAGE_RUN
@@ -446,8 +451,8 @@ Section -SetPasswords
   # TODO: replace by ConfigureConfiguration ?
 
   FileOpen $R1 $PLUGINSDIR\postgres.sed w
-  FileWrite $R1 "s#@db_user@#$DbUser#g$\r$\n"
-  FileWrite $R1 "s#@db_password@#with password '$DbPassword'#g$\r$\n"
+  FileWrite $R1 "s#@DB_USER@#$DbUser#g$\r$\n"
+  FileWrite $R1 "s#@DB_PASS@#with password '$DbPassword'#g$\r$\n"
   FileClose $R1
 
   #
@@ -672,15 +677,15 @@ SubSectionEnd # Storage Daemon Subsection
 
 SubSection "Director" SUBSEC_DIR
 
-Section Webinterface SEC_WEBINTERFACE
+Section Webinterface SEC_WEBUI
    SectionIn 2 3
    SetShellVarContext all
    SetOutPath "$INSTDIR"
    SetOverwrite ifnewer
-   #File /r "php"
    File /r "nssm.exe"
    File /r "bareos-webui"
 
+IfSilent skip_vc_redist_check
    # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (32 Bit)
    ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
 check_for_vc_redist:
@@ -697,6 +702,7 @@ check_for_vc_redist:
       goto check_for_vc_redist
    ${EndIf}
 
+skip_vc_redist_check:
    Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
    Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
 
@@ -711,20 +717,6 @@ check_for_vc_redist:
    CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
    Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
 
-#   Rename  "$PLUGINSDIR\webui-admin.conf" "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\profile\webui-admin.conf"
-#   Rename  "$PLUGINSDIR\admin.conf" "$APPDATA\${PRODUCT_NAME}\bareos-dir.d\console\admin.conf"
-
-   #!insertmacro InstallConfFile php.ini
-   #!insertmacro InstallConfFile directors.ini
-   #!insertmacro InstallConfFile configuration.ini
-   #!insertmacro InstallConfFile webui-admin.conf
-   #!insertmacro InstallConfFile admin.conf
-
-
-   #FileOpen  $R1 "$PLUGINSDIR\bareos-dir.conf" a
-   #FileSeek $R1 0 END
-   #FileWrite $R1 "@$APPDATA\${PRODUCT_NAME}\webui-admin.conf$\n"
-   #FileWrite $R1 "@$APPDATA\${PRODUCT_NAME}\admin.conf$\n"
    FileClose $R1
 
    ExecWait '$INSTDIR\nssm.exe install Bareos-webui $INSTDIR\bareos-webui\php\php.exe'
@@ -733,7 +725,7 @@ check_for_vc_redist:
    # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
    # see https://nssm.cc/usage -> quoting issues
    ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppParameters \
-      -S 127.0.0.1:9100 \
+      -S $WebUIListenAddress:$WebUIListenPort \
       -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
       -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
    ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
@@ -745,9 +737,17 @@ check_for_vc_redist:
    nsExec::ExecToLog "net start Bareos-webui"
 
    # Shortcuts
-   !insertmacro "CreateURLShortCut" "bareos-webui" "http://localhost:9100" "Bareos Backup Server Web Interface"
-   #CreateShortCut "$DESKTOP\bareos-webui.lnk" "http://localhost:9100"
-   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://localhost:9100"
+   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
+   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
+
+   # WebUI Firewall
+
+    DetailPrint  "Opening Firewall for WebUI"
+    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+    # profile=[private,domain]"
+    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+    # profile=[private,domain]"
+
 
 SectionEnd
 
@@ -821,6 +821,10 @@ SectionIn 3
 
   DetailPrint "libeay32.dll"
   CopyFiles /SILENT "$PostgresBinPath\libeay32.dll" "$INSTDIR"
+
+  # needed since postgresql 9.5
+  DetailPrint "libiconv-2.dll"
+  CopyFiles /SILENT "$PostgresBinPath\libiconv-2.dll" "$INSTDIR"
 
   # Since PostgreSQL 9.4 unfortunately setting the PATH Variable is not enough
   # to execute psql.exe It always complains about:
@@ -1126,8 +1130,8 @@ Section -ConfigureConfiguration
   FileSeek $R1 0 END
 
   FileWrite $R1 "s#@basename@-fd#$ClientName#g$\r$\n"
-  FileWrite $R1 "s#@basename@-dir#$DirectorName#g$\r$\n"
-  FileWrite $R1 "s#@basename@-mon#$HostName-mon#g$\r$\n"
+  FileWrite $R1 "s#bareos-dir#$DirectorName#g$\r$\n"
+  FileWrite $R1 "s#bareos-mon#$HostName-mon#g$\r$\n"
   FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
 
   FileWrite $R1 "s#XXX_REPLACE_WITH_DATABASE_DRIVER_XXX#$DbDriver#g$\r$\n"
@@ -1326,6 +1330,9 @@ Function .onInit
                     [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
                     $\r$\n\
                     [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]  $\r$\n\
+                    [/INSTALLWEBUI Installs Bareos WebUI Components, REQUIRES Visual C++ Redistributable for Visual Studio 2012 x86, implicitly sets /INSTALLDIRECTOR $\r$\n\
+                    [/WEBUILISTENADDRESS=webui listen address, default 127.0.0.1]  $\r$\n\
+                    [/WEBUILISTENPORT=webui listen port, default 9100 ]  $\r$\n\
                     [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]  $\r$\n\
                     [/DBADMINUSER=Database Admin User (not needed for sqlite3)]  $\r$\n\
                     [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]  $\r$\n\
@@ -1472,6 +1479,12 @@ done:
   ${GetOptions} $cmdLineParams "/DBADMINUSER=" $DbAdminUser
   ClearErrors
 
+  ${GetOptions} $cmdLineParams "/WEBUILISTENADDRESS=" $WebUIListenAddress
+  ClearErrors
+
+  ${GetOptions} $cmdLineParams "/WEBUILISTENPORT=" $WebUIListenPort
+  ClearErrors
+
   ${GetOptions} $cmdLineParams "/DBDRIVER=" $DbDriver
   ClearErrors
 
@@ -1489,6 +1502,12 @@ done:
   ${GetOptions} $cmdLineParams "/INSTALLDIRECTOR" $R0
   IfErrors 0 +2         # error is set if NOT found
     StrCpy $InstallDirector "no"
+  ClearErrors
+
+  StrCpy $InstallWebUI "yes"
+  ${GetOptions} $cmdLineParams "/INSTALLWEBUI" $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $InstallWebUI "no"
   ClearErrors
 
   StrCpy $InstallStorage "yes"
@@ -1550,7 +1569,14 @@ done:
   SectionSetFlags ${SEC_FDPLUGINS} ${SF_SELECTED} #  fd plugins
   SectionSetFlags ${SEC_FIREWALL_SD} ${SF_UNSELECTED} # unselect sd firewall (is selected by default, why?)
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
-  SectionSetFlags ${SEC_WEBINTERFACE} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
+  SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
+
+
+  StrCmp $InstallWebUI "no" dontInstWebUI
+    SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
+    StrCpy $InstallDirector "yes"               # webui needs director
+
+dontInstWebUI:
 
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
@@ -1722,6 +1748,12 @@ ${EndIf}
 
   strcmp $DbUser "" +1 +2
   StrCpy $DbUser "bareos"
+
+  strcmp $WebUIListenAddress "" +1 +2
+  StrCpy $WebUIListenAddress "127.0.0.1"
+
+  strcmp $WebUIListenPort "" +1 +2
+  StrCpy $WebUIListenPort "9100"
 
   strcmp $DbEncoding "" +1 +2
   StrCpy $DbEncoding "ENCODING 'SQL_ASCII' LC_COLLATE 'C' LC_CTYPE 'C'"
@@ -2091,6 +2123,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libintl*.dll"
   Delete "$INSTDIR\ssleay32.dll"
   Delete "$INSTDIR\libeay32.dll"
+  Delete "$INSTDIR\libiconv-2.dll"
 
 # logs
   Delete "$INSTDIR\*.log"
@@ -2149,6 +2182,8 @@ ConfDeleteSkip:
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos storage daemon (bareos-sd) access$\""
     DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
     nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos director (bareos-dir) access$\""
+    DetailPrint  "netsh advfirewall firewall delete rule name=$\"Bareos WebUI access$\""
+    nsExec::Exec "netsh advfirewall firewall delete rule name=$\"Bareos WebUI access$\""
 
   ${Else}
     DetailPrint  "Closing Firewall, OS is < Win7"
