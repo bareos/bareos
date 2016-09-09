@@ -147,7 +147,8 @@ rm -rf $RPM_BUILD_ROOT
 %files
 %defattr(-,root,root,-)
 %doc README.md LICENSE AGPL-3.0.txt AUTHORS
-%doc doc/
+%doc doc/README-TRANSLATION.md
+%doc tests/selenium
 %{_datadir}/%{name}/
 #attr(-, #daemon_user, #daemon_group) #{_datadir}/#{name}/data
 %dir /etc/bareos-webui
