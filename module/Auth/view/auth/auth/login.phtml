@@ -7,7 +7,6 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -172,7 +171,7 @@ get latest versions information via ajax call
 
 function getVersions() {
 
-   var update_url = "http://download.bareos.org/bareos/release/json/bareos-release-info.json?callback=jsonCallback";
+   var update_url = "https://download.bareos.com/release-info/bareos-release-info.json?callback=jsonCallback";
 
    var v = $.ajax({
       method: "GET",
