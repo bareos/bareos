@@ -34,7 +34,6 @@
       "zendframework/zend-modulemanager": "2.4.*",
       "zendframework/zend-cache": "2.4.*",
       "zendframework/zend-log": "2.4.*",
-      "zendframework/zend-db": "2.4.*",
       "zendframework/zend-console": "2.4.*",
       "zendframework/zend-http": "2.4.*",
       "zendframework/zend-escaper": "2.4.*",
