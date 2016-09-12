@@ -77,6 +77,8 @@ MainWin::MainWin(QWidget *parent) : QMainWindow(parent)
 
    readSettings();
 
+   this->about();
+
    foreach(Console *console, m_consoleHash) {
       console->connect_dir();
    }
@@ -594,17 +596,26 @@ void MainWin::input_line()
       m_currentConsole->setCurrent();
 }
 
-
 void MainWin::about()
 {
    QString fmt = QString("<br><h2>Bareos Administration Tool %1</h2>"
-                         "<p>Original by Dirk H Bartley and Kern Sibbald</p>"
-                         "<p>For more information, see: www.bareos.com"
-                         "<p>Copyright &copy; 2007-2010 Free Software Foundation Europe e.V."
-                         "<p>Copyright &copy; 2011-2012 Planets Communications B.V."
-                         "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
-                         "<p>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
-                         "<p>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR);
+                         "Dear user, please be aware that"
+                         "<h2> <span style=\"color:#aa0000;\">BAT is deprecated "
+                         "<br>in favour of "
+                         "<a href=\"http://www.bareos.org/en/bareos-webui.html\">Bareos-Webui</a></span></h2>"
+                         "<p>Bareos 16.2.x will be the last releases that includes BAT.</p>"
+                         "<p>Therefore we would like to ask for your help to improve the Bareos-Webui. "
+                         "If you miss any functionality from BAT in Bareos-Webui, "
+                         "please inform us on the "
+                         "<a href=\"https://groups.google.com/forum/?fromgroups#!forum/bareos-users\">bareos-users</a> maillinglist or"
+                         "<br>send a mail to <a href=\"mailto:info@bareos.org\">info@bareos.org</a>.</p>"
+                         "<p>Original by Dirk H Bartley and Kern Sibbald"
+                         "<br>For more information, see: www.bareos.com"
+                         "<br>Copyright &copy; 2007-2010 Free Software Foundation Europe e.V."
+                         "<br>Copyright &copy; 2011-2012 Planets Communications B.V."
+                         "<br>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
+                         "<br>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
+                         "<br>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR);
 
    QMessageBox::about(this, tr("About Bareos Administration Tool"), fmt);
 }
