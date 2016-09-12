@@ -31,7 +31,6 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
             'Zend\\Filter\\' => 12,
             'Zend\\EventManager\\' => 18,
             'Zend\\Escaper\\' => 13,
-            'Zend\\Db\\' => 8,
             'Zend\\Console\\' => 13,
             'Zend\\Config\\' => 12,
             'Zend\\Cache\\' => 11,
@@ -126,10 +125,6 @@ class ComposerStaticInit6df5b8a1471c61873b9f5b638848d4d7
         'Zend\\Escaper\\' => 
         array (
             0 => __DIR__ . '/..' . '/zendframework/zend-escaper/src',
-        ),
-        'Zend\\Db\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/zendframework/zend-db/src',
         ),
         'Zend\\Console\\' => 
         array (
