@@ -2213,6 +2213,9 @@ static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
       if (!rc.fileset) {
          ua->send_msg(_("FileSet \"%s\" not found.\n"), rc.fileset_name);
          rc.fileset = select_fileset_resource(ua);
+         if (!rc.fileset) {
+            return false;
+         }
       }
    } else if (!rc.fileset) {
       rc.fileset = rc.job->fileset;           /* use default */
