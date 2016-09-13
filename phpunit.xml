@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<phpunit bootstrap="tests/phpunit/Bootstrap.php" colors="true">
-	<testsuites>
-		<testsuite name="bareos-webui">
-			<directory>./tests/phpunit/JobTest</directory>
-			<directory>./tests/phpunit/DashboardTest</directory>
-			<directory>./tests/phpunit/DirectorTest</directory>
-			<directory>./tests/phpunit/ClientTest</directory>
-			<directory>./tests/phpunit/PoolTest</directory>
-			<directory>./tests/phpunit/MediaTest</directory>
-			<directory>./tests/phpunit/StorageTest</directory>
-			<directory>./tests/phpunit/RestoreTest</directory>
-		</testsuite>
-	</testsuites>
+<phpunit
+   bootstrap="tests/phpunit/Bootstrap.php"
+   convertErrorsToExceptions="true"
+   convertNoticesToExceptions="true"
+   convertWarningsToExceptions="true"
+   colors="true">
+
+<testsuites>
+   <testsuite name="bareos-webui">
+   </testsuite>
+</testsuites>
+
 </phpunit>
+

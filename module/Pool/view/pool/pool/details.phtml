@@ -85,7 +85,7 @@ $this->headTitle($title);
 <thead class="bg-primary">
    <th></th>
    <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Storage ID"); ?></th>
+   <th><?php echo $this->translate("Storage"); ?></th>
    <th><?php echo $this->translate("Type"); ?></th>
    <th><?php echo $this->translate("Last written"); ?></th>
    <th><?php echo $this->translate("Status"); ?></th>
@@ -207,7 +207,7 @@ $(document).ready(function() {
       "columns": [
          { "data": null, "orderable": false, "defaultContent": '', "className": 'details-control' },
          { "data": "volumename" },
-         { "data": "storageid" },
+         { "data": "storage" },
          { "data": "mediatype" },
          { "data": "lastwritten" },
          { "data": "volstatus" },

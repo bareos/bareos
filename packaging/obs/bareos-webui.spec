@@ -34,12 +34,12 @@ Requires: php-json
 Requires: php-libxml
 %endif
 Requires: php-mbstring
-Requires: php-mysql
+#Requires: php-mysql
 Requires: php-openssl
 Requires: php-pcre
-Requires: php-pdo
+#Requires: php-pdo
 #Requires: php-pecl
-Requires: php-pgsql
+#Requires: php-pgsql
 Requires: php-reflection
 Requires: php-session
 Requires: php-simplexml
