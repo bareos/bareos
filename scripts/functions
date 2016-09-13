@@ -426,14 +426,14 @@ end_test()
 
 copy_tape_confs()
 {
-   ${rscripts}/copy-tape-confs
    ${rscripts}/cleanup-tape
+   ${rscripts}/copy-tape-confs
 }
 
 copy_test_confs()
 {
-   ${rscripts}/copy-test-confs
    ${rscripts}/cleanup
+   ${rscripts}/copy-test-confs
 }
 
 disable_pluguins()
