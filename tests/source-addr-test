@@ -18,6 +18,7 @@ scripts/copy-confs
 #
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
+echo "s%Name = \"BackupClient1\"%Name = \"backup\";  client run after job = \"netstat -tan\"%g" >>${outf}
 cp $scripts/bareos-dir.conf $tmp/1
 sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
 
@@ -65,36 +66,12 @@ messages
 @#label volume=TestVolume001 storage=File pool=Full
 @#setdebug level=100 storage=File
 run job=$JobName yes
-@sleep 3
+@#sleep 3
 messages
 quit
 END_OF_DATA
 
 run_bareos
-
-# sleep 5
-print_debug "Detecting connections to SD sourced from ${IP}"
-netstat -tan | grep -E "127.0.0.1(.|:)$SDPORT .* ${IP}" > $tmp/log3.out
-if [ $? -ne 0 ]; then
-   stat=2
-   print_debug "Couldn't detect a connection to the SD sourced from SourceAddress ${IP}"
-fi
-
-print_debug "and connections to FD sourced from ${IP}"
-netstat -tan | grep -E "127.0.0.1(.|:)$FDPORT .* ${IP}" >> $tmp/log3.out
-if [ $? -ne 0 ]; then
-   stat=2
-   print_debug "Couldn't detect a connection to the FD sourced from SourceAddress ${IP}"
-fi
-
-if [ "$stat" = 2 ] ; then
-   netstat -tan
-fi
-
-if [ "$debug" = 1 ] ; then
-    cat $tmp/log3.out
-fi
-
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
@@ -117,6 +94,32 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 stop_bareos
+
+
+# sleep 5
+print_debug "Detecting connections to SD sourced from ${IP}"
+grep -E "127.0.0.1(.|:)$SDPORT .* ${IP}"   $tmp/log1.out > $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the SD sourced from SourceAddress ${IP}"
+fi
+
+print_debug "and connections to FD sourced from ${IP}"
+grep -E "127.0.0.1(.|:)$FDPORT .* ${IP}"  $tmp/log1.out >> $tmp/log3.out
+if [ $? -ne 0 ]; then
+   stat=2
+   print_debug "Couldn't detect a connection to the FD sourced from SourceAddress ${IP}"
+fi
+
+if [ "$stat" = 2 ] ; then
+   netstat -tan
+fi
+
+if [ "$debug" = 1 ] ; then
+    cat $tmp/log3.out
+fi
+
+
 check_two_logs
 check_restore_diff
 
