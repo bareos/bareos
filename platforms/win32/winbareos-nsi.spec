@@ -96,6 +96,8 @@ BuildRequires:  mingw64-winbareos-postvista-debug = %{version}
 BuildRequires:  osslsigncode
 BuildRequires:  obs-name-resolution-settings
 
+BuildRequires:  bareos-webui
+
 Source1:         winbareos.nsi
 Source2:         clientdialog.ini
 Source3:         directordialog.ini
@@ -109,8 +111,6 @@ Source9:         databasedialog.ini
 %define PHP_VERSION 5.6.25
 Source11:        http://windows.php.net/downloads/releases/php-%PHP_VERSION-Win32-VC11-x86.zip
 Source12:        https://nssm.cc/release/nssm-%NSSM_VERSION.zip
-Source13:        https://github.com/bareos/bareos-webui/archive/master.tar.gz
-
 
 %description
 Bareos Windows NSI installer packages for the different variants.
@@ -164,14 +164,18 @@ for flavor in %{flavors}; do
       rm -rvf nssm-%NSSM_VERSION
 
       # bareos-webui
-      tar xzvf %SOURCE13
-      mv bareos-webui-* bareos-webui  # rename subdirectory  bareos-webui-Release-15.2.2 -> bareos-webui
+      cp -av /usr/share/bareos-webui bareos-webui  # copy bareos-webui
       pushd bareos-webui
-      cp install/directors.ini $RPM_BUILD_ROOT/$flavor/release${BITS}
-      cp install/*/*.conf $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      mkdir install
+      cp /etc/bareos-webui/*.ini install
+      cp -av /etc/bareos install
+      mkdir -p tests/selenium
+      cp /usr/share/doc/packages/bareos-webui/selenium/webui-selenium-test.py tests/selenium
+
       echo "" >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF BAREOS_WEBUI START #####" >> %_sourcedir/LICENSE
-      cat LICENSE >> %_sourcedir/LICENSE # append bareos-webui license file to LICENSE
+      cat /usr/share/doc/packages/bareos-webui/LICENSE >> %_sourcedir/LICENSE # append bareos-webui license file to LICENSE
       echo "##### LICENSE FILE OF BAREOS_WEBUI END #####" >> %_sourcedir/LICENSE
       echo "" >> %_sourcedir/LICENSE
 
