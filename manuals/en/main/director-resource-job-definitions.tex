@@ -1543,6 +1543,10 @@ Although an Admin job is recorded in the  catalog, very little data is saved.
    If you subsequently delete a JobId that has a copy, the copy will be
    automatically upgraded to a Backup rather than a Copy, and it will
    subsequently be used for restoration.
+
+\item [Consolidate]
+    is used to consolidate Always Incremental Backups jobs, see \nameref{sec:alwaysincremental}.
+    It has been introduced in Bareos \sinceVersion{dir}{Job Type Consolidate}{16.2.4}.
 \end{description}
 
 Within a particular Job Type, there are also Levels,

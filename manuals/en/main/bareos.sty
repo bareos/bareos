@@ -489,6 +489,14 @@ Version $>=$ #3%
 \hyperlink{directive#1#2#3}{#4}%
 }
 
+\newcommand{\linkResourceDirectiveValue}[4]{%
+\linkResourceDirective{#1}{#2}{#3} \path|= #4|%
+}
+
+\newcommand{\resourceDirectiveValue}[4]{%
+\linkResourceDirectiveValue{#1}{#2}{#3}{#4}%
+}
+
 
 
 \lstnewenvironment{bconsole}[1]{
@@ -588,7 +596,7 @@ Version $>=$ #3%
     % #1 compontent
     % #2 resource type
     % #3 resource name
-    \renewcommand*{\lstlistingname}{resource}
+    \renewcommand*{\lstlistingname}{Resource}
     \footnotesize
     \lstset{
         backgroundcolor=\color{colorConfig},
