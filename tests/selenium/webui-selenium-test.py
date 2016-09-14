@@ -6,7 +6,7 @@ from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException
 from selenium.common.exceptions import NoAlertPresentException
 import unittest, time, re, sys, os
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities   
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
 
 class Bareos(unittest.TestCase):
@@ -14,7 +14,7 @@ class Bareos(unittest.TestCase):
         d = DesiredCapabilities.FIREFOX
         d['loggingPrefs'] = { 'browser':'ALL' }
         fp = webdriver.FirefoxProfile()
-        fp.set_preference('webdriver.log.file', '/tmp/firefox_console')
+        fp.set_preference('webdriver.log.file', os.getcwd() + '/firefox_console')
         self.driver = webdriver.Firefox(capabilities=d,firefox_profile=fp)
         self.driver.implicitly_wait(30)
         self.base_url = "http://%s" % targethost
