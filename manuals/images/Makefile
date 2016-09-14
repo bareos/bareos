@@ -9,6 +9,8 @@ ORIG_PNG = $(wildcard *.png)
 COPY_PNG = $(patsubst %.png,conv/%.png,$(ORIG_PNG))
 ORIG_DOT = $(wildcard *.dot)
 COPY_DOT = $(patsubst %.dot,conv/%.dot,$(ORIG_DOT))
+ORIG_SVG = $(wildcard *.svg)
+COPY_SVG = $(patsubst %.svg,conv/%.svg,$(ORIG_SVG))
 
 # conversion from fig to png does not work as expected,
 # so we use the png as base.
@@ -17,7 +19,7 @@ COPY_DOT = $(patsubst %.dot,conv/%.dot,$(ORIG_DOT))
 #CONV_FIG_EPS = $(patsubst %.fig,conv/%.eps,$(ORIG_FIG))
 
 
-all: $(CONV_PNG) $(COPY_PNG) $(COPY_DOT) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/bareos-webui-jobs.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png conv/ndmp-backup.svg conv/ndmp-cfg.svg conv/passive-client-communication.png conv/univention-configuration-registry-settings.png conv/univention-ucs-overview-administration.png
+all: $(CONV_PNG) $(COPY_PNG) $(COPY_DOT) $(COPY_SVG) conv/bareos-full-logo.png conv/autoxflate-functionblocks.png conv/bareos-webui-jobs.png conv/blocksize-decisionchart.png conv/Conf-Diagram.png conv/dbconfig-1-enable.png conv/dbconfig-2-select-database-type.png conv/dbconfig-3-postgresql-password.png conv/different_time.png conv/flow.png conv/ndmp-backup.svg conv/ndmp-cfg.svg conv/passive-client-communication.png conv/univention-configuration-registry-settings.png conv/univention-ucs-overview-administration.png
 
 # bareos-full-logo: png is of better quality than eps, therefore take that as source
 conv/bareos-full-logo.eps: bareos-full-logo.png
@@ -89,9 +91,9 @@ conv/%.eps: %.eps
 	@$(MKDIRCONV)
 	$(COPY) $< conv/$<
 
+# SVG are copied and converted to png
 conv/%.svg: %.svg
 	@$(MKDIRCONV)
-	#$(CONVERT) $< conv/`basename $< .eps`.png
 	$(CONVERT) $< conv/`basename $< .svg`.png
 	$(COPY) $< conv/$<
 

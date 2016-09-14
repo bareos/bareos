@@ -549,7 +549,7 @@ Version $>=$ #3%
 
 \lstnewenvironment{bconfig}[1]{%
     % #1 caption
-    \renewcommand*{\lstlistingname}{Configuration} 
+    \renewcommand*{\lstlistingname}{Configuration}
     \footnotesize
     \lstset{
         backgroundcolor=\color{colorConfig},
@@ -583,6 +583,32 @@ Version $>=$ #3%
             ]{#1}
     }
 }
+
+\lstnewenvironment{bareosConfigResource}[3]{%
+    % #1 compontent
+    % #2 resource type
+    % #3 resource name
+    \renewcommand*{\lstlistingname}{resource}
+    \footnotesize
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        %breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        keepspaces=true,
+        columns=fullflexible,
+        %label=config:#1,
+        caption=#1.d/#2/#3.conf,
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
 
 \lstnewenvironment{config}[1]{%
     % #1 caption

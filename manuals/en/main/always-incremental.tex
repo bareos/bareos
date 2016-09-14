@@ -1,0 +1,549 @@
+\chapter{Always Incremental Backups}
+\index[general]{Always Incremental}
+
+\section{Conventional Backup Scheme}
+
+\index[general]{Retention}
+
+To better understand the advantages of the Always Incremental Backup Scheme, we first analyze the way that the conventional Incremental - Differential - Full Backup Scheme works.
+
+The following figure shows the jobs available for restore over time. Red are full backups, green are differential backups and blue are incremental Backups.
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir inc-diff-full-jobs_available}
+\end{center}
+
+
+The next figure shows the amount of data being backed up over the network from that client over time:
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir inc-diff-full-jobdata}
+\end{center}
+
+
+Depending on the retention periods, old jobs are removed to save space for newer backups:
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir inc-diff-full-jobs_available-zoom}
+\end{center}
+
+The problem with this way of removing jobs is the fact that jobs are removed from the system which existing jobs depend on.
+
+Virtually all problems with the conventional backup scheme are solved using the always incremental backup scheme.
+
+
+\section{Always Incremental Backup Scheme}
+
+\subsection{Concept}
+
+The Always Incremental Backup Scheme does only incremental Backups of clients, which reduces the amount of data transferred over the network to a minimum.
+
+
+The Always Incremental Scheme is NOT suitable for backups that are not filebased, like database and vmware plugins.
+
+The Always Incremental Backup Scheme works as follows:
+
+Client Backups are always run as "incremental" backups. This would usually lead to an unlimited chain of incremental backups that are depend on each other.
+
+To avoid this problem, existing incremental backups older than a configurable age are consolidated into a new backup.
+
+
+These two steps are then executed every day:
+
+\begin{itemize}
+    \item Incremental Backup from Client
+    \item Consolidation of the jobs older than maximum configure age
+\end{itemize}
+
+Deleted files will be in the backup forever, if they are not detected as deleted using "accurate" backup.
+
+The Always Incremental Backup Scheme does not provide the option to have other longer retention
+periods for the backups.
+
+For Longterm Storage of data longer than the Always Incremental Job Retention, there are two options:
+
+\begin{itemize}
+    \item A copy job can be configured that copies existing full backups into a longterm pool.
+    \item A virtual Full Job can be configured that creates a virtual full backup into a longterm pool consolidating all exisiting backups into a new one.
+\end{itemize}
+
+The implementation with copy jobs is easy to implement and automatically copies all jobs that need to be copied in a single configured resource.
+The disadvantage of the copy job approach is the fact that at a certain point in time, the data that is copied for long term archive is already "always incremental job retention" old, so that the data in the longterm storage is not the current data that is available from the client.
+
+The solution using virtual full jobs to create longterm storage has the disadvantage, that for every backup job the a new longterm job needs to be created.
+
+The big advantage is that the current data will be transferred into the longterm storage.
+
+The way that bareos determines on what base the next incremental job will be done, would choose the longterm storage job to be taken as basis for the next incremental backup which is not what is intended. Therefore, the jobtype of the 
+longterm job is updated to "archive", so that it is not taken as base for then next incrementals and the always incremental job will stand alone.
+
+\subsection{How to configure in Bareos}
+
+For the Always Incremental Backup Scheme, new Directives have been added to the configuration.
+Three directives were added to the job resource:
+
+\begin{bareosConfigResource}{bareos-dir}{job}{example}
+Job {
+    Always Incremental = yes
+    Always Incremental Job Retention = <timespec>
+    Always Incremental Keep Number = <number>
+    ...
+    Accurate = Yes
+}
+\end{bareosConfigResource}
+
+\begin{description}
+    \item[Always Incremental] is to detect if this job uses the always incremental backup scheme
+    \item[Always Incremental Job Retention] set the age where incrementals of this job will be kept, older jobs will be consolidated.
+    \item[Always Incremental Keep Number] sets the number of incrementals that will be kept without regarding the age. This should make sure that a certain history of a  job will be kept even if the job is not executed for some time.
+\end{description}
+
+
+
+A new job type "consolidate" was created in order to automatically trigger the consolidation of incremental jobs that need to be consolidated.
+
+
+\begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
+Job {
+  Name = "Consolidate"
+  JobDefs = "DefaultJob"
+  Type = Consolidate
+
+  Storage = File1
+  Pool = AI-Incremental
+}
+\end{bareosConfigResource}
+
+
+
+The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
+
+For the Always Incremental Backup Scheme at least two storages are needed.
+
+\begin{bareosConfigResource}{bareos-dir}{pool}{AI-Incremental}
+Pool {
+  Name = AI-Incremental
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 180 days         # How long should the AI-Incremental Backups be kept? (#06)
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Label Format = "AI-Incremental-"              # Volumes will be labeled "AI-Incremental-<volume-id>"
+  Volume Use Duration = 23h
+  Storage = File1
+  Next Pool = AI-Full
+}
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-dir}{pool}{AI-Full}
+Pool {
+  Name = AI-Full
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 180 days         # How long should the AI-Full Backups be kept? (#06)
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Label Format = "AI-Full-"              # Volumes will be labeled "AI-Full-<volume-id>"
+  Volume Use Duration = 23h
+  Storage = File2
+  Next Pool = AI-Longterm
+}
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-dir}{pool}{AI-Longterm}
+Pool {
+  Name = AI-Longterm
+  Pool Type = Backup
+  Recycle = yes                       # Bareos can automatically recycle Volumes
+  AutoPrune = yes                     # Prune expired volumes
+  Volume Retention = 180 days         # How long should the AI-Longterm Backups be kept? (#06)
+  Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
+  Label Format = "AI-Longterm-"              # Volumes will be labeled "AI-Longterm-<volume-id>"
+  Volume Use Duration = 23h
+  Storage = File1
+}
+\end{bareosConfigResource}
+
+\subsection{How it works}
+
+The following configuration extract shows how a client backup is configured for always incremental Backup.
+The Backup itself is scheduled every night to run as incremental backup, while the consolidation is scheduled to run every day.
+
+\begin{bareosConfigResource}{bareos-dir}{job}{BackupClient1}
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+
+  # Always incremental settings
+  AlwaysIncremental = yes
+  AlwaysIncrementalJobRetention = 7 days
+
+  Accurate = yes
+
+  Pool = AI-Incremental
+  Full Backup Pool = AI-Full
+
+}
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
+Job {
+  Name = "Consolidate"
+  JobDefs = "DefaultJob"
+  Schedule = Consolidate
+  Type = Consolidate
+  Storage = File1
+  Pool = AI-Incremental
+}
+\end{bareosConfigResource}
+
+
+
+The following image shows the available backups for each day:
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental}
+\end{center}
+
+
+\begin{itemize}
+    \item The backup cycle starts with a full backup of the client. 
+    \item Every day a incremental backup is done and is additionally available.
+    \item When the age of the oldest incremental reaches "AlwaysIncrementalJobRetention", the consolidation job consolidates the oldest incremental with the full backup before to a new full backup.
+\end{itemize}
+
+This can go on more or less forever and there will be always an incremental history of "AlwaysIncrementalJobRetention".
+
+
+The following plot shows what happens if a job is not run for a certain amount of time.
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-with-pause-7days-retention-no-keep}
+\end{center}
+
+As can be seen, the nightly consolidation jobs still go on consolidating until the last incremental is too old and then only one full backup is left. This is usually not what is intended.
+
+For this reason, the directive "Always Incremental Keep Number" is available which sets the minimum number of incrementals that should be kept even if they are older than "AlwaysIncrementalJobRetention".
+
+Setting "Always Incremental Keep Number" to 7 in our case leads to the following result:
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-with-pause-7days-retention-7days-keep}
+\end{center}
+
+"Always Incremental Keep Number"  incrementals are always kept, and when the backup starts again the consolidation of old incrementals starts again.
+
+
+\subsection{Enhancements for the Always Incremental Backup Scheme}
+
+Besides the available backups at each point in time which we have considered until now, the amount of data being moved during the backups is another very important aspect.
+
+We will have a look at this aspect in the following pictures:
+
+
+\subsubsection{The basic always incremental scheme}
+
+The basic always incremental scheme does an incremental backup from the client daily which is relatively small and as such is very good.
+
+During the consolidation, each day the full backup is consolidated with the oldest incremental backup, which means that more or less the full amount of data being stored on the client is moved. 
+Although this consolidation only is performed locally on the storage daemon without client interaction, it is still an enormous amount of data being touched and can take an considerable amount of time.
+
+If all clients use the "always incremental" backup scheme, this means that the complete data being stored in the backup system needs to be moved every day!
+
+This is usually only feasible in relatively small environments.
+
+The following figure shows the Data Volume being moved during the normal always incremental scheme.
+\begin{itemize}
+    \item The red bar shows the amount of the first full backup being copied from the client.
+    \item The blue bars show the amount of the daily incremental backups. They are so little that the can be barely seen.
+    \item The green bars show the amount of data being moved every day during the consolidation jobs.
+\end{itemize}
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-jobdata}
+\end{center}
+
+
+
+\subsubsection{Always Incremental Max Full Age}
+
+To be able to cope with this problem, the directive "AlwaysIncrementalMaxFullAge" was added.
+When "AlwaysIncrementalMaxFullAge" is configured, in daily operation the Full Backup is left untouched while the incrementals are consolidated as usual. 
+Only if the Full Backup is older than "AlwaysIncrementalMaxFullAge", the full backup will also be part of the consolidation.
+
+Depending on the setting of the "AlwaysIncrementalMaxFullAge", the amount of daily data being moved can be reduced without losing the advantages of the always incremental Backup Scheme.
+
+"AlwaysIncrementalMaxFullAge" should never be less or equal of "AlwaysIncrementalJobRetention".
+
+The resulting inverval between full consolidations when running daily backups and daily consolidations is "AlwaysIncrementalMaxFullAge" - "AlwaysIncrementalJobRetention".
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-jobdata-AlwaysIncrementalMaxFullAge_21_days}
+\caption{Data Volume being moved with "AlwaysIncrementalMaxFullAge"}
+\end{figure}%
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-jobs_available-AlwaysIncrementalMaxFullAge_21_days}
+\caption{Jobs Available with "AlwaysIncrementalMaxFullAge"
+}
+\end{figure}%
+
+\subsubsection{Max Full Consolidations}
+
+When the "AlwaysIncrementalMaxFullAge" of many clients is set to the same value, it is probable that all full backups will reach the "AlwaysIncrementalMaxFullAge" at once and so consolidation jobs including the full backup will be started for all clients at once. This would again mean that the whole data being stored from all clients will be moved in one day.
+
+The following figure shows the amount of data being copied by the virtual jobs that do the consolidation when having 3 identically configured backup jobs:
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir jobdata_multiple_clients}
+\end{center}
+
+As can be seen, virtual jobs including the full are triggered for all three clients at the same time.
+
+This is of course not desirable so the directive "MaxFullConsolidations" was introduced.
+
+MaxFullConsolidations needs to be configured in the "Consolidate" Job:
+
+\begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
+Job {
+  Name = "Consolidate"
+  JobDefs = "DefaultJob"
+  Type = Consolidate
+
+  MaxFullConsolidations = 1
+
+  Storage = File1
+  Pool = AI-Incremental
+}
+\end{bareosConfigResource}
+
+
+If "MaxFullConsolidations" is configured, the consolidation job will not start more than the specified Consolidations that include the Full Backup.
+
+
+This leads to a better load balancing of full backup consolidations over different days. 
+The value should configured so that the consolidation jobs are completed before the next normal backup run starts.
+
+The number of always incremental jobs, the interval that the jobs are triggered and the setting of "AlwaysIncrementalMaxFullAge" influence the value that makes sense for "AlwaysIncrementalMaxFullConsolidations".
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir jobdata_multiple_clients_maxfullconsilidate}
+\caption{Data Volume being moved with "MaxFullConsolidations"}
+\end{figure}%
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\linewidth]{\idir jobs_available_multiple_clients_maxfullconsolidate}
+\caption{Jobs Available with "AlwaysIncrementalMaxFullConsolidations"}
+\end{figure}%
+
+
+\section{Long Term Storage of Data from Always Incremental Jobs}
+
+What is missing in the always incremental backup scheme in comparison to the traditional "Incremental Differential Full" scheme is the option to store a certain job for a longer time.
+
+When using always incremental, the usual maximum age of data stored during the backup cycle is "AlwaysIncrementalJobRetention".
+
+Usually, it is desired to be able to store a certain backup for a longer time, e.g. monthly a backup should be kept for half a year.
+
+
+There are two options to achieve this goal.
+
+\subsection{Copy Jobs}
+
+The configuration of archiving via copy job is simple, just configure a copy job that copies over the latest full backup
+at that point in time.
+
+As all full backups go into the "AI-Full" Pool, we just copy all uncopied backups in the "AI-Full" Pool to a longterm pool:
+
+\begin{bareosConfigResource}{bareos-dir}{job}{CopyLongtermFull}
+Job {
+  Name = "CopyLongtermFull"
+  Schedule = LongtermFull
+  Type = Copy
+  Level = Full
+  Pool = AI-Full
+  selection Type = PoolUncopiedJobs
+  Messages = Standard
+}
+\end{bareosConfigResource}
+
+As can be seen in the plot, the copy job creates a copy of the current full backup that is available and is already 7 days old.
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-copy-job-archiving}
+\end{center}
+
+
+\subsection{Virtual Full Jobs}
+
+The alternative to CopyJobs is creating a virtual Full Backup Job when the data should be stored in a long-term pool.
+
+\begin{bareosConfigResource}{bareos-dir}{job}{VirtualLongtermFull}
+Job {
+  Name = "VirtualLongtermFull"
+  Client = bareos-fd
+  FileSet = SelfTest
+  Schedule = LongtermFull
+  Type = Backup
+  #Level = Full
+  Level = VirtualFull
+  Pool = AI-Full
+  Messages = Standard
+
+  Priority = 13                 # run after  Consolidate
+  Run Script {
+        console = "update jobid=%i jobtype=A"
+        Runs When =  After
+   Runs On Client = No
+        Runs On Failure = No
+  }
+}
+\end{bareosConfigResource}
+
+
+To make sure the longterm virtualfull is not taken as base for the next incrementals, the jobtype of the copied job is set to Archive with the Runscript.
+
+As can be seen on the plot, the virtualfull archives the current data, i.e. it consolidates the full and all incrementals that are currently available.
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir always-incremental-virtualfull-job-archiving}
+\end{center}
+
+
+\chapter{How to manually transfer data/volumes}
+
+The always incremental backup scheme minimizes the amount of data that needs 
+to be transferred over the wire.
+
+This makes it possible to backup big filesystems over small bandwidths.
+
+The only challenge is to do the first full backup.
+
+
+The easiest way to transfer the data is to copy it to a portable 
+data medium (or even directly store it on there) and import the 
+data into the local bareos catalog as if it was backed up from the 
+original client.
+
+
+This can be done in two ways
+
+1. Install a storage daemon in the remote location that needs to be backed up and connect it to the main director.
+   This makes it easy to make a local backup in the remote location and then transfer the volumes to the local storage.
+   For this option the communication between the local director and the remote storage daemon needs to be possible.
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir ai-transfer-first-backup2}
+\end{center}
+
+2. Install a director and a storage daemon in the remote location.
+   This option means that the backup is done completely independent from the local director and only the volume is then transferred and needs to be imported afterwards. 
+
+\begin{center}
+\includegraphics[width=0.8\linewidth]{\idir ai-transfer-first-backup3}
+\end{center}
+
+
+\section{How to import the first full backup for always incremental with a remote storage daemon}
+
+
+First setup client, fileset, job and schedule as needed for a always incremental backup of the remote client.
+
+
+Run the first backup but make sure that you choose the remote storage to be used.
+
+
+\begin{bconsole}{run}
+*run job=BackupClient-remote level=Full storage=File-remote
+\end{bconsole}
+
+
+
+Transport the volumes that were used for that backup over to the local storage daemon and make them available to the local storage daemon. This can be either by putting the tapes into the local changer or by storing the file volmes into the local file volume directoy.
+
+If copying a volume to the local storage directory make sure that the file rights are correct.
+
+
+Now tell the director that the volume now belongs to the local storage daemon. 
+
+List volumes shows that the volumes used still belong to the remote storage:
+
+\begin{bconsole}{list volumes}
+*<input>list volumes</input>
+.....
+Pool: Full
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+-------------+
+| MediaId | VolumeName | VolStatus | Enabled | VolBytes | VolFiles | VolRetention | Recycle | Slot | InChanger | MediaType | LastWritten         | Storage     |
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+-------------+
+| 1       | Full-0001  | Append    | 1       | 38600329 | 0        | 31536000     | 1       | 0    | 0         | File      | 2016-07-28 14:00:47 | File-remote |
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+-------------+
+\end{bconsole}
+
+Use Update volume to set the right storage and check with list volumes that it worked:
+\begin{bconsole}{update volume}
+*<input>update volume=Full-0001 storage=File</input>
+*<input>list volumes</input>
+...
+Pool: Full
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+---------+
+| MediaId | VolumeName | VolStatus | Enabled | VolBytes | VolFiles | VolRetention | Recycle | Slot | InChanger | MediaType | LastWritten         | Storage |
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+---------+
+| 1       | Full-0001  | Append    | 1       | 38600329 | 0        | 31536000     | 1       | 0    | 0         | File      | 2016-07-28 14:00:47 | File    |
++---------+------------+-----------+---------+----------+----------+--------------+---------+------+-----------+-----------+---------------------+---------+
+\end{bconsole}
+
+Now the remote storage daemon can be disabled as it is not needed anymore.
+
+The next incremental run will take the previously taken full backup as reference and everything is OK.
+
+
+\section{How to import the first full backup for always incremental with a remote independent full installation}
+
+If a network connection between the local director and the remote storage daemon is not possible, it is also an option to setup a fully functional bareos installation remotely and then to import the created volumes.
+Of course the network connection between the director and the filedaemon is needed in any case to make the incremental backups possible.
+
+
+
+\begin{itemize}
+    \item Configure the Connection from local director to remote client, give the remote client the same name as it was when the data was backed up.
+  \bcommand{status}{client=win-remote-fd}
+    \item Add the Fileset created on remote machine to local machine.
+    \item Configure the Job that should backup the remote client with the fileset.
+    \item Run "estimate listing" on the remote backup job.
+    \item Run \bcommand{list}{filesets} to make sure the fileset was added to the catalog.
+\end{itemize}
+
+
+Then we need to create a backup on the remote machine onto a portable disk which we can then import into our local installation.
+
+
+
+On remote machine:
+
+\begin{itemize}
+    \item Install full bareos server on remote server (sd, fd, dir), e.g. with sqlite backend ''OK''
+    \item Add the client to the remote backup server.
+    \item Add fileset which the client will be backed up.
+    \item Add Pool with name "transfer" where the data will be written to.
+    \item create job that will backup the remote client with the remote fileset into the new pool
+    \item Do the local backup using the just created Pool and Filesets.
+\end{itemize}
+
+Transport the newly created volume over to the director machine (e.g. via external harddrive)
+and store the file where the device stores its files (e.g. /var/lib/bareos/storage)
+
+Shutdown Director on local director machine
+
+Import data form volume via bscan, you need to set which DB Backend is used:
+
+\command{bscan -B sqlite3 FileStorage -V Transfer-0001 -s -S}
+
+If the import was successfully completed, test if an incremental job really only backs up
+the minimum amount of data.
+
+
+%?
+%Update job jobid=<jobid_of_local_backup> client=remote-client filesetid=<filesetid>
