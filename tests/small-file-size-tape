@@ -9,8 +9,8 @@ JobName=smallfilesize
 
 require_tape_drive
 
-scripts/copy-tape-confs
 scripts/cleanup-tape
+scripts/copy-tape-confs
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 cp ${cwd}/bin/bareos-sd.conf ${cwd}/tmp/1

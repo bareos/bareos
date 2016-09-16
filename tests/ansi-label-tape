@@ -14,9 +14,9 @@ JobName=backuptape
 
 require_tape_drive
 
+scripts/cleanup-tape
 scripts/copy-tape-confs
 /bin/cp -f scripts/ansi-sd-tape.conf bin/bareos-sd.conf
-scripts/cleanup-tape
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 

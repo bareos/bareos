@@ -12,8 +12,8 @@ JobName=restorebyfile
 
 require_tape_drive
 
-scripts/copy-tape-confs
 scripts/cleanup-tape
+scripts/copy-tape-confs
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 sed s%\^%${cwd}% ${cwd}/scripts/flist | sort | uniq >${cwd}/tmp/restore2-list

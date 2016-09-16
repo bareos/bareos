@@ -8,8 +8,8 @@ JobName=truncatebug
 
 require_tape_drive
 
-scripts/copy-tape-confs
 scripts/cleanup-tape
+scripts/copy-tape-confs
 
 echo "${cwd}/build" >${cwd}/tmp/file-list
 

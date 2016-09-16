@@ -9,8 +9,8 @@ JobName=IncTape
 
 require_tape_drive
 
-scripts/copy-tape-confs
 scripts/cleanup-tape
+scripts/copy-tape-confs
 
 echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
 if test ! -d ${cwd}/tmp/build ; then
