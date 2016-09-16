@@ -139,8 +139,7 @@ Pool {
   Name = AI-Incremental
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
-  AutoPrune = yes                     # Prune expired volumes
-  Volume Retention = 180 days         # How long should jobs be kept? (#06)
+  Auto Prune = no                     # Don't prune jobs from the volume. Let this be done by Consolidate.
   Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
   Label Format = "AI-Incremental-"
   Volume Use Duration = 23h
@@ -154,8 +153,7 @@ Pool {
   Name = AI-Full
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
-  AutoPrune = yes                     # Prune expired volumes
-  Volume Retention = 180 days         # How long should jobs be kept? (#06)
+  Auto Prune = no                     # Don't prune jobs from the volume. Let this be done by Consolidate.
   Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
   Label Format = "AI-Full-"
   Volume Use Duration = 23h
@@ -169,8 +167,8 @@ Pool {
   Name = AI-Longterm
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
-  AutoPrune = yes                     # Prune expired volumes
-  Volume Retention = 180 days         # How long should jobs be kept? (#06)
+  Auto Prune = yes                    # Prune expired volumes
+  Volume Retention = 10 years         # How long should jobs be kept?
   Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
   Label Format = "AI-Longterm-"
   Volume Use Duration = 23h
