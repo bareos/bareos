@@ -8,8 +8,8 @@ See the \ilink{setdebug}{bcommandSetdebug} chapter about how to enable them.
 
 \section{Client Access Problems}
 \label{AccessProblems}
-\index[general]{Cannot Access a Client}
-   There are several reasons why Bareos could not contact a client  on a
+\index[general]{Problem!Cannot Access a Client}
+   There are several reasons why a \bareosDir could not contact a client  on a
    different machine. They are:
 
 \begin{itemize}
@@ -26,17 +26,48 @@ See the \ilink{setdebug}{bcommandSetdebug} chapter about how to enable them.
    Client machine. Try configuring everything identical to  how you run the
    client on the same machine as the Director, but  just change the address. If
    that works, make the other changes  one step at a time until it works.  
-\item You may also be having problems between your File daemon and your
-   Storage daemon. The name you use in the Storage resource of your
-   Director's conf file must be known (resolvable) by the File daemon, 
-   because it is passed symbolically to the File daemon, which then
-   resolves it to get an IP address used to contact the Storage daemon.
 \end{itemize}
 
-Some of the DNS and Firewall problems can be circumvented by configuring clients in network passive mode, see the section about \ilink{Passive Clients}{PassiveClient}.
+Some of the DNS and Firewall problems can be circumvented by configuring clients
+using \nameref {sec:ClientInitiatedConnection} or
+as \nameref{PassiveClient}.
+
+
+
+\subsection{Difficulties Connecting from the FD to the SD}
+\index[general]{Problem!Connecting from the FD to the SD}
+
+If you are having difficulties getting one or more of your File daemons to
+connect to the Storage daemon, it is most likely because you have not used a
+fully qualified domain name on the \linkResourceDirective{Dir}{Storage}{Address} directive.
+That is the resolver on the File daemon's machine
+(not on the Director's) must be able to resolve the name you supply into an IP
+address. An example of an address that is guaranteed not to work: \host{localhost}.
+An example that may work: \host{bareos-sd1}. An example that is more
+likely to work: \host{bareos-sd1.example.com}.
+
+You can verify how a \bareosFd resolves a DNS name by the following command:
+\begin{bconsole}{Test DNS resolution of the \bareosFd \name{bareos-fd}}
+*<input>resolve client=bareos-fd NONEXISTINGHOSTNAME</input>
+Connecting to Client bareos-fd at bareos:9102
+bareos-fd: Failed to resolve NONEXISTINGHOSTNAME
+*<input>resolve client=bareos-fd bareos-sd1.example.com</input>
+Connecting to Client bareos-fd at bareos:9102
+bareos-fd resolves bareos-sd1.example.com to host[ipv4;192.168.0.1]
+\end{bconsole}
+
+If your address is correct, then make sure that no other program is using the
+port 9103 on the Storage daemon's machine. The Bacula project has reserved 
+these port numbers by IANA, therefore they should only be used by Bacula and its replacements like Bareos.
+However, apparently
+some HP printers do use these port numbers. A \command{netstat -lntp}
+on the \bareosSd's machine can determine who is listening on the 9103 port (used for FD to SD
+communications in Bareos).
+
+
 
 \subsection{Authorization Errors}
-\index[general]{Authorization Errors}
+\index[general]{Problem!Authorization Errors}
 \index[general]{Concurrent Jobs}
 \label{AuthorizationErrors}
 

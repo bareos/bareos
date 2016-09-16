@@ -348,10 +348,9 @@ The following commands are currently implemented:
 add [pool=<pool-name>] [storage=<storage>] [jobid=<JobId>]
 \end{bconsole}
 
-
    Normally, the \bcommand{label}{} command is used rather than this command
-   because the \bcommand{label}{} command labels the physical media (tape, disk,
-   DVD, ...) and does the equivalent of the {\bf add} command.
+   because the \bcommand{label}{} command labels the physical media (tape, disk,, ...)
+   and does the equivalent of the \bcommand{add}{} command.
    The \bcommand{add}{} command affects only the Catalog and not the physical media (data
    on Volumes).  The physical media must exist and be labeled before use
    (usually with the \bcommand{label}{} command).  This command can, however, be
@@ -1344,7 +1343,7 @@ level=100 trace=1 hangup=0 timestamp=0 tracefilename=/var/lib/bareos/bareos-dir.
 \item [show]
    \index[general]{Console!Command!show}
    The show command will list the Director's resource records as defined in
-   the Director's configuration file (normally {\bf bareos-dir.conf}).
+   the Director's configuration.
    This command is used mainly for debugging purposes by developers.
    The following keywords are accepted on the
    show command line: catalogs, clients, counters, devices, directors,

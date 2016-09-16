@@ -62,12 +62,9 @@ service bareos-fd start
 \label{sec:TuturialBconsole}
 
 To communicate with the \bareosDir and to query the state of Bareos or run jobs,
-from the top level directory, simply enter:
-
-\command{bconsole}
-
-For simplicity, here we will describe only the \command{bconsole} program.
-For most purposes, also the \ilink{\bareosWebui}{sec:webui} can be used.
+the \command{bconsole} program can be used as a textual interface.
+Alternatively, for most purposes, also the \ilink{\bareosWebui}{sec:webui} can be used,
+but for simplicity, here we will describe only the \command{bconsole} program.
 
 The \command{bconsole} runs the Bareos Console program, which connects to the
 \bareosDir. Since Bareos is a network program, you can run the Console
@@ -82,7 +79,7 @@ Enter a period to cancel a command.
 *
 \end{commands}
 
-the asterisk is the console command prompt.
+The asterisk is the console command prompt.
 
 Type \bcommand{help}{} to see a list of available commands:
 
@@ -246,8 +243,8 @@ No Jobs running.
 \end{bconsole}
 
 In this case, the client is named \resourcename{Dir}{Client}{bareos-fd} your name might be different,
-but the line beginning with \path|bareos-fd Version ...| is printed by your File
-daemon, so we are now sure it is up and running.
+but the line beginning with \path|bareos-fd Version| is printed by your \bareosFd,
+so we are now sure it is up and running.
 
 Finally do the same for your \bareosSd with:
 
@@ -690,310 +687,302 @@ Simply enter the command \bcommand{quit}{}.
 \index[general]{Client!Adding a Second}
 \index[general]{Adding a Client}
 
-\subsection*{Changes on the Client}
-
 If you have gotten the example shown above to work on your system, you may be
-ready to add a second Client (File daemon). That is you have a second machine
-that you would like backed up. The only part you need installed on the other
-machine is the {\bf bareos-filedaemon}.
-
-This packages installs also its configuration file \path|/etc/bareos/bareos-fd.conf|
-and sets its hostname + \path|-fd| as FileDaemon name.
-However, the client does not known the Bareos Director, so this information must be given manually.
-
-Lets assume, your second client has the hostname {\bf client2}
-and this name is resolvable by DNS from the client and from the Bareos Director.
-
-Specify the Bareos Director in the File Daemon configuration file \path|/etc/bareos/bareos-fd.conf|:
-
-\footnotesize
-\begin{verbatim}
-...
-#
-# List Directors who are permitted to contact this File daemon
-#
-Director {
-  Name = bareos-dir
-  Password = "PASSWORD" # this is the passwort which you need to use within the client resource.
-}
-...
-\end{verbatim}
-\normalsize
-
-The password is also generated at installation time,
-but you are free to change it. Just keep in mind, it must be identical on the client and the Bareos Director.
-
-Restart the Bareos File Daemon by
-\footnotesize
-\begin{verbatim}
-root@client2:~ # service bareos-fd restart
-\end{verbatim}
-\normalsize
-
-
-
-\subsection*{Changes on the Server (Bareos Director)}
-
-Then you need to
-make some additions to your Director's configuration file to define the new
-File Daemon (Client).
-
-Starting from our original example which should be
-installed on your system, you should add the following lines (essentially
-copies of the existing data but with the names changed) to your Director's
-configuration file {\bf bareos-dir.conf}.
-
-Add following section makes the new client know to the Bareos Director. 
-Add this section to the existing Bareos Director configuration file \path|/etc/bareos/bareos-dir.conf|:
-
-\footnotesize
-\begin{verbatim}
-Client {
-  Name = client2-fd
-  Address = client2             # the name has to be resolvable through DNS. If this is not possible,
-                                # you can work with IP addresses
-  Password = "PASSWORD"         # password for FileDaemon which has to be the same like the password
-                                # in the director resource of the bareos-fd.conf on the backup client.
-                                # Copy it the the client to this line.
-}
-\end{verbatim}
-\normalsize
-
-Using this, the client is known to the Bareos Director. Additional you must specify, what to do with this client.
-Therefore we specify a Job, which mostly takes its settings from the existing DefaultJob:
-
-\footnotesize
-\begin{verbatim}
-Job {
-  JobDefs = "DefaultJob"
-  Name    = "client2"
-  Client  = "client2-fd"
-}
-\end{verbatim}
-\normalsize
-
-Check if the configuration file is correct by
-\footnotesize
-\begin{verbatim}
-root@bareos:~ # su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
-\end{verbatim}
-\normalsize
-
-If everything is okay, reload the Bareos Director:
-\footnotesize
-\begin{verbatim}
-root@bareos:~ # service bareos-dir reload
-\end{verbatim}
-\normalsize
-
-Now the setup for the second client should be ready.
-
-To test the functionality, you can run a backup and restore job like in the example with the first attached FileDaemon.
-However, there is an even earier way to check if a connection to a File Daemon is working. This is the \command{estimate listing} command in bconsole. Using this, the Bareos Director immediately connects to a client and returns all files that will be included in the next backup.
-
-Start \command{bconsole} and follow the instructions:
-\footnotesize
-\begin{verbatim}
-* estimate listing
-\end{verbatim}
-\normalsize
-
-The result should appear immediately.
-
-To make this a real production installation, you will possibly want to use
-different Pool, or a different schedule. It is up to you to customize.
-
-% For some important tips on changing names and passwords, and a diagram of what
-% names and passwords must match, please see
-% \ilink{Authorization Errors}{AuthorizationErrors} in the FAQ chapter
-% of this manual.
-
-\section{When The Tape Fills}
-\label{FullTape}
-\index[general]{Tape!Full}
-\index[general]{When The Tape Fills}
-\index[general]{Problem!Tape Full}
-
-If you have scheduled your job, typically nightly, there will come a time when
-the tape fills up and {\bf Bareos} cannot continue. In this case, Bareos will
-send you a message similar to the following:
-
-\footnotesize
-\begin{verbatim}
-bareos-sd: block.c:337 === Write error errno=28: ERR=No space left on device
-\end{verbatim}
-\normalsize
-
-This indicates that Bareos got a write error because the tape is full. Bareos
-will then search the Pool specified for your Job looking for an appendable
-volume. In the best of all cases, you will have properly set your Retention
-Periods and you will have all your tapes marked to be Recycled, and {\bf
-Bareos} will automatically recycle the tapes in your pool requesting and
-overwriting old Volumes. For more information on recycling, please see the
-\ilink{Recycling chapter}{RecyclingChapter} of this manual. If you
-find that your Volumes were not properly recycled (usually because of a
-configuration error), please see the
-\ilink{Manually Recycling Volumes}{manualrecycling} section of
-the Recycling chapter.
-
-If like me, you have a very large set of Volumes and you label them with the
-date the Volume was first writing, or you have not set up your Retention
-periods, Bareos will not find a tape in the pool, and it will send you a
-message similar to the following:
-
-\footnotesize
-\begin{verbatim}
-bareos-sd: Job usersave.2002-09-19.10:50:48 waiting. Cannot find any
-          appendable volumes.
-Please use the "label"  command to create a new Volume for:
-    Storage:      SDT-10000
-    Media type:   DDS-4
-    Pool:         Default
-\end{verbatim}
-\normalsize
-
-Until you create a new Volume, this message will be repeated an hour later,
-then two hours later, and so on doubling the interval each time up to a
-maximum interval of one day.
-
-The obvious question at this point is: What do I do now?
-
-The answer is simple: first, using the Console program, close the tape drive
-using the {\bf unmount} command. If you only have a single drive, it will be
-automatically selected, otherwise, make sure you release the one specified on
-the message (in this case {\bf STD-10000}).
-
-Next, you remove the tape from the drive and insert a new blank tape. Note, on
-some older tape drives, you may need to write an end of file mark ({\bf mt \
--f \ /dev/nst0 \ weof}) to prevent the drive from running away when Bareos
-attempts to read the label.
-
-Finally, you use the {\bf label} command in the Console to write a label to
-the new Volume. The {\bf label} command will contact the Storage daemon to
-write the software label, if it is successful, it will add the new Volume to
-the Pool, then issue a {\bf mount} command to the Storage daemon. See the
-previous sections of this chapter for more details on labeling tapes.
-
-The result is that Bareos will continue the previous Job writing the backup to
-the new Volume.
-
-If you have a Pool of volumes and Bareos is cycling through them, instead of
-the above message "Cannot find any appendable volumes.", Bareos may ask you
-to mount a specific volume. In that case, you should attempt to do just that.
-If you do not have the volume any more (for any of a number of reasons), you
-can simply mount another volume from the same Pool, providing it is
-appendable, and Bareos will use it. You can use the {\bf list volumes} command
-in the console program to determine which volumes are appendable and which are
-not.
-
-If like me, you have your Volume retention periods set correctly, but you have
-no more free Volumes, you can relabel and reuse a Volume as follows:
-
-\begin{itemize}
-\item Do a {\bf list volumes} in the Console and select the oldest  Volume for
-   relabeling.
-\item If you have setup your Retention periods correctly, the  Volume should
-   have VolStatus {\bf Purged}.
-\item If the VolStatus is not set to Purged, you will need to purge  the
-   database of Jobs that are written on that Volume. Do so  by using the command
-   {\bf purge jobs volume} in the Console.  If you have multiple Pools, you will
-be prompted for the  Pool then enter the VolumeName (or MediaId) when
-requested.
-\item Then simply use the {\bf relabel} command to relabel the  Volume.
-   \end{itemize}
-
-To manually relabel the Volume use the following additional steps:
-
-\begin{itemize}
-\item To delete the Volume from the catalog use the {\bf delete volume}
-   command in the Console and select the VolumeName (or MediaId) to be  deleted.
-
-\item Use the {\bf unmount} command in the Console to unmount the  old tape.
-\item Physically relabel the old Volume that you deleted so that it  can be
-   reused.
-\item Insert the old Volume in the tape drive.
-\item From a command line do: {\bf mt \ -f \ /dev/st0 \ rewind} and  {\bf mt \
-   -f \ /dev/st0 \ weof}, where you need to use the proper  tape drive name for
-   your system in place of {\bf /dev/st0}.
-\item Use the {\bf label} command in the Console to write a new  Bareos label
-   on your tape.
-\item Use the {\bf mount} command in the Console if it is not automatically
-   done, so that Bareos starts using your newly labeled tape.
-   \end{itemize}
-
-\section{Other Useful Console Commands}
-\index[general]{Console!Commands!Useful}
+ready to add a second Client (\bareosFd). That is you have a second machine
+that you would like backed up.
+Lets assume, following settings about the machine you want to add to your backup environment:
 
 \begin{description}
-
-\item [status dir]
-   \index[general]{Console!Command!status dir}
-   Print a status of all running jobs and jobs  scheduled in the next 24 hours.
-
-\item [status]
-   \index[general]{Console!Command!status}
-   The console program will prompt you to select  a daemon type, then will
-request the daemon's status.
-
-\item [status jobid=nn]
-   \index[general]{Console!Command!status jobid}
-   Print a status of JobId nn if it is running.  The Storage daemon is contacted
-and requested to print a current  status of the job as well.
-
-\item [list pools]
-   \index[general]{Console!Command!list pools}
-   List the pools defined in the Catalog (normally  only Default is used).
-
-\item [list media]
-   \index[general]{Console!Command!list media}
-   Lists all the media defined in the Catalog.
-
-\item [list jobs]
-   \index[general]{Console!Command!list jobs}
-   Lists all jobs in the Catalog that have run.
-
-\item [list jobid=nn]
-   \index[general]{Console!Command!list jobid}
-   Lists JobId nn from the Catalog.
-
-\item [list jobtotals]
-   \index[general]{Console!Command!list jobtotals}
-   Lists totals for all jobs in the Catalog.
-
-\item [list files jobid=nn]
-   \index[general]{Console!Command!list files jobid}
-   List the files that were saved for JobId nn.
-
-\item [list jobmedia]
-   \index[general]{Console!Command!list jobmedia}
-   List the media information for each Job run.
-
-\item [messages]
-   \index[general]{Console!Command!messages}
-   Prints any messages that have been directed to the console.
-
-\item [unmount storage=storage-name]
-   \index[general]{Console!Command!unmount storage}
-   Unmounts the drive associated with the storage  device with the name {\bf
-storage-name} if the drive is not currently being  used. This command is used
-if you wish Bareos to free the drive so  that you can use it to label a tape.
-
-
-\item [mount storage=storage-name]
-   \index[general]{Console!Command!mount storage}
-   Causes the drive associated with the  storage device to be mounted again. When
-Bareos reaches the end of a volume and requests you to mount a  new volume,
-you must issue this command after you have placed the  new volume in the
-drive. In effect, it is the signal needed by  Bareos to know to start reading
-or writing the new volume.
-
-\item [quit]
-   \index[general]{Console!Command!quit}
-   Exit or quit the console program.
+  \item[Hostname (FQDN)] \host{client2.example.com}
+  \item[IP Address] 192.168.0.2
+  \item[OS] Linux (otherwise the paths may differ)
 \end{description}
 
-Most of the commands given above, with the exception of {\bf list}, will
-prompt you for the necessary arguments if you simply enter the command name.
+For this you have to make changes on the server side (\bareosDir) and the client side.
+
+\subsection*{Client: install package}
+
+See \nameref{InstallChapter} about how to add the Bareos repository.
+The only part you need installed on the other
+machine is the \package{bareos-filedaemon}.
+
+\subsection*{Director: configure client}
+
+Bareos \sinceVersion{Dir}{configure}{16.2.4} offers the \ilink{configure add command}{sec:bcommandConfigure} to add resources to the \bareosDir.
+
+Start the \command{bconsole} and use the \bcommand{configure}{add client} command.
+Address must be a DNS resolvable name or an IP address.
+
+\begin{bconsole}{add a client}
+*<input>configure add client name=client2-fd address=192.168.0.2 password=secret</input>
+Created resource config file "/etc/bareos/bareos-dir.d/client/client2-fd.conf":
+Client {
+  Name = client2-fd
+  Address = 192.168.0.2
+  Password = secret
+}
+\end{bconsole}
+
+This creates two resource configuration files:
+\begin{itemize}
+  \item \file{/etc/bareos/bareos-dir.d/client/client2-fd.conf}
+  \item \file{/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf} (assuming your director resource is named \name{bareos-dir})
+\end{itemize}
+
+The \file{/etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf} is the required resource needed on the \bareosFd. You can copy it to the destination:
+
+\begin{commands}{Copy the bareos-fd director resource to the new client}
+scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/etc/bareos/bareos-fd.d/director/
+\end{commands}
+
+\subsubsection*{Manual configuration}
+
+Alternatively you can configure your resources manually.
+On the \bareosDir create the file
+\begin{bareosConfigResource}{bareos-dir}{client}{client2-fd}
+Client {
+  Name = client2-fd
+  Address = 192.168.0.2
+  Password = secret
+}
+\end{bareosConfigResource}
+
+Reload or restart your \bareosDir:
+\begin{bconsole}{reload the Director configuration}
+*<input>reload</input>
+reloaded
+\end{bconsole}
+
+The corresponding \bareosFd director resource can be created directly on the client, see below.
+
+
+\subsection*{Client: configure}
+
+The package \package{bareos-filedaemon} \sinceVersion{Fd}{Client resource files}{16.2.4} brings several configuration files:
+\begin{itemize}
+    \item \file{/etc/bareos/bareos-fd.d/client/myself.conf}
+    \item \file{/etc/bareos/bareos-fd.d/director/bareos-dir.conf}
+    \item \file{/etc/bareos/bareos-fd.d/director/bareos-mon.conf}
+    \item \file{/etc/bareos/bareos-fd.d/messages/Standard.conf}
+\end{itemize}
+
+In detail:
+\begin{description}
+    \item[\file{client/myself.conf}] defines the name of the client. The default is \path|<hostname>-fd|.
+        Changes are only required, if you want to use another name or en- or disable special \bareosFd features. See \nameref{ClientResourceClient}.
+
+    \item[\file{director/bareos-dir.conf}] gives the \bareosDir \name{bareos-dir} full access to this \bareosFd. During installation, the \linkResourceDirective{Fd}{Director}{Password} is set to a random default. Adapt the name and/or the password to your \bareosDir. (The name \name{bareos-dir} is the default \bareosDir name since Bareos \sinceVersion{Dir}{bareos-dir is the default \bareosDir name}{16.2.4}.)
+
+    \item[\file{director/bareos-mon.conf}] gives the \bareosDir \name{bareos-mon} restricted access to this \bareosFd. During installation, the \linkResourceDirective{Fd}{Director}{Password} is set to a random value. This resource is intended to be used by the local \package{bareos-tray-monitor}.
+
+    \item[\file{messages/Standard.conf}] defines, how messages should be handled. The default sends all relevant messages to the \bareosDir.
+\end{description}
+
+If your \bareosDir is named \name{bareos-dir},
+the \file{/etc/bareos/bareos-fd.d/director/bareos-dir.conf} may already be overwritten
+by the file you copied from the \bareosDir.
+If your Director has another name, an addition resource file will exists.
+You can define an arbitrary number of \bareosDir's in your \bareosFd configuration.
+However, normally you will only have one \resourcetype{Fd}{Director} with full control of your \bareosFd
+and optional one \resourcetype{Fd}{Director} for monitoring (used by the \bareosTrayMonitor).
+
+Anyhow, the resource will look similar to this:
+\begin{bareosConfigResource}{bareos-fd}{director}{bareos-dir}
+Director {
+  Name = bareos-dir
+  Password = "[md5]5ebe2294ecd0e0f08eab7690d2a6ee69"
+}
+\end{bareosConfigResource}
+
+After a restart of the \bareosFd to reload the configuration
+this resource allows the access for a \bareosDir with name \name{bareos-dir} and password \name{secret} (stored in MD5 format).
+
+% \begin{commands}{restart bareos-fd}
+% root@client2:~ # service bareos-fd restart
+% \end{commands}
+\begin{commands}{restart bareos-fd}
+service bareos-fd restart
+\end{commands}
+
+\subsubsection*{Manual configuration}
+
+If you have not created the \resourcetype{Fd}{Director} by \bcommand{configure}{}, you can create it also manually.
+If your \bareosDir is also named \name{bareos-dir}, modify or create the file \file{/etc/bareos/bareos-fd.d/director/bareos-dir.conf}:
+
+\begin{bareosConfigResource}{bareos-fd}{director}{bareos-dir}
+Director {
+  Name = "bareos-dir"   # Name of your Bareos Director
+  Password = "secret"   # Password (cleartext or MD5) must be identical
+                        # to the password of your client reosurce in the Direcotr
+                        # (bareos-dir.d/client/client2-fd.conf)
+}
+\end{bareosConfigResource}
+
+The diagram \nameref{fig:password} illustrates the relation between resource names and password of the different Bareos components.
+
+If your are not using the \nameref{sec:SubdirectoryConfigurationScheme},
+make sure that this resource file gets included in your \bareosFd configuration.
+You can verify this by
+\begin{commands}{show how bareos-fd would read the current configuration files}
+bareos-fd -xc
+\end{commands}
+
+After modifying the file, you have to restart the \bareosFd:
+\begin{commands}{restart bareos-fd}
+service bareos-fd restart
+\end{commands}
+
+
+
+\subsection*{Director: test client, add a job}
+
+The following example show how to
+\begin{itemize}
+    \item Verify the network connection from \bareosDir to the \bareosFd.
+    \item Add a job resource.
+    \item Dry-run the job (\bcommand{estimate}{listing}).
+    \item Run the job.
+    \item Wait for the job to finish.
+    \item Verify the job.
+\end{itemize}
+
+\begin{bconsole}{test the client and add a job resource}
+*<input>status client=client2-fd</input>
+...
+*<input>configure add job name=client2-job client=client2-fd jobdefs=DefaultJob</input>
+Created resource config file "/etc/bareos/bareos-dir.d/job/client2-job.conf":
+Job {
+  Name = client2-job
+  Client = client2-fd
+  JobDefs = DefaultJob
+}
+*<input>estimate listing job=client2-job</input>
+...
+*<input>run job=client2-job</input>
+...
+*<input>wait jobid=...</input>
+...
+*<input>list joblog jobid=...</input>
+...
+*<input>list files jobid=...</input>
+...
+*<input>list volumes</input>
+...
+\end{bconsole}
+
+
+
+% \section{When The Volumes Fills}
+% \index[general]{Tape!Full}
+% \index[general]{When The Tape Fills}
+% \index[general]{Problem!Tape Full}
+% 
+% If you have scheduled your job, typically nightly, there will come a time when
+% the tape fills up and {\bf Bareos} cannot continue. In this case, Bareos will
+% send you a message similar to the following:
+% 
+% \footnotesize
+% \begin{verbatim}
+% bareos-sd: block.c:337 === Write error errno=28: ERR=No space left on device
+% \end{verbatim}
+% \normalsize
+% 
+% This indicates that Bareos got a write error because the tape is full. Bareos
+% will then search the Pool specified for your Job looking for an appendable
+% volume. In the best of all cases, you will have properly set your Retention
+% Periods and you will have all your tapes marked to be Recycled, and {\bf
+% Bareos} will automatically recycle the tapes in your pool requesting and
+% overwriting old Volumes. For more information on recycling,
+% see \nameref{RecyclingChapter}.
+% If you
+% find that your Volumes were not properly recycled (usually because of a
+% configuration error), please see the
+% \nameref{manualrecycling} chapter.
+% 
+% If like me, you have a very large set of Volumes and you label them with the
+% date the Volume was first writing, or you have not set up your Retention
+% periods, Bareos will not find a tape in the pool, and it will send you a
+% message similar to the following:
+% 
+% \footnotesize
+% \begin{verbatim}
+% bareos-sd: Job usersave.2002-09-19.10:50:48 waiting. Cannot find any
+%           appendable volumes.
+% Please use the "label"  command to create a new Volume for:
+%     Storage:      SDT-10000
+%     Media type:   DDS-4
+%     Pool:         Default
+% \end{verbatim}
+% \normalsize
+% 
+% Until you create a new Volume, this message will be repeated an hour later,
+% then two hours later, and so on doubling the interval each time up to a
+% maximum interval of one day.
+% 
+% The obvious question at this point is: What do I do now?
+% 
+% The answer is simple: first, using the Console program, close the tape drive
+% using the {\bf unmount} command. If you only have a single drive, it will be
+% automatically selected, otherwise, make sure you release the one specified on
+% the message (in this case {\bf STD-10000}).
+% 
+% Next, you remove the tape from the drive and insert a new blank tape.
+% % Note, on some older tape drives, you may need to write an end of file mark
+% % (\command{mt -f /dev/nst0 weof}) to prevent the drive
+% % from running away when Bareos attempts to read the label.
+% 
+% Finally, you use the {\bf label} command in the Console to write a label to
+% the new Volume. The {\bf label} command will contact the Storage daemon to
+% write the software label, if it is successful, it will add the new Volume to
+% the Pool, then issue a {\bf mount} command to the Storage daemon. See the
+% previous sections of this chapter for more details on labeling tapes.
+% 
+% The result is that Bareos will continue the previous Job writing the backup to
+% the new Volume.
+% 
+% If you have a Pool of volumes and Bareos is cycling through them, instead of
+% the above message "Cannot find any appendable volumes.", Bareos may ask you
+% to mount a specific volume. In that case, you should attempt to do just that.
+% If you do not have the volume any more (for any of a number of reasons), you
+% can simply mount another volume from the same Pool, providing it is
+% appendable, and Bareos will use it. You can use the {\bf list volumes} command
+% in the console program to determine which volumes are appendable and which are
+% not.
+% 
+% If like me, you have your Volume retention periods set correctly, but you have
+% no more free Volumes, you can relabel and reuse a Volume as follows:
+% 
+% \begin{itemize}
+% \item Do a {\bf list volumes} in the Console and select the oldest  Volume for
+%    relabeling.
+% \item If you have setup your Retention periods correctly, the  Volume should
+%    have VolStatus {\bf Purged}.
+% \item If the VolStatus is not set to Purged, you will need to purge  the
+%    database of Jobs that are written on that Volume. Do so  by using the command
+%    {\bf purge jobs volume} in the Console.  If you have multiple Pools, you will
+% be prompted for the  Pool then enter the VolumeName (or MediaId) when
+% requested.
+% \item Then simply use the {\bf relabel} command to relabel the  Volume.
+%    \end{itemize}
+% 
+% To manually relabel the Volume use the following additional steps:
+% 
+% \begin{itemize}
+% \item To delete the Volume from the catalog use the {\bf delete volume}
+%    command in the Console and select the VolumeName (or MediaId) to be  deleted.
+% 
+% \item Use the {\bf unmount} command in the Console to unmount the  old tape.
+% \item Physically relabel the old Volume that you deleted so that it  can be
+%    reused.
+% \item Insert the old Volume in the tape drive.
+% \item From a command line do: {\bf mt \ -f \ /dev/st0 \ rewind} and  {\bf mt \
+%    -f \ /dev/st0 \ weof}, where you need to use the proper  tape drive name for
+%    your system in place of {\bf /dev/st0}.
+% \item Use the {\bf label} command in the Console to write a new  Bareos label
+%    on your tape.
+% \item Use the {\bf mount} command in the Console if it is not automatically
+%    done, so that Bareos starts using your newly labeled tape.
+%    \end{itemize}
 
 
 % \section{Debug Daemon Output}
@@ -1046,219 +1035,258 @@ As a consequence, you may need to have a bit of patience when first contacting
 the Storage daemon after starting the daemons. If you can see your tape drive,
 once the lights stop flashing, the drive will be ready to be used.
 
-The same considerations apply if you have just mounted a blank tape in a drive
-such as an HP DLT. It can take a minute or two before the drive properly
-recognizes that the tape is blank. If you attempt to {\bf mount} the tape with
+The same considerations apply if you have just mounted a blank tape in a drive.
+It can take a minute or two before the drive properly
+recognizes that the tape is blank.
+If you attempt to \bcommand{mount}{} the tape with
 the Console program during this recognition period, it is quite possible that
-you will hang your SCSI driver (at least on my Red Hat Linux system). As a
+you will hang your SCSI driver.
+As a
 consequence, you are again urged to have patience when inserting blank tapes.
 Let the device settle down before attempting to access it.
 
-\section{Difficulties Connecting from the FD to the SD}
-\index[general]{Problem!Connecting from the FD to the SD}
-
-If you are having difficulties getting one or more of your File daemons to
-connect to the Storage daemon, it is most likely because you have not used a
-fully qualified domain name on the {\bf Address} directive in the
-Director's Storage resource. That is the resolver on the File daemon's machine
-(not on the Director's) must be able to resolve the name you supply into an IP
-address. An example of an address that is guaranteed not to work: {\bf
-localhost}. An example that may work: {\bf megalon}. An example that is more
-likely to work: {\bf magalon.mydomain.com}. On Win32 if you don't have a good
-resolver (often true on older Windows systems), you might try using an IP
-address in place of a name.
-
-If your address is correct, then make sure that no other program is using the
-port 9103 on the Storage daemon's machine. The Bacula project has reserved 
-these port numbers by IANA, therefore they should only be used by Bacula and its replacements like Bareos.
-However, apparently
-some HP printers do use these port numbers. A {\bf netstat -a} on the Storage
-daemon's machine can determine who is using the 9103 port (used for FD to SD
-communications in Bareos).
 
 
-
-\section{Creating a Pool}
+\section{Pools}
 \label{Pool}
-\index[general]{Pool!Creating a}
-\index[general]{Creating a Pool}
+\index[general]{Pool!Overview}
 
-Creating the Pool is automatically done when {\bf Bareos} starts, so if you
+Creating the Pool is automatically done when the \bareosDir starts, so if you
 understand Pools, you can skip to the next section.
 
-When you run a job, one of the things that Bareos must know is what Volumes to
-use to backup the FileSet. Instead of specifying a Volume (tape) directly, you
-specify which Pool of Volumes you want Bareos to consult when it wants a tape
+When you run a backup job, one of the things that Bareos must know is what Volumes to
+use. Instead of specifying a Volume (tape) directly, you
+specify which Pool of Volumes you want Bareos to consult when it wants a Volume
 for writing backups. Bareos will select the first available Volume from the
-Pool that is appropriate for the Storage device you have specified for the Job
-being run. When a volume has filled up with data, {\bf Bareos} will change its
-VolStatus from {\bf Append} to {\bf Full}, and then {\bf Bareos} will use the
+Pool that is appropriate for the \linkResourceDirective{Dir}{Job}{Storage} you have specified for the Job
+being run. When a volume has filled up with data, Bareos will change its
+\name{VolStatus} from \name{Append} to \name{Full}, and then Bareos will use the
 next volume and so on. If no appendable Volume exists in the Pool, the
-Director will attempt to recycle an old Volume, if there are still no
-appendable Volumes available, {\bf Bareos} will send a message requesting the
+Director will attempt to recycle an old Volume.
+For details, please read the \nameref{RecyclingChapter} chapter.
+
+If there are still no
+appendable Volumes available, Bareos will send a message requesting the
 operator to create an appropriate Volume.
 
-{\bf Bareos} keeps track of the Pool name, the volumes contained in the Pool,
+Bareos keeps track of the Pool name, the volumes contained in the Pool,
 and a number of attributes of each of those Volumes.
 
 When Bareos starts, it ensures that all Pool resource definitions have been
 recorded in the catalog. You can verify this by entering:
-
-\footnotesize
-\begin{verbatim}
-list pools
-\end{verbatim}
-\normalsize
-
-to the console program, which should print something like the following:
-
-\footnotesize
-\begin{verbatim}
-*list pools
-Using default Catalog name=MySQL DB=bareos
-+--------+---------+---------+---------+----------+-------------+
-| PoolId | Name    | NumVols | MaxVols | PoolType | LabelFormat |
-+--------+---------+---------+---------+----------+-------------+
-| 1      | Default | 3       | 0       | Backup   | *           |
-| 2      | File    | 12      | 12      | Backup   | File        |
-+--------+---------+---------+---------+----------+-------------+
-*
-\end{verbatim}
-\normalsize
-
-If you attempt to create the same Pool name a second time, {\bf Bareos} will
-print:
-
-\footnotesize
-\begin{verbatim}
-Error: Pool Default already exists.
-Once created, you may use the update command to
-modify many of the values in the Pool record.
-\end{verbatim}
-\normalsize
+\begin{bconsole}{list pools}
+*<input>list pools</input>
++--------+--------------+---------+---------+----------+---------------+
+| PoolId | Name         | NumVols | MaxVols | PoolType | LabelFormat   |
++--------+--------------+---------+---------+----------+---------------+
+| 1      | Full         | 1       | 100     | Backup   | Full-         |
+| 2      | Differential | 0       | 100     | Backup   | Differential- |
+| 3      | Incremental  | 1       | 100     | Backup   | Incremental-  |
+| 4      | Scratch      | 0       | 0       | Backup   | *             |
++--------+--------------+---------+---------+----------+---------------+
+\end{bconsole}
 
 
-\section{Labeling Your Volumes}
-\index[general]{Volume!Label}
-\index[general]{Label!Labeling Volumes}
-\label{Labeling}
+% \section{Labeling Your Volumes}
+% \index[general]{Volume!Label}
+% \index[general]{Label!Labeling Volumes}
+% 
+% Bareos requires that each Volume contains a software label. There are several
+% strategies for labeling volumes. The one I use is to label them as they are
+% needed by {\bf Bareos} using the console program. That is when Bareos needs a
+% new Volume, and it does not find one in the catalog, it will send me an email
+% message requesting that I add Volumes to the Pool. I then use the {\bf label}
+% command in the Console program to label a new Volume and to define it in the
+% Pool database, after which Bareos will begin writing on the new Volume.
+% Alternatively, I can use the Console {\bf relabel} command to relabel a Volume
+% that is no longer used providing it has VolStatus {\bf Purged}.
+% 
+% Another strategy is to label a set of volumes at the start, then use them as
+% {\bf Bareos} requests them. This is most often done if you are cycling through
+% a set of tapes, for example using an autochanger. For more details on
+% recycling, please see the
+% \ilink{Automatic Volume Recycling}{RecyclingChapter} chapter of
+% this manual.
+% 
+% If you run a Bareos job, and you have no labeled tapes in the Pool, Bareos
+% will inform you, and you can create them "on-the-fly" so to speak. In my
+% case, I label my tapes with the date, for example: {\bf DLT-18April02}. See
+% below for the details of using the {\bf label} command.
+% 
+% \subsection*{Labeling Volumes with the Console Program}
+% \index[general]{Label!Labeling Volumes with the Console Program}
+% \index[general]{Console!Command!label}
+% 
+% Labeling volumes is normally done by using the console program.
+% 
+% \begin{enumerate}
+% \item bconsole
+% \item label
+% \end{enumerate}
+% 
+% If Bareos complains that you cannot label the tape because it is already
+% labeled, simply {\bf unmount} the tape using the {\bf unmount} command in the
+% console, then physically mount a blank tape and re-issue the {\bf label}
+% command.
+% 
+% Since the physical storage media is different for each device, the {\bf label}
+% command will provide you with a list of the defined Storage resources such as
+% the following:
+% 
+% \footnotesize
+% \begin{verbatim}
+% The defined Storage resources are:
+%      1: File
+%      2: 8mmDrive
+%      3: DLTDrive
+%      4: SDT-10000
+% Select Storage resource (1-4):
+% \end{verbatim}
+% \normalsize
+% 
+% At this point, you should have a blank tape in the drive corresponding to the
+% Storage resource that you select.
+% 
+% It will then ask you for the Volume name.
+% 
+% \footnotesize
+% \begin{verbatim}
+% Enter new Volume name:
+% \end{verbatim}
+% \normalsize
+% 
+% If Bareos complains:
+% 
+% \footnotesize
+% \begin{verbatim}
+% Media record for Volume xxxx already exists.
+% \end{verbatim}
+% \normalsize
+% 
+% It means that the volume name {\bf xxxx} that you entered already exists in
+% the Media database. You can list all the defined Media (Volumes) with the {\bf
+% list media} command. Note, the LastWritten column has been truncated for
+% proper printing.
+% 
+% \footnotesize
+% \begin{verbatim}
+% +---------------+---------+--------+----------------+-----/~/-+------------+-----+
+% | VolumeName    | MediaTyp| VolStat| VolBytes       | LastWri | VolReten   | Recy|
+% +---------------+---------+--------+----------------+---------+------------+-----+
+% | DLTVol0002    | DLT8000 | Purged | 56,128,042,217 | 2001-10 | 31,536,000 |   0 |
+% | DLT-07Oct2001 | DLT8000 | Full   | 56,172,030,586 | 2001-11 | 31,536,000 |   0 |
+% | DLT-08Nov2001 | DLT8000 | Full   | 55,691,684,216 | 2001-12 | 31,536,000 |   0 |
+% | DLT-01Dec2001 | DLT8000 | Full   | 55,162,215,866 | 2001-12 | 31,536,000 |   0 |
+% | DLT-28Dec2001 | DLT8000 | Full   | 57,888,007,042 | 2002-01 | 31,536,000 |   0 |
+% | DLT-20Jan2002 | DLT8000 | Full   | 57,003,507,308 | 2002-02 | 31,536,000 |   0 |
+% | DLT-16Feb2002 | DLT8000 | Full   | 55,772,630,824 | 2002-03 | 31,536,000 |   0 |
+% | DLT-12Mar2002 | DLT8000 | Full   | 50,666,320,453 | 1970-01 | 31,536,000 |   0 |
+% | DLT-27Mar2002 | DLT8000 | Full   | 57,592,952,309 | 2002-04 | 31,536,000 |   0 |
+% | DLT-15Apr2002 | DLT8000 | Full   | 57,190,864,185 | 2002-05 | 31,536,000 |   0 |
+% | DLT-04May2002 | DLT8000 | Full   | 60,486,677,724 | 2002-05 | 31,536,000 |   0 |
+% | DLT-26May02   | DLT8000 | Append |  1,336,699,620 | 2002-05 | 31,536,000 |   1 |
+% +---------------+---------+--------+----------------+-----/~/-+------------+-----+
+% \end{verbatim}
+% \normalsize
+% 
+% Once Bareos has verified that the volume does not already exist, it will
+% prompt you for the name of the Pool in which the Volume (tape) is to be
+% created.  If there is only one Pool (Default), it will be automatically
+% selected.
+% 
+% If the tape is successfully labeled, a Volume record will also be created in
+% the Pool. That is the Volume name and all its other attributes will appear
+% when you list the Pool. In addition, that Volume will be available for backup
+% if the MediaType matches what is requested by the Storage daemon.
+% 
+% When you labeled the tape, you answered very few questions about it --
+% principally the Volume name, and perhaps the Slot. However, a Volume record in
+% the catalog database (internally known as a Media record) contains quite a few
+% attributes. Most of these attributes will be filled in from the default values
+% that were defined in the Pool (i.e. the Pool holds most of the default
+% attributes used when creating a Volume).
+% 
+% It is also possible to add media to the pool without physically labeling the
+% Volumes. This can be done with the \bcommand{add}{} command. For more information,
+% please see the
+% \nameref{sec:bconsole} chapter.
 
-Bareos requires that each Volume contains a software label. There are several
-strategies for labeling volumes. The one I use is to label them as they are
-needed by {\bf Bareos} using the console program. That is when Bareos needs a
-new Volume, and it does not find one in the catalog, it will send me an email
-message requesting that I add Volumes to the Pool. I then use the {\bf label}
-command in the Console program to label a new Volume and to define it in the
-Pool database, after which Bareos will begin writing on the new Volume.
-Alternatively, I can use the Console {\bf relabel} command to relabel a Volume
-that is no longer used providing it has VolStatus {\bf Purged}.
+\section{Other Useful Console Commands}
+\index[general]{Console!Commands!Useful}
 
-Another strategy is to label a set of volumes at the start, then use them as
-{\bf Bareos} requests them. This is most often done if you are cycling through
-a set of tapes, for example using an autochanger. For more details on
-recycling, please see the
-\ilink{Automatic Volume Recycling}{RecyclingChapter} chapter of
-this manual.
+\begin{description}
+\item [help]
+    Show the list all all available commands.
 
-If you run a Bareos job, and you have no labeled tapes in the Pool, Bareos
-will inform you, and you can create them "on-the-fly" so to speak. In my
-case, I label my tapes with the date, for example: {\bf DLT-18April02}. See
-below for the details of using the {\bf label} command.
+\item [help list]
+    Show detail information about a specific command, in this case the command \bcommand{list}{}.
 
-\subsection*{Labeling Volumes with the Console Program}
-\index[general]{Label!Labeling Volumes with the Console Program}
-\index[general]{Console!Command!label}
+\item [status dir]
+   \index[general]{Console!Command!status dir}
+   Print a status of all running jobs and jobs  scheduled in the next 24 hours.
 
-Labeling volumes is normally done by using the console program.
+\item [status]
+   \index[general]{Console!Command!status}
+   The console program will prompt you to select  a daemon type, then will
+request the daemon's status.
 
-\begin{enumerate}
-\item bconsole
-\item label
-\end{enumerate}
+\item [status jobid=nn]
+   \index[general]{Console!Command!status jobid}
+   Print a status of JobId nn if it is running.  The Storage daemon is contacted
+and requested to print a current  status of the job as well.
 
-If Bareos complains that you cannot label the tape because it is already
-labeled, simply {\bf unmount} the tape using the {\bf unmount} command in the
-console, then physically mount a blank tape and re-issue the {\bf label}
-command.
+\item [list pools]
+   \index[general]{Console!Command!list pools}
+   List the pools defined in the Catalog (normally  only Default is used).
 
-Since the physical storage media is different for each device, the {\bf label}
-command will provide you with a list of the defined Storage resources such as
-the following:
+\item [list volumes]
+   \index[general]{Console!Command!list volumes}
+   Lists all the media defined in the Catalog.
 
-\footnotesize
-\begin{verbatim}
-The defined Storage resources are:
-     1: File
-     2: 8mmDrive
-     3: DLTDrive
-     4: SDT-10000
-Select Storage resource (1-4):
-\end{verbatim}
-\normalsize
+\item [list jobs]
+   \index[general]{Console!Command!list jobs}
+   Lists all jobs in the Catalog that have run.
 
-At this point, you should have a blank tape in the drive corresponding to the
-Storage resource that you select.
+\item [list jobid=nn]
+   \index[general]{Console!Command!list jobid}
+   Lists JobId nn from the Catalog.
 
-It will then ask you for the Volume name.
+\item [list jobtotals]
+   \index[general]{Console!Command!list jobtotals}
+   Lists totals for all jobs in the Catalog.
 
-\footnotesize
-\begin{verbatim}
-Enter new Volume name:
-\end{verbatim}
-\normalsize
+\item [list files jobid=nn]
+   \index[general]{Console!Command!list files jobid}
+   List the files that were saved for JobId nn.
 
-If Bareos complains:
+\item [list jobmedia]
+   \index[general]{Console!Command!list jobmedia}
+   List the media information for each Job run.
 
-\footnotesize
-\begin{verbatim}
-Media record for Volume xxxx already exists.
-\end{verbatim}
-\normalsize
+\item [messages]
+   \index[general]{Console!Command!messages}
+   Prints any messages that have been directed to the console.
 
-It means that the volume name {\bf xxxx} that you entered already exists in
-the Media database. You can list all the defined Media (Volumes) with the {\bf
-list media} command. Note, the LastWritten column has been truncated for
-proper printing.
+% \item [unmount storage=storage-name]
+%    \index[general]{Console!Command!unmount storage}
+%    Unmounts the drive associated with the storage  device with the name {\bf
+% storage-name} if the drive is not currently being  used. This command is used
+% if you wish Bareos to free the drive so  that you can use it to label a tape.
 
-\footnotesize
-\begin{verbatim}
-+---------------+---------+--------+----------------+-----/~/-+------------+-----+
-| VolumeName    | MediaTyp| VolStat| VolBytes       | LastWri | VolReten   | Recy|
-+---------------+---------+--------+----------------+---------+------------+-----+
-| DLTVol0002    | DLT8000 | Purged | 56,128,042,217 | 2001-10 | 31,536,000 |   0 |
-| DLT-07Oct2001 | DLT8000 | Full   | 56,172,030,586 | 2001-11 | 31,536,000 |   0 |
-| DLT-08Nov2001 | DLT8000 | Full   | 55,691,684,216 | 2001-12 | 31,536,000 |   0 |
-| DLT-01Dec2001 | DLT8000 | Full   | 55,162,215,866 | 2001-12 | 31,536,000 |   0 |
-| DLT-28Dec2001 | DLT8000 | Full   | 57,888,007,042 | 2002-01 | 31,536,000 |   0 |
-| DLT-20Jan2002 | DLT8000 | Full   | 57,003,507,308 | 2002-02 | 31,536,000 |   0 |
-| DLT-16Feb2002 | DLT8000 | Full   | 55,772,630,824 | 2002-03 | 31,536,000 |   0 |
-| DLT-12Mar2002 | DLT8000 | Full   | 50,666,320,453 | 1970-01 | 31,536,000 |   0 |
-| DLT-27Mar2002 | DLT8000 | Full   | 57,592,952,309 | 2002-04 | 31,536,000 |   0 |
-| DLT-15Apr2002 | DLT8000 | Full   | 57,190,864,185 | 2002-05 | 31,536,000 |   0 |
-| DLT-04May2002 | DLT8000 | Full   | 60,486,677,724 | 2002-05 | 31,536,000 |   0 |
-| DLT-26May02   | DLT8000 | Append |  1,336,699,620 | 2002-05 | 31,536,000 |   1 |
-+---------------+---------+--------+----------------+-----/~/-+------------+-----+
-\end{verbatim}
-\normalsize
+% \item [mount storage=storage-name]
+%    \index[general]{Console!Command!mount storage}
+%    Causes the drive associated with the  storage device to be mounted again. When
+% Bareos reaches the end of a volume and requests you to mount a  new volume,
+% you must issue this command after you have placed the  new volume in the
+% drive. In effect, it is the signal needed by  Bareos to know to start reading
+% or writing the new volume.
 
-Once Bareos has verified that the volume does not already exist, it will
-prompt you for the name of the Pool in which the Volume (tape) is to be
-created.  If there is only one Pool (Default), it will be automatically
-selected.
+\item [quit]
+   \index[general]{Console!Command!quit}
+   Exit or quit the console program.
+\end{description}
 
-If the tape is successfully labeled, a Volume record will also be created in
-the Pool. That is the Volume name and all its other attributes will appear
-when you list the Pool. In addition, that Volume will be available for backup
-if the MediaType matches what is requested by the Storage daemon.
+Most of the commands given above, with the exception of {\bf list}, will
+prompt you for the necessary arguments if you simply enter the command name.
 
-When you labeled the tape, you answered very few questions about it --
-principally the Volume name, and perhaps the Slot. However, a Volume record in
-the catalog database (internally known as a Media record) contains quite a few
-attributes. Most of these attributes will be filled in from the default values
-that were defined in the Pool (i.e. the Pool holds most of the default
-attributes used when creating a Volume).
-
-It is also possible to add media to the pool without physically labeling the
-Volumes. This can be done with the \bcommand{add}{} command. For more information,
-please see the
-\nameref{sec:bconsole} chapter.
+The full list of commands is shown in the chapter \nameref{sec:ConsoleCommands}.

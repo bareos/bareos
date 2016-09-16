@@ -831,6 +831,7 @@ When labeling a new volume (see \linkResourceDirective{Dir}{Pool}{Label Format})
 \variable{$Catalog} &  Name of the Catalog\\
 \variable{$MediaType} &  Type of the media
 \end{tabular}
+\hide{$}
 
 Additional, normal environment variables can be used, e.g.
 \variable{$HOME} oder \variable{$HOSTNAME}.
@@ -997,12 +998,16 @@ The default configuration files are automatically defined for correct
 authorization with random passwords. If you add to or modify these files, you
 will need to take care to keep them consistent.
 
-The following image illustrates what names/passwords in which files/Resources
-must match up:
+The diagram \nameref{fig:password} illustrates what names/passwords in which resources
+must match up.
 
+\begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=0.8\textwidth]{\idir Conf-Diagram}
+\caption{Relation between resource names and passwords}
+\label{fig:password}
 \end{center}
+\end{figure}
 
 In the left column, you can see the Director, Storage, and Client resources and their corresponding names and passwords -- these are all in \file{bareos-dir.conf}. In
 the right column the corresponding values in the
