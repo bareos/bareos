@@ -108,7 +108,7 @@ Source9:         databasedialog.ini
 %define NSISDLLS KillProcWMI.dll AccessControl.dll LogEx.dll
 
 %define NSSM_VERSION 2.24
-%define PHP_VERSION 5.6.25
+%define PHP_VERSION 5.6.26
 Source11:        http://windows.php.net/downloads/releases/php-%PHP_VERSION-Win32-VC11-x86.zip
 Source12:        https://nssm.cc/release/nssm-%NSSM_VERSION.zip
 
