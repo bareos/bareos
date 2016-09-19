@@ -25,7 +25,7 @@ cd ..
 change_jobname NightlySave $JobName
 start_test
 
-bin/testls weird-files2  >${cwd}/tmp/original
+bin/testls weird-files2 | sort >${cwd}/tmp/original
 
 cat <<END_OF_DATA >tmp/bconcmds
 @$out /dev/null
@@ -72,7 +72,7 @@ run_bconsole
 check_for_zombie_jobs storage=File
 stop_bareos
 
-bin/testls weird-files2 >${cwd}/tmp/restored
+bin/testls weird-files2 | sort >${cwd}/tmp/restored
 
 check_two_logs
 diff -u ${cwd}/tmp/original ${cwd}/tmp/restored 2>&1 >/dev/null
