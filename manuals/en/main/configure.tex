@@ -47,7 +47,7 @@ Directors are  available so that you may interact with them.
 
 When a Bareos component starts, it reads its configuration.
 In Bareos $<$ 16.2.2 only configuration files (which optionally can include other files) are supported.
-Since Bareos \sinceVersion{}{Configuration Subdirectories}{16.2.2} also configuration subdirectories are supported.
+Since Bareos \sinceVersion{}{Subdirectory Configuration Scheme}{16.2.2} also configuration subdirectories are supported.
 
 \subsubsection{Naming}
 
@@ -184,7 +184,7 @@ The subdirectory approach makes it easier to add or modify the configuration res
 The Bareos \ilink{configure}{sec:bcommandConfigure} command
 requires a configuration directory structure, as provided by the subdirectory approach.
 
-From Bareos \sinceVersion{}{Configuration subdirectories are used by default}{16.2.4} on,
+From Bareos \sinceVersion{}{Subdirectory Configuration Scheme used as Default}{16.2.4} on,
 new installations will use configuration subdirectories by default.
 
 
@@ -235,8 +235,8 @@ new installations will use configuration subdirectories by default.
 \paragraph{New installation}
 
 \begin{itemize}
-    \item The Subdirectories Configuration Scheme is used 
-            by default from Bareos \sinceVersion{}{Subdirectories Configuration Scheme}{16.2.4} onwards.
+    \item The Subdirectories Configuration Scheme is used
+            by default from Bareos \sinceVersion{}{Subdirectory Configuration Scheme used as Default}{16.2.4} onwards.
     \item They will be usable immediately after installing a Bareos component.
     \item If additional packages entail example configuration files (\path|$NAME.conf.example|),
         copy them to \path|$NAME.conf|, modify it as required and reload or restart the component.

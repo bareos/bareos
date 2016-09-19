@@ -457,11 +457,11 @@ create [pool=<pool-name>]
     \label{sec:bcommandConfigure}
 
     Configures director resources during runtime.
-    The first configure subcommand \bcommand{configure}{add} is available since Bareos \sinceVersion{console}{configure add}{16.2.4}.
+    The first configure subcommands are \bcommand{configure}{add} and \bcommand{configure}{export}.
     Other subcommands may follow in later releases.
 
     \begin{description}
-    \item[add]
+    \item [configure add]
         \label{sec:bcommandConfigureAdd}
         \index[general]{Console!Command!configure add}
 
@@ -514,6 +514,30 @@ The files in \directory{bareos-dir-export/client/} directory are not used by the
 However, they can be copied to new clients to configure these clients for the \bareosDir.
 
 \warning{Don't be confused by the extensive output of \bcommand{help}{configure}. As \bcommand{configure}{add} allows configuring arbitrary resources, the output of \bcommand{help}{configure} lists all the resources, each with all valid directives. The same data is also used for \command{bconsole} command line completion.}
+
+    Available since Bareos \sinceVersion{console}{configure add}{16.2.4}.
+
+
+    \item [configure export]
+        \label{sec:bcommandConfigureExport}
+        \index[general]{Console!Command!configure export}
+
+        This command allows to export the \resourcetype{Fd}{Director} resource for clients already configured in the \bareosDir.
+
+        Usage:
+\begin{bconsole}{Export the bareos-fd Director resource for the client bareos-fd}
+configure export client=bareos-fd
+Exported resource file "/etc/bareos/bareos-dir-export/client/bareos-fd/bareos-fd.d/director/bareos-dir.conf":
+Director {
+  Name = bareos-dir
+  Password = "[md5]932d1d3ef3c298047809119510f4bee6"
+}
+\end{bconsole}
+
+        To use it, copy the \resourcetype{Fd}{Director} resource file to the client machine 
+        (on Linux: to \directory{/etc/bareos/bareos-fd.d/director/}) and restart the \bareosFd.
+
+        Available since Bareos \sinceVersion{console}{configure export}{16.2.4}.
 
     \end{description}
 
