@@ -139,7 +139,12 @@ fi; \
 %posttrans_restore_file /etc/bareos/bareos-dir.d/webui-profiles.conf
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
+
+%if 0%{?suse_version} >= 1215
+a2enmod php7 &> /dev/null || true
+%else
 a2enmod php5 &> /dev/null || true
+%endif
 
 %clean
 rm -rf $RPM_BUILD_ROOT
