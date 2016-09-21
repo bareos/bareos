@@ -1,7 +1,7 @@
 %%
 %%
 
-This chapter addresses the installation process of the Bareos Webui.
+This chapter addresses the installation process of the \bareosWebui.
 
 Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareos project and available for a number of platforms.
 
@@ -12,24 +12,22 @@ Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareo
 \section{System Requirements}
 
 \begin{itemize}
-\item A working Bareos environment. The \bareosDir version should match the \bareosWebui version.
-\item A Bareos platform, where bareos-webui packages are provided.
-\item You can install the \bareosWebui on any host it does not have to be installed on the same as the \bareosDir.
-\item The default installation usese an Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv.
+\item A platform, for which the \package{bareos-webui} package is available, see \nameref{sec:BareosPackages}.
+\item A working Bareos environment.
+\item \bareosDir version $>=$ \bareosWebui version.
+\item The \bareosWebui can be installed on any host. It does not have to be installed on the same as the \bareosDir.
+\item The default installation uses an Apache 2.x webserver with mod-rewrite, mod-php5 and mod-setenv.
 \item PHP $>$= 5.3.3
 \end{itemize}
 
 \subsection{Version $<$ 16.2}
 
-\bareosWebui $>$= 16.2.4 includes the required Zend Framework 2 components. For older versions, you must install Zend Framework separatly.
-
-Following is a list where to get Zend Framework 2 packages from, if not already included in the repository of your distribution.
+\bareosWebui \sinceVersion{}{bareos-webui incorporates Zend Framework 2}{16.2.4} incorporates the required Zend Framework 2 components, no extra Zend Framework installation is required.
+For older versions of \package{bareos-webui}, you must install Zend Framework separately.
+Unfortunately, not all distributions offer Zend Framework 2 packages.
+The following list shows where to get the Zend Framework 2 package:
 
 \begin{itemize}
-\item Zend Framework 2.2.x or later.
-  \textbf{Note:} Unfortunately, not all distributions offer a Zend Framework 2 package.
-  The following list shows where to get the Zend Framework 2 package.
-  \begin{itemize}
   \item RHEL, CentOS
     \begin{itemize}
     \item \url{https://fedoraproject.org/wiki/EPEL}
@@ -45,10 +43,10 @@ Following is a list where to get Zend Framework 2 packages from, if not already 
     \begin{itemize}
     \item \url{http://download.bareos.org/bareos}
     \end{itemize}
-  \end{itemize}
 \end{itemize}
 
-\subsection
+Also be aware, that older versions of \bareosDir do not support the \nameref{sec:SubdirectoryConfigurationScheme}
+and therefore Bareos configuration resource files must be included manually.
 
 \section{Installation}
 
@@ -85,39 +83,74 @@ apt-get install bareos-webui
 \end{commands}
 \end{itemize}
 
-\subsection{Configuration of restricted consoles and profile resources}
+\subsection{Minimal Configuration}
 
-You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists (ACLs) in the director’s console resource. The ACLs are specified by a directive followed by a list of access names.
+This assumes, \bareosDir and \bareosWebui are installed on the same host.
 
-It is required to add at least one restricted named console. The restricted named consoles are used for authentication and access control. The name and password directives of the restricted consoles are the credentials you have to provide during authentication to the webui as username and password.
-
-The bareos-webui package provides a default console and profile configuration.
-
-\file{/etc/bareos/bareos-dir.d/console/admin.conf.example}
-\file{/etc/bareos/bareos-dir.d/profile/webui-admin.conf}
-
-Please note, that in older releases before 16.2 those configuration files were provided in a different location and had to be included manually.
-
-\begin{commands}{add webui-consoles and webui-profiles to the Bareos Director configuration}
-echo "@/etc/bareos/bareos-dir.d/webui-consoles.conf" >> /etc/bareos/bareos-dir.conf
-echo "@/etc/bareos/bareos-dir.d/webui-profiles.conf" >> /etc/bareos/bareos-dir.conf
+\begin{enumerate}
+    \item If you are using SELinux, allow HTTPD scripts and modules make network connections:
+\begin{commands}{}
+setsebool -P httpd_can_network_connect on
 \end{commands}
+    For details, see \nameref{sec:webui-selinux}.
+    \item restart Apache (to load configuration provided by bareos-webui, see \nameref{sec:webui-apache})
+    \item Use \command{bconsole} to create a user with name \name{admin} and password \name{secret} and permissions defined in \resourcename{Dir}{Profile}{webui-admin}:
+\begin{bconsole}{add a named console}
+*<input>configure add console name=admin password=secret profile=webui-admin</input>
+\end{bconsole}
+    Of course, you can choose other names and passwords.
+    For details, see \nameref{sec:webui-console}.
+    \item Login to http://HOSTNAME/bareos-webui
+\end{enumerate}
 
-\file{/etc/bareos/bareos-dir.d/console/admin.conf.example} provides a default admin console example using the default webui-admin profile we provide. Please create a console like that to be able to authenticate via webui against the \bareosDir.
 
-\begin{bconfig}{/etc/bareos/bareos-dir.d/console/admin.conf.example}
+\subsection{Configuration Details}
+
+
+\subsubsection{Create a restricted consoles}
+    \label{sec:webui-console}
+
+There is not need, that \bareosWebui itself provide a user management.
+Instead it uses so named \resourcetype{Dir}{Console} defined in the \bareosDir.
+You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges.
+
+At least one \resourcetype{Dir}{Console} is required to use the \bareosWebui.
+
+To allow a user with name \name{admin} and password \name{secret} to access the \bareosDir
+with permissions defined in the \resourcename{Dir}{Profile}{webui-admin} (see \nameref{sec:webui-profile}),
+either
+\begin{itemize}
+\item create a file \file{/etc/bareos/bareos-dir.d/console/admin.conf} with following content:
+\begin{bareosConfigResource}{bareos-dir}{console}{admin}
 Console {
-  Name = admin
-  Password = "admin"
-  Profile = webui-admin
+  Name = "admin"
+  Password = "secret"
+  Profile = "webui-admin"
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-For more details about the console resource configuration, please have a look at the chapter \nameref{DirectorResourceConsole}.
+To enable this, reload or restart your \bareosDir.
+\item or use the \command{bconsole}:
+\begin{bconsole}{add console}
+*<input>configure add console name=admin password=secret profile=webui-admin</input>
+\end{bconsole}
+\end{itemize}
 
-\file{/etc/bareos/bareos-dir.d/profile/webui-admin.conf} provides a default admin profile example which allows nearly every command available to use, except a few you really should use with care.
 
-\begin{bconfig}{/etc/bareos/bareos-dir.d/profile/webui-admin.conf}
+For details, please read \nameref{DirectorResourceConsole}.
+
+
+
+\subsubsection{Configuration of profile resources}
+    \label{sec:webui-profile}
+
+The package \package{bareos-webui} comes with a predefined profile for \bareosWebui: \resourcename{Dir}{Profile}{webui-admin}.
+
+If your \bareosWebui is installed on another system then the \bareosDir, you have to copy the profile to the \bareosDir.
+
+This is the default profile, giving access to all Bareos resources and allowing all commands used by the \bareosWebui:
+
+\begin{bareosConfigResource}{bareos-dir}{profile}{webui-admin}
 Profile {
   Name = webui-admin
   CommandACL = !.bvfs_clear_cache, !.exit, !.sql, !configure, !create, !delete, !purge, !sqlquery, !umount, !unmount, *all*
@@ -131,28 +164,42 @@ Profile {
   Where ACL = *all*
   Plugin Options ACL = *all*
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-For more details about profile resource configuration in bareos, please have a look at the chapter \nameref{DirectorResourceProfile}.
+The \resourcetype{Dir}{Profile} itself does not give any access to the \bareosDir,
+but can be used by \resourcetype{Dir}{Console}, which do give access to the \bareosDir, see \nameref{sec:webui-console}.
 
-\warning{Do not forget to reload your new director configuration.}
+For details, please read \nameref{DirectorResourceProfile}.
 
-\subsection{Configure your Apache Webserver}
+\subsubsection{SELinux}
+\label{sec:webui-selinux}
+\index[general]{SELinux!bareos-webui}
 
+To use \bareosDir on a system with SELinux enabled,
+permission must be given to HTTPD to make network connections:
+\begin{commands}{}
+setsebool -P httpd_can_network_connect on
+\end{commands}
+
+
+\subsubsection{Configure your Apache Webserver}
 \index[general]{Apache!bareos-webui}
+\label{sec:webui-apache}
 
-If you have installed from package, a default configuration is provided, please see \file{/etc/apache2/conf.d/bareos-webui.conf}, \file{/etc/httpd/conf.d/bareos-webui.conf} or \file{/etc/apache2/available-conf/bareos-webui.conf}.
+The package \package{bareos-webui} provides a default configuration for Apache.
+Depending on your distribution, it is installed at \file{/etc/apache2/conf.d/bareos-webui.conf}, \file{/etc/httpd/conf.d/bareos-webui.conf} or \file{/etc/apache2/available-conf/bareos-webui.conf}.
 
-The required Apache modules, \argument{setenv}, \argument{rewrite} and \argument{php} are enabled via package postinstall script. You simply need to restart your apache webserver manually.
+The required Apache modules, \argument{setenv}, \argument{rewrite} and \argument{php} are enabled via package postinstall script.
+However, after installing the \package{bareos-weui} package, you need to restart your Apache webserver manually.
 
-\subsection{Configure your /etc/bareos-webui/directors.ini}
+\subsubsection{Configure your /etc/bareos-webui/directors.ini}
 \index[general]{Configuration!WebUI}
 
-Configure your directors in \file{/etc/bareos-webui/directors.ini} to match your settings, which you have chosen in the previous steps.
+Configure your directors in \file{/etc/bareos-webui/directors.ini} to match your settings.
 
 The configuration file \file{/etc/bareos-webui/directors.ini} should look similar to this:
 
-\begin{bconfig}{Bareos-webui directors.ini}
+\begin{bconfig}{/etc/bareos-webui/directors.ini}
 ;
 ; Bareos WebUI Configuration
 ; File: /etc/bareos-webui/directors.ini
@@ -197,11 +244,11 @@ diraddress = "hostname"
 
 You can add as many directors as you want, also the same host with a different name and different catalog, if you have multiple catalogs.
 
-\subsection{Configure your /etc/bareos-webui/configuration.ini}
+\subsubsection{Configure your /etc/bareos-webui/configuration.ini}
 
 Since 16.2 you are able to configure a few parameters of the webui to your needs.
 
-\begin{bconfig}{Bareos-webui configuration.ini}
+\begin{bconfig}{/etc/bareos-webui/configuration.ini}
 [session]
 # Default: 3600 seconds
 timeout=3600
@@ -227,20 +274,7 @@ save_previous_state=false
 labelpooltype=scratch
 \end{bconfig}
 
-You are now able to login by calling http://HOSTNAME/bareos-webui in your browser of choice. Remember, login credentials are defined in your Bareos Director Console configuration.
-
 \section{Additional information}
-
-\subsection{SELinux}
-\index[general]{SELinux!bareos-webui}
-
-To install bareos-webui on a system with SELinux enabled, the following additional steps have to be performed.
-\begin{itemize}
- \item Allow HTTPD scripts and modules to connect to the network
-\begin{commands}{}
-setsebool -P httpd_can_network_connect on
-\end{commands}
-\end{itemize}
 
 \subsection{NGINX}
 \index[general]{nginx!bareos-webui}
