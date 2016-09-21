@@ -66,6 +66,7 @@ SELECT JobId, JobTDate, StartTime, EndTime FROM Job;
 
 list jobs
 prune jobs jobtype=backup yes
+@sleep 10
 list jobs
 sql
 SELECT JobId, JobTDate, StartTime, EndTime FROM Job;
