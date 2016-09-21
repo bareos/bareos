@@ -9,14 +9,23 @@ Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareo
   \includegraphics[width=0.8\textwidth]{\idir bareos-webui-jobs}
 \end{center}
 
-
 \section{System Requirements}
 
 \begin{itemize}
-\item A working Bareos environment, Bareos $>$= 15.2.2, including JSON API mode, see \ilink{jansson}{jansson}.
+\item A working Bareos environment. The \bareosDir version should match the \bareosWebui version.
 \item A Bareos platform, where bareos-webui packages are provided.
-\item An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv
+\item You can install the \bareosWebui on any host it does not have to be installed on the same as the \bareosDir.
+\item The default installation usese an Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv.
 \item PHP $>$= 5.3.3
+\end{itemize}
+
+\subsection{Version $<$ 16.2}
+
+\bareosWebui $>$= 16.2.4 includes the required Zend Framework 2 components. For older versions, you must install Zend Framework separatly.
+
+Following is a list where to get Zend Framework 2 packages from, if not already included in the repository of your distribution.
+
+\begin{itemize}
 \item Zend Framework 2.2.x or later.
   \textbf{Note:} Unfortunately, not all distributions offer a Zend Framework 2 package.
   The following list shows where to get the Zend Framework 2 package.
@@ -38,6 +47,8 @@ Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareo
     \end{itemize}
   \end{itemize}
 \end{itemize}
+
+\subsection
 
 \section{Installation}
 
@@ -74,65 +85,42 @@ apt-get install bareos-webui
 \end{commands}
 \end{itemize}
 
-
 \subsection{Configuration of restricted consoles and profile resources}
 
 You can have multiple consoles with different names and passwords, sort of like multiple users, each with different privileges. As a default, these consoles can do absolutely nothing – no commands whatsoever. You give them privileges or rather access to commands and resources by specifying access control lists (ACLs) in the director’s console resource. The ACLs are specified by a directive followed by a list of access names.
 
-It is required to add at least one restricted named console in your director configuration (\file{bareos-dir.conf}) for bareos-webui. The restricted named consoles, configured in your \file{bareos-dir.conf}, are used for authentication and access control. The name and password directives of the restricted consoles are the credentials you have to provide during authentication to the webui as username and password.
+It is required to add at least one restricted named console. The restricted named consoles are used for authentication and access control. The name and password directives of the restricted consoles are the credentials you have to provide during authentication to the webui as username and password.
 
-% For full access and functionality relating the director connection, the following commands are currently needed by the webui and have to be made available via the \linkResourceDirective{Dir}{Profile}{Command ACL} in the profile the restricted consoles use.
-% 
-% \begin{itemize}
-%  \item status
-%  \item messages
-%  \item show
-%  \item version
-%  \item run
-%  \item rerun
-%  \item cancel
-%  \item use
-%  \item restore
-%  \item list, llist
-%  \item .api
-%  \item .bvfs\_update
-%  \item .bvfs\_lsdirs
-%  \item .bvfs\_lsfiles
-%  \item .bvfs\_versions
-%  \item .bvfs\_restore
-%  \item .jobs
-%  \item .clients
-%  \item .filesets
-% \end{itemize}
+The bareos-webui package provides a default console and profile configuration.
 
-The bareos-webui package provides a default console and profile configuration under \directory{/etc/bareos/bareos-dir.d/},
-which have to be included at the bottom of your \file{/etc/bareos/bareos-dir.conf} and edited to your needs.
+\file{/etc/bareos/bareos-dir.d/console/admin.conf.example}
+\file{/etc/bareos/bareos-dir.d/profile/webui-admin.conf}
+
+Please note, that in older releases before 16.2 those configuration files were provided in a different location and had to be included manually.
 
 \begin{commands}{add webui-consoles and webui-profiles to the Bareos Director configuration}
 echo "@/etc/bareos/bareos-dir.d/webui-consoles.conf" >> /etc/bareos/bareos-dir.conf
 echo "@/etc/bareos/bareos-dir.d/webui-profiles.conf" >> /etc/bareos/bareos-dir.conf
 \end{commands}
 
-\begin{bconfig}{webui-consoles.conf}
-#
-# Restricted console used by bareos-webui
-#
+\file{/etc/bareos/bareos-dir.d/console/admin.conf.example} provides a default admin console example using the default webui-admin profile we provide. Please create a console like that to be able to authenticate via webui against the \bareosDir.
+
+\begin{bconfig}{/etc/bareos/bareos-dir.d/console/admin.conf.example}
 Console {
-  Name = user1
-  Password = "CHANGEME"
-  Profile = webui
+  Name = admin
+  Password = "admin"
+  Profile = webui-admin
 }
 \end{bconfig}
 
 For more details about the console resource configuration, please have a look at the chapter \nameref{DirectorResourceConsole}.
 
-\begin{bconfig}{webui-profiles.conf}
-#
-# bareos-webui default profile resource
-#
+\file{/etc/bareos/bareos-dir.d/profile/webui-admin.conf} provides a default admin profile example which allows nearly every command available to use, except a few you really should use with care.
+
+\begin{bconfig}{/etc/bareos/bareos-dir.d/profile/webui-admin.conf}
 Profile {
-  Name = webui
-  CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore, .jobs, .filesets, .clients
+  Name = webui-admin
+  CommandACL = !.bvfs_clear_cache, !.exit, !.sql, !configure, !create, !delete, !purge, !sqlquery, !umount, !unmount, *all*
   Job ACL = *all*
   Schedule ACL = *all*
   Catalog ACL = *all*
@@ -141,6 +129,7 @@ Profile {
   Client ACL = *all*
   FileSet ACL = *all*
   Where ACL = *all*
+  Plugin Options ACL = *all*
 }
 \end{bconfig}
 
@@ -170,18 +159,22 @@ The configuration file \file{/etc/bareos-webui/directors.ini} should look simila
 ;
 
 ;
-; Section localhost-dir
+; Section bareos-dir
 ;
-[localhost-dir]
+[bareos-dir]
 
-; Enable or disable section. Possible values are "yes" or "no", the default is "yes".
+; Enable or disable director. Possible values are "yes" or "no", the default is "yes".
 enabled = "yes"
 
-; Fill in the IP-Address or FQDN of you director.
+; Fill in the IP-Address or FQDN of your director.
 diraddress = "localhost"
 
 ; Default value is 9101
 dirport = 9101
+
+; Set catalog to explicit value if you have multiple catalogs,
+; the default value is "MyCatalog".
+;catalog = "MyCatalog"
 
 ;
 ; Section remote-dir
@@ -189,7 +182,8 @@ dirport = 9101
 [remote-dir]
 enabled = "no"
 diraddress = "hostname"
-dirport = 9101
+;dirport = 9101
+;catalog = "MyCatalog"
 ;tls_verify_peer = false
 ;server_can_do_tls = false
 ;server_requires_tls = false
@@ -201,9 +195,39 @@ dirport = 9101
 ;allowed_cns = ""
 \end{bconfig}
 
-You can add as many directors as you want.
+You can add as many directors as you want, also the same host with a different name and different catalog, if you have multiple catalogs.
 
-Now you are able to login by calling http://HOSTNAME/bareos-webui in your browser of choice. Your login credentials are defined in your Bareos Director Console configuration.
+\subsection{Configure your /etc/bareos-webui/configuration.ini}
+
+Since 16.2 you are able to configure a few parameters of the webui to your needs.
+
+\begin{bconfig}{Bareos-webui configuration.ini}
+[session]
+# Default: 3600 seconds
+timeout=3600
+
+[tables]
+# Define a list of pagination values.
+# Default: 10,25,50,100
+pagination_values=10,25,50,100
+
+# Default number of rows per page
+# for possible values see pagination_values
+# Default: 25
+pagination_default_value=25
+
+# State saving - restore table state on page reload.
+# Default: false
+save_previous_state=false
+
+[autochanger]
+# Pooltype for label to use as filter.
+# See pooltype in output of bconsole: list pools
+# Default: none
+labelpooltype=scratch
+\end{bconfig}
+
+You are now able to login by calling http://HOSTNAME/bareos-webui in your browser of choice. Remember, login credentials are defined in your Bareos Director Console configuration.
 
 \section{Additional information}
 
@@ -250,240 +274,12 @@ server {
 
                 fastcgi_pass unix:/var/run/php5-fpm.sock;
 
+                # Set APPLICATION_ENV to either 'production' or 'development'
+
+                # fastcgi_param APPLICATION_ENV development;
+                fastcgi_param APPLICATION_ENV production;
+
         }
 
 }
 \end{bconfig}
-
-
-\subsection{Installation from source}
-
-For information about installing from source, please refer to \url{https://github.com/bareos/bareos-webui/blob/master/doc/INSTALL.md}.
-
-% In this example we assume a running Apache2 Webserver with PHP5 and mod\_rewrite is already installed and configured properly.
-%
-% \subsection*{Step 1 - Get the source}
-%
-% \begin{commands}{}
-% cd /srv/www/htdocs
-%
-% git clone https://github.com/bareos/bareos-webui.git
-% \end{commands}
-%
-% or
-%
-% \begin{commands}{}
-% cd /srv/www/htdocs
-%
-% wget https://github.com/bareos/bareos-webui/archive/Release/15.2.1.tar.gz
-%
-% tar xf 15.2.1.tar.gz
-%
-% \end{commands}
-%
-% \subsection*{Step 2 - Get Zend Framework 2}
-%
-% If not installed in other ways we get Zend Framework 2 via Composer. Read more about Composer here: \url{https://getcomposer.org/}
-%
-% \begin{commands}{}
-% cd bareos-webui
-%
-% ./composer.phar install
-% \end{commands}
-%
-% \subsection*{Step 3 - Configure Apache2 Webserver}
-%
-% You can for example copy the default configuration file and edit it to your needs.
-%
-% \begin{commands}{}
-% cd /etc/apache2/conf.d
-%
-% cp /srv/www/htdocs/bareos-webui/install/apache/bareos-webui.conf .
-%
-% vim bareos-webui.conf
-% \end{commands}
-%
-% In this example it looks like the following.
-%
-% \begin{bconfig}{Webui Apache configuration file}
-% #
-% # Bareos WebUI Apache configuration file
-% #
-%
-% # Environment Variable for Application Debugging
-% # Set to "development" to turn on debugging mode or
-% # "production" to turn off debugging mode.
-% <IfModule env_module>
-%         SetEnv "APPLICATION_ENV" "production"
-% </IfModule>
-%
-% Alias /bareos-webui  /srv/www/htdocs/bareos-webui/public
-%
-% <Directory /srv/www/htdocs/bareos-webui/public>
-%
-%         Options FollowSymLinks
-%         AllowOverride None
-%
-%         # Following module checks are only done to support
-%         # Apache 2.2,
-%         # Apache 2.4 with mod_access_compat and
-%         # Apache 2.4 without mod_access_compat
-%         # in the same configuration file.
-%         # Feel free to adapt it to your needs.
-%
-%         # Apache 2.2
-%         <IfModule !mod_authz_core.c>
-%                 Order deny,allow
-%                 Allow from all
-%         </IfModule>
-%
-%         # Apache 2.4
-%         <IfModule mod_authz_core.c>
-%                 <IfModule mod_access_compat.c>
-%                     Order deny,allow
-%                 </IfModule>
-%                 Require all granted
-%         </IfModule>
-%
-%         <IfModule mod_rewrite.c>
-%                 RewriteEngine on
-%                 RewriteBase /bareos-webui
-%                 RewriteCond %{REQUEST_FILENAME} -s [OR]
-%                 RewriteCond %{REQUEST_FILENAME} -l [OR]
-%                 RewriteCond %{REQUEST_FILENAME} -d
-%                 RewriteRule ^.*$ - [NC,L]
-%                 RewriteRule ^.*$ index.php [NC,L]
-%         </IfModule>
-%
-%         <IfModule mod_php5.c>
-%                 php_flag magic_quotes_gpc off
-%                 php_flag register_globals off
-%         </IfModule>
-%
-% </Directory>
-% \end{bconfig}
-%
-% Restart your Apache Webserver.
-%
-% \subsection*{Step 4 - Configure the directors}
-%
-% Create a required configuration file \file{/etc/bareos-webui/directors.ini} and edit it to your needs.
-%
-% \textbf{Note:} The location and name of the directors.ini is mandatory.
-%
-% \begin{commands}{}
-% mkdir /etc/bareos-webui
-%
-% cd /etc/bareos-webui
-%
-% cp /srv/www/htdocs/bareos-webui/install/directors.ini .
-%
-% vim directors.ini
-% \end{commands}
-%
-% A basic directors.ini should look similar to this:
-%
-% \begin{bconfig}{Webui directors.ini}
-% [director121-dir]
-% enabled = "yes"
-% diraddress = "10.10.121.100"
-% dirport = 9101
-%
-% [director122-dir]
-% enabled = "yes"
-% diraddress = "10.10.122.100"
-% dirport = 9101
-%
-% [director123-dir]
-% enabled = "no"
-% diraddress = "10.10.123.100"
-% dirport = 9101
-% \end{bconfig}
-%
-% \subsection*{Step 5 - Create restricted named consoles}
-%
-% Configure restricted named consoles and reload your director configuration. Those consoles are like user accounts and used by the webui. Therefore you need need to create for example two files with the following content on the host your director runs on and you want to be able to connect to via the webui.
-%
-% \begin{bconfig}{}
-% #
-% # Preparations:
-% #
-% # include this configuration file in bareos-dir.conf by
-% # @/etc/bareos/bareos-dir.d/webui-consoles.conf
-% #
-%
-% #
-% # Restricted consoles used by bareos-webui
-% #
-% Console {
-%   Name = user1
-%   Password = "user1"
-%   Profile = profile1
-% }
-% Console {
-%   Name = user2
-%   Password = "user3"
-%   Profile = profile2
-% }
-% Console {
-%   Name = user3
-%   Password = "user3"
-%   Profile = profile3
-% }
-% \end{bconfig}
-%
-% \begin{bconfig}{}
-% #
-% # Preparations:
-% #
-% # include this configuration file in bareos-dir.conf by
-% # @/etc/bareos/bareos-dir.d/webui-profiles.conf
-% #
-%
-% #
-% # bareos-webui profile resources
-% #
-% Profile {
-%   Name = profile1
-%   CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore, .jobs, .filesets, .clients
-%   Job ACL = *all*
-%   Schedule ACL = *all*
-%   Catalog ACL = *all*
-%   Pool ACL = *all*
-%   Storage ACL = *all*
-%   Client ACL = *all*
-%   FileSet ACL = *all*
-%   Where ACL = *all*
-% }
-%
-% Profile {
-%   Name = profile2
-%   CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore, .jobs, .filesets, .clients
-%   Job ACL = *all*
-%   Schedule ACL = *all*
-%   Catalog ACL = *all*
-%   Pool ACL = *all*
-%   Storage ACL = *all*
-%   Client ACL = *all*
-%   FileSet ACL = *all*
-%   Where ACL = *all*
-% }
-%
-% Profile {
-%   Name = profile3
-%   CommandACL = status, messages, show, version, run, rerun, cancel, .api, .bvfs_*, list, llist, use, restore, .jobs, .filesets, .clients
-%   Job ACL = *all*
-%   Schedule ACL = *all*
-%   Catalog ACL = *all*
-%   Pool ACL = *all*
-%   Storage ACL = *all*
-%   Client ACL = *all*
-%   FileSet ACL = *all*
-%   Where ACL = *all*
-% }
-% \end{bconfig}
-%
-% After including both files and reloading the director you are done and able to use the webui.
-%
-% Login via your favorite browser by calling: \url{http:///bareos-webui/}.
-
