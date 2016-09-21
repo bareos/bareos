@@ -60,7 +60,7 @@ available under the GNU AGPLv3 software license.
 
 \section{Bareos Components or Services}
 
-Bareos is made up of the following five major components or services:
+Bareos is made up of the following major components or services:
 Director, Console, File, Storage, and Monitor services.
 
 
@@ -192,49 +192,17 @@ These are named differently depending on the distribution (\package{bareos-debug
 Not all packages are required to run Bareos.
 
 \begin{itemize}
-    \item For the Bareos Director, the package \package{bareos-director} and one of \package{bareos-database-mysql}, \package{bareos-database-postgresql} or \package{bareos-database-sqlite3} are required (use \package{bareos-database-sqlite3} only for testing).
+    \item For the Bareos Director, the package \package{bareos-director} and one of \package{bareos-database-postgresql}, \package{bareos-database-mysql} or \package{bareos-database-sqlite3} are required (use \package{bareos-database-sqlite3} only for testing).
 
-    \item For the Bareos Storage Daemon, the package \package{bareos-storage} is required. If you plan to connect tape drives to the storage director, also install the package \package{bareos-storage-tape}. This is kept separately, because it has additional dependencies  for tape tools.
+    \item For the \bareosSd, the package \package{bareos-storage} is required. If you plan to connect tape drives to the storage director, also install the package \package{bareos-storage-tape}. This is kept separately, because it has additional dependencies  for tape tools.
 
     \item On a client, only the package \package{bareos-filedaemon} is required. If you run it on a workstation, the packages \package{bareos-traymonitor} gives the user information about running backups.
 
-    \item On a Backup Administration system you need to install at least \package{bareos-bconsole} to have an interactive console to the Bareos Director.
+    \item On a Backup Administration system you need to install at least \package{bareos-bconsole} to have an interactive console to the \bareosDir.
 
 \end{itemize}
 
 
-
-\section{Bareos Configuration}
-\index[general]{Configuration!Bareos}
-
-In order for Bareos to understand your system, what clients you want backed
-up and how, you must create a number of configuration files containing
-resources (or objects).% The following presents an overall picture of this:
-
-\TODO{add overview picture}
-%\addcontentsline{lof}{figure}{Bareos Objects}
-%\includegraphics{\idir bareos-objects}
-
-\section{Conventions Used in this Document}
-\index[general]{Document Conventions}
-
-Bareos is in a state of evolution, and as a consequence, this manual
-will not always agree with the code. If an item in this manual is preceded by
-an asterisk (*), it indicates that the particular feature is not implemented.
-If it is preceded by a plus sign (+), it indicates that the feature may be
-partially implemented.
-% TODO: search for plus sign and asterisk and "IMPLEMENTED" and fix for printed book
-
-If you are reading this manual as supplied in a released version of the
-software, the above paragraph holds true. If you are reading the online
-version of the manual,
-\elink{http://www.bareos.org}{http://www.bareos.org}, please bear in
-mind that this version describes the current version in development
-that may contain features not in the released version. Just the same, it
-generally lags behind the code a bit.
-
-The source of this document is available at \elink{https://github.com/bareos/bareos-docs}{https://github.com/bareos/bareos-docs}. 
-As with the rest of the Bareos project, you are welcome to participate and improve it.
 
 \section{Quick Start}
 
