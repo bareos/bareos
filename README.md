@@ -6,7 +6,7 @@ A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 ### INSTALLATION
 
-See: [http://doc.bareos.org/master/html/bareos-manual-main-reference.html#InstallingBareosWebui](http://doc.bareos.org/master/html/bareos-manual-main-reference.html#InstallingBareosWebui)
+See: [https://github.com/bareos/bareos-webui/blob/master/doc/README-INSTALLATION.md](https://github.com/bareos/bareos-webui/blob/master/doc/README-INSTALLATION.md)
 
 ### LICENSE
 
