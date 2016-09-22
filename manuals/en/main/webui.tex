@@ -9,6 +9,37 @@ Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareo
   \includegraphics[width=0.8\textwidth]{\idir bareos-webui-jobs}
 \end{center}
 
+\section{Features}
+
+\begin{itemize}
+\item Intuitive web interface
+\item Multilinugual (English/German/French/Russian)
+\item Can access multiple directors and catalogs
+\item Individual accounts and ACL support via Bareos restricted named consoles
+%\item Display of the most recent job status in a dashboard widget
+%\item Display of current director messages in a dashboard widget
+\item Tape Autochanger management, with the possibility to label, import/export media and update your autochanger slot status
+\item Temporarly enable or disable jobs, clients and schedules and also see their current state
+\item Show
+    \begin{itemize}
+    \item Detailed information about Jobs, Clients, Filesets, Pools, Volumes, Storages, Schedules, Logs and Director messages
+    \item Filedaemon, Storage- and Director updates
+    \item Client, Director, Storage and Scheduler status
+    \end{itemize}
+%\item Browse through your pools and media/volumes to keep track of retentions, volume status and usage
+\item Backup Jobs
+    \begin{itemize}
+    \item Start, cancel, rerun and restore from.
+    \item Show the file list of backup jobs
+    \end{itemize}
+\item Restore files by browsing through a filetree of your backup jobs.
+    \begin{itemize}
+    \item Merge your backup jobs history and filesets of a client or use a single backup job for restore.
+    \item Restore files to a different client instead of the origin
+    \end{itemize}
+\item bconsole interface (limited to non-interactive commands)
+\end{itemize}
+
 \section{System Requirements}
 
 \begin{itemize}
@@ -17,7 +48,7 @@ Since \sinceVersion{dir}{bareos-webui}{15.2.0} bareos-webui is part of the Bareo
 \item \bareosDir version $>=$ \bareosWebui version.
 \item The \bareosWebui can be installed on any host. It does not have to be installed on the same as the \bareosDir.
 \item The default installation uses an Apache 2.x webserver with mod-rewrite, mod-php5 and mod-setenv.
-\item PHP $>$= 5.3.3
+\item PHP $>$= 5.3.23
 \end{itemize}
 
 \subsection{Version $<$ 16.2}
@@ -88,19 +119,25 @@ apt-get install bareos-webui
 This assumes, \bareosDir and \bareosWebui are installed on the same host.
 
 \begin{enumerate}
-    \item If you are using SELinux, allow HTTPD scripts and modules make network connections:
+
+\item If you are using SELinux, allow HTTPD scripts and modules make network connections:
 \begin{commands}{}
 setsebool -P httpd_can_network_connect on
 \end{commands}
-    For details, see \nameref{sec:webui-selinux}.
-    \item restart Apache (to load configuration provided by bareos-webui, see \nameref{sec:webui-apache})
-    \item Use \command{bconsole} to create a user with name \name{admin} and password \name{secret} and permissions defined in \resourcename{Dir}{Profile}{webui-admin}:
+For details, see \nameref{sec:webui-selinux}.
+
+\item Restart Apache (to load configuration provided by bareos-webui, see \nameref{sec:webui-apache})
+
+\item \label{item:webui-create-user}
+Use \command{bconsole} to create a user with name \name{admin} and password \name{secret} and permissions defined in \resourcename{Dir}{Profile}{webui-admin}:
 \begin{bconsole}{add a named console}
 *<input>configure add console name=admin password=secret profile=webui-admin</input>
 \end{bconsole}
-    Of course, you can choose other names and passwords.
-    For details, see \nameref{sec:webui-console}.
-    \item Login to http://HOSTNAME/bareos-webui
+Of course, you can choose other names and passwords.
+For details, see \nameref{sec:webui-console}.
+
+\item Login to http://HOSTNAME/bareos-webui with username and password as created in \ref{item:webui-create-user}.
+
 \end{enumerate}
 
 
@@ -246,7 +283,8 @@ You can add as many directors as you want, also the same host with a different n
 
 \subsubsection{Configure your /etc/bareos-webui/configuration.ini}
 
-Since 16.2 you are able to configure a few parameters of the webui to your needs.
+Since \sinceVersion{}{/etc/bareos-webui/configuration.ini}{16.2.2}
+you are able to configure some parameters of the \bareosWebui to your needs.
 
 \begin{bconfig}{/etc/bareos-webui/configuration.ini}
 [session]
@@ -279,7 +317,7 @@ labelpooltype=scratch
 \subsection{NGINX}
 \index[general]{nginx!bareos-webui}
 
-If you prefer to use bareos-webui on Nginx with php5-fpm instead of Apache,
+If you prefer to use \bareosWebui on Nginx with php5-fpm instead of Apache,
 a basic working configuration could look like this:
 
 \begin{bconfig}{bareos-webui on nginx}
@@ -298,22 +336,22 @@ server {
 
                 include snippets/fastcgi-php.conf;
 
-                # With php5-cgi alone pass the PHP
+                # php5-cgi alone:
+                # pass the PHP
                 # scripts to FastCGI server
                 # listening on 127.0.0.1:9000
+                #fastcgi_pass 127.0.0.1:9000;
 
-                # fastcgi_pass 127.0.0.1:9000;
-
-                # With php5-fpm:
-
+                # php5-fpm:
                 fastcgi_pass unix:/var/run/php5-fpm.sock;
 
-                # Set APPLICATION_ENV to either 'production' or 'development'
-
-                # fastcgi_param APPLICATION_ENV development;
+                # APPLICATION_ENV:  set to 'development' or 'production'
+                #fastcgi_param APPLICATION_ENV development;
                 fastcgi_param APPLICATION_ENV production;
 
         }
 
 }
 \end{bconfig}
+
+This will make the \bareosWebui accessible at http://bareos:9100/ (assuming your DNS resolve the hostname \host{bareos} to the NGINX server).
