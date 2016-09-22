@@ -12,7 +12,7 @@ Please see: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#
 * A working Bareos environment, Bareos >= 16.2. The Bareos Director and Bareos Webui should have the same version.
 * You can install Bareos Webui on any host it does not have to be installed on the same as the Bareos Director.
 * An Apache 2.x Webserver with mod-rewrite, mod-php5 and mod-setenv enabled.
-* PHP >= 5.3.3
+* PHP >= 5.3.23
 
 ### Get the source
 
