@@ -1,6 +1,6 @@
 Client {
   Name = "${client_name}-fd"
-  Address = "$client_name"
+  Address = "${client_name}"
   Password = "${password}"
 }
 
@@ -10,5 +10,5 @@ Job {
   JobDefs = "DefaultJob"
   FileSet = "Windows All Drives"
   Schedule = "WeeklyCycle"
-  Enabled = "$enable"
+  Enabled = "${enable}"
 }
