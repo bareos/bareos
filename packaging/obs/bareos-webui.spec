@@ -1,7 +1,7 @@
 
 Name:          bareos-webui
 #Provides:
-Version:       15.2.1
+Version:       16.2.0
 Release:       0%{?dist}
 Summary:       Bareos Web User Interface
 
@@ -15,7 +15,11 @@ BuildArch:     noarch
 
 BuildRequires: autoconf automake bareos-common
 
-Requires: php >= 5.3.3
+# ZendFramework 2.4 says it required php >= 5.3.23.
+# However, it works on SLES 11 with php 5.3.17
+# while it does not work with php 5.3.3 (RHEL6).
+Requires: php >= 5.3.17
+
 Requires: php-bz2
 Requires: php-ctype
 Requires: php-curl
@@ -60,8 +64,6 @@ BuildRequires: mod_php_any
 %define daemon_group www
 Requires:   apache
 Requires:   mod_php_any
-#Recommends: php-pgsql php-mysql php-sqlite
-#Suggests:   postgresql-server mysql sqlite3
 %else
 #if 0#{?fedora} || 0#{?rhel_version} || 0#{?centos_version}
 BuildRequires: httpd
@@ -140,8 +142,15 @@ fi; \
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
 
-%if 0%{?suse_version} >= 1215
-a2enmod php7 &> /dev/null || true
+%if 0%{?suse_version} >= 1315
+# 1315:
+#   SLES12 (PHP 7)
+#   openSUSE Leap 42.1 (PHP 5)
+if php -v | grep -q "PHP 7"; then
+  a2enmod php7 &> /dev/null || true
+else
+  a2enmod php5 &> /dev/null || true
+fi
 %else
 a2enmod php5 &> /dev/null || true
 %endif
