@@ -138,18 +138,13 @@ Ubuntu Universe $>=$ 15.04 does also include these packages.
 In the further text, these version will be named \name{Bareos (Debian.org)} 
 (also for the Ubuntu Universe version, as this is based on the Debian version).
 
-The source of these packages comes from a separate branch.
-For the release \name{bareos-14.2} this is
-\url{https://github.com/bareos/bareos/tree/bareos-14.2-debian} instead of the standard branch \url{https://github.com/bareos/bareos/tree/bareos-14.2}.
-
-The Bareos project tries to limit the differences between these branches to a minimum.
-
 \subsubsection{Limitations of the Debian.org/Ubuntu Universe version of Bareos}
 \label{sec:DebianOrgLimitations}
 
     \begin{itemize}
         \item Debian.org does not include the libfastlz compression library and therefore the Bareos (Debian.org) packages do not offer the fileset options \parameter{compression=LZFAST}, \parameter{compression=LZ4} and \parameter{compression=LZ4HC}.
         \item Debian.org prefers that Bareos (Debian.org) is linked against GnuTLS instead of OpenSSL. Therefore, the Bareos (Debian.org) package only support \nameref{sec:TransportEncryption} but no \nameref{DataEncryption}.
+        \item Debian.org does not include the \package{bareos-webui} package.
     \end{itemize}
 
 
