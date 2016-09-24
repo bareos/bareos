@@ -63,8 +63,8 @@ BuildRequires:  mingw64-readline
 BuildRequires:  mingw32-libstdc++
 BuildRequires:  mingw64-libstdc++
 
-BuildRequires:  mingw32-pthreads
-BuildRequires:  mingw64-pthreads
+BuildRequires:  mingw32-libwinpthread1
+BuildRequires:  mingw64-libwinpthread1
 
 BuildRequires:  mingw32-libqt4
 BuildRequires:  mingw64-libqt4
@@ -80,6 +80,9 @@ BuildRequires:  mingw64-libfastlz
 
 BuildRequires:  mingw32-sqlite
 BuildRequires:  mingw64-sqlite
+
+BuildRequires:  mingw32-libsqlite
+BuildRequires:  mingw64-libsqlite
 
 BuildRequires:  mingw32-cmocka
 BuildRequires:  mingw64-cmocka
@@ -254,7 +257,7 @@ for flavor in %{flavors}; do
       libsqlite3-0.dll \
       libtermcap-0.dll \
       openssl.exe \
-      pthreadGCE2.dll \
+      libwinpthread-1.dll \
       QtCore4.dll \
       QtGui4.dll \
       sed.exe \

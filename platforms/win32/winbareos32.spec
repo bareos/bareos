@@ -44,8 +44,8 @@ BuildRequires:  %{mingw}-cross-binutils
 BuildRequires:  %{mingw}-cross-pkg-config
 BuildRequires:  %{mingw}-libqt4-devel
 BuildRequires:  %{mingw}-libqt4
-BuildRequires:  %{mingw}-pthreads-devel
-BuildRequires:  %{mingw}-pthreads
+BuildRequires:  %{mingw}-libwinpthread1
+BuildRequires:  %{mingw}-winpthreads-devel
 BuildRequires:  %{mingw}-libopenssl-devel
 BuildRequires:  %{mingw}-libopenssl
 BuildRequires:  %{mingw}-openssl

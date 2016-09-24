@@ -28,7 +28,7 @@ INCLUDES = -I../.. \
 	   -I../compat/include
 LDLIBS = $(MINGW_LIB)/libssl.dll.a \
          $(MINGW_LIB)/libcrypto.dll.a \
-         $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libwinpthread.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/liblzo2.dll.a \
          $(MINGW_LIB)/libfastlz.dll.a \

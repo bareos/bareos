@@ -28,7 +28,7 @@ INCLUDES = -I../.. \
 	   -I../../findlib \
 	   -I../compat/include
 LDLIBS = ../lib/libbareos.dll \
-	 $(MINGW_LIB)/libpthreadGCE2.a \
+	 $(MINGW_LIB)/libwinpthread.a \
 	 $(WINSOCKLIB)
 
 LIBBAREOSFIND_SRCS = acl.c attribs.c bfile.c create_file.c \

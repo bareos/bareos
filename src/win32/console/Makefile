@@ -29,7 +29,7 @@ INCLUDES = -I../.. \
 	   -I../vss/include
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
-         $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libwinpthread.a \
          $(MINGW_LIB)/libz.dll.a \
          $(MINGW_LIB)/libreadline.dll.a \
          $(MINGW_LIB)/libjansson.a \
