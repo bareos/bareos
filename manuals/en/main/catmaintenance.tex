@@ -84,7 +84,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 \file{update_bareos_tables}    & update       & update the database schema \\
 \hline
 \file{drop_bareos_tables}      & deinstallation & remove Bareos database tables \\
-\file{drop_bareos_database}    & deinstallation & create Bareos database \\
+\file{drop_bareos_database}    & deinstallation & remove Bareos database \\
 \hline
 \file{make_catalog_backup.pl}  & backup         & backup the Bareos database, default on Linux \\
 \file{make_catalog_backup}     & backup         & backup the Bareos database for systems without Perl \\
@@ -1260,42 +1260,6 @@ CREATE INDEX file_jfp_idx on File (JobId, PathId, FilenameId);
 
 
 
-% hide: sqlite is not supported
-\hide{
-\section{Compacting Your SQLite Database}
-\index[general]{Compacting Your SQLite Database}
-\index[general]{Database!Compacting Your SQLite}
-
-First please read the previous section that explains why it is necessary to
-compress a database. SQLite version 2.8.4 and greater have the {\bf Vacuum}
-command for compacting the database.
-
-\footnotesize
-\begin{verbatim}
-cd {\bf working-directory}
-echo 'vacuum;' | sqlite bareos.db
-\end{verbatim}
-\normalsize
-
-As an alternative, you can use the following commands, adapted to your system:
-
-
-\footnotesize
-\begin{verbatim}
-cd {\bf working-directory}
-echo '.dump' | sqlite bareos.db > bareos.sql
-rm -f bareos.db
-sqlite bareos.db < bareos.sql
-rm -f bareos.sql
-\end{verbatim}
-\normalsize
-
-Where {\bf working-directory} is the directory that you specified in the
-Director's configuration file. Note, in the case of SQLite, it is necessary to
-completely delete (rm) the old database before creating a new compressed
-version.
-}
-
 \section{Backing Up Your Bareos Database}
 \index[general]{Backup!Bareos database}
 \index[general]{Backup!Catalog}
@@ -1402,7 +1366,7 @@ database after a month can roughly be calculated as:
 
 \footnotesize
 \begin{verbatim}
-   Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
+Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
 \end{verbatim}
 \normalsize
 
@@ -1411,11 +1375,7 @@ This would give the following:
 
 \footnotesize
 \begin{verbatim}
-   Size = 154 * 2 * (100,000 * 4 + 10,000 * 26)
-or
-   Size = 308 * (400,000 + 260,000)
-or
-   Size = 203,280,000 bytes
+Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
 \end{verbatim}
 \normalsize
 
@@ -1423,49 +1383,7 @@ So for the above two systems, we should expect to have a database size of
 approximately 200 Megabytes. Of course, this will vary according to how many
 files are actually backed up.
 
-Below are some statistics for a MySQL database containing Job records for five
-Clients beginning September 2001 through May 2002 (8.5 months) and File
-records for the last 80 days. (Older File records have been pruned). For these
-systems, only the user files and system files that change are backed up. The
-core part of the system is assumed to be easily reloaded from the Red Hat rpms.
-
-
-In the list below, the files (corresponding to Bareos Tables) with the
-extension .MYD contain the data records whereas files with the extension .MYI
-contain indexes.
-
-You will note that the File records (containing the file attributes) make up
-the large bulk of the number of records as well as the space used (459 Mega
-Bytes including the indexes). As a consequence, the most important Retention
-period will be the {\bf File Retention} period. A quick calculation shows that
-for each File that is saved, the database grows by approximately 150 bytes.
-
-\footnotesize
-\begin{verbatim}
-      Size in
-       Bytes   Records    File
- ============  =========  ===========
-          168          5  Client.MYD
-        3,072             Client.MYI
-  344,394,684  3,080,191  File.MYD
-  115,280,896             File.MYI
-    2,590,316    106,902  Filename.MYD
-    3,026,944             Filename.MYI
-          184          4  FileSet.MYD
-        2,048             FileSet.MYI
-       49,062      1,326  JobMedia.MYD
-       30,720             JobMedia.MYI
-      141,752      1,378  Job.MYD
-       13,312             Job.MYI
-        1,004         11  Media.MYD
-        3,072             Media.MYI
-    1,299,512     22,233  Path.MYD
-      581,632             Path.MYI
-           36          1  Pool.MYD
-        3,072             Pool.MYI
-            5          1  Version.MYD
-        1,024             Version.MYI
-\end{verbatim}
-\normalsize
-
-This database has a total size of approximately 450 Megabytes.
+You will note that the File table (containing the file attributes) make up
+the large bulk of the number of records as well as the space used.
+As a consequence, the most important Retention
+period will be the {\bf File Retention} period.
