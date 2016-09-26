@@ -250,6 +250,19 @@ bool check_softquotas(JCR *jcr)
             }
          }
       }
+   } else if (jcr->res.client->GraceTime != 0) {
+      /*
+       * Reset softquota
+       */
+      CLIENT_DBR cr;
+      memset(&cr, 0, sizeof(cr));
+      cr.ClientId = jcr->jr.ClientId;
+      if (!db_reset_quota_record(jcr, jcr->db, &cr)) {
+         Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s\n"),
+            db_strerror(jcr->db));
+      } else {
+         Jmsg(jcr, M_ERROR, 0, _("Softquota Reset, Grace Period ends now.\n"));
+      }
    }
 
 bail_out:
