@@ -492,8 +492,10 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
       Mmsg(fhdb_state->lmdb_name, "%s/.fhdb_lmdb.%d", working_directory, nis->jcr->JobId);
       result = mdb_env_open(fhdb_state->db_env, fhdb_state->lmdb_name, MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
       if (result) {
-         Dmsg2(dbglvl, _("Unable create LMDB database %s: %s\n"), fhdb_state->lmdb_name, mdb_strerror(result));
-         Jmsg2(nis->jcr, M_FATAL, 0, _("Unable create LMDB database %s: %s\n"), fhdb_state->lmdb_name, mdb_strerror(result));
+         Dmsg2(dbglvl, _("Unable to create LMDB database %s: %s. Check OS ulimit settings or adapt FileHistorySize\n"),
+               fhdb_state->lmdb_name, mdb_strerror(result));
+         Jmsg2(nis->jcr, M_FATAL, 0, _("Unable to create LMDB database %s: %s. Check OS ulimit settings or adapt FileHistorySize\n"),
+               fhdb_state->lmdb_name, mdb_strerror(result));
          goto bail_out;
       }
 
