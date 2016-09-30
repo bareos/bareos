@@ -1763,7 +1763,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char insta
    b_plugin_ctx *b_ctx;
 
    b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
-   memset(b_ctx, 0, sizeof(b_plugin_ctx));
+   (b_plugin_ctx *)memset(b_ctx, 0, sizeof(b_plugin_ctx));
    b_ctx->jcr = jcr;
    b_ctx->plugin = plugin;
 
@@ -1828,7 +1828,7 @@ void free_plugins(JCR *jcr)
       return;
    }
 
-   Dmsg2(dbglvl, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   Dmsg2(dbglvl, "Free instance fd-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
    foreach_alist(ctx, jcr->plugin_ctx_list) {
       /*
        * Free the plugin instance

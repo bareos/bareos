@@ -242,7 +242,7 @@ static void get_date_string(char *buf, int buf_len)
 
    my_timezone = tz_offset(now, tm);
    strftime(buf, buf_len, "%a, %d %b %Y %H:%M:%S", &tm);
-   snprintf(tzbuf, sizeof(tzbuf), " %+2.2ld%2.2u", -my_timezone / 60, abs(my_timezone) % 60);
+   snprintf(tzbuf, sizeof(tzbuf), " %+2.2ld%2.2ld", -my_timezone / 60, abs(my_timezone) % 60);
    strcat(buf, tzbuf);              /* add +0100 */
    strftime(tzbuf, sizeof(tzbuf), " (%Z)", &tm);
    strcat(buf, tzbuf);              /* add (CEST) */

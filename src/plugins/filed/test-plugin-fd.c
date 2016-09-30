@@ -123,7 +123,7 @@ struct plugin_ctx {
    int replace;
 
    int nb_obj;                        /* Number of objects created */
-   POOL_MEM *buf;                     /* store ConfigFile */
+   POOLMEM *buf;                      /* store ConfigFile */
 };
 
 #ifdef __cplusplus
@@ -177,7 +177,7 @@ static bRC newPlugin(bpContext *ctx)
    if (!p_ctx) {
       return bRC_Error;
    }
-   memset(p_ctx, 0, sizeof(struct plugin_ctx));
+   p_ctx = (plugin_ctx*)memset(p_ctx, 0, sizeof(struct plugin_ctx));
    ctx->pContext = (void *)p_ctx;        /* set our context pointer */
 
    bfuncs->registerBareosEvents(ctx,
@@ -201,7 +201,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
    if (p_ctx->buf) {
-      delete p_ctx->buf;
+      free_pool_memory(p_ctx->buf);
    }
    if (p_ctx->cmd) {
       free(p_ctx->cmd);                  /* free any allocated command string */
@@ -579,12 +579,13 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    } else if (p_ctx->nb_obj == 1) {
       ConfigFile ini;
 
-      p_ctx->buf = new POOL_MEM(PM_BSOCK);
+      p_ctx->buf = get_pool_memory(PM_BSOCK);
+      Dmsg(ctx, dbglvl, "p_ctx->buf = 0x%x\n", p_ctx->buf);
       ini.register_items(test_items, sizeof(struct ini_items));
 
       sp->object_name = (char*)INI_RESTORE_OBJECT_NAME;
       sp->object_len = ini.serialize(p_ctx->buf);
-      sp->object = p_ctx->buf->c_str();
+      sp->object = p_ctx->buf;
       sp->type = FT_PLUGIN_CONFIG;
 
       Dmsg(ctx, dbglvl, "RestoreOptions=<%s>\n", p_ctx->buf);

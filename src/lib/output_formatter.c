@@ -56,6 +56,8 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
    api = api_mode;
    compact = false;
 
+   filters = NULL;
+   hidden_columns = NULL;
    result_message_plain = new POOL_MEM(PM_MESSAGE);
 #if HAVE_JANSSON
    result_json = json_object();

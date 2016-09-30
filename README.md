@@ -6,10 +6,26 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+Release 16.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-16.2)](https://travis-ci.org/bareos/bareos)
+
+* Always Incremental Backup
+* Client initiated connection (active client behind firewall)
+* Enhanced ACLs: multi-tenancy capability
+* NDMP Enhancements
+* New subdirectory configuration scheme to ease automation
+* Director Configuration API
+  * Initially only adding configuration is implemented
+* API enhancements for Bareos WebUI
+* BAT is marked as deprecated in favor of Bareos WebUI
+
+
 Release 16.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-16.2)](https://travis-ci.org/bareos/bareos)
 
 * Remove fixed size reload table
 * Get rid of one VSS client at a time
@@ -18,7 +34,7 @@ Release 16.1.x
 Release 15.4.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
 
 * Storage Daemon Refactor record write code path.
 * Enable concurrent jobs on Windows platforms

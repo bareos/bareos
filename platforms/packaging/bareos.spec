@@ -390,6 +390,9 @@ Group:      Productivity/Archiving/Backup
 %if 0%{?suse_version}
 Requires:   sqlite3
 %endif
+%if 0%{?fedora_version}
+Requires:   sqlite
+%endif
 Requires:   %{name}-database-common = %{version}
 Provides:   %{name}-catalog-sqlite3
 Provides:   %{name}-database-backend

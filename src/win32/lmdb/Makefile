@@ -23,7 +23,7 @@ VPATH = .:../../lmdb
 include ../Makefile.inc
 
 INCLUDES = -I../../lmdb
-LDLIBS = $(MINGW_LIB)/libpthreadGCE2.a \
+LDLIBS = $(MINGW_LIB)/libwinpthread.a \
          -lntdll
 
 LIBBAREOSLMDB_SRCS = mdb.c midl.c

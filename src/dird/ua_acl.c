@@ -276,21 +276,9 @@ bool UAContext::acl_no_restrictions(int acl)
       return true;
    }
 
-   for (int i = 0; i < cons->ACL_lists[acl]->size(); i++) {
-      list_value = (char *)cons->ACL_lists[acl]->get(i);
-
-      if (*list_value == '!') {
-         return false;
-      }
-
-      if (bstrcasecmp("*all*", list_value)) {
-         return true;
-      }
-   }
-
-   foreach_alist(profile, cons->profiles) {
-      for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
-         list_value = (char *)profile->ACL_lists[acl]->get(i);
+   if (cons->ACL_lists[acl]) {
+      for (int i = 0; i < cons->ACL_lists[acl]->size(); i++) {
+         list_value = (char *)cons->ACL_lists[acl]->get(i);
 
          if (*list_value == '!') {
             return false;
@@ -298,6 +286,22 @@ bool UAContext::acl_no_restrictions(int acl)
 
          if (bstrcasecmp("*all*", list_value)) {
             return true;
+         }
+      }
+   }
+
+   foreach_alist(profile, cons->profiles) {
+      if (profile->ACL_lists[acl]) {
+         for (int i = 0; i < profile->ACL_lists[acl]->size(); i++) {
+            list_value = (char *)profile->ACL_lists[acl]->get(i);
+
+            if (*list_value == '!') {
+               return false;
+            }
+
+            if (bstrcasecmp("*all*", list_value)) {
+               return true;
+            }
          }
       }
    }

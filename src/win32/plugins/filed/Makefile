@@ -31,7 +31,7 @@ INCLUDES = -I../../.. \
 VDI_INCLUDES = -I../../vdi/include
 PYTHON_INCLUDES = -I../python/include
 LDLIBS = ../../lib/libbareos.dll \
-         $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libwinpthread.a \
          $(MINGW_LIB)/libz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 

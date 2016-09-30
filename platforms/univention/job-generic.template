@@ -1,6 +1,6 @@
 Client {
   Name = "${client_name}-fd"
-  Address = "$client_name"
+  Address = "${client_name}"
   Password = "${password}"
 }
 
@@ -8,7 +8,7 @@ Job {
   Name = "Backup-${client_name}"
   Client = "${client_name}-fd"
   JobDefs = "DefaultJob"
-  FileSet = "Linux All"
+  FileSet = "LinuxAll"
   Schedule = "WeeklyCycle"
-  Enabled = "$enable"
+  Enabled = "${enable}"
 }

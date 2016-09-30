@@ -1232,11 +1232,5 @@ void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
 getout:
    fd->close();
    delete(fd);
-
-   if (connection) {
-      connections->remove(connection);
-      delete(connection);
-   }
-
    return NULL;
 }

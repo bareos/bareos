@@ -189,11 +189,14 @@ static bRC newPlugin(bpContext *ctx)
  */
 static bRC freePlugin(bpContext *ctx)
 {
-   delta_test *self = get_self(ctx);
-   if (!self) {
+   struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
+
+   if (!p_ctx) {
       return bRC_Error;
    }
-   delete self;
+
+   free(p_ctx);                          /* free our private context */
+   p_ctx = NULL;
    return bRC_OK;
 }
 

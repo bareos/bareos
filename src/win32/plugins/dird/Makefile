@@ -39,7 +39,7 @@ INCLUDES = -I../../.. \
 endif
 PYTHON_INCLUDES = -I../python/include
 LDLIBS = ../../lib/libbareos.dll \
-         $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libwinpthread.a \
 	 $(MINGW_LIB)/libz.dll.a \
 	 $(MINGW_LIB)/libfastlz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid

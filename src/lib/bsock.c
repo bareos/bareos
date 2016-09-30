@@ -316,7 +316,10 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
    int tls_local_need = BNET_TLS_NONE;
    int tls_remote_need = BNET_TLS_NONE;
 
-   ASSERT(password.encoding == p_encoding_md5);
+   if(password.encoding != p_encoding_md5) {
+      Jmsg(jcr, M_FATAL, 0, _("Password encoding is not MD5. You are probably restoring a NDMP Backup with a restore job not configured for NDMP protocol.\n"));
+      goto auth_fatal;
+   }
 
    /*
     * TLS Requirement

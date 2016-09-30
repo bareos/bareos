@@ -199,8 +199,10 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
                         "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
                         "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
                         "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                        "Comment "
-                        "FROM Media WHERE Media.VolumeName='%s'", esc);
+                        "Comment,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "WHERE Media.VolumeName='%s'", esc);
       } else if (mdbr->PoolId > 0) {
          Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
                         "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
@@ -209,8 +211,10 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
                         "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
                         "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
                         "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                        "Comment "
-                        "FROM Media WHERE Media.PoolId=%s ORDER BY MediaId",
+                        "Comment,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "WHERE Media.PoolId=%s ORDER BY MediaId",
               edit_int64(mdbr->PoolId, ed1));
       } else {
           Mmsg(mdb->cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
@@ -220,8 +224,10 @@ void db_list_media_records(JCR *jcr, B_DB *mdb, MEDIA_DBR *mdbr,
                         "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
                         "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
                         "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                        "Comment "
-                        "FROM Media ORDER BY MediaId");
+                        "Comment,Name AS Storage "
+                        "FROM Media "
+                        "LEFT JOIN Storage USING(StorageId) "
+                        "ORDER BY MediaId");
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {

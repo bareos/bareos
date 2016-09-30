@@ -31,14 +31,14 @@ INCLUDES = -I. \
 	   -I../compat/include
 LDLIBS = ../lib/libbareos.a \
 	 ../lib/libbareos.dll \
-         $(MINGW_LIB)/libpthreadGCE2.a \
+         $(MINGW_LIB)/libwinpthread.a \
          $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
 LDLIBS_FIND = ../lib/libbareos.a \
 	      ../lib/libbareos.dll \
 	      ../findlib/libbareosfind.dll \
-	      $(MINGW_LIB)/libpthreadGCE2.a \
+	      $(MINGW_LIB)/libwinpthread.a \
 	      $(MINGW_LIB)/libjansson.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 

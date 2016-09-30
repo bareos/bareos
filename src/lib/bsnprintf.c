@@ -388,8 +388,8 @@ int bvsnprintf(char *buffer, int32_t maxlen, const char *format, va_list args)
             outch(ch);
             break;
          case 'w':
-            /* not supported yet, treat as next char */
-            ch = *format++;
+            /* not supported yet, skip char */
+            format++;
             break;
          default:
             /* Unknown, skip */
