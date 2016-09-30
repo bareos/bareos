@@ -6,14 +6,6 @@
 #
 
 
-# Query test no longer works because the query file is empty
-exit
-
-
-
-
-
-
 TestName="query-test"
 JobName=query
 . scripts/functions

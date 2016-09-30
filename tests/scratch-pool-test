@@ -15,10 +15,6 @@ TestName="scratch-pool-test"
 JobName=scratch-pool
 . scripts/functions
 
-if test x${AUTOCHANGER} = x/dev/null ; then
-   echo "two-volume-test skipped. No autochanger."
-   exit
-fi
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-2disk-confs

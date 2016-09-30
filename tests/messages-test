@@ -9,9 +9,6 @@ TestName="messages-test"
 JobName=backup
 . scripts/functions
 
-# turn off until the email problem is solved
-exit 0
-
 scripts/cleanup
 scripts/copy-confs
 change_jobname BackupClient1 $JobName
