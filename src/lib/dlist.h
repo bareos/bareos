@@ -40,10 +40,10 @@
  */
 #ifdef HAVE_TYPEOF
 #define foreach_dlist(var, list) \
-        for((var)=NULL; ((var)=(typeof(var))(list)->next(var)); )
+        for((var)=NULL; list ? ((var)=(typeof(var))(list)->next(var)) : NULL; )
 #else
 #define foreach_dlist(var, list) \
-    for((var)=NULL; (*((void **)&(var))=(void*)((list)->next(var))); )
+        for((var)=NULL; list ? (*((void **)&(var))=(void*)((list)->next(var))) : NULL; )
 #endif
 
 struct dlink {
@@ -166,12 +166,12 @@ inline int dlist::size() const
 
 
 
-inline void * dlist::first() const
+inline void *dlist::first() const
 {
    return head;
 }
 
-inline void * dlist::last() const
+inline void *dlist::last() const
 {
    return tail;
 }

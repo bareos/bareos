@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2015      Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -45,6 +45,16 @@ struct MYJCR {
    dlink link;
 };
 
+/*
+ * if a contructor is used without parameter,
+ * dlink must be the first item in the used structure.
+ * (otherwise loffset must be calculated)
+ */
+struct LIST_ITEM {
+   dlink link;
+   char *buf;
+};
+
 static int my_compare(void *item1, void *item2)
 {
    MYJCR *jcr1, *jcr2;
@@ -54,6 +64,113 @@ static int my_compare(void *item1, void *item2)
    comp = strcmp(jcr1->buf, jcr2->buf);
    return comp;
 }
+
+/*
+ * we expect, that the list is filled with strings of numbers from 0 to n.
+ */
+void test_foreach_dlist(dlist *list)
+{
+   LIST_ITEM *val = NULL;
+   char buf[30];
+   int i=0;
+
+   /*
+    * test all available foreach loops
+    */
+   foreach_dlist(val, list) {
+      sprintf(buf, "%d", i);
+      assert_string_equal(val->buf, buf);
+      i++;
+   }
+}
+
+void dlist_fill(dlist *list, int max)
+{
+   LIST_ITEM *jcr = NULL;
+   char buf[30];
+   int start = list->size();
+
+   for (int i=0; i<max; i++) {
+      jcr = (LIST_ITEM *)malloc(sizeof(MYJCR));
+      // memset not required
+      //memset(jcr, 0, sizeof(MYJCR));
+      sprintf(buf, "%d", start + i);
+      jcr->buf = bstrdup(buf);
+      list->append(jcr);
+      //printf("%s %s %d %s %s\n", buf, jcr->buf, list->size(), list->first(), list->last());
+      //printf("%s %s %d %x %x\n", buf, jcr->buf, list->size(), list->first(), list->last());
+   }
+}
+
+void free_item(LIST_ITEM *item)
+{
+   if (item) {
+      free(item->buf);
+      free(item);
+   }
+}
+
+void free_dlist(dlist *list)
+{
+   LIST_ITEM *val = NULL;
+   int number = list->size();
+
+   for(int i=number; i>0; i--) {
+      val = (LIST_ITEM *)list->last();
+      list->remove(val);
+      free_item(val);
+   }
+
+   assert_int_equal(list->size(), 0);
+
+   delete(list);
+}
+
+void test_dlist_dynamic() {
+   dlist *list = NULL;
+   LIST_ITEM *item = NULL;
+
+   // NULL->size() will segfault
+   //assert_int_equal(list->size(), 0);
+
+   // does foreach work for NULL?
+   test_foreach_dlist(list);
+
+   // create empty list
+   list = New(dlist());
+   assert_int_equal(list->size(), 0);
+
+   // does foreach work for empty lists?
+   test_foreach_dlist(list);
+
+   // fill the list
+   dlist_fill(list, 20);
+   assert_int_equal(list->size(), 20);
+   test_foreach_dlist(list);
+
+   // verify and remove the latest entries
+   assert_int_equal(list->size(), 20);
+   item = (LIST_ITEM *)list->last();
+   list->remove(item);
+   assert_string_equal(item->buf, "19");
+   free_item(item);
+
+   assert_int_equal(list->size(), 19);
+   item = (LIST_ITEM *)list->last();
+   list->remove(item);
+   assert_string_equal(item->buf, "18");
+   free_item(item);
+
+   // added more entires
+   dlist_fill(list, 20);
+   test_foreach_dlist(list);
+
+   assert_int_equal(list->size(), 38);
+
+   free_dlist(list);
+}
+
+
 
 void test_dlist(void **state) {
    (void) state;
@@ -90,7 +207,7 @@ void test_dlist(void **state) {
    index = 19;
    foreach_dlist(jcr, jcr_chain) {
       assert_int_equal(index, atoi(jcr->buf));
-      index --;
+      index--;
       free(jcr->buf);
    }
    jcr_chain->destroy();
@@ -201,6 +318,8 @@ void test_dlist(void **state) {
    foreach_dlist(node, &chain) {
    }
    chain.destroy();
+
+   test_dlist_dynamic();
 
    sm_dump(false);    /* unit test */
 
