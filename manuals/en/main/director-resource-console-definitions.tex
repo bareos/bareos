@@ -10,6 +10,7 @@ This directive is used to  specify a list of Client resource names that can be a
 \defDirective{Dir}{Console}{Command ACL}{}{}{%
 This directive is used to specify a list of of console commands that can
 be executed by the console.
+See examples at \nameref{sec:CommandAclExample}.
 }
 
 \defDirective{Dir}{Console}{Description}{}{}{%
@@ -25,32 +26,25 @@ This directive is used to specify a list of Job resource names that can
 be accessed by the console.  Without this directive, the console cannot
 access any of the Director's Job resources.  Multiple Job resource names
 may be specified by separating them with commas, and/or by specifying
-multiple JobACL directives.  For example, the directive may be specified
-as:
+multiple \configdirective{Job ACL} directives.
+For example, the directive may be specified as:
 \bconfigInput{config/DirConsoleJobACL1.conf}
 With the above specification, the console can access the Director's  resources
-for the four jobs named on the JobACL directives,  but for no others.
+for the jobs named on the \configdirective{Job ACL} directives,  but for no others.
 }
 
 \defDirective{Dir}{Console}{Name}{}{}{%
-The name of the console. This  name must match the name specified in the
-Console's configuration  resource (much as is the case with Client
-definitions).
+The name of the console. This  name must match the name specified at the
+Console client.
 }
 
 \defDirective{Dir}{Console}{Password}{}{}{%
 Specifies the password that must be supplied for a named Bareos Console
-to be authorized.  The same password must appear in the {\bf Console}
-resource of the Console configuration file.  For added security, the
-password is never actually passed across the network but rather a
-challenge response hash code created with the password.  This directive
-is required.
-
-The password is plain text.  It is preferable for security reasons to choose
-random text.
+to be authorized.
 }
 
 \defDirective{Dir}{Console}{Plugin Options ACL}{}{}{%
+Use this directive to specify the list of allowed Plugin Options.
 }
 
 \defDirective{Dir}{Console}{Pool ACL}{}{}{%
@@ -114,11 +108,10 @@ how the Bareos Director (and the other components) must be configured to use TLS
 This directive permits you to specify where a restricted console
 can restore files. If this directive is not specified, only the
 default restore location is permitted (normally \file{/tmp/bareos-restores}.
-If {\bf all} is specified any path the
-user enters will be accepted (not very secure), any other
-value specified (there may be multiple WhereACL directives) will
+If \argument{*all*} is specified any path the
+user enters will be accepted. Any other
+value specified (there may be multiple \configdirective{Where ACL} directives) will
 restrict the user to use that path. For example, on a Unix system,
 if you specify "/", the file will be restored to the original
-location.  This directive is untested.
+location.
 }
-

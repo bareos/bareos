@@ -509,12 +509,57 @@ the types listed below.
     \index[general]{Data Type!acl}
     \label{DataTypeAcl}
 This directive defines what is permitted to be accessed.
-It does this by using a list of strings, separated by commas (\parameter{,}).
-
+It does this by using a list of regular expressions, separated by commas (\argument{,})
+or using multiple directives.
+If \argument{!} is prepended, the expression is negated.
 The special keyword \parameter{*all*} allows unrestricted access.
 
-Depending on the type of the ACL, the strings can be either resource names, paths or bconsole commands.
+Depending on the type of the ACL, the regular expressions can be either resource names, paths or console commands.
 
+Since Bareos \sinceVersion{dir}{ACL: strict regular expression handling}{16.2.4} regular expression are handled more strictly. Before also substring matches has been accepted.
+
+\label{sec:CommandAclExample}
+For clarification, we demonstrate the usage of ACLs by some examples for \linkResourceDirective{Dir}{Console}{Command ACL}:
+\begin{bconfig}{Allow only the help command}
+Command ACL = help
+\end{bconfig}
+
+\begin{bconfig}{Allow the help and the list command}
+Command ACL = help, list
+\end{bconfig}
+
+\begin{bconfig}{Allow the help and the (not existing) iDoNotExist command}
+Command ACL = help, iDoNotExist
+\end{bconfig}
+
+\begin{bconfig}{Allow all commands (special keyword)}
+Command ACL = *all*
+\end{bconfig}
+
+\begin{bconfig}{Allow all commands except sqlquery and commands starting with u}
+Command ACL = !sqlquery, !u.*, *all*
+\end{bconfig}
+
+Same:
+\begin{bconfig}{Some as above. Specifying it in multiple lines doesn't change the meaning}
+Command ACL = !sqlquery, !u.*
+Command ACL = *all*
+\end{bconfig}
+
+\begin{bconfig}{Additional deny the setip and setdebug commands}
+Command ACL = !sqlquery
+Command ACL = !u.*
+Comamnd ACL = !set(ip|debug)
+Comamnd ACL = *all*
+\end{bconfig}
+
+\warning{
+ACL checking stops at the first match. So the following definition allows all commands, which might not be what you expected:
+}
+\begin{bconfig}{Wrong: Allows all commands}
+# WARNING: this configuration ignores !sqlquery, as *all* is matched before.
+Command ACL = *all*, !sqlquery
+\end{bconfig}
 
 \item [auth-type]
     \index[general]{Data Type!auth-type}

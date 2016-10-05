@@ -212,7 +212,19 @@
 \newcommand{\pool}[1]{\resourcename{Dir}{Pool}{#1}}
 \newcommand{\argument}[1]{\textit{#1}}
 \newcommand{\resourcetype}[2]{\path|#2|$^{\mbox{\tiny #1}}$}
-\newcommand{\resourcename}[3]{\path|#3|$^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}
+
+\makeatletter
+\newcommand{\resourcename}{%
+\@ifstar{%
+\resourcenameStar%
+}{%
+\resourcenameNostar%
+}%
+}
+\makeatother
+\newcommand{\resourcenameStar}[3]{\path|#3|}
+\newcommand{\resourcenameNostar}[3]{\path|#3|$^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}
+
 \newcommand{\registrykey}[1]{\path|#1|}
 \newcommand{\variable}[1]{\path|#1|}
 \newcommand{\volume}[1]{\path|#1|}
@@ -514,7 +526,7 @@ Version $>=$ #3%
         breakatwhitespace=true,
         prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
         postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
-        caption=#1,
+        caption=\mbox{#1},
         %basicstyle=\ttfamily,
         basicstyle=\small,
         stringstyle=\ttfamily,
@@ -550,7 +562,7 @@ Version $>=$ #3%
         keepspaces=true,
         columns=fullflexible,
         %label=config:#1,
-        caption=#1,
+        caption=\mbox{#1},
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
         moredelim=[is][\underline]{<strong>}{</strong>},
@@ -576,7 +588,7 @@ Version $>=$ #3%
         keepspaces=true,
         columns=fullflexible,
         %label=config:#1,
-        caption=#1,
+        caption=\mbox{#1},
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
         moredelim=[is][\underline]{<strong>}{</strong>},

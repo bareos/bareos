@@ -99,10 +99,10 @@ user can use to interact with the Director.  These three kinds of consoles
 comprise three different security levels.
 
 \begin{itemize}
-\item The first console type is an {\bf anonymous} or {\bf default}
+\item The first console type is an \name{admin} or \name{anonymous} or \name{default}
 console, which has full privileges.  There is no console resource
 necessary for this type since the password is specified in the Director
-resource.  Typically you would use this {\bf anonymous} console
+resource.  Typically you would use this console
 only for administrators.
 
 \item The second type of console is a
@@ -159,58 +159,73 @@ restricted consoles as noted above.
 \section{Example Console Configuration File}
 \index[general]{Configuration!bconsole}
 
-The following configuration files were supplied by Phil Stracchino. For
-example, if we define the following in the user's bconsole.conf file:
+A Console configuration file might look like this:
 
-\begin{bconfig}{}
+\begin{bconfig}{bconsole configuration}
 Director {
-   Name = MyDirector
+  Name = "bareos.example.com-dir"
+  address = "bareos.example.com"
+  Password = "PASSWORD"
+}
+\end{bconfig}
+
+With this configuration, the console program (e.g. \command{bconsole}) will try to connect
+to a \bareosDir named \name{bareos.example.com-dir}
+at the network address \host{bareos.example.com} and authenticate to the admin console using the password \name{PASSWORD}.
+
+\subsection{Using Named Consoles}
+\label{sec:ConsoleAccessExample}
+The following configuration files were supplied by Phil Stracchino.
+
+To use named consoles from \command{bconsole}, use a \file{bconsole.conf} configuration file like this:
+\begin{bconfig}{bconsole: restricted-user}
+Director {
+   Name = bareos-dir
    Address = myserver
    Password = "XXXXXXXXXXX"
 }
 
 Console {
    Name = restricted-user
-   Password = "UntrustedUser"
+   Password = "RUPASSWORD"
 }
 \end{bconfig}
 
-Where the Password in the Director section is deliberately incorrect, and the
-Console resource is given a name, in this case {\bf restricted-user}. Then
-in the Director's bareos-dir.conf file (not directly accessible by the user),
-we define:
+Where the Password in the Director section is deliberately incorrect and the
+Console resource is given a name, in this case \argument{restricted-user}. Then
+in the Director configuration (not directly accessible by the user), we define:
 
-\begin{bconfig}{}
+\begin{bareosConfigResource}{bareos-dir}{console}{restricted-user}
 Console {
   Name = restricted-user
-  Password = "UntrustedUser"
+  Password = "RUPASSWORD"
   JobACL = "Restricted Client Save"
   ClientACL = restricted-client
   StorageACL = main-storage
   ScheduleACL = *all*
   PoolACL = *all*
   FileSetACL = "Restricted Client's FileSet"
-  CatalogACL = DefaultCatalog
+  CatalogACL = MyCatalog
   CommandACL = run
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-
-the user logging into the Director from his Console will get logged in as {\bf
-restricted-user}, and he will only be able to see or access a Job with the
-name {\bf Restricted Client Save} a Client with the name {\bf
-restricted-client}, a Storage device {\bf main-storage}, any Schedule or Pool,
-a FileSet named {\bf Restricted Client's FileSet}, a Catalog named {\bf
-DefaultCatalog}, and the only command he can use in the Console is the {\bf
-run} command. In other words, this user is rather limited in what he can see
+The user login into the Director from his Console will get logged in as \resourcename{Dir}{Console}{restricted-user}
+and he will only be able to see or access a Job with the
+name \resourcename*{Dir}{Job}{Restricted Client Save}, a Client with the name \resourcename*{Dir}{Client}{restricted-client},
+a storage device \resourcename*{Dir}{Storage}{main-storage}, any Schedule or Pool,
+a FileSet named \resourcename*{Dir}{FileSet}{Restricted Client's FileSet}, a Catalog named \resourcename*{Dir}{Catalog}{MyCatalog}
+and the only command he can use in the Console is the \bcommand{run}{} command.
+In other words, this user is rather limited in what he can see
 and do with Bareos.
+For details how to configure ACLs, see the \dt{Acl} data type description.
 
-The following is an example of a bconsole.conf file that can access
-several Directors and has different Consoles depending on the director:
+The following is an example of a  \file{bconsole.conf} file that can access
+several Directors and has different Consoles depending on the Director:
 
-\begin{bconfig}{}
+\begin{bconfig}{bconsole: multiple consoles}
 Director {
-   Name = MyDirector
+   Name = bareos-dir
    Address = myserver
    Password = "XXXXXXXXXXX"    # no, really.  this is not obfuscation.
 }
@@ -223,24 +238,24 @@ Director {
 
 Console {
    Name = restricted-user
-   Password = "UntrustedUser"
+   Password = "RUPASSWORD"
    Director = MyDirector
 }
 
 Console {
-   Name = restricted-user
-   Password = "A different UntrustedUser"
+   Name = restricted-user2
+   Password = "OTHERPASSWORD"
    Director = SecondDirector
 }
 \end{bconfig}
 
-The second Director referenced at "secondserver" might look
+The second Director referenced at \resourcename{Dir}{Director}{secondserver} might look
 like the following:
 
-\begin{bconfig}{}
+\begin{bareosConfigResource}{bareos-dir}{console}{restricted-user2}
 Console {
-  Name = restricted-user
-  Password = "A different UntrustedUser"
+  Name = restricted-user2
+  Password = "OTHERPASSWORD"
   JobACL = "Restricted Client Save"
   ClientACL = restricted-client
   StorageACL = second-storage
@@ -251,18 +266,4 @@ Console {
   CommandACL = run, restore
   WhereACL = "/"
 }
-\end{bconfig}
-
-
-An example Console configuration file might be the following:
-
-\begin{bconfig}{}
-#
-# Bareos Console Configuration File
-#
-Director {
-  Name = "bareos.example.com-dir"
-  address = "bareos.example.com"
-  Password = "PASSWORD"
-}
-\end{bconfig}
+\end{bareosConfigResource}
