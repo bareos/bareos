@@ -118,6 +118,7 @@ echo %version | grep -o  '[0-9]\{1,3\}\.[0-9]\{1,3\}\.[0-9]\{1,3\}' > %{buildroo
 #       if the old config file don't exists but we have created a backup before,
 #       restore the old config file.
 #       Remove our backup, if it exists.
+# This update helper should be removed wih bareos-17.x.
 
 %define post_backup_file() \
 if [ -f  %1 ]; then \
@@ -136,11 +137,13 @@ fi; \
 
 %post
 %post_backup_file /etc/bareos/bareos-dir.d/webui-consoles.conf
-%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-consoles.conf
 %post_backup_file /etc/bareos/bareos-dir.d/webui-profiles.conf
-%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-profiles.conf
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
+
+%posttrans
+%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-consoles.conf
+%posttrans_restore_file /etc/bareos/bareos-dir.d/webui-profiles.conf
 
 %if 0%{?suse_version} >= 1315
 # 1315:
