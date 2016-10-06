@@ -912,7 +912,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) "%{_sysconfdir}/bareos/bareos-dir.d/fileset/Windows All Drives.conf"
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/backup-bareos-fd.conf
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupCatalog.conf
-%attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupClient1.conf
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/jobdefs/DefaultJob.conf
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreFiles.conf
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-dir.d/messages/Daemon.conf

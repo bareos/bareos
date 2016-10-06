@@ -426,8 +426,6 @@ bool BSOCK_TCP::send()
 {
    int32_t pktsiz;
    int32_t *hdr;
-   int32_t written = 0;
-   int32_t packet_msglen = 0;
    bool ok = true;
 
    if (errors) {
@@ -446,13 +444,23 @@ bool BSOCK_TCP::send()
       return false;
    }
 
+   if (msglen > max_message_len) {
+      if (!m_suppress_error_msgs) {
+         Qmsg4(m_jcr, M_ERROR, 0,
+             _("Socket has insane msglen=%d on call to %s:%s:%d\n"),
+             msglen, m_who, m_host, m_port);
+      }
+      return false;
+   }
+
    if (m_use_locking) {
       P(m_mutex);
    }
 
    /*
-    * Store packet length at head of message -- note, we have reserved an int32_t just before msg,
-    * So we can store there
+    * Store packet length at head of message.
+    * Note: we have reserved an int32_t just before msg,
+    *       so it can be stored there.
     */
    hdr = (int32_t *)(msg - (int)header_length);
 
@@ -461,35 +469,16 @@ bool BSOCK_TCP::send()
     */
    if (msglen <= 0) {
       pktsiz = header_length;                /* signal, no data */
-      *hdr = htonl(msglen);                  /* store signal */
-      ok = send_packet(hdr, pktsiz);
    } else {
       /*
-       * msg might be to long for a single Bareos packet.
-       * If so, send msg as multiple packages.
+       * msglen > 0 and msglen <= max_message_len
+       * message fits into one Bareos packet
        */
-      while (ok && (written < msglen)) {
-         if ((msglen - written) > max_message_len) {
-            /*
-             * Message is to large for a single Bareos packet.
-             * Send it via multiple packets.
-             */
-            pktsiz = max_packet_size;                  /* header + data */
-            packet_msglen = max_message_len;
-         } else {
-            /*
-             * Remaining message fits into one Bareos packet
-             */
-            pktsiz = header_length + (msglen-written); /* header + data */
-            packet_msglen = (msglen-written);
-         }
-
-         *hdr = htonl(packet_msglen);        /* store length */
-         ok = send_packet(hdr, pktsiz);
-         written += packet_msglen;
-         hdr = (int32_t *)(msg + written - (int)header_length);
-      }
+      pktsiz = header_length + msglen;      /* header + data */
    }
+
+   *hdr = htonl(msglen);                  /* store signal or message length */
+   ok = send_packet(hdr, pktsiz);
 
    if (m_use_locking) {
       V(m_mutex);

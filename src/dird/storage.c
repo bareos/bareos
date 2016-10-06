@@ -543,14 +543,18 @@ static inline void free_vol_list(changer_vol_list_t *vol_list)
 {
    vol_list_t *vl;
 
-   foreach_dlist(vl, vol_list->contents) {
-      if (vl->VolName) {
-         free(vl->VolName);
+   if (vol_list->contents) {
+      foreach_dlist(vl, vol_list->contents) {
+         if (vl->VolName) {
+            free(vl->VolName);
+         }
       }
+      vol_list->contents->destroy();
+      delete vol_list->contents;
+      vol_list->contents = NULL;
+   } else {
+      Dmsg0(100, "free_vol_list: vol_list->contents already empty\n");
    }
-   vol_list->contents->destroy();
-   delete vol_list->contents;
-   vol_list->contents = NULL;
 }
 
 /*
