@@ -216,6 +216,18 @@ This directive allows you to enable or disable automatic execution
 These settings are plugin specific, see \nameref{fdPlugins}.
 }
 
+\defDirective{Dir}{Job}{File History Size}{}{}{%
+When using NDMP and \linkResourceDirective{Dir}{Job}{Save File History} is enabled,
+this directives controls the size of the internal temporary database (LMDB)
+to translate NDMP file and directory information into Bareos file and directory information.
+
+\configdirective{File History Size} must be greater the number of directories + files of this NDMP backup job.
+
+\warning{This uses a large memory mapped file (\configdirective{File History Size} $* 256 \Longrightarrow$ around 2,3 GB for the \configdirective{File History Size = 10000000}).
+On 32-bit systems or if a memory limit for the user running the \bareosDir (normally \user{bareos}) exists
+(verify by \command{su - bareos -s /bin/sh -c "ulimit -a"}), this may fail.}
+}
+
 \defDirective{Dir}{Job}{File Set}{}{}{%
 The FileSet directive specifies the FileSet that will be used in the
 current Job.  The FileSet specifies which directories (or files) are to
@@ -1282,6 +1294,8 @@ any text after the last quote character.
 \defDirective{Dir}{Job}{Save File History}{}{14.2.0}{%
 \index[general]{NDMP!File History}%
 Allow disabling storing the file history, as this causes problems problems with some implementations of NDMP (out-of-order metadata).
+
+With \linkResourceDirective{Dir}{Job}{File History Size} the maximum number of files and directories inside a NDMP job can be configured.
 
 \warning{The File History is required to do a single file restore from NDMP backups. With this disabled, only full restores are possible.}
 }

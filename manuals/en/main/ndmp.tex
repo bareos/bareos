@@ -336,7 +336,7 @@ set by the user. The following environment variables are currently set automatic
     \item PREFIX
 \end{itemize}}
 
-\warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options \textrightarrow Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
+\warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options - Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
 
 
 \subsection{Bareos Director: Configure NDMP Jobs}
@@ -952,6 +952,15 @@ together with a description, want files to restore.
 
 The reason for this is that the Primary Storage System handles the backup data by itself.
 Bareos will not modify the backup data it receives from the Primary Storage System.
+
+\subsection{Temporary memory mapped database}
+
+\limitation*{NDMP}{64-bit system recommended}{%
+The \bareosDir uses a memory mapped database (LMBD) to temporarily store NDMP file information.
+On some 32-bit systems the default \linkResourceDirective{Dir}{Job}{File History Size} requires a larger memory area than available.
+In this case, you either have to lower the \linkResourceDirective{Dir}{Job}{File History Size}
+or preferably run the \bareosDir on a 64-bit system.
+}
 
 \section{Tested Environments}
 
