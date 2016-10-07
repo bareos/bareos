@@ -152,7 +152,7 @@ class StorageController extends AbstractActionController
          }
          elseif($action == "release") {
             $storage = $this->params()->fromQuery('storage');
-            $drive = $this->params()->fromQuery('drive');
+            $drive = $this->params()->fromQuery('srcslots');
 
             try {
                $result = $this->getStorageModel()->releaseSlot($this->bsock, $storage, $drive);

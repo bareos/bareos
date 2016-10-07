@@ -86,7 +86,8 @@ class AuthController extends AbstractActionController
                $_SESSION['bareos']['product-updates'] = $bareos_updates;
                $_SESSION['bareos']['dird-update-available'] = false;
 
-               if(isset($bareos_updates) && $bareos_updates != NULL) {
+               if(isset($bareos_updates) && $bareos_updates != false) {
+                  $_SESSION['bareos']['product-updates-status'] = true;
                   $updates = json_decode($bareos_updates, true);
 
                   try {
@@ -125,6 +126,10 @@ class AuthController extends AbstractActionController
                         }
                      }
                   }
+               }
+               else {
+                  // updates could not be retrieved by ajax call
+                  $_SESSION['bareos']['product-updates-status'] = false;
                }
 
                // Get the config.

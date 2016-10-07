@@ -32,11 +32,17 @@ class UpdateAlert extends AbstractHelper
    protected $value;
    protected $result;
 
-   public function __invoke($value)
+   public function __invoke($a=null,$b=null)
    {
-      if($value) {
-         $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Updates available"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
-         return $this->result;
+      if($a) {
+         if($b) {
+            $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Updates available"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
+            return $this->result;
+         }
+      }
+      else {
+         $this->result = '<a data-toggle="tooltip" data-placement="bottom" href="http://download.bareos.com/" target="_blank"title="Update informaton could not be retrieved"><span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span></a>';
+            return $this->result;
       }
    }
 }
