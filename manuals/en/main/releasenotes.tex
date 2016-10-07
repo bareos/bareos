@@ -35,7 +35,7 @@ First stable release of the Bareos 16.2 branch.
      \item Bareos packages contain the default configuration in \nameref{sec:ConfigurationSubdirectories}. Please read \nameref{sec:UpdateToConfigurationSubdirectories} before updating (make a copy of your configuration directories for your \bareosDir and \bareosSd before updating). Note: as the old configuration files are still supported, in most cases no changes are required.
      \item The default configuration does no longer name the \resourcetype{Dir}{Director} and \resourcetype{Sd}{Storage} resources after the systems hostname (\path|$HOSTNAME-dir| resp. \path|$HOSTNAME-sd|) but use \resourcename{Dir}{Director}{bareos-dir} resp. \resourcename{Sd}{Storage}{bareos-sd} as defaults. The prior solution had the disadvantage, that \path|$HOSTNAME-dir|\hide{$} has also been set on \bareosFd not running on the \bareosDir, which almost ever did require changing this setting. Also the new approach aligns better with \nameref{sec:ConfigurationSubdirectories}.
      \item Due to limitation of the build system, the default resource \resourcename{Dir}{FileSet}{Linux All} have been renamed to \resourcename{Dir}{FileSet}{LinuxAll} (no space between Linux and All).
-    \item The configuration of the \package{bareos-traymonitor} has also been splitted into resource files.
+     \item The configuration of the \package{bareos-traymonitor} has also been split into resource files.
         Additional, these resource files are now packaged in other packages:
         \begin{itemize}
             \item \path|$CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf|: \package{bareos-traymonitor}
@@ -45,9 +45,18 @@ First stable release of the Bareos 16.2 branch.
         \end{itemize}
          This way, the \package{bareos-traymonitor} will be configured automatically for the installed components.
      \end{itemize}
+\item Strict ACL handling
+     \begin{itemize}
+     \item Bareos Console \dt{Acl}s do no longer automatically matches substrings
+        (to avoid that e.g. \linkResourceDirectiveValue{Dir}{Console}{Pool ACL}{Full} also matches \pool{VirtualFull}).
+        To configure the ACL to work as before, \linkResourceDirectiveValue{Dir}{Console}{Pool ACL}{.*Full.*} must be set.
+        Unfortunately the \bareosWebui 15.2 \resourcename{Dir}{Profile}{webui} did use \linkResourceDirectiveValue{Dir}{Console}{Command ACL}{.bvfs*}, which is also no longer works as intended. Moreover, to use all of \bareosWebui 16.2 features, some additional commands must be permitted, so best use the new \resourcename{Dir}{Profile}{webui-admin}.
+     \end{itemize}
 \item \bareosWebui
      \begin{itemize}
      \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP $>=$ 5.3.17 (5.3.23).
+     \item Updating from Bareos 15.2: Adapt \resourcename{Dir}{Profile}{webui} (from bareos 15.2) to allow all commands of \resourcename{Dir}{Profile}{webui-admin} (\linkResourceDirective{Dir}{Console}{Command ACL}).
+     Alternately modify all \resourcetype{Dir}{Console}s currently using \resourcename{Dir}{Profile}{webui} to use \resourcename{Dir}{Profile}{webui-admin} instead.
      \end{itemize}
 \end{itemize}
 }
