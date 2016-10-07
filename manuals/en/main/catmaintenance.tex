@@ -12,15 +12,11 @@ Bareos stores its catalog in a database.
 Different database backends are supported:
 \begin{itemize}
     \item PostgreSQL
-    \item MySQL/MariaDB
+    \item MariaDB/MySQL (see \nameref{sec:MysqlSupport})
     \item Sqlite (only for testing)
 \end{itemize}
 
-What database will be used, can be configured in \file{/etc/bareos/bareos-dir.conf}, see the \nameref{DirectorResourceCatalog}.
-
-As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB.
-We test our packages against the prefered MySQL fork that a distribution provides.
-\index[general]{MariaDB|see{MySQL}}
+What database will be used, can be configured in the \bareosDir configuration, see the \nameref{DirectorResourceCatalog}.
 
 The database often runs on the same server as the Bareos Director.
 However, it is also possible to run it on a different system.
@@ -953,6 +949,19 @@ consider using \nameref{bareos-dbcheck} program .
 
 \index[general]{Database!MySQL}
 \index[general]{MySQL}
+
+\subsection{MySQL/MariaDB Support}
+\index[general]{MariaDB|see{MySQL}}
+\label{sec:MysqlSupport}
+
+As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB and fully support it.
+We test our packages against the preferred MySQL fork that a distribution provides.
+
+\limitation{MySQL}{MySQL $\geq$ 5.7 not supported}{%
+MySQL 5.7 did change it behavior in some respects. The result is, that the Bareos database creation scripts do not work any more.
+For the time being, we advise to use MariaDB instead, which is also the default on most Linux distributions.
+See \ticket{705}.
+}
 
 \subsection{Compacting Your MySQL Database}
 \index[general]{Database!MySQL!Compacting}

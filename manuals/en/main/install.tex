@@ -47,16 +47,18 @@ Next you have to decide, what database backend you want to use.
 Bareos supports following database backends:
 \begin{itemize}
     \item PostgreSQL by package \package{bareos-database-postgresql}
-    \item MySQL by package \package{bareos-database-mysql}
+    \item MariaDB/MySQL by package \package{bareos-database-mysql}
     \item Sqlite by package \package{bareos-database-sqlite3} \\
         \warning{The Sqlite backend is only intended for testing, not for productive use.}
 \end{itemize}
 
-The PostgreSQL backend is the default.
-However, the MySQL backend is also supported,
-while the Sqlite backend is intended for testing purposes only.
+\paragraph{PostgreSQL} is the default backend. If you have no other preferences, you should use this one.
 
-The Bareos database packages have there dependencies only to the database client packages, 
+\paragraph{MariaDB/MySQL} backend is also supported. If your system offers both, you should use MariaDB, see \nameref{sec:MysqlSupport}.
+
+\paragraph{Sqlite} backend is intended for testing purposes only.
+
+The Bareos database packages have there dependencies only to the database client packages,
 therefore the database itself must be installed manually.
 
 
