@@ -90,7 +90,7 @@ To configure a job to use Always Incremental Backup Scheme, following configurat
 \begin{bareosConfigResource}{bareos-dir}{job}{example}
 Job {
     ...
-    Accurate = Yes
+    Accurate = yes
     Always Incremental = yes
     Always Incremental Job Retention = <timespec>
     Always Incremental Keep Number = <number>
@@ -111,22 +111,20 @@ Job {
 
 \begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
 Job {
-  Name = "Consolidate"
-  JobDefs = "DefaultJob"
-  Type = Consolidate
-
-  Storage = File1
-  Pool = AI-Incremental
+    Name = "Consolidate"
+    Type = "Consolidate"
+    Accurate = "yes"
+    JobDefs = "DefaultJob"
 }
 \end{bareosConfigResource}
 
-
 \begin{description}
     \item[\resourceDirectiveValue{Dir}{Job}{Type}{Consolidate}] configures a job to be a consolidate job. This type have been introduced with the Always Incremental feature. When used, it automatically trigger the consolidation of incremental jobs that need to be consolidated.
+    \item[\linkResourceDirectiveValue{Dir}{Job}{Accurate}{yes}] let the generated virtual backup job keep the accurate information.
     \item[\linkResourceDirective{Dir}{Job}{Max Full Consolidations}] is described later, see \nameref{sec:MaxFullConsolidations}.
 \end{description}
 
-
+The \job{Consolidate} job evaluates all jobs configured with \linkResourceDirectiveValue{Dir}{Job}{Always Incremental}{yes}. When a job is selected for consolidation, all job runs are taken into account, independent of the pool and storage where they are located.
 
 The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
 
@@ -144,21 +142,21 @@ Pool {
   Label Format = "AI-Incremental-"
   Volume Use Duration = 23h
   Storage = File1
-  Next Pool = AI-Full
+  Next Pool = AI-Consolidated         # consolidated jobs go to this pool
 }
 \end{bareosConfigResource}
 
-\begin{bareosConfigResource}{bareos-dir}{pool}{AI-Full}
+\begin{bareosConfigResource}{bareos-dir}{pool}{AI-Consolidated}
 Pool {
-  Name = AI-Full
+  Name = AI-Consolidated
   Pool Type = Backup
   Recycle = yes                       # Bareos can automatically recycle Volumes
   Auto Prune = no                     # Don't prune jobs from the volume. Let this be done by Consolidate.
   Maximum Volume Bytes = 50G          # Limit Volume size to something reasonable
-  Label Format = "AI-Full-"
+  Label Format = "AI-Consolidated-"
   Volume Use Duration = 23h
   Storage = File2
-  Next Pool = AI-Longterm
+  Next Pool = AI-Longterm             # copy jobs write to this pool
 }
 \end{bareosConfigResource}
 
@@ -185,28 +183,26 @@ The Backup itself is scheduled every night to run as incremental backup, while t
 
 \begin{bareosConfigResource}{bareos-dir}{job}{BackupClient1}
 Job {
-  Name = "BackupClient1"
-  JobDefs = "DefaultJob"
+    Name = "BackupClient1"
+    JobDefs = "DefaultJob"
 
-  # Always incremental settings
-  AlwaysIncremental = yes
-  AlwaysIncrementalJobRetention = 7 days
+    # Always incremental settings
+    AlwaysIncremental = yes
+    AlwaysIncrementalJobRetention = 7 days
 
-  Accurate = yes
+    Accurate = yes
 
-  Pool = AI-Incremental
-  Full Backup Pool = AI-Full
+    Pool = AI-Incremental
+    Full Backup Pool = AI-Consolidated
 }
 \end{bareosConfigResource}
 
 \begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
 Job {
-  Name = "Consolidate"
-  JobDefs = "DefaultJob"
-  Schedule = Consolidate
-  Type = Consolidate
-  Storage = File1
-  Pool = AI-Incremental
+    Name = "Consolidate"
+    Type = "Consolidate"
+    Accurate = "yes"
+    JobDefs = "DefaultJob"
 }
 \end{bareosConfigResource}
 
@@ -328,14 +324,12 @@ This is of course not desirable so the directive \linkResourceDirective{Dir}{Job
 
 \begin{bareosConfigResource}{bareos-dir}{job}{Consolidate}
 Job {
-  Name = "Consolidate"
-  JobDefs = "DefaultJob"
-  Type = Consolidate
+    Name = "Consolidate"
+    Type = "Consolidate"
+    Accurate = "yes"
+    JobDefs = "DefaultJob"
 
-  Max Full Consolidations = 1
-
-  Storage = File1
-  Pool = AI-Incremental
+    Max Full Consolidations = 1
 }
 \end{bareosConfigResource}
 
@@ -379,7 +373,7 @@ There are two options to achieve this goal.
 The configuration of archiving via copy job is simple, just configure a copy job that copies over the latest full backup
 at that point in time.
 
-As all full backups go into the \pool{AI-Full}, we just copy all uncopied backups in the \pool{AI-Full} to a longterm pool:
+As all full backups go into the \pool{AI-Consolidated}, we just copy all uncopied backups in the \pool{AI-Consolidated} to a longterm pool:
 
 \begin{bareosConfigResource}{bareos-dir}{job}{CopyLongtermFull}
 Job {
@@ -387,8 +381,8 @@ Job {
   Schedule = LongtermFull
   Type = Copy
   Level = Full
-  Pool = AI-Full
-  selection Type = PoolUncopiedJobs
+  Pool = AI-Consolidated
+  Selection Type = PoolUncopiedJobs
   Messages = Standard
 }
 \end{bareosConfigResource}
@@ -397,6 +391,10 @@ As can be seen in the plot, the copy job creates a copy of the current full back
 \begin{center}
 \includegraphics[width=0.8\linewidth]{\idir always-incremental-copy-job-archiving}
 \end{center}
+
+The other disadvantage is, that it copies all jobs, not only the virtual full jobs. It also includes the virtual incremental jobs from this pool.
+% WRONG: does not prevent that the same job is copied twice
+%This could be avoided by using \linkResourceDirectiveValue{Dir}{Job}{Selection Type}{SqlQuery} and \linkResourceDirectiveValue{Dir}{Job}{Selection Pattern}{SELECT JobId FROM Job JOIN Pool USING(PoolId) WHERE Job.Type='B' and Job.Level='F' and Job.Jobstatus="T" and pool.name="AI-Consolidated";}
 
 
 \subsection{Virtual Full Jobs}
@@ -411,7 +409,7 @@ Job {
   Schedule = LongtermFull
   Type = Backup
   Level = VirtualFull
-  Pool = AI-Full
+  Pool = AI-Consolidated
   Messages = Standard
 
   Priority = 13                 # run after  Consolidate
