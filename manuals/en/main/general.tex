@@ -131,6 +131,31 @@ To perform a successful save or restore, the following four daemons must be
 configured and running: the Director daemon, the File daemon, the Storage
 daemon, and the Catalog service (MySQL, PostgreSQL or SQLite).
 
+\section{Bareos Version Numbers and Releases}
+    \index[general]{Version numbers}
+    \index[general]{Releases}
+
+Bareos version numbers consists of three parts: YY.Q.C
+
+\begin{center}
+\begin{tabular}{p{0.1\textwidth} p{0.8\textwidth}}
+YY & year (last two digits) \\
+Q  & quarter of the year \\
+YY.Q & year and quarter of the code freeze.
+        After this, as a general rule, no new feature should get introduced to this Bareos branch.
+        Subsequent release are for bugfixing. \\
+C & Release counter. For every subsequent release, this counter is incremented.
+        Beginning with 16.2, numbers from 1 to 3 represents the month of the quarter during development.
+        After the code freeze, the number is set to 4. So, stable releases get number from 4 onwards.
+        Maintenance releases get numbers starting from 5 onwards. \\
+\end{tabular}
+\end{center}
+
+Following information can be determined from the Bareos release bareos-16.2.4:
+\begin{itemize}
+\item 16.2: Code freeze have been in the second quarter of 2016
+\item 4: this is the first stable release of the bareos-16.2 branch
+\end{itemize}
 
 \section{Bareos Packages}
     \label{sec:BareosPackages}
