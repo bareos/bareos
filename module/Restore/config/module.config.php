@@ -33,6 +33,7 @@ return array(
    'controller_plugins' => array(
       'invokables' => array(
          'SessionTimeoutPlugin' => 'Application\Controller\Plugin\SessionTimeoutPlugin',
+         'CommandACLPlugin' => 'Application\Controller\Plugin\CommandACLPlugin',
       ),
    ),
    'router' => array(

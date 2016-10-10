@@ -36,6 +36,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
 <!-- Job -->
 <div class="row">
 
@@ -312,3 +314,5 @@ $(document).ready(function() {
 } );
 
 </script>
+
+<?php endif; ?>

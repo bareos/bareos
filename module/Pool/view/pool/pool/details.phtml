@@ -37,6 +37,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
 <!-- POOL -->
 <div class="row">
 
@@ -285,3 +287,5 @@ $(document).ready(function() {
 } );
 
 </script>
+
+<?php endif; ?>

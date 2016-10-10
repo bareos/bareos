@@ -37,6 +37,19 @@ class StorageController extends AbstractActionController
    protected $storageModel = null;
    protected $poolModel = null;
    protected $bsock = null;
+   protected $acl_alert = false;
+
+   private $required_commands = array(
+      "list",
+      "llist",
+      "status",
+      "import",
+      "export",
+      "release",
+      "update",
+      "label",
+      ".pools"
+   );
 
    public function indexAction()
    {
@@ -44,6 +57,16 @@ class StorageController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       return new ViewModel(array());
@@ -55,6 +78,16 @@ class StorageController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $result = null;
@@ -216,6 +249,16 @@ class StorageController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $result = null;

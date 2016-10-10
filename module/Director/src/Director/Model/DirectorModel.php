@@ -27,6 +27,19 @@ namespace Director\Model;
 
 class DirectorModel
 {
+   public function getAvailableCommands(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = '.help';
+         $result = $bsock->send_command($cmd, 2, null);
+         $messages = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $messages['result'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
    public function getDirectorVersion(&$bsock=null)
    {
       if(isset($bsock)) {

@@ -92,7 +92,6 @@ class AuthController extends AbstractActionController
 
                   try {
                      $dird_version = $this->getDirectorModel()->getDirectorVersion($this->bsock);
-                     $this->bsock->disconnect();
                   }
                   catch(Exception $e) {
                      echo $e->getMessage();
@@ -132,6 +131,30 @@ class AuthController extends AbstractActionController
                   $_SESSION['bareos']['product-updates-status'] = false;
                }
 
+               // Get available commands
+               try {
+                  $commands = $this->getDirectorModel()->getAvailableCommands($this->bsock);
+               }
+               catch(Exception $e) {
+                  echo $e->getMessage();
+               }
+
+               // Push available commands into SESSION context.
+               $_SESSION['bareos']['commands'] = $commands;
+
+               // Check if Command ACL has the minimal requirements
+               if($_SESSION['bareos']['commands']['.help']['permission'] == 0) {
+                  $this->bsock->disconnect();
+                  session_destroy();
+                  $err_msg = 'Sorry, your Command ACL does not fit the minimal requirements. For further information, please read the <a href="http://doc.bareos.org/master/html/bareos-manual-main-reference.html" target="_blank">Bareos documentation</a>.';
+                  return new ViewModel(
+                     array(
+                        'form' => $form,
+                        'err_msg' => $err_msg,
+                     )
+                  );
+               }
+
                // Get the config.
                $configuration = $this->getServiceLocator()->get('configuration');
 
@@ -151,6 +174,8 @@ class AuthController extends AbstractActionController
                else {
                   return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
                }
+
+               $this->bsock->disconnect();
             } else {
                $this->bsock->disconnect();
                session_destroy();

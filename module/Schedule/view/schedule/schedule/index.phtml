@@ -36,6 +36,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
 <!-- modal-001 start -->
 <div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
   <div class="modal-dialog modal-md">
@@ -160,3 +162,5 @@ $(document).ready(function() {
 } );
 
 </script>
+
+<?php endif; ?>

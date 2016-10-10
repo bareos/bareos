@@ -40,6 +40,20 @@ class RestoreController extends AbstractActionController
    protected $filesetModel = null;
    protected $restore_params = null;
    protected $bsock = null;
+   protected $acl_alert = false;
+
+   private $required_commands = array(
+      "llist",
+      ".filesets",
+      ".jobs",
+      "restore",
+      ".bvfs_update",
+      ".bvfs_get_jobids",
+      ".bvfs_lsdirs",
+      ".bvfs_lsfiles",
+      ".bvfs_restore",
+      ".bvfs_cleanup"
+   );
 
    /**
     *
@@ -50,6 +64,16 @@ class RestoreController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $this->bsock = $this->getServiceLocator()->get('director');
