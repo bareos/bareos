@@ -17,7 +17,7 @@
 #!BuildIgnore: post-build-checks
 
 Name:           mingw-debugsrc-devel
-Version:        16.3.1
+Version:        16.4.1
 Release:        0
 Summary:        bareos
 License:        LGPLv2+
