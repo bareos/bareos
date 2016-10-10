@@ -22,12 +22,36 @@ from   pprint import pprint
 import re
 
 
+class Dist:
+    def __init__(self, obsname):
+        self.obsname = obsname
+        [ self.dist, self.version ] = obsname.split('_',1)
+        self.dist = self.dist.replace('xUbuntu', 'Ubuntu').replace('SLE','SLES')
+        self.version = self.version.replace('_', '').replace('Leap', '').replace('SP','sp')
+        if self.dist == 'Debian':
+            self.version = self.version.replace('.0', '')
+
+    def dist(self):
+        return self.dist
+    
+    def version(self):
+        return self.version
+    
+    def getList(self):
+        return [ self.dist, self.version ]
+
 
 class LatexTable:
     def __init__(self, columns, rows):
         self.columns = columns
         self.rows = rows
-        
+
+    def __getIndexes(self):
+        result = ''
+        for i in self.columns:
+            result += '\\index[general]{{Platform!{0}!{1}}}'.format(Dist(i).dist, Dist(i).version)
+        return result
+
     def __getHeader(self):
         result="\\begin{center}\n"
         result+="\\begin{longtable}{ l "
@@ -45,7 +69,7 @@ class LatexTable:
         prefix=None
         prefixcount=0
         for i in self.columns:
-            prefix_new=i.split('_',1)[0].replace('_', ' ')
+            prefix_new=Dist(i).dist
             if prefix_new != prefix:
                 if prefixcount:
                     result+='\\multicolumn{%i}{ c|}{%s} &\n' % (prefixcount, prefix)
@@ -53,8 +77,7 @@ class LatexTable:
                 prefixcount=1
             else:
                 prefixcount+=1
-            version = i.split('_',1)[1]
-            version_header+=" & " + version.replace('_', '').replace('Leap', '').replace('SP','sp')
+            version_header+=" & " + Dist(i).version
         if prefixcount:
             result+='\\multicolumn{%i}{ c }{%s}\n' % (prefixcount, prefix)
         result+="\\\\ \n"
@@ -64,7 +87,7 @@ class LatexTable:
     def __getRows(self):
         result=''
         for desc in sorted(self.rows.keys()):
-            result+="%-40s & " % (desc)
+            result+='\\package{{{:s}}} & '.format(desc)
             result+=" & ".join(self.rows[desc])
             result+=' \\\\ \n'
         return result
@@ -76,11 +99,11 @@ class LatexTable:
         return result 
     
     def get(self):
-        result  = self.__getHeader()
+        result  = self.__getIndexes()
+        result += self.__getHeader()
         result += self.__getRows()
         result += self.__getFooter()
         return result
-
 
 class PackageDistReleaseData:
     def __init__(self):
