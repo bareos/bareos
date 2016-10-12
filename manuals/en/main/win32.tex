@@ -115,40 +115,11 @@ DBADMINUSER and DBADMINPASSWORD are used to create the bareos
 databases. If login is not possible silent installer will abort
 
 
-\subsection{Installing multiple Windows filedaemon services}
-
-It is possible to run multiple \bareosFd instances on Windows.
-To achieve this, you  need to create a service for each instance, and a configuration file that at least
-has a individual fd port for each instance.
-
-To create two bareos-fd services, you can call the following service create calls on the commandline on windows as administrator:
-
-\begin{commands}{}
-sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
-sc create bareosfd3 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd3.conf\""  depend= "tcpip/afd"
-\end{commands}
-
-This will create two \bareosFd services, one with the name bareosfd2 and the second with the name bareosfd3.
-
-The configuration files for the two services are \file{bareos-fd.conf} and \file{bareos-fd2.conf}, and need to have different network settings.
-
-The services can be started by calling
-
-\begin{commands}{}
-sc start bareosfd2
-\end{commands}
-
-and
-
-\begin{commands}{}
-sc start bareosfd3
-\end{commands}
-
-
 \section{Dealing with Windows Problems}
-\label{problems}
 \index[general]{Problem!Windows}
 \index[general]{Windows!Dealing with Problems}
+
+\subsection{Antivirus Program}
 
 If you are not using the portable option, and you have
 \linkResourceDirective{Dir}{FileSet}{Enable VSS}
@@ -167,64 +138,16 @@ problems, you might have to turn on VSS debugging.  The following
 link describes how to do this:
 \url{http://support.microsoft.com/kb/887013/en-us}.
 
-In Microsoft Windows Small Business Server 2003 the VSS Writer for Exchange
-is turned off by default. To turn it on, please see the following link:
-\url{http://support.microsoft.com/default.aspx?scid=kb;EN-US;Q838183}
+\subsection{Enable Debuggging}
 
+In case of problems, you can enable the creation of log files.
+For this you have to use the \command{bconsole} \ilink{setdebug}{bcommandSetdebug} command:
+\begin{bconsole}{Enable debug}
+*<input>setdebug client=bareos-fd level=200 trace=1</input>
+Connecting to Client bareos-fd at bareos.example.com:9102
+2000 OK setdebug=200 trace=1 hangup=0 tracefile=c:\bareos-fd.trace
+\end{bconsole}
 
-The most likely source of problems is authentication when the Director
-attempts to connect to the File daemon that you installed. This can occur if
-the names and the passwords defined in the File daemon's configuration file
-\file{bareos-fd.conf} file on
-the Windows machine do not match with the names and the passwords in the
-Director's configuration file \file{bareos-dir.conf} located on your Unix/Linux
-server.
-
-More specifically, the password found in the \configresource{Client} resource in the
-Director's configuration file must be the same as the password in the \configresource{Director}
-resource of the \bareosFd configuration file. In addition, the
-name of the \configresource{Director} resource in the \bareosFd configuration file
-must be the same as the name in the Director resource of the Director's
-configuration file.
-
-It is a bit hard to explain in words, but if you understand that a Director
-normally has multiple Clients and a Client (or File daemon) may permit access
-by multiple Directors, you can see that the names and the passwords on both
-sides must match for proper authentication.
-
-To get proper debug output of the daemons running on windows, please do the following:
-(The following example shows how to to it with the \bareosFd).
-
-Use \command{regedit} and open the registry in
-{
-\footnotesize
-\begin{verbatim}
-Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd
-\end{verbatim}
-}
-
-and set the \textbf{ImagePath} setting from
-
-{
-\footnotesize
-\begin{verbatim}
-"C:\Program Files\Bareos\bareos-fd.exe" /service  -c "C:\ProgramData\Bareos\bareos-fd.conf"
-\end{verbatim}
-}
-
-to
-
-{
-\footnotesize
-\begin{verbatim}
-"C:\Program Files\Bareos\bareos-fd.exe" /service -d200  -c "C:\ProgramData\Bareos\bareos-fd.conf"
-\end{verbatim}
-}
-
-After restarting the service, you will find a file called \file{C:\bareos-fd.trace} which will
-contain the debug output created by the daemon.
-
-The same can be done for the Director (replace bareos-fd by bareos-dir) and for the Storage Daemon (replace bareos-fd by bareos-sd).
 
 \section{Windows Compatibility Considerations}
 \label{Compatibility}
@@ -242,7 +165,7 @@ know which files were not backed up.
 If Volume Shadow Copy Service is enabled, Bareos is able to backing up any
 file.
 
-\subsection{Registry}
+\subsection{Backing up the Windows Registry}
 During backup, Bareos doesn't know about the system registry, so you will
 either need to write it out to an ASCII file using \command{regedit /e} or use a
 program specifically designed to make a copy or backup the registry.
@@ -532,10 +455,10 @@ better with this configuration).
 
 The Windows buildin Firewall is enabled since Windows version WinXP SP2.
 The Bareos installer opens the required network ports for Bareos.
-However, if you are using another Firewall, you might need to manually open the Bareos network port 9102/TCP.
+However, if you are using another Firewall, you might need to manually open the Bareos network ports.
+The \bareosFd listens on 9102/TCP.
 
 \subsection{Network TCP Port}
-\index[general]{Windows!Port Usage}
 
 If you want to see if the File daemon has properly opened the port and is
 listening, you can enter the following command in a shell window:
@@ -550,8 +473,7 @@ netstat -an | findstr 910[123]
 \index[general]{Problem!Windows Restore}
 \index[general]{Windows!Restore Problem}
 
-Please see the
-\ilink{Restore Chapter}{Windows} of this manual for problems
+Please see the \nameref{sec:RestoreOnWindows} chapter for problems
 that you might encounter doing a restore.
 
 \section{Windows Backup Problems}
@@ -620,6 +542,7 @@ the problem.
 
 
 
+\hide{
 \section{Fixing the Windows Boot Record}
 \index[general]{Windows!Fixing the Boot Record}
 
@@ -638,11 +561,77 @@ bootrec /rebuldbcd
 bootrec /fixboot
 bootrec /fixmbr
 \end{verbatim}
+}
+
+\section{Advanced Windows Configuration}
+
+\subsection{Windows Service}
+
+The \bareosFd (and also the \bareosDir and \bareosSd) is started as a Windows service.
+
+This is configured in the Registry at
+
+\begin{itemize}
+\item \path|Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd|
+\end{itemize}
+
+You can use the command \command{regedit} to modify the settings.
+
+E.g. to always start Bareos in debug mode,
+modify \path|Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\services\Bareos-fd| \path|ImagePath|
+from
+
+{
+\footnotesize
+\begin{verbatim}
+"C:\Program Files\Bareos\bareos-fd.exe" /service
+\end{verbatim}
+}
+
+to
+
+{
+\footnotesize
+\begin{verbatim}
+"C:\Program Files\Bareos\bareos-fd.exe" /service -d200
+\end{verbatim}
+}
+
+After restarting the service, you will find a file called \path|C:\bareos-fd.trace| which will
+contain the debug output created by the daemon.
+
+\subsubsection{Installing multiple Windows filedaemon services}
+
+It is possible to run multiple \bareosFd instances on Windows.
+To achieve this, you  need to create a service for each instance, and a configuration file that at least
+has a individual fd port for each instance.
+
+To create two bareos-fd services, you can call the following service create calls on the commandline on windows as administrator:
+
+\begin{commands}{}
+sc create bareosfd2 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd2.conf\""  depend= "tcpip/afd"
+sc create bareosfd3 binpath="\"C:\Program Files\Bareos\bareos-fd.exe\" /service  -c \"C:\ProgramData\Bareos\bareos-fd3.conf\""  depend= "tcpip/afd"
+\end{commands}
+
+This will create two \bareosFd services, one with the name bareosfd2 and the second with the name bareosfd3.
+
+The configuration files for the two services are \file{bareos-fd.conf} and \file{bareos-fd2.conf}, and need to have different network settings.
+
+The services can be started by calling
+
+\begin{commands}{}
+sc start bareosfd2
+\end{commands}
+
+and
+
+\begin{commands}{}
+sc start bareosfd3
+\end{commands}
 
 
-\section{File Daemon: Windows Specific Command Line Options}
+\subsection{Windows Specific Command Line Options}
 \index[general]{Windows!File Daemon!Command Line Options}
-\index[fd]{Windows!Command Line Options}
 
 These options are not normally seen or used by the user, and are documented
 here only for information purposes. At the current time, to change the default
