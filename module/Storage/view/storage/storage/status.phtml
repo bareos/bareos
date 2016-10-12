@@ -13,6 +13,8 @@ $this->headTitle($title);
 
 <br />
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
 <div class="row">
 <div class="col-md-8">
 
@@ -32,3 +34,5 @@ $this->headTitle($title);
 
 </div>
 </div>
+
+<?php endif; ?>

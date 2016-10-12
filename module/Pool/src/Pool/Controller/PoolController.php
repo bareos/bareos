@@ -33,6 +33,12 @@ class PoolController extends AbstractActionController
 {
    protected $poolModel = null;
    protected $bsock = null;
+   protected $acl_alert = false;
+
+   private $required_commands = array(
+      "list",
+      "llist"
+   );
 
    public function indexAction()
    {
@@ -40,6 +46,16 @@ class PoolController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       try {
@@ -64,6 +80,16 @@ class PoolController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $poolname = $this->params()->fromRoute('id');

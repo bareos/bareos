@@ -34,6 +34,15 @@ class ScheduleController extends AbstractActionController
 
    protected $scheduleModel = null;
    protected $bsock = null;
+   protected $acl_alert = false;
+
+   private $required_commands = array(
+      ".schedule",
+      "show",
+      "status",
+      "enable",
+      "disable"
+   );
 
    public function indexAction()
    {
@@ -41,6 +50,16 @@ class ScheduleController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $result = null;
@@ -113,6 +132,16 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
+      }
+
       $result = null;
 
       try {
@@ -139,6 +168,16 @@ class ScheduleController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
+      }
+
       $result = null;
 
       try {
@@ -163,6 +202,16 @@ class ScheduleController extends AbstractActionController
 
       if(!$this->SessionTimeoutPlugin()->isValid()) {
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
       }
 
       $result = null;

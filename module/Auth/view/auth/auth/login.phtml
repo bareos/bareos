@@ -161,6 +161,27 @@ $this->headTitle($title);
 
 </diV>
 
+<div class="row">
+
+<!-- Left space -->
+<div class="col-md-3">
+</div>
+
+<!-- ALERTS -->
+   <?php
+      if(!empty($this->err_msg)) {
+         echo '<div class="col-md-6 alert alert-danger" role="alert">';
+         echo $this->err_msg;
+         echo '</div>';
+      }
+   ?>
+
+<!-- Right space -->
+<div class="col-md-3">
+</div>
+
+</div>
+
 <script>
 
 /*

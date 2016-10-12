@@ -29,6 +29,8 @@ $this->headTitle($title);
 
 ?>
 
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
 <div class="row">
 
    <div class="col-md-4">
@@ -189,3 +191,5 @@ $this->headTitle($title);
    );
 
 </script>
+
+<?php endif; ?>
