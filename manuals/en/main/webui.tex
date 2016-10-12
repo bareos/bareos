@@ -231,6 +231,7 @@ However, after installing the \package{bareos-webui} package, you need to restar
 
 \subsubsection{Configure your /etc/bareos-webui/directors.ini}
 \index[general]{Configuration!WebUI}
+\label{sec:webui-configuration-files}
 
 Configure your directors in \file{/etc/bareos-webui/directors.ini} to match your settings.
 
@@ -311,6 +312,37 @@ save_previous_state=false
 # Default: none
 labelpooltype=scratch
 \end{bconfig}
+
+\section{Upgrade from 15.2 to 16.2}
+
+\subsection{Console/Profile changes}
+
+As some changes happened regarding the Command ACL and substring matching between 15.2 and 16.2, you need to change .bvfs_* to .bvfs_.* in your Command ACL to have a proper regular expression. Otherwise the restore module won't work any longer, especially the file browser.
+
+Additionally you have to add a few more commands to your Command ACL the \bareosWebui now makes use of.
+
+\begin{itemize}
+\item .help
+\item .schedule
+\item .pools
+\item import
+\item export
+\item update
+\item release
+\item enable
+\item disable
+\end{itemize}
+
+Alternatively have a look at the updated example profile the \bareosWebui delivers under the new subdirectory structure, \file{/etc/bareos/bareos-dir.d/profile/webui-admin.conf}.
+Also have a look on \nameref{sec:webui-profile} how to configure profile resources.
+
+\subsection{configuration.ini}
+
+Since 16.2 the \bareosWebui introduced an additional configuration file besides the directors.ini file named configuration.ini where you are able to adjust some parameters of the webui to your needs. Please see \nameref{sec:webui-configuration-files} for more details.
+
+\subsection{directors.ini}
+
+Since 16.2 it is now possible to work with different catalogs. Therefore the catalog parameter has been introduced. If you don't set a catalog explicitly the default "MyCatalog" will be used. Please see \nameref{sec:webui-configuration-files} for more details on how to configure your \file{/etc/bareos-webui/directors.ini}.
 
 \section{Additional information}
 
