@@ -23,7 +23,10 @@ Current limitations amongst others are:
     by snapshots which are required for CBT based backup.}
 
 \limitation*{VMware Plugin}{VM configuration is not backed up}{%
-    The VM configuration is not yet (bareos-15.2.2) backed up, so that it is not yet possible to recreate a completely deleted VM.}
+    The VM configuration is not backed up, so that it is not yet possible to recreate a completely deleted VM.}
+
+\limitation*{VMware Plugin}{Virtual Disks have to be smaller than 2TB}{%
+    Virtual Disks have to be smaller than 2 TB, see \ticket{670}.}
 
 \limitation*{VMware Plugin}{Restore can only be done to the same VM or to local VMDK files}{%
     Until Bareos Version 15.2.2, the restore has only be possible to the same existing VM with existing virtual disks.
