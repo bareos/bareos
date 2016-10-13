@@ -726,12 +726,112 @@ For a full description, see \url{https://github.com/bareos/contrib-pgsql-plugin/
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
+\subsubsection{Backup of a MySQL Databases by using the Bareos MySQL / MariaDB Percona xtrabackup Plugin}
+\index[general]{Plugin!Python!MySQL Backup}
+\label{backup-mysql-xtrabackup}
+This plugin is available since \sinceVersion{}{Plugin!Python!xtrabackup}{16.2.2}, it uses the xtrabackup tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB.
+It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. 
+If you simply want to backup full dumps, then using \ref{backup-mysql-python} is the easier way.
+
+\paragraph{Prerequisites}
+% \newline
+
+Install the xtrabackup tool from Percona. Documentation and packages are available here: \url{https://www.percona.com/software/mysql-database/percona-xtrabackup}.
+The plugin was succesfully tested with xtrabackup versions 2.3.5 and 2.4.4.
+
+As it is a Python plugin, it will also require to have the package \file{bareos-filedaemon-python-plugin} installed on the FD, where you run it.
+
+For authentication the \file{.mycnf} file is used. Before proceeding, make sure that xtrabackup can connect to the database and create backups.
+
+\paragraph{Installation}
+% \newline
+
+Make sure you have met the prerequisites.
+Install the files \file{BareosFdPercona.py} and \file{bareos-fd-percona.py} in your Bareos plugin directory (usually \directory{/usr/lib64/bareos/plugins}). These files are available
+in the Git repository \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/bareos_percona}.
+
+\paragraph{Configuration}
+% \newline
+
+Activate your plugin directory in the fd resource conf on the client. See \ref{fdPlugins} for more about plugins in general.
+
+\begin{bconfig}{Activate plugin directory}
+ FileDaemon {                          
+  Name = client-fd
+  #...
+  Plugin Directory = /usr/lib64/bareos/plugins
+}
+\end{bconfig}
+
+Now include the plugin as command-plugin in the Fileset resource:
+
+\begin{bconfig}{Fileset using the plugin}
+FileSet {
+    Name = "client-data"
+       Include  {
+                Options {
+                        compression=GZIP
+                        signature = MD5
+                }
+                File = /etc
+                #...
+                Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona"
+        }
+}
+\end{bconfig}
+
+If used this way, the plugin will call xtrabackup to create a backup of all databases in the xbstream format. This stream will be processed by Bareos. If job level is incremental, 
+xtrabackup will perform an incremental backup since the last backup -- for InnoDB tables. If you have MyISAM tables, you will get a full backup of those.
+
+You can append options to the plugin call as key=value pairs, separated by ':'.
+The following options are available:
+
+\begin{itemize}
+ \item With \parameter{mycnf} you can make xtrabackup use a special mycnf-file with login credentials.
+ \item \parameter{dumpbinary} lets you modify the default command xtrabackup.
+ \item \parameter{dumpoptions} to modify the options for xtrabackup. Default setting is:  \command{--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual\_tempdir}
+ \item \parameter{restorecommand} to modify the command for restore. Default setting is: \command{xbstream -x -C}
+ \item \parameter{strictIncremental}: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn't increased since last backup. 
+ This is to ensure, that eventual 
+ changes to MYISAM tables get into the backup. MYISAM does not support incremental backups, you will always get a full bakcup of these tables. 
+ If set to true, no data will be written into backup, if the LSN wasn't changed.
+ \end{itemize}
+ 
+\paragraph{Restore}
+
+With the usual Bareos restore mechanism a file-hierarchy will be created on the restore client under the default restore location:
+
+\directory{/tmp/bareos-restores/_percona/}
+
+Each restore job gets an own subdirectory, because Percona expects an empty directory. In that subdirectory, a new directory is created for every backup job that was part of the Full-Incremental sequence.
+
+The naming scheme is: \directory{fromLSN_toLSN_jobid}
+
+Example:
+\begin{verbatim}
+/tmp/bareos-restores/_percona/351/
+|-- 00000000000000000000_00000000000010129154_0000000334
+|-- 00000000000010129154_00000000000010142295_0000000335
+|-- 00000000000010142295_00000000000010201260_0000000338
+\end{verbatim}
+
+This example shows the restore tree for restore job with ID 351. First subdirectory has all files from the first full backup job with ID 334. 
+It starts at LSN 0 and goes until LSN 10129154.
+
+Next line is the first incremental job with ID 335, starting at LSN 10129154 until 10142295. The third line is the 2nd incremental job with ID 338.
+
+To further prepare the restored files, use the \command{xtrabackup --prepare} command. 
+Read \url{https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html} for more information.
+
+
 \subsubsection{Backup of a MySQL Databases by using the Python MySQL plugin}
 \index[general]{Plugin!Python!MySQL Backup}
 \label{backup-mysql-python}
 
 The Pyhton plugin from \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} makes a backup of all or selected 
-MySQL databases from the \bareosFd or any other MySQL server.
+MySQL databases from the \bareosFd or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe.
+This plugin is suitable to backup database dumps. 
+If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see \ref{backup-mysql-xtrabackup}).
 
 Following settings must be done on the Bareos client (\bareosFd):
 \begin{itemize}
