@@ -726,22 +726,28 @@ For a full description, see \url{https://github.com/bareos/contrib-pgsql-plugin/
 
 In this section, we describe different methods to do a full backup of a MySQL database.
 
-\subsubsection{Backup of a MySQL Databases by using the Bareos MySQL / MariaDB Percona xtrabackup Plugin}
-\index[general]{Plugin!Python!MySQL Backup}
+\subsubsection{Backup of MySQL Databases using the Bareos MySQL Percona xtrabackup Plugin}
+\index[general]{Plugin!MySQL Backup}
+\index[general]{Percona xtrabackup}
+\index[general]{xtrabackup}
 \label{backup-mysql-xtrabackup}
-This plugin is available since \sinceVersion{}{Plugin!Python!xtrabackup}{16.2.2}, it uses the xtrabackup tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB.
+
+This plugin is available since \sinceVersion{fd}{MySQL Incremental Backup Plugin for using Percona xtrabackup}{16.2.4},
+it uses the \command{xtrabackup} tool from Percona to perform full and incremental hot-backups of MySQL / MariaDB tables of type InnoDB.
 It can also backup MyISAM tables but only as full backups. On restore it requires a preparation using the xtrabackup tools, before the tables can be restored. 
-If you simply want to backup full dumps, then using \ref{backup-mysql-python} is the easier way.
+If you simply want to backup full dumps, then using \nameref{backup-mysql-python} is the easier way.
 
 \paragraph{Prerequisites}
 % \newline
 
 Install the xtrabackup tool from Percona. Documentation and packages are available here: \url{https://www.percona.com/software/mysql-database/percona-xtrabackup}.
-The plugin was succesfully tested with xtrabackup versions 2.3.5 and 2.4.4.
+The plugin was successfully tested with xtrabackup versions 2.3.5 and 2.4.4.
 
-As it is a Python plugin, it will also require to have the package \file{bareos-filedaemon-python-plugin} installed on the FD, where you run it.
+As it is a Python plugin,
+it will also require to have the package \package{bareos-filedaemon-python-plugin} installed on the \bareosFd, where you run it.
 
-For authentication the \file{.mycnf} file is used. Before proceeding, make sure that xtrabackup can connect to the database and create backups.
+For authentication the \file{.mycnf} file of the user running the \bareosFd.
+Before proceeding, make sure that xtrabackup can connect to the database and create backups.
 
 \paragraph{Installation}
 % \newline
@@ -753,35 +759,38 @@ in the Git repository \url{https://github.com/bareos/bareos-contrib/tree/master/
 \paragraph{Configuration}
 % \newline
 
-Activate your plugin directory in the fd resource conf on the client. See \ref{fdPlugins} for more about plugins in general.
+Activate your plugin directory in the fd resource conf on the client. See \nameref{fdPlugins} for more about plugins in general.
 
-\begin{bconfig}{Activate plugin directory}
- FileDaemon {                          
-  Name = client-fd
+\begin{bareosConfigResource}{bareos-fd}{client}{mysql-fd}
+Client {
+  Name = mysql-fd
   #...
   Plugin Directory = /usr/lib64/bareos/plugins
+  Plugin Name = "python"
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
 Now include the plugin as command-plugin in the Fileset resource:
 
-\begin{bconfig}{Fileset using the plugin}
+\begin{bareosConfigResource}{bareos-dir}{fileset}{mysql}
 FileSet {
-    Name = "client-data"
-       Include  {
-                Options {
-                        compression=GZIP
-                        signature = MD5
-                }
-                File = /etc
-                #...
-                Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona"
+    Name = "mysql"
+    Include  {
+        Options {
+            compression=GZIP
+            signature = MD5
         }
+        File = /etc
+        #...
+        Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-percona"
+    }
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-If used this way, the plugin will call xtrabackup to create a backup of all databases in the xbstream format. This stream will be processed by Bareos. If job level is incremental, 
-xtrabackup will perform an incremental backup since the last backup -- for InnoDB tables. If you have MyISAM tables, you will get a full backup of those.
+If used this way, the plugin will call xtrabackup to create a backup of all databases in the xbstream format.
+This stream will be processed by Bareos. If job level is incremental,
+xtrabackup will perform an incremental backup since the last backup -- for InnoDB tables.
+If you have MyISAM tables, you will get a full backup of those.
 
 You can append options to the plugin call as key=value pairs, separated by ':'.
 The following options are available:
@@ -789,7 +798,7 @@ The following options are available:
 \begin{itemize}
  \item With \parameter{mycnf} you can make xtrabackup use a special mycnf-file with login credentials.
  \item \parameter{dumpbinary} lets you modify the default command xtrabackup.
- \item \parameter{dumpoptions} to modify the options for xtrabackup. Default setting is:  \command{--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual\_tempdir}
+ \item \parameter{dumpoptions} to modify the options for xtrabackup. Default setting is:  \command{--backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual_tempdir}
  \item \parameter{restorecommand} to modify the command for restore. Default setting is: \command{xbstream -x -C}
  \item \parameter{strictIncremental}: By default (false), an incremental backup will create data, even if the Log Sequence Number (LSN) wasn't increased since last backup. 
  This is to ensure, that eventual 
@@ -824,14 +833,14 @@ To further prepare the restored files, use the \command{xtrabackup --prepare} co
 Read \url{https://www.percona.com/doc/percona-xtrabackup/2.4/xtrabackup_bin/incremental_backups.html} for more information.
 
 
-\subsubsection{Backup of a MySQL Databases by using the Python MySQL plugin}
-\index[general]{Plugin!Python!MySQL Backup}
+\subsubsection{Backup of MySQL Databases using the Python MySQL plugin}
+\index[general]{Plugin!MySQL Backup}
 \label{backup-mysql-python}
 
 The Pyhton plugin from \url{https://github.com/bareos/bareos-contrib/tree/master/fd-plugins/mysql-python} makes a backup of all or selected 
 MySQL databases from the \bareosFd or any other MySQL server. It makes use of the mysqldump command and basically grabs data from mysqldump via pipe.
 This plugin is suitable to backup database dumps. 
-If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see \ref{backup-mysql-xtrabackup}).
+If you prefer to use mechanisms like incremental hot-backups of InnoDB tables, please use the Bareos MySQL / MariaDB Percona xtrabackup Plugin (see \nameref{backup-mysql-xtrabackup}).
 
 Following settings must be done on the Bareos client (\bareosFd):
 \begin{itemize}
@@ -840,19 +849,19 @@ Following settings must be done on the Bareos client (\bareosFd):
   \item disable bacula compatibility (default for Bareos $>=$ 15.2)
 \end{itemize}
 
-\begin{bconfig}{bareos-fd.conf: enable Python FD plugins}
-FileDaemon {
+\begin{bareosConfigResource}{bareos-fd}{client}{mysql-fd}
+Client {
   Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
   Plugin Name = "python"
   compatible = no
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
 Configure the plugin in the \bareosDir:
 
-\begin{bconfig}{bareos-dir.conf: Python FD MySQL plugin}
+\begin{bareosConfigResource}{bareos-dir}{fileset}{mysql}
 FileSet {
     Name = "mysql"
     Include {
@@ -864,7 +873,7 @@ FileSet {
       #Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-mysql:mysqlhost=dbhost:mysqluser=bareos:mysqlpassword=bareos"
     }
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
 In the above example the plugin creates and saves a dump from the databases called \argument{test} and \argument{wikidb},
 running on the file-daemon. The commented example below
@@ -941,7 +950,7 @@ the \command{sh -c} is not needed there.
 See \linkResourceDirective{Dir}{Job}{Run Script} for more details.
 
 
-\subsubsection{Backup of a MySQL Databases by using the bpipe plugin}
+\subsubsection{Backup of a MySQL Database by using the bpipe plugin}
 \index[general]{bpipe!MySQL backup}
 
 Instead of creating a temporary database dump file,
