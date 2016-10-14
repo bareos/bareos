@@ -29,6 +29,8 @@ BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildArch:      noarch
 
 BuildRequires:  bareos-addons
+BuildRequires:  winbareos-nssm
+BuildRequires:  winbareos-php
 
 BuildRequires:  bc
 BuildRequires:  less
@@ -36,7 +38,6 @@ BuildRequires:  procps
 BuildRequires:  sed
 BuildRequires:  vim
 
-BuildRequires:  unzip
 # Bareos sources
 BuildRequires:  mingw-debugsrc-devel = %{version}
 
@@ -110,11 +111,6 @@ Source9:         databasedialog.ini
 
 %define NSISDLLS KillProcWMI.dll AccessControl.dll LogEx.dll
 
-%define NSSM_VERSION 2.24
-%define PHP_VERSION 5.6.26
-Source11:        http://windows.php.net/downloads/releases/php-%PHP_VERSION-Win32-VC11-x86.zip
-Source12:        https://nssm.cc/release/nssm-%NSSM_VERSION.zip
-
 %description
 Bareos Windows NSI installer packages for the different variants.
 
@@ -154,17 +150,13 @@ for flavor in %{flavors}; do
       echo "" >> %_sourcedir/LICENSE
 
       # nssm
-      unzip %SOURCE12;
-      cp nssm-%NSSM_VERSION/win${BITS}/nssm.exe $RPM_BUILD_ROOT/$flavor/release${BITS}
-
+      cp -a /usr/lib/windows/nssm/win${BITS}/nssm.exe .
       echo "" >> %_sourcedir/LICENSE
       echo "NSSM - the Non-Sucking Service Manager: https://nssm.cc/" >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF NSSM START #####" >> %_sourcedir/LICENSE
-      cat nssm-%NSSM_VERSION/README.txt >> %_sourcedir/LICENSE
+      cat /usr/lib/windows/nssm/README.txt >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF NSSM END #####" >> %_sourcedir/LICENSE
       echo "" >> %_sourcedir/LICENSE
-
-      rm -rvf nssm-%NSSM_VERSION
 
       # bareos-webui
       cp -av /usr/share/bareos-webui bareos-webui  # copy bareos-webui
@@ -183,20 +175,17 @@ for flavor in %{flavors}; do
       echo "" >> %_sourcedir/LICENSE
 
 
-      # php has no subdir in zipfile
-      mkdir php;
-      pushd php;
-      unzip %SOURCE11
-      cp php.ini-production $RPM_BUILD_ROOT/$flavor/release${BITS}/php.ini
+      # php
+      cp -a /usr/lib/windows/php/ .
+      cp php/php.ini .
       echo "" >> %_sourcedir/LICENSE
       echo "PHP: http://php.net/" >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF PHP START #####" >> %_sourcedir/LICENSE
-      cat license.txt >> %_sourcedir/LICENSE
+      cat php/license.txt >> %_sourcedir/LICENSE
       echo "##### LICENSE FILE OF PHP END #####" >> %_sourcedir/LICENSE
       echo "" >> %_sourcedir/LICENSE
 
       popd
-
 
       # copy the sql ddls over
       cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
