@@ -28,5 +28,13 @@ class ProtocolMessages():
         return b"1999 Authorization failed.\n"
 
     @staticmethod
+    def not_authorized():
+        return b"1999 You are not authorized.\n"
+
+    @staticmethod
     def is_auth_ok(msg):
         return msg == ProtocolMessages.auth_ok()
+
+    @staticmethod
+    def is_not_authorized(msg):
+        return msg == ProtocolMessages.not_authorized()
