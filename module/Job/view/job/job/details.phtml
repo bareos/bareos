@@ -187,6 +187,12 @@ $(document).ready(function() {
       "bFilter": false,
       "columnDefs": [
          {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
             "targets": 3,
             "render": function(data, type, full, meta) {
                return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';

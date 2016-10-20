@@ -27,14 +27,24 @@ namespace Job\Model;
 
 class JobModel
 {
-   public function getJobs(&$bsock=null, $days=null)
+   public function getJobs(&$bsock=null, $jobname=null, $days=null)
    {
       if(isset($bsock)) {
          if($days == "all") {
-            $cmd = 'llist jobs';
+            if($jobname == "all") {
+               $cmd = 'llist jobs';
+            }
+            else {
+               $cmd = 'llist jobs jobname="'.$jobname.'"';
+            }
          }
          else  {
-            $cmd = 'llist jobs days='.$days;
+            if($jobname == "all") {
+               $cmd = 'llist jobs days='.$days;
+            }
+            else {
+               $cmd = 'llist jobs jobname="'.$jobname.'" days='.$days;
+            }
          }
          $result = $bsock->send_command($cmd, 2, null);
          if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
@@ -52,7 +62,7 @@ class JobModel
       }
    }
 
-   public function getJobsByStatus(&$bsock=null, $status=null, $days=null, $hours=null)
+   public function getJobsByStatus(&$bsock=null, $jobname=null, $status=null, $days=null, $hours=null)
    {
       if(isset($bsock, $status)) {
          if(isset($days)) {
@@ -73,6 +83,9 @@ class JobModel
          }
          else {
             $cmd = 'llist jobs jobstatus='.$status.'';
+         }
+         if($jobname != "all") {
+            $cmd .= ' jobname="'.$jobname.'"';
          }
          $result = $bsock->send_command($cmd, 2, null);
          $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
