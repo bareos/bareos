@@ -20,7 +20,7 @@ bconsole()
   grep -v -e "$cmd" "$temp" > "$out"
 }
 
-for restype in catalog client console counter director fileset job jobdefs messages pool profile schedule storage; do
+for restype in catalog client console counter director fileset jobs jobdefs messages pool profile schedule storage; do
     printf "\n%s:\n" "$restype"
     printf "==========\n"
     mkdir $restype 2>/dev/null
