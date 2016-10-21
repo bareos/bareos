@@ -95,7 +95,16 @@ private:
    bool two_way_authenticate(JCR *jcr, const char *what,
                              const char *name, s_password &password,
                              tls_t &tls, bool initiated_by_remote);
-
+   bool authenticate_with_director_0(JCR *jcr,
+                                     const char *name, s_password& password, tls_t& tls,
+                                     char *response, int response_len);
+   bool authenticate_with_director_2(JCR *jcr, const char *name, const s_password& password,
+                                     tls_t &tls,
+                                     auth_backend_types auth_type, const char *user, const char *psk,
+                                     char *response, int response_len);
+   bool psk_auth(JCR *jcr, const char *user, const char *psk, char *response, int response_len);
+   bool cram_md5_auth(JCR *jcr, const char *psk, int tls_local_need, char *response, int response_len);
+   bool start_tls(JCR *jcr, tls_t& tls, char *response, int response_len);
 public:
    BSOCK();
    virtual ~BSOCK();
@@ -128,9 +137,11 @@ public:
    bool signal(int signal);
    const char *bstrerror();           /* last error on socket */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
-   bool authenticate_with_director(JCR *jcr,
-                                   const char *name, s_password &password, tls_t &tls,
-                                   char *response, int response_len);
+   bool authenticate_with_director(JCR *jcr, const char *name,
+                                   s_password& password, tls_t& tls,
+                                   char *response, int response_len, unsigned int protocol = 0,
+                                   const char *user = NULL, const char *psk = NULL,
+                                   auth_backend_types auth_type = AUTH_BACKEND_LOCAL_MD5);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);

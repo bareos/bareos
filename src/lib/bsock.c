@@ -241,9 +241,29 @@ static char OKhello[] =
 /*
  * Authenticate Director
  */
-bool BSOCK::authenticate_with_director(JCR *jcr,
-                                       const char *name, s_password &password, tls_t &tls,
-                                       char *response, int response_len)
+bool BSOCK::authenticate_with_director(JCR *jcr, const char *name,
+                                       s_password& password, tls_t& tls,
+                                       char *response, int response_len,
+                                       unsigned int protocol,
+                                       const char *user, const char *psk,
+                                       auth_backend_types auth_type)
+{
+   switch (protocol) {
+   case 0:
+      return authenticate_with_director_0(jcr, name, password, tls, response, response_len);
+   case 2:
+      return authenticate_with_director_2(jcr, name, password, tls, auth_type, user, psk,
+                                          response, response_len);
+   default:
+      // TODO
+      return false;
+   }
+}
+
+bool BSOCK::authenticate_with_director_0(JCR *jcr,
+                                         const char *name, s_password& password,
+                                         tls_t& tls,
+                                         char *response, int response_len)
 {
    char bashed_name[MAX_NAME_LENGTH];
    BSOCK *dir = this;        /* for readability */
@@ -297,6 +317,329 @@ bail_out:
              dir->host(), dir->port(), MANUAL_AUTH_URL);
 
    return false;
+}
+
+#define MAX_NAME 127
+#define STRINGIFY(a) #a
+#define TOSTRING(a) STRINGIFY(a)
+
+bool BSOCK::authenticate_with_director_2(JCR *jcr,
+                                         const char *name, const s_password& password, tls_t& tls,
+                                         auth_backend_types auth_type,
+                                         const char *user, const char *psk,
+                                         char *response, int response_len)
+{
+   static const char new_protocol_hello[] = "Hello %s calling protocol=%u ssl=%u\n";
+   const int dbglvl = 50;
+   bool auth_success = false;
+   char bashed_name[MAX_NAME_LENGTH + 1];
+   char remote[MAX_NAME + 1];
+   unsigned int protocol;
+   int tls_remote_capability;
+   int tls_remote_auth_only;
+   char version[MAX_NAME + 1];
+   char bareos_date[MAX_NAME + 1];
+
+   response[0] = 0;
+
+   bstrncpy(bashed_name, name, sizeof(bashed_name));
+   /* replaces blanks by 0x1 */
+   bash_spaces(bashed_name);
+
+   int tls_local_need = BNET_TLS_NONE;
+   if (get_tls_enable(tls.ctx)) {
+      tls_local_need = get_tls_require(tls.ctx) ? BNET_TLS_REQUIRED : BNET_TLS_OK;
+   }
+
+   /*
+    * Timeout Hello after 5 mins
+    */
+   start_timer(60 * 5);
+
+   /* console to director: Hello console_name calling protocol=2 ssl=1\n */
+   if (fsend(new_protocol_hello, bashed_name, 2, tls_local_need) <= 0) {
+      bsnprintf(response, response_len,
+                _("Error sending the Hello command: \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Error sending the Hello command: \"%s:%d\": %s.\n",
+            host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, _("Error sending the Hello commandd: \"%s:%d\": %s.\n"),
+           host(), port(), bstrerror());
+      goto bail_out;
+   }
+
+   if (recv() <= 0) {
+      /* maybe the director does not understand the new protocol =>
+         fall back to the old one */
+      bsnprintf(response, response_len,
+                _("Error waiting for Hello command response: \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Error waiting for Hello command response: \"%s:%d\": %s.\n",
+            host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Error waiting for Hello command response: \"%s:%d\": %s.\n",
+           host(), port(), bstrerror());
+      goto bail_out;
+   }
+
+   // check the answer received from hello
+
+   /* director to console: 1000 OK: name protocol=2 ssl=1\n */
+   if (sscanf(msg, "1000 OK:"
+              " %" TOSTRING(MAX_NAME) "s"
+              " %" TOSTRING(MAX_NAME) "s"
+              " %" TOSTRING(MAX_NAME) "s"
+              " protocol=%u"
+              " ssl=%u"
+              " ssl_auth_only=%u\n",
+              remote, version, bareos_date, &protocol, &tls_remote_capability,
+              &tls_remote_auth_only) != 6) {
+      bsnprintf(response, response_len,
+                _("Unexpected response to our hello when connected to \"%s:%d\": %s"),
+                host(), port(), msg);
+      Dmsg3(dbglvl, "Unexpected response to our hello when connected to \"%s:%d\": %s",
+            host(), port(), msg);
+      Jmsg(jcr, M_FATAL, 0, "Unexpected response to our hello when connected to \"%s:%d\": %s",
+           host(), port(), msg);
+      goto bail_out;
+   }
+
+   unbash_spaces(version);
+   unbash_spaces(bareos_date);
+
+   bsnprintf(response, response_len, "1000 OK: %s Version: %s (%s)\n",
+             remote, version, bareos_date);
+
+   if (protocol != 2) {
+      bsnprintf(response, response_len,
+                _("Non-matching protocol number (%u) from \"%s:\%d\".\n"),
+                protocol, host(), port());
+      Dmsg3(dbglvl, "Non-matching protocol number (%u) from \"%s:\%d\".\n",
+            protocol, host(), port());
+      Jmsg(jcr, M_FATAL, 0, "Non-matching protocol number (%u) from \"%s:\%d\".\n",
+           protocol, host(), port());
+      goto bail_out;
+   }
+
+   /* the protocol matches */
+   /* let us check the tls capabilities */
+
+   if (tls_local_need == BNET_TLS_REQUIRED &&
+       tls_remote_capability == BNET_TLS_NONE) {
+      bsnprintf(response, response_len,
+                _("Server \"%s:%d\" does not support required TLS.\n"),
+                host(), port());
+      Dmsg2(dbglvl, "Server \"%s:%d\" does not support required TLS.\n",
+            host(), port());
+      Jmsg(jcr, M_FATAL, 0, "Server \"%s:%d\" does not support required TLS.\n",
+            host(), port());
+      goto bail_out;
+   }
+
+   if (tls_local_need == BNET_TLS_REQUIRED) {
+      /* initialise TLS */
+      if (!start_tls(jcr, tls, response, response_len)) {
+         auth_success = false;
+         goto bail_out;
+      }
+   }
+
+   switch (auth_type) {
+   case AUTH_BACKEND_PAM:
+      if (!psk_auth(jcr, user, psk, response, response_len))
+         goto bail_out;
+      break;
+   case AUTH_BACKEND_LOCAL_MD5:
+      if (!cram_md5_auth(jcr, password.value, tls_local_need, response, response_len))
+         goto bail_out;
+      break;
+   default:
+      break;
+   }
+
+   /* all ok */
+   if (tls_local_need == BNET_TLS_REQUIRED && tls_remote_auth_only) {
+      free_tls();
+   }
+
+   auth_success = true;
+bail_out:
+   stop_timer();
+
+   if (jcr) {
+      jcr->authenticated = auth_success;
+   }
+
+   return auth_success;
+}
+
+bool BSOCK::start_tls(JCR *jcr, tls_t& tls, char *response, int response_len)
+{
+   const int dbglvl = 50;
+
+   alist *verify_list = NULL;
+
+   if (tls.verify_peer) {
+      verify_list = tls.allowed_cns;
+   }
+
+   if (fsend("STARTTLS\n") <= 0) {
+      bsnprintf(response, response_len,
+                _("Error sending the STARTTLS: \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Error sending the STARTTLS command: \"%s:%d\": %s.\n",
+            host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, _("Error sending the STARTTLS commandd: \"%s:%d\": %s.\n"),
+           host(), port(), bstrerror());
+      return false;
+   }
+
+   if (recv() <= 0) {
+      bsnprintf(response, response_len,
+                _("Error waiting for the STARTTLS command response: \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Error waiting for STARTTLS command response: \"%s:%d\": %s.\n",
+            host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Error waiting for STARTTLS command response: \"%s:%d\": %s.\n",
+           host(), port(), bstrerror());
+      return false;
+   }
+
+   // check the answer received for STARTTLS
+
+   if (!bstrcmp(msg, "1000 OK STARTTLS\n")) {
+      bsnprintf(response, response_len,
+                _("Unexpected response to our hello when connected to \"%s:%d\": %s"),
+                host(), port(), msg);
+      Dmsg3(dbglvl, "Unexpected response to our hello when connected to \"%s:%d\": %s",
+            host(), port(), msg);
+      Jmsg(jcr, M_FATAL, 0, "Unexpected response to our hello when connected to \"%s:%d\": %s",
+           host(), port(), msg);
+      return false;
+   }
+
+   if (!bnet_tls_client(tls.ctx, this, tls.verify_peer, verify_list)) {
+      // Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
+      bsnprintf(response, response_len, _("TLS negotiation with \"%s:%d\" failed.\n"),
+                host(), port());
+      Dmsg2(dbglvl, "TLS negotiation with \"%s:\%d\" failed.\n", host(), port());
+      Jmsg(jcr, M_FATAL, 0, "TLS negotiation with \"%s:\%d\" failed.\n", host(), port());
+      return false;
+   }
+
+   return true;
+}
+
+bool BSOCK::psk_auth(JCR *jcr, const char *user, const char *pass, char *response, int response_len)
+{
+   static const unsigned int MAX_USER_PASS = 128;
+   static const int dbglvl = 50;
+   char b64user[(MAX_USER_PASS + 2) / 3 * 4 + 1];
+   size_t userlen;
+   char b64pass[(MAX_USER_PASS + 2) / 3 * 4 + 1];
+   size_t passlen;
+   bool auth_ok = false;
+
+   /* send auth plain\n
+      expect +
+    */
+   if (fsend("auth plain\n") <= 0) {
+      bsnprintf(response, response_len, _("Send error to \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      return false;
+   }
+
+   if (recv() <= 0) {
+      bsnprintf(response, response_len, _("Read error from \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Read error from \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Read error from \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      goto bail_out;
+   }
+
+   if (!bstrcmp("+\n", msg)) {
+      bsnprintf(response, response_len,
+                _("Unexpected response to the 'auth plain' command from \"%s:%d\": %s"),
+                host(), port(), msg);
+      Dmsg3(dbglvl,
+            _("Unexpected response to the 'auth plain' command from \"%s:%d\": %s"),
+            host(), port(), msg);
+      Jmsg(jcr, M_FATAL, 0,
+            _("Unexpected response to the 'auth plain' command from \"%s:%d\": %s"),
+           host(), port(), msg);
+      goto bail_out;
+   }
+
+   /* bin_to_base64 should have const char * for 3rd argument */
+   userlen = strlen(user);
+   bin_to_base64(b64user, sizeof(b64user), (char *)user, userlen, true);
+   passlen = strlen(pass);
+   bin_to_base64(b64pass, sizeof(b64pass), (char *)pass, passlen, true);
+
+   if (fsend("login %s %s\n", b64user, b64pass) <= 0) {
+      bsnprintf(response, response_len, _("Send error to \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      goto bail_out;
+   }
+
+   if (recv() <= 0) {
+      bsnprintf(response, response_len, _("Read error from \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Read error from \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Read error from \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      goto bail_out;
+   }
+
+   if (!bstrcmp(msg, "1000 OK auth\n")) {
+      bsnprintf(response, response_len, _("Auth plain error from \"%s:%d\": %s.\n"),
+                host(), port(), msg);
+      Dmsg3(dbglvl, "Auth plain error from \"%s:%d\": %s.\n", host(), port(), msg);
+      Jmsg(jcr, M_FATAL, 0, "Auth plain error from \"%s:%d\": %s.\n", host(), port(), msg);
+      goto bail_out;
+   }
+
+   auth_ok = true;
+bail_out:
+   return auth_ok;
+}
+
+bool BSOCK::cram_md5_auth(JCR *jcr, const char *pass, int tls_local_need,
+                          char *response, int response_len)
+{
+   static const int dbglvl = 50;
+
+   if (fsend("auth cram-md5\n") <= 0) {
+      bsnprintf(response, response_len, _("Send error to \"%s:%d\": %s.\n"),
+                host(), port(), bstrerror());
+      Dmsg3(dbglvl, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      Jmsg(jcr, M_FATAL, 0, "Send error to \"%s:%d\": %s.\n", host(), port(), bstrerror());
+      return false;
+   }
+
+   int tls_remote_need = BNET_TLS_NONE; // not used
+   bool compatible = true;
+   // we read the challenge, respond, and consume the auth result
+   bool auth_success = cram_md5_respond(this, pass, &tls_remote_need, &compatible);
+   if (!auth_success) {
+      bsnprintf(response, response_len, _("cram_md5_response failed for: \"%s:%d\".\n"),
+                host(), port());
+      Jmsg(jcr, M_FATAL, 0, "cram_md5_response failed for: \"%s:%d\".\n", host(), port());
+      return false;
+   }
+   /* challenge the remote */
+   /* we send the challenge, the peer sends the response, we finish by sending
+      1000 OK auth */
+   auth_success = cram_md5_challenge(this, pass, tls_local_need, true);
+   if (!auth_success) {
+      bsnprintf(response, response_len,
+                _("cram_md5_challenge failed for \"%s:\%d\".\n"),
+                host(), port());
+      Jmsg(jcr, M_FATAL, 0, "cram_md5_challenge failed for \"%s:\%d\".\n", host(), port());
+   }
+   return auth_success;
 }
 
 /*
@@ -450,7 +793,6 @@ auth_fatal:
 
    return auth_success;
 }
-
 
 
 /*

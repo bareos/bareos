@@ -1041,6 +1041,32 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * Store authentication backend.
+ */
+static void store_auth_backend(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   int i;
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_NAME);
+   /*
+    * Store the type both pass 1 and pass 2
+    */
+   for (i = 0; authbackends[i].name; i++) {
+      if (bstrcasecmp(lc->str, authbackends[i].name)) {
+         *(uint16_t *)(item->value) = authbackends[i].token;
+         i = 0;
+         break;
+      }
+   }
+   if (i != 0) {
+      scan_err1(lc, _("Expected a Console Authentication Type keyword, got: %s"), lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+}
+
+/*
  * Store network addresses.
  *
  *   my tests
@@ -1295,6 +1321,9 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
       break;
    case CFG_TYPE_LABEL:
       store_label(lc, item, index, pass);
+      break;
+   case CFG_TYPE_AUTHBACKEND:
+      store_auth_backend(lc, item, index, pass);
       break;
    case CFG_TYPE_ADDRESSES:
       store_addresses(lc, item, index, pass);
@@ -1744,6 +1773,24 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
          if (print_item) {
             Mmsg(temp, "%s = %hu\n", items[i].name, *(items[i].ui16value));
             indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+         }
+         break;
+      case CFG_TYPE_AUTHBACKEND:
+         for (int j = 0; authbackends[j].name; j++) {
+            if (*(items[i].ui32value) == authbackends[j].token) {
+               /*
+                * Supress printing default value.
+                */
+               if (items[i].flags & CFG_ITEM_DEFAULT) {
+                  if (bstrcasecmp(items[i].default_value, authbackends[j].name)) {
+                     break;
+                  }
+               }
+
+               Mmsg(temp, "%s = \"%s\"\n", items[i].name, authbackends[j].name);
+               indent_config_item(cfg_str, 1, temp.c_str());
+               break;
+            }
          }
          break;
       case CFG_TYPE_INT32:

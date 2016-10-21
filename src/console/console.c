@@ -30,6 +30,13 @@
 #include "console_conf.h"
 #include "jcr.h"
 
+#include <termios.h>
+#include <string.h>
+
+#ifdef HAVE_TERMIOS_H
+#include <termios.h>
+#endif
+
 #ifdef HAVE_CONIO
 #include "conio.h"
 //#define CONIO_FIX 1
@@ -124,6 +131,8 @@ PROG_COPYRIGHT
 "        -t          test - read configuration and exit\n"
 "        -xc         print configuration and exit\n"
 "        -xs         print configuration file schema in JSON format and exit\n"
+"        -p          try other authentication protocols in case of\n"
+"                    authentication failure. False by default.\n"
 "        -?          print this message.\n"
 "\n"), 2000, HOST_OS, DISTNAME, DISTVER);
 }
@@ -349,29 +358,85 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
 }
 
 /*
+ * Call-back for reading a passphrase.
+ */
+#if defined(HAVE_WIN32)
+static int passphrase_callback(char *buf, int size, const void *userdata)
+{
+   const char *prompt = (const char *)userdata;
+   HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
+   DWORD mode;
+
+   if (!GetConsoleMode(h, &mode)) {
+      return 0;
+   }
+
+   if (h == INVALID_HANDLE_VALUE || !(SetConsoleMode(h, 0))) {
+      return 0;
+   }
+
+   sendit(prompt);
+   if (win32_cgets(buf, size) == NULL) {
+      buf[0] = 0;
+      SetConsoleMode(h, mode);
+      return 0;
+   } else {
+      SetConsoleMode(h, mode);
+      return strlen(buf);
+   }
+}
+#else
+static int passphrase_callback(char *buf, int size, const void *userdata)
+{
+   const char *prompt = (const char *)userdata;
+#ifdef HAVE_TERMIOS_H
+   struct termios term;
+   tcflag_t c_lflag;
+
+   sendit(prompt);
+   if (tcgetattr(STDIN_FILENO, &term) < 0) {
+      return 0;
+   }
+
+   c_lflag = term.c_lflag;
+   term.c_lflag &= ~ICANON;
+   term.c_lflag &= ~ECHO;
+
+   if (tcsetattr(STDIN_FILENO, 0, &term) < 0) {
+      return 0;
+   }
+
+   if (!bfgets(buf, size, stdin)) {
+      term.c_lflag = c_lflag;
+      tcsetattr(STDIN_FILENO, 0, &term);
+      return 0;
+   }
+   strip_trailing_newline(buf);
+
+   term.c_lflag = c_lflag;
+   tcsetattr(STDIN_FILENO, 0, &term);
+#else
+   char *passwd;
+
+   /*
+    * This function uses getpass(),
+    * which uses a static buffer and is NOT thread-safe.
+    */
+   passwd = getpass(prompt);
+   bstrncpy(buf, passwd, size);
+#endif
+
+   return strlen(buf);
+}
+#endif
+
+/*
  * Call-back for reading a passphrase for an encrypted PEM file
- * This function uses getpass(),
- *  which uses a static buffer and is NOT thread-safe.
  */
 static int tls_pem_callback(char *buf, int size, const void *userdata)
 {
 #ifdef HAVE_TLS
-   const char *prompt = (const char *)userdata;
-#if defined(HAVE_WIN32)
-   sendit(prompt);
-   if (win32_cgets(buf, size) == NULL) {
-      buf[0] = 0;
-      return 0;
-   } else {
-      return strlen(buf);
-   }
-#else
-   char *passwd;
-
-   passwd = getpass(prompt);
-   bstrncpy(buf, passwd, size);
-   return strlen(buf);
-#endif
+   return passphrase_callback(buf, size, userdata);
 #else
    buf[0] = 0;
    return 0;
@@ -1079,6 +1144,45 @@ try_again:
    return 1;
 }
 
+static void get_password(char *user, size_t userlen, char *psk, size_t psklen)
+{
+   sendit("User: ");
+   if (bfgets(user, userlen, stdin)) {
+      strip_trailing_newline(user);
+   }
+
+   passphrase_callback(psk, psklen, "Password: ");
+   sendit("\n");
+}
+
+static bool auth(JCR *jcr, const char *name, s_password *password,
+                 const char *user, const char *psk, enum auth_backend_types auth_type,
+                 tls_t *tls, utime_t heart_beat, BSOCK **UA_sock, unsigned int protocol)
+{
+   char errmsg[1024];
+   BSOCK *s = *UA_sock;
+
+   if (s) {
+      s->close();
+      delete s;
+   }
+   s = New(BSOCK_TCP);
+   if (!s->connect(NULL, 5, 15, heart_beat, "Director daemon",
+                   dir->address, NULL, dir->DIRport, false)) {
+      delete s;
+      return false;
+   }
+   *UA_sock = s;
+   jcr->dir_bsock = s;
+
+   bool authenticated =
+      s->authenticate_with_director(jcr, name, *password, *tls,
+                                    errmsg, sizeof(errmsg), protocol,
+                                    user, psk, auth_type);
+   sendit(errmsg);
+   return authenticated;
+}
+
 /*
  * Main Bareos Console -- User Interface Program
  */
@@ -1099,6 +1203,7 @@ int main(int argc, char *argv[])
    tls_t *tls = NULL;
    POOL_MEM history_file;
    utime_t heart_beat;
+   bool protocol_downgrade_is_allowed = false;
 
    errmsg_len = sizeof(errmsg);
    setlocale(LC_ALL, "");
@@ -1112,7 +1217,7 @@ int main(int argc, char *argv[])
    working_directory = "/tmp";
    args = get_pool_memory(PM_FNAME);
 
-   while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:?")) != -1) {
+   while ((ch = getopt(argc, argv, "D:lc:d:nstu:x:p?")) != -1) {
       switch (ch) {
       case 'D':                    /* Director */
          if (director) {
@@ -1158,6 +1263,10 @@ int main(int argc, char *argv[])
 
       case 'u':
          timeout = atoi(optarg);
+         break;
+
+      case 'p':
+         protocol_downgrade_is_allowed = true;
          break;
 
       case 'x':                    /* export configuration/schema and exit */
@@ -1332,14 +1441,13 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   UA_sock = New(BSOCK_TCP);
-   if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
-      delete UA_sock;
-      terminate_console(0);
-      return 1;
-   }
-   jcr.dir_bsock = UA_sock;
-
+   enum auth_backend_types auth_type = AUTH_BACKEND_LOCAL_MD5;
+   static const size_t MAX_PSK = 128;
+   static const size_t MAX_USER = 128;
+   char user[MAX_USER];
+   char psk[MAX_PSK];
+   unsigned int crt_protocol;
+   const unsigned int protocols[] = {2, 0};
    /*
     * If cons == NULL, default console will be used
     */
@@ -1348,20 +1456,39 @@ int main(int argc, char *argv[])
       ASSERT(cons->password.encoding == p_encoding_md5);
       password = &cons->password;
       tls = &cons->tls;
+      auth_type = (enum auth_backend_types)cons->authtype;
+      crt_protocol = 0;
    } else {
       name = "*UserAgent*";
       ASSERT(dir->password.encoding == p_encoding_md5);
       password = &dir->password;
       tls = &dir->tls;
+      auth_type = AUTH_BACKEND_LOCAL_MD5;
+      crt_protocol = sizeof(protocols) / sizeof(protocols[0]) - 1;
    }
 
-   if (!UA_sock->authenticate_with_director(&jcr, name, *password, *tls, errmsg, errmsg_len)) {
-      sendit(errmsg);
-      terminate_console(0);
-      return 1;
+   switch (auth_type) {
+   case AUTH_BACKEND_PAM:
+      /* ASSERT(cons->tls.require); */
+      get_password(user, sizeof(user), psk, sizeof(psk));
+      break;
+   default:
+      break;
    }
 
-   sendit(errmsg);
+   if (!auth(&jcr, name, password, user, psk, auth_type, tls, heart_beat,
+             &UA_sock, protocols[crt_protocol])) {
+      do {
+         ++crt_protocol;
+         if (!protocol_downgrade_is_allowed ||
+             crt_protocol >= sizeof(protocols) / sizeof(protocols[0])) {
+            terminate_console(0);
+            return 1;
+         }
+         // protocol_downgrade_is_allowd && there are still protocols to try
+      } while (!auth(&jcr, name, password, user, psk, auth_type, tls, heart_beat,
+                     &UA_sock, protocols[crt_protocol]));
+   }
 
    Dmsg0(40, "Opened connection with Director daemon\n");
 

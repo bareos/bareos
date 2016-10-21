@@ -303,6 +303,13 @@ bool get_timestamp(void);
 void set_db_type(const char *name);
 void register_message_callback(void msg_callback(int type, char *msg));
 
+/* pam.c */
+bool pam_authenticate_useragent(const char *user, const char *psk,
+                                alist *allowed_users,
+                                alist *allowed_groups,
+                                bool check_acl,
+                                const char *remote);
+
 /* passphrase.c */
 char *generate_crypto_passphrase(uint16_t length);
 

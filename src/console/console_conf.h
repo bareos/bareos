@@ -61,6 +61,7 @@ public:
    uint32_t history_length;           /* readline history length */
    char *director;                    /* bind to director */
    utime_t heartbeat_interval;        /* Interval to send heartbeats to Dir */
+   uint16_t authtype;                 /* Backend authentication type */
    tls_t tls;                         /* TLS structure */
 };
 

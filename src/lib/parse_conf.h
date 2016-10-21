@@ -52,6 +52,11 @@ struct s_mdestination {
    bool where;
 };
 
+enum auth_backend_types {
+   AUTH_BACKEND_LOCAL_MD5 = 0,
+   AUTH_BACKEND_PAM
+};
+
 /*
  * Used for message types.
  */
@@ -258,6 +263,7 @@ enum {
    CFG_TYPE_ADDRESSES_ADDRESS = 27,     /* Ip address */
    CFG_TYPE_ADDRESSES_PORT = 28,        /* Ip port */
    CFG_TYPE_PLUGIN_NAMES = 29,          /* Plugin Name(s) */
+   CFG_TYPE_AUTHBACKEND = 30,           /* Authentication Backend */
 
    /*
     * Director resource types. handlers in dird_conf.
