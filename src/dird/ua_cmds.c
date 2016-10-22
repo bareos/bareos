@@ -200,7 +200,7 @@ static struct cmdstruct commands[] = {
      NULL, true, false },
    { NT_(".quit"), quit_cmd, _("Close connection"),
      NULL, false, false },
-   { NT_(".sql"), dot_sql_cmd, _("Send an arbitary SQL command"),
+   { NT_(".sql"), dot_sql_cmd, _("Send an arbitrary SQL command"),
      NT_("query=<sqlquery>"), false, true },
    { NT_(".schedule"), dot_schedule_cmd, _("List all schedule resources"),
      NT_("[enabled | disabled]"), false, false },

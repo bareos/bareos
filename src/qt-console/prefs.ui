@@ -450,7 +450,7 @@
           <item row="5" column="0" >
            <widget class="QCheckBox" name="miscDebug" >
             <property name="text" >
-             <string>Debug Miscelaneous Items</string>
+             <string>Debug Miscellaneous Items</string>
             </property>
            </widget>
           </item>

@@ -359,7 +359,7 @@ bool try_device_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
    bsr = find_next_bsr(jcr->bsr, dev);
    if (bsr == NULL && jcr->bsr->mount_next_volume) {
       Dmsg0(500, "Would mount next volume here\n");
-      Dmsg2(500, "Current postion (file:block) %u:%u\n",
+      Dmsg2(500, "Current position (file:block) %u:%u\n",
          dev->file, dev->block_num);
       jcr->bsr->mount_next_volume = false;
       if (!dev->at_eot()) {

@@ -2144,7 +2144,7 @@ msgid "Expected an IP number or a hostname, got: %s"
 msgstr "Esperaba un numero IP o un hostname, obtuvo: %s"
 
 #: src/lib/res.c:1129
-msgid "State machine missmatch"
+msgid "State machine mismatch"
 msgstr "Estado de la máquina desajustado"
 
 #: src/lib/res.c:1135 src/lib/res.c:1146
@@ -12132,7 +12132,7 @@ msgstr "Conexión perdida"
 
 #: src/dird/ua_dotcmds.c:132
 #, fuzzy
-msgid "Send an arbitary SQL command"
+msgid "Send an arbitrary SQL command"
 msgstr "Introduzca lista de comandos SQL"
 
 #: src/dird/ua_dotcmds.c:134
@@ -12788,7 +12788,7 @@ msgstr "Invalido comando \"%s\". Introduzca \"done\" para salir.\n"
 #: src/dird/ua_tree.c:252
 #, c-format
 msgid ""
-"Something is wrong with the Delta sequence of %s, skiping new parts. Current "
+"Something is wrong with the Delta sequence of %s, skipping new parts. Current "
 "sequence is %d\n"
 msgstr ""
 
@@ -19607,12 +19607,12 @@ msgstr "Fallo al inicializar el contexto TLS para la consola \"%s\".\n"
 
 #: src/stored/backends/gfapi_device.c:440
 #, c-format
-msgid "Specified glusterfs direcory %s cannot be created.\n"
+msgid "Specified glusterfs directory %s cannot be created.\n"
 msgstr ""
 
 #: src/stored/backends/gfapi_device.c:450
 #, fuzzy, c-format
-msgid "Specified glusterfs direcory %s is not a directory.\n"
+msgid "Specified glusterfs directory %s is not a directory.\n"
 msgstr "%s existe pero no es un directorio.\n"
 
 #: src/stored/backends/rados_device.c:137
@@ -19690,12 +19690,12 @@ msgstr "No se puede iniciar mutex: ERR=%s\n"
 
 #: src/stored/backends/cephfs_device.c:166
 #, fuzzy, c-format
-msgid "Specified CEPHFS direcory %s cannot be created.\n"
+msgid "Specified CEPHFS directory %s cannot be created.\n"
 msgstr "%s existe pero no es un directorio.\n"
 
 #: src/stored/backends/cephfs_device.c:176
 #, fuzzy, c-format
-msgid "Specified CEPHFS direcory %s is not a directory.\n"
+msgid "Specified CEPHFS directory %s is not a directory.\n"
 msgstr "%s existe pero no es un directorio.\n"
 
 #: src/stored/backends/elasto_device.c:75

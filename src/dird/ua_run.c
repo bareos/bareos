@@ -254,17 +254,17 @@ bool rerun_cmd(UAContext *ua, const char *cmd)
    }
 
    if (j < 0 && !timeframe && !since_jobid_given) {
-      ua->send_msg("Please specifiy jobid, since_jobid, hours or days\n");
+      ua->send_msg("Please specify jobid, since_jobid, hours or days\n");
       goto bail_out;
    }
 
    if (j >= 0 && since_jobid_given) {
-      ua->send_msg("Please specifiy either jobid or since_jobid (and optionally until_jobid)\n");
+      ua->send_msg("Please specify either jobid or since_jobid (and optionally until_jobid)\n");
       goto bail_out;
    }
 
    if (j >= 0 && timeframe) {
-      ua->send_msg("Please specifiy either jobid or timeframe\n");
+      ua->send_msg("Please specify either jobid or timeframe\n");
       goto bail_out;
    }
 
