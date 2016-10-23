@@ -346,8 +346,15 @@ class LowLevel(object):
         except RuntimeError:
             self.logger.error("RuntimeError exception in recv")
             return (0, True, False)
+        
+        # invalid username
+        if ProtocolMessages.is_not_authorized(msg):
+            self.logger.error("failed: " + str(msg))
+            return (0, True, False)
+        
         # check the receive message
         self.logger.debug("(recv): " + str(msg))
+        
         msg_list = msg.split(b" ")
         chal = msg_list[2]
         # get th timestamp and the tle info from director response
