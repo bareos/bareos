@@ -20,7 +20,7 @@ bconsole()
   grep -v -e "$cmd" "$temp" > "$out"
 }
 
-for restype in catalog client console counter director fileset jobs jobdefs messages pool profile schedule storage; do
+for restype in catalog client console counter director fileset job jobdefs messages pool profile schedule storage; do
     printf "\n%s:\n" "$restype"
     printf "==========\n"
     mkdir $restype 2>/dev/null
@@ -28,8 +28,10 @@ for restype in catalog client console counter director fileset jobs jobdefs mess
         bconsole "$restype/bareos-dir.conf" "show director"
     else
         dotcommand=".${restype}"
-        if [ $restype = messages ]; then
+        if [ $restype = "messages" ]; then
             dotcommand=".msgs"
+        elif [ $restype = "job" ]; then
+            dotcommand=".jobs"
         fi
         TEMP=`mktemp`
         bconsole "$TEMP" "$dotcommand"
