@@ -28,8 +28,10 @@ for restype in catalog client console counter director fileset job jobdefs messa
         bconsole "$restype/bareos-dir.conf" "show director"
     else
         dotcommand=".${restype}"
-        if [ $restype = messages ]; then
+        if [ $restype = "messages" ]; then
             dotcommand=".msgs"
+        elif [ $restype = "job" ]; then
+            dotcommand=".jobs"
         fi
         TEMP=`mktemp`
         bconsole "$TEMP" "$dotcommand"
