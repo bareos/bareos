@@ -10,10 +10,12 @@
 The Windows version of Bareos is a native Win32 port, but there
 are very few source code changes to the Unix code, which means that the
 Windows version is for the most part running code that has long proved
-stable on Unix systems. Chapter \nameref{SupportedOSes} show, what Windows versions are supported.
+stable on Unix systems.
 
-The Bareos component that is most often used in Windows 
-is the File daemon or Client program. 
+Chapter \nameref{SupportedOSes} shows, what Windows versions are supported.
+
+The Bareos component that is most often used in Windows
+is the File daemon or Client program.
 As a consequence, when we
 speak of the Windows version of Bareos below, we are mostly referring to
 the File daemon (client).
@@ -29,8 +31,8 @@ runs in the background even if there is no user logged into the system.
 \index[general]{Windows!File Daemon!Installation}
 
 Normally, you will install the Windows version of Bareos from the binaries.
-The winbareos binary packages are provided under \url{http://download.bareos.org/bareos/release/latest/windows}.
-Additionally, there are OPSI packages available under \url{http://download.bareos.org/bareos/release/latest/windows/opsi}.
+The \name{winbareos} binary packages are provided under \url{http://download.bareos.org/bareos/release/latest/windows}.
+Additionally, there are \elink{OPSI}{http://www.opsi.org} packages available under \url{http://download.bareos.org/bareos/release/latest/windows/opsi}.
 
 This install is standard Windows .exe that runs an install wizard using the
 NSIS Free Software installer, so if you have already installed Windows
@@ -43,7 +45,27 @@ in \directory{C:\ProgramData\Bareos} (for Windows XP and older: \directory{C:\Do
 In addition, the {\bf Start\-{\textgreater}All Programs\-{\textgreater}Bareos} menu item
 will be created during the installation, and on that menu, you
 will find items for editing the configuration files, displaying
-the document, and starting \command{BAT} or \command{bconsole}.
+the document, and starting a user interface.
+
+During installation you can decide, what Bareos components you want to install.
+
+Typically, you only want to install the Bareos Client (\bareosFd) and optionally some interface tools on a Windows system.
+Normally, we recommend to let the server components run on a Linux or other Unix system.
+However, it is possible, to run the \bareosDir, \bareosSd and \bareosWebui on a Windows systems.
+You should be aware about following limitations:
+\limitation*{Windows}{Windows \bareosDir does not support MySQL database backend}{
+When running the \bareosDir on Windows, only PostgreSQL (and SQLite) database backends are supported.
+SQLite is best suited for test environments.
+}
+\limitation*{Windows}{\bareosSd only support backup to disk, not to tape}{
+}
+\limitation*{Windows}{The default installation of \bareosWebui is only suitable for local access}{%
+Normally the \bareosWebui is running on a Apache server on Linux.
+While it is possible, to run the \bareosWebui under Apache or another Webserver which supports PHP under Windows,
+the configuration shipped the the \package{winbareos} package uses the PHP internal webserver.
+This is okay for local access, but not suitable for being accessed via the network.
+To guarantee this, it is configured to only listen locally (\url{http://localhost:9100}).
+}
 
 
 \subsection{Graphical Installation}
@@ -153,7 +175,7 @@ Connecting to Client bareos-fd at bareos.example.com:9102
 \label{Compatibility}
 \index[general]{Windows!Compatibility Considerations}
 
-\subsection{Exclusively Opened Filed}
+\subsection{Exclusively Opened Files}
 If you are not using the \nameref{VSS} option and if any applications are running during
 the backup and they have files opened exclusively, Bareos will not be able
 to backup those files, so be sure you close your applications (or tell your
