@@ -7,7 +7,6 @@
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
  * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -156,15 +155,21 @@ $this->headTitle($title);
             "order": [[2, 'desc']],
             "columnDefs": [
                {
-                  "targets": 2,
+                  "targets": 0,
                   "render": function(data, type, full, meta) {
-                     return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+                     return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
                   }
                },
                {
                   "targets": 1,
                   "render": function(data, type, full, meta) {
                      return formatJobStatus(data);
+                  }
+               },
+               {
+                  "targets": 2,
+                  "render": function(data, type, full, meta) {
+                     return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
                   }
                },
                {

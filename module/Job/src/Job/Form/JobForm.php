@@ -31,15 +31,37 @@ use Zend\Form\Element;
 class JobForm extends Form
 {
 
+   protected $jobs;
    protected $period;
    protected $status;
+   protected $jobname;
 
-   public function __construct($period=null, $status=null)
+   public function __construct($jobs=null, $jobname=null, $period=null, $status=null)
    {
       parent::__construct('job');
 
+      $this->jobs = $jobs;
+      $this->jobname = $jobname;
       $this->period = $period;
       $this->status = $status;
+
+      if(isset($jobname)) {
+         $this->add(array(
+            'name' => 'jobname',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Job name'),
+               'value_options' => $this->getJobnames(),
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'data-size' => '6',
+               'id' => _('jobname'),
+               'value' => $jobname
+            )
+         ));
+      }
 
       if(isset($period)) {
          $this->add(array(
@@ -88,6 +110,17 @@ class JobForm extends Form
          ));
       }
 
+   }
+
+   private function getJobnames()
+   {
+      $selectData = array();
+      if(!empty($this->jobs)) {
+         foreach($this->jobs as $job) {
+            $selectData[$job['name']] = $job['name'];
+         }
+      }
+      return $selectData;
    }
 
 }

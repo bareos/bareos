@@ -88,23 +88,23 @@ class DashboardController extends AbstractActionController
 
       if($status != null) {
          if($status == "running") {
-            $jobs_R = $this->getJobModel()->getJobsByStatus($this->bsock, 'R', $days, $hours);
-            $jobs_l = $this->getJobModel()->getJobsByStatus($this->bsock, 'l', $days, $hours);
+            $jobs_R = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'R', $days, $hours);
+            $jobs_l = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'l', $days, $hours);
             $num = count($jobs_R) + count($jobs_l);
          }
          elseif($status == "waiting") {
-            $jobs_F = $this->getJobModel()->getJobsByStatus($this->bsock, 'F', $days, $hours);
-            $jobs_S = $this->getJobModel()->getJobsByStatus($this->bsock, 'S', $days, $hours);
-            $jobs_s = $this->getJobModel()->getJobsByStatus($this->bsock, 's', $days, $hours);
-            $jobs_m = $this->getJobModel()->getJobsByStatus($this->bsock, 'm', $days, $hours);
-            $jobs_M = $this->getJobModel()->getJobsByStatus($this->bsock, 'M', $days, $hours);
-            $jobs_j = $this->getJobModel()->getJobsByStatus($this->bsock, 'j', $days, $hours);
-            $jobs_c = $this->getJobModel()->getJobsByStatus($this->bsock, 'c', $days, $hours);
-            $jobs_C = $this->getJobModel()->getJobsByStatus($this->bsock, 'C', $days, $hours);
-            $jobs_d = $this->getJobModel()->getJobsByStatus($this->bsock, 'd', $days, $hours);
-            $jobs_t = $this->getJobModel()->getJobsByStatus($this->bsock, 't', $days, $hours);
-            $jobs_p = $this->getJobModel()->getJobsByStatus($this->bsock, 'p', $days, $hours);
-            $jobs_q = $this->getJobModel()->getJobsByStatus($this->bsock, 'q', $days, $hours);
+            $jobs_F = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'F', $days, $hours);
+            $jobs_S = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'S', $days, $hours);
+            $jobs_s = $this->getJobModel()->getJobsByStatus($this->bsock, null, 's', $days, $hours);
+            $jobs_m = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'm', $days, $hours);
+            $jobs_M = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'M', $days, $hours);
+            $jobs_j = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'j', $days, $hours);
+            $jobs_c = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'c', $days, $hours);
+            $jobs_C = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'C', $days, $hours);
+            $jobs_d = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'd', $days, $hours);
+            $jobs_t = $this->getJobModel()->getJobsByStatus($this->bsock, null, 't', $days, $hours);
+            $jobs_p = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'p', $days, $hours);
+            $jobs_q = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'q', $days, $hours);
             $num = count($jobs_F) + count($jobs_S) +
                count($jobs_s) + count($jobs_m) +
                count($jobs_M) + count($jobs_j) +
@@ -113,15 +113,15 @@ class DashboardController extends AbstractActionController
                count($jobs_p) + count($jobs_q);
          }
          elseif($status == "successful") {
-            $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, 'T', $days, $hours);
-            $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, 'W', $days, $hours);
+            $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'T', $days, $hours);
+            $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'W', $days, $hours);
             $num = count($jobs_T) + count($jobs_W);
          }
          elseif($status == "unsuccessful") {
-            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, 'A', $days, $hours);
-            $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, 'E', $days, $hours);
-            $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, 'e', $days, $hours);
-            $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, 'f', $days, $hours);
+            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'A', $days, $hours);
+            $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'E', $days, $hours);
+            $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'e', $days, $hours);
+            $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'f', $days, $hours);
             $num = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
          }
       }

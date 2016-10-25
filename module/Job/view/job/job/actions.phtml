@@ -109,7 +109,7 @@ $this->headTitle($title);
          "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
       "columns" : [
-         { "data": null },
+         { "data": "name" },
          { "data": "enabled", "orderable": true },
          { "data": null, "orderable": false }
       ],
@@ -125,7 +125,7 @@ $this->headTitle($title);
          {
             "targets": 0,
             "render": function(data, type, full, meta) {
-               return data.name;
+               return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
             }
          },
          {

@@ -39,11 +39,15 @@ $this->headTitle($title);
 
 <div class="row">
 
-<div class="col-md-3">
+<div class="col-md-2">
+   <?php echo $this->formRow($form->get('jobname')); ?>
+</div>
+
+<div class="col-md-2">
    <?php echo $this->formRow($form->get('period')); ?>
 </div>
 
-<div class="col-md-3">
+<div class="col-md-2">
    <?php echo $this->formRow($form->get('status')); ?>
 </div>
 
@@ -183,6 +187,7 @@ function updateQueryParams(k, v)
    var p = [];
    var params = [];
 
+   p['jobname'] = '<?php echo $this->jobname; ?>';
    p['status'] = '<?php echo $this->status; ?>';
    p['period'] = '<?php echo $this->period; ?>';
 
@@ -215,7 +220,7 @@ $(document).ready(function() {
 
    var table = $('#jobtable').DataTable( {
       "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&status='.$this->status.'&period='.$this->period; ?>",
+         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&jobname='.$this->jobname.'&status='.$this->status.'&period='.$this->period; ?>",
          "dataSrc": ""
       },
       "language": {
@@ -247,6 +252,12 @@ $(document).ready(function() {
             "targets": 1,
             "render": function(data, type, full, meta) {
                return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+            }
+         },
+         {
+            "targets": 2,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
             }
          },
          {
@@ -354,6 +365,10 @@ $(document).ready(function() {
 
    $('#jobtable tbody').on('mouseover', '#btn-1', function () {
       $('[data-toggle="tooltip"]').tooltip();
+   });
+
+   $('#jobname').change(function(event) {
+      window.location.href = window.location.pathname + '?' + updateQueryParams('jobname', this.value);
    });
 
    $('#period').change(function(event) {
