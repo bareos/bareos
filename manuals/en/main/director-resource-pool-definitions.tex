@@ -1,23 +1,23 @@
 \defDirective{Dir}{Pool}{Action On Purge}{}{}{%
 This directive \configline{Action On Purge=Truncate} instructs Bareos to truncate the
-volume when it is purged with the \configline{Purge Volume Action=Truncate}
+volume when it is purged with the \bcommand{purge}{volume action=truncate}
 command. It is useful to prevent disk based volumes from consuming too much
 space.
 
 \bconfigInput{config/DirPoolActionOnPurge1.conf}
 
 
-You can schedule the truncate operation at the end of your CatalogBackup job
+You can schedule the truncate operation at the end of your \job{BackupCatalog} job
 like in this example:
 
 \bconfigInput{config/DirPoolActionOnPurge2.conf}
 }
 
 \defDirective{Dir}{Pool}{Auto Prune}{}{}{%
-If AutoPrune is set to {\bf yes}, Bareos  will automatically
-apply the Volume Retention period when new
+If \configline{Auto Prune=yes}, the \linkResourceDirective{Dir}{Pool}{Volume Retention} period
+is automatically applied when a new
 Volume is needed and no appendable Volumes exist in the Pool.  Volume
-pruning causes expired Jobs (older than the {\bf Volume Retention}
+pruning causes expired Jobs (older than the \linkResourceDirective{Dir}{Pool}{Volume Retention}
 period) to be deleted from the Catalog and permits possible recycling of
 the Volume.
 }
@@ -26,7 +26,7 @@ the Volume.
 This specifies the name of the catalog resource to be used for this Pool.
 When a catalog is defined in a Pool it will override the definition in
 the client (and the Catalog definition in a Job since
-\sinceVersion{dir}{Job catalog overwriten by Pool catalog}{13.4.0}). e.g.
+\sinceVersion{dir}{Job catalog overwritten by Pool catalog}{13.4.0}). e.g.
 this catalog setting takes precedence over any other definition.
 }
 
@@ -104,7 +104,7 @@ characters which will be expanded by a complex algorithm allowing you to
 create Volume names of many different formats.  In all cases, the
 expansion process must resolve to the set of characters noted above that
 are legal Volume names.  Generally, these variable expansion characters
-begin with a dollar sign (\path|$|)
+begin with a dollar sign (\path|$|)\hide{$}
 or a left bracket (\path|[|).
 For more details on
 variable expansion, please see \nameref{sec:VariableExpansionVolumeLabels}.
@@ -292,6 +292,8 @@ when all Volumes are full, but you don't want to worry about setting
 proper retention periods.  However, by using this option you risk losing
 valuable data.
 
+In most cases, you should use \linkResourceDirective{Dir}{Pool}{Recycle Oldest Volume} instead.
+
 \warning{
 Be aware that \configdirective{Purge Oldest Volume} disregards all retention
 periods. If you have only a single Volume defined and you turn this
@@ -307,28 +309,27 @@ data.
 
 \defDirective{Dir}{Pool}{Recycle}{}{}{%
 This directive specifies whether or not Purged Volumes may be recycled.
-If it is set to {\bf yes} (default) and Bareos needs a volume but finds
+If it is set to \argument{yes} and Bareos needs a volume but finds
 none that are appendable, it will search for and recycle (reuse) Purged
 Volumes (i.e.  volumes with all the Jobs and Files expired and thus
 deleted from the Catalog).  If the Volume is recycled, all previous data
-written to that Volume will be overwritten. If Recycle is set to {\bf
-no}, the Volume will not be recycled, and hence, the data will remain
+written to that Volume will be overwritten. If Recycle is set to \argument{no},
+the Volume will not be recycled, and hence, the data will remain
 valid.  If you want to reuse (re-write) the Volume, and the recycle flag
 is no (0 in the catalog), you may manually set the recycle flag (update
 command) for a Volume to be reused.
 
 Please note that the value defined by this directive in the
-bareos-dir.conf file is the default value used when a Volume is created.
-Once the volume is created, changing the value in the bareos-dir.conf
+configuration file is the default value used when a Volume is created.
+Once the volume is created, changing the value in the configuration
 file will not change what is stored for the Volume.  To change the value
-for an existing Volume you must use the {\bf update} command in the
-Console.
+for an existing Volume you must use the \bcommand{update}{volume} command.
 
 When all Job and File records have been pruned or purged from the
 catalog for a particular Volume, if that Volume is marked as
 Append, Full, Used, or Error, it will then be marked as Purged. Only
 Volumes marked as Purged will be considered to be converted to the
-Recycled state if the {\bf Recycle} directive is set to {\bf yes}.
+Recycled state if the \configdirective{Recycle} directive is set to \argument{yes}.
 }
 
 \defDirective{Dir}{Pool}{Recycle Current Volume}{}{}{%
@@ -336,9 +337,7 @@ If Bareos needs a new Volume, this directive instructs Bareos to Prune
 the volume respecting the Job and File retention periods.  If all Jobs
 are pruned (i.e.  the volume is Purged), then the Volume is recycled and
 will be used as the next Volume to be written.  This directive respects
-any Job, File, or Volume retention periods that you may have specified,
-and thus it is {\bf much} better to use it rather than the Purge Oldest
-Volume directive.
+any Job, File, or Volume retention periods that you may have specified.
 
 This directive can be useful if you have: a fixed number of Volumes in
 the Pool, you want to cycle through them, and you have specified
@@ -359,8 +358,7 @@ respecting the retention periods of all Files and Jobs written to this
 Volume.  If all Jobs are pruned (i.e. the volume is Purged), then the
 Volume is recycled and will be used as the next Volume to be written.
 This directive respects any Job, File, or Volume retention periods that
-you may have specified, and as such it is {\bf much} better to use this
-directive than the Purge Oldest Volume.
+you may have specified.
 
 This directive can be useful if you have a fixed number of Volumes in the
 Pool and you want to cycle through them and you have specified the correct
