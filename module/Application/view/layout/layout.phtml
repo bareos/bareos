@@ -75,7 +75,7 @@ echo $this->doctype();
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
          </button>
-         <a href="http://www.bareos.org/" target="_blank"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
+         <a href="<?php echo $this->url('dashboard', array('action' => 'index')); ?>" target="_self"><img src="<?php echo $this->basePath('img/bareos-logo-small.png') ?>" alt="Bareos" /></a>&nbsp;
       </div>
       <div class="collapse navbar-collapse">
          <?php echo $this->navigation('navigation')->menu()->setMinDepth(0)->setMaxDepth(0)->setUlClass('nav navbar-nav'); ?>
