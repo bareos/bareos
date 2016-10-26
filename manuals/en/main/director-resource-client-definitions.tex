@@ -10,11 +10,11 @@ a backup protocol that uses a specific authentication type.
 }
 
 \defDirective{Dir}{Client}{Auto Prune}{}{}{%
-If AutoPrune is set to  {\bf yes}, Bareos
-will  automatically apply the File retention period and the Job  retention
-period for the Client at the end of the Job.  If you leave the default {\bf AutoPrune = no},
-pruning will not be done, and your Catalog will grow in size each time you
-run a Job.  Pruning affects only information in the catalog and not data
+If set to \argument{yes},
+Bareos will  automatically apply the \linkResourceDirective{Dir}{Client}{File Retention} period
+and the \linkResourceDirective{Dir}{Client}{Job Retention} period for the client at the end of the job.
+
+Pruning affects only information in the catalog and not data
 stored in the backup archives (on Volumes), but if pruning deletes all data
 referring to a certain volume, the volume is regarded as empty and will possibly
 be overwritten before the volume retention has expired.
@@ -45,7 +45,7 @@ For details, see \nameref{sec:ClientInitiatedConnection}.
 }
 
 \defDirective{Dir}{Client}{FD Port}{}{}{%
-Where the port is a port  number at which the Bareos File server daemon can
+Where the port is a port  number at which the \bareosFd can
 be contacted.  The default is 9102. For NDMP backups set this to 10000.
 }
 
@@ -53,8 +53,9 @@ be contacted.  The default is 9102. For NDMP backups set this to 10000.
 The File Retention directive defines the length of time that  Bareos will
 keep File records in the Catalog database after the End time of the
 Job corresponding to the File records.
-When this time period expires, and if
-{\bf AutoPrune} is set to  {\bf yes} Bareos will prune (remove) File records
+When this time period expires
+and \resourceDirectiveValue{Dir}{Client}{Auto Prune}{yes},
+Bareos will prune (remove) File records
 that  are older than the specified File Retention period. Note, this  affects
 only records in the catalog database. It does not  affect your archive
 backups.
@@ -62,10 +63,7 @@ backups.
 File records  may actually be retained for a shorter period than you specify
 on  this directive if you specify either a shorter \linkResourceDirective{Dir}{Client}{Job Retention}  or a
 shorter \linkResourceDirective{Dir}{Pool}{Volume Retention} period. The shortest  retention period of the
-three takes precedence.  The time may be expressed in seconds, minutes,
-hours, days, weeks, months, quarters, or years. See the
-\ilink{ Configuration chapter}{Time} of this  manual for
-additional details of time specification.
+three takes precedence.
 
 The  default is 60 days.
 }
@@ -82,16 +80,14 @@ If the Hard Quota is exceeded, the running job is terminated:
 \defDirective{Dir}{Client}{Heartbeat Interval}{}{}{%
 This directive is optional and if specified will cause the Director to
 set a keepalive interval (heartbeat) in seconds on each of the sockets
-it opens for the Storage resource.  This value will override any
-specified at the Director level.  It is implemented only on systems
-(Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
-The default value is zero, which means no change is made to the socket.
+it opens for the Storage resource.
+If set, this value overrides \linkResourceDirective{Dir}{Director}{Heartbeat Interval}.
 }
 
 \defDirective{Dir}{Client}{Job Retention}{}{}{%
 The Job Retention directive defines the length of time that  Bareos will keep
 Job records in the Catalog database after the Job End time.  When
-this time period expires, and if \linkResourceDirective{Dir}{Client}{Auto Prune} is set to {\bf yes}
+this time period expires and \resourceDirectiveValue{Dir}{Client}{Auto Prune}{yes}
 Bareos will prune (remove) Job records that are older than the specified
 File Retention period.  As with the other retention periods, this
 affects only records in the catalog and not data in your archive backup.
@@ -104,11 +100,6 @@ be less than the value you specify here if you set the \linkResourceDirective{Di
 Retention} directive to a smaller duration.  This is
 because the Job retention period and the Volume retention period are
 independently applied, so the smaller of the two takes precedence.
-
-The Job retention period is specified as seconds,  minutes, hours, days,
-weeks, months,  quarters, or years.  See the
-\ilink{Configuration chapter}{Time} of this manual for
-additional details of  time specification.
 
 The default is 180 days.
 }
@@ -153,13 +144,8 @@ See chapter \ilink{Passive Client}{PassiveClient}.
 This is the password to be  used when establishing a connection with the File
 services, so  the Client configuration file on the machine to be backed up
 must  have the same password defined for this Director.
-If you have either \file{/dev/random} or {\bf bc} on your machine,
-Bareos will generate a random  password during the configuration process,
-otherwise it will  be left blank.
 
-The password is plain text.  It is not generated through any special
-process, but it is preferable for security reasons to make the text
-random.
+The password is plain text.
 }
 
 \defDirective{Dir}{Client}{Port}{}{}{%
