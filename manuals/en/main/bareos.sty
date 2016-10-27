@@ -514,7 +514,12 @@ Version $>=$ #3%
 \linkResourceDirectiveValue{#1}{#2}{#3}{#4}%
 }
 
-
+%
+% lstnewenvironment
+%
+% columns=fullflexible, keepspaces=true: prevents spaces between characters on copy-and-paste
+% literate={-}{-}1: prevents that a minus ("-") get displayed as long minus (and causing erros on copy-and-paste)
+%
 
 \lstnewenvironment{bconsole}[1]{
     % #1 caption
@@ -527,11 +532,11 @@ Version $>=$ #3%
         prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
         postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
         caption=\mbox{#1},
-        %basicstyle=\ttfamily,
-        basicstyle=\small,
-        stringstyle=\ttfamily,
+        basicstyle=\ttfamily\small,
+        %columns=fixed,
+        columns=fullflexible,
         keepspaces=true,
-        columns=fixed,
+        literate={-}{-}1,
         backgroundcolor=\color{colorBconsole},
         frame=single,
         framerule=0pt,
@@ -559,8 +564,9 @@ Version $>=$ #3%
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1,
         %label=config:#1,
         caption=\mbox{#1},
         captionpos=b,
@@ -579,15 +585,14 @@ Version $>=$ #3%
     \lstset{
         backgroundcolor=\color{colorConfig},
         breaklines=true,
-        %breakatwhitespace=true,
         prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
         postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
-        %label=config:#1,
+        keepspaces=true,
+        literate={-}{-}1,
         caption=\mbox{#1},
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
@@ -603,8 +608,9 @@ Version $>=$ #3%
                 backgroundcolor=\color{colorConfig},
                 frame=single,framerule=0pt,
                 basicstyle=\ttfamily,
+                columns=fullflexible,
                 keepspaces=true,
-                columns=fullflexible
+                literate={-}{-}1
             ]{#1}
     }
 }
@@ -624,9 +630,9 @@ Version $>=$ #3%
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
-        %label=config:#1,
+        keepspaces=true,
+        literate={-}{-}1,
         caption=#1.d/#2/#3.conf,
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
@@ -649,9 +655,9 @@ Version $>=$ #3%
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
-        %label=config:#1,
+        keepspaces=true,
+        literate={-}{-}1,
         caption=#1,
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
@@ -674,9 +680,10 @@ Version $>=$ #3%
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
-        caption=#1,
+        keepspaces=true,
+        literate={-}{-}1,
+        caption=\mbox{#1},
         captionpos=b,
         % command only work for single commands without parameter.
         % as workaround, split a command and its parameter as in following example:
@@ -734,10 +741,10 @@ Version $>=$ #3%
         frame=single,
         framerule=0pt,
         basicstyle=\ttfamily,
-        keepspaces=true,
         columns=fullflexible,
-        %label=config:#1,
-        caption=#1,
+        keepspaces=true,
+        literate={-}{-}1,
+        caption=\mbox{#1},
         captionpos=b,
         moredelim=[is][\it]{<input>}{</input>},
         moredelim=[is][\underline]{<strong>}{</strong>},
