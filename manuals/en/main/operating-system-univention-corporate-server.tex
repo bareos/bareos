@@ -272,7 +272,7 @@ copy the generated client configuration over to the client and save it to follow
 
 \begin{commands}{copy client configuration from the server to the testw1.example.com client (Linux)}
 root@ucs:~# <input>CLIENTNAME=testw1.example.com</input>
-root@ucs:~# <input>scp /etc/bareos/bareos-dir-export/client/testw1.example.com${CLIENTNAME}-fd/bareos-fd.d/director/*.conf root@${CLIENTNAME}:/etc/bareos/bareos-fd.d/director/</input>
+root@ucs:~# <input>scp /etc/bareos/bareos-dir-export/client/${CLIENTNAME}-fd/bareos-fd.d/director/*.conf root@${CLIENTNAME}:/etc/bareos/bareos-fd.d/director/</input>
 \end{commands}
 
 
