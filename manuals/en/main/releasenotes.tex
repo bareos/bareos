@@ -19,12 +19,11 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 \releasenote{16.2.4}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-Code Release      & TBD\\
+Code Release      & 2016-10-28\\
 Database Version  & 2004 (unchanged)\\
 Release Ticket    & \ticket{698}\\
-Url               & TBD\\
-%Url               & \releaseUrlDownloadBareosOrg{16.2} \\
-%                  & \releaseUrlDownloadBareosCom{16.2} \\
+Url               & \releaseUrlDownloadBareosOrg{16.2} \\
+                  & \releaseUrlDownloadBareosCom{16.2} \\
 \end{tabular}
 
 First stable release of the Bareos 16.2 branch.
@@ -54,9 +53,9 @@ First stable release of the Bareos 16.2 branch.
      \end{itemize}
 \item \bareosWebui
      \begin{itemize}
-     \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP $>=$ 5.3.17 (5.3.23).
      \item Updating from Bareos 15.2: Adapt \resourcename{Dir}{Profile}{webui} (from bareos 15.2) to allow all commands of \resourcename{Dir}{Profile}{webui-admin} (\linkResourceDirective{Dir}{Console}{Command ACL}).
      Alternately modify all \resourcetype{Dir}{Console}s currently using \resourcename{Dir}{Profile}{webui} to use \resourcename{Dir}{Profile}{webui-admin} instead.
+     \item While RHEL 6 and CentOS 6 are still platforms supported by Bareos, the package \package{bareos-webui} is not available for these platforms, as the required ZendFramework 2.4 do require PHP $>=$ 5.3.17 (5.3.23). However, it is possible to use \package{bareos-webui} 15.2 against \package{bareos-director} 16.2. Also here, the profile must be adapted.
      \end{itemize}
 \end{itemize}
 }
