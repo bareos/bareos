@@ -31,7 +31,7 @@ $this->headTitle($title);
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
 
 <?php
-   if(isset($this->errors)) {
+   if(isset($this->errors) && !empty($this->errors)) {
       echo '<div class="alert alert-danger" role="alert"><button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
   <strong>Error: </strong>'.$this->errors.'</div>';
    }
