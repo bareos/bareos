@@ -31,6 +31,15 @@
 
 #define MAX_ID_LIST_LEN 2000000
 
+struct ua_cmdstruct {
+   const char *key; /* Command */
+   bool (*func)(UAContext *ua, const char *cmd); /* Handler */
+   const char *help; /* Main purpose */
+   const char *usage; /* All arguments to build usage */
+   const bool use_in_rs; /* Can use it in Console RunScript */
+   const bool audit_event; /* Log an audit event when this Command is executed */
+};
+
 class UAContext {
 public:
    /*
@@ -55,7 +64,6 @@ public:
    int max_prompts;                   /* Max size of list */
    int num_prompts;                   /* Current number in list */
    int api;                           /* For programs want an API */
-   int cmd_index;                     /* Index in command table */
    bool auto_display_messages;        /* If set, display messages */
    bool user_notified_msg_pending;    /* Set when user notified */
    bool automount;                    /* If set, mount after label */
@@ -71,18 +79,25 @@ public:
 
 private:
    /*
+    * Members
+    */
+   ua_cmdstruct *cmddef;              /* Definition of the currently executed command */
+
+   /*
     * Methods
     */
    bool acl_access_ok(int acl, const char *item, int len, bool audit_event = false);
    int rcode_to_acltype(int rcode);
    void log_audit_event_acl_failure(int acl, const char *item);
    void log_audit_event_acl_success(int acl, const char *item);
+   void set_command_definition(ua_cmdstruct *cmd) { cmddef = cmd; }
 
 public:
    /*
     * Methods
     */
    void signal(int sig) { UA_sock->signal(sig); };
+   bool execute(ua_cmdstruct *cmd);
 
    /*
     * ACL check method.
@@ -98,6 +113,7 @@ public:
    RES *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
    POOLRES *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
    STORERES *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
+   STORERES *GetStoreResWithId(DBId_t id, bool audit_event = true, bool lock = true);
    CLIENTRES *GetClientResWithName(const char *name, bool audit_event = true, bool lock = true);
    JOBRES *GetJobResWithName(const char *name, bool audit_event = true, bool lock = true);
    FILESETRES *GetFileSetResWithName(const char *name, bool audit_event = true, bool lock = true);
@@ -117,6 +133,7 @@ public:
    void error_msg(const char *fmt, ...);
    void warning_msg(const char *fmt, ...);
    void info_msg(const char *fmt, ...);
+   void send_cmd_usage(const char *fmt, ...);
 };
 
 /*

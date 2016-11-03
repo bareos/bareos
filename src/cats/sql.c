@@ -56,6 +56,17 @@ dbid_list::~dbid_list()
    free(DBId);
 }
 
+DBId_t dbid_list::get(int i) const {
+   if (i >= size()) {
+      Emsg2(M_ERROR_TERM, 0,
+            _("Unable to access dbid_list entry %d. Only %d entries available.\n"),
+            i, size());
+      return (DBId_t)0;
+   }
+   return DBId[i];
+}
+
+
 /*
  * Called here to retrieve an integer from the database
  */

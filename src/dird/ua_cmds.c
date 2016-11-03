@@ -111,12 +111,13 @@ static bool mount_cmd(UAContext *ua, const char *cmd);
 static bool noop_cmd(UAContext *ua, const char *cmd);
 static bool release_cmd(UAContext *ua, const char *cmd);
 static bool reload_cmd(UAContext *ua, const char *cmd);
+static bool resolve_cmd(UAContext *ua, const char *cmd);
 static bool setdebug_cmd(UAContext *ua, const char *cmd);
 static bool setbwlimit_cmd(UAContext *ua, const char *cmd);
 static bool setip_cmd(UAContext *ua, const char *cmd);
 static bool time_cmd(UAContext *ua, const char *cmd);
-static bool resolve_cmd(UAContext *ua, const char *cmd);
 static bool trace_cmd(UAContext *ua, const char *cmd);
+static bool truncate_cmd(UAContext *ua, const char *cmd);
 static bool unmount_cmd(UAContext *ua, const char *cmd);
 static bool use_cmd(UAContext *ua, const char *cmd);
 static bool var_cmd(UAContext *ua, const char *cmd);
@@ -128,6 +129,7 @@ static bool delete_job_id_range(UAContext *ua, char *tok);
 static bool delete_volume(UAContext *ua);
 static bool delete_pool(UAContext *ua);
 static void delete_job(UAContext *ua);
+static bool do_truncate(UAContext *ua, MEDIA_DBR &mr);
 
 bool quit_cmd(UAContext *ua, const char *cmd);
 
@@ -136,15 +138,7 @@ bool quit_cmd(UAContext *ua, const char *cmd);
  * New commands are added after existing commands with similar letters
  * to prevent breakage of existing user scripts.
  */
-struct cmdstruct {
-   const char *key; /* Command */
-   bool (*func)(UAContext *ua, const char *cmd); /* Handler */
-   const char *help; /* Main purpose */
-   const char *usage; /* All arguments to build usage */
-   const bool use_in_rs; /* Can use it in Console RunScript */
-   const bool audit_event; /* Log an audit event when this Command is executed */
-};
-static struct cmdstruct commands[] = {
+static struct ua_cmdstruct commands[] = {
    { NT_("."), noop_cmd, _("no op"),
      NULL, true, false },
    { NT_(".actiononpurge"), dot_aop_cmd, _("List possible actions on purge"),
@@ -262,7 +256,7 @@ static struct cmdstruct commands[] = {
          "\tenable estimate exit gui label list llist\n"
          "\tmessages memory mount prune purge quit query\n"
          "\trestore relabel release reload run status\n"
-         "\tsetbandwidth setdebug setip show sqlquery time trace unmount\n"
+         "\tsetbandwidth setdebug setip show sqlquery time trace truncate unmount\n"
          "\tumount update use var version wait"), false, false },
    { NT_("import"), import_cmd, _("Import volumes from import/export slots to normal slots"),
      NT_("storage=<storage-name> [ srcslots=<slot-selection> dstslots=<slot-selection> volume=<volume-name> scan ]"), true, true },
@@ -291,8 +285,8 @@ static struct cmdstruct commands[] = {
          "storages |\n"
          "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
          "volume=<volume-name> |\n"
-         "[ current ] | [ enabled ] | [disabled] |\n"
-         "[ limit=<number> [ offset=<number> ] ]"), true, true },
+         "[current] | [enabled | disabled] |\n"
+         "[limit=<number> [offset=<number>]]"), true, true },
    { NT_("llist"), llist_cmd, _("Full or long list like list command"),
      NT_("basefiles jobid=<jobid> | basefiles ujobid=<complete_name> |\n"
          "backups client=<client-name> [fileset=<fileset-name>] [jobstatus=<status>] [level=<level>] [order=<asc|desc>] [limit=<number>] [days=<number>] [hours=<number>]|\n"
@@ -384,6 +378,8 @@ static struct cmdstruct commands[] = {
      NT_(""), true, false },
    { NT_("trace"), trace_cmd, _("Turn on/off trace to file"),
      NT_("on | off"), true, true },
+   { NT_("truncate"), truncate_cmd, _("Truncate purged volumes"),
+     NT_("volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]"), true, true },
    { NT_("unmount"), unmount_cmd, _("Unmount storage"),
      NT_("storage=<storage-name> [ drive=<drivenum> ]\n"
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
@@ -411,7 +407,13 @@ static struct cmdstruct commands[] = {
      NT_("jobname=<name> | jobid=<jobid> | ujobid=<complete_name> | mount [timeout=<number>]"), false, false }
 };
 
-#define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
+#define comsize ((int)(sizeof(commands)/sizeof(struct ua_cmdstruct)))
+
+bool UAContext::execute(ua_cmdstruct *cmd)
+{
+   set_command_definition(cmd);
+   return (cmd->func)(this, this->cmd);
+}
 
 /*
  * Execute a command from the UA
@@ -472,7 +474,7 @@ bool do_a_command(UAContext *ua)
             user->signal(BNET_CMD_BEGIN);
          }
          ua->send->set_mode(ua->api);
-         ok = (*commands[i].func)(ua, ua->cmd);   /* go execute command */
+         ok = ua->execute(&commands[i]);
          if (ua->api) {
             user->signal(ok ? BNET_CMD_OK : BNET_CMD_FAILED);
          }
@@ -1802,6 +1804,250 @@ static bool time_cmd(UAContext *ua, const char *cmd)
    ua->send->object_end("time");
 
    return true;
+}
+
+
+
+/*
+ * truncate command. Truncates volumes (volume files) on the storage daemon.
+ *
+ * usage:
+ * truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
+ */
+static bool truncate_cmd(UAContext *ua, const char *cmd)
+{
+   bool result = false;
+   int i = -1;
+   int parsed_args = 1; /* start at 1, as command itself is also counted */
+   char esc[MAX_NAME_LENGTH * 2 + 1];
+   POOL_MEM tmp(PM_MESSAGE);
+   POOL_MEM volumes(PM_MESSAGE);
+   dbid_list mediaIds;
+   MEDIA_DBR mr;
+   POOL_DBR pool_dbr;
+   STORAGE_DBR storage_dbr;
+
+   memset(&pool_dbr, 0, sizeof(pool_dbr));
+   memset(&storage_dbr, 0, sizeof(storage_dbr));
+
+   /*
+    * Look for volumes that can be recycled,
+    * are enabled and have used more than the first block.
+    */
+   memset(&mr, 0, sizeof(mr));
+   mr.Recycle = 1;
+   mr.Enabled = VOL_ENABLED;
+   mr.VolBytes = (512 * 126);  /* search volumes with more than 64,512 bytes (DEFAULT_BLOCK_SIZE) */
+
+   if (!(ua->argc > 1)) {
+      ua->send_cmd_usage(_("missing parameter"));
+      return false;
+   }
+
+   /* arg: volstatus=Purged */
+   i = find_arg_with_value(ua, "volstatus");
+   if (i < 0) {
+      ua->send_cmd_usage(_("required parameter 'volstatus' missing"));
+      return false;
+   }
+   if (!(bstrcasecmp(ua->argv[i], "Purged"))) {
+      ua->send_cmd_usage(_("Invalid parameter. 'volstatus' must be 'Purged'."));
+      return false;
+   }
+   parsed_args++;
+
+   /*
+    * Look for Purged volumes.
+    */
+   bstrncpy(mr.VolStatus, "Purged", sizeof(mr.VolStatus));
+
+   if (!open_db(ua)) {
+      ua->error_msg("Failed to open db.\n");
+      goto bail_out;
+   }
+
+   ua->send->add_acl_filter_tuple(2, Pool_ACL);
+   ua->send->add_acl_filter_tuple(3, Storage_ACL);
+
+   /*
+    * storage parameter is only required
+    * if ACL forbids access to all storages.
+    * Otherwise the user should not be asked for this parameter.
+    */
+   i = find_arg_with_value(ua, "storage");
+   if ((i >= 0) || ua->acl_has_restrictions(Storage_ACL)) {
+      if (!select_storage_dbr(ua, &storage_dbr, "storage")) {
+         goto bail_out;
+      }
+      mr.StorageId = storage_dbr.StorageId;
+      parsed_args++;
+   }
+
+   /*
+    * pool parameter is only required
+    * if ACL forbids access to all pools.
+    * Otherwise the user should not be asked for this parameter.
+    */
+   i = find_arg_with_value(ua, "pool");
+   if ((i >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
+      if (!select_pool_dbr(ua, &pool_dbr, "pool")) {
+         goto bail_out;
+      }
+      mr.PoolId = pool_dbr.PoolId;
+      if (i >= 0) {
+         parsed_args++;
+      }
+   }
+
+   /*
+    * parse volume parameter.
+    * Currently only support one volume parameter
+    * (multiple volume parameter have been intended before,
+    * but this causes problems with parsing and ACL handling).
+    */
+   i = find_arg_with_value(ua, "volume");
+   if (i >= 0) {
+      if (is_name_valid(ua->argv[i])) {
+         db_escape_string(ua->jcr, ua->db, esc, ua->argv[i], strlen(ua->argv[i]));
+         if (!*volumes.c_str()) {
+            Mmsg(tmp, "'%s'", esc);
+         } else {
+            Mmsg(tmp, ",'%s'", esc);
+         }
+         volumes.strcat(tmp.c_str());
+         parsed_args++;
+      }
+   }
+
+   if (find_arg(ua, NT_("yes")) >= 0) {
+      /* parameter yes is evaluated at 'get_confirmation' */
+      parsed_args++;
+   }
+
+   if (parsed_args != ua->argc) {
+      ua->send_cmd_usage(_("Invalid parameter."));
+      goto bail_out;
+   }
+
+   /* create sql query string (in ua->db->cmd) */
+   if (!prepare_media_sql_query(ua->jcr, ua->db, &mr, volumes)) {
+      ua->error_msg(_("Invalid parameter (failed to create sql query).\n"));
+      goto bail_out;
+   }
+
+   /* execute query and display result */
+   db_list_sql_query(ua->jcr, ua->db, ua->db->cmd,
+                     ua->send, HORZ_LIST, "volumes", true);
+
+   /*
+    * execute query to get media ids.
+    * Second execution is only required,
+    * because function is also used in other contextes.
+    */
+   tmp.strcpy(ua->db->cmd);
+   if (!db_get_query_dbids(ua->jcr, ua->db, tmp, mediaIds)) {
+      Dmsg0(100, "No results from db_get_query_dbids\n");
+      goto bail_out;
+   };
+
+   if (!mediaIds.size()) {
+      Dmsg0(100, "Results are empty\n");
+      goto bail_out;
+   }
+
+   if (!verify_media_ids_from_single_storage(ua->jcr, ua->db, mediaIds)) {
+      ua->error_msg("Selected volumes are from different storages. "
+                    "This is not supported. Please choose only volumes from a single storage.\n");
+      goto bail_out;
+   }
+
+   mr.MediaId = mediaIds.get(0);
+   if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
+      goto bail_out;
+   }
+
+   if (ua->GetStoreResWithId(mr.StorageId)->Protocol != APT_NATIVE) {
+      ua->warning_msg(_("Storage uses a non-native protocol. Truncate is only supported for native protocols.\n"));
+      goto bail_out;
+   }
+
+   if (!get_confirmation(ua, _("Truncate listed volumes (yes/no)? "))) {
+      goto bail_out;
+   }
+
+   /*
+    * Loop over the candidate Volumes and actually truncate them
+    */
+   for (int i = 0; i < mediaIds.size(); i++) {
+      memset(&mr, 0, sizeof(mr));
+      mr.MediaId = mediaIds.get(i);
+      if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
+         Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t) mr.MediaId);
+      } else {
+         do_truncate(ua, mr);
+      }
+   }
+
+bail_out:
+   close_db(ua);
+   if (ua->jcr->store_bsock) {
+      ua->jcr->store_bsock->signal(BNET_TERMINATE);
+      ua->jcr->store_bsock->close();
+      delete ua->jcr->store_bsock;
+      ua->jcr->store_bsock = NULL;
+   }
+
+   return result;
+}
+
+static bool do_truncate(UAContext *ua, MEDIA_DBR &mr)
+{
+   bool retval = false;
+   STORAGE_DBR storage_dbr;
+   POOL_DBR pool_dbr;
+
+   memset(&storage_dbr, 0, sizeof(storage_dbr));
+   memset(&pool_dbr, 0, sizeof(pool_dbr));
+
+   storage_dbr.StorageId = mr.StorageId;
+   if (!db_get_storage_record(ua->jcr, ua->db, &storage_dbr)) {
+      ua->error_msg("failed to determine storage for id %lld\n", mr.StorageId);
+      goto bail_out;
+   }
+
+   pool_dbr.PoolId = mr.PoolId;
+   if (!db_get_pool_record(ua->jcr, ua->db, &pool_dbr)) {
+      ua->error_msg("failed to determine pool for id %lld\n", mr.PoolId);
+      goto bail_out;
+   }
+
+   /*
+    * Choose storage
+    */
+   ua->jcr->res.wstore = ua->GetStoreResWithName(storage_dbr.Name);
+   if (!ua->jcr->res.wstore) {
+      ua->error_msg("failed to determine storage resource by name %s\n", storage_dbr.Name);
+      goto bail_out;
+   }
+
+   if (send_label_request(ua, ua->jcr->res.wstore,
+                          &mr, &mr,
+                          &pool_dbr,
+                          /* bool media_record_exists */
+                          true,
+                          /* bool relabel */
+                          true,
+                          /* drive_number_t drive */
+                          0,
+                          /* slot_number_t slot */
+                          0)) {
+      ua->send_msg(_("The volume '%s' has been truncated.\n"), mr.VolumeName);
+      retval = true;
+   }
+
+bail_out:
+   ua->jcr->res.wstore = NULL;
+   return retval;
 }
 
 /*

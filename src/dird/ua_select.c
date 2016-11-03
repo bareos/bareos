@@ -760,11 +760,11 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    sr->StorageId = 0;
    if (!db_get_storage_ids(ua->jcr, ua->db, &num_storages, &ids)) {
       ua->error_msg(_("Error obtaining storage ids. ERR=%s\n"), db_strerror(ua->db));
-      return 0;
+      return false;
    }
 
    if (num_storages <= 0) {
-      ua->error_msg(_("No storages defined. Use the \"create\" command to create one.\n"));
+      ua->error_msg(_("No storages defined.\n"));
       return false;
    }
 

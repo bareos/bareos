@@ -1852,3 +1852,28 @@ void UAContext::info_msg(const char *fmt, ...)
    va_end(arg_ptr);
    send->message(MSG_TYPE_INFO, message);
 }
+
+
+void UAContext::send_cmd_usage(const char *fmt, ...)
+{
+   va_list arg_ptr;
+   POOL_MEM message;
+   POOL_MEM usage;
+
+   /* send current buffer */
+   send->send_buffer();
+
+   va_start(arg_ptr, fmt);
+   message.bvsprintf(fmt, arg_ptr);
+   va_end(arg_ptr);
+
+   if (cmddef) {
+      if (cmddef->key && cmddef->usage) {
+         usage.bsprintf("\nUSAGE: %s %s\n", cmddef->key, cmddef->usage);
+         message.strcat(usage);
+      }
+   }
+
+   send->message(NULL, message);
+}
+

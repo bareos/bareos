@@ -402,6 +402,18 @@ STORERES *UAContext::GetStoreResWithName(const char *name, bool audit_event, boo
    return (STORERES *)GetResWithName(R_STORAGE, name, audit_event, lock);
 }
 
+STORERES *UAContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
+{
+   STORAGE_DBR storage_dbr;
+   memset(&storage_dbr, 0, sizeof(storage_dbr));
+
+   storage_dbr.StorageId = id;
+   if (db_get_storage_record(jcr, db, &storage_dbr)) {
+      return GetStoreResWithName(storage_dbr.Name, audit_event, lock);
+   }
+   return NULL;
+}
+
 CLIENTRES *UAContext::GetClientResWithName(const char *name, bool audit_event, bool lock)
 {
    return (CLIENTRES *)GetResWithName(R_CLIENT, name, audit_event, lock);

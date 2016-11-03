@@ -102,11 +102,13 @@ int db_get_num_pool_records(JCR *jcr, B_DB *mdb);
 int db_get_pool_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
 bool db_get_client_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
 int db_get_storage_ids(JCR *jcr, B_DB *mdb, int *num_ids, DBId_t **ids);
+bool prepare_media_sql_query(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes);
 bool db_get_media_ids(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t **ids);
+bool db_get_query_dbids(JCR *jcr, B_DB *mdb, POOL_MEM &query, dbid_list &ids);
+bool verify_media_ids_from_single_storage(JCR *jcr, B_DB *mdb, dbid_list &ids);
 int db_get_job_volume_parameters(JCR *jcr, B_DB *mdb, JobId_t JobId, VOL_PARAMS **VolParams);
 bool db_get_client_record(JCR *jcr, B_DB *mdb, CLIENT_DBR *cdbr);
 bool db_get_counter_record(JCR *jcr, B_DB *mdb, COUNTER_DBR *cr);
-bool db_get_query_dbids(JCR *jcr, B_DB *mdb, POOL_MEM &query, dbid_list &ids);
 bool db_get_file_list(JCR *jcr, B_DB *mdb, char *jobids,
                       bool use_md5, bool use_delta,
                       DB_RESULT_HANDLER *result_handler, void *ctx);
@@ -147,6 +149,10 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
 bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
                        OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose = false);
+bool db_list_sql_query_start(JCR *jcr, B_DB *mdb, const char *query,
+                             OUTPUT_FORMATTER *sendit, e_list_type type,
+                             const char *description, bool verbose = false);
+void db_list_sql_query_end(JCR *jcr, B_DB *mdb);
 void db_list_client_records(JCR *jcr, B_DB *mdb, char *clientname,
                             OUTPUT_FORMATTER *sendit, e_list_type type);
 void db_list_storage_records(JCR *jcr, B_DB *mdb,
