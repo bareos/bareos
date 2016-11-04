@@ -80,7 +80,7 @@ extern "C" int bndmp_fhdb_lmdb_add_file(struct ndmlog *ixlog, int tagc, char *ra
       /*
        * Every file entry is relative from the filesystem currently being backed up.
        */
-      Dmsg2(100, "bndmp_fhdb_lmdb_add_file: New filename ==> %s/%s\n", nis->filesystem, raw_name);
+      Dmsg2(100, "bndmp_fhdb_lmdb_add_file: New filename ==> %s%s\n", nis->filesystem, raw_name);
 
       if (nis->jcr->ar) {
          /*
@@ -96,14 +96,24 @@ extern "C" int bndmp_fhdb_lmdb_add_file(struct ndmlog *ixlog, int tagc, char *ra
             ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
             pm_strcpy(pathname, nis->filesystem);
-            pm_strcat(pathname, "/");
-            pm_strcat(pathname, raw_name);
+
+            /*
+             * skip leading slash to avoid double slashes
+             */
+            if (raw_name == (char*)'/') {
+               pm_strcat(pathname, raw_name + 1);
+            } else {
+               pm_strcat(pathname, raw_name);
+            }
 
             if (FileType == FT_DIREND) {
                /*
-                * A directory needs to end with a slash.
+                * A directory needs to end with a '/'
+                * so append it if it is missing
                 */
-               pm_strcat(pathname, "/");
+               if ( pathname.c_str()[strlen(pathname.c_str()) - 1] != '/' ) {
+                  pm_strcat(pathname, "/");
+               }
             }
          }
 
@@ -159,7 +169,6 @@ retry:
       result = mdb_put(fhdb_state->db_rw_txn, fhdb_state->db_dbi, &key, &data, 0);
       switch (result) {
       case 0:
-         //Jmsg3(nis->jcr, M_INFO, 0,  "added file \"%s\", node=%llu, dir_node=%llu\n", raw_name, payload->node, payload->dir_node);
          Dmsg3(dbglvl, "added file \"%s\", node=%llu, dir_node=%llu\n", raw_name, payload->node, payload->dir_node);
          break;
       case MDB_TXN_FULL:
@@ -667,8 +676,12 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
             if (FileType == FT_DIREND) {
                /*
                 * split_path_and_filename() expects directories to end with a '/'
+                * so append '/' if full_path does not already end with '/'
                 */
-               pm_strcat(full_path, "/");
+               if ( full_path.c_str()[strlen(full_path.c_str()) - 1] != '/' ) {
+                  Dmsg1(100, ("appending / to %s \n"), full_path.c_str());
+                  pm_strcat(full_path, "/");
+               }
             }
             ndmp_store_attribute_record(nis->jcr, full_path.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
                                         0, (ndmp_fstat.fh_info.valid == NDMP9_VALIDITY_VALID) ? ndmp_fstat.fh_info.value : 0);
