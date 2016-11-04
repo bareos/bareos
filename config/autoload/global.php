@@ -5,9 +5,8 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author    Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -48,6 +47,15 @@ if(!file_exists($directors_ini)) {
    exit();
 }
 else {
+   // As of PHP 5.6.1 can also be specified as INI_SCANNER_TYPED. In this mode boolean,
+   // null and integer types are preserved when possible. String values "true", "on" and
+   // "yes" are converted to TRUE. "false", "off", "no" and "none" are considered FALSE.
+   // "null" is converted to NULL in typed mode. Also, all numeric strings are converted
+   // to integer type if it is possible.
+   //
+   // In future we might want to apply the INI_SCANNER_TYPED mode to simplify things.
+   //
+   // See: http://php.net/manual/en/function.parse-ini-file.php
    $directors = parse_ini_file($directors_ini, true, INI_SCANNER_NORMAL);
 }
 
@@ -108,7 +116,8 @@ function read_directors_ini($directors, $directors_ini)
 
    foreach($directors as $instance) {
 
-      if(array_key_exists('enabled', $instance) && isset($instance['enabled']) && (strtolower($instance['enabled']) == "yes" || strtolower($instance['enabled']) == TRUE)) {
+      if(array_key_exists('enabled', $instance) && isset($instance['enabled']) &&
+         (strtolower($instance['enabled']) == "yes" || strtolower($instance['enabled']) == "true" || $instance['enabled'] == TRUE)) {
 
          if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
             $arr[key($directors)] = array();
