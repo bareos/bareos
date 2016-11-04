@@ -117,7 +117,7 @@ function read_directors_ini($directors, $directors_ini)
    foreach($directors as $instance) {
 
       if(array_key_exists('enabled', $instance) && isset($instance['enabled']) &&
-         (strtolower($instance['enabled']) == "yes" || strtolower($instance['enabled']) == "true" || $instance['enabled'] == TRUE)) {
+         (strtolower($instance['enabled']) === "yes" || strtolower($instance['enabled']) === "true" || $instance['enabled'] == 1)) {
 
          if(array_key_exists('diraddress', $instance) && isset($instance['diraddress'])) {
             $arr[key($directors)] = array();
