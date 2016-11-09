@@ -1,0 +1,236 @@
+# Bareos WebUI, Italian Localization
+# Copyright (C) 2016
+# This file is distributed under the same license as the Bareos WebUI package.
+# Alessandro Rigopoulos, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Bareos WebUI\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-03 07:07+0100\n"
+"PO-Revision-Date: 2016-11-09 19:01+0100\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Last-Translator: Alessandro Rigopoulos\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: it_IT\n"
+
+#: ../../js/datatables.functions.js:66
+msgid "Backup"
+msgstr "Backup"
+
+#: ../../js/datatables.functions.js:69
+msgid "Migrated"
+msgstr "Migrato"
+
+#: ../../js/datatables.functions.js:72
+msgid "Verify"
+msgstr "Verifica"
+
+#: ../../js/datatables.functions.js:75
+msgid "Restore"
+msgstr "Ripristino"
+
+#: ../../js/datatables.functions.js:78
+msgid "Console program"
+msgstr "Programma da Terminale"
+
+#: ../../js/datatables.functions.js:81
+msgid "Internal system job"
+msgstr "Job interno di sistema"
+
+#: ../../js/datatables.functions.js:84
+msgid "Admin"
+msgstr "Admin"
+
+#: ../../js/datatables.functions.js:87
+msgid "Archive"
+msgstr "Archivio"
+
+#: ../../js/datatables.functions.js:90
+msgid "Copy of a job"
+msgstr "Copia di un job"
+
+#: ../../js/datatables.functions.js:93
+msgid "Copy job"
+msgstr "Copia job"
+
+#: ../../js/datatables.functions.js:96
+msgid "Migration job"
+msgstr "Job di Migrazione"
+
+#: ../../js/datatables.functions.js:99
+msgid "Scan"
+msgstr "Scansione"
+
+#: ../../js/datatables.functions.js:111 ../../js/datatables.functions.js:150
+msgid "Full"
+msgstr "Totale"
+
+#: ../../js/datatables.functions.js:113
+msgid "Differential"
+msgstr "Differenziale"
+
+#: ../../js/datatables.functions.js:115
+msgid "Incremental"
+msgstr "Incrementale"
+
+#: ../../js/datatables.functions.js:117
+msgid "VirtualFull"
+msgstr "Virtuale Totale"
+
+#: ../../js/datatables.functions.js:119
+msgid "Base"
+msgstr "Base"
+
+#: ../../js/datatables.functions.js:121
+msgid "Catalog"
+msgstr "Catalogo"
+
+#: ../../js/datatables.functions.js:123
+msgid "InitCatalog"
+msgstr "Inizializza Catalogo"
+
+#: ../../js/datatables.functions.js:125
+msgid "VolumeToCatalog"
+msgstr "Volume con Catalogo"
+
+#: ../../js/datatables.functions.js:127
+msgid "DiskToCatalog"
+msgstr "Disco con Catalogo"
+
+#: ../../js/datatables.functions.js:129
+msgid "Data"
+msgstr "Dati"
+
+#: ../../js/datatables.functions.js:131
+msgid "None"
+msgstr "Nessuno"
+
+#: ../../js/datatables.functions.js:145 ../../js/datatables.functions.js:175
+msgid "day(s)"
+msgstr "giorno(i)"
+
+#: ../../js/datatables.functions.js:150
+msgid "Used"
+msgstr "Utilizzato"
+
+#: ../../js/datatables.functions.js:162
+msgid "expired"
+msgstr "scaduto"
+
+#: ../../js/datatables.functions.js:166
+msgid "expires in 1 day"
+msgstr "scade tra 1 giorno"
+
+#: ../../js/datatables.functions.js:170
+msgid "expires in"
+msgstr "scade tra"
+
+#: ../../js/datatables.functions.js:170
+msgid "days"
+msgstr "giorni"
+
+#: ../../js/datatables.functions.js:181
+msgid "never"
+msgstr "mai"
+
+#: ../../js/datatables.functions.js:190
+msgid "today"
+msgstr "oggi"
+
+#: ../../js/datatables.functions.js:193
+msgid "day(s) ago"
+msgstr "giorno(i) fa"
+
+#: ../../js/datatables.functions.js:196
+msgid "month(s) ago"
+msgstr "mese(i) fa"
+
+#: ../../js/datatables.functions.js:199
+msgid "year(s) ago"
+msgstr "anno(i) fa"
+
+#: ../../js/datatables.functions.js:232
+msgid "enabled"
+msgstr "abilitato"
+
+#: ../../js/datatables.functions.js:235
+msgid "disabled"
+msgstr "disabilitato"
+
+#: ../../js/datatables.functions.js:243
+msgid "Yes"
+msgstr "Sì"
+
+#: ../../js/datatables.functions.js:246
+msgid "No"
+msgstr "No"
+
+#: ../../js/datatables.functions.js:256 ../../js/datatables.functions.js:260
+#: ../../js/datatables.functions.js:264
+msgid "Failure"
+msgstr "Fallito"
+
+#: ../../js/datatables.functions.js:268
+msgid "Success"
+msgstr "Successo"
+
+#: ../../js/datatables.functions.js:272
+msgid "Running"
+msgstr "In esecuzione"
+
+#: ../../js/datatables.functions.js:276
+msgid "Queued"
+msgstr "In coda"
+
+#: ../../js/datatables.functions.js:280
+msgid "Blocked"
+msgstr "Bloccato"
+
+#: ../../js/datatables.functions.js:284
+msgid "Verify found differences"
+msgstr "La Verifica ha rilevato differenze"
+
+#: ../../js/datatables.functions.js:288
+msgid "Canceled"
+msgstr "Annullato"
+
+#: ../../js/datatables.functions.js:292 ../../js/datatables.functions.js:296
+#: ../../js/datatables.functions.js:300 ../../js/datatables.functions.js:304
+#: ../../js/datatables.functions.js:308 ../../js/datatables.functions.js:312
+#: ../../js/datatables.functions.js:316 ../../js/datatables.functions.js:320
+#: ../../js/datatables.functions.js:324 ../../js/datatables.functions.js:328
+msgid "Waiting"
+msgstr "In attesa"
+
+#: ../../js/datatables.functions.js:332
+msgid "SD despooling attributes"
+msgstr "SD invio attributi"
+
+#: ../../js/datatables.functions.js:336
+msgid "Doing batch insert file records"
+msgstr "Inserimento batch dei record dei file"
+
+#: ../../js/datatables.functions.js:340
+msgid "Incomplete"
+msgstr "Incompleto"
+
+#: ../../js/datatables.functions.js:344
+msgid "Committing data"
+msgstr "Inserimento dati"
+
+#: ../../js/datatables.functions.js:348
+msgid "Warning"
+msgstr "Avviso"
+
+#: ../../js/datatables.functions.js:352
+msgid "Doing data despooling"
+msgstr "Despooling dati in corso"
+
+#: ../../js/datatables.functions.js:356
+msgid "Queued waiting for device"
+msgstr "In coda in attesa di dispositivo"
