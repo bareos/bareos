@@ -128,6 +128,13 @@ The \job{Consolidate} job evaluates all jobs configured with \linkResourceDirect
 
 The always incremental jobs need to be executed during the backup window (usually at night), while the consolidation jobs should be scheduled during the daytime when no backups are executed.
 
+\warning{All Bareos job resources have some required directives, e.g. \linkResourceDirective{Dir}{Job}{Client}.
+Even so, none other than the mentioned directives are evaluated by a \resourceDirectiveValue{Dir}{Job}{Type}{Consolidate},
+they still have to be defined.
+Normally all required directives are already set in \resourceDirectiveValue{Dir}{Job}{JobDefs}{DefaultJob}.
+If not, you have to add them. You can use arbitrary, but valid values.}
+
+
 \subsection{Storages and Pools}
 
 For the Always Incremental Backup Scheme at least two storages are needed.
