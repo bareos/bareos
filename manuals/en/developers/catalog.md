@@ -56,25 +56,6 @@ any job. All information received and stored by the Storage daemon
 (normally on tape) allows and handles arbitrarily long path and
 filenames.
 
-### Installing and Configuring MySQL
-
-For the details of installing and configuring MySQL, please see the
-chapter of this manual.
-
-### Installing and Configuring PostgreSQL
-
-For the details of installing and configuring PostgreSQL, please see the
-chapter of this manual.
-
-### Installing and Configuring SQLite
-
-For the details of installing and configuring SQLite, please see the
-chapter of this manual.
-
-### Internal Bareos Catalog
-
-Please see the chapter of this manual for more details.
-
 ### Database Table Design
 
 All discussions that follow pertain to the MySQL database. The details
@@ -306,77 +287,112 @@ to ensure that a Full backup is done prior to the next incremental.
 ### JobMedia
 
 Column Name | Data Type | Remark
-------------|-----------|---------------------------------------------------------------------------------
+------------|-----------|----------------------------------------------------------------
 JobMediaId  | integer   | Primary Key
 JobId       | integer   | Link to Job Record
 MediaId     | integer   | Link to Media Record
 FirstIndex  | integer   | The index (sequence number) of the first file written for this Job to the Media
 LastIndex   | integer   | The index of the last file written for this Job to the Media
-StartFile   | integer   | The physical media (tape) file number of the first block written for this Job
-EndFile     | integer   | The physical media (tape) file number of the last block written for this Job
-StartBlock  | integer   | The number of the first block written for this Job
-Endblock    | integer   | The number of the last block written for this Job
+StartFile   | integer   | Tape: the physical media file mark number of the first block written for this Job. 
+|           |           | Other: upper 32-bit of the position of the first block written for this Job. 
+EndFile     | integer   | Tape: the physical media file mark number of the last block written for this Job.
+|           |           | Other: upper 32-bit of the position of the last block written for this Job.
+StartBlock  | integer   | Tape: the number of the first block written for this Job
+|           |           | Other: lower 32-bit of the position of the first block written for this Job.
+Endblock    | integer   | Tape: the number of the last block written for this Job
+|           |           | Other: lower 32-bit of the position of the last block written for this Job.
 VolIndex    | integer   | The Volume use sequence number within the Job
 
 The <span>**JobMedia**</span> table contains one entry at the following:
-start of the job, start of each new tape file, start of each new tape,
-end of the job. Since by default, a new tape file is written every 2GB,
-in general, you will have more than 2 JobMedia records per Job. The
-number can be varied by changing the “Maximum File Size” specified in
+start of the job, start of each new tape file mark, start of each new tape,
+end of the job.
+You will have 2 or more JobMedia records per Job.
+
+
+
+#### Tape Volume
+
+The number ob records depends on the “Maximum File Size” specified in
 the Device resource. This record allows Bareos to efficiently position
-close to (within 2GB) any given file in a backup. For restoring a full
+close to any given file in a backup. For restoring a full
 Job, these records are not very important, but if you want to retrieve a
 single file that was written near the end of a 100GB backup, the
 JobMedia records can speed it up by orders of magnitude by permitting
 forward spacing files and blocks rather than reading the whole 100GB
 backup.
 
+#### Other Volume
+
+StartFile and StartBlock are both 32-bit integer values.
+However, as the position on a disk volume is specified in bytes, we need this to be a 64-bit value.
+
+Therefore, the start position is calculated as:
+
+```
+StartPosition = StartFile * 4294967296 + StartBlock
+```
+
+The end position of a job on a volume can be determined by:
+
+```
+EndPosition = EndFile * 4294967296 + EndBlock
+```
+
+Be aware, that you can not assume, that the job size on a volume is `EndPosition - StartPosition`.
+When interleaving is used other jobs can also be stored between Start- and EndPosition.
+
+```
+EndPosition - StartPosition >= JobSizeOnThisMedia
+```
+
+
+
 ### Volume (Media)
 
-Column Name | Data Type | Remark
-------------|-----------|----------------------------------------
-MediaId     | integer   | Primary Key 
-VolumeName  | tinyblob  | Volume name 
-Slot        | integer   | Autochanger Slot number or zero
-PoolId      | integer   | Link to Pool Record 
-MediaType   | tinyblob  | The MediaType supplied by the user
-MediaTypeId | integer   | The MediaTypeId 
-LabelType   | tinyint   | The type of label on the Volume
-FirstWritten | datetime  | Time/date when first written 
-LastWritten  | datetime  | Time/date when last written 
-LabelDate    | datetime  | Time/date when tape labeled 
-VolJobs      | integer   | Number of jobs written to this media
-VolFiles     | integer   | Number of files written to this media
-VolBlocks    | integer   | Number of blocks written to this media
-VolMounts    | integer   | Number of time media mounted 
-VolBytes     | bigint    | Number of bytes saved in Job 
-VolParts     | integer   | The number of parts for a Volume (DVD)
-VolErrors    | integer   | Number of errors during Job 
-VolWrites    | integer   | Number of writes to media 
-MaxVolBytes  | bigint    | Maximum bytes to put on this media
+Column Name      | Data Type | Remark
+-----------------|-----------|----------------------------------------
+MediaId          | integer   | Primary Key 
+VolumeName       | tinyblob  | Volume name 
+Slot             | integer   | Autochanger Slot number or zero
+PoolId           | integer   | Link to Pool Record 
+MediaType        | tinyblob  | The MediaType supplied by the user
+MediaTypeId      | integer   | The MediaTypeId 
+LabelType        | tinyint   | The type of label on the Volume
+FirstWritten     | datetime  | Time/date when first written 
+LastWritten      | datetime  | Time/date when last written 
+LabelDate        | datetime  | Time/date when tape labeled 
+VolJobs          | integer   | Number of jobs written to this media
+VolFiles         | integer   | Number of files written to this media
+VolBlocks        | integer   | Number of blocks written to this media
+VolMounts        | integer   | Number of time media mounted 
+VolBytes         | bigint    | Number of bytes saved in Job 
+VolParts         | integer   | The number of parts for a Volume (DVD)
+VolErrors        | integer   | Number of errors during Job 
+VolWrites        | integer   | Number of writes to media 
+MaxVolBytes      | bigint    | Maximum bytes to put on this media
 VolCapacityBytes | bigint    | Capacity estimate for this volume
-VolStatus    | enum      | Status of media: Full, Archive, Append, Recycle, Read-Only, Disabled, Error, Busy 
-Enabled      | tinyint   | Whether or not Volume can be written
-Recycle      | tinyint   | Whether or not Bareos can recycle the Volumes: Yes, No 
-ActionOnPurge | tinyint   | What happens to a Volume after purging
-VolRetention  | bigint    | 64 bit seconds until expiration 
-VolUseDureation | bigint    | 64 bit seconds volume can be used
-MaxVolJobs      | integer   | maximum jobs to put on Volume 
-MaxVolFiles     | integer   | maximume EOF marks to put on Volume
-InChanger     | tinyint   | Whether or not Volume in autochanger
-StorageId | integer   | Storage record ID 
-DeviceId  | integer   | Device record ID 
-MediaAddressing | integer   | Method of addressing media 
-VolReadTime | bigint    | Time Reading Volume 
-VolWriteTime | bigint    | Time Writing Volume 
-EndFile | integer   | End File number of Volume 
-EndBlock | integer   | End block number of Volume 
-LocationId | integer   | Location record ID 
-RecycleCount | integer   | Number of times recycled 
-InitialWrite | datetime  | When Volume first written 
-ScratchPoolId | integer   | Id of Scratch Pool 
-RecyclePoolId | integer   | Pool ID where to recycle Volume
-Comment | blob      | User text field 
+VolStatus        | enum      | Status of media: Full, Archive, Append, Recycle, Read-Only, Disabled, Error, Busy 
+Enabled          | tinyint   | Whether or not Volume can be written
+Recycle          | tinyint   | Whether or not Bareos can recycle the Volumes: Yes, No 
+ActionOnPurge    | tinyint   | What happens to a Volume after purging
+VolRetention     | bigint    | 64 bit seconds until expiration 
+VolUseDureation  | bigint    | 64 bit seconds volume can be used
+MaxVolJobs       | integer   | maximum jobs to put on Volume 
+MaxVolFiles      | integer   | maximume EOF marks to put on Volume
+InChanger        | tinyint   | Whether or not Volume in autochanger
+StorageId        | integer   | Storage record ID 
+DeviceId         | integer   | Device record ID 
+MediaAddressing  | integer   | Method of addressing media 
+VolReadTime      | bigint    | Time Reading Volume 
+VolWriteTime     | bigint    | Time Writing Volume 
+EndFile          | integer   | End File number of Volume 
+EndBlock         | integer   | End block number of Volume 
+LocationId       | integer   | Location record ID 
+RecycleCount     | integer   | Number of times recycled 
+InitialWrite     | datetime  | When Volume first written 
+ScratchPoolId    | integer   | Id of Scratch Pool 
+RecyclePoolId    | integer   | Pool ID where to recycle Volume
+Comment          | blob      | User text field 
 
 The <span>**Volume**</span> table (internally referred to as the Media
 table) contains one entry for each volume, that is each tape, cassette
