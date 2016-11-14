@@ -724,38 +724,21 @@ Extended-Attributes
 
 The File-attributes consist of the following:
 
-<span>|p<span>0.6in</span>|p<span>0.7in</span>|p<span>1in</span>|p<span>1in</span>|p<span>1.4in</span>|</span>
-& & & &\
- & <span>st\_dev </span> & <span>Device number of filesystem </span> &
-<span>Drive number </span> & <span>vRefNum </span>\
- & <span>st\_ino </span> & <span>Inode number </span> & <span>Always 0
-</span> & <span>fileID/dirID </span>\
- & <span>st\_mode </span> & <span>File mode </span> & <span>File mode
-</span> & <span>777 dirs/apps; 666 docs; 444 locked docs </span>\
- & <span>st\_nlink </span> & <span>Number of links to the file </span> &
-<span>Number of link (only on NTFS) </span> & <span>Always 1 </span>\
- & <span>st\_uid </span> & <span>Owner ID </span> & <span>Always 0
-</span> & <span>Always 0 </span>\
- & <span>st\_gid </span> & <span>Group ID </span> & <span>Always 0
-</span> & <span>Always 0 </span>\
- & <span>st\_rdev </span> & <span>Device ID for special files </span> &
-<span>Drive No. </span> & <span>Always 0 </span>\
- & <span>st\_size </span> & <span>File size in bytes </span> &
-<span>File size in bytes </span> & <span>Data fork file size in bytes
-</span>\
- & <span>st\_blksize </span> & <span>Preferred block size </span> &
-<span>Always 0 </span> & <span>Preferred block size </span>\
- & <span>st\_blocks </span> & <span>Number of blocks allocated </span> &
-<span>Always 0 </span> & <span>Number of blocks allocated </span>\
- & <span>st\_atime </span> & <span>Last access time since epoch </span>
-& <span>Last access time since epoch </span> & <span>Last access time
--66 years </span>\
- & <span>st\_mtime </span> & <span>Last modify time since epoch </span>
-& <span>Last modify time since epoch </span> & <span>Last access time
--66 years </span>\
- & <span>st\_ctime </span> & <span>Inode change time since epoch </span>
-& <span>File create time since epoch </span> & <span>File create time
--66 years</span>\
+Stat Name   |  Unix                          | Windows                       | MacOS
+------------|--------------------------------|-------------------------------|----------------------
+st_dev      |  Device number of filesystem   | Drive number                  | vRefNum
+st_ino      |  Inode number                  | Always 0                      | fileID/dirID
+st_mode     |  File mode                     | File mode                     | 777 dirs/apps; 666 docs; 444 locked docs
+st_nlink    |  Number of links to the file   | Number of link (only on NTFS) | Always 1
+st_uid      |  Owner ID                      | Always 0                      | Always 0
+st_gid      |  Group ID                      | Always 0                      | Always 0
+st_rdev     |  Device ID for special files   | Drive No.                     | Always 0
+st_size     |  File size in bytes            | File size in bytes            | Data fork file size in bytes
+st_blksize  |  Preferred block size          | Always 0                      | Preferred block size
+st_blocks   |  Number of blocks allocated    | Always 0                      | Number of blocks allocated
+st_atime    |  Last access time since epoch  | Last access time since epoch  | Last access time -66 years
+st_mtime    |  Last modify time since epoch  | Last modify time since epoch  | Last access time -66 years
+st_ctime    |  Inode change time since epoch | File create time since epoch  | File create time -66 years
 
 Old Depreciated Tape Format
 ---------------------------
