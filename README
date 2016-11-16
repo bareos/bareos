@@ -60,7 +60,7 @@ Running the disk based tests:
 
 You can run all the disk based tests by doing:
 
-  ./do_file
+  ./do_disk
 
 The disk based tests are totally separate from any production
 system, provided you have configured the database appropriately
