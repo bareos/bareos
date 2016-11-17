@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -51,10 +51,6 @@ static const char *select_jobs_from_client =
 /*
  * Purge records from database
  *
- * Purge Files (from) [Job|JobId|Client|Volume]
- * Purge Jobs  (from) [Client|Volume]
- *
- * N.B. Not all above is implemented yet.
  */
 bool purge_cmd(UAContext *ua, const char *cmd)
 {
@@ -63,6 +59,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
    MEDIA_DBR mr;
    JOB_DBR  jr;
    POOL_MEM cmd_holder(PM_MESSAGE);
+   const char *permission_denied_message = _("Permission denied: need full %s permission.\n");
 
    static const char *keywords[] = {
       NT_("files"),
@@ -97,7 +94,34 @@ bool purge_cmd(UAContext *ua, const char *cmd)
       "JobId, Client or Volume; or it purges (deletes)\n"
       "all Jobs from a Client or Volume without regard\n"
       "to retention periods. Normally you should use the\n"
-      "PRUNE command, which respects retention periods.\n"));
+      "PRUNE command, which respects retention periods.\n"
+      "This command requires full access to all resources.\n"));
+
+   /*
+    * Check for console ACL permissions.
+    * These permission might be harder than required.
+    * However, otherwise it gets hard to figure out the correct permission.
+    * E.g. when purging a volume, this volume can contain
+    * different jobs from different client, stored in different pools and storages.
+    * Instead of checking all of this,
+    * we require full permissions to all of these resources.
+    */
+   if (ua->acl_has_restrictions(Client_ACL)) {
+      ua->error_msg(permission_denied_message, "client");
+      return false;
+   }
+   if (ua->acl_has_restrictions(Job_ACL)) {
+      ua->error_msg(permission_denied_message, "job");
+      return false;
+   }
+   if (ua->acl_has_restrictions(Pool_ACL)) {
+      ua->error_msg(permission_denied_message, "pool");
+      return false;
+   }
+   if (ua->acl_has_restrictions(Storage_ACL)) {
+      ua->error_msg(permission_denied_message, "storage");
+      return false;
+   }
 
    if (!open_client_db(ua, true)) {
       return true;
