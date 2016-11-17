@@ -1827,6 +1827,9 @@ bool get_user_job_type_selection(UAContext *ua, int *jobtype)
    int i;
    char job_type[MAX_NAME_LENGTH];
 
+   /* set returning jobtype to invalid */
+   *jobtype = -1;
+
    if ((i = find_arg_with_value(ua, NT_("jobtype"))) >= 0) {
       bstrncpy(job_type, ua->argv[i], sizeof(job_type));
    } else {
@@ -1836,8 +1839,7 @@ bool get_user_job_type_selection(UAContext *ua, int *jobtype)
       }
 
       if (do_prompt(ua, _("JobType"),  _("Select Job Type"), job_type, sizeof(job_type)) < 0) {
-         *jobtype = -1;
-         return true;
+         return false;
       }
    }
 

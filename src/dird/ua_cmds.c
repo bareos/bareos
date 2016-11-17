@@ -320,11 +320,15 @@ static struct ua_cmdstruct commands[] = {
    { NT_("move"), move_cmd, _("Move slots in an autochanger"),
      NT_("storage=<storage-name> srcslots=<slot-selection> dstslots=<slot-selection>"), true, true },
    { NT_("prune"), prune_cmd, _("Prune records from catalog"),
-     NT_("files | jobs | jobtype=<jobtype> | pool=<pool-name> | client=<client-name> | volume=<volume-name> | directory=<directory> | recursive"), true, true },
+     NT_("files [client=<client>] [pool=<pool>] [yes] |\n"
+         "jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |\n"
+         "volume [=volume] [pool=<pool>] [yes] |\n"
+         "stats [yes] |\n"
+         "directory [=directory] [client=<client>] [recursive] [yes]"), true, true },
    { NT_("purge"), purge_cmd, _("Purge records from catalog"),
      NT_("[files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |\n"
          "[jobs [client=<client> | volume=<volume>]] |\n"
-         "[volume [=<volume>] [storage=<storage>] [pool=<pool> | allpools] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
+         "[volume[=<volume>] [storage=<storage>] [pool=<pool> | allpools] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |\n"
          "[quota [client=<client>]]"), true, true },
    { NT_("quit"), quit_cmd, _("Terminate Bconsole session"),
      NT_(""), false, false },
