@@ -1,16 +1,22 @@
 \defDirective{Dir}{Pool}{Action On Purge}{}{}{%
-This directive \configline{Action On Purge=Truncate} instructs Bareos to truncate the
+% DEPRECATED:
+% because it does not do what is expected by the name.
+% Is only has an influence,
+% when using the command "purge volume action=truncate"
+% but did do nothing automatically.
+
+The directive \configline{Action On Purge=Truncate} instructs Bareos to truncate the
 volume when it is purged with the \bcommand{purge}{volume action=truncate}
 command. It is useful to prevent disk based volumes from consuming too much
 space.
 
-\bconfigInput{config/DirPoolActionOnPurge1.conf}
-
-
-You can schedule the truncate operation at the end of your \job{BackupCatalog} job
-like in this example:
-
-\bconfigInput{config/DirPoolActionOnPurge2.conf}
+% \bconfigInput{config/DirPoolActionOnPurge1.conf}
+%
+% THIS DOES NOT WORK:
+% You can schedule the truncate operation at the end of your \job{BackupCatalog} job
+% like in this example:
+% 
+% \bconfigInput{config/DirPoolActionOnPurge2.conf}
 }
 
 \defDirective{Dir}{Pool}{Auto Prune}{}{}{%

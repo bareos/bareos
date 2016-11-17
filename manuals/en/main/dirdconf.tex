@@ -419,77 +419,60 @@ Another important aspect of a Pool is that it contains the default attributes
 (Maximum Jobs, Retention Period, Recycle flag, ...) that will be given to a
 Volume when it is created. This avoids the need for you to answer a large
 number of questions when labeling a new Volume. Each of these attributes can
-later be changed on a Volume by Volume basis using the {\bf update} command in
+later be changed on a Volume by Volume basis using the \bcommand{update}{} command in
 the console program. Note that you must explicitly specify which Pool Bareos
 is to use with each Job. Bareos will not automatically search for the correct
 Pool.
 
-Most often in Bareos installations all backups for all machines (Clients) go
-to a single set of Volumes. In this case, you will probably only use the {\bf
-Default} Pool. If your backup strategy calls for you to mount a different tape
-each day, you will probably want to define a separate Pool for each day. For
-more information on this subject, please see the
-\ilink{Backup Strategies}{StrategiesChapter} chapter of this
-manual.
-
 To use a Pool, there are three distinct steps. First the Pool must be defined
-in the Director's configuration file. Then the Pool must be written to the
+in the Director's configuration. Then the Pool must be written to the
 Catalog database. This is done automatically by the Director each time that it
-starts, or alternatively can be done using the {\bf create} command in the
-console program. Finally, if you change the Pool definition in the Director's
+starts. Finally, if you change the Pool definition in the Director's
 configuration file and restart Bareos, the pool will be updated alternatively
-you can use the {\bf update pool} console command to refresh the database
+you can use the \bcommand{update}{pool} console command to refresh the database
 image. It is this database image rather than the Director's resource image
 that is used for the default Volume attributes. Note, for the pool to be
 automatically created or updated, it must be explicitly referenced by a Job
 resource.
 
-Next the physical media must be labeled. The labeling can either be done with
-the {\bf label} command in the {\bf console} program or using the {\bf btape}
-program. The preferred method is to use the {\bf label} command in the {\bf
-console} program.
+If automatic labeling is not enabled (see \nameref{AutomaticLabeling})
+the physical media must be manually labeled.
+The labeling can either be done with
+the \bcommand{label}{} command in the console program or using the \command{btape}
+program. The preferred method is to use the \bcommand{label}{} command in the console program.
+Generally, automatic labeling is enabled for \linkResourceDirectiveValue{Sd}{Device}{Device Type}{File}
+and disabled for \linkResourceDirectiveValue{Sd}{Device}{Device Type}{Tape}.
 
 Finally, you must add Volume names (and their attributes) to the Pool. For
-Volumes to be used by Bareos they must be of the same {\bf Media Type} as the
+Volumes to be used by Bareos they must be of the same \linkResourceDirective{Sd}{Device}{Media Type} as the
 archive device specified for the job (i.e. if you are going to back up to a
 DLT device, the Pool must have DLT volumes defined since 8mm volumes cannot be
-mounted on a DLT drive). The {\bf Media Type} has particular importance if you
+mounted on a DLT drive). The \linkResourceDirective*{Sd}{Device}{Media Type} has particular importance if you
 are backing up to files. When running a Job, you must explicitly specify which
 Pool to use. Bareos will then automatically select the next Volume to use from
-the Pool, but it will ensure that the {\bf Media Type} of any Volume selected
+the Pool, but it will ensure that the \linkResourceDirective*{Sd}{Device}{Media Type} of any Volume selected
 from the Pool is identical to that required by the Storage resource you have
 specified for the Job.
 
-If you use the {\bf label} command in the console program to label the
+If you use the \bcommand{label}{} command in the console program to label the
 Volumes, they will automatically be added to the Pool, so this last step is
 not normally required.
 
 It is also possible to add Volumes to the database without explicitly labeling
-the physical volume. This is done with the {\bf add} console command.
+the physical volume. This is done with the \bcommand{add}{} console command.
 
 As previously mentioned, each time Bareos starts, it scans all the Pools
 associated with each Catalog, and if the database record does not already
-exist, it will be created from the Pool Resource definition. {\bf Bareos}
-probably should do an {\bf update pool} if you change the Pool definition, but
-currently, you must do this manually using the {\bf update pool} command in
-the Console program.
+exist, it will be created from the Pool Resource definition.
+If you change the Pool definition, you manually have to call \bcommand{update}{pool} command in
+the console program to propagate the changes to existing volumes.
 
-The Pool Resource defined in the Director's configuration file
-(\file{bareos-dir.conf}) may contain the following directives:
+The Pool Resource defined in the Director's configuration
+may contain the following directives:
 
 \input{autogenerated/bareos-dir-resource-pool-table.tex}
 \input{director-resource-pool-definitions.tex}
 \input{autogenerated/bareos-dir-resource-pool-description.tex}
-
-In order for a Pool to be used during a Backup Job, the Pool must have at
-least one Volume associated with it.  Volumes are created for a Pool using
-the {\bf label} or the {\bf add} commands in the {\bf Bareos Console},
-program.  In addition to adding Volumes to the Pool (i.e.  putting the
-Volume names in the Catalog database), the physical Volume must be labeled
-with a valid Bareos software volume label before {\bf Bareos} will accept
-the Volume.  This will be automatically done if you use the {\bf label}
-command.  Bareos can automatically label Volumes if instructed to do so,
-but this feature is not yet fully implemented.
 
 The following is an example of a valid Pool resource definition:
 

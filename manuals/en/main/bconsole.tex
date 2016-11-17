@@ -1026,20 +1026,19 @@ list nextvol job=<job-name> days=nnn
    device.  It is a way to tell Bareos that you have mounted a tape and
    that Bareos should examine the tape.  This command is normally
    used only after there was no Volume in a drive and Bareos requests you to mount a new
-   Volume or when you have specifically unmounted a Volume with the {\bf
-   unmount} console command, which causes Bareos to close the drive.  If
+   Volume or when you have specifically unmounted a Volume with the \bcommand{unmount}{}
+   console command, which causes Bareos to close the drive.  If
    you have an autoloader, the mount command will not cause Bareos to
    operate the autoloader unless you specify a {\bf slot} and possibly a
    {\bf drive}. The various forms of the mount command are:
 
 \begin{bconsole}{mount}
-mount  storage=<storage-name> [slot=<num>] [
-       drive=<num> ]
+mount storage=<storage-name> [slot=<num>] [drive=<num>]
 mount [jobid=<id> | job=<job-name>]
 \end{bconsole}
 
-   If you have specified {\bf Automatic  Mount = yes} in the Storage daemon's
-   Device resource,  under most circumstances, Bareos will automatically access
+   If you have specified \linkResourceDirectiveValue{Sd}{Device}{Automatic  Mount}{yes},
+   under most circumstances, Bareos will automatically access
    the Volume unless you have explicitly \bcommand{unmount}{}ed it in  the Console
    program.
 
@@ -1074,45 +1073,46 @@ Connecting to Storage daemon TandbergT40 at bareos:9103 ...
    records from specified Volumes.
 
 \begin{bconsole}{prune}
-prune files|jobs|volume|stats client=<client-name> volume=<volume-name>
+prune files [client=<client>] [pool=<pool>] [yes] |
+      jobs [client=<client>] [pool=<pool>] [jobtype=<jobtype>] [yes] |
+      volume [=volume] [pool=<pool>] [yes] |
+      stats [yes]
 \end{bconsole}
 
-   For a Volume to be pruned, the {\bf VolStatus} must be Full, Used, or
-   Append, otherwise the pruning will not take place.
+   For a Volume to be pruned, the volume status must be \volumestatus{Full}, \volumestatus{Used} or
+   \volumestatus{Append} otherwise the pruning will not take place.
 
 \item [purge]
    \index[general]{Console!Command!purge}
-   The Purge command will delete associated Catalog database records from
-   Jobs and Volumes without considering the retention period.  {\bf Purge}
-   works only on the Catalog database and does not affect data written to
-   Volumes.  This command can be dangerous because you can delete catalog
+   \label{bcommandPurge}
+   The Purge command will delete associated catalog database records from
+   Jobs and Volumes without considering the retention period.
+   This command can be dangerous because you can delete catalog
    records associated with current backups of files, and we recommend that
    you do not use it unless you know what you are doing.  The permitted
-   forms of {\bf purge} are:
+   forms of \bcommand{purge}{} are:
 
 \begin{bconsole}{purge}
-purge files jobid=<jobid>|job=<job-name> | client=<client-name>
-purge jobs client=<client-name> (of all jobs)
-purge volume|volume=<vol-name> (of all jobs)
+purge [files [job=<job> | jobid=<jobid> | client=<client> | volume=<volume>]] |
+      [jobs [client=<client> | volume=<volume>]] |
+      [volume [=<volume>] [storage=<storage>] [pool=<pool>] [devicetype=<type>] [drive=<drivenum>] [action=<action>]] |
+      [quota [client=<client>]]
 \end{bconsole}
 
-For the {\bf purge} command to work on Volume Catalog database  records the
-{\bf VolStatus}  must be Append, Full, Used, or Error.
+For the \bcommand{purge}{} command to work on volume catalog database  records the
+volume status must be \volumestatus{Append}, \volumestatus{Full}, \volumestatus{Used} or \volumestatus{Error}.
 
 The actual data written to the Volume will be unaffected by this command unless
-you are using the \texttt{ActionOnPurge=Truncate} option on those Media.
+you are using the \linkResourceDirectiveValue{Dir}{Pool}{Action On Purge}{Truncate} option.
 
-To ask Bareos to truncate your \texttt{Purged} volumes, you need to use the
-following command in interactive mode or in a RunScript:
+To ask Bareos to truncate your \volumestatus{Purged} volumes, you need to use the
+following command in interactive mode:
 \begin{bconsole}{purge example}
-*<input>purge volume action=truncate storage=File allpools</input>
-# or by default, action=all
-*<input>purge volume action storage=File pool=Default</input>
+*<input>purge volume action=truncate storage=File pool=Full</input>
 \end{bconsole}
 
-It is possible to specify the volume name, the media type, the pool, the
-storage, etc\dots (see \bcommand{help}{purge}).
-Be sure that your storage device is idle when you decide to run this command.
+However, normally you should use the \bcommand{purge}{} command only to purge a volume from the catalog
+and use the \bcommand{truncate}{} command to truncate the volume on the \bareosSd.
 
 \item [resolve]
    \index[general]{Console!Command!resolve}
@@ -1120,7 +1120,7 @@ Be sure that your storage device is idle when you decide to run this command.
     As the different components of Bareos will establish network connections to other Bareos components,
     it is important that DNS name resolution works on involved components and delivers the same results.
     The \bcommand{resolve}{} command can be used to test DNS resolution of a given hostname 
-    on director, storage daemonm or client.
+    on director, storage daemon or client.
 
 \begin{bconsole}{resolve example}
 *<input>resolve www.bareos.com</input>
@@ -1158,14 +1158,14 @@ bareos-sd resolves www.bareos.com to host[ipv4:84.44.166.242]
    The full form of this command is:
 
 \begin{bconsole}{relabel}
-relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<newvolume-name>}
+relabel storage=<storage-name> oldvolume=<old-volume-name> volume=<new-volume-name> pool=<pool-name> [encrypt]
 \end{bconsole}
 
    If you leave out any part, you will be prompted for it.  In order for
    the Volume (old-volume-name) to be relabeled, it must be in the catalog,
-   and the volume status must be marked {\bf Purged} or {\bf Recycle}.
-   This happens automatically as a result of applying retention periods, or
-   you may explicitly purge the volume using the {\bf purge} command.
+   and the volume status must be marked \volumestatus{Purged} or \volumestatus{Recycle}.
+   This happens automatically as a result of applying retention periods or
+   you may explicitly purge the volume using the \bcommand{purge}{} command.
 
    Once the volume is physically relabeled, the old data previously written
    on the Volume is lost and cannot be recovered.
@@ -1181,12 +1181,12 @@ release storage=<storage-name>
 \end{bconsole}
 
    After a release command, the device is still kept open by Bareos (unless
-   \linkResourceDirective{Sd}{Device}{Always Open}=No) so it
+   \linkResourceDirectiveValue{Sd}{Device}{Always Open}{no}) so it
    cannot be used by another program.  However, with some tape drives, the
    operator can remove the current tape and to insert a different one, and
    when the next Job starts, Bareos will know to re-read the tape label to
    find out what tape is mounted.  If you want to be able to use the drive
-   with another program (e.g.  \command{mt}), you must use the \bcommand{unmount}
+   with another program (e.g.  \command{mt}), you must use the \bcommand{unmount}{}
    command to cause Bareos to completely release (close) the device.
 
 \item [reload]
@@ -1571,7 +1571,7 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 ====
 \end{bconsole}
 
-\bcommand{status scheduler}{} accepts the following parameters:
+\bcommand{status}{scheduler} accepts the following parameters:
 \begin{description}
     \item[client=clientname] shows only the schedules that affect the given client.
     \item[job=jobname] shows only the schedules that affect the given job.
@@ -1580,13 +1580,11 @@ Mo 17-Jun-2013 21:10  WeeklyCycleAfterBackup  Level=Full
 \end{description}
 
 In case you are running a maintained version of Bareos,
-the command \bcommand{status subscriptions}{} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions
+the command \bcommand{status}{subscriptions} (\sinceVersion{console}{status subscriptions}{12.4.4}) can help you to keep the overview over the subscriptions
 that are used.
 
-To enable this functionality, just add the configuration directive subscriptions to the director configuration in the director resource:
-
-The number of subscribed clients can be set in
-the director resource, for example:
+To enable this functionality, just add the configuration \linkResourceDirective{Dir}{Director}{Subscriptions} directive
+and specify the number of subscribed clients, for example:
 \begin{bconfig}{enable subscription check}
 Director {
    ...
@@ -1594,7 +1592,7 @@ Director {
 }
 \end{bconfig}
 
-Using the console command \bcommand{status subscriptions}{}, the status of
+Using the console command \bcommand{status}{subscriptions}, the status of
 the subscriptions can be checked any time interactively:
 
 \begin{bconsole}{status subscriptions}
@@ -1612,7 +1610,7 @@ JobId 7: Warning: Subscriptions exceeded: (used/total) (51/50)
 Please note: Nothing else than the warning is issued, no enforcement on
 backup, restore or any other operation will happen.
 
-Setting the value for \configdirective{Subscriptions} to 0 disables this functionality:
+Setting the value for \linkResourceDirectiveValue{Dir}{Director}{Subscriptions}{0} disables this functionality:
 \begin{bconfig}{disable subscription check}
 Director {
    ...
@@ -1629,6 +1627,28 @@ Not configuring the directive at all also disables it, as the default value for 
 \item [trace]
    \index[general]{Console!Command!trace}
    Turn on/off trace to file.
+
+\item [truncate]
+   \index[general]{Console!Command!truncate}
+   \index[general]{Disk!Freeing disk space}
+   \index[sd]{Disk!Freeing disk space}
+   \label{bcommandTruncate}
+
+    If the status of a volume is \volumestatus{Purged},
+    it normally still contains data, even so it can not easily be accessed.
+
+\begin{bconsole}{truncate}
+truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
+\end{bconsole}
+
+
+    When using a disk volume (and other volume types also) the volume file still resides on the \bareosSd.
+    If you want to reclaim disk space, you can use the \bcommand{truncate}{volstatus=Purged} command.
+    When used on a volume, it rewrites the header and by this frees the rest of the disk space.
+
+    If the volume you want to get rid of has not the \volumestatus{Purged} status,
+    you first have to use the \bcommand{prune}{volume} or even the \bcommand{purge}{volume} command
+    to free the volume from all remaining jobs.
 
 \item [umount]
    \index[general]{Console!Command!umount}

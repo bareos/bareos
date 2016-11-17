@@ -785,24 +785,24 @@ to {\bf Native} currently the director understand the following protocols:
 
 \defDirective{Dir}{Job}{Prune Files}{}{}{%
 Normally, pruning of Files from the Catalog is specified on a Client by
-Client basis in the Client resource with the {\bf AutoPrune} directive.
-If this directive is specified (not normally) and the value is {\bf
-yes}, it will override the value specified in the Client resource.
+Client basis in \linkResourceDirective{Dir}{Client}{Auto Prune}.
+If this directive is specified and the value is \argument{yes},
+it will override the value specified in the Client resource.
 }
 
 \defDirective{Dir}{Job}{Prune Jobs}{}{}{%
 Normally, pruning of Jobs from the Catalog is specified on a Client by
-Client basis in the Client resource with the {\bf AutoPrune} directive.
-If this directive is specified (not normally) and the value is {\bf
-yes}, it will override the value specified in the Client resource.
+Client basis in \linkResourceDirective{Dir}{Client}{Auto Prune}.
+If this directive is specified and the value is \argument{yes},
+it will override the value specified in the Client resource.
 }
 
 \defDirective{Dir}{Job}{Prune Volumes}{}{}{%
 Normally, pruning of Volumes from the Catalog is specified on a Pool by
-Pool basis in the Pool resource with the {\bf AutoPrune} directive.
+Pool basis in \linkResourceDirective{Dir}{Pool}{Auto Prune} directive.
 Note, this is different from File and Job pruning which is done on a
-Client by Client basis.  If this directive is specified (not normally)
-and the value is {\bf yes}, it will override the value specified in the
+Client by Client basis.  If this directive is specified
+and the value is \argument{yes}, it will override the value specified in the
 Pool resource.
 }
 
@@ -982,7 +982,7 @@ program prior or after the current Job.  This is optional.  By default, the
 program is executed on the Client side like in \texttt{ClientRunXXXJob}.
 
 \textbf{Console} options are special commands that are sent to the director instead
-of the OS. At this time, console command ouputs are redirected to log with
+of the OS. At this time, console command outputs are redirected to log with
 the jobid 0.
 
 You can use following console command: \texttt{delete}, \texttt{disable},
@@ -990,7 +990,7 @@ You can use following console command: \texttt{delete}, \texttt{disable},
 \texttt{memory}, \texttt{prune}, \texttt{purge}, \texttt{reload},
 \texttt{status}, \texttt{setdebug}, \texttt{show}, \texttt{time},
 \texttt{trace}, \texttt{update}, \texttt{version}, \texttt{.client},
-\texttt{.jobs}, \texttt{.pool}, \texttt{.storage}.  
+\texttt{.jobs}, \texttt{.pool}, \texttt{.storage}.
 See \nameref{sec:bconsole} for
 more information. You need to specify needed information on command line, nothing
 will be prompted. Example:
