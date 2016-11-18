@@ -46,7 +46,7 @@ start_test
 cat <<END_OF_DATA >${tmp}/bconcmds
 messages
 @$out ${tmp}/log1.out w
-label storage=File1 volume=TestVolume001 pool=Default
+label storage=File1 pool=Default volume=TestVolume001
 run job=$JobName storage=File1 yes
 wait
 messages

@@ -1,125 +1,173 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
 # Run a backup of generated data and check if the soft quota limits are respected
 #
 #
 TestName="quota-softquota-test"
-JobName=BackupClient1
-. scripts/functions
+
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+
+check_backup()
+{
+    local jobid=$1
+    if grep "^  Termination: *Backup OK" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+        print_debug "jobid ${jobid}: Backup OK => OK"
+    else
+        print_debug "jobid ${jobid}: Backup failed => NOK"
+        estat=${jobid}
+    fi
+    return $estat
+}
 
 scripts/cleanup
-scripts/copy-test-confs
 
-rm -f bin/bareos-dir.conf
-/bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf.quota-softquota-test bin/bareos-dir.conf
+# Config files will be copied to required location.
+# Base configuration files come from the
+# configs/BASE/ directory, see
+# configs/BASE/README.txt for an overview of the provides resources.
+# Store your additonal resources to
+# configs/$TestName.
+# It is also possible to overwrite resources from configs/BASE.
+# If you define a full config file (instead of config files for individual resources),
+# only these will be taken.
+copy_configs
 
 # create test data
-dd if=/dev/zero of=${cwd}/tmp/testdata bs=40000k count=1
+dd if=/dev/zero of=${cwd}/tmp/testdata bs=10M count=1
 
 echo "${cwd}/tmp/testdata" >${cwd}/tmp/file-list
 start_test
 
-# we make the following tests:
-#1.: Backup data less than the Soft Quota
-#2.: Backup data that gets over the soft quota
-#3.: Backup data again, this job notices that we are over quota
-#    and sets the grace time.
-#4.: Backup data again inside of the grace time
-#   then sleep until the grace time is over
-#5.: Backup data again outside of the grace time
+#
+# we store each job to log${jobid}.out
+#
+# verify logs by:
+# grep -E -i '(quota|grace)' tmp/log*.out
 
-
-#@$out /dev/null
 cat >${cwd}/tmp/bconcmds <<END_OF_DATA
 messages
-label storage=File volume=TestVolume001
+label storage=File1 pool=Default volume=TestVolume001
+
+
+
 @$out ${cwd}/tmp/log1.out
+@# 1: backup data less than the Soft Quota => ok - 10MB
+
 run job=$JobName Level=Full yes
 wait
 messages
+
+
+
 @$out ${cwd}/tmp/log2.out
+@# 2: backup data less than the Soft Quota => ok - 20MB
+
 run job=$JobName Level=Full yes
 wait
 messages
+
+
+
 @$out ${cwd}/tmp/log3.out
+@# 3: backup data. "Quota Used" > "Soft Quota" => ok - 30MB ("Soft Quota exceeded, Grace Period starts now.")
+
 run job=$JobName Level=Full yes
 wait
 messages
+
+
+
 @$out ${cwd}/tmp/log4.out
+@# 4: backup data. job notices that quota is exceeded but continues => ok - 40MB ("Soft Quota exceeded, will be enforced after Grace Period expires.")
+
 run job=$JobName Level=Full yes
 wait
 messages
 
-delete job jobid=2 yes
-delete job jobid=3 yes
+
+
 @$out ${cwd}/tmp/log5.out
+@# 5: wait till the grace time is over.
+@#    backup data outside the grace time => fail - 40MB
+
+@sleep 15
+
 run job=$JobName Level=Full yes
 wait
 messages
 
-END_OF_DATA
 
-run_bareos
-check_for_zombie_jobs storage=File
-stop_bareos
 
-# check if job gets a over quota warning
-grep "Softquota Exceeded, Grace Period starts now." ${tmp}/log3.out 2>&1 >/dev/null
-if test $? -eq 0; then
-   print_debug "no 'Softquota Exceeded' warning found."
-else
-   estat=1
-fi
-# check if job is successful
-grep "^  Termination: *Backup OK" ${tmp}/log3.out 2>&1 >/dev/null
-if test $? -eq 0; then
-   print_debug "Check for Softquota during grace time: Backup OK."
-else
-   estat=2
-fi
-
-BACKUP_ESTAT=$estat
-# wait till the grace time is over...
-sleep 15
-
-cat >${cwd}/tmp/bconcmds <<END_OF_DATA
 @$out ${cwd}/tmp/log6.out
-run job=$JobName Level=Full yes
-wait
-messages
+@# 6: delete jobs, so that "Quota Used" < "Soft Quota",
+@#    backup data => ok - 20MB
 
 delete job jobid=1 yes
-delete job jobid=4 yes
+delete job jobid=2 yes
+delete job jobid=3 yes
 
-@$out ${cwd}/tmp/log7.out
 run job=$JobName Level=Full yes
 wait
 messages
 
-@$out ${cwd}/tmp/log8.out
-run job=$JobName Level=Full yes
-wait
-messages
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File
+check_for_zombie_jobs storage=File1
 stop_bareos
 
-estat=$BACKUP_ESTAT
-# check if third job is gets the Grace Time expired and Over Quota warning
-grep "Fatal error: Soft Quota Exceeded / Grace Time expired" ${tmp}/log6.out 2>&1 >/dev/null
-if test $? -eq 0; then
-   print_debug "Found Quota Exceeded and Grace Time expired"
+# check if backup run successful
+check_backup 1
+check_backup 2
+
+# check if job gets a over quota warning
+check_backup 3
+jobid=3
+if grep "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
 else
-   estat=3
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
 fi
-# check if third job is canceled as expected
-grep "^  Termination: .*Backup Error" ${tmp}/log6.out 2>&1 >/dev/null
-if test $? -eq 0; then
-   print_debug "SoftQuota Exceeded and Grace time expired: Backup Error is OK"
+
+check_backup 4
+jobid=4
+if grep "Soft Quota exceeded," ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded => OK"
 else
-   estat=4
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
+fi
+
+# check if job is gets the Grace Time expired and Over Quota warning
+jobid=5
+if grep "Fatal error: Soft Quota exceeded / Grace Time expired" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota exceeded and Grace Time expired => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota exceeded' message found => NOK"
+   estat=${jobid}
+fi
+# check if job is canceled as expected (some job as previous test)
+if grep "^  Termination: .*Backup Error" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Backup failed (quota exceeded) => OK"
+else
+   print_debug "jobid ${jobid}: no 'Backup Error' message found => NOK"
+   estat=${jobid}
+fi
+
+# check if job is successful
+check_backup 6
+jobid=6
+if grep "Soft Quota reset" ${tmp}/log${jobid}.out 2>&1 >/dev/null; then
+   print_debug "jobid ${jobid}: Soft Quota reset => OK"
+else
+   print_debug "jobid ${jobid}: no 'Soft Quota reset' message found => NOK"
+   estat=${jobid}
 fi
 
 end_test
