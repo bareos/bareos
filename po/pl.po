@@ -2119,7 +2119,7 @@ msgid "Expected an IP number or a hostname, got: %s"
 msgstr "Oczekiwano nazwy pliku, otrzymano: %s"
 
 #: src/lib/res.c:1129
-msgid "State machine missmatch"
+msgid "State machine mismatch"
 msgstr ""
 
 #: src/lib/res.c:1135 src/lib/res.c:1146
@@ -12046,7 +12046,7 @@ msgstr "Połączenie utracone."
 
 #: src/dird/ua_dotcmds.c:132
 #, fuzzy
-msgid "Send an arbitary SQL command"
+msgid "Send an arbitrary SQL command"
 msgstr "Wprowadź listę poleceń SQL"
 
 #: src/dird/ua_dotcmds.c:134
@@ -12682,7 +12682,7 @@ msgstr ""
 #: src/dird/ua_tree.c:252
 #, c-format
 msgid ""
-"Something is wrong with the Delta sequence of %s, skiping new parts. Current "
+"Something is wrong with the Delta sequence of %s, skipping new parts. Current "
 "sequence is %d\n"
 msgstr ""
 
@@ -19221,12 +19221,12 @@ msgstr "Nie można zainicjalizowa blokady Pythona. ERR=%s\n"
 
 #: src/stored/backends/gfapi_device.c:440
 #, c-format
-msgid "Specified glusterfs direcory %s cannot be created.\n"
+msgid "Specified glusterfs directory %s cannot be created.\n"
 msgstr ""
 
 #: src/stored/backends/gfapi_device.c:450
 #, fuzzy, c-format
-msgid "Specified glusterfs direcory %s is not a directory.\n"
+msgid "Specified glusterfs directory %s is not a directory.\n"
 msgstr "%s istnieje ale nie ma go w katalogu.\n"
 
 #: src/stored/backends/rados_device.c:137
@@ -19304,12 +19304,12 @@ msgstr "Nie mogę zainicjować muteksa: ERR=%s\n"
 
 #: src/stored/backends/cephfs_device.c:166
 #, fuzzy, c-format
-msgid "Specified CEPHFS direcory %s cannot be created.\n"
+msgid "Specified CEPHFS directory %s cannot be created.\n"
 msgstr "%s istnieje ale nie ma go w katalogu.\n"
 
 #: src/stored/backends/cephfs_device.c:176
 #, fuzzy, c-format
-msgid "Specified CEPHFS direcory %s is not a directory.\n"
+msgid "Specified CEPHFS directory %s is not a directory.\n"
 msgstr "%s istnieje ale nie ma go w katalogu.\n"
 
 #: src/stored/backends/elasto_device.c:75

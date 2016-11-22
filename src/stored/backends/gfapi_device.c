@@ -437,7 +437,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          switch (errno) {
          case ENOENT:
             if (!gfapi_makedirs(m_glfs, m_virtual_filename)) {
-               Mmsg1(errmsg, _("Specified glusterfs direcory %s cannot be created.\n"), m_virtual_filename);
+               Mmsg1(errmsg, _("Specified glusterfs directory %s cannot be created.\n"), m_virtual_filename);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;
             }
@@ -447,7 +447,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          }
       } else {
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified glusterfs direcory %s is not a directory.\n"), m_virtual_filename);
+            Mmsg1(errmsg, _("Specified glusterfs directory %s is not a directory.\n"), m_virtual_filename);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }

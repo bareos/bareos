@@ -1405,7 +1405,7 @@ Press OK to proceed with the purge operation?</source>
     </message>
     <message>
         <location filename="../prefs.ui" line="500"/>
-        <source>Debug Miscelaneous Items</source>
+        <source>Debug Miscellaneous Items</source>
         <translation type="unfinished"></translation>
     </message>
     <message>
@@ -2106,7 +2106,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../restore/prerestore.cpp" line="104"/>
-        <source>Comma separted list of Job Ids</source>
+        <source>Comma separated list of Job Ids</source>
         <translation type="unfinished"></translation>
     </message>
     <message>

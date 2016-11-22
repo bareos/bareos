@@ -250,7 +250,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
 
          } else {
             tree->ua->warning_msg(_("Something is wrong with the Delta sequence of %s, "
-                                    "skiping new parts. Current sequence is %d\n"),
+                                    "skipping new parts. Current sequence is %d\n"),
                                   row[1], node->delta_seq);
 
             Dmsg3(0, "Something is wrong with Delta, skip it "

@@ -160,7 +160,7 @@ License: AGPL-3.0 with Bacula and other exceptions
     .
     The new source header doesn't include a reference to the AUTHORS file
     in each source file but we still maintain the AUTHORS file with all
-    authors of the orignal project ("Bacula") and any new authors for code
+    authors of the original project ("Bacula") and any new authors for code
     submitted to the BAREOS project.The AUTHORS file can be found in the main
     directory.
     .
