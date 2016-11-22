@@ -13,8 +13,8 @@ if not exist "%SED_CMD%" (
     call :exit 1
 )
 
-echo source %SRC%
-echo dest: %DST%
+echo source: %SRC%
+echo dest:   %DST%
 
 if "%SRC%" == "" (
     call :usage
@@ -41,6 +41,14 @@ mkdir "%DST%"
 if not exist "%DST%\*" (
     echo Directory "%DST%" does not exists.
     call :exit 1
+)
+
+rem Check if the icacls command is available.
+rem If yes, it will later be used to adapt
+rem rem the permissions of the configuration.
+WHERE icacls.exe >NUL
+IF ERRORLEVEL 0 (
+   SET ACL_CMD=icacls.exe
 )
 
 pushd "%SRC%"
@@ -71,10 +79,40 @@ for /D %%c in (*) do (
                 "%SED_CMD%" --in-place=".orig" --file "%SED_SCRIPT%" "%%f"
             )
         )
+        if defined ACL_CMD (
+            if "%%c" == "tray-monitor.d" (
+               rem The bareos-tray-monitor should be accessable and its configuration adaptable
+               rem for all users.
+               rem Therefore grant Full Access to the group "Users".
+               "%ACL_CMD%" "%DST%\%%c" /grant *S-1-5-32-545:"(OI)(CI)F"
+            ) else (
+               rem The Bareos Daemon (Dir, Sd, Fd) contains passwords.
+               rem Only users from the "Administrators" group should be able to read them.
+               rem Therefore remove the "Users" group from the ACLs.
+
+               rem Stop ACL inheritance and copy the current ACLs
+               "%ACL_CMD%" "%DST%\%%c" /inheritance:d
+
+               rem Remove ACL for group "Users"
+               "%ACL_CMD%" "%DST%\%%c" /remove:g *S-1-5-32-545 /T
+            )
+        )
     )
     pushd "%SRC%"
 )
 popd
+
+if defined ACL_CMD (
+   rem configure.sed also contains passwords.
+   rem So make it only accessable for Administrators.
+
+   rem Stop ACL inheritance and copy the current ACLs
+   "%ACL_CMD%" "%DST%\configure.sed" /inheritance:d
+
+   rem Remove ACL for group "Users"
+   "%ACL_CMD%" "%DST%\configure.sed" /remove:g *S-1-5-32-545 /T
+)
+
 rem call :exit
 goto:eof
 

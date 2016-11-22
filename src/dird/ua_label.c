@@ -216,15 +216,10 @@ static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
    return true;
 }
 
-static bool send_label_request(UAContext *ua,
-                               STORERES *store,
-                               MEDIA_DBR *mr,
-                               MEDIA_DBR *omr,
-                               POOL_DBR *pr,
-                               bool media_record_exists,
-                               bool relabel,
-                               drive_number_t drive,
-                               slot_number_t slot)
+bool send_label_request(UAContext *ua,
+                        STORERES *store, MEDIA_DBR *mr, MEDIA_DBR *omr, POOL_DBR *pr,
+                        bool media_record_exists, bool relabel,
+                        drive_number_t drive, slot_number_t slot)
 {
    bool retval;
 

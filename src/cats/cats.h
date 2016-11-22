@@ -66,9 +66,13 @@ public:
 
    dbid_list();                       /* in sql.c */
    ~dbid_list();                      /* in sql.c */
+
+   int size() const { return num_ids; }
+   DBId_t get(int i) const;
 };
 
-/* Job information passed to create job record and update
+/*
+ * Job information passed to create job record and update
  * job record at end of job. Note, although this record
  * contains all the fields found in the Job database record,
  * it also contains fields found in the JobMedia record.

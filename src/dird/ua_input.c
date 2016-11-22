@@ -167,6 +167,27 @@ bool get_yesno(UAContext *ua, const char *prompt)
 }
 
 /*
+ * Checks for "yes" cmd parameter.
+ * If not given, display prompt and gets user input "yes" or "no".
+ *
+ * Returns:  true  if cmd parameter "yes" is given
+ *                 or user enters "yes"
+ *           false otherwise
+ */
+bool get_confirmation(UAContext *ua, const char *prompt)
+{
+   if (find_arg(ua, NT_("yes")) >= 0) {
+      return true;
+   }
+
+   if (get_yesno(ua, prompt)) {
+      return (ua->pint32_val == 1);
+   }
+
+   return false;
+}
+
+/*
  * Gets an Enabled value => 0, 1, 2, yes, no, archived
  * Returns: 0, 1, 2 if OK
  *          -1 on error

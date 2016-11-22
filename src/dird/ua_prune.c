@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -90,12 +90,6 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
 
 /*
  * Prune records from database
- *
- * prune files client=xxx [pool=yyy]
- * prune jobs client=xxx [pool=yyy]
- * prune volume=xxx
- * prune stats
- * prune directory=xxx [client=xxx] [recursive]
  */
 bool prune_cmd(UAContext *ua, const char *cmd)
 {
@@ -105,6 +99,7 @@ bool prune_cmd(UAContext *ua, const char *cmd)
    MEDIA_DBR mr;
    utime_t retention;
    int kw;
+   const char *permission_denied_message = _("Permission denied: need full %s permission.\n");
    static const char *keywords[] = {
       NT_("Files"),
       NT_("Jobs"),
@@ -113,6 +108,21 @@ bool prune_cmd(UAContext *ua, const char *cmd)
       NT_("Directory"),
       NULL
    };
+
+   /*
+    * All prune commands might target jobs that reside on different storages.
+    * Instead of checking all of them,
+    * we require full permission on jobs and storages.
+    * Client and Pool permissions are checked at the individual subcommands.
+    */
+   if (ua->acl_has_restrictions(Job_ACL)) {
+      ua->error_msg(permission_denied_message, "job");
+      return false;
+   }
+   if (ua->acl_has_restrictions(Storage_ACL)) {
+      ua->error_msg(permission_denied_message, "storage");
+      return false;
+   }
 
    if (!open_client_db(ua, true)) {
       return false;
@@ -134,11 +144,12 @@ bool prune_cmd(UAContext *ua, const char *cmd)
 
    switch (kw) {
    case 0: /* prune files */
+
       if (!(client = get_client_resource(ua))) {
          return false;
       }
 
-      if (find_arg_with_value(ua, NT_("pool")) >= 0) {
+      if ((find_arg_with_value(ua, NT_("pool")) >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
@@ -165,7 +176,7 @@ bool prune_cmd(UAContext *ua, const char *cmd)
          return false;
       }
 
-      if (find_arg_with_value(ua, NT_("pool")) >= 0) {
+      if ((find_arg_with_value(ua, NT_("pool")) >= 0) || ua->acl_has_restrictions(Pool_ACL)) {
          pool = get_pool_resource(ua);
       } else {
          pool = NULL;
@@ -174,8 +185,15 @@ bool prune_cmd(UAContext *ua, const char *cmd)
       /*
        * Ask what jobtype to prune.
        */
-      if (!get_user_job_type_selection(ua, &jobtype) || jobtype == -1) {
-         return (jobtype == -1) ? true : false;
+      if (!get_user_job_type_selection(ua, &jobtype)) {
+         return false;
+      }
+
+      /*
+       * Verify that result jobtype is valid (this should always be the case).
+       */
+      if (jobtype < 0) {
+         return false;
       }
 
       /*
@@ -192,6 +210,12 @@ bool prune_cmd(UAContext *ua, const char *cmd)
       return prune_jobs(ua, client, pool, jobtype);
    }
    case 2: /* prune volume */
+
+      if (ua->acl_has_restrictions(Client_ACL)) {
+         ua->error_msg(permission_denied_message, "client");
+         return false;
+      }
+
       if (!select_pool_and_media_dbr(ua, &pr, &mr)) {
          return false;
       }
@@ -213,13 +237,28 @@ bool prune_cmd(UAContext *ua, const char *cmd)
 
       retention = me->stats_retention;
 
+      if (ua->acl_has_restrictions(Client_ACL)) {
+         ua->error_msg(permission_denied_message, "client");
+         return false;
+      }
+      if (ua->acl_has_restrictions(Pool_ACL)) {
+         ua->error_msg(permission_denied_message, "pool");
+         return false;
+      }
+
       if (!confirm_retention(ua, &retention, "Statistics")) {
          return false;
       }
 
       return prune_stats(ua, retention);
    case 4: /* prune directory */
-      if (find_arg_with_value(ua, NT_("client")) >= 0) {
+
+      if (ua->acl_has_restrictions(Pool_ACL)) {
+         ua->error_msg(permission_denied_message, "pool");
+         return false;
+      }
+
+      if ((find_arg_with_value(ua, NT_("client")) >= 0) || ua->acl_has_restrictions(Client_ACL)) {
          if (!(client = get_client_resource(ua))) {
             return false;
          }

@@ -140,4 +140,8 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog);
 void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog);
 void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog);
 
+
+extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
+
+
 #endif

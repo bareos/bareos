@@ -34,10 +34,11 @@ echo "----- create some file to test backup / restore ----"
 echo "bareos restore test" > ${BACKUP_TEST_FILE}
 echo
 echo "------ trigger backup job -----"
-echo -e "run job=BackupClient1 yes\rwait" | bconsole | grep "Job queued. JobId="
+echo -e "run job=backup-bareos-fd yes\rwait" | bconsole | grep "Job queued. JobId="
 echo "status dir" | bconsole
 echo
 echo "------ trigger restore job -----"
 echo -e "restore select current\r2\rls\rmark usr\rdone\ryes\rwait" | bconsole
 echo "status dir" | bconsole
 grep "bareos restore test" /tmp/bareos-restores/${BACKUP_TEST_FILE}
+

@@ -10,7 +10,7 @@ Director {                            # define myself
   # (eg. because of your router or firewall configuration).
   # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
   #
-  # Heartbeat Interval = 1m
+  # Heartbeat Interval = 1 min
 
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@

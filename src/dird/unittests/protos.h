@@ -23,12 +23,15 @@
 #include "ndmp/ndmlib.h"
 
 extern "C" {
-   int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
+   /*
+    * common for both back ends
+    */
+   int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
+
    int bndmp_fhdb_mem_add_dir(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_u_quad dir_node, ndmp9_u_quad node);
    int bndmp_fhdb_mem_add_dirnode_root(struct ndmlog *ixlog, int tagc, ndmp9_u_quad root_node);
    int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc, ndmp9_u_quad node, ndmp9_file_stat *fstat);
 
-   int bndmp_fhdb_lmdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
    int bndmp_fhdb_lmdb_add_dir(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_u_quad dir_node, ndmp9_u_quad node);
    int bndmp_fhdb_lmdb_add_dirnode_root(struct ndmlog *ixlog, int tagc, ndmp9_u_quad root_node);
    int bndmp_fhdb_lmdb_add_node(struct ndmlog *ixlog, int tagc, ndmp9_u_quad node, ndmp9_file_stat *fstat);

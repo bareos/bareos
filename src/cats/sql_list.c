@@ -57,24 +57,40 @@ bool db_list_sql_query(JCR *jcr, B_DB *mdb, const char *query,
 {
    bool retval = false;
 
+   if (db_list_sql_query_start(jcr, mdb, query, sendit, type, description, verbose)) {
+      retval = true;
+      db_list_sql_query_end(jcr, mdb);
+   }
+
+   return retval;
+}
+
+bool db_list_sql_query_start(JCR *jcr, B_DB *mdb, const char *query,
+                             OUTPUT_FORMATTER *sendit, e_list_type type,
+                             const char *description, bool verbose)
+{
    db_lock(mdb);
    if (!sql_query(mdb, query, QF_STORE_RESULT)) {
       Mmsg(mdb->errmsg, _("Query failed: %s\n"), sql_strerror(mdb));
       if (verbose) {
          sendit->decoration(mdb->errmsg);
       }
-      goto bail_out;
+      db_unlock(mdb);
+      return false;
    }
 
    sendit->array_start(description);
    list_result(jcr, mdb, sendit, type);
    sendit->array_end(description);
-   sql_free_result(mdb);
-   retval = true;
 
-bail_out:
+   return true;
+}
+
+
+void db_list_sql_query_end(JCR *jcr, B_DB *mdb)
+{
+   sql_free_result(mdb);
    db_unlock(mdb);
-   return retval;
 }
 
 void db_list_pool_records(JCR *jcr, B_DB *mdb, POOL_DBR *pdbr,

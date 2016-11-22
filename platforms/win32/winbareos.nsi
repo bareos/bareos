@@ -50,7 +50,7 @@ Var ClientName            #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var ClientPassword        #XXX_REPLACE_WITH_FD_PASSWORD_XXX
 Var ClientMonitorPassword #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
 Var ClientAddress         #XXX_REPLACE_WITH_FD_MONITOR_PASSWORD_XXX
-Var ClientCompatible      # is  client compatible?
+Var ClientCompatible      # is client compatible?
 
 # Needed for configuring the storage config file
 Var StorageName        # name of the storage in the director config (Device)
@@ -177,15 +177,16 @@ Page custom getStorageParameters
 Page custom displayDirconfSnippet
 
 Function LaunchLink
+  StrCmp $InstallWebUI "no" skipLaunchWebui
+    ExecShell "open" "http://$WebUIListenAddress:$WebUIListenPort"
+  skipLaunchWebui:
   ExecShell "open" "http://www.bareos.com"
-  ExecShell "open" "http://$WebUIListenAddress:$WebUIListenPort"
 FunctionEnd
 
 !define MUI_FINISHPAGE_RUN
 #!define MUI_FINISHPAGE_RUN_NOTCHECKED
-!define MUI_FINISHPAGE_RUN_TEXT "Open www.bareos.com and bareos-webui"
+!define MUI_FINISHPAGE_RUN_TEXT "open Bareos websites"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
-
 !insertmacro MUI_PAGE_FINISH
 
 ; Uninstaller pages
@@ -433,11 +434,11 @@ InstType "Minimal - FileDaemon + Plugins, no Traymonitor"
 
 
 Section -StopDaemon
-#  nsExec::ExecToLog "net stop bareos-fd"
-# looks like this does not work on win7 sp1
-# if the service doesnt exist, it fails and the installation
-# cannot start
-# so we use the shotgun:
+  #  nsExec::ExecToLog "net stop bareos-fd"
+  # looks like this does not work on win7 sp1
+  # if the service doesnt exist, it fails and the installation
+  # cannot start
+  # so we use the shotgun:
   KillProcWMI::KillProc "bareos-fd.exe"
   KillProcWMI::KillProc "bareos-sd.exe"
   KillProcWMI::KillProc "bareos-dir.exe"
@@ -490,8 +491,6 @@ Section -SetPasswords
   #
   FileWrite $R1 "s#Name = admin#Name = $WebUILogin#g$\r$\n"
   FileWrite $R1 "s#Password = $\"admin$\"#Password = $WebUIPassword#g$\r$\n"
-
-
 
   FileClose $R1
 
@@ -575,7 +574,6 @@ SectionIn 1 2 3 4
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\client\"
   File config\tray-monitor.d\client\FileDaemon-local.conf
-  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\client\FileDaemon-local.conf"
 
   SetOutPath "$APPDATA\${PRODUCT_NAME}"
   File "config\fillup.sed"
@@ -648,7 +646,6 @@ SectionIn 2 3
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\storage"
   File config\tray-monitor.d\storage\StorageDaemon-local.conf
-  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\storage\StorageDaemon-local.conf"
 
 SectionEnd
 
@@ -657,8 +654,6 @@ SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR\Plugins"
   SetOverwrite ifnewer
-  #File "autoxflate-sd.dll"
-  #File "python-sd.dll"
   File "*-sd.dll"
   File "Plugins\BareosSd*.py"
   File "Plugins\bareos-sd*.py"
@@ -688,80 +683,6 @@ SubSectionEnd # Storage Daemon Subsection
 
 SubSection "Director" SUBSEC_DIR
 
-Section Webinterface SEC_WEBUI
-   SectionIn 2 3
-   SetShellVarContext all
-   SetOutPath "$INSTDIR"
-   SetOverwrite ifnewer
-   File /r "nssm.exe"
-   File /r "bareos-webui"
-
-IfSilent skip_vc_redist_check
-   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (32 Bit)
-   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-check_for_vc_redist:
-   ${If} $R1 == ""
-      ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
-      MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
-                                 It is needed by the bareos-webui service.$\r$\n\
-                                 Please install vcredist_x86.exe from $\r$\n\
-                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
-                                 and click OK when done." /SD IDOK
-   ${EndIf}
-   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
-   ${If} $R1 == ""
-      goto check_for_vc_redist
-   ${EndIf}
-
-skip_vc_redist_check:
-   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
-   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
-
-   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
-   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
-   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
-
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
-   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
-
-   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
-   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
-
-   FileClose $R1
-
-   ExecWait '$INSTDIR\nssm.exe install Bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-   ExecWait '$INSTDIR\nssm.exe set Bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
-   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
-   # see https://nssm.cc/usage -> quoting issues
-   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppParameters \
-      -S $WebUIListenAddress:$WebUIListenPort \
-      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
-      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-   ExecWait '$INSTDIR\nssm.exe set Bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
-
-   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
-                     "Description" "Bareos Webui php service"
-
-   nsExec::ExecToLog "net start Bareos-webui"
-
-   # Shortcuts
-   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
-   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
-
-   # WebUI Firewall
-
-    DetailPrint  "Opening Firewall for WebUI"
-    DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-    # profile=[private,domain]"
-    nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
-    # profile=[private,domain]"
-
-
-SectionEnd
-
 Section /o "Director" SEC_DIR
 SectionIn 2 3
 
@@ -785,7 +706,6 @@ SectionIn 2 3
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\director"
   File config\tray-monitor.d\director\Director-local.conf
-  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\director\Director-local.conf"
 
 SectionEnd
 
@@ -976,22 +896,7 @@ SubSectionEnd # Director Subsection
 
 
 
-SubSection "Consoles" SUBSEC_CONSOLES
-
-Section /o "Text Console (bconsole)" SEC_BCONSOLE
-SectionIn 2 3
-  SetShellVarContext all
-  SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
-
-  File "bconsole.exe"
-  File "libhistory6.dll"
-  File "libreadline6.dll"
-  File "libtermcap-0.dll"
-
-  !insertmacro InstallConfFile "bconsole.conf"
-SectionEnd
+SubSection "User Interfaces" SUBSEC_CONSOLES
 
 Section /o "Tray-Monitor" SEC_TRAYMON
 SectionIn 1 2 3
@@ -1011,12 +916,103 @@ SectionIn 1 2 3
   # install configuration as templates
   SetOutPath "$INSTDIR\defaultconfigs\tray-monitor.d\monitor"
   File config\tray-monitor.d\monitor\bareos-mon.conf
-  !insertmacro AllowAccessForAll "$INSTDIR\defaultconfigs\tray-monitor.d\monitor\bareos-mon.conf"
 SectionEnd
 
 
-Section /o "Qt Console (BAT)" SEC_BAT
+Section "Bareos Webui" SEC_WEBUI
+   SectionIn 2 3
+   ; set to yes, needed for MUI_FINISHPAGE_RUN_FUNCTION
+   StrCpy $InstallWebUI "yes"
+   SetShellVarContext all
+   SetOutPath "$INSTDIR"
+   SetOverwrite ifnewer
+   File /r "nssm.exe"
+   File /r "bareos-webui"
+
+IfSilent skip_vc_redist_check
+   # check  for Visual C++ Redistributable für Visual Studio 2012 x86 (32 Bit)
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+check_for_vc_redist:
+   ${If} $R1 == ""
+      ExecShell "open" "https://www.microsoft.com/en-us/download/details.aspx?id=30679"
+      MessageBox MB_OK|MB_ICONSTOP "Visual C++ Redistributable for Visual Studio 2012 x86 was not found$\r$\n\
+                                 It is needed by the bareos-webui service.$\r$\n\
+                                 Please install vcredist_x86.exe from $\r$\n\
+                                 https://www.microsoft.com/en-us/download/details.aspx?id=30679$\r$\n\
+                                 and click OK when done." /SD IDOK
+   ${EndIf}
+   ReadRegDword $R1 HKLM "SOFTWARE\Wow6432Node\Microsoft\VisualStudio\11.0\VC\Runtimes\x86" "Installed"
+   ${If} $R1 == ""
+      goto check_for_vc_redist
+   ${EndIf}
+
+skip_vc_redist_check:
+   Rename  "$INSTDIR\bareos-webui\config\autoload\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php.orig"
+   Rename  "$PLUGINSDIR\global.php" "$INSTDIR\bareos-webui\config\autoload\global.php"
+
+   Rename  "$PLUGINSDIR\php.ini"   "$APPDATA\${PRODUCT_NAME}\php.ini"
+   Rename  "$PLUGINSDIR\directors.ini" "$APPDATA\${PRODUCT_NAME}\directors.ini"
+   Rename  "$PLUGINSDIR\configuration.ini" "$APPDATA\${PRODUCT_NAME}\configuration.ini"
+
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\profile"
+   Rename  "$PLUGINSDIR\webui-admin.conf" "$INSTDIR\defaultconfigs\bareos-dir.d\profile\webui-admin.conf"
+
+   CreateDirectory "$INSTDIR\defaultconfigs\bareos-dir.d\console"
+   Rename  "$PLUGINSDIR\admin.conf"       "$INSTDIR\defaultconfigs\bareos-dir.d\console\admin.conf"
+
+   FileClose $R1
+
+   ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
+   # see https://nssm.cc/usage -> quoting issues
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
+      -S $WebUIListenAddress:$WebUIListenPort \
+      -c $\"$\"$\"$APPDATA\${PRODUCT_NAME}\php.ini$\"$\"$\" \
+      -t $\"$\"$\"$INSTDIR\bareos-webui\public$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStdout $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppStderr $\"$\"$\"$APPDATA\${PRODUCT_NAME}\logs\bareos-webui.log$\"$\"$\"'
+
+   WriteRegStr HKLM "SYSTEM\CurrentControlSet\Services\Bareos-webui" \
+                     "Description" "Bareos Webui php service"
+
+   nsExec::ExecToLog "net start Bareos-webui"
+
+   # Shortcuts
+   !insertmacro "CreateURLShortCut" "bareos-webui" "http://$WebUIListenAddress:$WebUIListenPort" "Bareos Backup Server Web Interface"
+   CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bareos-webui.lnk" "http://$WebUIListenAddress:$WebUIListenPort"
+
+   # WebUI Firewall
+
+   DetailPrint  "Opening Firewall for WebUI"
+   DetailPrint  "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+   # profile=[private,domain]"
+   nsExec::Exec "netsh advfirewall firewall add rule name=$\"Bareos WebUI access$\" dir=in action=allow program=$\"$INSTDIR\bareos-webui\php\php.exe$\" enable=yes protocol=TCP localport=$WEBUILISTENPORT description=$\"Bareos WebUI rule$\""
+   # profile=[private,domain]"
+
+SectionEnd
+
+
+Section /o "Text Console (bconsole)" SEC_BCONSOLE
 SectionIn 2 3
+  SetShellVarContext all
+  SetOutPath "$INSTDIR"
+  SetOverwrite ifnewer
+  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk" "$INSTDIR\bconsole.exe"
+
+  File "bconsole.exe"
+  File "libhistory6.dll"
+  File "libreadline6.dll"
+  File "libtermcap-0.dll"
+
+  !insertmacro InstallConfFile "bconsole.conf"
+SectionEnd
+
+
+Section /o "Qt Console (BAT, deprecated)" SEC_BAT
+#SectionIn 2 3
   SetShellVarContext all
   SetOutPath "$INSTDIR"
   SetOverwrite ifnewer
@@ -1030,8 +1026,8 @@ SectionIn 2 3
 
   !insertmacro InstallConfFile "bat.conf"
 SectionEnd
-SubSectionEnd # Consoles Subsection
 
+SubSectionEnd # Consoles Subsection
 
 
 
@@ -1326,38 +1322,38 @@ Function .onInit
   ClearErrors
   ${GetOptions} $cmdLineParams '/?' $R0
   IfErrors +3 0
-  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource] $\r$\n\
-                    [/CLIENTPASSWORD=Password to access the client]  $\r$\n\
-                    [/CLIENTADDRESS=Network Address of the client] $\r$\n\
-                    [/CLIENTMONITORPASSWORD=Password for monitor access] $\r$\n\
+  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource]$\r$\n\
+                    [/CLIENTPASSWORD=Password to access the client]$\r$\n\
+                    [/CLIENTADDRESS=Network Address of the client]$\r$\n\
+                    [/CLIENTMONITORPASSWORD=Password for monitor access]$\r$\n\
                     [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
                     $\r$\n\
-                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)] $\r$\n\
-                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]  $\r$\n\
+                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)]$\r$\n\
+                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]$\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
                     $\r$\n\
-                    [/STORAGENAME=Name of the storage ressource] $\r$\n\
-                    [/STORAGEPASSWORD=Password to access the storage]  $\r$\n\
-                    [/STORAGEADDRESS=Network Address of the storage] $\r$\n\
-                    [/STORAGEMONITORPASSWORD=Password for monitor access] $\r$\n\
+                    [/STORAGENAME=Name of the storage ressource]$\r$\n\
+                    [/STORAGEPASSWORD=Password to access the storage]$\r$\n\
+                    [/STORAGEADDRESS=Network Address of the storage]$\r$\n\
+                    [/STORAGEMONITORPASSWORD=Password for monitor access]$\r$\n\
                     $\r$\n\
-                    [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]  $\r$\n\
-                    [/INSTALLWEBUI Installs Bareos WebUI Components, REQUIRES Visual C++ Redistributable for Visual Studio 2012 x86, implicitly sets /INSTALLDIRECTOR $\r$\n\
-                    [/WEBUILISTENADDRESS=webui listen address, default 127.0.0.1]  $\r$\n\
-                    [/WEBUILISTENPORT=webui listen port, default 9100 ]  $\r$\n\
-                    [/WEBUILOGIN=Login Name for WebUI, default admin ] $\r$\n\
-                    [/WEBUIPASSWORD=Password for WebUI, default admin ]  $\r$\n\
-                    [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]  $\r$\n\
-                    [/DBADMINUSER=Database Admin User (not needed for sqlite3)]  $\r$\n\
-                    [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]  $\r$\n\
-                    [/INSTALLSTORAGE  Installs Storage Daemon and Components]  $\r$\n\
+                    [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]$\r$\n\
+                    [/INSTALLWEBUI Installs Bareos WebUI Components, REQUIRES Visual C++ Redistributable for Visual Studio 2012 x86, implicitly sets /INSTALLDIRECTOR]$\r$\n\
+                    [/WEBUILISTENADDRESS=webui listen address, default 127.0.0.1]$\r$\n\
+                    [/WEBUILISTENPORT=webui listen port, default 9100]$\r$\n\
+                    [/WEBUILOGIN=Login Name for WebUI, default admin]$\r$\n\
+                    [/WEBUIPASSWORD=Password for WebUI, default admin]$\r$\n\
+                    [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]$\r$\n\
+                    [/DBADMINUSER=Database Admin User (not needed for sqlite3)]$\r$\n\
+                    [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]$\r$\n\
+                    [/INSTALLSTORAGE  Installs Storage Daemon and Components]$\r$\n\
                     $\r$\n\
                     [/S silent install without user interaction]$\r$\n\
-                        (deletes config files on uinstall, moves existing config files away and uses newly new ones) $\r$\n\
+                        (deletes config files on uinstall, moves existing config files away and uses newly new ones)$\r$\n\
                     [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use existing config files during silent install]$\r$\n\
                     [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
                     [/? (this help dialog)] $\r$\n\
-                    [/WRITELOGS lets the installer create log files in INSTDIR"
+                    [/WRITELOGS lets the installer create log files in INSTDIR]"
   Abort
 
   # Check if this is Windows NT.
@@ -1437,6 +1433,7 @@ uninst:
   # Exec $INSTDIR\uninst.exe
 
 no_remove_uninstaller:
+
   MessageBox MB_OK|MB_ICONEXCLAMATION "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
       FileOpen $R1 $TEMP\abortreason.txt w
       FileWrite $R1 "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
@@ -1444,8 +1441,6 @@ no_remove_uninstaller:
   abort
 
 done:
-
-
 
   ${GetOptions} $cmdLineParams "/CLIENTNAME="  $ClientName
   ClearErrors
@@ -1539,7 +1534,7 @@ done:
 
 
   StrCpy $SilentKeepConfig "yes"
-  ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
+  ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG" $R0
   IfErrors 0 +2         # error is set if NOT found
     StrCpy $SilentKeepConfig "no"
   ClearErrors
@@ -1577,7 +1572,7 @@ done:
   File "/oname=$PLUGINSDIR\sqlite3.sql" ".\ddl\creates\sqlite3.sql"
 
   # webui
-  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini-production"
+  File "/oname=$PLUGINSDIR\php.ini" ".\bareos-webui\php\php.ini"
   File "/oname=$PLUGINSDIR\global.php" ".\bareos-webui\config\autoload\global.php"
   File "/oname=$PLUGINSDIR\directors.ini" ".\bareos-webui\install\directors.ini"
   File "/oname=$PLUGINSDIR\configuration.ini" ".\bareos-webui\install\configuration.ini"
@@ -1592,19 +1587,17 @@ done:
   SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_UNSELECTED} # unselect dir firewall (is selected by default, why?)
   SectionSetFlags ${SEC_WEBUI} ${SF_UNSELECTED} # unselect webinterface (is selected by default, why?)
 
-
   StrCmp $InstallWebUI "no" dontInstWebUI
     SectionSetFlags ${SEC_WEBUI} ${SF_SELECTED} # webui
     StrCpy $InstallDirector "yes"               # webui needs director
-
-dontInstWebUI:
+  dontInstWebUI:
 
   StrCmp $InstallDirector "no" dontInstDir
     SectionSetFlags ${SEC_DIR} ${SF_SELECTED} # director
     SectionSetFlags ${SEC_FIREWALL_DIR} ${SF_SELECTED} # director firewall
     SectionSetFlags ${SEC_DIRPLUGINS} ${SF_SELECTED} # director plugins
 
-  # also install bconsole if director is selected
+    # also install bconsole if director is selected
     SectionSetFlags ${SEC_BCONSOLE} ${SF_SELECTED} # bconsole
 
 IfSilent 0 DbDriverCheckEnd
@@ -1811,19 +1804,19 @@ FunctionEnd
 # Client Configuration Dialog
 #
 Function getClientParameters
-push $R0
-# skip if we are upgrading
-strcmp $Upgrading "yes" skip
+  push $R0
+  # skip if we are upgrading
+  strcmp $Upgrading "yes" skip
 
-# prefill the dialog fields with our passwords and other
-# information
+  # prefill the dialog fields with our passwords and other
+  # information
 
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 2" "state" $ClientName
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 3" "state" $DirectorName
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 4" "state" $ClientPassword
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 14" "state" $ClientMonitorPassword
   WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 5" "state" $ClientAddress
-#  WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 7" "state" "Director console password"
+  # WriteINIStr "$PLUGINSDIR\clientdialog.ini" "Field 7" "state" "Director console password"
 
 
 ${If} ${SectionIsSelected} ${SEC_FD}
@@ -1847,19 +1840,19 @@ FunctionEnd
 # Storage Configuration Dialog
 #
 Function getStorageParameters
-push $R0
-# skip if we are upgrading
-strcmp $Upgrading "yes" skip
+  push $R0
+  # skip if we are upgrading
+  strcmp $Upgrading "yes" skip
 
-# prefill the dialog fields with our passwords and other
-# information
+  # prefill the dialog fields with our passwords and other
+  # information
 
   WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 2" "state" $StorageDaemonName
   WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 3" "state" $DirectorName
   WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 4" "state" $StoragePassword
   WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 14" "state" $StorageMonitorPassword
   WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 5" "state" $StorageAddress
-#  WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 7" "state" "Director console password"
+  # WriteINIStr "$PLUGINSDIR\storagedialog.ini" "Field 7" "state" "Director console password"
 
 
 ${If} ${SectionIsSelected} ${SEC_SD}
@@ -1882,8 +1875,9 @@ FunctionEnd
 #
 Function getDirectorParameters
   Push $R0
-strcmp $Upgrading "yes" skip
-# prefill the dialog fields
+  strcmp $Upgrading "yes" skip
+
+  # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 2" "state" $DirectorAddress
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 3" "state" $DirectorPassword
 #TODO: also do this if BAT is selected alone
@@ -1893,6 +1887,7 @@ ${If} ${SectionIsSelected} ${SEC_BCONSOLE}
   ReadINIStr  $DirectorAddress        "$PLUGINSDIR\directordialog.ini" "Field 2" "state"
   ReadINIStr  $DirectorPassword       "$PLUGINSDIR\directordialog.ini" "Field 3" "state"
 ${EndIf}
+
 skip:
   Pop $R0
 FunctionEnd
@@ -1904,11 +1899,12 @@ FunctionEnd
 #
 Function getDatabaseParameters
   Push $R0
-strcmp $Upgrading "yes" skip
-strcmp $InstallDirector "no" skip
+
+  strcmp $Upgrading "yes" skip
+  strcmp $InstallDirector "no" skip
 
 ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-# prefill the dialog fields
+  # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 3" "state" $DbAdminUser
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 4" "state" $DbAdminPassword
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 5" "state" $DbUser
@@ -1916,16 +1912,14 @@ ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 7" "state" $DbName
   WriteINIStr "$PLUGINSDIR\databasedialog.ini" "Field 8" "state" $DbPort
   InstallOptions::dialog $PLUGINSDIR\databasedialog.ini
-
 ${EndIF}
-#  Pop $R0
 
 skip:
   Pop $R0
 FunctionEnd
 
 Function getDatabaseParametersLeave
-# read values just configured
+  # read values just configured
   ReadINIStr  $DbAdminUser            "$PLUGINSDIR\databasedialog.ini" "Field 3" "state"
   ReadINIStr  $DbAdminPassword        "$PLUGINSDIR\databasedialog.ini" "Field 4" "state"
   ReadINIStr  $DbUser                 "$PLUGINSDIR\databasedialog.ini" "Field 5" "state"
@@ -1936,10 +1930,11 @@ dbcheckend:
 
    StrCmp $InstallDirector "no" SkipDbCheck # skip DbConnection if not instaling director
    StrCmp $DbDriver "sqlite3" SkipDbCheck   # skip DbConnection of using sqlite3
-${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
-   !insertmacro CheckDbAdminConnection
-   MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
-${EndIF}
+
+   ${If} ${SectionIsSelected} ${SEC_DIR_POSTGRES}
+     !insertmacro CheckDbAdminConnection
+     MessageBox MB_OK|MB_ICONINFORMATION "Connection to db server with DbAdmin credentials was successful."
+   ${EndIF}
 SkipDbCheck:
 
 FunctionEnd
@@ -2014,11 +2009,11 @@ Function un.onInit
 FunctionEnd
 
 Section Uninstall
-# UnInstaller Options
-   ${GetParameters} $cmdLineParams
-   ClearErrors
+  # UnInstaller Options
+  ${GetParameters} $cmdLineParams
+  ClearErrors
 
-# check cmdline parameters
+  # check cmdline parameters
   StrCpy $SilentKeepConfig "yes"
   ${GetOptions} $cmdLineParams "/SILENTKEEPCONFIG"  $R0
   IfErrors 0 +2         # error is set if NOT found
@@ -2046,8 +2041,8 @@ Section Uninstall
   sleep 3000
   nsExec::ExecToLog '"$INSTDIR\bareos-dir.exe" /remove'
 
-  ExecWait '$INSTDIR\nssm.exe stop Bareos-webui'
-  ExecWait '$INSTDIR\nssm.exe remove Bareos-webui confirm'
+  ExecWait '$INSTDIR\nssm.exe stop bareos-webui'
+  ExecWait '$INSTDIR\nssm.exe remove bareos-webui confirm'
 
   # kill tray monitor
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
@@ -2231,25 +2226,31 @@ ConfDeleteSkip:
 SectionEnd
 
 Function .onSelChange
-Push $R0
-Push $R1
+  Push $R0
+  Push $R1
 
-#  !insertmacro StartRadioButtons $1
-#    !insertmacro RadioButton ${SEC_DIR_POSTGRES}
-#    !insertmacro RadioButton ${SEC_DIR_SQLITE}
-#  !insertmacro EndRadioButtons
+  # !insertmacro StartRadioButtons $1
+  # !insertmacro RadioButton ${SEC_DIR_POSTGRES}
+  # !insertmacro RadioButton ${SEC_DIR_SQLITE}
+  # !insertmacro EndRadioButtons
 
-# if Postgres was not detected always disable postgresql backend
+  # if Postgres was not detected always disable postgresql backend
 
-${If} $IsPostgresInstalled == no
-  SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
-${EndIf}
+  ${If} $IsPostgresInstalled == no
+    SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
+  ${EndIf}
 
   # Check if BAT was just selected then select SEC_BCONSOLE
   SectionGetFlags ${SEC_BAT} $R0
   IntOp $R0 $R0 & ${SF_SELECTED}
   StrCmp $R0 ${SF_SELECTED} 0 +2
   SectionSetFlags ${SEC_BCONSOLE} $R0
+
+  # Check if WEBUI was just selected then select SEC_DIR
+  SectionGetFlags ${SEC_WEBUI} $R0
+  IntOp $R0 $R0 & ${SF_SELECTED}
+  StrCmp $R0 ${SF_SELECTED} 0 +2
+  SectionSetFlags ${SEC_DIR} $R0
 
   # if director is selected, we set InstallDirector to yes and select textconsole
   StrCpy $InstallDirector "no"
@@ -2269,6 +2270,6 @@ ${EndIf}
   StrCmp $R0 ${SF_SELECTED} 0 +2
   StrCpy $DbDriver "postgresql"
 
-Pop $R1
-Pop $R0
+  Pop $R1
+  Pop $R0
 FunctionEnd

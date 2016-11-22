@@ -335,12 +335,17 @@ bool get_cmd(UAContext *ua, const char *prompt, bool subprompt = false);
 bool get_pint(UAContext *ua, const char *prompt);
 bool get_yesno(UAContext *ua, const char *prompt);
 bool is_yesno(char *val, bool *ret);
+bool get_confirmation(UAContext *ua, const char *prompt = _("Confirm (yes/no): "));
 int get_enabled(UAContext *ua, const char *val);
 void parse_ua_args(UAContext *ua);
 bool is_comment_legal(UAContext *ua, const char *name);
 
 /* ua_label.c */
 bool is_volume_name_legal(UAContext *ua, const char *name);
+bool send_label_request(UAContext *ua,
+                        STORERES *store, MEDIA_DBR *mr, MEDIA_DBR *omr, POOL_DBR *pr,
+                        bool media_record_exists, bool relabel,
+                        drive_number_t drive, slot_number_t slot);
 
 /* ua_update.c */
 void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr);

@@ -760,11 +760,11 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    sr->StorageId = 0;
    if (!db_get_storage_ids(ua->jcr, ua->db, &num_storages, &ids)) {
       ua->error_msg(_("Error obtaining storage ids. ERR=%s\n"), db_strerror(ua->db));
-      return 0;
+      return false;
    }
 
    if (num_storages <= 0) {
-      ua->error_msg(_("No storages defined. Use the \"create\" command to create one.\n"));
+      ua->error_msg(_("No storages defined.\n"));
       return false;
    }
 
@@ -1827,6 +1827,9 @@ bool get_user_job_type_selection(UAContext *ua, int *jobtype)
    int i;
    char job_type[MAX_NAME_LENGTH];
 
+   /* set returning jobtype to invalid */
+   *jobtype = -1;
+
    if ((i = find_arg_with_value(ua, NT_("jobtype"))) >= 0) {
       bstrncpy(job_type, ua->argv[i], sizeof(job_type));
    } else {
@@ -1836,8 +1839,7 @@ bool get_user_job_type_selection(UAContext *ua, int *jobtype)
       }
 
       if (do_prompt(ua, _("JobType"),  _("Select Job Type"), job_type, sizeof(job_type)) < 0) {
-         *jobtype = -1;
-         return true;
+         return false;
       }
    }
 

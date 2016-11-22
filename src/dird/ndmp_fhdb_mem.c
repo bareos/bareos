@@ -432,57 +432,6 @@ static N_TREE_NODE *find_tree_node(N_TREE_ROOT *root, uint64_t inode)
    return (N_TREE_NODE *)NULL;
 }
 
-extern "C" int bndmp_fhdb_mem_add_file(struct ndmlog *ixlog, int tagc, char *raw_name,
-                                       ndmp9_file_stat *fstat)
-{
-   NIS *nis = (NIS *)ixlog->ctx;
-
-   nis->jcr->lock();
-   nis->jcr->JobFiles++;
-   nis->jcr->unlock();
-
-   if (nis->save_filehist) {
-      int8_t FileType = 0;
-      POOL_MEM attribs(PM_FNAME),
-               pathname(PM_FNAME);
-
-      /*
-       * Every file entry is releative from the filesystem currently being backuped.
-       */
-      Dmsg2(100, "bndmp_fhdb_mem_add_file: New filename ==> %s/%s\n", nis->filesystem, raw_name);
-
-      if (nis->jcr->ar) {
-         /*
-          * See if this is the top level entry of the tree e.g. len == 0
-          */
-         if (strlen(raw_name) == 0) {
-            ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-
-            pm_strcpy(pathname, nis->filesystem);
-            pm_strcat(pathname, "/");
-            return 0;
-         } else {
-            ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
-
-            pm_strcpy(pathname, nis->filesystem);
-            pm_strcat(pathname, "/");
-            pm_strcat(pathname, raw_name);
-
-            if (FileType == FT_DIREND) {
-               /*
-                * A directory needs to end with a slash.
-                */
-               pm_strcat(pathname, "/");
-            }
-         }
-
-         ndmp_store_attribute_record(nis->jcr, pathname.c_str(), nis->virtual_filename, attribs.c_str(), FileType,
-                                     0, (fstat->fh_info.valid == NDMP9_VALIDITY_VALID) ? fstat->fh_info.value : 0);
-      }
-   }
-
-   return 0;
-}
 
 /*
  * This inserts a piece of meta data we receive out or order in a hash table
@@ -800,7 +749,7 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog)
    /*
     * Register the FileHandleDB callbacks.
     */
-   fhdb_callbacks.add_file = bndmp_fhdb_mem_add_file;
+   fhdb_callbacks.add_file = bndmp_fhdb_add_file;
    fhdb_callbacks.add_dir = bndmp_fhdb_mem_add_dir;
    fhdb_callbacks.add_node = bndmp_fhdb_mem_add_node;
    fhdb_callbacks.add_dirnode_root = bndmp_fhdb_mem_add_dirnode_root;
