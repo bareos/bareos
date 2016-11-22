@@ -1641,7 +1641,6 @@ Not configuring the directive at all also disables it, as the default value for 
 truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [yes]
 \end{bconsole}
 
-
     When using a disk volume (and other volume types also) the volume file still resides on the \bareosSd.
     If you want to reclaim disk space, you can use the \bcommand{truncate}{volstatus=Purged} command.
     When used on a volume, it rewrites the header and by this frees the rest of the disk space.
@@ -1649,6 +1648,8 @@ truncate volstatus=Purged [storage=<storage>] [pool=<pool>] [volume=<volume>] [y
     If the volume you want to get rid of has not the \volumestatus{Purged} status,
     you first have to use the \bcommand{prune}{volume} or even the \bcommand{purge}{volume} command
     to free the volume from all remaining jobs.
+
+    This command is available since Bareos \sinceVersion{dir}{truncate command}{16.2.5}.
 
 \item [umount]
    \index[general]{Console!Command!umount}
