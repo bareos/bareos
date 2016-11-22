@@ -295,7 +295,7 @@ enum {
    CFG_TYPE_BASE = 86,                  /* Basejob Expression */
    CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
    CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
-   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
+   CFG_TYPE_FSTYPE = 89,                /* FileSystem match criterium (UNIX)*/
    CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
    CFG_TYPE_META = 91,                  /* Meta tag */
 

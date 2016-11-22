@@ -2512,7 +2512,7 @@ Cette commande est utilisée pour détruire un enregistrement &quot;volume&quot;
     </message>
     <message>
         <location filename="../prefs.ui" line="453"/>
-        <source>Debug Miscelaneous Items</source>
+        <source>Debug Miscellaneous Items</source>
         <translation>Débogage divers</translation>
     </message>
     <message>
@@ -4081,7 +4081,7 @@ Appuyer sur OK pour continuer ?</translation>
     <message>
         <location filename="../restore/prerestore.cpp" line="82"/>
         <location filename="../restore/prerestore.cpp" line="98"/>
-        <source>Comma separted list of Job Ids</source>
+        <source>Comma separated list of Job Ids</source>
         <translation>Liste de &quot;id de travail&quot; séparés par des virgules</translation>
     </message>
     <message>

@@ -71,7 +71,7 @@ void prerestorePage::buildPage()
    if (m_dataInType == R_NONE) {
       selectJobRadio->setChecked(true);
       selectJobIdsRadio->setChecked(false);
-      jobIdEdit->setText(tr("Comma separted list of Job Ids"));
+      jobIdEdit->setText(tr("Comma separated list of Job Ids"));
       jobIdEdit->setEnabled(false);
    } else if (m_dataInType == R_JOBIDLIST) {
       selectJobIdsRadio->setChecked(true);
@@ -87,7 +87,7 @@ void prerestorePage::buildPage()
    } else if (m_dataInType == R_JOBDATETIME) {
       selectJobRadio->setChecked(true);
       selectJobIdsRadio->setChecked(false);
-      jobIdEdit->setText(tr("Comma separted list of Job Ids"));
+      jobIdEdit->setText(tr("Comma separated list of Job Ids"));
       jobIdEdit->setEnabled(false);
       recentCheckBox->setCheckState(Qt::Unchecked);
       jobRadioClicked(true);

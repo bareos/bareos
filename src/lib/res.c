@@ -1163,7 +1163,7 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
             bstrncpy(hostname_str, lc->str, sizeof(hostname_str));
             break;
          case EMPTYLINE:
-            scan_err0(lc, _("State machine missmatch"));
+            scan_err0(lc, _("State machine mismatch"));
             break;
          }
          token = lex_get_token(lc, T_SKIP_EOL);
@@ -2063,7 +2063,7 @@ static DATATYPE_NAME datatype_names[] = {
    { CFG_TYPE_BASE, "BASEJOB", "Basejob Expression" },
    { CFG_TYPE_WILD, "WILDCARD", "Wildcard Expression" },
    { CFG_TYPE_PLUGIN, "PLUGIN", "Plugin definition" },
-   { CFG_TYPE_FSTYPE, "FILESYSTEM_TYPE", "FileSytem match criterium (UNIX)" },
+   { CFG_TYPE_FSTYPE, "FILESYSTEM_TYPE", "FileSystem match criterium (UNIX)" },
    { CFG_TYPE_DRIVETYPE, "DRIVE_TYPE", "DriveType match criterium (Windows)" },
    { CFG_TYPE_META, "META_TAG", "Meta tag" },
 

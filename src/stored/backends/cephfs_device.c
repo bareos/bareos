@@ -163,7 +163,7 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
          case -ENOENT:
             status = ceph_mkdirs(m_cmount, m_basedir, 0750);
             if (status < 0) {
-               Mmsg1(errmsg, _("Specified CEPHFS direcory %s cannot be created.\n"), m_basedir);
+               Mmsg1(errmsg, _("Specified CEPHFS directory %s cannot be created.\n"), m_basedir);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;
             }
@@ -173,7 +173,7 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
          }
       } else {
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified CEPHFS direcory %s is not a directory.\n"), m_basedir);
+            Mmsg1(errmsg, _("Specified CEPHFS directory %s is not a directory.\n"), m_basedir);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
