@@ -323,9 +323,12 @@ static bool update_path_hierarchy_cache(JCR *jcr,
    Mmsg(mdb->cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
    UPDATE_DB(jcr, mdb, mdb->cmd);
 
-   /* need to COMMIT here and start a new transaction */
+   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
+    * see the current HasCache value. A new transaction must only be started
+    * after having finished PathHierarchy processing, otherwise prevention
+    * from duplicate key violations in build_path_hierarchy() will not work.
+    */
    db_end_transaction(jcr, mdb);
-   db_start_transaction(jcr, mdb);
 
    /* Inserting path records for JobId */
    Mmsg(mdb->cmd, "INSERT INTO PathVisibility (PathId, JobId) "
@@ -386,6 +389,8 @@ static bool update_path_hierarchy_cache(JCR *jcr,
       }
       free(result);
    }
+
+   db_start_transaction(jcr, mdb);
 
    if (mdb->db_get_type_index() == SQL_TYPE_SQLITE3) {
       Mmsg(mdb->cmd,
