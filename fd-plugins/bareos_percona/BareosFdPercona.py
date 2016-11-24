@@ -163,7 +163,20 @@ class BareosFdPercona (BareosFdPluginBaseclass):
             # We check, if the DB was changed at all since last backup
             get_lsn_command = ("echo 'SHOW ENGINE INNODB STATUS' | %s | grep 'Log sequence number' | cut -d ' ' -f 4"
                                % self.mysqlcmd)
-            last_lsn = int(os.popen(get_lsn_command).read())
+            last_lsn_proc = Popen(get_lsn_command, shell=True, stdout=PIPE, stderr=PIPE)
+            last_lsn_proc.wait()
+            returnCode = last_lsn_proc.poll()
+            (mysqlStdOut, mysqlStdErr) = last_lsn_proc.communicate()
+            if returnCode != 0 or mysqlStdErr:
+                JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN with command \"%s\", Error: %s" 
+                    % (get_lsn_command, mysqlStdErr))
+                return bRCs['bRC_Error']
+            else:
+                try:
+                    last_lsn = int(mysqlStdOut)
+                except:
+                    JobMessage(context, bJobMessageType['M_FATAL'], "Error reading LSN: \"%s\" not an integer" %mysqlStdOut)
+                    return bRCs['bRC_Error']
             if self.max_to_lsn > 0 and self.max_to_lsn >= last_lsn and self.strictIncremental:
                 bareosfd.DebugMessage(
                     context, 100,
