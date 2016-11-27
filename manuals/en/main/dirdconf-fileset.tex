@@ -342,15 +342,15 @@ Include {
         The purpose of plugins is to provide an interface to any system program
         for backup and restore. That allows you, for example, to do database backups without a local dump.
 
-        The syntax and semantics of the Plugin directive require 
+        The syntax and semantics of the Plugin directive require
         the first part of the string up to the colon to be the name of the plugin.
-        Everything after the first colon is ignored by the File daemon but is passed to the plugin. 
-        Thus the plugin writer may define the 
+        Everything after the first colon is ignored by the File daemon but is passed to the plugin.
+        Thus the plugin writer may define the
         meaning of the rest of the string as he wishes.
 
-        The program \nameref{bpluginfo} can be used, to retreive information about a specific plugin.
+        For more information, see \nameref{fdPlugins}.
 
-        Examples about the bpipe- and the mssql-plugin can be found in the sections about the \nameref{bpipe} and the \nameref{MSSQL}.
+        The program \nameref{bpluginfo} can be used, to retrieve information about a specific plugin.
 
         Note: It is also possible to define more than one plugin directive in a FileSet to do several database dumps at once.
 

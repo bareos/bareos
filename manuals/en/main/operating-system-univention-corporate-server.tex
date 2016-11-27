@@ -96,7 +96,7 @@ File: /etc/bareos/bareos-dir.conf
 
 \warning{univention-bareos $<$ 15.2 did require a manual reload/restart of the bareos-dir service:}
 \begin{commands}{let bareos-dir reload its configuration}
-root@ucs:~# <input>service  bareos-dir reload</input>
+root@ucs:~# <input>service bareos-dir reload</input>
 [ ok ] Reloading Bareos Director: bareos-dir.
 \end{commands}
 
@@ -195,7 +195,7 @@ For example, to use a NAS device for storing backups, you can mount your NAS vol
 The directory needs to be writable by user \user{bareos}.
 
 \begin{commands}{Example for changing the storage path}
-root@ucs:/etc/bareos# <input>ucr set bareos/filestorage=/path/to_your/storage</input>
+root@ucs:/etc/bareos# <input>ucr set bareos/filestorage=/path/to/your/storage</input>
 Setting bareos/filestorage
 File: /etc/bareos/bareos-sd.conf
 \end{commands}
