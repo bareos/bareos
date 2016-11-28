@@ -212,12 +212,6 @@ class LoginForm extends Form
       }
 
       switch($language) {
-         case 'de_DE':
-            $l['de_DE'] = 'German';
-            break;
-         case 'de':
-            $l['de_DE'] = 'German';
-            break;
          case 'en_EN':
             $l['en_EN'] = 'English';
             break;
@@ -235,6 +229,18 @@ class LoginForm extends Form
             break;
          case 'fr_FR':
             $l['fr_FR'] = 'French';
+            break;
+         case 'de_DE':
+            $l['de_DE'] = 'German';
+            break;
+         case 'de':
+            $l['de_DE'] = 'German';
+            break;
+         case 'it':
+            $l['it_IT'] = 'Italian';
+            break;
+         case 'it_IT':
+            $l['it_IT'] = 'Italian';
             break;
          case 'ru_RU':
             $l['ru_RU'] = 'Russian';
@@ -256,6 +262,7 @@ class LoginForm extends Form
       $locales['en_EN'] = "English";
       $locales['fr_FR'] = "French";
       $locales['de_DE'] = "German";
+      $locales['it_IT'] = "Italian";
       $locales['ru_RU'] = "Russian";
 
       return $locales;
