@@ -212,6 +212,12 @@ class LoginForm extends Form
       }
 
       switch($language) {
+         case 'cn':
+            $l['cn_CN'] = 'Chinese';
+            break;
+         case 'cn_CN':
+            $l['cn_CN'] = 'Chinese';
+            break;
          case 'en_EN':
             $l['en_EN'] = 'English';
             break;
@@ -265,6 +271,7 @@ class LoginForm extends Form
    {
       $locales = array();
 
+      $locales['cn_CN'] = "Chinese";
       $locales['en_EN'] = "English";
       $locales['fr_FR'] = "French";
       $locales['de_DE'] = "German";

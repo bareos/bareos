@@ -26,6 +26,10 @@ var dt_textdomain = "";
 
 function setDtLocale(val) {
    switch(val) {
+      case 'cn':
+      case 'cn_CN':
+         dt_locale = 'cn_CN';
+         break;
       case 'en':
       case 'en_EN':
          dt_locale = 'en_EN';
@@ -374,6 +378,10 @@ function formatJobStatus(data) {
 
 function getLocale(locale) {
    switch(locale) {
+      case 'cn':
+      case 'cn_CN':
+         lang = 'Chinese.json';
+         break;
       case 'en':
       case 'en_EN':
          lang = 'English.json';
