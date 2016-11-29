@@ -1,0 +1,1052 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2016-11-22 10:24+0800\n"
+"PO-Revision-Date: 2016-11-22 11:22+0800\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Last-Translator: \n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+"Language: zh\n"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../../../module/Storage/view/storage/storage/details.phtml:156
+#: ../../../module/Job/view/job/job/index.phtml:163
+#: ../../../module/Job/view/job/job/details.phtml:137
+#: ../../../module/Pool/view/pool/pool/details.phtml:49
+#: ../../../module/Application/config/module.config.php:161
+#: ../../../module/Application/config/module.config.php:166
+msgid "Pool"
+msgstr "池"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
+#: ../../../module/Storage/view/storage/storage/details.phtml:126
+msgid "Drive"
+msgstr "驱动"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "提交"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:27
+#: ../../../module/Application/config/module.config.php:157
+msgid "Storages"
+msgstr "存储"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:33
+#: ../../../module/Storage/view/storage/storage/details.phtml:32
+#: ../../../module/Storage/view/storage/storage/status.phtml:9
+#: ../../../module/Media/view/media/media/index.phtml:33
+#: ../../../module/Media/view/media/media/details.phtml:33
+#: ../../../module/Pool/view/pool/pool/index.phtml:33
+#: ../../../module/Pool/view/pool/pool/details.phtml:33
+msgid "Devices"
+msgstr "设备"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:34
+#: ../../../module/Storage/view/storage/storage/details.phtml:33
+#: ../../../module/Storage/view/storage/storage/status.phtml:10
+#: ../../../module/Media/view/media/media/index.phtml:34
+#: ../../../module/Media/view/media/media/details.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:27
+#: ../../../module/Pool/view/pool/pool/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:48
+#: ../../../module/Pool/view/pool/pool/details.phtml:34
+msgid "Pools"
+msgstr "池"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:35
+#: ../../../module/Storage/view/storage/storage/details.phtml:34
+#: ../../../module/Storage/view/storage/storage/status.phtml:11
+#: ../../../module/Media/view/media/media/index.phtml:27
+#: ../../../module/Media/view/media/media/index.phtml:35
+#: ../../../module/Media/view/media/media/index.phtml:48
+#: ../../../module/Media/view/media/media/details.phtml:35
+#: ../../../module/Pool/view/pool/pool/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/index.phtml:58
+#: ../../../module/Pool/view/pool/pool/details.phtml:35
+#: ../../../module/Pool/view/pool/pool/details.phtml:59
+#: ../../../module/Pool/view/pool/pool/details.phtml:80
+#: ../../../module/Application/config/module.config.php:171
+#: ../../../module/Application/config/module.config.php:176
+msgid "Volumes"
+msgstr "卷"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:48
+msgid "Storage Devices"
+msgstr "存储设备"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:56
+#: ../../../module/Media/view/media/media/index.phtml:57
+#: ../../../module/Media/view/media/media/details.phtml:57
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:76
+#: ../../../module/Restore/view/restore/restore/index.phtml:243
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:46
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:46
+#: ../../../module/Pool/view/pool/pool/index.phtml:56
+#: ../../../module/Pool/view/pool/pool/details.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Client/view/client/client/index.phtml:53
+#: ../../../module/Client/view/client/client/details.phtml:50
+msgid "Name"
+msgstr "名称"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:57
+msgid "Autochanger"
+msgstr "自动转换"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:58
+#: ../../../module/Storage/view/storage/storage/details.phtml:111
+#: ../../../module/Storage/view/storage/storage/details.phtml:130
+#: ../../../module/Storage/view/storage/storage/details.phtml:159
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:78
+#: ../../../module/Job/view/job/job/index.phtml:33
+#: ../../../module/Job/view/job/job/index.phtml:79
+#: ../../../module/Job/view/job/job/actions.phtml:34
+#: ../../../module/Job/view/job/job/actions.phtml:78
+#: ../../../module/Job/view/job/job/details.phtml:34
+#: ../../../module/Job/view/job/job/details.phtml:67
+#: ../../../module/Client/view/client/client/index.phtml:57
+#: ../../../module/Client/view/client/client/details.phtml:55
+#: ../../../module/Client/view/client/client/details.phtml:82
+msgid "Actions"
+msgstr "动作"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:112
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:324
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
+msgid "No"
+msgstr "否"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:114
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:323
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
+msgid "Yes"
+msgstr "是"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:123
+#: ../../../module/Storage/view/storage/storage/index.phtml:126
+#: ../../../module/Storage/view/storage/storage/details.phtml:154
+#: ../../../module/Media/view/media/media/index.phtml:61
+#: ../../../module/Media/view/media/media/details.phtml:61
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
+#: ../../../module/Director/view/director/director/index.phtml:33
+#: ../../../module/Director/view/director/director/messages.phtml:32
+#: ../../../module/Director/view/director/director/console.phtml:32
+#: ../../../module/Job/src/Job/Form/JobForm.php:73
+#: ../../../module/Job/view/job/job/index.phtml:78
+#: ../../../module/Job/view/job/job/actions.phtml:77
+#: ../../../module/Job/view/job/job/details.phtml:66
+#: ../../../module/Pool/view/pool/pool/details.phtml:93
+#: ../../../module/Client/view/client/client/index.phtml:56
+#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Client/view/client/client/details.phtml:151
+msgid "Status"
+msgstr "状态"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:123
+msgid "Manage autochanger"
+msgstr "管理自动转换"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:26
+msgid "Storage details"
+msgstr "存储详情"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:51
+msgid "Director message"
+msgstr "主控端信息"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:57
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:55
+#: ../../../module/Job/view/job/job/index.phtml:110
+#: ../../../module/Job/view/job/job/index.phtml:131
+#: ../../../module/Job/view/job/job/actions.phtml:55
+#: ../../../module/Client/view/client/client/index.phtml:89
+msgid "Close"
+msgstr "关闭"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:72
+#: ../../../module/Storage/view/storage/storage/details.phtml:349
+msgid "Label barcodes"
+msgstr "标签条形码"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:82
+msgid "Assign media to this pool."
+msgstr "将媒体介质分配到此池."
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:84
+msgid "Use this drive for labeling."
+msgstr "使用此驱动器进行标记."
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:88
+#: ../../../module/Job/view/job/job/index.phtml:322
+#: ../../../module/Job/view/job/job/index.phtml:328
+#: ../../../module/Job/view/job/job/details.phtml:246
+msgid "Cancel"
+msgstr "取消"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:103
+msgid "Import/Export Slots"
+msgstr "导入/导出插槽"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:108
+#: ../../../module/Storage/view/storage/storage/details.phtml:149
+#: ../../../module/Media/view/media/media/details.phtml:169
+msgid "Slot"
+msgstr "插槽"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:109
+#: ../../../module/Storage/view/storage/storage/details.phtml:128
+#: ../../../module/Storage/view/storage/storage/details.phtml:150
+msgid "Volume"
+msgstr "卷"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:121
+msgid "Drives"
+msgstr "设备"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:127
+msgid "Loaded"
+msgstr "加载"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:144
+msgid "Slots"
+msgstr "插槽"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:151
+#: ../../../module/Media/view/media/media/details.phtml:94
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Job/view/job/job/index.phtml:76
+#: ../../../module/Job/view/job/job/details.phtml:64
+#: ../../../module/Client/view/client/client/details.phtml:81
+msgid "Bytes"
+msgstr "字节"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:152
+#: ../../../module/Media/view/media/media/index.phtml:60
+#: ../../../module/Media/view/media/media/details.phtml:60
+#: ../../../module/Media/view/media/media/details.phtml:153
+#: ../../../module/Pool/view/pool/pool/details.phtml:92
+#: ../../../module/Pool/view/pool/pool/details.phtml:142
+msgid "Last written"
+msgstr "最后写入"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:153
+msgid "Expiration"
+msgstr "到期"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:155
+msgid "Media Type"
+msgstr "媒体介质类型"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:300
+msgid "not in catalog"
+msgstr "不在目录中"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:336
+msgid "Export"
+msgstr "导出"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:343
+msgid "Update slots"
+msgstr "更新插槽"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:395
+msgid "Release"
+msgstr "释放"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:448
+msgid "Import"
+msgstr "导入"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:455
+msgid "Import all"
+msgstr "全部导入"
+
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "存储状态"
+
+#: ../../../module/Media/view/media/media/index.phtml:58
+#: ../../../module/Media/view/media/media/details.phtml:58
+#: ../../../module/Pool/view/pool/pool/details.phtml:90
+msgid "Storage"
+msgstr "存储"
+
+#: ../../../module/Media/view/media/media/index.phtml:59
+#: ../../../module/Media/view/media/media/details.phtml:59
+#: ../../../module/Media/view/media/media/details.phtml:91
+#: ../../../module/Job/view/job/job/index.phtml:73
+#: ../../../module/Job/view/job/job/details.phtml:61
+#: ../../../module/Pool/view/pool/pool/index.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:58
+#: ../../../module/Pool/view/pool/pool/details.phtml:91
+msgid "Type"
+msgstr "类型"
+
+#: ../../../module/Media/view/media/media/index.phtml:62
+#: ../../../module/Media/view/media/media/details.phtml:62
+#: ../../../module/Pool/view/pool/pool/details.phtml:94
+msgid "Retention/Expiration"
+msgstr "保留/到期"
+
+#: ../../../module/Media/view/media/media/index.phtml:63
+#: ../../../module/Media/view/media/media/details.phtml:63
+#: ../../../module/Pool/view/pool/pool/details.phtml:95
+msgid "Maximum bytes"
+msgstr "最大字节数"
+
+#: ../../../module/Media/view/media/media/index.phtml:64
+#: ../../../module/Media/view/media/media/details.phtml:64
+#: ../../../module/Pool/view/pool/pool/details.phtml:96
+msgid "Current bytes"
+msgstr "当前字节"
+
+#: ../../../module/Media/view/media/media/details.phtml:27
+msgid "Volume details"
+msgstr "卷详细信息"
+
+#: ../../../module/Media/view/media/media/details.phtml:80
+msgid "Jobs on volume"
+msgstr "卷中的作业"
+
+#: ../../../module/Media/view/media/media/details.phtml:88
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../../../module/Job/view/job/job/index.phtml:70
+#: ../../../module/Job/view/job/job/details.phtml:58
+#: ../../../module/Client/view/client/client/details.phtml:76
+msgid "Job ID"
+msgstr "作业ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:89
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:38
+#: ../../../module/Job/view/job/job/index.phtml:71
+#: ../../../module/Job/view/job/job/actions.phtml:76
+#: ../../../module/Job/view/job/job/details.phtml:59
+msgid "Job name"
+msgstr "作业名称"
+
+#: ../../../module/Media/view/media/media/details.phtml:90
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../../../module/Job/view/job/job/index.phtml:72
+#: ../../../module/Job/view/job/job/details.phtml:60
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:130
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:147
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:165
+#: ../../../module/Client/view/client/client/details.phtml:43
+msgid "Client"
+msgstr "客户"
+
+#: ../../../module/Media/view/media/media/details.phtml:92
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../../../module/Job/view/job/job/index.phtml:74
+#: ../../../module/Job/view/job/job/details.phtml:62
+#: ../../../module/Client/view/client/client/details.phtml:79
+msgid "Level"
+msgstr "级别"
+
+#: ../../../module/Media/view/media/media/details.phtml:93
+#: ../../../module/Job/view/job/job/index.phtml:75
+#: ../../../module/Job/view/job/job/details.phtml:63
+#: ../../../module/Client/view/client/client/details.phtml:80
+msgid "Files"
+msgstr "文件"
+
+#: ../../../module/Media/view/media/media/details.phtml:95
+msgid "Starttime"
+msgstr "开始时间"
+
+#: ../../../module/Media/view/media/media/details.phtml:96
+msgid "Endtime"
+msgstr "结束时间"
+
+#: ../../../module/Media/view/media/media/details.phtml:145
+#: ../../../module/Pool/view/pool/pool/details.phtml:134
+msgid "Label date"
+msgstr "标签日期"
+
+#: ../../../module/Media/view/media/media/details.phtml:149
+#: ../../../module/Pool/view/pool/pool/details.phtml:138
+msgid "First written"
+msgstr "第一次写入"
+
+#: ../../../module/Media/view/media/media/details.phtml:157
+#: ../../../module/Pool/view/pool/pool/details.phtml:146
+msgid "Volume jobs"
+msgstr "卷作业"
+
+#: ../../../module/Media/view/media/media/details.phtml:161
+#: ../../../module/Pool/view/pool/pool/details.phtml:150
+msgid "Recycle"
+msgstr "回收"
+
+#: ../../../module/Media/view/media/media/details.phtml:165
+msgid "Volume writes"
+msgstr "卷写入"
+
+#: ../../../module/Media/view/media/media/details.phtml:173
+msgid "Media Id"
+msgstr "媒体介质ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:177
+msgid "Volume Blocks"
+msgstr "卷块"
+
+#: ../../../module/Media/view/media/media/details.phtml:181
+msgid "Volume use duration"
+msgstr "卷使用持续时间"
+
+#: ../../../module/Media/view/media/media/details.phtml:185
+msgid "Volume Pool Id"
+msgstr "卷池ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:189
+msgid "In changer"
+msgstr "在更改中"
+
+#: ../../../module/Media/view/media/media/details.phtml:193
+msgid "Volume Files"
+msgstr "卷文件"
+
+#: ../../../module/Media/view/media/media/details.phtml:197
+msgid "Max. volume jobs"
+msgstr "最大卷作业"
+
+#: ../../../module/Media/view/media/media/details.phtml:201
+msgid "Volume mounts"
+msgstr "卷挂载"
+
+#: ../../../module/Media/view/media/media/details.phtml:205
+msgid "Volume capacity bytes"
+msgstr "卷容量字节"
+
+#: ../../../module/Media/view/media/media/details.phtml:209
+msgid "Volume errors"
+msgstr "卷错误"
+
+#: ../../../module/Media/view/media/media/details.phtml:213
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:136
+#: ../../../module/Job/view/job/job/actions.phtml:135
+#: ../../../module/Client/view/client/client/index.phtml:223
+msgid "Enabled"
+msgstr "使能"
+
+#: ../../../module/Media/view/media/media/details.phtml:217
+msgid "Max. volume files"
+msgstr "最大卷文件"
+
+#: ../../../module/Media/view/media/media/details.phtml:221
+msgid "Endfile"
+msgstr "结束文件"
+
+#: ../../../module/Media/view/media/media/details.phtml:225
+msgid "Endblock"
+msgstr "结束块"
+
+#: ../../../module/Media/view/media/media/details.phtml:229
+msgid "Labeltype"
+msgstr "标签类型"
+
+#: ../../../module/Media/view/media/media/details.phtml:233
+msgid "Device Id"
+msgstr "设备ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:237
+msgid "Location Id"
+msgstr "位置ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:241
+msgid "Recycle count"
+msgstr "回收计数"
+
+#: ../../../module/Media/view/media/media/details.phtml:245
+msgid "Initial write"
+msgstr "初始写入"
+
+#: ../../../module/Media/view/media/media/details.phtml:249
+msgid "Scratch Pool Id"
+msgstr "划痕池标识ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:253
+msgid "Recycle pool Id"
+msgstr "回收池ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:257
+msgid "Comment"
+msgstr "评论"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:32
+msgid "Jobs started during the past 24 hours"
+msgstr "工作开始在过去24小时"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:41
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:66
+msgid "Running"
+msgstr "运行"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:45
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:67
+msgid "Waiting"
+msgstr "等待"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:49
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:68
+msgid "Terminated successfully"
+msgstr "已成功终止"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:53
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:69
+msgid "Terminated unsuccessfully"
+msgstr "终止失败"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:32
+msgid "Most recent job status per job name"
+msgstr "每个作业名称的最近工作状态"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../../../module/Job/view/job/job/index.phtml:171
+#: ../../../module/Job/view/job/job/details.phtml:145
+msgid "Start"
+msgstr "开始"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../../../module/Job/view/job/job/index.phtml:175
+#: ../../../module/Job/view/job/job/details.phtml:149
+msgid "End"
+msgstr "结束"
+
+#: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "当前设备信息"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:27
+#: ../../../module/Application/config/module.config.php:125
+msgid "Dashboard"
+msgstr "主页"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../../../module/Application/config/module.config.php:153
+msgid "Schedules"
+msgstr "时间表"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../../../module/Job/view/job/job/index.phtml:32
+#: ../../../module/Job/view/job/job/actions.phtml:33
+#: ../../../module/Job/view/job/job/details.phtml:33
+#: ../../../module/Client/view/client/client/index.phtml:32
+#: ../../../module/Client/view/client/client/details.phtml:32
+#: ../../../module/Client/view/client/client/status.phtml:9
+msgid "Show"
+msgstr "显示"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../../../module/Application/config/module.config.php:133
+msgid "Overview"
+msgstr "概述"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+msgid "Scheduler status"
+msgstr "调度程序状态"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:139
+#: ../../../module/Job/view/job/job/actions.phtml:138
+#: ../../../module/Client/view/client/client/index.phtml:226
+msgid "Disabled"
+msgstr "禁用"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:147
+#: ../../../module/Job/view/job/job/actions.phtml:146
+#: ../../../module/Client/view/client/client/index.phtml:238
+msgid "Disable"
+msgstr "禁用"
+
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:150
+#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Client/view/client/client/index.phtml:241
+msgid "Enable"
+msgstr "使能"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "时间调度详细信息"
+
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "时间调度状态"
+
+#: ../../../module/Director/view/director/director/index.phtml:27
+#: ../../../module/Director/view/director/director/messages.phtml:26
+#: ../../../module/Application/config/module.config.php:183
+msgid "Director"
+msgstr "主控端"
+
+#: ../../../module/Director/view/director/director/index.phtml:34
+#: ../../../module/Director/view/director/director/messages.phtml:33
+#: ../../../module/Director/view/director/director/console.phtml:33
+#: ../../../module/Job/view/job/job/details.phtml:85
+msgid "Messages"
+msgstr "信息"
+
+#: ../../../module/Director/view/director/director/index.phtml:35
+#: ../../../module/Director/view/director/director/messages.phtml:34
+#: ../../../module/Director/view/director/director/console.phtml:34
+msgid "Console"
+msgstr "控制台"
+
+#: ../../../module/Director/view/director/director/index.phtml:48
+msgid "Director Status"
+msgstr "主控端状态"
+
+#: ../../../module/Director/view/director/director/messages.phtml:44
+msgid "Refresh"
+msgstr "刷新"
+
+#: ../../../module/Director/view/director/director/messages.phtml:51
+msgid "Director messages"
+msgstr "主控端信息"
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole（批量模式）,请小心处理."
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "所有命令必须是一个线程,对话框不工作."
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "Type help for a list of commands."
+msgstr "键入命令列表的帮助."
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:49
+msgid "Time period"
+msgstr "时间段"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:51
+msgid "last 24 hours"
+msgstr "最近24小时"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:52
+msgid "last 3 days"
+msgstr "最后3天"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:53
+msgid "last week"
+msgstr "上星期"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:54
+msgid "last month"
+msgstr "上月"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:55
+msgid "last year"
+msgstr "去年"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:56
+msgid "unlimited"
+msgstr "无限"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:62
+msgid "period"
+msgstr "周期"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:75
+msgid "all"
+msgstr "所有"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:76
+msgid "running"
+msgstr "运行"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:77
+msgid "waiting"
+msgstr "等待"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:78
+msgid "terminated unsuccessfully"
+msgstr "终止失败"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:79
+msgid "terminated successfully"
+msgstr "已成功终止"
+
+#: ../../../module/Job/view/job/job/index.phtml:61
+msgid "Job list"
+msgstr "作业列表"
+
+#: ../../../module/Job/view/job/job/index.phtml:77
+#: ../../../module/Job/view/job/job/details.phtml:65
+msgid "Errors"
+msgstr "错误"
+
+#: ../../../module/Job/view/job/job/index.phtml:102
+msgid "Failed to retrieve data from Bareos director"
+msgstr "无法从Bareos 主控端检索数据"
+
+#: ../../../module/Job/view/job/job/index.phtml:105
+msgid ""
+"Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "请尝试减少要显示的数据量，例如 减少时间。"
+
+#: ../../../module/Job/view/job/job/index.phtml:106
+msgid "Error message received from director:"
+msgstr "从主控端收到的错误消息："
+
+#: ../../../module/Job/view/job/job/index.phtml:107
+msgid "Failed to send result as json. Maybe result message to long?"
+msgstr "无法将结果作为json发送。 可能结果消息长？"
+
+#: ../../../module/Job/view/job/job/index.phtml:159
+#: ../../../module/Job/view/job/job/details.phtml:133
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:236
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:251
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:37
+#: ../../../module/Client/view/client/client/details.phtml:78
+msgid "Fileset"
+msgstr "文件集"
+
+#: ../../../module/Job/view/job/job/index.phtml:167
+#: ../../../module/Job/view/job/job/details.phtml:141
+msgid "Scheduled"
+msgstr "计划"
+
+#: ../../../module/Job/view/job/job/index.phtml:291
+#: ../../../module/Job/view/job/job/index.phtml:301
+#: ../../../module/Job/view/job/job/details.phtml:231
+msgid "Rerun"
+msgstr "重新运行"
+
+#: ../../../module/Job/view/job/job/index.phtml:291
+#: ../../../module/Job/view/job/job/index.phtml:293
+#: ../../../module/Client/view/client/client/details.phtml:208
+msgid "Show Files"
+msgstr "显示文件"
+
+#: ../../../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "作业操作"
+
+#: ../../../module/Job/view/job/job/actions.phtml:146
+#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Application/config/module.config.php:138
+msgid "Run"
+msgstr "运行"
+
+#: ../../../module/Job/view/job/job/details.phtml:49
+msgid "Job"
+msgstr "作业"
+
+#: ../../../module/Job/view/job/job/details.phtml:93
+#: ../../../module/Client/view/client/client/details.phtml:77
+msgid "Timestamp"
+msgstr "时间戳"
+
+#: ../../../module/Job/view/job/job/details.phtml:94
+#: ../../../module/Application/view/error/index.phtml:18
+#: ../../../module/Application/view/error/index.phtml:42
+#: ../../../module/Application/view/error/404.phtml:62
+#: ../../../module/Application/view/error/404.phtml:86
+msgid "Message"
+msgstr "信息"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:94
+msgid "Backup jobs"
+msgstr "备份作业"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:111
+msgid "Backups"
+msgstr "备份"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:201
+msgid "Restore to client"
+msgstr "还原到客户端"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:218
+msgid "Restore to (another) client"
+msgstr "还原到(另一个)客户端"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:237
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:252
+msgid "Please choose a fileset"
+msgstr "请选择一个文件集"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:267
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:285
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:302
+msgid "Restore job"
+msgstr "还原作业"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:321
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:340
+msgid "Merge all client filesets"
+msgstr "合并所有客户端文件集"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:361
+msgid "Merge all related jobs to last full backup of selected backup job"
+msgstr "合并所有相关作业以完成所选备份作业的完整备份"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:380
+msgid "Merge jobs"
+msgstr "合并作业"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:400
+msgid "Replace files on client"
+msgstr "替换客户端上的文件"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:402
+msgid "always"
+msgstr "总是"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
+msgid "never"
+msgstr "从不"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:404
+msgid "if file being restored is older than existing file"
+msgstr "如果要还原的文件比现有文件旧"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:405
+msgid "if file being restored is newer than existing file"
+msgstr "如果要还原的文件比现有文件更新"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:421
+msgid "Restore location on client"
+msgstr "要恢复到客户端的位置"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:428
+msgid "e.g. / or /tmp/bareos-restores/"
+msgstr "例如. / 或者/tmp/bareos-restores/"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:449
+msgid "Related jobs for a most recent full restore"
+msgstr "最近完全还原的相关作业"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:486
+#: ../../../module/Restore/view/restore/restore/index.phtml:26
+#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Client/view/client/client/details.phtml:151
+#: ../../../module/Application/config/module.config.php:145
+msgid "Restore"
+msgstr "还原"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:94
+msgid "File selection"
+msgstr "文件选择"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:244
+msgid "Size"
+msgstr "大小"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:245
+msgid "Date"
+msgstr "日期"
+
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:37
+msgid "Filesets"
+msgstr "文件集"
+
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
+msgid "Id"
+msgstr "ID号"
+
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:47
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
+msgid "Creation time"
+msgstr "创建时间"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "文件详情"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "MD5 checksum"
+msgstr "MD5校验和"
+
+#: ../../../module/Pool/view/pool/pool/index.phtml:59
+#: ../../../module/Pool/view/pool/pool/details.phtml:60
+msgid "Maximum volumes"
+msgstr "最大卷"
+
+#: ../../../module/Pool/view/pool/pool/index.phtml:60
+#: ../../../module/Pool/view/pool/pool/details.phtml:61
+msgid "Volume retention"
+msgstr "卷保留"
+
+#: ../../../module/Pool/view/pool/pool/index.phtml:61
+#: ../../../module/Pool/view/pool/pool/details.phtml:62
+msgid "Maximum volume jobs"
+msgstr "最大卷作业"
+
+#: ../../../module/Pool/view/pool/pool/index.phtml:62
+#: ../../../module/Pool/view/pool/pool/details.phtml:63
+msgid "Maximum volume bytes"
+msgstr "卷容量字节"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:27
+msgid "Pool details"
+msgstr "池详情"
+
+#: ../../../module/Client/view/client/client/index.phtml:26
+#: ../../../module/Client/view/client/client/index.phtml:45
+#: ../../../module/Application/config/module.config.php:149
+msgid "Clients"
+msgstr "客户端"
+
+#: ../../../module/Client/view/client/client/index.phtml:54
+#: ../../../module/Client/view/client/client/details.phtml:51
+msgid "Version"
+msgstr "版本"
+
+#: ../../../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "客户端详情"
+
+#: ../../../module/Client/view/client/client/details.phtml:52
+msgid "Autoprune"
+msgstr "自动修剪"
+
+#: ../../../module/Client/view/client/client/details.phtml:53
+msgid "Fileretention"
+msgstr "文件保留"
+
+#: ../../../module/Client/view/client/client/details.phtml:54
+msgid "Jobretention"
+msgstr "作业保留"
+
+#: ../../../module/Client/view/client/client/details.phtml:69
+msgid "Last backups"
+msgstr "上次备份"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "客户端状态"
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid ""
+"Sorry, it seems you are not authorized to run this module. If you think this "
+"is an error, please contact your local administrator."
+msgstr ""
+"很抱歉，您似乎无权运行此模块。 如果您认为这是一个错误，请与当地管理员联系。"
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid ""
+"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
+"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
+"documentation</a> for any additional information on how to configure the "
+"Command ACL directive of your Console/Profile resources. Following is a list "
+"of required commands which need to be in your Command ACL to run this module "
+"properly:"
+msgstr ""
+"请读 <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
+"reference.html#sec:webui-console\" target=\"_blank\">Bareos文档</a>有关如何配"
+"置控制台/配置文件资源的Command ACL指令的任何其他信息。 以下是需要在您的命令"
+"ACL中正确运行此模块的必需命令的列表："
+
+#: ../../../module/Application/config/module.config.php:129
+msgid "Jobs"
+msgstr "作业"
+
+#: ../../../module/Application/view/layout/layout.phtml:94
+msgid "Help"
+msgstr "帮助"
+
+#: ../../../module/Application/view/layout/layout.phtml:96
+msgid "Logout"
+msgstr "登出"
+
+#: ../../../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "发生错误"
+
+#: ../../../module/Application/view/error/index.phtml:11
+#: ../../../module/Application/view/error/404.phtml:55
+msgid "Additional information"
+msgstr "附加信息"
+
+#: ../../../module/Application/view/error/index.phtml:14
+#: ../../../module/Application/view/error/index.phtml:38
+#: ../../../module/Application/view/error/404.phtml:58
+#: ../../../module/Application/view/error/404.phtml:82
+msgid "File"
+msgstr "文件"
+
+#: ../../../module/Application/view/error/index.phtml:22
+#: ../../../module/Application/view/error/index.phtml:46
+#: ../../../module/Application/view/error/404.phtml:66
+#: ../../../module/Application/view/error/404.phtml:90
+msgid "Stack trace"
+msgstr "堆栈跟踪"
+
+#: ../../../module/Application/view/error/index.phtml:32
+#: ../../../module/Application/view/error/404.phtml:76
+msgid "Previous exceptions"
+msgstr "上一个例外"
+
+#: ../../../module/Application/view/error/index.phtml:61
+#: ../../../module/Application/view/error/404.phtml:105
+msgid "No Exception available"
+msgstr "无异常"
+
+#: ../../../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "一个404错误发生"
+
+#: ../../../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "请求的控制器无法分派请求。"
+
+#: ../../../module/Application/view/error/404.phtml:15
+msgid ""
+"The requested controller could not be mapped to an existing controller class."
+msgstr "请求的控制器无法映射到现有的控制器类。"
+
+#: ../../../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "请求的控制器不可分派。"
+
+#: ../../../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "请求的网址无法通过路由进行匹配。"
+
+#: ../../../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "我们目前无法确定为什么生成404错误。"
+
+#: ../../../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "控制器"
+
+#: ../../../module/Application/view/error/404.phtml:43
+#, php-format
+msgid "resolves to %s"
+msgstr "解析为%s"
