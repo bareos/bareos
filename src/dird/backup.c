@@ -368,7 +368,7 @@ bool do_native_backup(JCR *jcr)
 
    if (check_softquotas(jcr)) {
       Dmsg0(10, "Quota exceeded\n");
-      Jmsg(jcr, M_FATAL, 0, _("Soft Quota Exceeded / Grace Time expired. Job terminated.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Soft Quota exceeded / Grace Time expired. Job terminated.\n"));
       return false;
    }
 
@@ -599,6 +599,12 @@ bool do_native_backup(JCR *jcr)
    if (jcr->HasBase && !db_commit_base_file_attributes_record(jcr, jcr->db))  {
       Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
    }
+
+   /*
+    * Check softquotas after job did run.
+    * If quota is exceeded now, set the GraceTime.
+    */
+   check_softquotas(jcr);
 
    if (status == JS_Terminated) {
       native_backup_cleanup(jcr, status);
@@ -1016,7 +1022,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
          bstrftimes(gdt, sizeof(gdt), jcr->res.client->GraceTime +
                                       jcr->res.client->SoftQuotaGracePeriod);
       } else {
-         bstrncpy(gdt, "Soft Quota was never exceeded", sizeof(gdt));
+         bstrncpy(gdt, "Soft Quota not exceeded", sizeof(gdt));
       }
       Mmsg(quota_info, _(
            "  Quota Used:             %s (%sB)\n"
