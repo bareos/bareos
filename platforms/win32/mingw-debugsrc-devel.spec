@@ -1,7 +1,7 @@
 #
 # spec file for package mingw-debugsrc-devel
 #
-# Copyright (c) 2014-2015 Bareos GmbH & Co. KG
+# Copyright (c) 2014-2016 Bareos GmbH & Co. KG
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed
@@ -17,7 +17,7 @@
 #!BuildIgnore: post-build-checks
 
 Name:           mingw-debugsrc-devel
-Version:        16.4.1
+Version:        0.0.0
 Release:        0
 Summary:        bareos
 License:        LGPLv2+

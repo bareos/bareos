@@ -23,7 +23,7 @@
 %define bareos_configs bareos-dir.d/ bareos-fd.d/ bareos-sd.d/ tray-monitor.d/ bconsole.conf bat.conf
 
 Name:           %{mingw}-winbareos
-Version:        16.4.1
+Version:        0.0.0
 Release:        0
 Summary:        Bareos build for Windows
 License:        LGPLv2+
