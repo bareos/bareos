@@ -1,13 +1,16 @@
 #!/bin/sh
 #
-# Run a simple backup with encryption and a real sparse file.
+# Run a simple backup of the Bareos build directory using the Sparse option
+#   then restore it.
 #
-TestName="sparse-encrypt-test"
+TestName="gigaslam-sparse-test"
 JobName=SparseTest
+#JobName=SparseCompressedTest
+
 . scripts/functions
 
 scripts/cleanup
-scripts/copy-crypto-confs
+scripts/copy-test-confs
 
 # Directory to backup.
 # This example uses a subdirectory of the bareos source/build directory,
@@ -18,6 +21,7 @@ BackupDirectory="${cwd}/build/src/tests/"
 echo "${BackupDirectory}" >${tmp}/file-list
 
 mkdir -p "${BackupDirectory}"
+
 SPARSEFILE="${BackupDirectory}/gigaslam.gif"
 
 # create a sparse file
@@ -40,7 +44,6 @@ cat >${cwd}/tmp/bconcmds <<END_OF_DATA
 messages
 @$out ${cwd}/tmp/log1.out
 label storage=File volume=TestVolume001
-setdebug level=10 fd
 run job=$JobName yes
 wait
 messages
@@ -49,9 +52,8 @@ list volumes
 @# now do a restore
 @#
 @$out ${cwd}/tmp/log2.out
-@# setdebug level=0 fd
-restore where=${cwd}/tmp/bareos-restores storage=File
-5
+restore where=${cwd}/tmp/bareos-restores select storage=File
+unmark *
 mark *
 done
 yes

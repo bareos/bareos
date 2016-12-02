@@ -160,6 +160,7 @@ set_error()
 {
     estat=9
     echo "ERROR: $@" >> $tmp/err.log
+    echo "ERROR: $@"
 }
 
 check_files_written()

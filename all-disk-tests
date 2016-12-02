@@ -45,11 +45,8 @@ rm -f dumps/*
 ./run tests/fileregexp-test
 ./run tests/backup-to-null
 ./run tests/regexwhere-test
-# The following two can uses *lots* of disk space
-#   so they are normally turned off, but if you have
-#   at least two GB free, you can run them
-#./run tests/sparse-encrypt-test
-#./run tests/gigaslam-sparse-test
+./run tests/sparse-file-test
+./run tests/sparse-encrypt-test
 ./run tests/differential-test
 ./run tests/four-concurrent-jobs-test
 ./run tests/four-jobs-test
