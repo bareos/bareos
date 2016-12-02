@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -174,6 +175,65 @@ void unbash_spaces(POOL_MEM &pm)
         *str = ' ';
      str++;
    }
+}
+
+
+/*
+ * Parameter:
+ *   resultbuffer: one line string
+ *   mutlilinestring: multiline string (separated by "\n")
+ *   separator: separator string
+ *
+ * multilinestring should be indented according to resultbuffer.
+ *
+ * return:
+ *   resultbuffer: multilinestring will be added to resultbuffer.
+ *
+ * Example:
+ *   resultbuffer="initial string"
+ *   mutlilinestring="line1\nline2\nline3"
+ *   separator="->"
+ * Result:
+ *   initial string->line1
+ *                 ->line2
+ *                 ->line3
+ */
+const char *indent_multiline_string(POOL_MEM &resultbuffer,
+                                    const char *multilinestring,
+                                    const char *separator)
+{
+   POOL_MEM multiline(multilinestring);
+   POOL_MEM indent(PM_MESSAGE);
+   char *p1 = multiline.c_str();
+   char *p2 = NULL;
+   bool line1 = true;
+   size_t len;
+
+   /* create indentation string */
+   for (len = resultbuffer.strlen(); len > 0; len--) {
+      indent.strcat(" ");
+   }
+   indent.strcat(separator);
+
+   resultbuffer.strcat(separator);
+
+   while ((p2 = strchr(p1, '\n')) != NULL) {
+      *p2 = 0;
+      if (!line1) {
+         resultbuffer.strcat(indent);
+      }
+      resultbuffer.strcat(p1);
+      resultbuffer.strcat("\n");
+      p1 = p2+1;
+      line1 = false;
+   }
+
+   if (!line1) {
+      resultbuffer.strcat(indent);
+   }
+   resultbuffer.strcat(p1);
+
+   return resultbuffer.c_str();
 }
 
 char *encode_time(utime_t utime, char *buf)

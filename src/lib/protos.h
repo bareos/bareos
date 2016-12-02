@@ -35,6 +35,7 @@ ATTR *new_attr(JCR *jcr);
 void free_attr(ATTR *attr);
 int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ATTR *attr);
 void build_attr_output_fnames(JCR *jcr, ATTR *attr);
+const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr);
 void print_ls_output(JCR *jcr, ATTR *attr);
 
 /* attribs.c */
@@ -409,6 +410,7 @@ void bash_spaces(char *str);
 void bash_spaces(POOL_MEM &pm);
 void unbash_spaces(char *str);
 void unbash_spaces(POOL_MEM &pm);
+const char* indent_multiline_string(POOL_MEM &resultbuffer, const char *multilinestring, const char *separator);
 char *encode_time(utime_t time, char *buf);
 bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds);
 char *encode_mode(mode_t mode, char *buf);

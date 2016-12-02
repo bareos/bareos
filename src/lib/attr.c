@@ -241,23 +241,17 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
 extern char *getuser(uid_t uid, char *name, int len);
 extern char *getgroup(gid_t gid, char *name, int len);
 
-/**
- * Print an ls style message, also send M_RESTORED
- */
-void print_ls_output(JCR *jcr, ATTR *attr)
+static const char *attr_stat_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
 {
    char buf[5000];
    char ec1[30];
    char en1[30], en2[30];
-   char *p, *f;
+   char *p;
    guid_list *guid;
 
    if (attr->type == FT_DELETED) { /* TODO: change this to get last seen values */
-      bsnprintf(buf, sizeof(buf),
-                "----------   - -        -                - ---------- --------  %s\n", attr->ofname);
-      Dmsg1(dbglvl, "%s", buf);
-      Jmsg(jcr, M_RESTORED, 1, "%s", buf);
-      return;
+      resultbuffer.strcat("----------   - -        -                - ---------- --------");
+      return resultbuffer.c_str();
    }
 
    if (!jcr->id_list) {
@@ -271,23 +265,50 @@ void print_ls_output(JCR *jcr, ATTR *attr)
                 guid->gid_to_name(attr->statp.st_gid, en2, sizeof(en2)));
    p += sprintf(p, "%12.12s ", edit_int64(attr->statp.st_size, ec1));
    p = encode_time(attr->statp.st_ctime, p);
-   *p++ = ' ';
-   *p++ = ' ';
-   for (f=attr->ofname; *f && (p-buf) < (int)sizeof(buf)-10; ) {
-      *p++ = *f++;
-   }
-   if (attr->type == FT_LNK) {
-      *p++ = ' ';
-      *p++ = '-';
-      *p++ = '>';
-      *p++ = ' ';
-      /* Copy link name */
-      for (f=attr->olname; *f && (p-buf) < (int)sizeof(buf)-10; ) {
-         *p++ = *f++;
-      }
-   }
-   *p++ = '\n';
-   *p = 0;
-   Dmsg1(dbglvl, "%s", buf);
-   Jmsg(jcr, M_RESTORED, 1, "%s", buf);
+
+   resultbuffer.strcat(buf);
+   return resultbuffer.c_str();
 }
+
+static const char *attr_file_to_str(POOL_MEM &resultbuffer, ATTR *attr)
+{
+   resultbuffer.strcat(attr->ofname);
+   if (attr->type == FT_LNK) {
+      resultbuffer.strcat(" -> ");
+      resultbuffer.strcat(attr->olname);
+   }
+   return resultbuffer.c_str();
+}
+
+
+const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
+{
+   attr_stat_to_str(resultbuffer, jcr, attr);
+   resultbuffer.strcat("\n");
+   attr_file_to_str(resultbuffer, attr);
+
+   return resultbuffer.c_str();
+}
+
+
+static const char *attr_to_ls_output(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
+{
+   attr_stat_to_str(resultbuffer, jcr, attr);
+   resultbuffer.strcat("  ");
+   attr_file_to_str(resultbuffer, attr);
+   resultbuffer.strcat("\n");
+
+   return resultbuffer.c_str();
+}
+
+/**
+ * Print an ls style message, also send M_RESTORED
+ */
+void print_ls_output(JCR *jcr, ATTR *attr)
+{
+   POOL_MEM resultbuffer(PM_MESSAGE);
+   attr_to_ls_output(resultbuffer, jcr, attr);
+   Dmsg1(dbglvl, "%s", resultbuffer.c_str());
+   Jmsg(jcr, M_RESTORED, 1, "%s", resultbuffer.c_str());
+}
+

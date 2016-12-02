@@ -195,6 +195,7 @@ bool read_records(DCR *dcr,
 /* record.c */
 const char *FI_to_ascii(char *buf, int fi);
 const char *stream_to_ascii(char *buf, int stream, int fi);
+const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec);
 void dump_record(const char *tag, const DEV_RECORD *rec);
 bool write_record_to_block(DCR *dcr, DEV_RECORD *rec);
 bool can_write_record_to_block(DEV_BLOCK *block, const DEV_RECORD *rec);

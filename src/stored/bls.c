@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -76,7 +76,7 @@ PROG_COPYRIGHT
 "    (no j or k option) list saved files\n"
 "       -L              dump label\n"
 "       -p              proceed inspite of errors\n"
-"       -v              be verbose\n"
+"       -v              be verbose (can be specified multiple times)\n"
 "       -V              specify Volume names (separated by |)\n"
 "       -?              print this message\n\n"), 2000, VERSION, BDATE);
    exit(1);
@@ -374,7 +374,7 @@ static void do_ls(char *infname)
       return;
    }
    read_records(dcr, record_cb, mount_next_read_volume);
-   printf("%u files found.\n", num_files);
+   printf("%u files and directories found.\n", num_files);
 }
 
 /**
@@ -382,6 +382,8 @@ static void do_ls(char *infname)
  */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 {
+   POOL_MEM record_str(PM_MESSAGE);
+
    if (rec->FileIndex < 0) {
       get_session_record(dev, rec, &sessrec);
       return true;
@@ -407,27 +409,23 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       build_attr_output_fnames(jcr, attr);
 
       if (file_is_included(ff, attr->fname) && !file_is_excluded(ff, attr->fname)) {
-         if (verbose) {
-            Pmsg5(-1, _("FileIndex=%d VolSessionId=%d VolSessionTime=%d Stream=%d DataLen=%d\n"),
-                  rec->FileIndex, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
+         if (!verbose) {
+            print_ls_output(jcr, attr);
+         } else {
+            Pmsg1(-1, "%s\n",  record_to_str(record_str, jcr, rec));
          }
-         print_ls_output(jcr, attr);
          num_files++;
       }
       break;
-   case STREAM_PLUGIN_NAME: {
-      char data[100];
-      int len = MIN(rec->data_len+1, sizeof(data));
-      bstrncpy(data, rec->data, len);
-      Pmsg1(000, "Plugin data: %s\n", data);
-      break;
-   }
-   case STREAM_RESTORE_OBJECT:
-      Pmsg0(000, "Restore Object record\n");
-      break;
    default:
+      if (verbose) {
+         Pmsg1(-1, "%s\n",  record_to_str(record_str, jcr, rec));
+      }
       break;
    }
+
+   /* debug output of record */
+   dump_record("", rec);
 
    return true;
 }

@@ -71,6 +71,112 @@ const char *FI_to_ascii(char *buf, int fi)
    }
 }
 
+
+static const char *compression_to_str(POOL_MEM &resultbuffer,
+                                      const char *compression_algorithm,
+                                      uint32_t data_length,
+                                      uint16_t compression_level,
+                                      uint16_t compression_algorithm_version)
+{
+   POOL_MEM tmp(PM_MESSAGE);
+   tmp.bsprintf("%s, level=%u, version=%u, length=%u",
+                compression_algorithm, compression_level,
+                compression_algorithm_version, data_length);
+   resultbuffer.strcat(tmp);
+   return resultbuffer.c_str();
+}
+
+static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
+{
+   int32_t maskedStream = rec->maskedStream;
+   int32_t stream = rec->maskedStream;
+   POOLMEM *buf = rec->data;
+   POOL_MEM tmp(PM_MESSAGE);
+   unser_declare;
+
+   if (stream == STREAM_SPARSE_GZIP_DATA ||
+       stream == STREAM_SPARSE_COMPRESSED_DATA) {
+      uint64_t faddr = 0;
+
+      ser_begin(buf, sizeof(uint64_t));
+      unser_uint64(faddr);
+      ser_end(buf, sizeof(uint64_t));
+
+      buf += sizeof(uint64_t);
+
+      Dmsg1(400, "Sparse data stream found: start address=%llu\n", faddr);
+      tmp.bsprintf("Sparse: StartAddress=%llu. ", faddr);
+      resultbuffer.strcat(tmp);
+   }
+
+   Dmsg1(400, "Stream found in decompress_data(): %d\n", stream);
+   switch (stream) {
+   case STREAM_COMPRESSED_DATA:
+   case STREAM_SPARSE_COMPRESSED_DATA:
+   case STREAM_WIN32_COMPRESSED_DATA:
+   case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
+   case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA: {
+      uint32_t comp_magic, comp_len;
+      uint16_t comp_level, comp_version;
+
+      /*
+       * Read compress header
+       */
+      unser_begin(buf, sizeof(comp_stream_header));
+      unser_uint32(comp_magic);
+      unser_uint32(comp_len);
+      unser_uint16(comp_level);
+      unser_uint16(comp_version);
+      unser_end(buf, sizeof(comp_stream_header));
+
+      Dmsg4(400, "Compressed data stream found: magic=0x%x, len=%d, level=%d, ver=0x%x\n",
+            comp_magic, comp_len, comp_level, comp_version);
+
+      switch (comp_magic) {
+      case COMPRESS_GZIP:
+         compression_to_str(resultbuffer, "GZIP", comp_len, comp_level, comp_version);
+         break;
+      case COMPRESS_LZO1X:
+         compression_to_str(resultbuffer, "LZO1X", comp_len, comp_level, comp_version);
+         break;
+      case COMPRESS_FZFZ:
+         compression_to_str(resultbuffer, "FZFZ", comp_len, comp_level, comp_version);
+         break;
+      case COMPRESS_FZ4L:
+         compression_to_str(resultbuffer, "FZ4L", comp_len, comp_level, comp_version);
+         break;
+      case COMPRESS_FZ4H:
+         compression_to_str(resultbuffer, "FZ4H", comp_len, comp_level, comp_version);
+         break;
+      default:
+         tmp.bsprintf(_("Compression algorithm 0x%x found, but not supported!\n"), comp_magic);
+         resultbuffer.strcat(tmp);
+         break;
+      }
+      break;
+   }
+   case STREAM_GZIP_DATA:
+   case STREAM_SPARSE_GZIP_DATA:
+      /* deprecated */
+      compression_to_str(resultbuffer, "GZIP", 0, 0, 0);
+      break;
+   default:
+      break;
+   }
+
+   return resultbuffer.c_str();
+}
+
+static const char *record_md5_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
+{
+   char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
+
+   bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_MD5_SIZE, true);
+   resultbuffer.bsprintf("%s (base64)", digest);
+
+   return resultbuffer.c_str();
+}
+
 /**
  * Convert a Stream ID into a printable
  * ASCII string. Not reentrant.
@@ -257,6 +363,75 @@ static const char *findex_to_str(int32_t index, char *buf, size_t bufsz)
    FI_to_ascii(buf, index);
 
    return buf;
+}
+
+
+static const char *record_unix_attributes_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+{
+   ATTR *attr = new_attr(NULL);
+
+   if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
+      resultbuffer.bsprintf("ERROR");
+      return NULL;
+   }
+
+   attr->data_stream = decode_stat(attr->attr, &attr->statp, sizeof(attr->statp), &attr->LinkFI);
+   build_attr_output_fnames(jcr, attr);
+   attr_to_str(resultbuffer, jcr, attr);
+
+   free_attr(attr);
+
+   return resultbuffer.c_str();
+}
+
+
+static const char *get_record_short_info(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+{
+   switch (rec->maskedStream) {
+   case STREAM_UNIX_ATTRIBUTES:
+   case STREAM_UNIX_ATTRIBUTES_EX:
+      record_unix_attributes_to_str(resultbuffer, jcr, rec);
+      break;
+   case STREAM_MD5_DIGEST:
+      record_md5_to_str(resultbuffer, rec);
+      break;
+   case STREAM_PLUGIN_NAME: {
+      char data[100];
+      int len = MIN(rec->data_len+1, sizeof(data));
+      bstrncpy(data, rec->data, len);
+      resultbuffer.bsprintf("data: %s\n", data);
+      break;
+   }
+   case STREAM_RESTORE_OBJECT:
+      resultbuffer.bsprintf("Restore Object record");
+      break;
+   case STREAM_COMPRESSED_DATA:
+   case STREAM_SPARSE_COMPRESSED_DATA:
+   case STREAM_WIN32_COMPRESSED_DATA:
+   case STREAM_ENCRYPTED_FILE_COMPRESSED_DATA:
+   case STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA:
+   case STREAM_GZIP_DATA: /* deprecated */
+   case STREAM_SPARSE_GZIP_DATA: /* deprecated */
+      record_compression_to_str(resultbuffer, rec);
+      break;
+   default:
+      break;
+   }
+   return resultbuffer.c_str();
+}
+
+const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+{
+   POOL_MEM record_info_buf(PM_MESSAGE);
+   char stream_buf[100];
+
+   resultbuffer.bsprintf("FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5d",
+                         rec->FileIndex, rec->Stream,
+                         stream_to_ascii(stream_buf, rec->Stream, rec->FileIndex),
+                         rec->data_len);
+   indent_multiline_string(resultbuffer, get_record_short_info(record_info_buf, jcr, rec), " | ");
+
+   return resultbuffer.c_str();
 }
 
 void dump_record(const char *tag, const DEV_RECORD *rec)
