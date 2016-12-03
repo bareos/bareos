@@ -184,6 +184,9 @@ static RES_ITEM con_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "AuthBackend", CFG_TYPE_AUTHBACKEND, ITEM(res_con.authtype), 0, CFG_ITEM_DEFAULT, "native", NULL, NULL },
+   { "AllowedUsers", CFG_TYPE_ALIST_STR, ITEM(res_con.allowed_users), 0, 0, NULL, NULL, NULL },
+   { "AllowedGroups", CFG_TYPE_ALIST_STR, ITEM(res_con.allowed_groups), 0, 0, NULL, NULL, NULL },
    { "JobACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Job_ACL, 0, NULL, NULL, NULL },
    { "ClientACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Client_ACL, 0, NULL, NULL, NULL },
    { "StorageACL", CFG_TYPE_ACL, ITEM(res_con.ACL_lists), Storage_ACL, 0, NULL, NULL, NULL },
@@ -2539,6 +2542,14 @@ void free_resource(RES *sres, int type)
       if (res->res_con.password.value) {
          free(res->res_con.password.value);
       }
+      if (res->res_con.allowed_users) {
+         delete res->res_con.allowed_users;
+         res->res_con.allowed_users = NULL;
+      }
+      if (res->res_con.allowed_groups) {
+         delete res->res_con.allowed_groups;
+         res->res_con.allowed_groups = NULL;
+      }
       if (res->res_con.profiles) {
          delete res->res_con.profiles;
       }
@@ -2804,6 +2815,8 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
       } else {
          res->res_con.tls.allowed_cns = res_all.res_con.tls.allowed_cns;
          res->res_con.profiles = res_all.res_con.profiles;
+         res->res_con.allowed_users = res_all.res_con.allowed_users;
+         res->res_con.allowed_groups = res_all.res_con.allowed_groups;
       }
       break;
    case R_DIRECTOR:

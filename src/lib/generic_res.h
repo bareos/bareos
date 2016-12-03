@@ -86,4 +86,14 @@ static s_kw tapelabels[] = {
    { NULL, 0 }
 };
 
+/*
+ * Authentication backends permitted in Console Authentication
+ *
+ * auth_backend auth_code = token
+ */
+static struct s_kw authbackends[] = {
+   { "Native", AUTH_BACKEND_LOCAL_MD5 },
+   { "PAM", AUTH_BACKEND_PAM },
+   { NULL, 0 }
+};
 #endif /* _GENERIC_RES_H */

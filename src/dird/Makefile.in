@@ -24,6 +24,7 @@ NDMP_LIBS = @NDMP_LIBS@
 DB_LIBS=@DB_LIBS@
 LMDB_LIBS=@LMDB_LIBS@
 
+PAM_LIBS_NONSHARED = @PAM_LIBS_NONSHARED@
 OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
 GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
@@ -84,7 +85,7 @@ bareos-dir: Makefile $(SVROBJS) \
 	$(LIBTOOL_LINK) $(CXX) $(WLDFLAGS) $(LDFLAGS) -L../lib -L../cats -L../findlib -o $@ $(SVROBJS) \
 	      $(NDMP_LIBS) -lbareosfind -lbareossql -lbareoscats -lbareoscfg -lbareos -lm $(DLIB) \
 	      $(DB_LIBS) $(LIBS) $(WRAPLIBS) $(GETTEXT_LIBS) $(CAP_LIBS) \
-	      $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED) $(LMDB_LIBS)
+	      $(PAM_LIBS_NONSHARED) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED) $(LMDB_LIBS)
 
 bareos-dbcheck: Makefile $(DBCHKOBJS) \
 	 ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \

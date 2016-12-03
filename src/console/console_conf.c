@@ -79,6 +79,7 @@ static RES_ITEM cons_items[] = {
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
+   { "AuthBackend", CFG_TYPE_AUTHBACKEND, ITEM(res_cons.authtype), 0, CFG_ITEM_DEFAULT, "native", NULL, NULL },
    TLS_CONFIG(res_cons)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };

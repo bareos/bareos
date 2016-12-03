@@ -201,6 +201,9 @@ public:
 class CONRES : public BRSRES {
 public:
    s_password password;               /* UA server password */
+   uint16_t authtype;                 /* Authentication protocol used */
+   alist *allowed_users;              /* Allowed authentication ids */
+   alist *allowed_groups;             /* Allowed authentication groups */
    alist *ACL_lists[Num_ACL];         /* Pointers to ACLs */
    alist *profiles;                   /* Pointers to profile resources */
    tls_t tls;                         /* TLS structure */

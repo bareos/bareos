@@ -23,6 +23,7 @@ COMPRESS_CPPFLAGS += @ZLIB_INC@ @LZO_INC@ @FASTLZ_INC@
 JANSSON_CPPFLAGS = @JANSSON_INC@
 
 DEBUG = @DEBUG@
+PAM_LIBS = @PAM_LIBS@
 CAM_LIBS = @CAM_LIBS@
 CAP_LIBS = @CAP_LIBS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -62,7 +63,7 @@ LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
 		 crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
 		 edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c json.c \
 		 lockmgr.c md5.c mem_pool.c message.c mntent_cache.c \
-		 output_formatter.c passphrase.c path_list.c plugins.c poll.c \
+		 output_formatter.c pam.h pam.c pam_auth.c passphrase.c path_list.c plugins.c poll.c \
 		 priv.c queue.c rblist.c runscript.c rwlock.c scan.c scsi_crypto.c \
 		 scsi_lli.c scsi_tapealert.c sellist.c serial.c sha1.c signal.c \
 		 smartall.c tls_gnutls.c tls_none.c tls_nss.c tls_openssl.c \
@@ -191,7 +192,7 @@ libbareos.a: $(LIBBAREOS_OBJS)
 libbareos.la: Makefile $(LIBBAREOS_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -o $@ $(LIBBAREOS_LOBJS) -export-dynamic -rpath $(libdir) -release $(LIBBAREOS_LT_RELEASE) \
-	                $(WRAPLIBS) $(CAM_LIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(FASTLZ_LIBS) $(JANSSON_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(LIBS) $(DLLIBS)
+	                $(WRAPLIBS) $(PAM_LIBS) $(CAM_LIBS) $(CAP_LIBS) $(ZLIB_LIBS) $(LZO_LIBS) $(FASTLZ_LIBS) $(JANSSON_LIBS) $(OPENSSL_LIBS) $(GNUTLS_LIBS) $(LIBS) $(DLLIBS)
 
 libbareoscfg.a: $(LIBBAREOSCFG_OBJS)
 	@echo "Making $@ ..."
