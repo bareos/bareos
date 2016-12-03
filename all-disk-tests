@@ -109,6 +109,7 @@ rm -f dumps/*
 ./run tests/lzfast-encrypt-test
 ./run tests/lzfast-test
 ./run tests/config-add-client-test
+./run tests/truncate-command-test
 echo "End non-root disk tests"
 echo "End non-root disk tests" >>test.out
 
