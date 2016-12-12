@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Authenticate caller
- *
  * Kern Sibbald, October 2000
+ */
+/**
+ * @file
+ * Authenticate caller
  */
 
 #include "bareos.h"
@@ -35,7 +37,7 @@ static char Dir_sorry[] =
 static char OK_hello[] =
    "3000 OK Hello\n";
 
-/*
+/**
  * Initiate the message channel with the Director.
  * It has made a connection to our server.
  *
@@ -107,7 +109,7 @@ bool authenticate_director(JCR *jcr)
    return dir->fsend("%s", OK_hello);
 }
 
-/*
+/**
  * Authenticate a remote storage daemon.
  *
  * This is used for SD-SD replication of data.
@@ -131,7 +133,7 @@ bool authenticate_storagedaemon(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Authenticate with a remote storage daemon.
  *
  * This is used for SD-SD replication of data.
@@ -155,7 +157,7 @@ bool authenticate_with_storagedaemon(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Authenticate a remote File daemon.
  *
  * This is used for FD backups or restores.
@@ -179,7 +181,7 @@ bool authenticate_filedaemon(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Authenticate with a remote file daemon.
  *
  * This is used for passive FD backups or restores.

@@ -19,11 +19,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
 /*
- * Output Formatter prototypes
- *
  * Joerg Steffens, April 2015
+ */
+/**
+ * @file
+ * Output Formatter prototypes
  */
 
 #ifndef __OUTPUT_FORMATTER_H_
@@ -39,7 +40,7 @@
 #define UA_JSON_FLAGS_NORMAL JSON_INDENT(2)
 #define UA_JSON_FLAGS_COMPACT JSON_COMPACT
 
-/*
+/**
  * See if the source file needs the full JANSSON namespace or that we can
  * get away with using a forward declaration of the json_t struct.
  */
@@ -50,7 +51,7 @@ typedef struct json_t json_t;
 #endif
 #endif
 
-/*
+/**
  * Filtering states.
  */
 typedef enum of_filter_state {
@@ -59,7 +60,7 @@ typedef enum of_filter_state {
    OF_FILTER_STATE_UNKNOWN
 } of_filter_state;
 
-/*
+/**
  * Filtering types.
  */
 typedef enum of_filter_type {
@@ -93,7 +94,7 @@ typedef struct of_filter_tuple {
    } u;
 } of_filter_tuple;
 
-/*
+/**
  * Actual output formatter class.
  */
 class OUTPUT_FORMATTER : public SMARTALLOC {

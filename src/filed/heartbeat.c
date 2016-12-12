@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MMIII
+ */
+/**
+ * @file
  * Bareos File Daemon heartbeat routines
  * Listens for heartbeats coming from the SD
  * If configured, sends heartbeats to Dir
- *
- * Kern Sibbald, May MMIII
  */
 
 #include "bareos.h"
@@ -37,7 +39,7 @@ extern "C" void *sd_heartbeat_thread(void *arg);
 extern "C" void *dir_heartbeat_thread(void *arg);
 extern bool no_signals;
 
-/*
+/**
  * Listen on the SD socket for heartbeat signals.
  * Send heartbeats to the Director every HB_TIME
  *   seconds.
@@ -173,7 +175,7 @@ void stop_heartbeat_monitor(JCR *jcr)
    }
 }
 
-/*
+/**
  * Thread for sending heartbeats to the Director when there
  *   is no SD monitoring needed -- e.g. restore and verify Vol
  *   both do their own read() on the SD socket.
@@ -216,7 +218,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
    return NULL;
 }
 
-/*
+/**
  * Same as above but we don't listen to the SD
  */
 void start_dir_heartbeat(JCR *jcr)

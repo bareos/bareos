@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS sql pooling code that manages the database connection pools.
- *
  * Written by Marco van Wieringen, March 2010
+ */
+/**
+ * @file
+ * BAREOS sql pooling code that manages the database connection pools.
  */
 
 #include "bareos.h"
@@ -32,7 +34,7 @@
 
 #include "cats.h"
 
-/*
+/**
  * Get a non-pooled connection used when either sql pooling is
  * runtime disabled or at compile time. Or when we run out of
  * pooled connections and need more database connections.
@@ -122,7 +124,7 @@ static void destroy_pool_descriptor(SQL_POOL_DESCRIPTOR *spd, bool flush_only)
    }
 }
 
-/*
+/**
  * Initialize the sql connection pool.
  */
 bool db_sql_pool_initialize(const char *db_drivername,
@@ -254,7 +256,7 @@ ok_out:
    return retval;
 }
 
-/*
+/**
  * Cleanup the sql connection pools.
  * This gets called on shutdown.
  */
@@ -281,7 +283,7 @@ void db_sql_pool_destroy(void)
    V(mutex);
 }
 
-/*
+/**
  * Flush the sql connection pools.
  * This gets called on config reload. We close all unreferenced connections.
  */
@@ -313,7 +315,7 @@ void db_sql_pool_flush(void)
    V(mutex);
 }
 
-/*
+/**
  * Grow the sql connection pool.
  * This function should be called with the mutex held.
  */
@@ -386,7 +388,7 @@ static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
    }
 }
 
-/*
+/**
  * Shrink the sql connection pool.
  * This function should be called with the mutex held.
  */
@@ -470,7 +472,7 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
    }
 }
 
-/*
+/**
  * Find the connection pool with the correct connections.
  * This function should be called with the mutex held.
  */
@@ -494,7 +496,7 @@ static inline SQL_POOL_DESCRIPTOR *sql_find_pool_descriptor(const char *db_drive
    return NULL;
 }
 
-/*
+/**
  * Find a free connection in a certain connection pool.
  * This function should be called with the mutex held.
  */
@@ -510,7 +512,7 @@ static inline SQL_POOL_ENTRY *sql_find_free_connection(SQL_POOL_DESCRIPTOR *spd)
    return NULL;
 }
 
-/*
+/**
  * Find a connection in a certain connection pool.
  * This function should be called with the mutex held.
  */
@@ -524,7 +526,7 @@ static inline SQL_POOL_ENTRY *sql_find_first_connection(SQL_POOL_DESCRIPTOR *spd
    return NULL;
 }
 
-/*
+/**
  * Get a new connection from the pool.
  */
 B_DB *db_sql_get_pooled_connection(JCR *jcr,
@@ -684,7 +686,7 @@ bail_out:
    return db_handle;
 }
 
-/*
+/**
  * Put a connection back onto the pool for reuse.
  *
  * The abort flag is set when we encounter a dead or misbehaving connection
@@ -817,7 +819,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
 
 #else /* HAVE_SQL_POOLING */
 
-/*
+/**
  * Initialize the sql connection pool.
  * For non pooling this is a no-op.
  */
@@ -840,7 +842,7 @@ bool db_sql_pool_initialize(const char *db_drivername,
    return true;
 }
 
-/*
+/**
  * Cleanup the sql connection pools.
  * For non pooling this is a no-op.
  */
@@ -848,7 +850,7 @@ void db_sql_pool_destroy(void)
 {
 }
 
-/*
+/**
  * Flush the sql connection pools.
  * For non pooling this is a no-op.
  */
@@ -856,7 +858,7 @@ void db_sql_pool_flush(void)
 {
 }
 
-/*
+/**
  * Get a new connection from the pool.
  * For non pooling we just call db_sql_get_non_pooled_connection.
  */
@@ -889,7 +891,7 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                            need_private);
 }
 
-/*
+/**
  * Put a connection back onto the pool for reuse.
  * For non pooling we just do a close_database.
  */

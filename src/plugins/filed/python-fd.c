@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Python plugin for the Bareos File Daemon
- *
  * Marco van Wieringen, August 2012
+ */
+/**
+ * @file
+ * Python plugin for the Bareos File Daemon
  */
 #define BUILD_PLUGIN
 
@@ -46,7 +48,7 @@ static const int dbglvl = 150;
 #define PLUGIN_DESCRIPTION  "Python File Daemon Plugin"
 #define PLUGIN_USAGE        "python:module_path=<path-to-python-modules>:module_name=<python-module-to-load>:..."
 
-/*
+/**
  * Forward referenced functions
  */
 static bRC newPlugin(bpContext *ctx);
@@ -89,7 +91,7 @@ static bRC PySetXattr(bpContext *ctx, xattr_pkt *xp);
 static bRC PyRestoreObjectData(bpContext *ctx, struct restore_object_pkt *rop);
 static bRC PyHandleBackupFile(bpContext *ctx, struct save_pkt *sp);
 
-/*
+/**
  * Pointers to Bareos functions
  */
 static bFuncs *bfuncs = NULL;
@@ -131,7 +133,7 @@ static pFuncs pluginFuncs = {
    setXattr
 };
 
-/*
+/**
  * Plugin private context
  */
 struct plugin_ctx {
@@ -155,7 +157,7 @@ struct plugin_ctx {
 
 #include "python-fd.h"
 
-/*
+/**
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
@@ -166,7 +168,7 @@ static PyThreadState *mainThreadState;
 extern "C" {
 #endif
 
-/*
+/**
  * Plugin called here when it is first loaded
  */
 bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
@@ -190,7 +192,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * Plugin called here when it is unloaded, normally when Bareos is going to exit.
  */
 bRC DLL_IMP_EXP unloadPlugin()
@@ -208,7 +210,7 @@ bRC DLL_IMP_EXP unloadPlugin()
 }
 #endif
 
-/*
+/**
  * Called here to make a new instance of the plugin -- i.e. when
  * a new Job is started. There can be multiple instances of
  * each plugin that are running at the same time.  Your
@@ -252,7 +254,7 @@ static bRC newPlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Release everything concerning a particular instance of a
  * plugin. Normally called when the Job terminates.
  */
@@ -317,7 +319,7 @@ static bRC freePlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Called by core code to get a variable from the plugin.
  * Not currently used.
  */
@@ -338,7 +340,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called by core code to set a plugin variable.
  * Not currently used.
  */
@@ -358,7 +360,7 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
    return retval;
 }
 
-/*
+/**
  * Called by Bareos when there are certain events that the
  * plugin might want to know.  The value depends on the event.
  */
@@ -539,7 +541,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called when starting to backup a file. Here the plugin must
  * return the "stat" packet for the directory/file and provide
  * certain information so that Bareos knows what the file is.
@@ -595,7 +597,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Done backing up a file.
  */
 static bRC endBackupFile(bpContext *ctx)
@@ -615,7 +617,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Do actual I/O. Bareos calls this after startBackupFile
  * or after startRestoreFile to do the actual file
  * input or output.
@@ -641,7 +643,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Start restore of a file.
  */
 static bRC startRestoreFile(bpContext *ctx, const char *cmd)
@@ -661,7 +663,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Done restoring a file.
  */
 static bRC endRestoreFile(bpContext *ctx)
@@ -681,7 +683,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called here to give the plugin the information needed to
  * re-create the file on a restore.  It basically gets the
  * stat packet that was created during the backup phase.
@@ -705,7 +707,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called after the file has been restored. This can be used to
  * set directory permissions, ...
  */
@@ -726,7 +728,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * When using Incremental dump, all previous dumps are necessary
  */
 static bRC checkFile(bpContext *ctx, char *fname)
@@ -750,7 +752,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  */
 static bRC getAcl(bpContext *ctx, acl_pkt *ap)
 {
@@ -769,7 +771,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  */
 static bRC setAcl(bpContext *ctx, acl_pkt *ap)
 {
@@ -788,7 +790,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  */
 static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
 {
@@ -807,7 +809,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  */
 static bRC setXattr(bpContext *ctx, xattr_pkt *xp)
 {
@@ -826,7 +828,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Strip any backslashes in the string.
  */
 static inline void strip_back_slashes(char *value)
@@ -847,7 +849,7 @@ static inline void strip_back_slashes(char *value)
    }
 }
 
-/*
+/**
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
 static inline bool parse_boolean(const char *argument_value)
@@ -860,7 +862,7 @@ static inline bool parse_boolean(const char *argument_value)
    }
 }
 
-/*
+/**
  * Only set destination to value when it has no previous setting.
  */
 static inline void set_string_if_null(char **destination, char *value)
@@ -871,7 +873,7 @@ static inline void set_string_if_null(char **destination, char *value)
    }
 }
 
-/*
+/**
  * Always set destination to value and clean any previous one.
  */
 static inline void set_string(char **destination, char *value)
@@ -884,7 +886,7 @@ static inline void set_string(char **destination, char *value)
    strip_back_slashes(*destination);
 }
 
-/*
+/**
  * Parse the plugin definition passed in.
  *
  * The definition is in this form:
@@ -1062,7 +1064,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * Work around API changes in Python versions.
  * These function abstract the storage and retrieval of the bpContext
  * which is passed to the Python methods and which the method can pass
@@ -1072,7 +1074,7 @@ bail_out:
 #if ((PY_VERSION_HEX < 0x02070000) || \
      ((PY_VERSION_HEX >= 0x03000000) && \
       (PY_VERSION_HEX < 0x03010000)))
-/*
+/**
  * Python version before 2.7 and 3.0.
  */
 static PyObject *PyCreatebpContext(bpContext *ctx)
@@ -1088,7 +1090,7 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
    return (bpContext *)PyCObject_AsVoidPtr(pyCtx);
 }
 #else
-/*
+/**
  * Python version after 2.6 and 3.1.
  */
 static PyObject *PyCreatebpContext(bpContext *ctx)
@@ -1105,7 +1107,7 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
 }
 #endif
 
-/*
+/**
  * Convert a return value into a bRC enum value.
  */
 static inline bRC conv_python_retval(PyObject *pRetVal)
@@ -1113,7 +1115,7 @@ static inline bRC conv_python_retval(PyObject *pRetVal)
    return (bRC)PyInt_AsLong(pRetVal);
 }
 
-/*
+/**
  * Convert a return value from bRC enum value into Python Object.
  */
 static inline PyObject *conv_retval_python(bRC retval)
@@ -1121,7 +1123,7 @@ static inline PyObject *conv_retval_python(bRC retval)
    return (PyObject *)PyInt_FromLong((int)retval);
 }
 
-/*
+/**
  * Handle a Python error.
  *
  * Python equivalent:
@@ -1176,7 +1178,7 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
    free(error_string);
 }
 
-/*
+/**
  * Initial load of the Python module.
  *
  * Based on the parsed plugin options we set some prerequisits like the
@@ -1370,7 +1372,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Any plugin options which are passed in are dispatched here to a Python method and it
  * can parse the plugin options. This function is also called after PyLoadModule() has
  * loaded the Python module and made sure things are operational. Normally you would only get
@@ -1693,7 +1695,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Called when starting to backup a file. Here the plugin must
  * return the "stat" packet for the directory/file and provide
  * certain information so that Bareos knows what the file is.
@@ -1747,7 +1749,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called at the end of backing up a file for a command plugin.
  * If the plugin's work is done, it should return bRC_OK.
  * If the plugin wishes to create another file and back it up,
@@ -1857,7 +1859,7 @@ static inline bool PyIoPacketToNative(PyIoPacket *pIoPkt, struct io_pkt *io)
    return true;
 }
 
-/*
+/**
  * Do actual I/O. Bareos calls this after startBackupFile
  * or after startRestoreFile to do the actual file
  * input or output.
@@ -1911,7 +1913,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called when the first record is read from the Volume that was previously written by the command plugin.
  */
 static bRC PyStartRestoreFile(bpContext *ctx, const char *cmd)
@@ -1956,7 +1958,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called when a command plugin is done restoring a file.
  */
 static bRC PyEndRestoreFile(bpContext *ctx)
@@ -2024,7 +2026,7 @@ static inline void PyRestorePacketToNative(PyRestorePacket *pRestorePacket, stru
    rp->create_status = pRestorePacket->create_status;
 }
 
-/*
+/**
  * Called for a command plugin to create a file during a Restore job before restoring the data.
  * This entry point is called before any I/O is done on the file. After this call,
  * Bareos will call pluginIO() to open the file for write.
@@ -2589,7 +2591,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to get certain internal values of the current Job.
  */
@@ -2665,7 +2667,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    return pRetVal;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to get certain internal values of the current Job.
  */
@@ -2709,7 +2711,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue debug messages using the Bareos debug message facility.
  */
@@ -2733,7 +2735,7 @@ static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args)
    return Py_None;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue Job messages using the Bareos Job message facility.
  */
@@ -2757,7 +2759,7 @@ static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args)
    return Py_None;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Register Event to register additional events it wants
  * to receive.
@@ -2801,7 +2803,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue an Unregister Event to unregister events it doesn't want to
  * receive anymore.
@@ -2841,7 +2843,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a GetInstanceCount to retrieve the number of instances of
  * the current plugin being loaded into the daemon.
@@ -2870,7 +2872,7 @@ static PyObject *PyBareosGetInstanceCount(PyObject *self, PyObject *args)
    return pRetVal;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add Exclude pattern to the fileset.
  */
@@ -2894,7 +2896,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add Include pattern to the fileset.
  */
@@ -2918,7 +2920,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add Include Options to the fileset.
  */
@@ -2942,7 +2944,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add Regex to the fileset.
  */
@@ -2967,7 +2969,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add Wildcard to the fileset.
  */
@@ -2992,7 +2994,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add New Option block.
  */
@@ -3013,7 +3015,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add New Include block.
  */
@@ -3034,7 +3036,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Add New Pre Include block.
  */
@@ -3055,7 +3057,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a check if a file have to be backuped using Accurate code.
  */
@@ -3108,7 +3110,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a check if a file would be saved using current Include/Exclude code.
  */
@@ -3152,7 +3154,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Set bit in the Accurate Seen bitmap.
  */
@@ -3176,7 +3178,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Clear bit in the Accurate Seen bitmap.
  */
@@ -3200,7 +3202,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Some helper functions.
  */
 static inline char *PyGetStringValue(PyObject *object)
@@ -3221,11 +3223,11 @@ static inline char *PyGetByteArrayValue(PyObject *object)
    return PyByteArray_AsString(object);
 }
 
-/*
+/**
  * Python specific handlers for PyRestoreObject structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
@@ -3244,7 +3246,7 @@ static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyRestoreObject_init(PyRestoreObject *self, PyObject *args, PyObject *kwds)
@@ -3294,7 +3296,7 @@ static int PyRestoreObject_init(PyRestoreObject *self, PyObject *args, PyObject 
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyRestoreObject_dealloc(PyRestoreObject *self)
@@ -3308,11 +3310,11 @@ static void PyRestoreObject_dealloc(PyRestoreObject *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PyStatPacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyStatPacket_repr(PyStatPacket *self)
@@ -3332,7 +3334,7 @@ static PyObject *PyStatPacket_repr(PyStatPacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyStatPacket_init(PyStatPacket *self, PyObject *args, PyObject *kwds)
@@ -3393,7 +3395,7 @@ static int PyStatPacket_init(PyStatPacket *self, PyObject *args, PyObject *kwds)
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyStatPacket_dealloc(PyStatPacket *self)
@@ -3401,11 +3403,11 @@ static void PyStatPacket_dealloc(PyStatPacket *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PySavePacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static inline const char *print_flags_bitmap(PyObject *bitmap)
@@ -3455,7 +3457,7 @@ static PyObject *PySavePacket_repr(PySavePacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
@@ -3517,7 +3519,7 @@ static int PySavePacket_init(PySavePacket *self, PyObject *args, PyObject *kwds)
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PySavePacket_dealloc(PySavePacket *self)
@@ -3540,11 +3542,11 @@ static void PySavePacket_dealloc(PySavePacket *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PyRestorePacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
@@ -3566,7 +3568,7 @@ static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyRestorePacket_init(PyRestorePacket *self, PyObject *args, PyObject *kwds)
@@ -3628,7 +3630,7 @@ static int PyRestorePacket_init(PyRestorePacket *self, PyObject *args, PyObject 
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyRestorePacket_dealloc(PyRestorePacket *self)
@@ -3636,11 +3638,11 @@ static void PyRestorePacket_dealloc(PyRestorePacket *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PyIoPacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyIoPacket_repr(PyIoPacket *self)
@@ -3660,7 +3662,7 @@ static PyObject *PyIoPacket_repr(PyIoPacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyIoPacket_init(PyIoPacket *self, PyObject *args, PyObject *kwds)
@@ -3716,7 +3718,7 @@ static int PyIoPacket_init(PyIoPacket *self, PyObject *args, PyObject *kwds)
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyIoPacket_dealloc(PyIoPacket *self)
@@ -3727,11 +3729,11 @@ static void PyIoPacket_dealloc(PyIoPacket *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PyAclPacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyAclPacket_repr(PyAclPacket *self)
@@ -3746,7 +3748,7 @@ static PyObject *PyAclPacket_repr(PyAclPacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyAclPacket_init(PyAclPacket *self, PyObject *args, PyObject *kwds)
@@ -3772,7 +3774,7 @@ static int PyAclPacket_init(PyAclPacket *self, PyObject *args, PyObject *kwds)
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyAclPacket_dealloc(PyAclPacket *self)
@@ -3783,11 +3785,11 @@ static void PyAclPacket_dealloc(PyAclPacket *self)
    PyObject_Del(self);
 }
 
-/*
+/**
  * Python specific handlers for PyIOPacket structure mapping.
  */
 
-/*
+/**
  * Representation.
  */
 static PyObject *PyXattrPacket_repr(PyXattrPacket *self)
@@ -3802,7 +3804,7 @@ static PyObject *PyXattrPacket_repr(PyXattrPacket *self)
    return s;
 }
 
-/*
+/**
  * Initialization.
  */
 static int PyXattrPacket_init(PyXattrPacket *self, PyObject *args, PyObject *kwds)
@@ -3831,7 +3833,7 @@ static int PyXattrPacket_init(PyXattrPacket *self, PyObject *args, PyObject *kwd
    return 0;
 }
 
-/*
+/**
  * Destructor.
  */
 static void PyXattrPacket_dealloc(PyXattrPacket *self)

@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database Delete record interface routines
- *
  * Kern Sibbald, December 2000
+ */
+/**
+ * @file
+ * BAREOS Catalog Database Delete record interface routines
  */
 
 #include "bareos.h"
@@ -39,7 +41,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * Delete Pool record, must also delete all associated
  *  Media records.
  *
@@ -109,7 +111,7 @@ struct s_del_ctx {
    int tot_ids;                       /* total to process */
 };
 
-/*
+/**
  * Called here to make in memory list of JobIds to be
  *  deleted. The in memory list will then be transversed
  *  to issue the SQL DELETE commands.  Note, the list
@@ -133,7 +135,7 @@ static int delete_handler(void *ctx, int num_fields, char **row)
 }
 
 
-/*
+/**
  * This routine will purge (delete) all records
  * associated with a particular Volume. It will
  * not delete the media record itself.
@@ -183,7 +185,7 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
    return 1;
 }
 
-/*
+/**
  * Delete Media record and all records that are associated with it.
  * Returns: false on error
  *          true on success
@@ -211,7 +213,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Purge all records associated with a
  * media record. This does not delete the
  * media record itself. But the media status

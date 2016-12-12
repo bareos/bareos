@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Bareos Console interface to the Director
- *
  * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * Bareos Console interface to the Director
  */
 
 #include "bareos.h"
@@ -158,7 +160,7 @@ static int zed_keyscmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
-/*
+/**
  * These are the @command
  */
 struct cmdstruct {
@@ -348,7 +350,7 @@ static void read_and_process_input(FILE *input, BSOCK *UA_sock)
    }
 }
 
-/*
+/**
  * Call-back for reading a passphrase for an encrypted PEM file
  * This function uses getpass(),
  *  which uses a static buffer and is NOT thread-safe.
@@ -383,7 +385,7 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 #include "readline/readline.h"
 #include "readline/history.h"
 
-/*
+/**
  * Get the first keyword of the line
  */
 static char *get_first_keyword()
@@ -400,7 +402,7 @@ static char *get_first_keyword()
    return ret;
 }
 
-/*
+/**
  * Return the command before the current point.
  * Set nb to the number of command to skip
  */
@@ -459,7 +461,7 @@ static char *get_previous_keyword(int current_point, int nb)
    return s;
 }
 
-/*
+/**
  * Simple structure that will contain the completion list
  */
 struct ItemList {
@@ -480,7 +482,7 @@ void init_items()
    items->list.init();
 }
 
-/*
+/**
  * Match a regexp and add the result to the items list
  * This function is recursive
  */
@@ -722,7 +724,7 @@ static int eolcmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
-/*
+/**
  * Return 1 if OK
  *        0 if no input
  *       -1 error (must stop)
@@ -799,7 +801,7 @@ static bool bisatty(int fd)
 #endif
 
 #ifdef HAVE_WIN32 /* use special console for input on win32 */
-/*
+/**
  * Get next input command from terminal.
  *
  *   Returns: 1 if got input
@@ -849,7 +851,7 @@ again:
    return 1;
 }
 #else
-/*
+/**
  * Get next input command from terminal.
  *
  *   Returns: 1 if got input
@@ -1079,7 +1081,7 @@ try_again:
    return 1;
 }
 
-/*
+/**
  * Main Bareos Console -- User Interface Program
  */
 int main(int argc, char *argv[])
@@ -1453,7 +1455,7 @@ static void terminate_console(int sig)
    return;
 }
 
-/*
+/**
  * Make a quick check to see that we have all the resources needed.
  */
 static int check_resources()
@@ -1610,7 +1612,7 @@ static int do_outputcmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
-/*
+/**
  * @exec "some-command" [wait-seconds]
 */
 static int execcmd(FILE *input, BSOCK *UA_sock)
@@ -1692,7 +1694,7 @@ static int timecmd(FILE *input, BSOCK *UA_sock)
    return 1;
 }
 
-/*
+/**
  * Send a line to the output file and or the terminal
  */
 void senditf(const char *fmt,...)

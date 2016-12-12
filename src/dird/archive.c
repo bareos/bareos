@@ -19,12 +19,15 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- archive.c -- responsible for doing archive jobs
- *
- * based on admin.c
  * Marco van Wieringen, June 2016
  */
 
+/**
+ * @file
+ * responsible for doing archive jobs
+ *
+ * based on admin.c
+ */
 #include "bareos.h"
 #include "dird.h"
 
@@ -40,7 +43,7 @@ bool do_archive_init(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Returns: false on failure
  *          true  on success
  */
@@ -61,7 +64,7 @@ bool do_archive(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Release resources allocated during archive.
  */
 void archive_cleanup(JCR *jcr, int TermCode)

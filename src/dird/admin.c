@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- admin.c -- responsible for doing admin jobs
- *
  * Kern Sibbald, May MMIII
+ */
+
+/**
+ * @file
+ *
+ * responsible for doing admin jobs
  */
 
 #include "bareos.h"
@@ -39,7 +44,7 @@ bool do_admin_init(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Returns: false on failure
  *          true  on success
  */
@@ -61,7 +66,7 @@ bool do_admin(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Release resources allocated during backup.
  */
 void admin_cleanup(JCR *jcr, int TermCode)

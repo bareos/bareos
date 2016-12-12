@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,10 +20,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Bareos File Daemon  backup.c  send file attributes and data to the Storage daemon.
- *
+/*
  * Kern Sibbald, March MM
+ */
+/**
+ * @file
+ * Bareos File Daemon  backup.c  send file attributes and data to the Storage daemon.
  */
 
 #include "bareos.h"
@@ -322,7 +324,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Terminate the signing digest and send it to the Storage daemon
  */
 static inline bool terminate_signing_digest(b_save_ctx &bsctx)
@@ -383,7 +385,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Terminate any digest and send it to Storage daemon
  */
 static inline bool terminate_digest(b_save_ctx &bsctx)
@@ -895,7 +897,7 @@ bail_out:
    return rtnstat;
 }
 
-/*
+/**
  * Handle the data just read and send it to the SD after doing any postprocessing needed.
  */
 static inline bool send_data_to_sd(b_ctx *bctx)
@@ -1029,7 +1031,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
 }
 
 #ifdef HAVE_WIN32
-/*
+/**
  * Callback method for ReadEncryptedFileRaw()
  */
 static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG ulLength)
@@ -1071,7 +1073,7 @@ static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG u
    return ERROR_SUCCESS;
 }
 
-/*
+/**
  * Send the content of an Encrypted file on an EFS filesystem.
  */
 static inline bool send_encrypted_data(b_ctx &bctx)
@@ -1099,7 +1101,7 @@ bail_out:
 }
 #endif
 
-/*
+/**
  * Send the content of a file on anything but an EFS filesystem.
  */
 static inline bool send_plain_data(b_ctx &bctx)

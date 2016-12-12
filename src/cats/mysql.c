@@ -21,13 +21,14 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March 2000
+ * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
+ */
+/**
+ * @file
  * BAREOS Catalog Database routines specific to MySQL
  * These are MySQL specific routines -- hopefully all
  * other files are generic.
- *
- * Kern Sibbald, March 2000
- *
- * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
  */
 
 #include "bareos.h"
@@ -46,7 +47,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * List of open databases
  */
 static dlist *db_list = NULL;
@@ -141,7 +142,7 @@ B_DB_MYSQL::~B_DB_MYSQL()
 {
 }
 
-/*
+/**
  * Now actually open the database.  This can generate errors,
  *  which are returned in the errmsg
  *
@@ -329,7 +330,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * This call is needed because the message channel thread
  *  opens a database on behalf of a jcr that was created in
  *  a different thread. MySQL then allocates thread specific
@@ -344,7 +345,7 @@ void B_DB_MYSQL::thread_cleanup(void)
 #endif
 }
 
-/*
+/**
  * Escape strings so that MySQL is happy
  *
  *   NOTE! len is the length of the old string. Your new
@@ -356,7 +357,7 @@ void B_DB_MYSQL::escape_string(JCR *jcr, char *snew, char *old, int len)
    mysql_real_escape_string(m_db_handle, snew, old, len);
 }
 
-/*
+/**
  * Escape binary object so that MySQL is happy
  * Memory is stored in B_DB struct, no need to free it
  */
@@ -367,7 +368,7 @@ char *B_DB_MYSQL::escape_object(JCR *jcr, char *old, int len)
    return esc_obj;
 }
 
-/*
+/**
  * Unescape binary object so that MySQL is happy
  */
 void B_DB_MYSQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
@@ -405,7 +406,7 @@ void B_DB_MYSQL::end_transaction(JCR *jcr)
    }
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
@@ -690,7 +691,7 @@ bool B_DB_MYSQL::sql_field_is_numeric(int field_type)
    return IS_NUM(field_type);
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -718,7 +719,7 @@ bool B_DB_MYSQL::sql_batch_start(JCR *jcr)
 }
 
 /* set error to something to abort operation */
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -736,7 +737,7 @@ bool B_DB_MYSQL::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -793,7 +794,7 @@ bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    return true;
 }
 
-/*
+/**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */

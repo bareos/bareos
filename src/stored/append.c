@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Append code for Storage daemon
- *
  * Kern Sibbald, May MM
+ */
+/**
+ * @file
+ * Append code for Storage daemon
  */
 
 #include "bareos.h"
@@ -37,13 +40,11 @@ static char OK_replicate[] =
 
 /* Forward referenced functions */
 
-/*
- */
 void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
 {
 }
 
-/*
+/**
  * Append Data sent from File daemon
  */
 bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
@@ -348,7 +349,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Send attributes and digest to Director for Catalog
  */
 bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec)

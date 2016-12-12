@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +22,11 @@
 /*
  * Written by John Walker, MM
  */
+/**
+ * @file
+ *  Serialisation support functions from serial.c
+ */
 
-/*  Serialisation support functions from serial.c.  */
 
 extern void serial_int16(uint8_t * * const ptr, const int16_t v);
 extern void serial_uint16(uint8_t * * const ptr, const uint16_t v);
@@ -44,7 +48,7 @@ extern btime_t unserial_btime(uint8_t * * const ptr);
 extern float64_t unserial_float64(uint8_t * * const ptr);
 extern void unserial_string(uint8_t * * const ptr, char * const str, int max);
 
-/*
+/**
 
                          Serialisation Macros
 

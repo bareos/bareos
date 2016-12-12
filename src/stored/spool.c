@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Spooling code
- *
  * Kern Sibbald, March 2004
+ */
+/**
+ * @file
+ * Spooling code
  */
 
 #include "bareos.h"
@@ -53,7 +55,7 @@ struct spool_stats_t {
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static spool_stats_t spool_stats;
 
-/*
+/**
  * Header for data spool record */
 struct spool_hdr {
    int32_t  FirstIndex;               /* FirstIndex for buffer */
@@ -210,7 +212,7 @@ static bool close_data_spool_file(DCR *dcr, bool end_of_spool)
 
 static const char *spool_name = "*spool*";
 
-/*
+/**
  * NB! This routine locks the device, but if committing will
  *     not unlock it. If not committing, it will be unlocked.
  */
@@ -401,7 +403,7 @@ static bool despool_data(DCR *dcr, bool commit)
    return ok;
 }
 
-/*
+/**
  * Read a block from the spool file
  *
  *  Returns RB_OK on success
@@ -458,7 +460,7 @@ static int read_block_from_spool_file(DCR *dcr)
    return RB_OK;
 }
 
-/*
+/**
  * Write a block to the spool file
  *
  *  Returns: true on success or EOT
@@ -647,7 +649,7 @@ bool are_attributes_spooled(JCR *jcr)
    return jcr->spool_attributes && jcr->dir_bsock->m_spool_fd != -1;
 }
 
-/*
+/**
  * Create spool file for attributes.
  *  This is done by "attaching" to the bsock, and when
  *  it is called, the output is written to a file.
@@ -688,7 +690,7 @@ static void make_unique_spool_filename(JCR *jcr, POOLMEM *&name, int fd)
    Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name, jcr->Job, fd);
 }
 
-/*
+/**
  * Tell Director where to find the attributes spool file
  *  Note, if we are not on the same machine, the Director will
  *  return an error, and the higher level routine will transmit

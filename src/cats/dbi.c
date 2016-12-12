@@ -21,14 +21,15 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database routines specific to DBI
- *   These are DBI specific routines
- *
  *    João Henrique Freitas, December 2007
  *    based upon work done by Dan Langille, December 2003 and
  *    by Kern Sibbald, March 2000
- *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
+ */
+/**
+ * @file
+ * BAREOS Catalog Database routines specific to DBI
+ *   These are DBI specific routines
  */
 /*
  * This code only compiles against a recent version of libdbi. The current
@@ -62,12 +63,12 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * List of open databases
  */
 static dlist *db_list = NULL;
 
-/*
+/**
  * Control allocated fields by dbi_getvalue
  */
 static dlist *dbi_getvalue_list = NULL;
@@ -192,7 +193,7 @@ B_DB_DBI::~B_DB_DBI()
 {
 }
 
-/*
+/**
  * Now actually open the database.  This can generate errors,
  *   which are returned in the errmsg
  *
@@ -408,7 +409,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Escape strings so that DBI is happy
  *
  *   NOTE! len is the length of the old string. Your new
@@ -446,7 +447,7 @@ void B_DB_DBI::escape_string(JCR *jcr, char *snew, char *old, int len)
    Dmsg2(500, "dbi_conn_escape_string_copy %p %s\n",snew,snew);
 }
 
-/*
+/**
  * Escape binary object so that DBI is happy
  * Memory is stored in B_DB struct, no need to free it
  */
@@ -466,7 +467,7 @@ char *B_DB_DBI::escape_object(JCR *jcr, char *old, int len)
    return esc_obj;
 }
 
-/*
+/**
  * Unescape binary object so that DBI is happy
  */
 void B_DB_DBI::unescape_object(JCR *jcr, char *from, int32_t expected_len,
@@ -483,7 +484,7 @@ void B_DB_DBI::unescape_object(JCR *jcr, char *from, int32_t expected_len,
    dest[expected_len] = '\0';
 }
 
-/*
+/**
  * Start a transaction. This groups inserts and makes things
  * much more efficient. Usually started when inserting
  * file attributes.
@@ -622,7 +623,7 @@ void B_DB_DBI::end_transaction(JCR *jcr)
    }
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
@@ -660,7 +661,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Note, if this routine returns 1 (failure), BAREOS expects
  *  that no result has been stored.
  *
@@ -1135,7 +1136,7 @@ bool B_DB_DBI::sql_field_is_numeric(int field_type)
    }
 }
 
-/*
+/**
  * Escape strings so that PostgreSQL is happy on COPY
  *
  *   NOTE! len is the length of the old string. Your new
@@ -1184,7 +1185,7 @@ static char *postgresql_copy_escape(char *dest, char *src, size_t len)
    return dest;
 }
 
-/*
+/**
  * This can be a bit strang but is the one way to do
  *
  * Returns true if OK
@@ -1292,7 +1293,7 @@ ok_out:
    return retval;
 }
 
-/*
+/**
  * Set error to something to abort operation
  */
 bool B_DB_DBI::sql_batch_end(JCR *jcr, const char *error)
@@ -1336,7 +1337,7 @@ bool B_DB_DBI::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/*
+/**
  * This function is big and use a big switch.
  * In near future is better split in small functions
  * and refactory.
@@ -1449,7 +1450,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */

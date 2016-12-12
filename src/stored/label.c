@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * label.c  Bareos routines to handle labels
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Bareos routines to handle labels
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -32,7 +34,7 @@
 /* Forward referenced functions */
 static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
 
-/*
+/**
  * Read the volume label
  *
  * If dcr->VolumeName == NULL, we accept any Bareos Volume
@@ -288,7 +290,7 @@ bail_out:
    return status;
 }
 
-/*
+/**
  * Put a volume label into the block
  *
  * Returns: false on failure
@@ -323,7 +325,7 @@ static bool write_volume_label_to_block(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Write a Volume Label
  *  !!! Note, this is ONLY used for writing
  *            a fresh volume label.  Any data
@@ -469,7 +471,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Write a volume label. This is ONLY called if we have a valid Bareos
  *   label of type PRE_LABEL or we are recyling an existing Volume.
  *
@@ -618,7 +620,7 @@ bool DCR::rewrite_volume_label(bool recycle)
    return true;
 }
 
-/*
+/**
  *  create_volume_label_record
  *   Serialize label (from dev->VolHdr structure) into device record.
  *   Assumes that the dev->VolHdr structure is properly
@@ -679,7 +681,7 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
          FI_to_ascii(buf, rec->FileIndex), rec->data_len);
 }
 
-/*
+/**
  * Create a volume label in memory
  */
 void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
@@ -722,7 +724,7 @@ void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
    }
 }
 
-/*
+/**
  * Create session label
  *  The pool memory must be released by the calling program
  */

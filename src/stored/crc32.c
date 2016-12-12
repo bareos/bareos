@@ -2,6 +2,7 @@
    crc32.c 32 bit CRC
 
    Copyright (C) 2010 Joakim Tjernlund
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This file is free software: you can redistribute it and/or modify
    it under the terms of the GNU Lesser General Public License as published by
@@ -14,15 +15,17 @@
    GNU Lesser Affero General Public License for more details.
 */
 /*
- * Original 32 bit CRC.  Algorithm from RFC 2083 (png format)
  * By Kern Sibbald, January 2001
- *
- * Inproved, faster version
+ * Improved, faster version
  * By Joakim Tjernlunc, 2010
+ */
+/**
+ * @file
+ * Original 32 bit CRC.  Algorithm from RFC 2083 (png format)
  */
 
 #ifdef GENERATE_STATIC_CRC_TABLE
-/*
+/**
  * The following code can be used to generate the static CRC table.
  *
  * Note, the magic number 0xedb88320L below comes from the terms
@@ -80,7 +83,7 @@ main()
 #define tole(x) x
 #endif
 
-/*
+/**
  * The magic number 0xedb88320L below comes from the terms
  * of the defining polynomial x^n,
  * where n=0,1,2,4,5,7,8,10,11,12,16,22,23,26
@@ -348,7 +351,7 @@ tole(0x43d23e48L), tole(0xfb6e592dL), tole(0xe9dbf6c3L), tole(0x516791a6L),
 tole(0xccb0a91fL), tole(0x740cce7aL), tole(0x66b96194L), tole(0xde0506f1L)},
 };
 
-/*
+/**
  * Calculate the PNG 32 bit CRC on a buffer
  */
 uint32_t bcrc32(unsigned char*buf, int len)
@@ -409,7 +412,7 @@ static void usage()
    exit(1);
 }
 
-/*
+/**
  * Reads a single ASCII file and prints the HEX md5 sum.
  */
 #include <stdio.h>

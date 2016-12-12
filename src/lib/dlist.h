@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,19 +20,21 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MMIV and MMVII
+ */
+/**
+ * @file
  * Doubly linked list  -- dlist
  *
  * See the end of the file for the dlistString class which
  * facilitates storing strings in a dlist.
- *
- * Kern Sibbald, MMIV and MMVII
  */
 
 #define M_ABORT 1
 
 /* In case you want to specifically specify the offset to the link */
 #define OFFSET(item, link) (int)((char *)(link) - (char *)(item))
-/*
+/**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
  * (void *) as an lvalue on the left side of an equal.
@@ -85,7 +88,7 @@ public:
 };
 
 
-/*
+/**
  * This allows us to do explicit initialization,
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.
@@ -108,7 +111,7 @@ inline void dlist::init()
 }
 
 
-/*
+/**
  * Constructor called with the address of a
  *   member of the list (not the list head), and
  *   the address of the link within that member.
@@ -176,7 +179,7 @@ inline void *dlist::last() const
    return tail;
 }
 
-/*
+/**
  * C string helper routines for dlist
  *   The string (char *) is kept in the node
  *

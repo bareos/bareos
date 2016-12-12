@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Python Director Plugin program
- *
  * Marco van Wieringen, August 2012
+ */
+/**
+ * @file
+ * Python Director Plugin program
  */
 #include "bareos.h"
 #include "dird.h"
@@ -89,7 +91,7 @@ static pDirFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-/*
+/**
  * Plugin private context
  */
 struct plugin_ctx {
@@ -107,7 +109,7 @@ struct plugin_ctx {
 
 #include "python-dir.h"
 
-/*
+/**
  * We don't actually use this but we need it to tear down the
  * final python interpreter on unload of the plugin. Each instance of
  * the plugin get its own interpreter.
@@ -118,7 +120,7 @@ static PyThreadState *mainThreadState;
 extern "C" {
 #endif
 
-/*
+/**
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bareos can directly call these two entry points
  *  they are common to all Bareos plugins.
@@ -146,7 +148,7 @@ bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP unloadPlugin()
@@ -324,7 +326,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Strip any backslashes in the string.
  */
 static inline void strip_back_slashes(char *value)
@@ -345,7 +347,7 @@ static inline void strip_back_slashes(char *value)
    }
 }
 
-/*
+/**
  * Parse a integer value.
  */
 static inline int64_t parse_integer(const char *argument_value)
@@ -353,7 +355,7 @@ static inline int64_t parse_integer(const char *argument_value)
    return str_to_int64(argument_value);
 }
 
-/*
+/**
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
 static inline bool parse_boolean(const char *argument_value)
@@ -366,7 +368,7 @@ static inline bool parse_boolean(const char *argument_value)
    }
 }
 
-/*
+/**
  * Always set destination to value and clean any previous one.
  */
 static inline void set_string(char **destination, char *value)
@@ -379,7 +381,7 @@ static inline void set_string(char **destination, char *value)
    strip_back_slashes(*destination);
 }
 
-/*
+/**
  * Parse the plugin definition passed in.
  *
  * The definition is in this form:
@@ -522,7 +524,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * Work around API changes in Python versions.
  * These function abstract the storage and retrieval of the bpContext
  * which is passed to the Python methods and which the method can pass
@@ -532,7 +534,7 @@ bail_out:
 #if ((PY_VERSION_HEX < 0x02070000) || \
      ((PY_VERSION_HEX >= 0x03000000) && \
       (PY_VERSION_HEX < 0x03010000)))
-/*
+/**
  * Python version before 2.7 and 3.0.
  */
 static PyObject *PyCreatebpContext(bpContext *ctx)
@@ -548,7 +550,7 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
    return (bpContext *)PyCObject_AsVoidPtr(pyCtx);
 }
 #else
-/*
+/**
  * Python version after 2.6 and 3.1.
  */
 static PyObject *PyCreatebpContext(bpContext *ctx)
@@ -565,7 +567,7 @@ static bpContext *PyGetbpContext(PyObject *pyCtx)
 }
 #endif
 
-/*
+/**
  * Convert a return value into a bRC enum value.
  */
 static inline bRC conv_python_retval(PyObject *pRetVal)
@@ -573,7 +575,7 @@ static inline bRC conv_python_retval(PyObject *pRetVal)
    return (bRC)PyInt_AsLong(pRetVal);
 }
 
-/*
+/**
  * Convert a return value from bRC enum value into Python Object.
  */
 static inline PyObject *conv_retval_python(bRC retval)
@@ -581,7 +583,7 @@ static inline PyObject *conv_retval_python(bRC retval)
    return (PyObject *)PyInt_FromLong((int)retval);
 }
 
-/*
+/**
  * Handle a Python error.
  *
  * Python equivalent:
@@ -636,7 +638,7 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
    free(error_string);
 }
 
-/*
+/**
  * Initial load of the Python module.
  *
  * Based on the parsed plugin options we set some prerequisits like the
@@ -747,7 +749,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Any plugin options which are passed in are dispatched here to a Python method and it
  * can parse the plugin options. This function is also called after PyLoadModule() has
  * loaded the Python module and made sure things are operational.
@@ -844,7 +846,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to get certain internal values of the current Job.
  */
@@ -935,7 +937,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    return pRetVal;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to set certain internal values of the current Job.
  */
@@ -983,7 +985,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue debug messages using the Bareos debug message facility.
  */
@@ -1007,7 +1009,7 @@ static PyObject *PyBareosDebugMessage(PyObject *self, PyObject *args)
    return Py_None;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue Job messages using the Bareos Job message facility.
  */
@@ -1031,7 +1033,7 @@ static PyObject *PyBareosJobMessage(PyObject *self, PyObject *args)
    return Py_None;
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a Register Event to register additional events it wants
  * to receive.
@@ -1075,7 +1077,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue an Unregister Event to unregister events it doesn't want to
  * receive anymore.
@@ -1119,7 +1121,7 @@ bail_out:
    return conv_retval_python(retval);
 }
 
-/*
+/**
  * Callback function which is exposed as a part of the additional methods which allow
  * a Python plugin to issue a GetInstanceCount to retrieve the number of instances of
  * the current plugin being loaded into the daemon.

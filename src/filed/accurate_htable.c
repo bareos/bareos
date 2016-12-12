@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,10 +20,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * This file contains the HTABLE abstraction of the accurate payload storage.
- *
+/*
  * Marco van Wieringen, December 2013
+ */
+/**
+ * @file
+ * This file contains the HTABLE abstraction of the accurate payload storage.
  */
 
 #include "bareos.h"

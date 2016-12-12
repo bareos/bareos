@@ -21,9 +21,10 @@
    02110-1301, USA.
 */
 /*
- * BAREOS pluginloader
- *
  * Kern Sibbald, October 2007
+ */
+/** @file
+ * BAREOS pluginloader
  */
 #include "bareos.h"
 #include "dird.h"
@@ -259,7 +260,7 @@ bail_out:
    return rc;
 }
 
-/*
+/**
  * Print to file the plugin info.
  */
 void dump_dir_plugin(Plugin *plugin, FILE *fp)
@@ -381,7 +382,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    return true;
 }
 
-/*
+/**
  * Instantiate a new plugin instance.
  */
 static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t instance)
@@ -411,7 +412,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t i
    return ctx;
 }
 
-/*
+/**
  * Send a bDirEventNewPluginOptions event to all plugins configured in
  * jcr->res.Job.DirPluginOptions
  */
@@ -509,7 +510,7 @@ void dispatch_new_plugin_options(JCR *jcr)
    }
 }
 
-/*
+/**
  * Create a new instance of each plugin for this Job
  */
 void new_plugins(JCR *jcr)
@@ -541,7 +542,7 @@ void new_plugins(JCR *jcr)
    }
 }
 
-/*
+/**
  * Free the plugin instances for this Job
  */
 void free_plugins(JCR *jcr)
@@ -565,11 +566,10 @@ void free_plugins(JCR *jcr)
    jcr->plugin_ctx_list = NULL;
 }
 
-/* ==============================================================
+/**
  *
  * Callbacks from the plugin
  *
- * ==============================================================
  */
 static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 {

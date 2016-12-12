@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * ELASTO API device abstraction.
- *
  * Marco van Wieringen, November 2014
+ */
+/**
+ * @file
+ * ELASTO API device abstraction.
  */
 
 #include "bareos.h"
@@ -35,7 +37,7 @@
 
  /*
   * Options that can be specified for this device type.
- */
+  */
 enum device_option_type {
    argument_none = 0,
    argument_publishfile,
@@ -56,7 +58,7 @@ static device_option device_options[] = {
    { NULL, argument_none }
 };
 
-/*
+/**
  * Open a volume using libelasto.
  */
 int elasto_device::d_open(const char *pathname, int flags, int mode)
@@ -201,7 +203,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * Read data from a volume using libelasto.
  */
 ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
@@ -256,7 +258,7 @@ ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
    }
 }
 
-/*
+/**
  * Write data to a volume using libelasto.
  */
 ssize_t elasto_device::d_write(int fd, const void *buffer, size_t count)

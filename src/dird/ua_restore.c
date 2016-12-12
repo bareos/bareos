@@ -21,15 +21,16 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Database restore Command
- *                    Creates a bootstrap file for restoring files and
- *                    starts the restore job.
- *
+ * Kern Sibbald, July MMII
  * Tree handling routines split into ua_tree.c July MMIII.
  * BSR (bootstrap record) handling routines split into
  * bsr.c July MMIII
- *
- * Kern Sibbald, July MMII
+ */
+/**
+ * @file
+ * User Agent Database restore Command
+ *                    Creates a bootstrap file for restoring files and
+ *                    starts the restore job.
  */
 
 #include "bareos.h"
@@ -62,7 +63,7 @@ static int restore_count_handler(void *ctx, int num_fields, char **row);
 static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table);
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
 
-/*
+/**
  * Restore files
  */
 bool restore_cmd(UAContext *ua, const char *cmd)
@@ -338,7 +339,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Fill the rx->BaseJobIds and display the list
  */
 static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
@@ -391,7 +392,7 @@ static bool has_value(UAContext *ua, int i)
    return true;
 }
 
-/*
+/**
  * This gets the client name from which the backup was made
  */
 static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
@@ -433,7 +434,7 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
    return true;
 }
 
-/*
+/**
  * This is where we pick up a client name to restore to.
  */
 static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
@@ -461,7 +462,7 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
    return true;
 }
 
-/*
+/**
  * The first step in the restore process is for the user to
  *  select a list of JobIds from which he will subsequently
  *  select which files are to be restored.
@@ -903,7 +904,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
    return true;
 }
 
-/*
+/**
  * Get date from user
  */
 static bool get_date(UAContext *ua, char *date, int date_len)
@@ -923,7 +924,7 @@ static bool get_date(UAContext *ua, char *date, int date_len)
    return true;
 }
 
-/*
+/**
  * Insert a single file, or read a list of files from a file
  */
 static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, bool dir)
@@ -970,7 +971,7 @@ static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, b
    }
 }
 
-/*
+/**
  * For a given file (path+filename), split into path and file, then
  * lookup the most recent backup in the catalog to get the JobId
  * and FileIndex, then insert them into the findex list.
@@ -1001,7 +1002,7 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
    return true;
 }
 
-/*
+/**
  * For a given path lookup the most recent backup in the catalog
  * to get the JobId and FileIndexes of all files in that directory.
  */
@@ -1031,7 +1032,7 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
    return true;
 }
 
-/*
+/**
  * Get the JobId and FileIndexes of all files in the specified table
  */
 static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
@@ -1300,7 +1301,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
    return OK;
 }
 
-/*
+/**
  * This routine is used to get the current backup or a backup before the specified date.
  */
 static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date)
@@ -1522,7 +1523,7 @@ static int restore_count_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Callback handler to get JobId and FileIndex for files
  *   can insert more than one depending on the caller.
  */
@@ -1538,7 +1539,7 @@ static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Callback handler make list of JobIds
  */
 static int jobid_handler(void *ctx, int num_fields, char **row)
@@ -1556,7 +1557,7 @@ static int jobid_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Callback handler to pickup last Full backup JobTDate
  */
 static int last_full_handler(void *ctx, int num_fields, char **row)
@@ -1567,7 +1568,7 @@ static int last_full_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Callback handler build FileSet name prompt list
  */
 static int fileset_handler(void *ctx, int num_fields, char **row)
@@ -1579,7 +1580,7 @@ static int fileset_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Free names in the list
  */
 static void free_name_list(NAME_LIST *name_list)

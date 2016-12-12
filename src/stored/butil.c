@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MM
+ */
+/**
+ * @file
  * Utility routines for "tool" programs such as bscan, bls,
  * bextract, ...  Some routines also used by Bareos.
- *
- * Kern Sibbald, MM
  *
  * Normally nothing in this file is called by the Storage
  * daemon because we interact more directly with the user
@@ -45,7 +47,7 @@ char SD_IMP_EXP *configfile;
 STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
 CONFIG SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
-/*
+/**
  * Setup a "daemon" JCR for the various standalone tools (e.g. bls, bextract, bscan, ...)
  */
 JCR *setup_jcr(const char *name, char *dev_name,
@@ -94,7 +96,7 @@ JCR *setup_jcr(const char *name, char *dev_name,
    return jcr;
 }
 
-/*
+/**
  * Setup device, jcr, and prepare to access device.
  *   If the caller wants read access, acquire the device, otherwise,
  *     the caller will do it.
@@ -176,7 +178,7 @@ static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
    return true;
 }
 
-/*
+/**
  * Called here when freeing JCR so that we can get rid
  *  of "daemon" specific memory allocated.
  */
@@ -219,7 +221,7 @@ static void my_free_jcr(JCR *jcr)
    return;
 }
 
-/*
+/**
  * Search for device resource that corresponds to
  * device name on command line (or default).
  *
@@ -277,7 +279,7 @@ static DEVRES *find_device_res(char *device_name, bool readonly)
    return device;
 }
 
-/*
+/**
  * Device got an error, attempt to analyse it
  */
 void display_tape_error_status(JCR *jcr, DEVICE *dev)

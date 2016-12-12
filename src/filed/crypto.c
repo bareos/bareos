@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,12 +20,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Functions to handle cryptology
- *
+/*
  * Kern Sibbald, March MM
- *
  * Extracted from other source files by Marco van Wieringen, June 2011
+ */
+/**
+ * @file
+ * Functions to handle cryptology
  */
 
 #include "bareos.h"
@@ -136,7 +137,7 @@ bool crypto_session_send(JCR *jcr, BSOCK *sd)
    return true;
 }
 
-/*
+/**
  * Verify the signature for the last restored file
  * Return value is either true (signature correct)
  * or false (signature could not be verified).
@@ -268,7 +269,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * In the context of jcr, flush any remaining data from the cipher context,
  * writing it to bfd.
  * Return value is true on success, false on failure.
@@ -388,7 +389,7 @@ void deallocate_fork_cipher(r_ctx &rctx)
    }
 }
 
-/*
+/**
  * Setup a encryption context
  */
 bool setup_encryption_context(b_ctx &bctx)
@@ -434,7 +435,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Setup a decryption context
  */
 bool setup_decryption_context(r_ctx &rctx, RESTORE_CIPHER_CTX &rcctx)

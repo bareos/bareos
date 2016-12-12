@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Database Query Commands
- *
  * Kern Sibbald, December MMI
+ */
+/**
+ * @file
+ * BAREOS Director -- User Agent Database Query Commands
  */
 
 #include "bareos.h"
@@ -34,7 +36,7 @@ extern DIRRES *director;
 static POOLMEM *substitute_prompts(UAContext *ua,
                        POOLMEM *query, char **prompt, int nprompt);
 
-/*
+/**
  * Read a file containing SQL queries and prompt
  *  the user to select which one.
  *
@@ -241,7 +243,7 @@ static POOLMEM *substitute_prompts(UAContext *ua, POOLMEM *query, char **prompt,
    return new_query;
 }
 
-/*
+/**
  * Get general SQL query for Catalog
  */
 bool sqlquery_cmd(UAContext *ua, const char *cmd)

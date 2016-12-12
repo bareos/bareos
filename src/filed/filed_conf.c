@@ -21,6 +21,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, September MM
+ */
+/**
+ * @file
  * Main configuration file parser for Bareos File Daemon (Client)
  * some parts may be split into separate files such as
  * the schedule configuration (sch_config.c).
@@ -37,15 +41,13 @@
  * 3. The daemon specific file, which contains the Resource
  *    definitions as well as any specific store routines
  *    for the resource records.
- *
- * Kern Sibbald, September MM
  */
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "filed.h"
 
-/*
+/**
  * Define the first and last resource ID record
  * types. Note, these should be unique for each
  * daemon though not a requirement.
@@ -53,11 +55,11 @@
 static RES *sres_head[R_LAST - R_FIRST + 1];
 static RES **res_head = sres_head;
 
-/*
+/**
  * Forward referenced subroutines
  */
 
-/*
+/**
  * We build the current resource here as we are
  * scanning the resource configuration definition,
  * then move it to allocated memory when the resource
@@ -66,14 +68,14 @@ static RES **res_head = sres_head;
 static URES res_all;
 static int32_t res_all_size = sizeof(res_all);
 
-/*
+/**
  * Definition of records permitted within each
  * resource with the routine to process the record
  * information.
  */
 
 
-/*
+/**
  * Client or File daemon "Global" resources
  */
 static RES_ITEM cli_items[] = {
@@ -119,7 +121,7 @@ static RES_ITEM cli_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Directors that can use our services
  */
 static RES_ITEM dir_items[] = {
@@ -142,12 +144,12 @@ static RES_ITEM dir_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Message resource
  */
 #include "lib/msg_res.h"
 
-/*
+/**
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
@@ -159,7 +161,7 @@ static RES_TABLE resources[] = {
    { NULL, NULL, 0}
 };
 
-/*
+/**
  * Dump contents of resource
  */
 void dump_resource(int type, RES *reshdr,
@@ -199,7 +201,7 @@ void dump_resource(int type, RES *reshdr,
    }
 }
 
-/*
+/**
  * Free memory of resource.
  * NB, we don't need to worry about freeing any references
  * to other resources as they will be freed when that
@@ -334,7 +336,7 @@ void free_resource(RES *sres, int type)
    }
 }
 
-/*
+/**
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
@@ -485,7 +487,7 @@ static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
@@ -510,7 +512,7 @@ static void init_resource_cb(RES_ITEM *item, int pass)
    }
 }
 
-/*
+/**
  * callback function for parse_config
  * See ../lib/parse_conf.c, function parse_config, for more generic handling.
  */
@@ -550,7 +552,7 @@ bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
    return config->parse_config();
 }
 
-/*
+/**
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON

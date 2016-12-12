@@ -1,6 +1,9 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
+
    Copyright (C) 2009-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
    License as published by the Free Software Foundation and included
@@ -14,10 +17,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 */
 /*
+ *    Stefan Reddig, June 2009 with help of Marco van Wieringen April 2010
+ */
+/*
+ * @file
  * BAREOS Catalog Database routines specific to Ingres
  *   These are Ingres specific routines
- *
- *    Stefan Reddig, June 2009 with help of Marco van Wieringen April 2010
  */
 #include "bareos.h"
 /* # line 37 "myingres.sc" */
@@ -40,7 +45,7 @@ IISQLCA *IIsqlca();
 #endif
 #define sqlca (*(IIsqlca()))
 
-/*
+/**
  * ---Implementations---
  */
 int INGgetCols(INGconn *dbconn, const char *query, bool explicit_commit)

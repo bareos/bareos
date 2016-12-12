@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS RUNSCRIPT Structure definition for FileDaemon and Director
- *
  * Eric Bollengier May 2006
+ */
+/**
+ * @file
+ * BAREOS RUNSCRIPT Structure definition for FileDaemon and Director
  */
 
 #ifndef __RUNSCRIPT_H_
@@ -43,7 +46,7 @@
  * free_runscript(script);
  */
 
-/*
+/**
  * RUNSCRIPT->when can take following bit values:
  */
 enum {
@@ -59,7 +62,7 @@ enum {
    CONSOLE_CMD = '@'
 };
 
-/*
+/**
  * Structure for RunScript ressource
  */
 class RUNSCRIPT {

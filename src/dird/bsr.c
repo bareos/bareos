@@ -21,12 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Bootstrap routines.
- *
- * BSR (bootstrap record) handling routines split from ua_restore.c July 2003
- * Bootstrap send handling routines split from restore.c July 2012
- *
  * Kern Sibbald, July 2002
+ */
+/**
+ * @file
+ * Bootstrap routines.
  */
 
 #include "bareos.h"
@@ -36,7 +35,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Create new FileIndex entry for BSR
  */
 RBSR_FINDEX *new_findex()
@@ -46,7 +45,7 @@ RBSR_FINDEX *new_findex()
    return fi;
 }
 
-/*
+/**
  * Free all BSR FileIndex entries
  */
 static inline void free_findex(RBSR_FINDEX *fi)
@@ -58,7 +57,7 @@ static inline void free_findex(RBSR_FINDEX *fi)
    }
 }
 
-/*
+/**
  * Get storage device name from Storage resource
  */
 static bool get_storage_device(char *device, char *storage)
@@ -79,7 +78,7 @@ static bool get_storage_device(char *device, char *storage)
    return true;
 }
 
-/*
+/**
  * Print a BSR entry into a memory buffer.
  */
 static void print_bsr_item(POOL_MEM *pool_buf, const char *fmt, ...)
@@ -103,7 +102,7 @@ static void print_bsr_item(POOL_MEM *pool_buf, const char *fmt, ...)
    pool_buf->strcat(item.c_str());
 }
 
-/*
+/**
  * Our data structures were not designed completely
  * correctly, so the file indexes cover the full
  * range regardless of volume. The FirstIndex and LastIndex
@@ -141,7 +140,7 @@ static inline uint32_t write_findex(RBSR_FINDEX *fi,
    return count;
 }
 
-/*
+/**
  * Find out if Volume defined with FirstIndex and LastIndex
  * falls within the range of selected files in the bsr.
  */
@@ -160,7 +159,7 @@ static inline bool is_volume_selected(RBSR_FINDEX *fi,
    return false;
 }
 
-/*
+/**
  * Create a new bootstrap record
  */
 RBSR *new_bsr()
@@ -171,7 +170,7 @@ RBSR *new_bsr()
    return bsr;
 }
 
-/*
+/**
  * Free the entire BSR
  */
 void free_bsr(RBSR *bsr)
@@ -195,7 +194,7 @@ void free_bsr(RBSR *bsr)
    }
 }
 
-/*
+/**
  * Complete the BSR by filling in the VolumeName and
  * VolSessionId and VolSessionTime using the JobId
  */
@@ -251,7 +250,7 @@ static void make_unique_restore_filename(UAContext *ua, POOL_MEM &fname)
    jcr->RestoreBootstrap = bstrdup(fname.c_str());
 }
 
-/*
+/**
  * Write the bootstrap records to file
  */
 uint32_t write_bsr_file(UAContext *ua, RESTORE_CTX &rx)
@@ -384,7 +383,7 @@ void display_bsr_info(UAContext *ua, RESTORE_CTX &rx)
    return;
 }
 
-/*
+/**
  * Write bsr data for a single bsr record
  */
 static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
@@ -459,7 +458,7 @@ static uint32_t write_bsr_item(RBSR *bsr, UAContext *ua,
    return total_count;
 }
 
-/*
+/**
  * Here we actually write out the details of the bsr file.
  * Note, there is one bsr for each JobId, but the bsr may
  * have multiple volumes, which have been entered in the
@@ -503,7 +502,7 @@ void print_bsr(UAContext *ua, RESTORE_CTX &rx)
    fprintf(stdout, "%s", buffer.c_str());
 }
 
-/*
+/**
  * Add a FileIndex to the list of BootStrap records.
  * Here we are only dealing with JobId's and the FileIndexes
  * associated with those JobIds.
@@ -637,7 +636,7 @@ void add_findex(RBSR *bsr, uint32_t JobId, int32_t findex)
    return;
 }
 
-/*
+/**
  * Add all possible  FileIndexes to the list of BootStrap records.
  * Here we are only dealing with JobId's and the FileIndexes
  * associated with those JobIds.
@@ -703,7 +702,7 @@ void add_findex_all(RBSR *bsr, uint32_t JobId)
    return;
 }
 
-/*
+/**
  * Open the bootstrap file and find the first Storage=
  * Returns ok if able to open
  *
@@ -751,7 +750,7 @@ bool open_bootstrap_file(JCR *jcr, bootstrap_info &info)
    return true;
 }
 
-/*
+/**
  * This function compare the given storage name with the
  * the current one. We compare the name and the address:port.
  * Returns true if we use the same storage.
@@ -800,7 +799,7 @@ static inline bool is_on_same_storage(JCR *jcr, char *new_one)
    return true;
 }
 
-/*
+/**
  * Check if the current line contains Storage="xxx", and compare the
  * result to the current storage. We use UAContext to analyse the bsr
  * string.
@@ -836,7 +835,7 @@ static inline bool check_for_new_storage(JCR *jcr, bootstrap_info &info)
    return false;
 }
 
-/*
+/**
  * Send bootstrap file to Storage daemon section by section.
  */
 bool send_bootstrap_file(JCR *jcr, BSOCK *sock, bootstrap_info &info)
@@ -872,7 +871,7 @@ bool send_bootstrap_file(JCR *jcr, BSOCK *sock, bootstrap_info &info)
    return true;
 }
 
-/*
+/**
  * Clean the bootstrap_info struct
  */
 void close_bootstrap_file(bootstrap_info &info)

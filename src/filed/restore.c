@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Bareos File Daemon restore.c Restorefiles.
- *
  * Kern Sibbald, November MM
+ */
+/**
+ * @file
+ * Bareos File Daemon restore.c Restorefiles.
  */
 
 #include "bareos.h"
@@ -61,13 +63,13 @@ const bool have_xattr = true;
 const bool have_xattr = false;
 #endif
 
-/*
+/**
  * Data received from Storage Daemon
  */
 static char rec_header[] =
    "rechdr %ld %ld %ld %ld %ld";
 
-/*
+/**
  * Forward referenced functions
  */
 #if defined(HAVE_LIBZ)
@@ -92,7 +94,7 @@ static bool close_previous_stream(JCR *jcr, r_ctx &rctx);
 int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
                      uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx);
 
-/*
+/**
  * Close a bfd check that we are at the expected file offset.
  * Makes use of some code from set_attributes().
  */
@@ -139,7 +141,7 @@ static inline bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
 #endif
 }
 
-/*
+/**
  * Cleanup of delayed restore stack with streams for later processing.
  */
 static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
@@ -161,7 +163,7 @@ static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
    }
 }
 
-/*
+/**
  * Push a data stream onto the delayed restore stack for later processing.
  */
 static inline void push_delayed_data_stream(r_ctx &rctx, BSOCK *sd)
@@ -181,7 +183,7 @@ static inline void push_delayed_data_stream(r_ctx &rctx, BSOCK *sd)
    rctx.delayed_streams->append(dds);
 }
 
-/*
+/**
  * Perform a restore of an ACL using the stream received.
  * This can either be a delayed restore or direct restore.
  */
@@ -223,7 +225,7 @@ static inline bool do_restore_acl(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Perform a restore of an XATTR using the stream received.
  * This can either be a delayed restore or direct restore.
  */
@@ -264,7 +266,7 @@ static inline bool do_restore_xattr(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Restore any data streams that are restored after the file
  * is fully restored and has its attributes restored. Things
  * like acls and xattr are restored after we set the file
@@ -368,7 +370,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Restore the requested files.
  */
 void do_restore(JCR *jcr)
@@ -1244,7 +1246,7 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
    return true;
 }
 
-/*
+/**
  * In the context of jcr, write data to bfd.
  * We write buflen bytes in buf at addr. addr is updated in place.
  * The flags specify whether to use sparse files or compression.
@@ -1315,7 +1317,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * If extracting, close any previous stream
  */
 static bool close_previous_stream(JCR *jcr, r_ctx &rctx)

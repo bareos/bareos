@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,16 +19,17 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
 /*
- * red-black binary tree routines -- rblist.h
- *
  * Kern Sibbald, MMV
+ */
+/**
+ * @file
+ * red-black binary tree routines -- rblist.h
  */
 
 #define M_ABORT 1
 
-/*
+/**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
  * (bnode *) as an lvalue on the left side of an equal.
@@ -81,7 +83,7 @@ public:
 };
 
 
-/*
+/**
  * This allows us to do explicit initialization,
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.

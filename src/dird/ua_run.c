@@ -20,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Run Command
- *
  * Kern Sibbald, December MMI
  */
-
+/**
+ * @file
+ * BAREOS Director -- Run Command
+ */
 #include "bareos.h"
 #include "dird.h"
 
@@ -39,7 +40,7 @@ static int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc);
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
 
-/*
+/**
  * Rerun a job by jobid. Lookup the job data and rerun the job with that data.
  *
  * Returns: false on error
@@ -188,7 +189,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Rerun a job selection.
  *
  * Returns: 0 on error
@@ -335,7 +336,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * For Backup and Verify Jobs
  *     run [job=]<job-name> level=<level-name>
  *
@@ -824,7 +825,7 @@ try_again:
    return 0;
 }
 
-/*
+/**
  * Reset the restore context.
  * This subroutine can be called multiple times, so it must keep any prior settings.
  */

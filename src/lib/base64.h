@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Generic base 64 input and output routines
- *
  * Written by Kern E. Sibbald, March MM.
+ */
+/**
+ * @file
+ * Generic base 64 input and output routines
  */
 
 /* Maximum size of len bytes after base64 encoding */

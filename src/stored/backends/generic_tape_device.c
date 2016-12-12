@@ -21,18 +21,20 @@
    02110-1301, USA.
 */
 /*
- * Generic Tape API device abstraction.
- *
  * Kern Sibbald, MM
  *
  * Extracted from other source files Marco van Wieringen, June 2014
+ */
+/**
+ * @file
+ * Generic Tape API device abstraction.
  */
 
 #include "bareos.h"
 #include "stored.h"
 #include "generic_tape_device.h"
 
-/*
+/**
  * Open a tape device
  */
 void generic_tape_device::open_device(DCR *dcr, int omode)
@@ -144,7 +146,7 @@ void generic_tape_device::open_device(DCR *dcr, int omode)
    Dmsg1(100, "open dev: tape %d opened\n", m_fd);
 }
 
-/*
+/**
  * Position device to end of medium (end of data)
  *
  * Returns: true  on succes
@@ -292,7 +294,7 @@ bool generic_tape_device::eod(DCR *dcr)
    return ok;
 }
 
-/*
+/**
  * Called to indicate that we have just read an EOF from the device.
  */
 void generic_tape_device::set_ateof()
@@ -304,7 +306,7 @@ void generic_tape_device::set_ateof()
    block_num = 0;
 }
 
-/*
+/**
  * Called to indicate we are now at the end of the volume, and writing is not possible.
  */
 void generic_tape_device::set_ateot()
@@ -318,7 +320,7 @@ void generic_tape_device::set_ateot()
    clear_append();
 }
 
-/*
+/**
  * Rewind device and put it offline
  *
  * Returns: true  on success
@@ -355,7 +357,7 @@ bool generic_tape_device::offline()
    return true;
 }
 
-/*
+/**
  * Write an end of file on the device
  *
  * Returns: true on success
@@ -402,7 +404,7 @@ bool generic_tape_device::weof(int num)
    return status == 0;
 }
 
-/*
+/**
  * Foward space a file
  *
  * Returns: true  on success
@@ -587,7 +589,7 @@ bool generic_tape_device::fsf(int num)
    return status == 0;
 }
 
-/*
+/**
  * Backward space a file
  *
  * Returns: false on failure
@@ -633,7 +635,7 @@ static inline bool dev_get_os_pos(DEVICE *dev, struct mtget *mt_stat)
           mt_stat->mt_fileno >= 0;
 }
 
-/*
+/**
  * Foward space num records
  *
  * Returns: false on failure
@@ -688,7 +690,7 @@ bool generic_tape_device::fsr(int num)
    return status == 0;
 }
 
-/*
+/**
  * Backward space a record
  *
  * Returns:  false on failure
@@ -729,7 +731,7 @@ bool generic_tape_device::bsr(int num)
    return status == 0;
 }
 
-/*
+/**
  * Load medium in device
  *
  * Returns: true  on success
@@ -798,7 +800,7 @@ void generic_tape_device::unlock_door()
 }
 
 #if defined(MTIOCLRERR)
-/*
+/**
  * Found on Solaris
  */
 static inline void os_clrerror(DEVICE *dev)
@@ -809,7 +811,7 @@ static inline void os_clrerror(DEVICE *dev)
    Dmsg0(200, "Did MTIOCLRERR\n");
 }
 #elif defined(MTIOCERRSTAT)
-/*
+/**
  * Typically on FreeBSD
  */
 static inline void os_clrerror(DEVICE *dev)
@@ -826,7 +828,7 @@ static inline void os_clrerror(DEVICE *dev)
    }
 }
 #elif defined(MTCSE)
-/*
+/**
  * Clear Subsystem Exception TRU64
  */
 static inline void os_clrerror(DEVICE *dev)
@@ -849,7 +851,7 @@ static inline void os_clrerror(DEVICE *dev)
 }
 #endif
 
-/*
+/**
  * If implemented in system, clear the tape error status.
  */
 void generic_tape_device::clrerror(int func)
@@ -1085,7 +1087,7 @@ void generic_tape_device::set_os_device_parameters(DCR *dcr)
 #endif
 }
 
-/*
+/**
  * Returns file position on tape or -1
  */
 int32_t generic_tape_device::get_os_tape_file()
@@ -1100,7 +1102,7 @@ int32_t generic_tape_device::get_os_tape_file()
    return -1;
 }
 
-/*
+/**
  * Rewind the device.
  *
  * Returns: true  on success
@@ -1182,7 +1184,7 @@ bool generic_tape_device::rewind(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * (Un)mount the device (for tape devices)
  */
 static bool do_mount(DCR *dcr, int mount, int dotimeout)
@@ -1347,7 +1349,7 @@ char *generic_tape_device::status_dev()
    return status;
 }
 
-/*
+/**
  * Set the position of the device.
  *
  * Returns: true  on succes
@@ -1358,7 +1360,7 @@ bool generic_tape_device::update_pos(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Reposition the device to file, block
  *
  * Returns: false on failure
@@ -1413,7 +1415,7 @@ bool generic_tape_device::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
    return true;
 }
 
-/*
+/**
  * Mount the device.
  *
  * If timeout, wait until the mount command returns 0.
@@ -1430,7 +1432,7 @@ bool generic_tape_device::mount_backend(DCR *dcr, int timeout)
    return retval;
 }
 
-/*
+/**
  * Unmount the device
  *
  * If timeout, wait until the unmount command returns 0.

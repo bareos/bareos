@@ -21,39 +21,41 @@
    02110-1301, USA.
 */
 /*
- * Configuration file parser for Bareos Storage daemon
- *
  * Kern Sibbald, March MM
+ */
+/**
+ * @file
+ * Configuration file parser for Bareos Storage daemon
  */
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "stored.h"
 
-/*
+/**
  * First and last resource ids
  */
 static RES *sres_head[R_LAST - R_FIRST + 1];
 static RES **res_head = sres_head;
 
-/*
+/**
  * Forward referenced subroutines
  */
 
-/*
+/**
  * We build the current resource here statically,
  * then move it to dynamic memory
  */
 static URES res_all;
 static int32_t res_all_size = sizeof(res_all);
 
-/*
+/**
  * Definition of records permitted within each
  * resource with the routine to process the record
  * information.
  */
 
-/*
+/**
  * Globals for the Storage daemon.
  */
 static RES_ITEM store_items[] = {
@@ -104,7 +106,7 @@ static RES_ITEM store_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Directors that can speak to the Storage daemon
  */
 static RES_ITEM dir_items[] = {
@@ -118,7 +120,7 @@ static RES_ITEM dir_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * NDMP DMA's that can speak to the Storage daemon
  */
 static RES_ITEM ndmp_items[] = {
@@ -131,7 +133,7 @@ static RES_ITEM ndmp_items[] = {
    { NULL, 0, { 0 }, 0, 0, 0, NULL, NULL }
 };
 
-/*
+/**
  * Device definition
  */
 static RES_ITEM dev_items[] = {
@@ -206,7 +208,7 @@ static RES_ITEM dev_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Autochanger definition
  */
 static RES_ITEM changer_items[] = {
@@ -220,12 +222,12 @@ static RES_ITEM changer_items[] = {
 
 // { "mountanonymousvolumes", CFG_TYPE_BIT, ITEM(res_dev.cap_bits), CAP_ANONVOLS, CFG_ITEM_DEFAULT, "off" },
 
-/*
+/**
  * Message resource
  */
 #include "lib/msg_res.h"
 
-/*
+/**
  * This is the master resource definition
  */
 static RES_TABLE resources[] = {
@@ -238,7 +240,7 @@ static RES_TABLE resources[] = {
    { NULL, NULL, 0 }
 };
 
-/*
+/**
  * Authentication methods
  */
 static struct s_kw authmethods[] = {
@@ -248,7 +250,7 @@ static struct s_kw authmethods[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Device types
  *
  * device type, device code = token
@@ -266,7 +268,7 @@ static s_kw dev_types[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * IO directions.
  */
 static s_kw io_directions[] = {
@@ -276,7 +278,7 @@ static s_kw io_directions[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Compression algorithms
  */
 static s_kw compression_algorithms[] = {
@@ -288,7 +290,7 @@ static s_kw compression_algorithms[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
 static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -314,7 +316,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store password either clear if for NDMP or MD5 hashed for native.
  */
 static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -343,7 +345,7 @@ static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
       break;
    }
 }
-/*
+/**
  * Store Device Type (File, FIFO, Tape)
  */
 static void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -369,7 +371,7 @@ static void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store Maximum Block Size, and check it is not greater than MAX_BLOCK_LENGTH
  */
 static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -381,7 +383,7 @@ static void store_maxblocksize(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-/*
+/**
  * Store the IO direction on a certain device.
  */
 static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -404,7 +406,7 @@ static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store the compression algorithm to use on a certain device.
  */
 static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -427,7 +429,7 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Dump contents of resource
  */
 void dump_resource(int type, RES *reshdr,
@@ -467,7 +469,7 @@ void dump_resource(int type, RES *reshdr,
    }
 }
 
-/*
+/**
  * Free memory of resource.
  * NB, we don't need to worry about freeing any references
  * to other resources as they will be freed when that
@@ -637,7 +639,7 @@ void free_resource(RES *sres, int type)
    }
 }
 
-/*
+/**
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * or alist pointers.
@@ -775,7 +777,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
    return (error == 0);
 }
 
-/*
+/**
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
@@ -800,7 +802,7 @@ static void init_resource_cb(RES_ITEM *item, int pass)
    }
 }
 
-/*
+/**
  * callback function for parse_config
  * See ../lib/parse_conf.c, function parse_config, for more generic handling.
  */
@@ -871,7 +873,7 @@ bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
    return retval;
 }
 
-/*
+/**
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON

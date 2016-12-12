@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the Free
@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
-/*
+/**
+ * @file
  * This defines the Python types in C++ and the callbacks from Python we support.
  */
 
@@ -28,7 +28,7 @@
 
 #include "structmember.h"
 
-/*
+/**
  * This defines the arguments that the plugin parser understands.
  */
 enum plugin_argument_type {
@@ -48,11 +48,11 @@ static plugin_argument plugin_arguments[] = {
    { NULL, argument_none }
 };
 
-/*
+/**
  * Python structures mapping C++ ones.
  */
 
-/*
+/**
  * This packet is used for the restore objects.
  * It is passed to the plugin when restoring the object.
  */
@@ -70,7 +70,7 @@ typedef struct {
    uint32_t JobId;                   /* JobId object came from */
 } PyRestoreObject;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyRestoreObject_dealloc(PyRestoreObject *self);
@@ -136,7 +136,7 @@ static PyTypeObject PyRestoreObjectType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PyStatPacket type
  */
 typedef struct {
@@ -156,7 +156,7 @@ typedef struct {
    uint64_t blocks;
 } PyStatPacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyStatPacket_dealloc(PyStatPacket *self);
@@ -225,7 +225,7 @@ static PyTypeObject PyStatPacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PySavePacket type
  */
 typedef struct {
@@ -247,7 +247,7 @@ typedef struct {
    int32_t object_index;              /* Restore object index */
 } PySavePacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PySavePacket_dealloc(PySavePacket *self);
@@ -318,7 +318,7 @@ static PyTypeObject PySavePacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PyRestorePacket type
  */
 typedef struct {
@@ -339,7 +339,7 @@ typedef struct {
    int create_status;                 /* Status from createFile() */
 } PyRestorePacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyRestorePacket_dealloc(PyRestorePacket *self);
@@ -409,7 +409,7 @@ static PyTypeObject PyRestorePacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PyIOPacket type
  */
 typedef struct {
@@ -428,7 +428,7 @@ typedef struct {
    bool win32;                        /* Win32 GetLastError returned */
 } PyIoPacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyIoPacket_dealloc(PyIoPacket *self);
@@ -496,7 +496,7 @@ static PyTypeObject PyIoPacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PyAclPacket type
  */
 typedef struct {
@@ -505,7 +505,7 @@ typedef struct {
    PyObject *content;                 /* ACL content */
 } PyAclPacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyAclPacket_dealloc(PyAclPacket *self);
@@ -563,7 +563,7 @@ static PyTypeObject PyAclPacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * The PyXattrPacket type
  */
 typedef struct {
@@ -573,7 +573,7 @@ typedef struct {
    PyObject *value;                   /* XATTR value */
 } PyXattrPacket;
 
-/*
+/**
  * Forward declarations of type specific functions.
  */
 static void PyXattrPacket_dealloc(PyXattrPacket *self);
@@ -632,7 +632,7 @@ static PyTypeObject PyXattrPacketType = {
    0,                                 /* tp_new */
 };
 
-/*
+/**
  * Callback methods from Python.
  */
 static PyObject *PyBareosGetValue(PyObject *self, PyObject *args);

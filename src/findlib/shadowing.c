@@ -3,7 +3,7 @@
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,19 +21,21 @@
    02110-1301, USA.
 */
 /*
+ * Written by Marco van Wieringen, November 2011
+ */
+/**
+ * @file
  * Detect fileset shadowing e.g. when an include entry pulls in data
  * which is already being backuped by another include pattern. Currently
  * we support both local and global shadowing. Where local shadowing is
  * when the shadowing occurs within one include block and global when
  * between multiple include blocks.
- *
- * Written by Marco van Wieringen, November 2011
  */
 
 #include "bareos.h"
 #include "find.h"
 
-/*
+/**
  * Check if a certain fileset include pattern shadows another pattern.
  */
 static inline bool check_include_pattern_shadowing(JCR *jcr,
@@ -102,7 +104,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * See if recursion is on or off for a specific include block.
  * We use the data from the default options block.
  * e.g. the last option block in the include block.
@@ -122,7 +124,7 @@ static inline bool include_block_is_recursive(findINCEXE *incexe)
    return recursive;
 }
 
-/*
+/**
  * See if an options block of an include block has any wildcard
  * or regex settings which are not used for excluding.
  */
@@ -169,7 +171,7 @@ static inline bool include_block_has_patterns(findINCEXE *incexe)
    return has_find_patterns;
 }
 
-/*
+/**
  * For this include block lookup the shadow checking type requested.
  * We use the data from the default options block.
  * e.g. the last option block in the include block.
@@ -188,7 +190,7 @@ static inline b_fileset_shadow_type include_block_get_shadow_type(findINCEXE *in
    return shadow_type;
 }
 
-/*
+/**
  * See if there is any local shadowing within an include block.
  */
 static void check_local_fileset_shadowing(JCR *jcr,
@@ -268,7 +270,7 @@ static void check_local_fileset_shadowing(JCR *jcr,
    }
 }
 
-/*
+/**
  * See if there is any local shadowing within an include block or
  * any global shadowing between include blocks.
  */

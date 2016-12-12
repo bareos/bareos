@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * attr.c  Unpack an Attribute record returned from the tape
- *
  * Kern Sibbald, June MMIII  (code pulled from filed/restore.c and updated)
+ */
+/**
+ * @file
+ * attr.c  Unpack an Attribute record returned from the tape
  */
 
 #include "bareos.h"
@@ -148,7 +151,7 @@ static void strip_double_slashes(char *fname)
 }
 #endif
 
-/*
+/**
  * Build attr->ofname from attr->fname and
  *       attr->olname from attr->olname
  */
@@ -238,7 +241,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
 extern char *getuser(uid_t uid, char *name, int len);
 extern char *getgroup(gid_t gid, char *name, int len);
 
-/*
+/**
  * Print an ls style message, also send M_RESTORED
  */
 void print_ls_output(JCR *jcr, ATTR *attr)

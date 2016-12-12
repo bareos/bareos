@@ -2,7 +2,7 @@
    BAREOS - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * This file handles commands from another Storage daemon.
- *
  * Marco van Wieringen, November 2012
+ */
+/**
+ * @file
+ * This file handles commands from another Storage daemon.
  *
  * We get here because the Director has initiated a Job with
  * another Storage daemon, then done the same with this
@@ -54,7 +56,7 @@ struct s_cmds {
    bool (*func)(JCR *jcr);
 };
 
-/*
+/**
  * The following are the recognized commands from the Remote Storage daemon
  */
 static struct s_cmds sd_cmds[] = {
@@ -64,7 +66,7 @@ static struct s_cmds sd_cmds[] = {
    { NULL, NULL } /* list terminator */
 };
 
-/*
+/**
  * Responses sent to the Remote Storage daemon
  */
 static char NO_open[] =
@@ -78,7 +80,7 @@ static char OK_end_replicate[] =
 static char OK_start_replicate[] =
    "3000 OK start replicate ticket = %d\n";
 
-/*
+/**
  * Responses sent to the Director
  */
 static char Job_start[] =
@@ -86,7 +88,7 @@ static char Job_start[] =
 static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
-/*
+/**
  * After receiving a connection (in socket_server.c) if it is
  * from the Storage daemon, this routine is called.
  */
@@ -94,7 +96,7 @@ void *handle_stored_connection(BSOCK *sd, char *job_name)
 {
    JCR *jcr;
 
-/*
+/**
  * With the following bmicrosleep on, running the
  * SD under the debugger fails.
  */
@@ -144,7 +146,7 @@ void *handle_stored_connection(BSOCK *sd, char *job_name)
    return NULL;
 }
 
-/*
+/**
  * Now talk to the SD and do what he says
  */
 static void do_sd_commands(JCR *jcr)
@@ -204,7 +206,7 @@ static void do_sd_commands(JCR *jcr)
    sd->signal(BNET_TERMINATE);        /* signal to SD job is done */
 }
 
-/*
+/**
  * Run a Storage daemon replicate Job -- Wait for remote Storage daemon
  * to connect and authenticate it we then will get a wakeup sign using
  * the job_start_wait conditional
@@ -287,7 +289,7 @@ cleanup:
    return false;
 }
 
-/*
+/**
  * Start of replication.
  */
 static bool start_replication_session(JCR *jcr)
@@ -312,7 +314,7 @@ static bool start_replication_session(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Replicate data.
  *    Open Data Channel and receive Data for archiving
  *    Write the Data to the archive device
@@ -347,7 +349,7 @@ static bool replicate_data(JCR *jcr)
    return false;
 }
 
-/*
+/**
  * End a replication session.
  */
 static bool end_replication_session(JCR *jcr)

@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Bareos pluginloader
- *
  * Kern Sibbald, October 2007
+ */
+/**
+ * @file
+ * Bareos pluginloader
  */
 #include "bareos.h"
 #include "filed.h"
@@ -44,7 +46,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 extern int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
 
-/*
+/**
  * Function pointers to be set here
  */
 extern DLL_IMP_EXP int (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode);
@@ -53,7 +55,7 @@ extern DLL_IMP_EXP ssize_t (*plugin_bread)(BFILE *bfd, void *buf, size_t count);
 extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count);
 extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int whence);
 
-/*
+/**
  * Forward referenced functions
  */
 static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value);
@@ -83,7 +85,7 @@ static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname);
 static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname);
 static bRC bareosGetInstanceCount(bpContext *ctx, int *ret);
 
-/*
+/**
  * These will be plugged into the global pointer structure for the findlib.
  */
 static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode);
@@ -125,7 +127,7 @@ static bFuncs bfuncs = {
    bareosClearSeenBitmap
 };
 
-/*
+/**
  * Bareos private context
  */
 struct b_plugin_ctx {
@@ -1754,7 +1756,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    return true;
 }
 
-/*
+/**
  * Instantiate a new plugin instance.
  */
 static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char instance)

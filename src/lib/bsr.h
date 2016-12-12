@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BootStrap record definition -- for restoring files.
- *
  * Kern Sibbald, June 2002
+ */
+/**
+ * @file
+ * BootStrap record definition -- for restoring files.
  */
 #ifndef __BSR_H
 #define __BSR_H 1
@@ -34,7 +36,7 @@
 #include <regex.h>
 #endif
 
-/*
+/**
  * List of Volume names to be read by Storage daemon.
  *  Formed by Storage daemon from BSR
  */
@@ -47,7 +49,7 @@ struct VOL_LIST {
    uint32_t start_file;
 };
 
-/*
+/**
  * !!!!!!!!!!!!!!!!!! NOTE !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  * !!!                                               !!!
  * !!!   All records must have a pointer to          !!!

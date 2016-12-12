@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Tape labeling commands
- *
  * Kern Sibbald, April MMIII
+ */
+/**
+ * @file
+ * BAREOS Director -- Tape labeling commands
  */
 
 #include "bareos.h"

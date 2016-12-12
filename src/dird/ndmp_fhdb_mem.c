@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * In memory FHDB for NDMP Data Management Application (DMA)
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * In memory FHDB for NDMP Data Management Application (DMA)
  */
 
 #include "bareos.h"
@@ -73,13 +75,13 @@ struct ndmp_fhdb_root {
     */
    rblink sibling;
    rblist child;
-   char *fname;                   /* File name */
-   char *attr;                    /* Encoded stat struct */
-   int8_t FileType;               /* Type of File */
-   int32_t FileIndex;             /* File index */
-   uint64_t Offset;               /* File Offset in NDMP stream */
-   uint64_t inode;                /* Inode nr */
-   uint16_t fname_len;            /* Filename length */
+   char *fname;                   /**< File name */
+   char *attr;                    /**< Encoded stat struct */
+   int8_t FileType;               /**< Type of File */
+   int32_t FileIndex;             /**< File index */
+   uint64_t Offset;               /**< File Offset in NDMP stream */
+   uint64_t inode;                /**< Inode nr */
+   uint16_t fname_len;            /**< Filename length */
    ndmp_fhdb_node *next;
    ndmp_fhdb_node *parent;
 
@@ -87,12 +89,12 @@ struct ndmp_fhdb_root {
     * The above ^^^ must be identical to a ndmp_fhdb_node structure
     * The below vvv is only for the root of the tree.
     */
-   ndmp_fhdb_node *first;         /* first entry in the tree */
-   ndmp_fhdb_node *last;          /* last entry in the tree */
-   ndmp_fhdb_mem *mem;            /* tree memory */
-   uint32_t total_size;           /* total bytes allocated */
-   uint32_t blocks;               /* total mallocs */
-   ndmp_fhdb_node *cached_parent; /* cached parent */
+   ndmp_fhdb_node *first;         /**< first entry in the tree */
+   ndmp_fhdb_node *last;          /**< last entry in the tree */
+   ndmp_fhdb_mem *mem;            /**< tree memory */
+   uint32_t total_size;           /**< total bytes allocated */
+   uint32_t blocks;               /**< total mallocs */
+   ndmp_fhdb_node *cached_parent; /**< cached parent */
 };
 typedef struct ndmp_fhdb_root N_TREE_ROOT;
 
@@ -108,7 +110,7 @@ struct fhdb_state {
    htable *out_of_order_metadata;
 };
 
-/*
+/**
  * Lightweight version of Bareos tree functions for holding the NDMP
  * filehandle index database. See lib/tree.[ch] for the full version.
  */

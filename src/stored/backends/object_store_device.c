@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Object Storage API device abstraction.
- *
  * Marco van Wieringen, February 2014
+ */
+/**
+ * @file
+ * Object Storage API device abstraction.
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 #include "stored.h"
 #include "object_store_device.h"
 
-/*
+/**
  * Options that can be specified for this device type.
  */
 enum device_option_type {
@@ -55,7 +57,7 @@ static device_option device_options[] = {
 static int droplet_reference_count = 0;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-/*
+/**
  * Generic log function that glues libdroplet with BAREOS.
  */
 static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
@@ -76,7 +78,7 @@ static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const ch
    }
 }
 
-/*
+/**
  * Map the droplet errno's to system ones.
  */
 static inline int droplet_errno_to_system_errno(dpl_status_t status)
@@ -104,7 +106,7 @@ static inline int droplet_errno_to_system_errno(dpl_status_t status)
    return -1;
 }
 
-/*
+/**
  * Open a volume using libdroplet.
  */
 int object_store_device::d_open(const char *pathname, int flags, int mode)
@@ -322,7 +324,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * Read data from a volume using libdroplet.
  */
 ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
@@ -349,7 +351,7 @@ ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
    }
 }
 
-/*
+/**
  * Write data to a volume using libdroplet.
  */
 ssize_t object_store_device::d_write(int fd, const void *buffer, size_t count)
@@ -398,7 +400,7 @@ int object_store_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-/*
+/**
  * Open a directory on the object store and find out size information for a file.
  */
 static inline size_t object_store_get_file_size(dpl_ctx_t *ctx, const char *filename)

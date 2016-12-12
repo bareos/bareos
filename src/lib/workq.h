@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +20,21 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, January MMI
+ */
+/**
+ * @file
  * BAREOS work queue routines. Permits passing work to
  * multiple threads.
  *
  * Kern Sibbald, January MMI
  *
- * This code adapted from "Programming with POSIX Threads", by David R. Butenhof
  */
 
 #ifndef __WORKQ_H
 #define __WORKQ_H 1
 
-/*
+/**
  * Structure to keep track of work queue request
  */
 typedef struct workq_ele_tag {
@@ -38,7 +42,7 @@ typedef struct workq_ele_tag {
    void                 *data;
 } workq_ele_t;
 
-/*
+/**
  * Structure describing a work queue
  */
 typedef struct workq_tag {

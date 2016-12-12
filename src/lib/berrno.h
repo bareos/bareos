@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +22,12 @@
 /*
  * Kern Sibbald, July MMIV
  */
+/**
+ * @file
+ * berrno header file
+ */
 
-/*
+/**
  * Extra bits set to interpret errno value differently from errno
  */
 #ifdef HAVE_WIN32
@@ -33,7 +38,7 @@
 #define b_errno_exit   (1<<28)        /* child exited, exit code returned */
 #define b_errno_signal (1<<27)        /* child died, signal code returned */
 
-/*
+/**
  * A more generalized way of handling errno that works with Unix, Windows,
  *  and with BAREOS bpipes.
  *

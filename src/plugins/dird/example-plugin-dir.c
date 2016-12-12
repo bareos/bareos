@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Sample Plugin program
- *
  *  Kern Sibbald, October 2007
- *
+ */
+/**
+ * @file
+ * Sample Plugin program
  */
 #include "bareos.h"
 #include "dir_plugins.h"
@@ -72,7 +74,7 @@ static pDirFuncs pluginFuncs = {
 extern "C" {
 #endif
 
-/*
+/**
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bareos can directly call these two entry points
  *  they are common to all Bareos plugins.
@@ -94,7 +96,7 @@ bRC DLL_IMP_EXP loadPlugin(bDirInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP unloadPlugin()

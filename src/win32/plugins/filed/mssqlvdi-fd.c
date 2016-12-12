@@ -3,7 +3,7 @@
 
    Copyright (C) 2010 Zilvinas Krapavickas <zkrapavickas@gmail.com>
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,26 +20,27 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * @file
  * MSSQL backup restore plugin using VDI.
  */
 #include "bareos.h"
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-/*
+/**
  * Microsoft® Component Object Model (COM)
  */
 #include <comutil.h>
 
-/*
+/**
  * Microsoft® MSSQL Virtual Device Interface (VDI)
  */
 #include "vdi.h"
 #include "vdierror.h"
 #include "vdiguid.h"
 
-/*
+/**
  * Microsoft® ActiveX® Data Objects
  */
 #include <initguid.h>
@@ -78,7 +79,7 @@ static const int dbglvl = 150;
 #define VDI_DEFAULT_WAIT 60000 /* 60 seconds */
 #define VDI_WAIT_TIMEOUT 0xFFFFFFFF /* INFINITE */
 
-/*
+/**
  * Forward referenced functions
  */
 static bRC newPlugin(bpContext *ctx);
@@ -100,13 +101,13 @@ static bRC end_restore_job(bpContext *ctx, void *value);
 static void close_vdi_deviceset(struct plugin_ctx *p_ctx);
 static bool adoReportError(bpContext *ctx);
 
-/*
+/**
  * Pointers to Bareos functions
  */
 static bFuncs *bfuncs = NULL;
 static bInfo  *binfo = NULL;
 
-/*
+/**
  * Plugin Information block
  */
 static genpInfo pluginInfo = {
@@ -121,7 +122,7 @@ static genpInfo pluginInfo = {
    PLUGIN_USAGE
 };
 
-/*
+/**
  * Plugin entry points for Bareos
  */
 static pFuncs pluginFuncs = {
@@ -144,7 +145,7 @@ static pFuncs pluginFuncs = {
    checkFile
 };
 
-/*
+/**
  * Plugin private context
  */
 struct plugin_ctx {
@@ -181,7 +182,7 @@ struct adoThreadContext {
    BSTR ado_query;
 };
 
-/*
+/**
  * This defines the arguments that the plugin parser understands.
  */
 enum plugin_argument_type {
@@ -223,7 +224,7 @@ static plugin_argument plugin_arguments[] = {
 extern "C" {
 #endif
 
-/*
+/**
  * loadPlugin() and unloadPlugin() are entry points that are exported, so Bareos can
  * directly call these two entry points they are common to all Bareos plugins.
  *
@@ -242,7 +243,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP unloadPlugin()
@@ -254,7 +255,7 @@ bRC DLL_IMP_EXP unloadPlugin()
 }
 #endif
 
-/*
+/**
  * The following entry points are accessed through the function pointers we supplied to Bareos.
  * Each plugin type (dir, fd, sd) has its own set of entry points that the plugin must define.
  *
@@ -299,7 +300,7 @@ static bRC newPlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Free a plugin instance, i.e. release our private storage
  */
 static bRC freePlugin(bpContext *ctx)
@@ -389,7 +390,7 @@ static bRC freePlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Return some plugin value (none defined)
  */
 static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
@@ -397,7 +398,7 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Set a plugin value (none defined)
  */
 static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
@@ -405,7 +406,7 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Handle an event that was generated in Bareos
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
@@ -462,7 +463,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    return retval;
 }
 
-/*
+/**
  * Start the backup of a specific file
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
@@ -525,7 +526,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    return bRC_OK;
 }
 
-/*
+/**
  * Done with backup of this file
  */
 static bRC endBackupFile(bpContext *ctx)
@@ -536,7 +537,7 @@ static bRC endBackupFile(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Strip any backslashes in the string.
  */
 static inline void strip_back_slashes(char *value)
@@ -557,7 +558,7 @@ static inline void strip_back_slashes(char *value)
    }
 }
 
-/*
+/**
  * Parse a boolean value e.g. check if its yes or true anything else translates to false.
  */
 static inline bool parse_boolean(const char *argument_value)
@@ -570,7 +571,7 @@ static inline bool parse_boolean(const char *argument_value)
    }
 }
 
-/*
+/**
  * Only set destination to value when it has no previous setting.
  */
 static inline void set_string_if_null(char **destination, char *value)
@@ -581,7 +582,7 @@ static inline void set_string_if_null(char **destination, char *value)
    }
 }
 
-/*
+/**
  * Always set destination to value and clean any previous one.
  */
 static inline void set_string(char **destination, char *value)
@@ -594,7 +595,7 @@ static inline void set_string(char **destination, char *value)
    strip_back_slashes(*destination);
 }
 
-/*
+/**
  * Parse the plugin definition passed in.
  *
  * The definition is in this form:
@@ -754,7 +755,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * Close the VDI deviceset if is is opened.
  */
 static void close_vdi_deviceset(plugin_ctx *p_ctx)
@@ -786,7 +787,7 @@ static void close_vdi_deviceset(plugin_ctx *p_ctx)
    }
 }
 
-/*
+/**
  * Generic COM error reporting function.
  */
 static void comReportError(bpContext *ctx, HRESULT hrErr)
@@ -852,7 +853,7 @@ static void comReportError(bpContext *ctx, HRESULT hrErr)
    pErrorInfo->Release();
 }
 
-/*
+/**
  * Retrieve errors from ADO Connection.
  */
 static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, POOL_MEM &ado_errorstr)
@@ -928,7 +929,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Print errors (when available) collected by adoThreadSetError function.
  */
 static bool adoReportError(bpContext *ctx)
@@ -948,7 +949,7 @@ static bool adoReportError(bpContext *ctx)
    return false;
 }
 
-/*
+/**
  * Retrieve errors from ADO Connection when running the query in a seperate thread.
  */
 static void adoThreadSetError(bpContext *ctx, _ADOConnection *adoConnection)
@@ -984,7 +985,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Cleanup function called on thread destroy.
  */
 static void adoCleanupThread(void *data)
@@ -1028,7 +1029,7 @@ static void adoCleanupThread(void *data)
    CoUninitialize();
 }
 
-/*
+/**
  * Run a seperate thread that connects to the database server and
  * controls the backup or restore. When we close the VDI device we
  * also tear down this database control thread.
@@ -1108,7 +1109,7 @@ bail_out:
    return NULL;
 }
 
-/*
+/**
  * Create a connection string for connecting to the master database.
  */
 static void set_ado_connect_string(bpContext *ctx)
@@ -1147,7 +1148,7 @@ static void set_ado_connect_string(bpContext *ctx)
    p_ctx->ado_connect_string = bstrdup(ado_connect_string.c_str());
 }
 
-/*
+/**
  * Generate a valid connect string and the backup command we should execute
  * in the seperate database controling thread.
  */
@@ -1206,7 +1207,7 @@ static inline void perform_ado_backup(bpContext *ctx)
    free_pool_memory(vdsname);
 }
 
-/*
+/**
  * Generate a valid connect string and the restore command we should execute
  * in the seperate database controling thread.
  */
@@ -1289,7 +1290,7 @@ static inline void perform_ado_restore(bpContext *ctx)
    free_pool_memory(vdsname);
 }
 
-/*
+/**
  * Run a query not in a seperate thread.
  */
 static inline bool run_ado_query(bpContext *ctx, const char *query)
@@ -1372,7 +1373,7 @@ cleanup:
    return retval;
 }
 
-/*
+/**
  * Automatically recover the database at the end of the whole restore process.
  */
 static inline bool perform_ado_recover(bpContext *ctx)
@@ -1386,7 +1387,7 @@ static inline bool perform_ado_recover(bpContext *ctx)
    return run_ado_query(ctx, recovery_query.c_str());
 }
 
-/*
+/**
  * Setup a VDI device for performing a backup or restore operation.
  */
 static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
@@ -1515,7 +1516,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Perform an I/O operation to a file as part of a restore.
  */
 static inline bool perform_file_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
@@ -1588,7 +1589,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Perform an I/O operation to a virtual device as part of a backup or restore.
  */
 static inline bool perform_vdi_io(bpContext *ctx, struct io_pkt *io, DWORD *completionCode)
@@ -1681,7 +1682,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * End of I/O tear down the VDI and check if everything did go to plan.
  */
 static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
@@ -1738,7 +1739,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Bareos is calling us to do the actual I/O
  */
 static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
@@ -1831,7 +1832,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * See if we need to do any postprocessing after the restore.
  */
 static bRC end_restore_job(bpContext *ctx, void *value)
@@ -1856,7 +1857,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
    return retval;
 }
 
-/*
+/**
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
@@ -1865,7 +1866,7 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
    return bRC_OK;
 }
 
-/*
+/**
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
@@ -1874,7 +1875,7 @@ static bRC endRestoreFile(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * This is called during restore to create the file (if necessary) We must return in rp->create_status:
  *
  *  CF_ERROR    -- error
@@ -1902,7 +1903,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
    return bRC_OK;
 }
 
-/*
+/**
  * We will get here if the File is a directory after everything is written in the directory.
  */
 static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
@@ -1910,7 +1911,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    return bRC_OK;
 }
 
-/*
+/**
  * When using Incremental dump, all previous dumps are necessary
  */
 static bRC checkFile(bpContext *ctx, char *fname)

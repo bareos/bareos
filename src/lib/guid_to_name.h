@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007 Kern Sibbald
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +21,9 @@
 */
 /*
  * Written by Kern Sibbald, July 2007 to replace idcache.c
- *
+ */
+/**
+ * @file
  * Program to convert uid and gid into names, and cache the results
  * for preformance reasons.
  */

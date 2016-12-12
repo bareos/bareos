@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2008-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +20,20 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March MMVII
+ */
+/**
+ * @file
  * Status packet definition that is used in both the SD and FD. It
  * permits Win32 to call output_status() and get the output back
  * at the callback address line by line, and for Linux code,
  * the output can be sent directly to a BSOCK.
- *
- * Kern Sibbald, March MMVII
  */
 
 #ifndef __STATUS_H_
 #define __STATUS_H_
 
-/*
+/**
  * Packet to send to output_status()
  */
 class STATUS_PKT {

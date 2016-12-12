@@ -19,14 +19,15 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-// vss.cpp -- Interface to Volume Shadow Copies (VSS)
-//
-// Copyright transferred from MATRIX-Computer GmbH to
-//   Kern Sibbald by express permission.
-//
-// Author          : Thorsten Engel
-// Created On      : Fri May 06 21:44:00 2005
-
+/*
+ Copyright transferred from MATRIX-Computer GmbH to
+   Kern Sibbald by express permission.
+ Author          : Thorsten Engel
+ Created On      : Fri May 06 21:44:00 2005
+*/
+/* @file
+ Interface to Volume Shadow Copies (VSS)
+*/
 
 #ifdef WIN32_VSS
 

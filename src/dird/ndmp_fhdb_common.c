@@ -19,11 +19,12 @@
    02110-1301, USA.
 */
 /*
- * Functions common to mem and lmdb backends of fhdb handling
- *
  * Philipp Storz, Nov 2016
  */
-
+/**
+ * @file
+ * Functions common to mem and lmdb backends of fhdb handling
+ */
 #include "bareos.h"
 #include "dird.h"
 

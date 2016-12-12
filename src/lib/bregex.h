@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +36,12 @@
  *
  * Modified to work with C++ for use in BAREOS,
  * Kern Sibbald April, 2006
+ */
+/**
+ * @file
+ * regexpr.h
+ * regular expression header file
+ *
  */
 
 #ifndef b_REGEXPR_H

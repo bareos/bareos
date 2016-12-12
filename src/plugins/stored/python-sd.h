@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the Free
@@ -18,15 +18,15 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
-/*
+/**
+ * @file
  * This defines the Python types in C++ and the callbacks from Python we support.
  */
 
 #ifndef BPYTHONSD_H
 #define BPYTHONSD_H 1
 
-/*
+/**
  * This defines the arguments that the plugin parser understands.
  */
 enum plugin_argument_type {
@@ -47,7 +47,7 @@ static plugin_argument plugin_arguments[] = {
    { "module_name", argument_module_name },
    { NULL, argument_none }
 };
-/*
+/**
  * Callback methods from Python.
  */
 static PyObject *PyBareosGetValue(PyObject *self, PyObject *args);

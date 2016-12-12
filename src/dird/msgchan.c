@@ -21,20 +21,20 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- msgchan.c -- handles the message channel
- *                                 to the Storage daemon and the File daemon.
- *
  * Kern Sibbald, August MM
- *
- * This routine runs as a thread and must be thread reentrant.
- *
- * Basic tasks done here:
- *    Open a message channel with the Storage daemon
- *      to authenticate ourself and to pass the JobId.
- *    Create a thread to interact with the Storage daemon
- *      who returns a job status and requests Catalog services, etc.
  */
 
+/**
+ * @file
+ *
+ * handles the message channel to the Storage daemon and the File daemon.
+ *
+ * * Basic tasks done here:
+ *    * Open a message channel with the Storage daemon
+ *      to authenticate ourself and to pass the JobId.
+ *    * Create a thread to interact with the Storage daemon
+ *      who returns a job status and requests Catalog services, etc.
+ */
 #include "bareos.h"
 #include "dird.h"
 
@@ -99,10 +99,13 @@ bool update_device_res(JCR *jcr, DEVICERES *dev)
 }
 #endif
 
-/*
- * Send bootstrap file to Storage daemon.
- *  This is used for restore, verify VolumeToCatalog, migration,
- *    and copy Jobs.
+/** Send bootstrap file to Storage daemon.
+ *  This is used for
+ *    * restore
+ *    * verify
+ *    * VolumeToCatalog
+ *    * migration and
+ *    * copy Jobs
  */
 static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
 {
@@ -135,8 +138,7 @@ static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
    return true;
 }
 
-/*
- * Start a job with the Storage daemon
+/** Start a job with the Storage daemon
  */
 bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_bsr)
 {
@@ -359,8 +361,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
    return ok;
 }
 
-/*
- * Start a thread to handle Storage daemon messages and
+/** Start a thread to handle Storage daemon messages and
  *  Catalog requests.
  */
 bool start_storage_daemon_message_thread(JCR *jcr)
@@ -403,8 +404,7 @@ extern "C" void msg_thread_cleanup(void *arg)
    free_jcr(jcr);                           /* release jcr */
 }
 
-/*
- * Handle the message channel (i.e. requests from the
+/** Handle the message channel (i.e. requests from the
  *  Storage daemon).
  * Note, we are running in a separate thread.
  */
@@ -547,8 +547,7 @@ extern "C" void *device_thread(void *arg)
    return NULL;
 }
 
-/*
- * Start a thread to handle getting Device resource information
+/** Start a thread to handle getting Device resource information
  *  from SD. This is called once at startup of the Director.
  */
 void init_device_resources()

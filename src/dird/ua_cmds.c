@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Commands
- *
  * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * User Agent Commands
  */
 
 #include "bareos.h"
@@ -133,7 +135,7 @@ static bool do_truncate(UAContext *ua, MEDIA_DBR &mr);
 
 bool quit_cmd(UAContext *ua, const char *cmd);
 
-/*
+/**
  * Not all in alphabetical order.
  * New commands are added after existing commands with similar letters
  * to prevent breakage of existing user scripts.
@@ -421,7 +423,7 @@ bool UAContext::execute(ua_cmdstruct *cmd)
    return (cmd->func)(this, this->cmd);
 }
 
-/*
+/**
  * Execute a command from the UA
  */
 bool do_a_command(UAContext *ua)
@@ -507,7 +509,7 @@ static bool is_dot_command(const char *cmd)
    return false;
 }
 
-/*
+/**
  * Add Volumes to an existing Pool
  */
 static bool add_cmd(UAContext *ua, const char *cmd)
@@ -658,7 +660,7 @@ static bool add_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Turn auto mount on/off
  *
  * automount on

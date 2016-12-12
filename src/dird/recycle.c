@@ -21,12 +21,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Automatic Recycling of Volumes
- *                    Recycles Volumes that have been purged
- *
  * Kern Sibbald, May MMII
  */
-
+/**
+ * @file
+ * BAREOS Director -- Automatic Recycling of Volumes
+ *                    Recycles Volumes that have been purged
+ */
 #include "bareos.h"
 #include "dird.h"
 
@@ -49,7 +50,7 @@ bool find_recycled_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
    return false;
 }
 
-/*
+/**
  * Look for oldest Purged volume
  */
 bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
@@ -73,7 +74,7 @@ bool recycle_oldest_purged_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr,
    return false;
 }
 
-/*
+/**
  * Recycle the specified volume
  */
 bool recycle_volume(JCR *jcr, MEDIA_DBR *mr)

@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Authenticate Director who is attempting to connect.
- *
  * Kern Sibbald, October 2000
+ */
+/**
+ * @file
+ * Authenticate Director who is attempting to connect.
  */
 
 #include "bareos.h"
@@ -52,7 +54,7 @@ static char OK_hello[] =
 static char Dir_sorry[] =
    "2999 Authentication failed.\n";
 
-/*
+/**
  * To prevent DOS attacks,
  * wait a bit in case of an
  * authentication failure of a (remotely) initiated connection.
@@ -76,7 +78,7 @@ static inline void authenticate_failed(JCR *jcr, POOL_MEM &message)
    delay();
 }
 
-/*
+/**
  * Inititiate the communications with the Director.
  * He has made a connection to our server.
  *
@@ -140,7 +142,7 @@ bool authenticate_director(JCR *jcr)
    return dir->fsend("%s", (me->compatible) ? OK_hello_compat : OK_hello);
 }
 
-/*
+/**
  * Authenticate with a remote director.
  */
 bool authenticate_with_director(JCR *jcr, DIRRES *dir_res)
@@ -152,7 +154,7 @@ bool authenticate_with_director(JCR *jcr, DIRRES *dir_res)
                                                 dir_res->tls);
 }
 
-/*
+/**
  * Authenticate a remote storage daemon.
  */
 bool authenticate_storagedaemon(JCR *jcr)
@@ -177,7 +179,7 @@ bool authenticate_storagedaemon(JCR *jcr)
    return result;
 }
 
-/*
+/**
  * Authenticate with a remote storage daemon.
  */
 bool authenticate_with_storagedaemon(JCR *jcr)

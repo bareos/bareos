@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -107,7 +107,7 @@ void accurate_free(JCR *jcr)
    }
 }
 
-/*
+/**
  * Send the deleted or the base file list and cleanup.
  */
 bool accurate_finish(JCR *jcr)
@@ -137,7 +137,7 @@ bool accurate_finish(JCR *jcr)
    return retval;
 }
 
-/*
+/**
  * This function is called for each file seen in fileset.
  * We check in file_list hash if fname have been backuped
  * the last time. After we can compare Lstat field.
@@ -163,10 +163,10 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    }
 
    if (!jcr->file_list) {
-      return true;              /* Not initialized properly */
+      return true;              /** Not initialized properly */
    }
 
-   /*
+   /**
     * Apply path stripping for lookup in accurate data.
     */
    strip_path(ff_pkt);
@@ -184,7 +184,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       goto bail_out;
    }
 
-   /*
+   /**
     * Restore original name so we can check the actual file when we check
     * the accurate options later on. This is mostly important for the
     * calculate_and_compare_file_chksum() function as that needs to calulate
@@ -195,7 +195,7 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
    ff_pkt->accurate_found = true;
    ff_pkt->delta_seq = payload->delta_seq;
 
-   decode_stat(payload->lstat, &statc, sizeof(statc), &LinkFIc); /* decode catalog stat */
+   decode_stat(payload->lstat, &statc, sizeof(statc), &LinkFIc); /** decode catalog stat */
 
    if (!jcr->rerunning && (jcr->getJobLevel() == L_FULL)) {
       opts = ff_pkt->BaseJobOpts;
@@ -203,13 +203,13 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       opts = ff_pkt->AccurateOpts;
    }
 
-   /*
+   /**
     * Loop over options supplied by user and verify the fields he requests.
     */
    for (char *p = opts; !status && *p; p++) {
       char ed1[30], ed2[30];
       switch (*p) {
-      case 'i':                /* Compare INODE numbers */
+      case 'i':                /** Compare INODE numbers */
          if (statc.st_ino != ff_pkt->statp.st_ino) {
             Dmsg3(dbglvl-1, "%s      st_ino   differ. Cat: %s File: %s\n",
                   fname,
@@ -218,8 +218,8 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'p':                /* Permissions bits */
-         /*
+      case 'p':                /** Permissions bits */
+         /**
           * TODO: If something change only in perm, user, group
           * Backup only the attribute stream
           */
@@ -229,28 +229,28 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'n':                /* Number of links */
+      case 'n':                /** Number of links */
          if (statc.st_nlink != ff_pkt->statp.st_nlink) {
             Dmsg3(dbglvl-1, "%s      st_nlink differ. Cat: %d File: %d\n",
                   fname, (uint32_t)statc.st_nlink, (uint32_t)ff_pkt->statp.st_nlink);
             status = true;
          }
          break;
-      case 'u':                /* User id */
+      case 'u':                /** User id */
          if (statc.st_uid != ff_pkt->statp.st_uid) {
             Dmsg3(dbglvl-1, "%s      st_uid   differ. Cat: %u File: %u\n",
                   fname, (uint32_t)statc.st_uid, (uint32_t)ff_pkt->statp.st_uid);
             status = true;
          }
          break;
-      case 'g':                /* Group id */
+      case 'g':                /** Group id */
          if (statc.st_gid != ff_pkt->statp.st_gid) {
             Dmsg3(dbglvl-1, "%s      st_gid   differ. Cat: %u File: %u\n",
                   fname, (uint32_t)statc.st_gid, (uint32_t)ff_pkt->statp.st_gid);
             status = true;
          }
          break;
-      case 's':                /* Size */
+      case 's':                /** Size */
          if (statc.st_size != ff_pkt->statp.st_size) {
             Dmsg3(dbglvl-1, "%s      st_size  differ. Cat: %s File: %s\n",
                   fname,
@@ -259,25 +259,25 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'a':                /* Access time */
+      case 'a':                /** Access time */
          if (statc.st_atime != ff_pkt->statp.st_atime) {
             Dmsg1(dbglvl-1, "%s      st_atime differs\n", fname);
             status = true;
          }
          break;
-      case 'm':                /* Modification time */
+      case 'm':                /** Modification time */
          if (statc.st_mtime != ff_pkt->statp.st_mtime) {
             Dmsg1(dbglvl-1, "%s      st_mtime differs\n", fname);
             status = true;
          }
          break;
-      case 'c':                /* Change time */
+      case 'c':                /** Change time */
          if (statc.st_ctime != ff_pkt->statp.st_ctime) {
             Dmsg1(dbglvl-1, "%s      st_ctime differs\n", fname);
             status = true;
          }
          break;
-      case 'd':                /* File size decrease */
+      case 'd':                /** File size decrease */
          if (statc.st_size > ff_pkt->statp.st_size) {
             Dmsg3(dbglvl-1, "%s      st_size  decrease. Cat: %s File: %s\n",
                   fname,
@@ -286,11 +286,11 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
             status = true;
          }
          break;
-      case 'A':                /* Always backup a file */
+      case 'A':                /** Always backup a file */
          status = true;
          break;
-      case '5':                /* Compare MD5 */
-      case '1':                /* Compare SHA1 */
+      case '5':                /** Compare MD5 */
+      case '1':                /** Compare SHA1 */
          if (!status && ff_pkt->type != FT_LNKSAVED &&
              (S_ISREG(ff_pkt->statp.st_mode) &&
              (bit_is_set(FO_MD5, ff_pkt->flags) ||
@@ -314,13 +314,13 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
       }
    }
 
-   /*
+   /**
     * In Incr/Diff accurate mode, we mark all files as seen
     * When in Full+Base mode, we mark only if the file match exactly
     */
    if (jcr->getJobLevel() == L_FULL) {
       if (!status) {
-         /*
+         /**
           * Compute space saved with basefile.
           */
          jcr->base_size += ff_pkt->statp.st_size;
@@ -370,7 +370,7 @@ bool accurate_cmd(JCR *jcr)
    jcr->file_list->init(jcr, nb);
    jcr->accurate = true;
 
-   /*
+   /**
     * dirmsg = fname + \0 + lstat + \0 + checksum + \0 + delta_seq + \0
     */
    while (dir->recv() >= 0) {
@@ -379,7 +379,7 @@ bool accurate_cmd(JCR *jcr)
       lstat = dir->msg + fname_length + 1;
       lstat_length = strlen(lstat);
 
-      /*
+      /**
        * No checksum.
        */
       if ((fname_length + lstat_length + 2) >= dir->msglen) {
@@ -391,7 +391,7 @@ bool accurate_cmd(JCR *jcr)
          chksum_length = strlen(chksum);
          delta_seq = str_to_int32(chksum + chksum_length + 1);
 
-         /*
+         /**
           * Sanity check total length of the received msg must be at least
           * total of the 3 lengths calculcated + 3 (\0)
           */

@@ -21,11 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Update command processing
- *
  * Split from ua_cmds.c March 2005
- *
  * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * Update command processing
  */
 
 #include "bareos.h"
@@ -38,7 +39,7 @@ static bool update_job(UAContext *ua);
 static bool update_stats(UAContext *ua);
 static void update_slots(UAContext *ua);
 
-/*
+/**
  * Update a Pool Record in the database.
  *  It is always updated from the Resource record.
  *
@@ -310,7 +311,7 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-/*
+/**
  * Modify the Pool in which this Volume is located
  */
 void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
@@ -345,7 +346,7 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
    db_unlock(ua->db);
 }
 
-/*
+/**
  * Modify the RecyclePool of a Volume
  */
 void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
@@ -385,7 +386,7 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
    db_unlock(ua->db);
 }
 
-/*
+/**
  * Modify the Storage in which this Volume is located
  */
 void update_vol_storage(UAContext *ua, char *val, MEDIA_DBR *mr)
@@ -411,7 +412,7 @@ void update_vol_storage(UAContext *ua, char *val, MEDIA_DBR *mr)
    db_unlock(ua->db);
 }
 
-/*
+/**
  * Refresh the Volume information from the Pool record
  */
 static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
@@ -433,7 +434,7 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
    }
 }
 
-/*
+/**
  * Refresh the Volume information from the Pool record for all Volumes
  */
 static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
@@ -533,7 +534,7 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-/*
+/**
  * Update a media record -- allows you to change the
  *  Volume status. E.g. if you want BAREOS to stop
  *  writing on the volume, set it to anything other
@@ -894,7 +895,7 @@ static bool update_volume(UAContext *ua)
    return true;
 }
 
-/*
+/**
  * Update long term statistics
  */
 static bool update_stats(UAContext *ua)
@@ -912,7 +913,7 @@ static bool update_stats(UAContext *ua)
    return true;
 }
 
-/*
+/**
  * Update pool record -- pull info from current POOL resource
  */
 static bool update_pool(UAContext *ua)
@@ -948,7 +949,7 @@ static bool update_pool(UAContext *ua)
    return true;
 }
 
-/*
+/**
  * Update a Job record -- allows to change the fields in a Job record.
  */
 static bool update_job(UAContext *ua)
@@ -1066,7 +1067,7 @@ static bool update_job(UAContext *ua)
    return true;
 }
 
-/*
+/**
  * Update Slots corresponding to Volumes in autochanger
  */
 static void update_slots(UAContext *ua)
@@ -1249,7 +1250,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Update Slots corresponding to Volumes in autochanger.
  * We only update any new volume location of slots marked in
  * the given slot_list. If you want to do funky stuff
@@ -1359,7 +1360,7 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, changer_vol_list
    return;
 }
 
-/*
+/**
  * Set the inchanger flag to zero for each slot marked in
  * the given slot_list.
  *

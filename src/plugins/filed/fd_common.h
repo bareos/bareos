@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2010-2011 Bacula Systems(R) SA
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the Free
@@ -17,8 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
-/* You can include this file to your plugin to have
+/*
+ * @file
+ * You can include this file to your plugin to have
  * access to some common tools and utilities provided by Bareos
  */
 

@@ -20,11 +20,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
 /*
- * BAREOS Director -- authenticate.c -- handles authorization of Consoles, Storage and File daemons.
- *
  * Kern Sibbald, May MMI
+ */
+/**
+ * @file
+ * handles authorization of Consoles, Storage and File daemons.
  *
  * This routine runs as a thread and must be thread reentrant.
  */
@@ -56,7 +57,7 @@ static char FDOKnewHello[] =
 static char Dir_sorry[] =
    "1999 You are not authorized.\n";
 
-/*
+/**
  * Authenticate with a remote Storage daemon
  */
 bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
@@ -65,7 +66,7 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
 
-   /*
+   /**
     * Send my name to the Storage daemon then do authentication
     */
    bstrncpy(dirname, me->hdr.name, sizeof(dirname));
@@ -112,7 +113,7 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
    return true;
 }
 
-/*
+/**
  * Authenticate with a remote File daemon
  */
 bool authenticate_with_file_daemon(JCR *jcr)
@@ -129,7 +130,7 @@ bool authenticate_with_file_daemon(JCR *jcr)
       return true;
    }
 
-   /*
+   /**
     * Send my name to the File daemon then do authentication
     */
    bstrncpy(dirname, me->name(), sizeof(dirname));
@@ -180,7 +181,7 @@ bool authenticate_with_file_daemon(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Authenticate File daemon connection
  */
 bool authenticate_file_daemon(BSOCK *fd, char *client_name)
@@ -213,7 +214,7 @@ bool authenticate_file_daemon(BSOCK *fd, char *client_name)
    return true;
 }
 
-/*
+/**
  * Count the number of established console connections.
  */
 static inline bool count_console_connections()
@@ -231,7 +232,7 @@ static inline bool count_console_connections()
    return (cnt >= me->MaxConsoleConnections) ? false : true;
 }
 
-/*
+/**
  * Authenticate user agent.
  */
 bool authenticate_user_agent(UAContext *uac)

@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Input and scanning code
- *
  * Kern Sibbald, October MMI
+ */
+/**
+ * @file
+ * User Agent Input and scanning code
  */
 
 #include "bareos.h"
@@ -32,7 +34,7 @@
 
 /* Exported functions */
 
-/*
+/**
  * If subprompt is set, we send a BNET_SUB_PROMPT signal otherwise
  *   send a BNET_TEXT_INPUT signal.
  */
@@ -74,7 +76,7 @@ bool get_cmd(UAContext *ua, const char *prompt, bool subprompt)
    return true;
 }
 
-/*
+/**
  * Get a positive integer
  *  Returns:  false if failure
  *            true  if success => value in ua->pint32_val
@@ -109,7 +111,7 @@ bool get_pint(UAContext *ua, const char *prompt)
    }
 }
 
-/*
+/**
  * Test a yes or no response
  *  Returns:  false if failure
  *            true  if success => ret == true for yes
@@ -131,7 +133,7 @@ bool is_yesno(char *val, bool *ret)
    return true;
 }
 
-/*
+/**
  * Gets a yes or no response
  * Returns:  false if failure
  *           true  if success => ua->pint32_val == 1 for yes
@@ -166,7 +168,7 @@ bool get_yesno(UAContext *ua, const char *prompt)
    }
 }
 
-/*
+/**
  * Checks for "yes" cmd parameter.
  * If not given, display prompt and gets user input "yes" or "no".
  *
@@ -187,7 +189,7 @@ bool get_confirmation(UAContext *ua, const char *prompt)
    return false;
 }
 
-/*
+/**
  * Gets an Enabled value => 0, 1, 2, yes, no, archived
  * Returns: 0, 1, 2 if OK
  *          -1 on error
@@ -219,7 +221,7 @@ void parse_ua_args(UAContext *ua)
    parse_args(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 }
 
-/*
+/**
  * Check if the comment has legal characters
  * If ua is non-NULL send the message
  */

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +22,9 @@
 
 /*
  * Kern Sibbald, September MMVII
- *
+ */
+
+/*
  * This is tricky code, especially when writing from scratch. Fortunately,
  * a non-copyrighted version of mkdir was available to consult.
  *
@@ -36,14 +39,14 @@
 
 #define dbglvl 50
 
-/*
+/**
  *  * For old systems that don't have lchown() use chown()
  *   */
 #ifndef HAVE_LCHOWN
 #define lchown chown
 #endif
 
-/*
+/**
  *  * For old systems that don't have lchmod() use chmod()
  *   */
 #ifndef HAVE_LCHMOD
@@ -105,7 +108,7 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
    }
 }
 
-/*
+/**
  * mode is the mode bits to use in creating a new directory
  * parent_mode are the parent's modes if we need to create parent directories.
  * owner and group are to set on any created dirs

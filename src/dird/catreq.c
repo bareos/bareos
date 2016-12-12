@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- catreq.c -- handles the message channel
- *                                catalog request from the Storage daemon.
- *
  * Kern Sibbald, March MMI
+ */
+/**
+ * @file
+ * handles the message channel
+ *             catalog request from the Storage daemon.
  *
  * This routine runs as a thread and must be thread reentrant.
  *
@@ -370,7 +372,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Note, we receive the whole attribute record, but we select out only the stat
  * packet, VolSessionId, VolSessionTime, FileIndex, file type, and file name to
  * store in the catalog.
@@ -634,7 +636,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    }
 }
 
-/*
+/**
  * Update File Attributes in the catalog with data sent by the Storage daemon.
  */
 void catalog_update(JCR *jcr, BSOCK *bs)
@@ -664,7 +666,7 @@ bail_out:
    }
 }
 
-/*
+/**
  * Update File Attributes in the catalog with data read from
  * the storage daemon spool file. We receive the filename and
  * we try to read it.

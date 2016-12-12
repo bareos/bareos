@@ -21,15 +21,17 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Access Control List (ACL) handling
- *
  * Kern Sibbald, January MMIV
+ */
+/**
+ * @file
+ * User Agent Access Control List (ACL) handling
  */
 
 #include "bareos.h"
 #include "dird.h"
 
-/*
+/**
  * Check if access is permitted to item in acl
  */
 bool UAContext::acl_access_ok(int acl, const char *item, bool audit_event)
@@ -37,7 +39,7 @@ bool UAContext::acl_access_ok(int acl, const char *item, bool audit_event)
    return acl_access_ok(acl, item, strlen(item), audit_event);
 }
 
-/*
+/**
  * Check if this is a regular expresion.
  * A regexp uses the following chars:
  * ., (, ), [, ], |, ^, $, +, ?, *
@@ -72,7 +74,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Loop over the items in the alist and verify if they match the given item
  * that access was requested for.
  */
@@ -202,7 +204,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * This version expects the length of the item which we must check.
  */
 bool UAContext::acl_access_ok(int acl, const char *item, int len, bool audit_event)
@@ -261,7 +263,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * This function returns if the authentication has any acl restrictions for a certain acltype.
  */
 bool UAContext::acl_no_restrictions(int acl)
@@ -343,7 +345,7 @@ int UAContext::rcode_to_acltype(int rcode)
    return acl;
 }
 
-/*
+/**
  * This checks the right ACL if the UA has access to the wanted resource.
  */
 bool UAContext::is_res_allowed(RES *res)
@@ -363,7 +365,7 @@ bool UAContext::is_res_allowed(RES *res)
    return acl_access_ok(acl, res->name, false);
 }
 
-/*
+/**
  * Try to get a resource and make sure the current ACL allows it to be retrieved.
  */
 RES *UAContext::GetResWithName(int rcode, const char *name, bool audit_event, bool lock)

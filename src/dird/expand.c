@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- expand.c -- does variable expansion
- * in particular for the LabelFormat specification.
- *
  * Kern Sibbald, June MMIII
+ */
+/**
+ * @file
+ * does variable expansion
+ * in particular for the LabelFormat specification.
  */
 
 #include "bareos.h"
@@ -174,7 +176,7 @@ static struct s_built_in_vars built_in_vars[] = {
    { NULL, 0, NULL }
 };
 
-/*
+/**
  * Search the table of built-in variables, and if found,
  * call the appropriate subroutine to do the work.
  */
@@ -204,7 +206,7 @@ static var_rc_t lookup_built_in_var(var_t *ctx,
    return VAR_ERR_UNDEFINED_VARIABLE;
 }
 
-/*
+/**
  * Search counter variables
  */
 static var_rc_t lookup_counter_var(var_t *ctx,
@@ -279,7 +281,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
    return status;
 }
 
-/*
+/**
  * Called here from "core" expand code to look up a variable
  */
 static var_rc_t lookup_var(var_t *ctx,
@@ -393,7 +395,7 @@ static var_rc_t lookup_var(var_t *ctx,
    return VAR_OK;
 }
 
-/*
+/**
  * Called here to do a special operation on a variable
  *   op_ptr  points to the special operation code (not EOS terminated)
  *   arg_ptr points to argument to special op code
@@ -447,7 +449,7 @@ static var_rc_t operate_var(var_t *var,
    return status;
 }
 
-/*
+/**
  * Expand an input line and return it.
  *
  * Returns: 0 on failure

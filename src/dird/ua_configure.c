@@ -19,9 +19,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Interactive configuration engine for director.
- *
  * Written by Marco van Wieringen, January 2015
+ */
+/**
+ * @file
+ * Interactive configuration engine for director.
  */
 
 #include "bareos.h"
@@ -219,7 +221,7 @@ static inline bool configure_create_fd_resource_string(UAContext *ua, POOL_MEM &
    return true;
 }
 
-/*
+/**
  * Create a bareos-fd director resource file
  * that corresponds to our client definition.
  */
@@ -271,7 +273,7 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
    return true;
 }
 
-/*
+/**
  * To add a resource during runtime, the following approach is used:
  *
  * - Create a temporary file which contains the new resource.

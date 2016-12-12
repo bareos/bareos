@@ -20,11 +20,11 @@
    02110-1301, USA.
 */
 /*
- * lex.h
- *
- * Lexical scanning of configuration files, used by parsers.
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Lexical scanning of configuration files, used by parsers.
  */
 
 #ifndef _LEX_H
@@ -53,7 +53,7 @@
 #define T_UTF8_BOM                    201 /* File starts with a UTF-8 BOM*/
 #define T_UTF16_BOM                   202 /* File starts with a UTF-16LE BOM*/
 
-/*
+/**
  * The following will be returned only if
  * the appropriate expect flag has been set
  */
@@ -133,7 +133,7 @@ typedef struct s_lex_context {
 typedef void (LEX_ERROR_HANDLER)(const char *file, int line, LEX *lc, const char *msg, ...);
 typedef void (LEX_WARNING_HANDLER)(const char *file, int line, LEX *lc, const char *msg, ...);
 
-/*
+/**
  * Lexical scanning errors in parsing conf files
  */
 #define scan_err0(lc, msg) \
@@ -151,7 +151,7 @@ lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
 #define scan_err6(lc, msg, a1, a2, a3, a4, a5, a6) \
 lc->scan_error(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
-/*
+/**
  * Lexical scanning warnings in parsing conf files
  */
 #define scan_warn0(lc, msg) \

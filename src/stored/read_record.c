@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,9 @@
    02110-1301, USA.
 */
 /*
+ * Kern E. Sibbald, August MMII
+ */
+/**
  * This file provides routines that will handle all
  * the gory little details of reading a record from a Bareos
  * archive. It uses a callback to pass you each record in turn,
@@ -30,8 +33,6 @@
  * Note, this routine is really the heart of the restore routines,
  * and we are *really* bit pushing here so be careful about making
  * any modifications.
- *
- * Kern E. Sibbald, August MMII
  */
 
 #include "bareos.h"
@@ -106,7 +107,7 @@ static char *rec_state_bits_to_str(DEV_RECORD *rec)
    return buf;
 }
 
-/*
+/**
  * Allocate a new read context which will contains accumulated data from a read session.
  */
 READ_CTX *new_read_context(void)
@@ -121,7 +122,7 @@ READ_CTX *new_read_context(void)
    return rctx;
 }
 
-/*
+/**
  * Free a read context which contains accumulated data from a read session.
  */
 void free_read_context(READ_CTX *rctx)
@@ -141,7 +142,7 @@ void free_read_context(READ_CTX *rctx)
    free(rctx);
 }
 
-/*
+/**
  * Setup the record pointer in the Read Context.
  * Reuse an already existing record when available in the linked
  * list or allocate a fresh one and prepend it in the linked list.
@@ -171,7 +172,7 @@ void read_context_set_record(DCR *dcr, READ_CTX *rctx)
    rctx->rec = rec;
 }
 
-/*
+/**
  * Read the next block from the device and handle any volume
  * switches etc.
  *
@@ -265,7 +266,7 @@ bool read_next_block_from_device(DCR *dcr,
    }
 }
 
-/*
+/**
  * Read the next record from a block.
  *
  * Returns:  true on continue processing.
@@ -369,7 +370,7 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
    }
 }
 
-/*
+/**
  * This subroutine reads all the records and passes them back to your
  * callback routine (also mount routine at EOM).
  *

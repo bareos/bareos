@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Enable backup privileges for Win32 systems.
- *
  * Kern Sibbald, May MMIII
+ */
+/**
+ * @file
+ * Enable backup privileges for Win32 systems.
  */
 
 #include "bareos.h"
@@ -81,7 +84,7 @@ enable_priv(JCR *jcr, HANDLE hToken, const char *name, int ignore_errors)
     return 1;
 }
 
-/*
+/**
  * Setup privileges we think we will need.  We probably do not need
  *  the SE_SECURITY_NAME, but since nothing seems to be working,
  *  we get it hoping to fix the problems.

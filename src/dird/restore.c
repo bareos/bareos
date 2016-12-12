@@ -20,10 +20,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * BAREOS Director -- restore.c -- responsible for restoring files
- *
+/*
  * Kern Sibbald, November MM
+ */
+/**
+ * @file
+ * responsible for restoring files
  *
  * This routine is run as a separate thread.
  *
@@ -34,6 +36,7 @@
  *    Open Message Channel with Storage daemon to tell him a job will be starting.
  *    Open connection with File daemon and pass him commands to do the restore.
  */
+
 
 #include "bareos.h"
 #include "dird.h"

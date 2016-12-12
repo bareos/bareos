@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, September MMI
+ */
+/**
+ * @file
  * Bareos File Daemon estimate.c
  * Make and estimate of the number of files and size to be saved.
- *
- * Kern Sibbald, September MMI
  */
 
 #include "bareos.h"
@@ -30,7 +33,7 @@
 
 static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool);
 
-/*
+/**
  * Find all the requested files and count them.
  */
 int make_estimate(JCR *jcr)
@@ -50,7 +53,7 @@ int make_estimate(JCR *jcr)
    return status;
 }
 
-/*
+/**
  * Called here by find() for each file included.
  *
  */

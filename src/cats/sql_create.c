@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database Create record interface routines
- *
  * Kern Sibbald, March 2000
+ */
+/**
+ * @file
+ * BAREOS Catalog Database Create record interface routines
  */
 
 #include "bareos.h"
@@ -41,7 +43,7 @@ static const int dbglevel = 100;
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * Forward referenced subroutines
  */
 

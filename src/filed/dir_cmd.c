@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * This file handles accepting Director Commands
- *
  * Kern Sibbald, October MM
+ */
+/**
+ * @file
+ * This file handles accepting Director Commands
  */
 
 #include "bareos.h"
@@ -151,20 +153,20 @@ static struct s_cmds cmds[] = {
    { NULL, NULL, false } /* list terminator */
 };
 
-/*
+/**
  * Commands send to director
  */
 static char hello_client[] =
    "Hello Client %s FdProtocolVersion=%d calling\n";
 
-/*
+/**
  * Responses received from the director
  */
 static
 const char OKversion[] =
    "1000 OK: %s Version: %s (%u %s %u)";
 
-/*
+/**
  * Commands received from director that need scanning
  */
 static char setauthorizationcmd[] =
@@ -212,7 +214,7 @@ static char runscriptcmd[] =
 static char resolvecmd[] =
    "resolve %s";
 
-/*
+/**
  * Responses sent to Director
  */
 static char errmsg[] =
@@ -283,7 +285,7 @@ static char OKPluginOptions[] =
 static char BadPluginOptions[] =
    "2905 Bad PluginOptions command.\n";
 
-/*
+/**
  * Responses received from Storage Daemon
  */
 static char OK_end[] =
@@ -297,7 +299,7 @@ static char OK_data[] =
 static char OK_append[] =
    "3000 OK append data\n";
 
-/*
+/**
  * Commands sent to Storage Daemon
  */
 static char append_open[] =
@@ -315,7 +317,7 @@ static char read_data[] =
 static char read_close[] =
    "read close session %d\n";
 
-/*
+/**
  * See if we are allowed to execute the command issued.
  */
 static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
@@ -424,7 +426,7 @@ static inline void cleanup_fileset(JCR *jcr)
    jcr->ff->fileset = NULL;
 }
 
-/*
+/**
  * Count the number of running jobs.
  */
 static inline bool count_running_jobs()
@@ -576,7 +578,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
    return NULL;
 }
 
-/*
+/**
  * Create a new thread to handle director connection.
  */
 static bool start_process_director_commands(JCR *jcr)
@@ -592,7 +594,7 @@ static bool start_process_director_commands(JCR *jcr)
    return (result == 0);
 }
 
-/*
+/**
  * Connection request from an director.
  *
  * Accept commands one at a time from the Director and execute them.
@@ -778,7 +780,7 @@ static bool sm_dump_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Resolve a hostname
  */
 static bool resolve_cmd(JCR *jcr)
@@ -1174,7 +1176,7 @@ static bool runscript_cmd(JCR *jcr)
    return dir->fsend(OKRunScript);
 }
 
-/*
+/**
  * This passes plugin specific options.
  */
 static bool pluginoptions_cmd(JCR *jcr)
@@ -1198,7 +1200,7 @@ static bool pluginoptions_cmd(JCR *jcr)
    return dir->fsend(OKPluginOptions);
 }
 
-/*
+/**
  * This reads data sent from the Director from the
  * RestoreObject table that allows us to get objects
  * that were backed up (VSS .xml data) and are needed
@@ -2247,7 +2249,7 @@ static bool verify_cmd(JCR *jcr)
    return false;                      /* return and terminate command loop */
 }
 
-/*
+/**
  * Open connection to Director.
  */
 static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)

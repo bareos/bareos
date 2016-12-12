@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- sd_cmds.c -- send commands to Storage daemon
- *
  * Kern Sibbald, August MM
- *
  * Extracted from other source files by Marco van Wieringen, December 2011
+ */
+/**
+ * @file
+ * send commands to Storage daemon
  */
 
 #include "bareos.h"
@@ -77,7 +78,7 @@ static char changerslotsresponse[] =
 static char changerdrivesresponse[] =
    "drives=%hd\n";
 
-/*
+/**
  * Establish a connection with the Storage daemon and perform authentication.
  */
 bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
@@ -134,7 +135,7 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
    return true;
 }
 
-/*
+/**
  * Open a connection to a SD.
  */
 BSOCK *open_sd_bsock(UAContext *ua)
@@ -152,7 +153,7 @@ BSOCK *open_sd_bsock(UAContext *ua)
    return ua->jcr->store_bsock;
 }
 
-/*
+/**
  * Close a connection to a SD.
  */
 void close_sd_bsock(UAContext *ua)
@@ -165,7 +166,7 @@ void close_sd_bsock(UAContext *ua)
    }
 }
 
-/*
+/**
  * We get the volume name from the SD
  */
 char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t drive)
@@ -211,7 +212,7 @@ char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t 
    return VolName;
 }
 
-/*
+/**
  * We get the slot list from the Storage daemon.
  * If listall is set we run an 'autochanger listall' cmd
  * otherwise an 'autochanger list' cmd
@@ -518,7 +519,7 @@ parse_error:
    return vol_list;
 }
 
-/*
+/**
  * We get the number of slots in the changer from the SD
  */
 slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
@@ -551,7 +552,7 @@ slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
    return slots;
 }
 
-/*
+/**
  * We get the number of drives in the changer from the SD
  */
 drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
@@ -583,7 +584,7 @@ drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
    return drives;
 }
 
-/*
+/**
  * Cancel a running job on a storage daemon. Used by the interactive cancel
  * command to cancel a JobId on a Storage Daemon this can be used when the
  * Director already removed the Job and thinks it finished but the Storage
@@ -617,7 +618,7 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
    return true;
 }
 
-/*
+/**
  * Cancel a running job on a storage daemon. The interactive flag sets
  * if we are interactive or not e.g. when doing an interactive cancel
  * or a system invoked one.
@@ -678,7 +679,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
    return true;
 }
 
-/*
+/**
  * Cancel a running job on a storage daemon. System invoked
  * non interactive version this builds a ua context and calls
  * the interactive one with the interactive flag set to false.
@@ -707,7 +708,7 @@ bail_out:
    free_ua_context(ua);
 }
 
-/*
+/**
  * Get the status of a remote storage daemon.
  */
 void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
@@ -777,7 +778,7 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
    return;
 }
 
-/*
+/**
  * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
@@ -825,7 +826,7 @@ bool native_transfer_volume(UAContext *ua, STORERES *store,
    return retval;
 }
 
-/*
+/**
  * Ask the autochanger to perform a mount, umount or release operation.
  */
 bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
@@ -866,7 +867,7 @@ bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
    return retval;
 }
 
-/*
+/**
  * sends request to report secure erase command
  * and receives the command or "*None*" of not set
  */
@@ -907,7 +908,7 @@ bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
    return true;
 }
 
-/*
+/**
  * resolve a host on a storage daemon
  */
 bool do_storage_resolve(UAContext *ua, STORERES *store)
@@ -942,7 +943,7 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
    return true;
 }
 
-/*
+/**
  * send Job specific plugin options to a storage daemon
  */
 bool do_storage_plugin_options(JCR *jcr)

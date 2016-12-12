@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Storage specific NDMP Data Management Application (DMA) routines
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * Storage specific NDMP Data Management Application (DMA) routines
  */
 
 #include "bareos.h"
@@ -37,7 +39,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Output the status of a storage daemon when its a normal storage
  * daemon accessed via the NDMP protocol or query the TAPE and ROBOT
  * agent of a native NDMP server.
@@ -65,7 +67,7 @@ void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
    }
 }
 
-/*
+/**
  * Interface function which glues the logging infra of the NDMP lib for debugging.
  */
 extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev, char *msg)
@@ -83,7 +85,7 @@ extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev
    Dmsg1(100, "%s\n", msg);
 }
 
-/*
+/**
  * Generic cleanup function that can be used after a successfull or failed NDMP Job ran.
  */
 static void cleanup_ndmp_session(struct ndm_session *ndmp_sess)
@@ -102,7 +104,7 @@ static void cleanup_ndmp_session(struct ndm_session *ndmp_sess)
    free(ndmp_sess);
 }
 
-/*
+/**
  * Generic function to run a storage Job on a remote NDMP server.
  */
 static bool ndmp_run_storage_job(JCR *jcr, STORERES *store, struct ndm_session *ndmp_sess, struct ndm_job_param *ndmp_job)
@@ -166,7 +168,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Generic function to get the current element status of a NDMP robot.
  */
 static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_session **ndmp_sess)
@@ -215,7 +217,7 @@ static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_sessi
    return true;
 }
 
-/*
+/**
  * Get the volume names from a smc_element_descriptor.
  */
 static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
@@ -231,7 +233,7 @@ static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
    }
 }
 
-/*
+/**
  * Fill the mapping table from logical to physical storage addresses.
  *
  * The robot mapping table is used when we need to map from a logical
@@ -315,7 +317,7 @@ static void ndmp_fill_storage_mappings(UAContext *ua, STORERES *store, struct nd
    }
 }
 
-/*
+/**
  * Get the current content of the autochanger as a generic vol_list dlist.
  */
 dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan)
@@ -493,7 +495,7 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
    return vol_list;
 }
 
-/*
+/**
  * Update the mapping table from logical to physical storage addresses.
  */
 static bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
@@ -511,7 +513,7 @@ static bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
    return true;
 }
 
-/*
+/**
  * Number of slots in a NDMP autochanger.
  */
 slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store)
@@ -545,7 +547,7 @@ slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store)
    return slots;
 }
 
-/*
+/**
  * Number of drives in a NDMP autochanger.
  */
 drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store)
@@ -578,7 +580,7 @@ drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store)
    return drives;
 }
 
-/*
+/**
  * Move a volume from one slot to an other in a NDMP autochanger.
  */
 bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
@@ -657,7 +659,7 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
    return retval;
 }
 
-/*
+/**
  * Lookup the name of a drive in a NDMP autochanger.
  */
 static char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
@@ -677,7 +679,7 @@ static char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
    return NULL;
 }
 
-/*
+/**
  * Perform an autochanger operation in a NDMP autochanger.
  */
 bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const char *operation,
@@ -782,7 +784,7 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
    return retval;
 }
 
-/*
+/**
  * Label a volume in a NDMP autochanger.
  */
 bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
@@ -870,7 +872,7 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    return retval;
 }
 #else
-/*
+/**
  * Dummy entry points when NDMP not enabled.
  */
 void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)

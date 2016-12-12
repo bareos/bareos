@@ -21,9 +21,10 @@
    02110-1301, USA.
 */
 /*
- * Program to check a BAREOS database for consistency and to make repairs
- *
  * Kern E. Sibbald, August 2002
+ */
+/**
+ * Program to check a BAREOS database for consistency and to make repairs
  */
 
 #include "bareos.h"
@@ -1347,7 +1348,7 @@ static void repair_bad_paths()
    }
 }
 
-/*
+/**
  * Gen next input command from the terminal
  */
 static char *get_cmd(const char *prompt)
@@ -1389,7 +1390,7 @@ typedef struct s_idx_list {
 
 static IDX_LIST idx_list[MAXIDX];
 
-/*
+/**
  * Called here with each table index to be added to the list
  */
 static int check_idx_handler(void *ctx, int num_fields, char **row)
@@ -1432,7 +1433,7 @@ static int check_idx_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Return TRUE if "one column" index over *col_name exists
  */
 static bool check_idx(const char *col_name)
@@ -1471,7 +1472,7 @@ static bool check_idx(const char *col_name)
    }
 }
 
-/*
+/**
  * Create temporary one-column index
  */
 static bool create_tmp_idx(const char *idx_name, const char *table_name,
@@ -1495,7 +1496,7 @@ static bool create_tmp_idx(const char *idx_name, const char *table_name,
    return true;
 }
 
-/*
+/**
  * Drop temporary index
  */
 static bool drop_tmp_idx(const char *idx_name, const char *table_name)

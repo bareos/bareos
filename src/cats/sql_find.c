@@ -21,13 +21,15 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, December 2000
+ */
+/**
+ * @file
  * BAREOS Catalog Database Find record interface routines
  *
  * Note, generally, these routines are more complicated
  * that a simple search by name or id. Such simple
  * request are in get.c
- *
- * Kern Sibbald, December 2000
  */
 
 #include "bareos.h"
@@ -43,7 +45,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * Find job start time if JobId specified, otherwise
  * find last Job start time Incremental and Differential saves.
  *
@@ -137,7 +139,7 @@ bail_out:
 }
 
 
-/*
+/**
  * Find the last job start time for the specified JobLevel
  *
  *  StartTime is returned in stime
@@ -186,7 +188,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Find last failed job since given start-time
  *   it must be either Full or Diff.
  *
@@ -230,7 +232,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Find JobId of last job that ran.  E.g. for
  *   VERIFY_CATALOG we want the JobId of the last INIT.
  *   For VERIFY_VOLUME_TO_CATALOG, we want the JobId of the last Job.
@@ -300,7 +302,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Search a comma separated list of unwanted volume names and see if given VolumeName is on it.
  */
 static inline bool is_on_unwanted_volumes_list(const char *VolumeName,
@@ -329,7 +331,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Find Available Media (Volume) for Pool
  *
  * Find a Volume for a given PoolId, MediaType, and Status.

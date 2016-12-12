@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Dynamic loading of SD backend plugins.
- *
  * Marco van Wieringen, June 2014
+ */
+/**
+ * @file
+ * Dynamic loading of SD backend plugins.
  */
 
 #ifndef __SD_BACKENDS_H_
@@ -33,7 +35,7 @@ typedef DEVICE *(*t_backend_instantiate)(JCR *jcr, int device_type);
 typedef void (*t_flush_backend)(void);
 }
 
-/*
+/**
  * Loaded shared library with a certain backend interface type.
  */
 struct backend_shared_library_t {
@@ -54,7 +56,7 @@ struct backend_shared_library_t {
 #define DYN_LIB_EXTENSION ".so"
 #endif
 
-/*
+/**
  * Known backend to interface mappings.
  */
 static struct backend_interface_mapping_t {

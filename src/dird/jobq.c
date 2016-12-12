@@ -21,6 +21,14 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, July MMIII
+ *
+ *
+ * This code was adapted from the Bareos workq, which was
+ * adapted from "Programming with POSIX Threads", by
+ * David R. Butenhof
+ */
+/**
  * BAREOS job queue routines.
  *
  * This code consists of three queues, the waiting_jobs
@@ -29,13 +37,6 @@
  * allocated and they can immediately be run, and the
  * running queue where jobs are placed when they are
  * running.
- *
- * Kern Sibbald, July MMIII
- *
- *
- * This code was adapted from the Bareos workq, which was
- * adapted from "Programming with POSIX Threads", by
- * David R. Butenhof
  */
 
 #include "bareos.h"
@@ -107,7 +108,7 @@ int jobq_init(jobq_t *jq, int threads, void *(*engine)(void *arg))
    return 0;
 }
 
-/*
+/**
  * Destroy the job queue
  *
  * Returns: 0 on success
@@ -160,7 +161,7 @@ struct wait_pkt {
    jobq_t *jq;
 };
 
-/*
+/**
  * Wait until schedule time arrives before starting. Normally
  * this routine is only used for jobs started from the console
  * for which the user explicitly specified a start time. Otherwise
@@ -209,7 +210,7 @@ extern "C" void *sched_wait(void *arg)
    return NULL;
 }
 
-/*
+/**
  * Add a job to the queue
  * jq is a queue that was created with jobq_init
  */
@@ -308,7 +309,7 @@ int jobq_add(jobq_t *jq, JCR *jcr)
    return status;
 }
 
-/*
+/**
  * Remove a job from the job queue. Used only by cancel_job().
  * jq is a queue that was created with jobq_init
  * work_item is an element of work
@@ -355,7 +356,7 @@ int jobq_remove(jobq_t *jq, JCR *jcr)
    return status;
 }
 
-/*
+/**
  * Start the server thread if it isn't already running
  */
 static int start_server(jobq_t *jq)
@@ -393,7 +394,7 @@ static int start_server(jobq_t *jq)
    return status;
 }
 
-/*
+/**
  * This is the worker thread that serves the job queue.
  * When all the resources are acquired for the job,
  * it will call the user's engine.
@@ -664,7 +665,7 @@ extern "C" void *jobq_server(void *arg)
    return NULL;
 }
 
-/*
+/**
  * Returns true if cleanup done and we should look for more work
  */
 static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
@@ -787,7 +788,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
    return retval;
 }
 
-/*
+/**
  * See if we can acquire all the necessary resources for the job (JCR)
  *
  *  Returns: true  if successful
@@ -953,7 +954,7 @@ static void dec_job_concurrency(JCR *jcr)
    V(mutex);
 }
 
-/*
+/**
  * Note: inc_read_store() and dec_read_store() are
  * called from select_next_rstore() in src/dird/job.c
  */

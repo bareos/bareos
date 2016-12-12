@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database Update record interface routines
- *
  * Kern Sibbald, March 2000
+ */
+/**
+ * @file
+ * BAREOS Catalog Database Update record interface routines
  */
 
 #include "bareos.h"
@@ -80,7 +82,7 @@ bool B_DB::mark_file_record(JCR *jcr, FileId_t FileId, JobId_t JobId)
    return retval;
 }
 
-/*
+/**
  * Update the Job record at start of Job
  *
  * Returns: false on failure
@@ -115,7 +117,7 @@ bool B_DB::update_job_start_record(JCR *jcr, JOB_DBR *jr)
    return retval;
 }
 
-/*
+/**
  * Update Long term statistics with all jobs that were run before age seconds
  */
 int B_DB::update_stats(JCR *jcr, utime_t age)
@@ -138,7 +140,7 @@ int B_DB::update_stats(JCR *jcr, utime_t age)
    return rows;
 }
 
-/*
+/**
  * Update the Job record at end of Job
  *
  * Returns: false on failure
@@ -190,7 +192,7 @@ bool B_DB::update_job_end_record(JCR *jcr, JOB_DBR *jr)
    return retval;
 }
 
-/*
+/**
  * Update Client record
  * Returns: false on failure
  *          true on success
@@ -226,7 +228,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Update Counters record
  * Returns: false on failure
  *          true on success
@@ -298,7 +300,7 @@ bool B_DB::update_storage_record(JCR *jcr, STORAGE_DBR *sr)
 }
 
 
-/*
+/**
  * Update the Media Record at end of Session
  *
  * Returns: false on failure
@@ -392,7 +394,7 @@ bool B_DB::update_media_record(JCR *jcr, MEDIA_DBR *mr)
    return retval;
 }
 
-/*
+/**
  * Update the Media Record Default values from Pool
  *
  * Returns: false on failure
@@ -445,7 +447,7 @@ bool B_DB::update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
 }
 
 
-/*
+/**
  * If we have a non-zero InChanger, ensure that no other Media
  *  record has InChanger set on the same Slot.
  *
@@ -481,7 +483,7 @@ void B_DB::make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr)
    }
 }
 
-/*
+/**
  * Update Quota record
  *
  * Returns: false on failure
@@ -507,7 +509,7 @@ bool B_DB::update_quota_gracetime(JCR *jcr, JOB_DBR *jr)
    return retval;
 }
 
-/*
+/**
  * Update Quota Softlimit
  *
  * Returns: false on failure
@@ -532,7 +534,7 @@ bool B_DB::update_quota_softlimit(JCR *jcr, JOB_DBR *jr)
    return retval;
 }
 
-/*
+/**
  * Reset Quota Gracetime
  *
  * Returns: false on failure

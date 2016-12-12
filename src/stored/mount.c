@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Routines for handling mounting tapes for reading and for writing.
- *
  * Kern Sibbald, August MMII
+ */
+/**
+ * @file
+ * Routines for handling mounting tapes for reading and for writing.
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -45,7 +47,7 @@ enum {
    check_error
 };
 
-/*
+/**
  * If release is set, we rewind the current volume,
  * which we no longer want, and ask the user (console)
  * to mount the next volume.
@@ -361,7 +363,7 @@ no_lock_bail_out:
    return false;
 }
 
-/*
+/**
  * This routine is meant to be called once the first pass
  * to ensure that we have a candidate volume to mount.
  * Otherwise, we ask the sysop to created one.
@@ -652,7 +654,7 @@ void DCR::do_swapping(bool is_writing)
    }
 }
 
-/*
+/**
  * Check if the current position on the volume corresponds to what is in the catalog.
  */
 bool DCR::is_eod_valid()
@@ -731,7 +733,7 @@ bool DCR::is_eod_valid()
    return true;
 }
 
-/*
+/**
  * If permitted, we label the device, make sure we can do
  *   it by checking that the VolCatBytes is zero => not labeled,
  *   once the Volume is labeled we don't want to label another
@@ -798,7 +800,7 @@ int DCR::try_autolabel(bool opened)
    return try_default;
 }
 
-/*
+/**
  * Mark volume in error in catalog
  */
 void DCR::mark_volume_in_error()
@@ -816,7 +818,7 @@ void DCR::mark_volume_in_error()
    dev->set_unload();                 /* must get a new volume */
 }
 
-/*
+/**
  * The Volume is not in the correct slot, so mark this
  * Volume as not being in the Changer.
  */
@@ -834,7 +836,7 @@ void DCR::mark_volume_not_inchanger()
    dcr->dir_update_volume_info(true, false);  /* set new status */
 }
 
-/*
+/**
  * Either because we are going to hang a new volume, or because
  * of explicit user request, we release the current volume.
  */
@@ -881,7 +883,7 @@ void DCR::release_volume()
    Dmsg0(190, "release_volume\n");
 }
 
-/*
+/**
  *      Insanity check
  *
  * Check to see if the tape position as defined by the OS is
@@ -918,7 +920,7 @@ bool DCR::is_tape_position_ok()
    return true;
 }
 
-/*
+/**
  * If we are reading, we come here at the end of the tape
  *  and see if there are more volumes to be mounted.
  */

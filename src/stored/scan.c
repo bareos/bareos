@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,11 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MMVI
+ */
+/**
  * scan.c scan a directory (on a removable file) for a valid
  * Volume name. If found, open the file for append.
- *
- * Kern Sibbald, MMVI
  */
 
 #include "bareos.h"
@@ -131,7 +133,7 @@ get_out:
    return found;
 }
 
-/*
+/**
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */

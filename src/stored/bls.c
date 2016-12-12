@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
 #include "bareos.h"
@@ -346,7 +348,7 @@ static void do_blocks(char *infname)
    return;
 }
 
-/*
+/**
  * We are only looking for labels or in particular Job Session records
  */
 static bool jobs_cb(DCR *dcr, DEV_RECORD *rec)
@@ -375,7 +377,7 @@ static void do_ls(char *infname)
    printf("%u files found.\n", num_files);
 }
 
-/*
+/**
  * Called here for each record from read_records()
  */
 static bool record_cb(DCR *dcr, DEV_RECORD *rec)

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,12 +20,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, January MMI
+ * This code adapted from "Programming with POSIX Threads", by David R. Butenhof
+ */
+/**
+ * @file
  * BAREOS Thread Read/Write locking code. It permits
  * multiple readers but only one writer.
- *
- * Kern Sibbald, January MMI
- *
- * This code adapted from "Programming with POSIX Threads", by David R. Butenhof
  */
 
 #ifndef __RWLOCK_H
@@ -57,7 +59,7 @@ typedef struct s_rwsteal_tag {
 
 #define rwl_writelock(x)     rwl_writelock_p((x), __FILE__, __LINE__)
 
-/*
+/**
  * read/write lock prototypes
  */
 extern int rwl_init(brwlock_t *rwl, int priority = 0);

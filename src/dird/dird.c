@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director daemon -- this is the main program
- *
  * Kern Sibbald, March MM
+ */
+/**
+ * @file
+ * the main program
  */
 
 #include "bareos.h"
@@ -108,7 +110,7 @@ static void free_saved_resources(resource_table_reference *table)
    free(table->res_table);
 }
 
-/*
+/**
  * Called here at the end of every job that was hooked decrementing the active job_count.
  * When it goes to zero, no one is using the associated resource table, so free it.
  */
@@ -136,7 +138,7 @@ static void reload_job_end_cb(JCR *jcr, void *ctx)
    unlock_jobs();
 }
 
-/*
+/**
  * This allows the message handler to operate on the database by using a pointer
  * to this function. The pointer is needed because the other daemons do not have
  * access to the database. If the pointer is not defined (other daemons), then
@@ -446,7 +448,10 @@ bail_out:
    return 0;
 }
 
-/* Cleanup and then exit */
+/**
+ * Cleanup and then exit
+ *
+ */
 #if !defined(HAVE_WIN32)
 static
 #endif
@@ -500,7 +505,7 @@ void terminate_dird(int sig)
    exit(sig);
 }
 
-/*
+/**
  * If we get here, we have received a SIGHUP, which means to reread our configuration file.
  */
 #if !defined(HAVE_WIN32)
@@ -545,7 +550,7 @@ static bool init_sighandler_sighup()
    return retval;
 }
 
-/*
+/**
  * The algorithm used is as follows: we count how many jobs are
  * running and mark the running jobs to make a callback on
  * exiting. The old config is saved with the reload table
@@ -579,7 +584,7 @@ bool do_reload_config()
    lock_jobs();
    LockRes();
 
-   /**
+   /*
     * Flush the sql connection pools.
     */
    db_sql_pool_flush();
@@ -676,7 +681,7 @@ bail_out:
    return reloaded;
 }
 
-/*
+/**
  * See if two storage definitions point to the same Storage Daemon.
  *
  * We compare:
@@ -691,7 +696,7 @@ static inline bool is_same_storage_daemon(STORERES *store1, STORERES *store2)
           bstrcasecmp(store1->password.value, store2->password.value);
 }
 
-/*
+/**
  * Make a quick check to see that we have all the
  * resources needed.
  *
@@ -1079,7 +1084,7 @@ bail_out:
    return OK;
 }
 
-/*
+/**
  * Initialize the sql pooling.
  */
 static bool initialize_sql_pooling(void)
@@ -1114,7 +1119,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * In this routine,
  *  - we can check the connection (mode=CHECK_CONNECTION)
  *  - we can synchronize the catalog with the configuration (mode=UPDATE_CATALOG)

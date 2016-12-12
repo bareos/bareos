@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Bareos File Daemon Status routines
- *
  * Kern Sibbald, August MMI
+ */
+/**
+ * @file
+ * Bareos File Daemon Status routines
  */
 
 #include "bareos.h"
@@ -59,7 +61,7 @@ static int privs = 0;
 #define VSS ""
 #endif
 
-/*
+/**
  * General status generator
  */
 static void output_status(STATUS_PKT *sp)
@@ -431,7 +433,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
    }
 }
 
-/*
+/**
  * Send to bsock (Director or Console)
  */
 static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
@@ -447,7 +449,7 @@ static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
    }
 }
 
-/*
+/**
  * Status command from Director
  */
 bool status_cmd(JCR *jcr)
@@ -464,7 +466,7 @@ bool status_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * .status command from Director
  */
 bool qstatus_cmd(JCR *jcr)
@@ -525,7 +527,7 @@ bool qstatus_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Convert Job Level into a string
  */
 static const char *level_to_str(int level)
@@ -577,7 +579,7 @@ static const char *level_to_str(int level)
 #if defined(HAVE_WIN32)
 int bareosstat = 0;
 
-/*
+/**
  * Put message in Window List Box
  */
 char *bareos_status(char *buf, int buf_len)

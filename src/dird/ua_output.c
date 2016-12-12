@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Output Commands
+ * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * User Agent Output Commands
  *
  * I.e. messages, listing database, showing resources, ...
- *
- * Kern Sibbald, September MM
  */
 
 #include "bareos.h"
@@ -43,13 +45,13 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
 static bool list_nextvol(UAContext *ua, int ndays);
 static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist);
 
-/*
+/**
  * Some defaults.
  */
 #define DEFAULT_LOG_LINES 5
 #define DEFAULT_NR_DAYS 50
 
-/*
+/**
  * Turn auto display of console messages on/off
  */
 bool autodisplay_cmd(UAContext *ua, const char *cmd)
@@ -74,7 +76,7 @@ bool autodisplay_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Turn GUI mode on/off
  */
 bool gui_cmd(UAContext *ua, const char *cmd)
@@ -99,7 +101,7 @@ bool gui_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Enter with Resources locked
  */
 static void show_disabled_jobs(UAContext *ua)
@@ -126,7 +128,7 @@ static void show_disabled_jobs(UAContext *ua)
    }
 }
 
-/*
+/**
  * Enter with Resources locked
  */
 static void show_disabled_clients(UAContext *ua)
@@ -153,7 +155,7 @@ static void show_disabled_clients(UAContext *ua)
    }
 }
 
-/*
+/**
  * Enter with Resources locked
  */
 static void show_disabled_schedules(UAContext *ua)
@@ -205,7 +207,7 @@ static struct showstruct avail_resources[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  *  Displays Resources
  *
  *  show all
@@ -343,7 +345,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  *  List contents of database
  *
  *  list jobs                   - lists all jobs run
@@ -442,7 +444,7 @@ bail_out:
    return jobid;
 }
 
-/*
+/**
  * Filter convience functions that abstract the actions needed to
  * perform a certain type of acl or resource filtering.
  */
@@ -1344,7 +1346,7 @@ get_out:
    return true;
 }
 
-/*
+/**
  * For a given job, we examine all his run records
  *  to see if it is scheduled today or tomorrow.
  */
@@ -1436,7 +1438,7 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
    return NULL;
 }
 
-/*
+/**
  * Fill in the remaining fields of the jcr as if it is going to run the job.
  */
 bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
@@ -1549,7 +1551,7 @@ bool messages_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Callback routine for "filtering" database listing.
  */
 of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
@@ -1667,7 +1669,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Callback routine for "printing" database listing
  */
 bool printit(void *ctx, const char *msg)
@@ -1685,7 +1687,7 @@ bool printit(void *ctx, const char *msg)
    return retval;
 }
 
-/*
+/**
  * Format message and send to other end.
 
  * If the UA_sock is NULL, it means that there is no user
@@ -1778,7 +1780,7 @@ void bsendmsg(void *ctx, const char *fmt, ...)
  * The following UA methods are mainly intended for GUI
  * programs
  */
-/*
+/**
  * This is a message that should be displayed on the user's
  *  console.
  */
@@ -1796,7 +1798,7 @@ void UAContext::send_msg(const char *fmt, ...)
    send->message(NULL, message);
 }
 
-/*
+/**
  * This is an error condition with a command. The gui should put
  *  up an error or critical dialog box.  The command is aborted.
  */
@@ -1816,7 +1818,7 @@ void UAContext::error_msg(const char *fmt, ...)
    send->message(MSG_TYPE_ERROR, message);
 }
 
-/*
+/**
  * This is a warning message, that should bring up a warning
  *  dialog box on the GUI. The command is not aborted, but something
  *  went wrong.
@@ -1837,7 +1839,7 @@ void UAContext::warning_msg(const char *fmt, ...)
    send->message(MSG_TYPE_WARNING, message);
 }
 
-/*
+/**
  * This is an information message that should probably be put
  *  into the status line of a GUI program.
  */

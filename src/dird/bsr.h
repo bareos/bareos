@@ -1,7 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2002-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,15 +20,17 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, July 2002
+ */
+/**
+ * @file
  * Bootstrap Record header file
  *
  * BSR (bootstrap record) handling routines split from ua_restore.c July 2003
  * Bootstrap send handling routines split from restore.c July 2012
- *
- * Kern Sibbald, July 2002
  */
 
-/*
+/**
  * FileIndex entry in restore bootstrap record
  */
 struct RBSR_FINDEX {
@@ -36,7 +39,7 @@ struct RBSR_FINDEX {
    int32_t findex2;
 };
 
-/*
+/**
  * Restore bootstrap record -- not the real one, but useful here
  *  The restore bsr is a chain of BSR records (linked by next).
  *  Each BSR represents a single JobId, and within it, it
@@ -45,19 +48,19 @@ struct RBSR_FINDEX {
  *    on which the Job is stored to the BSR.
  */
 struct RBSR {
-   RBSR *next;                        /* next JobId */
-   JobId_t JobId;                     /* JobId this bsr */
+   RBSR *next;                        /**< next JobId */
+   JobId_t JobId;                     /**< JobId this bsr */
    uint32_t VolSessionId;
    uint32_t VolSessionTime;
-   int      VolCount;                 /* Volume parameter count */
-   VOL_PARAMS *VolParams;             /* Volume, start/end file/blocks */
-   RBSR_FINDEX *fi;                   /* File indexes this JobId */
-   char *fileregex;                   /* Only restore files matching regex */
+   int      VolCount;                 /**< Volume parameter count */
+   VOL_PARAMS *VolParams;             /**< Volume, start/end file/blocks */
+   RBSR_FINDEX *fi;                   /**< File indexes this JobId */
+   char *fileregex;                   /**< Only restore files matching regex */
 };
 
 class UAContext;
 
-/*
+/**
  * Open bootstrap file.
  */
 struct bootstrap_info

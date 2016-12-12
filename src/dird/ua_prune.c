@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Database prune Command
+ * Kern Sibbald, February MMII
+ */
+/**
+ * @file
+ * User Agent Database prune Command
  *
  * Applies retention periods
- *
- * Kern Sibbald, February MMII
  */
 
 #include "bareos.h"
@@ -40,7 +42,7 @@ static bool prune_directory(UAContext *ua, CLIENTRES *client);
 static bool prune_stats(UAContext *ua, utime_t retention);
 static bool grow_del_list(struct del_ctx *del);
 
-/*
+/**
  * Called here to count entries to be deleted
  */
 int del_count_handler(void *ctx, int num_fields, char **row)
@@ -55,7 +57,7 @@ int del_count_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Called here to make in memory list of JobIds to be
  *  deleted and the associated PurgedFiles flag.
  *  The in memory list will then be transversed
@@ -88,7 +90,7 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Prune records from database
  */
 bool prune_cmd(UAContext *ua, const char *cmd)
@@ -274,7 +276,7 @@ bool prune_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Prune Directory meta data records from the database.
  */
 static bool prune_directory(UAContext *ua, CLIENTRES *client)
@@ -404,7 +406,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Prune Job stat records from the database.
  */
 static bool prune_stats(UAContext *ua, utime_t retention)
@@ -440,7 +442,7 @@ static bool prune_stats(UAContext *ua, utime_t retention)
    return true;
 }
 
-/*
+/**
  * Use pool and client specified by user to select jobs to prune
  * returns add_from string to add in FROM clause
  *         add_where string to add in WHERE clause
@@ -479,7 +481,7 @@ static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
    return true;
 }
 
-/*
+/**
  * Prune File records from the database. For any Job which
  * is older than the retention period, we unconditionally delete
  * all File records for that Job.  This is simple enough that no
@@ -614,7 +616,7 @@ struct accurate_check_ctx {
    DBId_t FileSetId;                  /* Id of FileSet */
 };
 
-/*
+/**
  * row: Job.Name, FileSet, Client.Name, FileSetId, ClientId, Type
  */
 static int job_select_handler(void *ctx, int num_fields, char **row)
@@ -660,7 +662,7 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Pruning Jobs is a bit more complicated than purging Files
  * because we delete Job records only if there is a more current
  * backup of the FileSet. Otherwise, we keep the Job record.
@@ -847,7 +849,7 @@ bail_out:
    return 1;
 }
 
-/*
+/**
  * Dispatch to the right prune jobs function.
  */
 bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
@@ -860,7 +862,7 @@ bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
    }
 }
 
-/*
+/**
  * Prune a given Volume
  */
 bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
@@ -899,7 +901,7 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
    return ok;
 }
 
-/*
+/**
  * Get prune list for a volume
  */
 int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
@@ -936,7 +938,7 @@ bail_out:
    return count;
 }
 
-/*
+/**
  * We have a list of jobs to prune or purge. If any of them is
  *   currently running, we set its JobId to zero which effectively
  *   excludes it.

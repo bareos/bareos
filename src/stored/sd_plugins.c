@@ -21,9 +21,12 @@
    02110-1301, USA.
 */
 /*
- * Bareos pluginloader
- *
  * Kern Sibbald, October 2007
+ */
+
+/**
+ * @file
+ * Bareos pluginloader
  */
 #include "bareos.h"
 #include "stored.h"
@@ -86,7 +89,7 @@ static bsdFuncs bfuncs = {
    bareosFreeRecord
 };
 
-/*
+/**
  * Bareos private context
  */
 struct b_plugin_ctx {
@@ -150,7 +153,7 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
    return true;
 }
 
-/*
+/**
  * Edit codes into ChangerCommand
  *  %% = %
  *  %a = Archive device name
@@ -305,7 +308,7 @@ bail_out:
    return stop;
 }
 
-/*
+/**
  * Create a plugin event
  */
 bRC generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value, bool reverse)
@@ -368,7 +371,7 @@ bail_out:
    return rc;
 }
 
-/*
+/**
  * Print to file the plugin info.
  */
 void dump_sd_plugin(Plugin *plugin, FILE *fp)
@@ -489,7 +492,7 @@ static bool is_plugin_compatible(Plugin *plugin)
    return true;
 }
 
-/*
+/**
  * Instantiate a new plugin instance.
  */
 static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t instance)
@@ -519,7 +522,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t i
    return ctx;
 }
 
-/*
+/**
  * Send a bsdEventNewPluginOptions event to all plugins configured in jcr->plugin_options.
  */
 void dispatch_new_plugin_options(JCR *jcr)
@@ -615,7 +618,7 @@ void dispatch_new_plugin_options(JCR *jcr)
    }
 }
 
-/*
+/**
  * Create a new instance of each plugin for this Job
  */
 void new_plugins(JCR *jcr)
@@ -653,7 +656,7 @@ void new_plugins(JCR *jcr)
    }
 }
 
-/*
+/**
  * Free the plugin instances for this Job
  */
 void free_plugins(JCR *jcr)

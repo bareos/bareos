@@ -1,4 +1,4 @@
-/*
+/**
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
@@ -20,7 +20,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * Kern Sibbald, January MM
+ */
+/***
+ * @file
  * Main configuration file parser for BAREOS Directors,
  * some parts may be split into separate files such as
  * the schedule configuration (run_config.c).
@@ -39,20 +43,18 @@
  * 3. The daemon specific file, which contains the Resource
  *    definitions as well as any specific store routines
  *    for the resource records.
- *
- * Kern Sibbald, January MM
  */
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "dird.h"
 
-/*
+/**
  * Used by print_config_schema_json
  */
 extern struct s_kw RunFields[];
 
-/*
+/**
  * Define the first and last resource ID record
  * types. Note, these should be unique for each
  * daemon though not a requirement.
@@ -61,22 +63,22 @@ static RES *sres_head[R_LAST - R_FIRST + 1];
 static RES **res_head = sres_head;
 static POOL_MEM *configure_usage_string = NULL;
 
-/*
+/**
  * Set default indention e.g. 2 spaces.
  */
 #define DEFAULT_INDENT_STRING "  "
 
-/*
+/**
  * Imported subroutines
  */
 extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
 extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
 
-/*
+/**
  * Forward referenced subroutines
  */
 
-/*
+/**
  * We build the current resource here as we are
  * scanning the resource configuration definition,
  * then move it to allocated memory when the resource
@@ -85,7 +87,7 @@ extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
 static URES res_all;
 static int32_t res_all_size = sizeof(res_all);
 
-/*
+/**
  * Definition of records permitted within each
  * resource with the routine to process the record
  * information. NOTE! quoted names must be in lower case.
@@ -143,7 +145,7 @@ static RES_ITEM dir_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Profile Resource
  *
  * name handler value code flags default_value
@@ -176,7 +178,7 @@ static RES_ITEM profile_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Console Resource
  *
  * name handler value code flags default_value
@@ -203,7 +205,7 @@ static RES_ITEM con_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Client or File daemon resource
  *
  * name handler value code flags default_value
@@ -250,7 +252,7 @@ static RES_ITEM cli_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/* Storage daemon resource
+/** Storage daemon resource
  *
  * name handler value code flags default_value
  */
@@ -287,7 +289,7 @@ static RES_ITEM store_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Catalog Resource Directives
  *
  * name handler value code flags default_value
@@ -325,7 +327,7 @@ static RES_ITEM cat_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Job Resource Directives
  *
  * name handler value code flags default_value
@@ -435,7 +437,7 @@ RES_ITEM job_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * FileSet resource
  *
  * name handler value code flags default_value
@@ -451,7 +453,7 @@ static RES_ITEM fs_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Schedule -- see run_conf.c
  *
  * name handler value code flags default_value
@@ -466,7 +468,7 @@ static RES_ITEM sch_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Pool resource
  *
  * name handler value code flags default_value
@@ -509,7 +511,7 @@ static RES_ITEM pool_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Counter Resource
  *
  * name handler value code flags default_value
@@ -525,12 +527,12 @@ static RES_ITEM counter_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * Message resource
  */
 #include "lib/msg_res.h"
 
-/*
+/**
  * This is the master resource definition.
  * It must have one item for each of the resources.
  *
@@ -557,7 +559,7 @@ static RES_TABLE resources[] = {
    { NULL, NULL, 0, 0 }
 };
 
-/*
+/**
  * Note, when this resource is used, we are inside a Job
  * resource. We treat the RunScript like a sort of
  * mini-resource within the Job resource. As such we
@@ -568,7 +570,7 @@ static RES_TABLE resources[] = {
  */
 static RUNSCRIPT res_runscript;
 
-/*
+/**
  * new RunScript items
  * name handler value code flags default_value
  */
@@ -585,14 +587,14 @@ static RES_ITEM runscript_items[] = {
  { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * The following arrays are referenced from else where and
  * used for display to the user so the keyword are pretty
  * printed with additional capitals. As the code uses
  * strcasecmp anyhow this doesn't matter.
  */
 
-/*
+/**
  * Keywords (RHS) permitted in Job Level records
  *
  * name level job_type
@@ -622,7 +624,7 @@ struct s_jl joblevels[] = {
    { NULL, 0, 0 }
 };
 
-/* Keywords (RHS) permitted in Job type records
+/** Keywords (RHS) permitted in Job type records
  *
  * type_name job_type
  */
@@ -638,7 +640,7 @@ struct s_jt jobtypes[] = {
    { NULL, 0 }
 };
 
-/* Keywords (RHS) permitted in Protocol type records
+/** Keywords (RHS) permitted in Protocol type records
  *
  * name token
  */
@@ -648,7 +650,7 @@ static struct s_kw backupprotocols[] = {
    { NULL, 0 }
 };
 
-/* Keywords (RHS) permitted in AuthProtocol type records
+/** Keywords (RHS) permitted in AuthProtocol type records
  *
  * name token
  */
@@ -660,7 +662,7 @@ static struct s_kw authprotocols[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in Authentication type records
  *
  * name token
@@ -672,7 +674,7 @@ static struct s_kw authmethods[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in Selection type records
  *
  * type_name job_type
@@ -690,7 +692,7 @@ static struct s_jt migtypes[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in Restore replace type records
  *
  * name token
@@ -703,7 +705,7 @@ struct s_kw ReplaceOptions[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in ActionOnPurge type records
  *
  * name token
@@ -714,7 +716,7 @@ struct s_kw ActionOnPurgeOptions[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in Volume status type records
  *
  * token is set to zero for all items as this
@@ -733,7 +735,7 @@ struct s_kw VolumeStatus[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Keywords (RHS) permitted in Pool type records
  *
  * token is set to zero for all items as this
@@ -847,7 +849,7 @@ json_t *json_datatype(const int type, RES_ITEM items[])
    return json;
 }
 
-/*
+/***
  * Print configuration file schema in json format
  */
 bool print_config_schema_json(POOL_MEM &buffer)
@@ -1004,7 +1006,7 @@ static inline bool cmdline_items(POOL_MEM *buffer, RES_ITEM items[])
    return true;
 }
 
-/*
+/***
  * Get the usage string for the console "configure" command.
  *
  * This will be all available resource directives.
@@ -1056,7 +1058,7 @@ void destroy_configure_usage_string()
    }
 }
 
-/*
+/***
  * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
  */
 static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
@@ -1260,7 +1262,7 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
 }
 
 
-/*
+/***
  * Ensure that all required items are present
  */
 bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
@@ -2317,7 +2319,7 @@ const char *level_to_str(int level)
    return str;
 }
 
-/*
+/***
  * Dump contents of resource
  */
 void dump_resource(int type, RES *ures,
@@ -2408,7 +2410,7 @@ bail_out:
    }
 }
 
-/*
+/***
  * Free all the members of an INCEXE structure
  */
 static void free_incexe(INCEXE *incexe)
@@ -2446,7 +2448,7 @@ static void free_incexe(INCEXE *incexe)
    free(incexe);
 }
 
-/*
+/**
  * Free memory of resource -- called when daemon terminates.
  * NB, we don't need to worry about freeing any references
  * to other resources as they will be freed when that
@@ -2973,7 +2975,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
    return result;
 }
 
-/*
+/***
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers because they may not have been defined until
@@ -3099,7 +3101,7 @@ bool propagate_jobdefs(int res_type, JOBRES *res)
    return true;
 }
 
-/*
+/***
  * Populate Job Defaults (e.g. JobDefs)
  */
 static inline bool populate_jobdefs()
@@ -3196,7 +3198,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/***
  * Store Device. Note, the resource is created upon the
  * first reference. The details of the resource are obtained
  * later from the SD.
@@ -3245,7 +3247,7 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-/*
+/***
  * Store Migration/Copy type
  */
 static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3273,7 +3275,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/***
  * Store JobType (backup, verify, restore)
  */
 static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3301,7 +3303,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/***
  * Store Protocol (Native, NDMP)
  */
 static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3354,7 +3356,7 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/***
  * Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
  */
 static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3381,7 +3383,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/***
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
 static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3409,7 +3411,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store Job Level (Full, Incremental, ...)
  */
 static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3437,7 +3439,7 @@ static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store password either clear if for NDMP and catalog or MD5 hashed for native.
  */
 static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3491,7 +3493,7 @@ static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-/*
+/**
  * Store ACL (access control list)
  */
 static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3523,7 +3525,7 @@ static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * Store Audit event.
  */
 static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3552,7 +3554,7 @@ static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
    set_bit(index, res_all.hdr.item_present);
    clear_bit(index, res_all.hdr.inherit_content);
 }
-/*
+/**
  * Store a runscript->when in a bit field
  */
 static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3573,7 +3575,7 @@ static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store a runscript->target
  */
 static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3601,7 +3603,7 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store a runscript->command as a string and runscript->cmd_type as a pointer
  */
 static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3673,7 +3675,7 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store a bool in a bit field without modifing res_all.hdr
  * We can also add an option to store_bool to skip res_all.hdr
  */
@@ -3690,7 +3692,7 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store RunScript info
  *
  * Note, when this routine is called, we are inside a Job
@@ -3813,7 +3815,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/*
+/**
  * callback function for edit_job_codes
  * See ../lib/util.c, function edit_job_codes, for more remaining codes
  *
@@ -3881,7 +3883,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
    return NULL;
 }
 
-/*
+/**
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
@@ -3923,7 +3925,7 @@ static void init_resource_cb(RES_ITEM *item, int pass)
    }
 }
 
-/*
+/**
  * callback function for parse_config
  * See ../lib/parse_conf.c, function parse_config, for more generic handling.
  */
@@ -3986,7 +3988,7 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-/*
+/**
  * callback function for print_config
  * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
  */

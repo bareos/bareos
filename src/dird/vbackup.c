@@ -21,17 +21,18 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- vbackup.c -- responsible for doing virtual backup jobs or
+ * Kern Sibbald, July MMVIII
+ */
+/* @file
+ * responsible for doing virtual backup jobs or
  *                    in other words, consolidation or synthetic backups.
  *
- * Kern Sibbald, July MMVIII
- *
  * Basic tasks done here:
- *    Open DB and create records for this job.
- *    Figure out what Jobs to copy.
- *    Open Message Channel with Storage daemon to tell him a job will be starting.
- *    Open connection with File daemon and pass him commands to do the backup.
- *    When the File daemon finishes the job, update the DB.
+ *   * Open DB and create records for this job.
+ *   * Figure out what Jobs to copy.
+ *   * Open Message Channel with Storage daemon to tell him a job will be starting.
+ *   * Open connection with File daemon and pass him commands to do the backup.
+ *   * When the File daemon finishes the job, update the DB.
  */
 
 #include "bareos.h"
@@ -41,7 +42,7 @@ static const int dbglevel = 10;
 
 static bool create_bootstrap_file(JCR *jcr, char *jobids);
 
-/*
+/**
  * Called here before the job is run to do the job specific setup.
  */
 bool do_native_vbackup_init(JCR *jcr)
@@ -140,7 +141,7 @@ bool do_native_vbackup_init(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Do a virtual backup, which consolidates all previous backups into a sort of synthetic Full.
  *
  * Returns:  false on failure
@@ -359,7 +360,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Release resources allocated during backup.
  */
 void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel)
@@ -459,7 +460,7 @@ void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel)
    Dmsg0(100, "Leave vbackup_cleanup()\n");
 }
 
-/*
+/**
  * This callback routine is responsible for inserting the
  *  items it gets into the bootstrap structure. For each JobId selected
  *  this routine is called once for each file. We do not allow

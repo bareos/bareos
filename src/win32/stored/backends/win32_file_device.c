@@ -21,18 +21,18 @@
    02110-1301, USA.
 */
 /*
- * Windows File API device abstraction.
- *
  * Kern Sibbald, MM
- *
- * Extracted from other source files Marco van Wieringen, December 2013
+ */
+/**
+ * @file
+ * Windows File API device abstraction.
  */
 
 #include "bareos.h"
 #include "stored.h"
 #include "win32_file_device.h"
 
-/*
+/**
  * (Un)mount the device (For a FILE device)
  */
 static bool do_mount(DCR *dcr, bool mount, int dotimeout)
@@ -152,7 +152,7 @@ get_out:
    return true;
 }
 
-/*
+/**
  * Mount the device.
  *
  * If timeout, wait until the mount command returns 0.
@@ -169,7 +169,7 @@ bool win32_file_device::mount_backend(DCR *dcr, int timeout)
    return retval;
 }
 
-/*
+/**
  * Unmount the device
  *
  * If timeout, wait until the unmount command returns 0.

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 1981-2012 Free Software Foundation Europe e.V.
-             Yes, that is 1981 no error.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,13 +20,14 @@
    02110-1301, USA.
 */
 /*
- * Generalized console input/output handler
- * A maintanable replacement for readline()
- *
  * Kern Sibbald, December MMIII
- *
  * This code is in part derived from code that I wrote in
  * 1981, so some of it is a bit old and could use a cleanup.
+ */
+/**
+ * @file
+ * Generalized console input/output handler
+ * A maintanable replacement for readline()
  */
 
 /*
@@ -63,7 +64,7 @@
 extern "C" int tgetent(void *, const char *);
 extern "C" int tgetnum(const char *);
 extern "C" char *tgetstr (const char*, char**);
-/*
+/**
  * Note: the following on older (Solaris 10) systems
  * may need to be moved to after the #endif
  */
@@ -138,7 +139,7 @@ static char *kE;                             /* end */
 
 #define TRUE  1
 #define FALSE 0
-/*
+/**
  * Stab entry. Input chars (str), the length, and the desired
  *  func code.
  */
@@ -274,7 +275,7 @@ void con_init(FILE *input)
    trapctlc();
 }
 
-/*
+/**
  * Zed control keys
  */
 void con_set_zed_keys(void)
@@ -319,7 +320,7 @@ void con_term()
 }
 
 #ifdef TEST_PROGRAM
-/*
+/**
  * Guarantee that the string is properly terminated */
 char *bstrncpy(char *dest, const char *src, int maxlen)
 {
@@ -330,7 +331,7 @@ char *bstrncpy(char *dest, const char *src, int maxlen)
 #endif
 
 
-/*
+/**
  * New style string mapping to function code
  */
 static unsigned do_smap(unsigned c)
@@ -400,7 +401,7 @@ static void dump_stab()
 }
 #endif
 
-/*
+/**
  * New routine. Add string to string->func mapping table.
  */
 static void add_smap(char *str, int func)

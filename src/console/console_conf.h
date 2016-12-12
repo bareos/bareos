@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,14 +21,16 @@
    02110-1301, USA.
 */
 /*
- * Bareos User Agent specific configuration and defines
- *
  * Kern Sibbald, Sep MM
+ */
+/**
+ * @file
+ * Bareos User Agent specific configuration and defines
  */
 
 #define CONFIG_FILE "bconsole.conf"   /* default configuration file */
 
-/*
+/**
  * Resource codes -- they must be sequential for indexing
  */
 
@@ -39,7 +41,7 @@ enum {
    R_LAST = R_DIRECTOR                /* Keep this updated */
 };
 
-/*
+/**
  * Some resource attributes
  */
 enum {
@@ -55,23 +57,23 @@ enum {
 /* Console "globals" */
 class CONRES : public BRSRES {
 public:
-   char *rc_file;                     /* startup file */
-   char *history_file;                /* command history file */
-   s_password password;               /* UA server password */
-   uint32_t history_length;           /* readline history length */
-   char *director;                    /* bind to director */
-   utime_t heartbeat_interval;        /* Interval to send heartbeats to Dir */
-   tls_t tls;                         /* TLS structure */
+   char *rc_file;                     /**< startup file */
+   char *history_file;                /**< command history file */
+   s_password password;               /**< UA server password */
+   uint32_t history_length;           /**< readline history length */
+   char *director;                    /**< bind to director */
+   utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+   tls_t tls;                         /**< TLS structure */
 };
 
 /* Director */
 class DIRRES : public BRSRES {
 public:
-   uint32_t DIRport;                  /* UA server port */
-   char *address;                     /* UA server address */
-   s_password password;               /* UA server password */
-   utime_t heartbeat_interval;        /* Interval to send heartbeats to Dir */
-   tls_t tls;                         /* TLS structure */
+   uint32_t DIRport;                  /**< UA server port */
+   char *address;                     /**< UA server address */
+   s_password password;               /**< UA server password */
+   utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+   tls_t tls;                         /**< TLS structure */
 };
 
 /* Define the Union of all the above

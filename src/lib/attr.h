@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * attr.h Definition of attributes packet for unpacking from tape
- *
  * Kern Sibbald, June MMIII
+ */
+/**
+ * @file
+ * Definition of attributes packet for unpacking from tape
  */
 
 #ifndef __ATTR_H_
@@ -29,26 +32,26 @@
 
 
 struct ATTR {
-   int32_t stream;                    /* attribute stream id */
-   int32_t data_stream;               /* id of data stream to follow */
-   int32_t type;                      /* file type FT */
-   int32_t file_index;                /* file index */
-   int32_t LinkFI;                    /* file index to data if hard link */
-   int32_t delta_seq;                 /* delta sequence numbr */
-   uid_t uid;                         /* userid */
-   struct stat statp;                 /* decoded stat packet */
-   POOLMEM *attrEx;                   /* extended attributes if any */
-   POOLMEM *ofname;                   /* output filename */
-   POOLMEM *olname;                   /* output link name */
+   int32_t stream;                    /**< attribute stream id */
+   int32_t data_stream;               /**< id of data stream to follow */
+   int32_t type;                      /**< file type FT */
+   int32_t file_index;                /**< file index */
+   int32_t LinkFI;                    /**< file index to data if hard link */
+   int32_t delta_seq;                 /**< delta sequence numbr */
+   uid_t uid;                         /**< userid */
+   struct stat statp;                 /**< decoded stat packet */
+   POOLMEM *attrEx;                   /**< extended attributes if any */
+   POOLMEM *ofname;                   /**< output filename */
+   POOLMEM *olname;                   /**< output link name */
    /*
     * Note the following three variables point into the
     *  current BSOCK record, so they are invalid after
     *  the next socket read!
     */
-   char *attr;                        /* attributes position */
-   char *fname;                       /* filename */
-   char *lname;                       /* link name if any */
-   JCR *jcr;                          /* jcr pointer */
+   char *attr;                        /**< attributes position */
+   char *fname;                       /**< filename */
+   char *lname;                       /**< link name if any */
+   JCR *jcr;                          /**< jcr pointer */
 };
 
 #endif /* __ATTR_H_ */

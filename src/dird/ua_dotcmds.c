@@ -21,14 +21,16 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Commands
+ * Kern Sibbald, April MMII
+ */
+/**
+ * @file
+ * User Agent Commands
  *
  * These are "dot" commands, i.e. commands preceded
  * by a period. These commands are meant to be used
  * by a program, so there is no prompting, and the
  * returned results are (supposed to be) predictable.
- *
- * Kern Sibbald, April MMII
  */
 
 #include "bareos.h"
@@ -304,7 +306,7 @@ static bool bvfs_parse_arg(UAContext *ua, DBId_t *pathid, char **path, char **jo
    return true;
 }
 
-/*
+/**
  * This checks to see if the JobId given is allowed under the current
  * ACLs e.g. comparing the JobName against the Job_ACL and the client
  * against the Client_ACL.
@@ -339,7 +341,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * This returns in filtered_jobids the list of allowed jobids in the
  * jobids variable under the current ACLs e.g. using bvfs_validate_jobid().
  */
@@ -380,7 +382,7 @@ static bool bvfs_validate_jobids(UAContext *ua, const char *jobids, POOL_MEM &fi
    return (cnt > 0) ? true : false;
 }
 
-/*
+/**
  * .bvfs_cleanup path=b2XXXXX
  */
 bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd)
@@ -398,7 +400,7 @@ bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
  */
 bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
@@ -443,7 +445,7 @@ bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
  */
@@ -496,7 +498,7 @@ bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 path=
@@ -543,7 +545,7 @@ bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * .bvfs_versions jobid=0 client=<client-name> fnid=10 pathid=10 copies versions (jobid isn't used)
  */
 bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
@@ -585,7 +587,7 @@ bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * .bvfs_get_jobids jobid=1
  *  -> returns needed jobids to restore
  * .bvfs_get_jobids jobid=1 all
@@ -768,7 +770,7 @@ static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
    return;
 }
 
-/*
+/**
  * .die (seg fault)
  * .dump (sm_dump)
  * .exit (no arg => .quit)
@@ -906,7 +908,7 @@ bool dot_admin_cmds(UAContext *ua, const char *cmd)
    return result;
 }
 #else
-/*
+/**
  * Dummy routine for non-development version
  */
 bool dot_admin_cmds(UAContext *ua, const char *cmd)
@@ -935,7 +937,7 @@ bool dot_jobdefs_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Can use an argument to filter on JobType
  * .jobs [type=B]
  */
@@ -1215,7 +1217,7 @@ bool dot_types_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * If this command is called, it tells the director that we
  * are a program that wants a sort of API, and hence,
  * we will probably suppress certain output, include more
@@ -1465,7 +1467,7 @@ bool dot_volstatus_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Return default values for a job
  */
 bool dot_defaults_cmd(UAContext *ua, const char *cmd)

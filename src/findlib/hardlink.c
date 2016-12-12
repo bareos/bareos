@@ -20,15 +20,17 @@
    02110-1301, USA.
 */
 /*
- * Hardlinked files handling. The hardlinks are tracked using a htable.
- *
  * Written by Marco van Wieringen, May 2014
+ */
+/**
+ * @file
+ * Hardlinked files handling. The hardlinks are tracked using a htable.
  */
 
 #include "bareos.h"
 #include "find.h"
 
-/*
+/**
  * Lookup a inode/dev in the list of hardlinked files.
  */
 CurLink *lookup_hardlink(JCR *jcr, FF_PKT *ff_pkt, ino_t ino, dev_t dev)
@@ -86,7 +88,7 @@ CurLink *new_hardlink(JCR *jcr, FF_PKT *ff_pkt, char *fname, ino_t ino, dev_t de
    return hl;
 }
 
-/*
+/**
  * When the current file is a hardlink, the backup code can compute
  * the checksum and store it into the CurLink structure.
  */

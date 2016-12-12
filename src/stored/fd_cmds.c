@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * This file handles commands from the File daemon.
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * This file handles commands from the File daemon.
  *
  * We get here because the Director has initiated a Job with
  * the Storage daemon, then done the same with the File daemon,
@@ -59,7 +61,7 @@ struct s_cmds {
    bool (*func)(JCR *jcr);
 };
 
-/*
+/**
  * The following are the recognized commands from the File daemon
  */
 static struct s_cmds fd_cmds[] = {
@@ -97,7 +99,7 @@ static char Job_start[] =
 static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
-/*
+/**
  * After receiving a connection (in dircmd.c) if it is
  * from the File daemon, this routine is called.
  */
@@ -105,7 +107,7 @@ void *handle_filed_connection(BSOCK *fd, char *job_name)
 {
    JCR *jcr;
 
-/*
+/**
  * With the following bmicrosleep on, running the
  * SD under the debugger fails.
  */
@@ -158,7 +160,7 @@ void *handle_filed_connection(BSOCK *fd, char *job_name)
    return NULL;
 }
 
-/*
+/**
  * Run a File daemon Job -- File daemon already authorized
  * Director sends us this command.
  *
@@ -193,7 +195,7 @@ void run_job(JCR *jcr)
    free_plugins(jcr);                 /* release instantiated plugins */
 }
 
-/*
+/**
  * Now talk to the FD and do what he says
  */
 void do_fd_commands(JCR *jcr)
@@ -253,7 +255,7 @@ void do_fd_commands(JCR *jcr)
    fd->signal(BNET_TERMINATE);        /* signal to FD job is done */
 }
 
-/*
+/**
  * Append Data command
  *    Open Data Channel and receive Data for archiving
  *    Write the Data to the archive device
@@ -293,7 +295,7 @@ static bool append_end_session(JCR *jcr)
    return fd->fsend(OK_end);
 }
 
-/*
+/**
  * Append Open session command
  */
 static bool append_open_session(JCR *jcr)
@@ -316,7 +318,7 @@ static bool append_open_session(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Append Close session command
  *    Close the append session and send back Statistics
  *    (need to fix statistics)
@@ -344,7 +346,7 @@ static bool append_close_session(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Read Data command
  *    Open Data Channel, read the data from
  *    the archive device and send to File
@@ -365,7 +367,7 @@ static bool read_data_cmd(JCR *jcr)
    }
 }
 
-/*
+/**
  * Read Open session command
  *    We need to scan for the parameters of the job
  *    to be restored.
@@ -409,7 +411,7 @@ static bool read_open_session(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Read Close session command
  *    Close the read session
  */

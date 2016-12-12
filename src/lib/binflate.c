@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * @file
  * BAREOS zlib compression wrappers
  */
 
@@ -27,7 +29,7 @@
 #include <zlib.h>
 #endif
 
-/*
+/**
  * Deflate or compress and input buffer.  You must supply an
  *  output buffer sufficiently long and the length of the
  *  output buffer. Generally, if the output buffer is the
@@ -66,7 +68,7 @@ int Zdeflate(char *in, int in_len, char *out, int &out_len)
 #endif
 }
 
-/*
+/**
  * Inflate or uncompress an input buffer.  You must supply
  *  and output buffer and an output length sufficiently long
  *  or there will be an error.  This uncompresses in one call.

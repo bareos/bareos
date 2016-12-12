@@ -3,7 +3,7 @@
 
    Copyright (C) 2005-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * ansi_label.c routines to handle ANSI (and perhaps one day IBM) tape labels.
- *
  * Kern Sibbald, MMV
+ */
+/**
+ * @file
+ * ansi_label.c routines to handle ANSI tape labels.
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -37,7 +39,7 @@ void ebcdic_to_ascii(char *dst, char *src, int count);
 static char *ansi_date(time_t td, char *buf);
 static bool same_label_names(char *bareos_name, char *ansi_name);
 
-/*
+/**
  * We read an ANSI label and compare the Volume name. We require
  * a VOL1 record of 80 characters followed by a HDR1 record containing
  * BAREOS.DATA in the filename field. We then read up to 3 more
@@ -222,7 +224,7 @@ int read_ansi_ibm_label(DCR *dcr)
    return VOL_LABEL_ERROR;
 }
 
-/*
+/**
  * ANSI/IBM VOL1 label
  *  80 characters blank filled
  * Pos   count   Function      What Bareos puts
@@ -278,7 +280,7 @@ int read_ansi_ibm_label(DCR *dcr)
  */
 static const char *labels[] = {"HDR", "EOF", "EOV"};
 
-/*
+/**
  * Write an ANSI or IBM 80 character tape label
  *
  * Type determines whether we are writing HDR, EOF, or EOV labels
@@ -448,7 +450,7 @@ bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
    }
 }
 
-/*
+/**
  * Check a Bareos Volume name against an ANSI Volume name
  */
 static bool same_label_names(char *bareos_name, char *ansi_name)
@@ -486,7 +488,7 @@ static bool same_label_names(char *bareos_name, char *ansi_name)
    return false;
 }
 
-/*
+/**
  * ANSI date
  *  ' 'YYDDD
  */

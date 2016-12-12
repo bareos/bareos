@@ -20,7 +20,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
+/**
+ * @file
+ * bareos virtual filesystem layer
+ */
 #include "bareos.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
@@ -181,7 +184,7 @@ bail_out:
    fnl = 0;
 }
 
-/*
+/**
  * Internal function to update path_hierarchy cache with a shared pathid cache
  * return Error 0
  *        OK    1
@@ -516,7 +519,7 @@ char *bvfs_basename_dir(char *path)
    return p;
 }
 
-/*
+/**
  * Find an store the filename descriptor for empty directories Filename.Name=''
  */
 DBId_t Bvfs::get_dir_filenameid()
@@ -535,7 +538,7 @@ DBId_t Bvfs::get_dir_filenameid()
    return dir_filenameid;
 }
 
-/*
+/**
  * Update the bvfs cache for current jobids
  */
 void Bvfs::update_cache()
@@ -553,7 +556,7 @@ bool Bvfs::ch_dir(const char *path)
    return pwd_id != 0;
 }
 
-/*
+/**
  * Get all file versions for a specified client
  * TODO: Handle basejobs using different client
  */
@@ -621,7 +624,7 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Retrieve . and .. information
  */
 void Bvfs::ls_special_dirs()
@@ -777,7 +780,7 @@ bool Bvfs::ls_files()
    return nb_record == limit;
 }
 
-/*
+/**
  * Return next Id from comma separated list
  *
  * Returns:

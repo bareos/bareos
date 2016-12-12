@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,21 +21,22 @@
    02110-1301, USA.
 */
 /*
- * -*- Mode: C++ -*-
- * compat.cpp -- compatibilty layer to make bareos-fd run natively under windows
- *
  * Copyright transferred from Raider Solutions, Inc to
  *   Kern Sibbald and John Walker by express permission.
  *
  * Author          : Christopher S. Hull
  * Created On      : Sat Jan 31 15:55:00 2004
  */
+/**
+ * @file
+ * compatibilty layer to make bareos-fd run natively under windows
+ */
 #include "bareos.h"
 #include "jcr.h"
 #include "dlfcn.h"
 #include "findlib/find.h"
 
-/*
+/**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller
  * than our define of FILE_ATTRIBUTE_VOLUME_MOUNT_POINT.
  */
@@ -43,7 +44,7 @@
 #error "FILE_ATTRIBUTE_VALID_FLAGS smaller than FILE_ATTRIBUTE_VALID_FLAGS"
 #endif
 
-/*
+/**
  * Note, if you want to see what Windows variables and structures
  * are defined, bareos.h includes <windows.h>, which is found in:
  *
@@ -61,7 +62,7 @@ static const int dbglvl = 500;
 static pthread_mutex_t com_security_mutex = PTHREAD_MUTEX_INITIALIZER;
 static bool com_security_initialized = false;
 
-/*
+/**
  * The CoInitializeSecurity function initializes the security layer and sets the specified values
  * as the security default. If a process does not call CoInitializeSecurity, COM calls it automatically
  * the first time an interface is marshaled or unmarshaled, registering the system default security.
@@ -104,7 +105,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * UTF-8 to UCS2 path conversion is expensive,
  * so we cache the conversion. During backup the
  * conversion is called 3 times (lstat, attribs, open),
@@ -121,7 +122,7 @@ struct thread_vss_path_convert {
    t_pVSSPathConvertW pPathConvertW;
 };
 
-/*
+/**
  * We use thread specific data using pthread_set_specific and pthread_get_specific
  * to have unique and separate data for each thread instead of global variables.
  */
@@ -193,7 +194,7 @@ static thread_vss_path_convert *Win32GetPathConvert()
    return tvpc;
 }
 
-/*
+/**
  * UTF-8 to UCS2 path conversion caching.
  */
 static void Win32ConvCleanupCache(void *arg)
@@ -278,7 +279,7 @@ void Win32TSDCleanup()
    V(tsd_mutex);
 }
 
-/*
+/**
  * Special flag used to enable or disable Bacula compatible win32 encoding.
  */
 static bool win32_bacula_compatible = true;
@@ -298,12 +299,12 @@ bool Win32IsCompatible()
    return win32_bacula_compatible;
 }
 
-/*
+/**
  * Forward referenced functions
  */
 const char *errorString(void);
 
-/*
+/**
  * To allow the usage of the original version in this file here
  */
 #undef fputs
@@ -313,7 +314,7 @@ const char *errorString(void);
 extern DWORD g_platform_id;
 extern DWORD g_MinorVersion;
 
-/*
+/**
  * From Microsoft SDK (KES) is the diff between Jan 1 1601 and Jan 1 1970
  */
 #ifdef HAVE_MINGW
@@ -683,7 +684,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
    return (POOLMEM *)pwszBuf;
 }
 
-/*
+/**
  * Convert from WCHAR (UCS) to UTF-8
  */
 int wchar_2_UTF8(POOLMEM *&pszUTF, const WCHAR *pszUCS)
@@ -701,7 +702,7 @@ int wchar_2_UTF8(POOLMEM *&pszUTF, const WCHAR *pszUCS)
    }
 }
 
-/*
+/**
  * Convert from WCHAR (UCS) to UTF-8
  */
 int wchar_2_UTF8(char *pszUTF, const WCHAR *pszUCS, int cchChar)
@@ -740,7 +741,7 @@ int UTF8_2_wchar(POOLMEM *&ppszUCS, const char *pszUTF)
    }
 }
 
-/*
+/**
  * Convert a C character string into an BSTR.
  */
 BSTR str_2_BSTR(const char *pSrc)
@@ -771,7 +772,7 @@ BSTR str_2_BSTR(const char *pSrc)
    return wsOut;
 }
 
-/*
+/**
  * Convert a BSTR into an C character string.
  */
 char *BSTR_2_str(const BSTR pSrc)
@@ -936,7 +937,7 @@ void srandom(unsigned int seed)
    srand(seed);
 }
 
-/*
+/**
  * Convert from Windows concept of time to Unix concept of time
  */
 static void cvt_utime_to_ftime(const time_t  &time, FILETIME &wintime)
@@ -1142,7 +1143,7 @@ const char *errorString(void)
    return rval;
 }
 
-/*
+/**
  * Retrieve the unique devicename of a Volume MountPoint.
  */
 static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&devicename)
@@ -1235,7 +1236,7 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&d
    return true;
 }
 
-/*
+/**
  * Retrieve the symlink target
  */
 static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinktarget)
@@ -1353,7 +1354,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
    return nrconverted;
 }
 
-/*
+/**
  * Encode file sttributes using the old Bacula method.
  */
 static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, struct stat *sb)
@@ -1371,7 +1372,7 @@ static inline void encode_windows_flags_compatible(DWORD pdwFileAttributes, stru
    }
 }
 
-/*
+/**
  * This is called for directories, and reparse points and is used to
  * get some special attributes like the type of reparse point etc..
  */
@@ -1948,7 +1949,7 @@ bail_out:
    return stat2(filename, sb);
 }
 
-/*
+/**
  * Get the Volume MountPoint unique devicename for the given filename.
  * This is a wrapper around get_volume_mount_point_data() used for retrieving
  * the VMP data used in the VSS snapshotting.
@@ -1958,7 +1959,7 @@ bool win32_get_vmp_devicename(const char *filename, POOLMEM *&devicename)
    return get_volume_mount_point_data(filename, devicename);
 }
 
-/*
+/**
  * We write our own ftruncate because the one in the
  *  Microsoft library mrcrt.dll does not truncate
  *  files greater than 2GB.
@@ -2043,7 +2044,7 @@ int waitpid(int, int*, int)
    return -1;
 }
 
-/*
+/**
  * Read contents of symbolic link
  */
 ssize_t readlink(const char *path, char *buf, size_t bufsiz)
@@ -2060,7 +2061,7 @@ ssize_t readlink(const char *path, char *buf, size_t bufsiz)
    return strlen(buf);
 }
 
-/*
+/**
  * Create a directory symlink / file symlink/junction
  */
 int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
@@ -2140,7 +2141,7 @@ bail_out:
 #endif
 }
 
-/*
+/**
  * Create a hardlink
  */
 int link(const char *existing, const char *newfile)
@@ -2230,7 +2231,7 @@ int gettimeofday(struct timeval *tv, struct timezone *tz)
 }
 #endif //HAVE_MINGW
 
-/*
+/**
  * Write in Windows System log
  */
 extern "C" void syslog(int type, const char *fmt, ...)
@@ -2270,7 +2271,7 @@ struct group *getgrgid(uid_t)
     return NULL;
 }
 
-/*
+/**
  * Implement opendir/readdir/closedir on top of window's API
  */
 typedef struct _dir
@@ -2429,7 +2430,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
    return 0;
 }
 
-/*
+/**
  * Dotted IP address to network address
  *
  * Returns 1 if  OK
@@ -2897,7 +2898,7 @@ int win32_unlink(const char *filename)
    return nRetCode;
 }
 
-/*
+/**
  * Define attributes that are legal to set with SetFileAttributes()
  */
 #define SET_ATTRS ( \
@@ -3095,7 +3096,7 @@ const char *getArgv0(const char *cmdline)
     return rval;
 }
 
-/*
+/**
  * Extracts the executable or script name from the first string in cmdline.
  *
  * If the name contains blanks then it must be quoted with double quotes,
@@ -3764,7 +3765,7 @@ bail_out:
 #endif
 
 #ifdef HAVE_MINGW
-/*
+/**
  * Syslog function, added by Nicolas Boichat
  */
 extern "C" void openlog(const char *ident, int option, int facility)
@@ -3772,7 +3773,7 @@ extern "C" void openlog(const char *ident, int option, int facility)
 }
 #endif //HAVE_MINGW
 
-/*
+/**
  * Log an error message
  */
 void LogErrorMsg(const char *message)
@@ -3801,7 +3802,7 @@ void LogErrorMsg(const char *message)
    }
 }
 
-/*
+/**
  * Don't allow OS to suspend while backup running
  * Note, the OS automatically tracks these for each thread
  */

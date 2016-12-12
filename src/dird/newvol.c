@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- newvol.c -- creates new Volumes in
+ * Kern Sibbald, May MMI
+ */
+/**
+ * @file
+ * creates new Volumes in
  *                                catalog Media table from the
  *                                LabelFormat specification.
- *
- * Kern Sibbald, May MMI
  *
  * This routine runs as a thread and must be thread reentrant.
  *
@@ -42,7 +44,7 @@
 static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
 static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
 
-/*
+/**
  * Automatic Volume name creation using the LabelFormat
  *
  * The media record must have the PoolId filled in when
@@ -159,7 +161,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
    return true;
 }
 
-/*
+/**
  * Perform full substitution on Label
  */
 static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)

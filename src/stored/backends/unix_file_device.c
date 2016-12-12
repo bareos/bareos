@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2013 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,18 +21,19 @@
    02110-1301, USA.
 */
 /*
- * UNIX FILE API device abstraction.
- *
  * Kern Sibbald, MM
- *
  * Extracted from other source files Marco van Wieringen, December 2013
+ */
+/**
+ * @file
+ * UNIX FILE API device abstraction.
  */
 
 #include "bareos.h"
 #include "stored.h"
 #include "unix_file_device.h"
 
-/*
+/**
  * (Un)mount the device (For a FILE device)
  */
 static bool do_mount(DCR *dcr, bool mount, int dotimeout)
@@ -152,7 +153,7 @@ get_out:
    return true;
 }
 
-/*
+/**
  * Mount the device.
  *
  * If timeout, wait until the mount command returns 0.
@@ -169,7 +170,7 @@ bool unix_file_device::mount_backend(DCR *dcr, int timeout)
    return retval;
 }
 
-/*
+/**
  * Unmount the device
  *
  * If timeout, wait until the unmount command returns 0.

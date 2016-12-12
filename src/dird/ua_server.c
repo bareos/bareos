@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Server
- *
  * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * User Agent Server
  */
 
 #include "bareos.h"
@@ -33,7 +35,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Create a Job Control Record for a control "job", filling in all the appropriate fields.
  */
 JCR *new_control_jcr(const char *base_name, int job_type)
@@ -62,7 +64,7 @@ JCR *new_control_jcr(const char *base_name, int job_type)
    return jcr;
 }
 
-/*
+/**
  * Handle Director User Agent commands
  */
 void *handle_UA_client_request(BSOCK *user)
@@ -132,7 +134,7 @@ getout:
    return NULL;
 }
 
-/*
+/**
  * Create a UAContext for a Job that is running so that
  *   it can the User Agent routines and
  *   to ensure that the Job gets the proper output.

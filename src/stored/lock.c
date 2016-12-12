@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Collection of Bacula Storage daemon locking software
- *
  * Kern Sibbald, June 2007
+ */
+/*+
+ * @file
+ * Collection of Bacula Storage daemon locking software
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -33,7 +36,7 @@ const int dbglvl = 0;
 const int dbglvl = 500;
 #endif
 
-/*
+/**
  * The Storage daemon has three locking concepts that must be understood:
  *
  * 1. dblock    blocking the device, which means that the device
@@ -139,7 +142,7 @@ void DEVICE::dunblock(bool locked)
 }
 
 #ifdef SD_DEBUG_LOCK
-/*
+/**
  * Debug DCR locks  N.B.
  *
  */
@@ -175,7 +178,7 @@ void DCR::dbg_mUnlock(const char *file, int line)
    return;
 }
 
-/*
+/**
  * Debug DEVICE locks  N.B.
  *
  */
@@ -234,10 +237,10 @@ void DEVICE::dbg_Unlock_read_acquire(const char *file, int line)
 
 #else
 
-/*
+/**
  * DCR locks N.B.
  */
-/*
+/**
  * Multiple rLock implementation
  */
 void DCR::mLock(bool locked)
@@ -253,7 +256,7 @@ void DCR::mLock(bool locked)
    return;
 }
 
-/*
+/**
  * Multiple rUnlock implementation
  */
 void DCR::mUnlock()
@@ -275,7 +278,7 @@ void DCR::mUnlock()
    return;
 }
 
-/*
+/**
  * DEVICE locks N.B.
  */
 void DEVICE::rUnlock()
@@ -315,7 +318,7 @@ void DEVICE::Unlock_read_acquire()
 
 #endif
 
-/*
+/**
  * Main device access control
  */
 int DEVICE::init_mutex()
@@ -323,7 +326,7 @@ int DEVICE::init_mutex()
    return pthread_mutex_init(&m_mutex, NULL);
 }
 
-/*
+/**
  * Write device acquire mutex
  */
 int DEVICE::init_acquire_mutex()
@@ -331,7 +334,7 @@ int DEVICE::init_acquire_mutex()
    return pthread_mutex_init(&acquire_mutex, NULL);
 }
 
-/*
+/**
  * Read device acquire mutex
  */
 int DEVICE::init_read_acquire_mutex()
@@ -339,7 +342,7 @@ int DEVICE::init_read_acquire_mutex()
    return pthread_mutex_init(&read_acquire_mutex, NULL);
 }
 
-/*
+/**
  * Set order in which device locks must be acquired
  */
 void DEVICE::set_mutex_priorities()
@@ -357,7 +360,7 @@ int DEVICE::next_vol_timedwait(const struct timespec *timeout)
    return pthread_cond_timedwait(&wait_next_vol, &m_mutex, timeout);
 }
 
-/*
+/**
  * This is a recursive lock that checks if the device is blocked.
  *
  * When blocked is set, all threads EXCEPT thread with id no_wait_id
@@ -407,7 +410,7 @@ void DEVICE::rLock(bool locked)
    }
 }
 
-/*
+/**
  * Block all other threads from using the device
  *
  * Device must already be locked.  After this call,
@@ -425,7 +428,7 @@ void _block_device(const char *file, int line, DEVICE *dev, int state)
    Dmsg3(sd_dbglvl, "set blocked=%s from %s:%d\n", dev->print_blocked(), file, line);
 }
 
-/*
+/**
  * Unblock the device, and wake up anyone who went to sleep.
  * Enter: device locked
  * Exit:  device locked
@@ -442,7 +445,7 @@ void _unblock_device(const char *file, int line, DEVICE *dev)
    }
 }
 
-/*
+/**
  * Enter with device locked and blocked
  * Exit with device unlocked and blocked by us.
  */
@@ -459,7 +462,7 @@ void _steal_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock_t *
    dev->Unlock();
 }
 
-/*
+/**
  * Enter with device blocked by us but not locked
  * Exit with device locked, and blocked by previous owner
  */
@@ -503,7 +506,7 @@ const char *DEVICE::print_blocked() const
    }
 }
 
-/*
+/**
  * Check if the device is blocked or not
  */
 bool DEVICE::is_device_unmounted()

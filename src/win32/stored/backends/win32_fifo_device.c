@@ -21,18 +21,20 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MM
+ * Extracted from other source files Marco van Wieringen, December 2013
+ */
+/**
+ * @file
  * UNIX FIFO API device abstraction.
  *
- * Kern Sibbald, MM
- *
- * Extracted from other source files Marco van Wieringen, December 2013
  */
 
 #include "bareos.h"
 #include "stored.h"
 #include "win32_fifo_device.h"
 
-/*
+/**
  * Open a fifo device
  */
 void win32_fifo_device::open_device(DCR *dcr, int omode)
@@ -140,7 +142,7 @@ bool win32_fifo_device::eod(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * (Un)mount the device (For a FILE device)
  */
 static bool do_mount(DCR *dcr, bool mount, int dotimeout)
@@ -260,7 +262,7 @@ get_out:
    return true;
 }
 
-/*
+/**
  * Mount the device.
  *
  * If timeout, wait until the mount command returns 0.
@@ -277,7 +279,7 @@ bool win32_fifo_device::mount_backend(DCR *dcr, int timeout)
    return retval;
 }
 
-/*
+/**
  * Unmount the device
  *
  * If timeout, wait until the unmount command returns 0.

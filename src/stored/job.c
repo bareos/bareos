@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Job control and execution for Storage Daemon
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Job control and execution for Storage Daemon
  */
 
 #include "bareos.h"
@@ -55,7 +57,7 @@ static char BAD_job[] =
 static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
-/*
+/**
  * Director requests us to start a job
  * Basic tasks done here:
  *  - We pickup the JobId to be run from the Director.
@@ -377,7 +379,7 @@ bool finish_cmd(JCR *jcr)
 }
 
 #ifdef needed
-/*
+/**
  *   Query Device command from Director
  *   Sends Storage Daemon's information on the device to the
  *    caller (presumably the Director).
@@ -447,7 +449,7 @@ bool query_cmd(JCR *jcr)
 }
 #endif
 
-/*
+/**
  * Destroy the Job Control Record and associated
  * resources (sockets).
  */

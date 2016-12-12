@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Create a file, and reset the modes
- *
  * Kern Sibbald, November MM
+ */
+/**
+ * @file
+ * Create a file, and reset the modes
  */
 
 #include "bareos.h"
@@ -42,7 +44,7 @@
 static int separate_path_and_file(JCR *jcr, char *fname, char *ofile);
 static int path_already_seen(JCR *jcr, char *path, int pnl);
 
-/*
+/**
  * Create the file, or the directory
  *
  * fname is the original filename
@@ -472,7 +474,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    return CF_ERROR;
 }
 
-/*
+/**
  *  Returns: > 0 index into path where last path char is.
  *           0  no path
  *           -1 filename is zero length
@@ -517,7 +519,7 @@ static int separate_path_and_file(JCR *jcr, char *fname, char *ofile)
    return pnl;
 }
 
-/*
+/**
  * Primitive caching of path to prevent recreating a pathname
  *   each time as long as we remain in the same directory.
  */

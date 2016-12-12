@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,15 +20,17 @@
    02110-1301, USA.
 */
 /*
- * Implement routines to determine file system types.
- *
  * Written by Preben 'Peppe' Guldberg, December MMIV
+ */
+/**
+ * @file
+ * Implement routines to determine file system types.
  */
 
 #include "bareos.h"
 #include "find.h"
 
-/*
+/**
  * These functions should be implemented for each OS
  *
  * bool fstype(const char *fname, char *fs, int fslen);
@@ -177,7 +180,7 @@ bool fstype(const char *fname, char *fs, int fslen)
 }
 #endif
 
-/*
+/**
  * Compare function build on top of fstype, OS independent.
  *
  * bool fstype_equals(const char *fname, const char *fstypename);

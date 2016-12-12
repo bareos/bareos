@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Gluster Filesystem API device abstraction.
- *
  * Marco van Wieringen, May 2014
+ */
+/**
+ * @file
+ * Gluster Filesystem API device abstraction.
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 #include "stored.h"
 #include "backends/cephfs_device.h"
 
-/*
+/**
  * Options that can be specified for this device type.
  */
 enum device_option_type {
@@ -52,7 +54,7 @@ static device_option device_options[] = {
    { NULL, argument_none }
 };
 
-/*
+/**
  * Open a volume using libcephfs.
  */
 int cephfs_device::d_open(const char *pathname, int flags, int mode)
@@ -204,7 +206,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * Read data from a volume using libcephfs.
  */
 ssize_t cephfs_device::d_read(int fd, void *buffer, size_t count)
@@ -217,7 +219,7 @@ ssize_t cephfs_device::d_read(int fd, void *buffer, size_t count)
    }
 }
 
-/*
+/**
  * Write data to a volume using libcephfs.
  */
 ssize_t cephfs_device::d_write(int fd, const void *buffer, size_t count)

@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +19,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User agent auditing.
- *
  * Written by Marco van Wieringen, April 2014
+ */
+/**
+ * @file
+ * BAREOS Director -- User agent auditing.
  */
 
 #include "bareos.h"
@@ -29,7 +31,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * See if we need to audit this event.
  */
 bool UAContext::audit_event_wanted(bool audit_event_enabled)
@@ -51,7 +53,7 @@ bool UAContext::audit_event_wanted(bool audit_event_enabled)
    return false;
 }
 
-/*
+/**
  * Log an audit event for a console that accesses an resource or cmd that is not allowed.
  */
 static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg, int acl, const char *item)
@@ -123,7 +125,7 @@ void UAContext::log_audit_event_acl_success(int acl, const char *item)
    log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl success %s %s\n"), acl, item);
 }
 
-/*
+/**
  * Log an audit event
  */
 void UAContext::log_audit_event_cmdline()

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,8 +22,12 @@
 /*
  * Kern Sibbald, June MMIII
  */
+/**
+ * @file
+ * alist header file
+ */
 
-/*
+/**
  * There is a lot of extra casting here to work around the fact
  * that some compilers (Sun and Visual C++) do not accept
  * (void *) as an lvalue on the left side of an equal.
@@ -66,7 +71,7 @@
 
 #endif
 
-/*
+/**
  * Second arg of init
  */
 enum {
@@ -74,7 +79,7 @@ enum {
   not_owned_by_alist = false
 };
 
-/*
+/**
  * Array list -- much like a simplified STL vector
  *               array of pointers to inserted items
  */
@@ -112,7 +117,7 @@ public:
    void *pop() { return remove(num_items - 1); };
 };
 
-/*
+/**
  * Define index operator []
  */
 inline void * alist::operator [](int index) const {
@@ -127,7 +132,7 @@ inline bool alist::empty() const
    return num_items == 0;
 }
 
-/*
+/**
  * This allows us to do explicit initialization,
  *   allowing us to mix C++ classes inside malloc'ed
  *   C structures. Define before called in constructor.

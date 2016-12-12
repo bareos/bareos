@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director Job processing routines
- *
  * Kern Sibbald, October MM
+ */
+/**
+ * @file
+ * BAREOS Director Job processing routines
  */
 
 #include "bareos.h"
@@ -66,7 +68,7 @@ void term_job_server()
    jobq_destroy(&job_queue);          /* ignore any errors */
 }
 
-/*
+/**
  * Run a job -- typically called by the scheduler, but may also
  *              be called by the UA (Console program).
  *
@@ -401,7 +403,7 @@ void update_job_end(JCR *jcr, int TermCode)
    update_job_end_record(jcr);
 }
 
-/*
+/**
  * This is the engine called by jobq.c:jobq_add() when we were pulled from the work queue.
  *
  * At this point, we are running in our own thread and all necessary resources are
@@ -631,7 +633,7 @@ void sd_msg_thread_send_signal(JCR *jcr, int sig)
    jcr->unlock();
 }
 
-/*
+/**
  * Cancel a job -- typically called by the UA (Console program), but may also
  *              be called by the job watchdog.
  *
@@ -749,7 +751,7 @@ static void job_monitor_watchdog(watchdog_t *self)
    endeach_jcr(jcr);
 }
 
-/*
+/**
  * Check if the maxwaittime has expired and it is possible
  *  to cancel the job.
  */
@@ -777,7 +779,7 @@ static bool job_check_maxwaittime(JCR *jcr)
    return cancel;
 }
 
-/*
+/**
  * Check if maxruntime has expired and if the job can be
  *   canceled.
  */
@@ -819,7 +821,7 @@ static bool job_check_maxruntime(JCR *jcr)
    return cancel;
 }
 
-/*
+/**
  * Check if MaxRunSchedTime has expired and if the job can be
  *   canceled.
  */
@@ -837,7 +839,7 @@ static bool job_check_maxrunschedtime(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Get or create a Pool record with the given name.
  * Returns: 0 on error
  *          poolid if OK
@@ -862,7 +864,7 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
    return pr.PoolId;
 }
 
-/*
+/**
  * Check for duplicate jobs.
  *  Returns: true  if current job should continue
  *           false if current job should terminate
@@ -995,7 +997,7 @@ bool allow_duplicate_job(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * This subroutine edits the last job start time into a
  * "since=date/time" buffer that is returned in the
  * variable since.  This is used for display purposes in
@@ -1268,7 +1270,7 @@ void apply_pool_overrides(JCR *jcr, bool force)
    }
 }
 
-/*
+/**
  * Get or create a Client record for this Job
  */
 bool get_or_create_client_record(JCR *jcr)
@@ -1374,7 +1376,7 @@ void init_jcr_job_record(JCR *jcr)
    bstrncpy(jcr->jr.Job, jcr->Job, sizeof(jcr->jr.Job));
 }
 
-/*
+/**
  * Write status and such in DB
  */
 void update_job_end_record(JCR *jcr)
@@ -1395,7 +1397,7 @@ void update_job_end_record(JCR *jcr)
    }
 }
 
-/*
+/**
  * Takes base_name and appends (unique) current
  *   date and time to form unique job name.
  *
@@ -1453,7 +1455,9 @@ void create_unique_job_name(JCR *jcr, const char *base_name)
    Dmsg2(100, "JobId=%u created Job=%s\n", jcr->JobId, jcr->Job);
 }
 
-/* Called directly from job rescheduling */
+/**
+ * Called directly from job rescheduling
+ */
 void dird_free_jcr_pointers(JCR *jcr)
 {
    if (jcr->file_bsock) {
@@ -1482,7 +1486,7 @@ void dird_free_jcr_pointers(JCR *jcr)
    free_and_null_pool_memory(jcr->fname);
 }
 
-/*
+/**
  * Free the Job Control Record if no one is still using it.
  *  Called from main free_jcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
@@ -1556,7 +1560,7 @@ void dird_free_jcr(JCR *jcr)
    Dmsg0(200, "End dird free_jcr\n");
 }
 
-/*
+/**
  * The Job storage definition must be either in the Job record
  * or in the Pool record.  The Pool record overrides the Job record.
  */
@@ -1583,7 +1587,7 @@ void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
    }
 }
 
-/*
+/**
  * Set some defaults in the JCR necessary to
  * run. These items are pulled from the job
  * definition as defaults, but can be overridden
@@ -1748,7 +1752,7 @@ void create_clones(JCR *jcr)
    }
 }
 
-/*
+/**
  * Given: a JobId in jcr->previous_jr.JobId,
  *  this subroutine writes a bsr file to restore that job.
  * Returns: -1 on error

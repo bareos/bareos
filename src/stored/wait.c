@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,12 +20,14 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March 2005
+ */
+/**
+ * @file
  * Subroutines to handle waiting for operator intervention
  * or waiting for a Device to be released
  *
  * Code for wait_for_sysop() pulled from askdir.c
- *
- * Kern Sibbald, March 2005
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -35,7 +38,7 @@ const int dbglvl = 400;
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
 
-/*
+/**
  * Wait for SysOp to mount a tape on a specific device
  *
  *   Returns: W_ERROR, W_TIMEOUT, W_POLL, W_MOUNT, or W_WAKE
@@ -205,7 +208,7 @@ int wait_for_sysop(DCR *dcr)
 }
 
 
-/*
+/**
  * Wait for any device to be released, then we return, so
  * higher level code can rescan possible devices.  Since there
  * could be a job waiting for a drive to free up, we wait a maximum
@@ -249,7 +252,7 @@ bool wait_for_device(JCR *jcr, int &retries)
    return ok;
 }
 
-/*
+/**
  * Signal the above wait_for_device function.
  */
 void release_device_cond()
@@ -258,7 +261,7 @@ void release_device_cond()
 }
 
 #ifdef xxx
-/*
+/**
  * The jcr timers are used for waiting on any device *
  * Returns: true if time doubled
  *          false if max time expired

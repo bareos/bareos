@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Memory Pool prototypes
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Memory Pool prototypes
  */
 
 #ifndef __MEM_POOL_H_
@@ -60,7 +63,7 @@ void free_pool_memory(POOLMEM *buf);
 
 #endif
 
-/*
+/**
  * Macro to simplify free/reset pointers
  */
 #define free_and_null_pool_memory(a) do { if (a) { free_pool_memory(a); (a) = NULL;} } while (0)

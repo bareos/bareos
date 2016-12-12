@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
- * block.c -- tape block handling functions
- *
  * Kern Sibbald, March MMI
  * added BB02 format October MMII
+ */
+/**
+ @file
+ * tape block handling functions
  */
 
 #include "bareos.h"
@@ -48,7 +50,7 @@ static void reread_last_block(DCR *dcr);
 
 bool forge_on = false;                /* proceed inspite of I/O errors */
 
-/*
+/**
  * Dump the block header, then walk through
  * the block printing out the record headers.
  */
@@ -111,7 +113,7 @@ void dump_block(DEV_BLOCK *b, const char *msg)
   }
 }
 
-/*
+/**
  * Create a new block structure.
  * We pass device so that the block can inherit the
  * min and max block sizes.
@@ -138,7 +140,7 @@ DEV_BLOCK *new_block(DEVICE *dev)
    return block;
 }
 
-/*
+/**
  * Duplicate an existing block (eblock)
  */
 DEV_BLOCK *dup_block(DEV_BLOCK *eblock)
@@ -152,7 +154,7 @@ DEV_BLOCK *dup_block(DEV_BLOCK *eblock)
    return block;
 }
 
-/*
+/**
  * Only the first block checksum error was reported.
  *   If there are more, report it now.
  */
@@ -164,7 +166,7 @@ void print_block_read_errors(JCR *jcr, DEV_BLOCK *block)
    }
 }
 
-/*
+/**
  * Free block
  */
 void free_block(DEV_BLOCK *block)
@@ -177,7 +179,7 @@ void free_block(DEV_BLOCK *block)
    }
 }
 
-/*
+/**
  * Empty the block -- for writing
  */
 void empty_block(DEV_BLOCK *block)
@@ -190,7 +192,7 @@ void empty_block(DEV_BLOCK *block)
    block->FirstIndex = block->LastIndex = 0;
 }
 
-/*
+/**
  * Create block header just before write. The space
  * in the buffer should have already been reserved by
  * init_block.
@@ -225,7 +227,7 @@ static uint32_t ser_block_header(DEV_BLOCK *block, bool do_checksum)
    return CheckSum;
 }
 
-/*
+/**
  * Unserialize the block header for reading block.
  * This includes setting all the buffer pointers correctly.
  *
@@ -344,7 +346,7 @@ static inline bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block)
    return true;
 }
 
-/*
+/**
  * Write a block to the device, with locking and unlocking
  *
  * Returns: true  on success
@@ -419,7 +421,7 @@ bail_out:
    return status;
 }
 
-/*
+/**
  * Write a block to the device
  *
  * Returns: true  on success or EOT
@@ -798,7 +800,7 @@ static void reread_last_block(DCR *dcr)
 #endif
 }
 
-/*
+/**
  * If this routine is called, we do our bookkeeping and
  * then assure that the volume will not be written any more.
  */
@@ -868,7 +870,7 @@ static bool terminate_writing_volume(DCR *dcr)
    return ok;
 }
 
-/*
+/**
  * Do bookkeeping when a new file is created on a Volume. This is
  *  also done for disk files to generate the jobmedia records for
  *  quick seeking.
@@ -917,7 +919,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Read block with locking
  */
 bool DCR::read_block_from_device(bool check_block_numbers)
@@ -932,7 +934,7 @@ bool DCR::read_block_from_device(bool check_block_numbers)
    return ok;
 }
 
-/*
+/**
  * Read the next block into the block structure and unserialize
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.

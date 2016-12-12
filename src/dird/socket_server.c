@@ -20,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * This file handles external connections made to the director.
- *
  * Kern Sibbald, August MM
- *
  * Extracted from other source files by Marco van Wieringen, October 2014
+ */
+/**
+ * @file
+ * This file handles external connections made to the director.
  */
 
 #include "bareos.h"
@@ -116,7 +117,7 @@ extern "C" void *connect_thread(void *arg)
    return NULL;
 }
 
-/*
+/**
  * Called here by Director daemon to start UA (user agent)
  * command thread. This routine creates the thread and then
  * returns.

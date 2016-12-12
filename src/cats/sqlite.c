@@ -21,11 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database routines specific to SQLite
- *
  * Kern Sibbald, January 2002
- *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
+ */
+/**
+ * @file
+ * BAREOS Catalog Database routines specific to SQLite
  */
 
 #include "bareos.h"
@@ -137,7 +138,7 @@ B_DB_SQLITE::~B_DB_SQLITE()
 {
 }
 
-/*
+/**
  * Now actually open the database.  This can generate errors,
  * which are returned in the errmsg
  *
@@ -289,7 +290,7 @@ void B_DB_SQLITE::thread_cleanup(void)
    sqlite3_thread_cleanup();
 }
 
-/*
+/**
  * Start a transaction. This groups inserts and makes things
  * much more efficient. Usually started when inserting
  * file attributes.
@@ -353,7 +354,7 @@ struct rh_data {
    bool initialized;
 };
 
-/*
+/**
  * Convert SQLite's callback into BAREOS DB callback
  */
 static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, char **col_names)
@@ -375,7 +376,7 @@ static int sqlite_result_handler(void *arh_data, int num_fields, char **rows, ch
    return 0;
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
@@ -416,7 +417,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Submit a sqlite query and retrieve all the data
  */
 bool B_DB_SQLITE::sql_query_without_handler(const char *query, int flags)
@@ -462,7 +463,7 @@ void B_DB_SQLITE::sql_free_result(void)
    db_unlock(this);
 }
 
-/*
+/**
  * Fetch one row at a time
  */
 SQL_ROW B_DB_SQLITE::sql_fetch_row(void)
@@ -592,7 +593,7 @@ bool B_DB_SQLITE::sql_field_is_numeric(int field_type)
    }
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -615,7 +616,7 @@ bool B_DB_SQLITE::sql_batch_start(JCR *jcr)
 }
 
 /* set error to something to abort operation */
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -626,7 +627,7 @@ bool B_DB_SQLITE::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -655,7 +656,7 @@ bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    return sql_query_without_handler(cmd);
 }
 
-/*
+/**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */

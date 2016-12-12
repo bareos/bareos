@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- backup.c -- responsible for doing backup jobs
- *
  * Kern Sibbald, March MM
+ */
+/**
+ * @file
+ * responsible for doing backup jobs
  *
  * Basic tasks done here:
  *    Open DB and create records for this job.

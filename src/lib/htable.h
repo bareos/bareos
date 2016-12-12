@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,15 +22,15 @@
 /*
  * Written by Kern Sibbald, MMIV
  */
+/**
+ * @file
+ * Hash table class -- htable
+ */
 
 #ifndef HTABLE_H
 #define HTABLE_H
 
-/*
- * Hash table class -- htable
- */
-
-/*
+/**
  * Loop var through each member of table
  */
 #ifdef HAVE_TYPEOF

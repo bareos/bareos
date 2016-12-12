@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Dynamic loading of catalog plugins.
- *
  * Marco van Wieringen, November 2010
+ */
+/**
+ * @file
+ * Dynamic loading of catalog plugins.
  */
 
 #ifndef __CATS_BACKENDS_H_
@@ -46,7 +48,7 @@ typedef B_DB *(*t_backend_instantiate)(JCR *jcr,
 typedef void (*t_flush_backend)(void);
 }
 
-/*
+/**
  * Loaded shared library with a certain backend interface type.
  */
 struct backend_shared_library_t {
@@ -67,7 +69,7 @@ struct backend_shared_library_t {
 #define DYN_LIB_EXTENSION ".so"
 #endif
 
-/*
+/**
  * Known backend to interface mappings.
  */
 static struct backend_interface_mapping_t {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -25,13 +25,13 @@
 #define __XATTR_H
 
 /*
- *  * Number of xattr errors to report per job.
- *   */
+ * Number of xattr errors to report per job.
+ */
 #define XATTR_REPORT_ERR_MAX_PER_JOB    25
 
 /*
- *  * Return codes from xattr subroutines.
- *   */
+ * Return codes from xattr subroutines.
+ */
 typedef enum {
    bxattr_exit_fatal = -1,
    bxattr_exit_error = 0,

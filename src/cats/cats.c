@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Generic catalog class methods.
- *
  * Written by Marco van Wieringen, January 2011
+ */
+/**
+ * @file
+ * Generic catalog class methods.
  */
 
 #include "bareos.h"
@@ -50,7 +52,7 @@ bool B_DB::match_database(const char *db_driver, const char *db_name,
    return match;
 }
 
-/*
+/**
  * Clone a B_DB class by either increasing the reference count
  * (when mult_db_connection == false) or by getting a new
  * connection otherwise. We use a method so we can reference
@@ -114,7 +116,7 @@ const char *B_DB::get_type(void)
    }
 }
 
-/*
+/**
  * Lock database, this can be called multiple times by the same
  * thread without blocking, but must be unlocked the number of
  * times it was locked using db_unlock().
@@ -130,7 +132,7 @@ void B_DB::_lock_db(const char *file, int line)
    }
 }
 
-/*
+/**
  * Unlock the database. This can be called multiple times by the
  * same thread up to the number of times that thread called
  * db_lock()/
@@ -153,7 +155,7 @@ void B_DB::print_lock_info(FILE *fp)
    }
 }
 
-/*
+/**
  * Escape strings so that database engine is happy.
  *
  * NOTE! len is the length of the old string. Your new
@@ -186,7 +188,7 @@ void B_DB::escape_string(JCR *jcr, char *snew, char *old, int len)
    *n = 0;
 }
 
-/*
+/**
  * Escape binary object.
  * We base64 encode the data so its normal ASCII
  * Memory is stored in B_DB struct, no need to free it.
@@ -204,7 +206,7 @@ char *B_DB::escape_object(JCR *jcr, char *old, int len)
    return esc_obj;
 }
 
-/*
+/**
  * Unescape binary object
  * We base64 encode the data so its normal ASCII
  */

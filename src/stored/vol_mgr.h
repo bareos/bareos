@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,11 @@
  * Pulled out of dev.h
  *
  * Kern Sibbald, MMXIII
+ *
+ */
+/**
+ * @file
+ * volume management definitions
  *
  */
 
@@ -49,21 +54,21 @@ VOLRES *read_vol_walk_start();
 VOLRES *read_vol_walk_next(VOLRES *prev_vol);
 void read_vol_walk_end(VOLRES *vol);
 
-/*
+/**
  * Volume reservation class -- see vol_mgr.c and reserve.c
  */
 class VOLRES {
-   bool m_swapping;                   /* set when swapping to another drive */
-   bool m_in_use;                     /* set when volume reserved or in use */
-   bool m_reading;                    /* set when reading */
-   slot_number_t m_slot;              /* slot of swapping volume */
-   uint32_t m_JobId;                  /* JobId for read volumes */
-   volatile int32_t m_use_count;      /* Use count */
-   pthread_mutex_t m_mutex;           /* Vol muntex */
+   bool m_swapping;                   /**< set when swapping to another drive */
+   bool m_in_use;                     /**< set when volume reserved or in use */
+   bool m_reading;                    /**< set when reading */
+   slot_number_t m_slot;              /**< slot of swapping volume */
+   uint32_t m_JobId;                  /**< JobId for read volumes */
+   volatile int32_t m_use_count;      /**< Use count */
+   pthread_mutex_t m_mutex;           /**< Vol muntex */
 public:
    dlink link;
-   char *vol_name;                    /* Volume name */
-   DEVICE *dev;                       /* Pointer to device to which we are attached */
+   char *vol_name;                    /**< Volume name */
+   DEVICE *dev;                       /**< Pointer to device to which we are attached */
 
    void init_mutex() { pthread_mutex_init(&m_mutex, NULL); };
    void destroy_mutex() { pthread_mutex_destroy(&m_mutex); };

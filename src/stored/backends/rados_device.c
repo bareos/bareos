@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * CEPH (librados) API device abstraction.
- *
  * Marco van Wieringen, February 2014
+ */
+/**
+ * @file
+ * CEPH (librados) API device abstraction.
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 #include "stored.h"
 #include "rados_device.h"
 
-/*
+/**
  * Options that can be specified for this device type.
  */
 enum device_option_type {
@@ -69,7 +71,7 @@ static device_option device_options[] = {
    { NULL, argument_none }
 };
 
-/*
+/**
  * Open a volume using librados.
  */
 int rados_device::d_open(const char *pathname, int flags, int mode)
@@ -321,7 +323,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * Read some data from an object at a given offset.
  */
 ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t count)
@@ -337,7 +339,7 @@ ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t co
 #endif
 }
 
-/*
+/**
  * Read data from a volume using librados.
  */
 ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
@@ -360,7 +362,7 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
    }
 }
 
-/*
+/**
  * Write some data to an object at a given offset.
  * Seems the API changed everything earlier then 0.69 returns bytes written.
  */
@@ -390,7 +392,7 @@ ssize_t rados_device::write_object_data(boffset_t offset, char *buffer, size_t c
 #endif
 }
 
-/*
+/**
  * Write data to a volume using librados.
  */
 ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)

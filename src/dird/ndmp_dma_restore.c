@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Restore specific NDMP Data Management Application (DMA) routines
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * Restore specific NDMP Data Management Application (DMA) routines
  */
 
 #include "bareos.h"
@@ -44,7 +46,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 static char OKbootstrap[] =
    "3000 OK bootstrap\n";
 
-/*
+/**
  * Walk the tree of selected files for restore and lookup the
  * correct fileid. Return the actual full pathname of the file
  * corresponding to the given fileid.
@@ -81,7 +83,7 @@ static inline char *lookup_fileindex(JCR *jcr, int32_t FileIndex)
    return NULL;
 }
 
-/*
+/**
  * Add a filename to the files we want to restore.
  *
  * The RFC says this:
@@ -152,7 +154,7 @@ static inline void add_to_namelist(struct ndm_job_param *job,
    ndma_store_nlist(&job->nlist_tab, &nl);
 }
 
-/*
+/**
  * See in the tree with selected files what files were selected to be restored.
  */
 static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int32_t FileIndex,
@@ -204,7 +206,7 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int3
    return cnt;
 }
 
-/*
+/**
  * Database handler that handles the returned environment data for a given JobId.
  */
 static int ndmp_env_handler(void *ctx, int num_fields, char **row)
@@ -223,7 +225,7 @@ static int ndmp_env_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Fill the NDMP restore environment table with the data for the data agent to act on.
  */
 static inline bool fill_restore_environment(JCR *jcr,
@@ -432,7 +434,7 @@ static inline bool fill_restore_environment(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Extract any post backup statistics.
  */
 static inline bool extract_post_restore_stats(JCR *jcr,
@@ -470,7 +472,7 @@ static inline bool extract_post_restore_stats(JCR *jcr,
    return retval;
 }
 
-/*
+/**
  * Setup a NDMP restore session.
  */
 bool do_ndmp_restore_init(JCR *jcr)
@@ -517,7 +519,7 @@ static inline int ndmp_wait_for_job_termination(JCR *jcr)
    return jcr->SDJobStatus;
 }
 
-/*
+/**
  * The bootstrap is stored in a file, so open the file, and loop
  * through it processing each storage device in turn. If the
  * storage is different from the prior one, we open a new connection
@@ -846,7 +848,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Run a NDMP restore session.
  */
 bool do_ndmp_restore(JCR *jcr)
@@ -901,7 +903,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Cleanup a NDMP restore session.
  */
 void ndmp_restore_cleanup(JCR *jcr, int TermCode)

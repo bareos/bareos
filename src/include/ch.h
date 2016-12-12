@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,15 +20,17 @@
    02110-1301, USA.
 */
 /**
- * Compressed stream header struct
- *
  * Laurent Papier
+ */
+/**
+ * @file
+ * Compressed stream header struct
  */
 
 #ifndef __CH_H
 #define __CH_H 1
 
-/*
+/**
  * Compression algorithm signature. 4 letters as a 32bits integer
  */
 #define COMPRESS_NONE  0x4e4f4e45  /* used for incompressible block */
@@ -37,7 +40,7 @@
 #define COMPRESS_FZ4L  0x465A344C
 #define COMPRESS_FZ4H  0x465A3448
 
-/*
+/**
  * Compression header version
  */
 #define COMP_HEAD_VERSION 0x1

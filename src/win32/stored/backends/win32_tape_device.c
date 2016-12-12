@@ -21,14 +21,14 @@
    02110-1301, USA.
 */
 /*
- * Windows Tape API device abstraction.
- *
  * Kern Sibbald, MM
- *
- * Emulate the Linux st (scsi tape) driver on Microsoft Windows.
  * Robert Nelson, May, 2006 <robertn@the-nelsons.org>
- *
  * Extracted from other source files Marco van Wieringen, December 2013
+ */
+/**
+ * @file
+ * Windows Tape API device abstraction.
+ * Emulate the Linux st (scsi tape) driver on Microsoft Windows.
  */
 
 #include "bareos.h"
@@ -44,7 +44,7 @@
 #endif
 #include <ntddscsi.h>
 
-/*
+/**
  * SCSI bus status codes.
  */
 #define SCSISTAT_GOOD                  0x00

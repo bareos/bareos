@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, December 2000
+ */
+/**
+ * @file
  * Subroutines to handle Catalog reqests sent to the Director
  * Reqests/commands from the Director are handled in dircmd.c
- *
- * Kern Sibbald, December 2000
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -73,7 +75,7 @@ static char Device_update[] =
    "autoselect=%d autochanger=%d "
    "changer_name=%s media_type=%s volume_name=%s\n";
 
-/*
+/**
  * Send update information about a device to Director
  */
 bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
@@ -714,7 +716,7 @@ DCR *SD_DCR::get_new_spooling_dcr()
    return dcr;
 }
 
-/*
+/**
  * Dummy methods for everything but SD and BTAPE.
  */
 bool DCR::dir_ask_sysop_to_mount_volume(int /*mode*/)

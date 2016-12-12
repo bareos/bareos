@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2015-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * Volume management functions for Storage Daemon
- *
  * Kern Sibbald, MM
- *
  * Split from reserve.c October 2008
+ */
+/**
+ * @file
+ * Volume management functions for Storage Daemon
  */
 
 #include "bareos.h"
@@ -52,7 +53,7 @@ static void free_read_vol_item(VOLRES *vol);
 static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName);
 static void debug_list_volumes(const char *imsg);
 
-/*
+/**
  * For append volumes the key is the VolumeName.
  */
 static int compare_by_volumename(void *item1, void *item2)
@@ -66,7 +67,7 @@ static int compare_by_volumename(void *item1, void *item2)
    return strcmp(vol1->vol_name, vol2->vol_name);
 }
 
-/*
+/**
  * For read volumes the key is JobId, VolumeName.
  */
 static int read_compare(void *item1, void *item2)
@@ -93,7 +94,7 @@ bool is_vol_list_empty()
    return vol_list->empty();
 }
 
-/*
+/**
  *  Initialized the main volume list. Note, we are using a recursive lock.
  */
 void init_vol_list_lock()
@@ -112,7 +113,7 @@ void term_vol_list_lock()
    rwl_destroy(&vol_list_lock);
 }
 
-/*
+/**
  * This allows a given thread to recursively call to lock_volumes()
  */
 void _lock_volumes(const char *file, int line)
@@ -151,7 +152,7 @@ void _unlock_read_volumes()
    bthread_mutex_unlock(&read_vol_lock);
 }
 
-/*
+/**
  * Add a volume to the read list.
  *
  * Note, we use VOLRES because it simplifies the code
@@ -181,7 +182,7 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
    unlock_read_volumes();
 }
 
-/*
+/**
  * Remove a given volume name from the read list.
  */
 void remove_read_volume(JCR *jcr, const char *VolumeName)
@@ -208,7 +209,7 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
 // pthread_cond_broadcast(&wait_next_vol);
 }
 
-/*
+/**
  * Search for a Volume name in the read Volume list.
  *
  * Returns: VOLRES entry on success
@@ -243,7 +244,7 @@ static VOLRES *find_read_volume(const char *VolumeName)
    return fvol;
 }
 
-/*
+/**
  * List Volumes -- this should be moved to status.c
  */
 enum {
@@ -269,7 +270,7 @@ static void debug_list_volumes(const char *imsg)
    endeach_vol(vol);
 }
 
-/*
+/**
  * Create a Volume item to put in the Volume list
  * Ensure that the device points to it.
  */
@@ -335,7 +336,7 @@ static void free_read_vol_item(VOLRES *vol)
    }
 }
 
-/*
+/**
  * Put a new Volume entry in the Volume list. This
  * effectively reserves the volume so that it will
  * not be mounted again.
@@ -579,7 +580,7 @@ get_out:
    return vol;
 }
 
-/*
+/**
  * Start walk of vol chain
  * The proper way to walk the vol chain is:
  *
@@ -609,7 +610,7 @@ VOLRES *vol_walk_start()
    return vol;
 }
 
-/*
+/**
  * Get next vol from chain, and release current one
  */
 VOLRES *vol_walk_next(VOLRES *prev_vol)
@@ -631,7 +632,7 @@ VOLRES *vol_walk_next(VOLRES *prev_vol)
    return vol;
 }
 
-/*
+/**
  * Release last vol referenced
  */
 void vol_walk_end(VOLRES *vol)
@@ -711,7 +712,7 @@ void read_vol_walk_end(VOLRES *vol)
    }
 }
 
-/*
+/**
  * Search for a Volume name in the Volume list.
  *
  * Returns: VOLRES entry on success
@@ -739,7 +740,7 @@ static VOLRES *find_volume(const char *VolumeName)
    return fvol;
 }
 
-/*
+/**
  * Free a Volume from the Volume list if it is no longer used
  * Note, for tape drives we want to remember where the Volume
  * was when last used, so rather than free the volume entry,
@@ -793,7 +794,7 @@ bool volume_unused(DCR *dcr)
    }
 }
 
-/*
+/**
  * Unconditionally release the volume entry
  */
 bool free_volume(DEVICE *dev)
@@ -841,7 +842,7 @@ bool free_volume(DEVICE *dev)
    return true;
 }
 
-/*
+/**
  * Create the Volume list
  */
 void create_volume_lists()
@@ -855,7 +856,7 @@ void create_volume_lists()
    }
 }
 
-/*
+/**
  * Free normal append volumes list
  */
 static inline void free_volume_list(const char *what, dlist *vollist)
@@ -874,7 +875,7 @@ static inline void free_volume_list(const char *what, dlist *vollist)
    }
 }
 
-/*
+/**
  * Release all Volumes from the list
  */
 void free_volume_lists()
@@ -896,7 +897,7 @@ void free_volume_lists()
    }
 }
 
-/*
+/**
  * Determine if caller can write on volume
  */
 bool DCR::can_i_write_volume()
@@ -912,7 +913,7 @@ bool DCR::can_i_write_volume()
    return can_i_use_volume();
 }
 
-/*
+/**
  * Determine if caller can read or write volume
  */
 bool DCR::can_i_use_volume()
@@ -953,7 +954,7 @@ get_out:
    return rtn;
 }
 
-/*
+/**
  * Create a temporary copy of the volume list.  We do this,
  * to avoid having the volume list locked during the
  * call to reserve_device(), which would cause a deadlock.
@@ -991,7 +992,7 @@ dlist *dup_vol_list(JCR *jcr)
    return temp_vol_list;
 }
 
-/*
+/**
  * Free the specified temp list.
  */
 void free_temp_vol_list(dlist *temp_vol_list)

@@ -21,15 +21,16 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database routines specific to Ingres
- * These are Ingres specific routines
- *
  *    Stefan Reddig, June 2009 with help of Marco van Wieringen April 2010
  *    based upon work done
  *    by Dan Langille, December 2003 and
  *    by Kern Sibbald, March 2000
- *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
+ */
+/**
+ * @file
+ * BAREOS Catalog Database routines specific to Ingres
+ * These are Ingres specific routines
  */
 
 #include "bareos.h"
@@ -48,7 +49,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * List of open databases.
  */
 static dlist *db_list = NULL;
@@ -62,7 +63,7 @@ struct B_DB_RWRULE {
    bool trigger;
 };
 
-/*
+/**
  * Create a new query filter.
  */
 static bool db_allocate_query_filter(JCR *jcr, alist *query_filters, int pattern_length,
@@ -88,7 +89,7 @@ static bool db_allocate_query_filter(JCR *jcr, alist *query_filters, int pattern
    }
 }
 
-/*
+/**
  * Create a stack of all filters that should be applied to a SQL query
  * before submitting it to the database backend.
  */
@@ -113,7 +114,7 @@ static inline alist *db_initialize_query_filters(JCR *jcr)
    return query_filters;
 }
 
-/*
+/**
  * Free all query filters.
  */
 static inline void db_destroy_query_filters(alist *query_filters)
@@ -226,7 +227,7 @@ B_DB_INGRES::~B_DB_INGRES()
 {
 }
 
-/*
+/**
  * Now actually open the database.  This can generate errors,
  *   which are returned in the errmsg
  *
@@ -350,7 +351,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Start a transaction. This groups inserts and makes things
  * much more efficient. Usually started when inserting
  * file attributes.
@@ -405,7 +406,7 @@ void B_DB_INGRES::end_transaction(JCR *jcr)
    db_unlock(this);
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  *  the result_handler is called with the ctx.
  */
@@ -441,7 +442,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Note, if this routine returns false (failure), BAREOS expects
  * that no result has been stored.
  *
@@ -730,7 +731,7 @@ int B_DB_INGRES::sql_affected_rows(void)
    return m_num_rows;
 }
 
-/*
+/**
  * First execute the insert query and then retrieve the currval.
  * By setting transaction to true we make it an atomic transaction
  * and as such we can get the currval after which we commit if
@@ -889,7 +890,7 @@ bool B_DB_INGRES::sql_field_is_numeric(int field_type)
    }
 }
 
-/*
+/**
  * Escape strings so that Ingres is happy on COPY
  *
  *   NOTE! len is the length of the old string. Your new
@@ -936,7 +937,7 @@ static char *ingres_copy_escape(char *dest, char *src, size_t len)
    return dest;
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -958,7 +959,7 @@ bool B_DB_INGRES::sql_batch_start(JCR *jcr)
    return ok;
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -968,7 +969,7 @@ bool B_DB_INGRES::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-/*
+/**
  * Returns true if OK
  *         false if failed
  */
@@ -998,7 +999,7 @@ bool B_DB_INGRES::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    return sql_query_without_handler(cmd);
 }
 
-/*
+/**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */

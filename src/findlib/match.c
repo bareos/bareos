@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern E. Sibbald, December MMI
+ */
+/**
+ * @file
  * Old style
  *
  * Routines used to keep and match include and exclude
@@ -31,8 +35,6 @@
  * src/filed/fileset.c.
  *
  * This code is still used for lists in testls and bextract.
- *
- * Kern E. Sibbald, December MMI
  */
 
 #include "bareos.h"
@@ -76,7 +78,7 @@ bool match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool
    return true;
 }
 
-/*
+/**
  * Done doing filename matching, release all
  *  resources used.
  */
@@ -110,7 +112,7 @@ void term_include_exclude_files(FF_PKT *ff)
    ff->excluded_paths_list = NULL;
 }
 
-/*
+/**
  * Add a filename to list of included files
  */
 void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
@@ -416,7 +418,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
          prefixed, bit_is_set(FO_COMPRESS, inc->options), inc->algo, inc->fname);
 }
 
-/*
+/**
  * We add an exclude name to either the exclude path
  *  list or the exclude filename list.
  */
@@ -452,7 +454,7 @@ void add_fname_to_exclude_list(FF_PKT *ff, const char *fname)
 }
 
 
-/*
+/**
  * Get next included file
  */
 struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_file *ainc)
@@ -475,7 +477,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
    return inc;
 }
 
-/*
+/**
  * Walk through the included list to see if this
  *  file is included possibly with wild-cards.
  */
@@ -511,7 +513,7 @@ bool file_is_included(FF_PKT *ff, const char *file)
    return false;
 }
 
-/*
+/**
  * This is the workhorse of excluded_file().
  * Determine if the file is excluded or not.
  */
@@ -530,7 +532,7 @@ static bool file_in_excluded_list(struct s_excluded_file *exc, const char *file)
    return false;
 }
 
-/*
+/**
  * Walk through the excluded lists to see if this
  *  file is excluded, or if it matches a component
  *  of an excluded directory.
@@ -564,7 +566,7 @@ bool file_is_excluded(FF_PKT *ff, const char *file)
    return false;
 }
 
-/*
+/**
  * Parse a size matching fileset option.
  */
 bool parse_size_match(const char *size_match_pattern,

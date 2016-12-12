@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,7 +20,6 @@
    02110-1301, USA.
 */
 /*
- *  OSSP var - Variable Expansion
  *  Copyright (c) 2001-2002 Ralf S. Engelschall <rse@engelschall.com>
  *  Copyright (c) 2001-2002 The OSSP Project (http://www.ossp.org/)
  *  Copyright (c) 2001-2002 Cable & Wireless Deutschland (http://www.cw.com/de/)
@@ -36,6 +36,10 @@
  */
 /*
  * Modified for use with BACULA by Kern Sibbald, June 2003
+ */
+/**
+ * @file
+ * OSSP var - Variable Expansion
  */
 
 #ifndef __VAR_H__

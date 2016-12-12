@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,12 +21,14 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, April MM
+ */
+/**
+ * @file
  * Bareos Tape manipulation program
  *
  * Has various tape manipulation commands -- mostly for
  * use in determining how tapes really work.
- *
- * Kern Sibbald, April MM
  *
  * Note, this program reads stored.conf, and will only
  * talk to devices that are configured.
@@ -45,7 +47,7 @@ char buf[100000];
 int bsize = TAPE_BSIZE;
 char VolName[MAX_NAME_LENGTH];
 
-/*
+/**
  * If you change the format of the state file,
  *  increment this value
  */
@@ -133,9 +135,9 @@ static void terminate_btape(int sig);
 int get_cmd(const char *prompt);
 
 
-/*********************************************************************
+/**
  *
- *     Bareos tape testing program
+ * Bareos tape testing program
  *
  */
 int main(int margc, char *margv[])
@@ -416,7 +418,7 @@ static void print_speed(uint64_t bytes)
          edit_uint64_with_suffix(rate, ec2));
 }
 
-/*
+/**
  * Helper that fill a buffer with random data or not
  */
 typedef enum {
@@ -494,7 +496,7 @@ void quitcmd()
    quit = 1;
 }
 
-/*
+/**
  * Write a label to the tape
  */
 static void labelcmd()
@@ -517,7 +519,7 @@ static void labelcmd()
    Pmsg1(-1, _("Wrote Volume label for volume \"%s\".\n"), cmd);
 }
 
-/*
+/**
  * Read the tape label
  */
 static void readlabelcmd()
@@ -559,7 +561,7 @@ static void readlabelcmd()
 }
 
 
-/*
+/**
  * Load the tape should have prevously been taken
  * off line, otherwise this command is not necessary.
  */
@@ -572,7 +574,7 @@ static void loadcmd()
       Pmsg1(0, _("Loaded %s\n"), dev->print_name());
 }
 
-/*
+/**
  * Rewind the tape.
  */
 static void rewindcmd()
@@ -585,7 +587,7 @@ static void rewindcmd()
    }
 }
 
-/*
+/**
  * Clear any tape error
  */
 static void clearcmd()
@@ -593,7 +595,7 @@ static void clearcmd()
    dev->clrerror(-1);
 }
 
-/*
+/**
  * Write and end of file on the tape
  */
 static void weofcmd()
@@ -636,7 +638,7 @@ static void eomcmd()
    }
 }
 
-/*
+/**
  * Go to the end of the medium (either hardware determined
  *  or defined by two eofs.
  */
@@ -645,7 +647,7 @@ static void eodcmd()
    eomcmd();
 }
 
-/*
+/**
  * Backspace file
  */
 static void bsfcmd()
@@ -665,7 +667,7 @@ static void bsfcmd()
    }
 }
 
-/*
+/**
  * Backspace record
  */
 static void bsrcmd()
@@ -684,7 +686,7 @@ static void bsrcmd()
    }
 }
 
-/*
+/**
  * List device capabilities as defined in the stored.conf file.
  */
 static void capcmd()
@@ -731,7 +733,7 @@ static void capcmd()
 
 }
 
-/*
+/**
  * Test writing larger and larger records.
  * This is a torture test for records.
  */
@@ -778,7 +780,7 @@ static void rectestcmd()
    Dsm_check(200);
 }
 
-/*
+/**
  * This test attempts to re-read a block written by Bareos
  *   normally at the end of the tape. Bareos will then back up
  *   over the two eof marks, backup over the record and reread
@@ -1015,7 +1017,7 @@ static int btape_find_arg(const char *keyword)
 
 #define ok(a)    if (!(a)) return
 
-/*
+/**
  * For file (/dev/zero, /dev/urandom, normal?)
  *    use raw mode to write a suite of 3 files of 1, 2, 4, 8 GB
  *    use qfill mode to write the same
@@ -1196,7 +1198,7 @@ bail_out:
    return rc;
 }
 
-/*
+/**
  * This test writes Bareos blocks to the tape in
  * several files. It then rewinds the tape and attepts
  * to read these blocks back checking the data.
@@ -1274,7 +1276,7 @@ bail_out:
    return rc;
 }
 
-/*
+/**
  * This test writes Bareos blocks to the tape in
  * several files. It then rewinds the tape and attepts
  * to read these blocks back checking the data.
@@ -1403,7 +1405,7 @@ bail_out:
 
 
 
-/*
+/**
  * This test writes some records, then writes an end of file,
  *   rewinds the tape, moves to the end of the data and attepts
  *   to append to the tape.  This function is essential for
@@ -1465,7 +1467,7 @@ static int append_test()
 }
 
 
-/*
+/**
  * This test exercises the autochanger
  */
 static int autochanger_test()
@@ -1617,7 +1619,7 @@ static void autochangercmd()
 }
 
 
-/*
+/**
  * This test assumes that the append test has been done,
  *   then it tests the fsf function.
  */
@@ -1725,7 +1727,7 @@ bail_out:
 
 
 
-/*
+/**
  * This is a general test of Bareos's functions
  *   needed to read and write the tape.
  */
@@ -1882,7 +1884,7 @@ static void fsrcmd()
    }
 }
 
-/*
+/**
  * Read a Bareos block from the tape
  */
 static void rbcmd()
@@ -1891,7 +1893,7 @@ static void rbcmd()
    dcr->read_block_from_dev(NO_BLOCK_NUMBER_CHECK);
 }
 
-/*
+/**
  * Write a Bareos block to the tape
  */
 static void wrcmd()
@@ -1931,7 +1933,7 @@ bail_out:
    Dsm_check(200);
 }
 
-/*
+/**
  * Read a record from the tape
  */
 static void rrcmd()
@@ -1959,7 +1961,7 @@ static void rrcmd()
 }
 
 
-/*
+/**
  * Scan tape by reading block by block. Report what is
  * on the tape.  Note, this command does raw reads, and as such
  * will not work with fixed block size devices.
@@ -2042,7 +2044,7 @@ static void scancmd()
 }
 
 
-/*
+/**
  * Scan tape by reading Bareos block by block. Report what is
  * on the tape.  This function reads Bareos blocks, so if your
  * Device resource is correctly defined, it should work with
@@ -2187,7 +2189,7 @@ static void statcmd()
 #endif
 }
 
-/*
+/**
  * First we label the tape, then we fill
  *  it with data get a new tape and write a few blocks.
  */
@@ -2462,7 +2464,7 @@ static void fillcmd()
    free_memory(rec.data);
 }
 
-/*
+/**
  * Read two tapes written by the "fill" command and ensure
  *  that the data is valid.  If stop==1 we simulate full read back
  *  of two tapes.  If stop==-1 we simply read the last block and
@@ -2509,7 +2511,7 @@ static void unfillcmd()
    this_block = NULL;
 }
 
-/*
+/**
  * This is the second part of the fill command. After the tape or
  *  tapes are written, we are called here to reread parts, particularly
  *  the last block.
@@ -2737,7 +2739,7 @@ static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
    return true;
 }
 
-/*
+/**
  * Write current block to tape regardless of whether or
  *   not it is full. If the tape fills, attempt to
  *   acquire another tape.
@@ -2834,7 +2836,7 @@ static int flush_block(DEV_BLOCK *block, int dump)
 }
 
 
-/*
+/**
  * First we label the tape, then we fill
  *  it with data get a new tape and write a few blocks.
  */
@@ -2891,7 +2893,7 @@ bail_out:
    Dsm_check(200);
 }
 
-/*
+/**
  * Fill a tape using raw write() command
  */
 static void rawfill_cmd()
@@ -3022,7 +3024,7 @@ PROG_COPYRIGHT
 
 }
 
-/*
+/**
  * Get next input command from terminal.  This
  * routine is REALLY primitive, and should be enhanced
  * to have correct backspacing, etc.

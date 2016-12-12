@@ -21,13 +21,15 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March 2000
+ */
+/**
+ * @file
  * BAREOS Catalog Database interface routines
  *
  * Almost generic set of SQL database interface routines
  * (with a little more work) SQL engine specific routines are in
  * mysql.c, postgresql.c, sqlite.c, ...
- *
- * Kern Sibbald, March 2000
  */
 
 #include "bareos.h"
@@ -63,7 +65,7 @@ DBId_t dbid_list::get(int i) const {
 }
 
 
-/*
+/**
  * Called here to retrieve an integer from the database
  */
 int db_int_handler(void *ctx, int num_fields, char **row)
@@ -83,7 +85,7 @@ int db_int_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Called here to retrieve a 32/64 bit integer from the database.
  *   The returned integer will be extended to 64 bit.
  */
@@ -98,7 +100,7 @@ int db_int64_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Called here to retrieve a btime from the database.
  *   The returned integer will be extended to 64 bit.
  */
@@ -113,7 +115,7 @@ int db_strtime_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Use to build a comma separated list of values from a query. "10,20,30"
  */
 int db_list_handler(void *ctx, int num_fields, char **row)
@@ -125,7 +127,7 @@ int db_list_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * specific context passed from db_check_max_connections to db_max_connections_handler.
  */
 struct max_connections_context {
@@ -133,7 +135,7 @@ struct max_connections_context {
    uint32_t nr_connections;
 };
 
-/*
+/**
  * Called here to retrieve an integer from the database
  */
 static inline int db_max_connections_handler(void *ctx, int num_fields, char **row)
@@ -160,7 +162,7 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
    return 0;
 }
 
-/*
+/**
  * Check catalog max_connections setting
  */
 bool B_DB::check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs)
@@ -226,7 +228,7 @@ bool B_DB::check_tables_version(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Utility routine for queries. The database MUST be locked before calling here.
  * Returns: false on failure
  *          true on success
@@ -247,7 +249,7 @@ bool B_DB::QueryDB(const char *file, int line, JCR *jcr, const char *select_cmd)
    return true;
 }
 
-/*
+/**
  * Utility routine to do inserts
  * Returns: false on failure
  *          true on success
@@ -278,7 +280,7 @@ bool B_DB::InsertDB(const char *file, int line, JCR *jcr, const char *select_cmd
    return true;
 }
 
-/*
+/**
  * Utility routine for updates.
  * Returns: false on failure
  *          true on success
@@ -313,7 +315,7 @@ bool B_DB::UpdateDB(const char *file, int line, JCR *jcr, const char *update_cmd
    return true;
 }
 
-/*
+/**
  * Utility routine for deletes
  *
  * Returns: -1 on error
@@ -334,7 +336,7 @@ int B_DB::DeleteDB(const char *file, int line, JCR *jcr, const char *delete_cmd)
    return sql_affected_rows();
 }
 
-/*
+/**
  * Get record max. Query is already in mdb->cmd
  *  No locking done
  *
@@ -361,7 +363,7 @@ int B_DB::get_sql_record_max(JCR *jcr)
    return retval;
 }
 
-/*
+/**
  * Return pre-edited error message
  */
 char *B_DB::strerror()
@@ -369,7 +371,7 @@ char *B_DB::strerror()
    return errmsg;
 }
 
-/*
+/**
  * Given a full filename, split it into its path
  *  and filename parts. They are returned in pool memory
  *  in the mdb structure.
@@ -425,7 +427,7 @@ void B_DB::split_path_and_file(JCR *jcr, const char *filename)
    Dmsg2(500, "split path=%s file=%s\n", path, fname);
 }
 
-/*
+/**
  * Set maximum field length to something reasonable
  */
 static int max_length(int max_length)
@@ -440,7 +442,7 @@ static int max_length(int max_length)
    return max_len;
 }
 
-/*
+/**
  * List dashes as part of header for listing SQL results in a table
  */
 void B_DB::list_dashes(OUTPUT_FORMATTER *send)
@@ -466,7 +468,7 @@ void B_DB::list_dashes(OUTPUT_FORMATTER *send)
    send->decoration("\n");
 }
 
-/*
+/**
  * List result handler used by queries done with db_big_sql_query()
  */
 int B_DB::list_result(void *vctx, int nb_col, char **row)
@@ -709,7 +711,7 @@ int list_result(void *vctx, int nb_col, char **row)
    return mdb->list_result(vctx, nb_col, row);
 }
 
-/*
+/**
  * If full_list is set, we list vertically, otherwise, we list on one line horizontally.
  *
  * Return number of rows
@@ -968,7 +970,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
    return mdb->list_result(jcr, send, type);
 }
 
-/*
+/**
  * Open a new connexion to mdb catalog. This function is used by batch and accurate mode.
  */
 bool B_DB::open_batch_connection(JCR *jcr)
@@ -996,7 +998,7 @@ void B_DB::db_debug_print(FILE *fp)
    print_lock_info(fp);
 }
 
-/*
+/**
  * !!! WARNING !!! Use this function only when bareos is stopped.
  * ie, after a fatal signal and before exiting the program
  * Print information about a B_DB object.

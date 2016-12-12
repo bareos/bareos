@@ -21,13 +21,14 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database routines specific to PostgreSQL
- * These are PostgreSQL specific routines
- *
  * Dan Langille, December 2003
  * based upon work done by Kern Sibbald, March 2000
- *
  * Major rewrite by Marco van Wieringen, January 2010 for catalog refactoring.
+ */
+/**
+ * @file
+ * BAREOS Catalog Database routines specific to PostgreSQL
+ * These are PostgreSQL specific routines
  */
 
 #include "bareos.h"
@@ -47,7 +48,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * List of open databases
  */
 static dlist *db_list = NULL;
@@ -146,7 +147,7 @@ B_DB_POSTGRESQL::~B_DB_POSTGRESQL()
 {
 }
 
-/*
+/**
  * Check that the database correspond to the encoding we want
  */
 bool B_DB_POSTGRESQL::check_database_encoding(JCR *jcr)
@@ -183,7 +184,7 @@ bool B_DB_POSTGRESQL::check_database_encoding(JCR *jcr)
    return retval;
 }
 
-/*
+/**
  * Now actually open the database.  This can generate errors, which are returned in the errmsg
  *
  * DO NOT close the database or delete mdb here !!!!
@@ -367,7 +368,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Escape strings so that PostgreSQL is happy
  *
  *   NOTE! len is the length of the old string. Your new
@@ -387,7 +388,7 @@ void B_DB_POSTGRESQL::escape_string(JCR *jcr, char *snew, char *old, int len)
    }
 }
 
-/*
+/**
  * Escape binary so that PostgreSQL is happy
  *
  */
@@ -410,7 +411,7 @@ char *B_DB_POSTGRESQL::escape_object(JCR *jcr, char *old, int len)
    return (char *)esc_obj;
 }
 
-/*
+/**
  * Unescape binary object so that PostgreSQL is happy
  *
  */
@@ -442,7 +443,7 @@ void B_DB_POSTGRESQL::unescape_object(JCR *jcr, char *from, int32_t expected_len
    Dmsg1(010, "obj size: %d\n", *dest_len);
 }
 
-/*
+/**
  * Start a transaction. This groups inserts and makes things
  * much more efficient. Usually started when inserting
  * file attributes.
@@ -503,7 +504,7 @@ void B_DB_POSTGRESQL::end_transaction(JCR *jcr)
    db_unlock(this);
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
@@ -567,7 +568,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
@@ -605,7 +606,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Note, if this routine returns false (failure), BAREOS expects
  * that no result has been stored.
  * This is where QUERY_DB comes with Postgresql.
@@ -968,7 +969,7 @@ bool B_DB_POSTGRESQL::sql_field_is_numeric(int field_type)
    }
 }
 
-/*
+/**
  * Escape strings so that PostgreSQL is happy on COPY
  *
  *   NOTE! len is the length of the old string. Your new
@@ -1079,7 +1080,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Set error to something to abort operation
  */
 bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
@@ -1168,7 +1169,7 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    return true;
 }
 
-/*
+/**
  * Initialize database data structure. In principal this should
  * never have errors, or it is really fatal.
  */

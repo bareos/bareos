@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,7 @@
    02110-1301, USA.
 */
 /**
+ * @file
  * General header file configurations that apply to
  * all daemons.  System dependent stuff goes here.
  *
@@ -63,7 +64,7 @@
 #endif
 
 #ifdef DEBUG
-/*
+/**
  * In DEBUG mode an assert that is triggered generates a segmentation
  * fault so we can capture the debug info using btraceback.
  */
@@ -83,14 +84,14 @@
 #define ASSERT2(x, y)
 #endif
 
-/*
+/**
  * Allow printing of NULL pointers
  */
 #define NPRT(x) (x)?(x):_("*None*")
 #define NPRTB(x) (x)?(x):""
 
 #if defined(HAVE_WIN32)
-/*
+/**
  * Reduce compiler warnings from Windows vss code
  */
 #define uuid(x)
@@ -210,7 +211,7 @@ void InitWinAPIWrapper();
  */
 #define AUTH_TIMEOUT 60 * 10
 
-/*
+/**
  * Default network buffer size
  */
 #define DEFAULT_NETWORK_BUFFER_SIZE (64 * 1024)
@@ -308,7 +309,7 @@ typedef int64_t   boffset_t;
 typedef off_t     boffset_t;
 #endif
 
-/*
+/**
  * Create some simple types for now int16_t e.g. 65 K should be enough.
  */
 typedef int16_t slot_number_t;
@@ -630,7 +631,7 @@ int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 #endif /* HAVE_WIN32 */
 
 #ifdef HAVE_SUN_OS
-/*
+/**
  * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
  * so we need to explictly increase the concurrency level.
  */
@@ -644,7 +645,7 @@ extern int thr_setconcurrency(int);
 #endif
 
 #else
-/*
+/**
  * Not needed on most systems
  */
 #define set_thread_concurrency(x)
@@ -665,7 +666,7 @@ int getdomainname(char *name, int len);
 #define TRACEFILEDIRECTORY working_directory ? working_directory : "c:"
 
 #if defined(HAVE_WIN32)
-/*
+/**
  *   Windows
  */
 #define DEFAULT_CONFIGDIR "C:\\Documents and Settings\\All Users\\Application Data\\Bareos"
@@ -679,7 +680,7 @@ extern void pause_msg(const char *file, const char *func, int line, const char *
 #define pause(msg) if (debug_level) pause_msg(__FILE__, __func__, __LINE__, (msg))
 
 #else
-/*
+/**
  *   Unix/Linux
  */
 #define PathSeparator '/'

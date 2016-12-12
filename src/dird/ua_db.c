@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent database handling.
- *
  * Kern Sibbald, September MM
+ */
+/**
+ * @file
+ * BAREOS Director -- User Agent database handling.
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 
 /* Imported subroutines */
 
-/*
+/**
  * This call explicitly checks for a catalog=catalog-name and
  * if given, opens that catalog.  It also checks for
  * client=client-name and if found, opens the catalog
@@ -104,7 +106,7 @@ bool open_client_db(UAContext *ua, bool use_private)
    return open_db(ua, use_private);
 }
 
-/*
+/**
  * Open the catalog database.
  */
 bool open_db(UAContext *ua, bool use_private)
@@ -199,7 +201,7 @@ void close_db(UAContext *ua)
    }
 }
 
-/*
+/**
  * Create a pool record from a given Pool resource
  *
  * Returns: -1  on error
@@ -235,7 +237,7 @@ int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
    return 1;
 }
 
-/*
+/**
  * This is a common routine used to stuff the Pool DB record defaults
  * into the Media DB record just before creating a media (Volume) record.
  */
@@ -257,7 +259,7 @@ void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
    mr->Enabled = VOL_ENABLED;
 }
 
-/*
+/**
  * Set POOL_DBR.RecyclePoolId and POOL_DBR.ScratchPoolId from Pool resource
  * works with set_pooldbr_from_poolres
  */
@@ -304,7 +306,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
    return ret;
 }
 
-/*
+/**
  * This is a common routine to create or update a
  * Pool DB base record from a Pool Resource. We handle
  * the setting of MaxVols and NumVols slightly differently
@@ -353,7 +355,7 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
    }
 }
 
-/*
+/**
  * set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog
  */
 int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)

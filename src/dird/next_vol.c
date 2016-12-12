@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- next_vol -- handles finding the next volume for append.
+ * Kern Sibbald, March MMI
+ */
+/**
+ * @file
+ * handles finding the next volume for append.
  *
  * Split out of catreq.c August MMIII catalog request from the Storage daemon.
- *
- * Kern Sibbald, March MMI
  */
 
 #include "bareos.h"
@@ -33,7 +35,7 @@
 
 static int const dbglvl = 50;   /* debug level */
 
-/*
+/**
  * Set storage id if possible
  */
 void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
@@ -43,7 +45,7 @@ void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
    }
 }
 
-/*
+/**
  *  Items needed:
  *
  *  mr.PoolId must be set
@@ -208,7 +210,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
    return ok;
 }
 
-/*
+/**
  * Check if any time limits or use limits have expired if so,
  * set the VolStatus appropriately.
  */
@@ -285,7 +287,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
    return expired;
 }
 
-/*
+/**
  * Try hard to recycle the current volume
  *
  * Returns: on failure - reason = NULL

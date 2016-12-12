@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Generic base 64 input and output routines
- *
  * Written by Kern E. Sibbald, March MM.
+ */
+/**
+ * @file
+ * Generic base 64 input and output routines
  */
 
 #include "bareos.h"
@@ -85,7 +88,7 @@ int to_base64(int64_t value, char *where)
    return n;
 }
 
-/*
+/**
  * Convert the Base 64 characters in where to
  * a value. No checking is done on the validity
  * of the characters!!
@@ -116,7 +119,7 @@ int from_base64(int64_t *value, char *where)
 }
 
 
-/*
+/**
  * Encode binary data in bin of len bytes into
  * buf as base64 characters.
  *
@@ -165,7 +168,7 @@ int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible)
    return j;
 }
 
-/*
+/**
  * Decode base64 data in bin of len bytes into
  * buf as binary characters.
  *

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Second generation Storage daemon.
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * Second generation Storage daemon.
  *
  * It accepts a number of simple commands from the File daemon
  * and acts on them. When a request to append data is made,
@@ -533,7 +535,7 @@ static int check_resources()
    return OK;
 }
 
-/*
+/**
  * Remove old .spool files written by me from the working directory.
  */
 static void cleanup_old_files()
@@ -610,7 +612,7 @@ get_out2:
 }
 
 
-/*
+/**
  * Here we attempt to init and open each device. This is done once at startup in a separate thread.
  */
 extern "C"
@@ -706,7 +708,7 @@ void *device_initialization(void *arg)
    return NULL;
 }
 
-/*
+/**
  * Clean up and then exit
  */
 #if !defined(HAVE_WIN32)

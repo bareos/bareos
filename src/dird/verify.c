@@ -21,14 +21,16 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- verify.c -- responsible for running file verification
- *
  * Kern Sibbald, October MM
+ */
+/**
+ * @file
+ * responsible for running file verification
  *
  * Basic tasks done here:
- *    Open DB
- *    Open connection with File daemon and pass him commands to do the verify.
- *    When the File daemon sends the attributes, compare them to what is in the DB.
+ *    * Open DB
+ *    * Open connection with File daemon and pass him commands to do the verify.
+ *    * When the File daemon sends the attributes, compare them to what is in the DB.
  */
 
 #include "bareos.h"
@@ -55,7 +57,7 @@ static char OKpassiveclient[] =
 static void prt_fname(JCR *jcr);
 static int missing_handler(void *ctx, int num_fields, char **row);
 
-/*
+/**
  * Called here before the job is run to do the job
  *   specific setup.
  */
@@ -87,8 +89,8 @@ bool do_verify_init(JCR *jcr)
    return true;
 }
 
-/*
- * Do a verification of the specified files against the Catlaog
+/**
+ * Do a verification of the specified files against the Catalog
  *
  *  Returns:  false on failure
  *            true  on success
@@ -474,7 +476,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Release resources allocated during verify.
  */
 void verify_cleanup(JCR *jcr, int TermCode)
@@ -617,7 +619,7 @@ void verify_cleanup(JCR *jcr, int TermCode)
    Dmsg0(100, "Leave verify_cleanup()\n");
 }
 
-/*
+/**
  * This routine is called only during a Verify
  */
 void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
@@ -892,7 +894,7 @@ bail_out:
    free_pool_memory(fname);
 }
 
-/*
+/**
  * We are called here for each record that matches the above
  *  SQL query -- that is for each file contained in the Catalog
  *  that was not marked earlier. This means that the file in
@@ -914,7 +916,7 @@ static int missing_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Print filename for verify
  */
 static void prt_fname(JCR *jcr)

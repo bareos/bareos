@@ -20,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * This file handles external connections made to the File daemon.
- *
  * Kern Sibbald, October MM
- *
  * Extracted from other source files by Marco van Wieringen, October 2014
+ */
+/**
+ * @file
+ * This file handles external connections made to the File daemon.
  */
 
 #include "bareos.h"
@@ -35,7 +36,7 @@ static workq_t socket_workq;
 static pthread_t tcp_server_tid;
 static alist *sock_fds = NULL;
 
-/*
+/**
  * Connection request. We accept connections either from the Director or the Storage Daemon
  *
  * NOTE! We are running as a separate thread

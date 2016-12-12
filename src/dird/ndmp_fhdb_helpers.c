@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * FHDB helper routines for NDMP Data Management Application (DMA)
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * FHDB helper routines for NDMP Data Management Application (DMA)
  */
 
 #include "bareos.h"
@@ -32,7 +34,7 @@
 
 #include "ndmp/ndmagents.h"
 
-/*
+/**
  * Store all entries in the FHDB as hardlinked items to the NDMP archive in the backup catalog.
  */
 void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,

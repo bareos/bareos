@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS BREGEXP Structure definition for FileDaemon
- *
  * Eric Bollengier March 2007
+ */
+/**
+ * @file
+ * BAREOS BREGEXP Structure definition for FileDaemon
  */
 
 #ifndef __BREG_H_
@@ -48,25 +51,25 @@
 
 #define BREG_NREGS 11
 
-/*
+/**
  * Structure for BREGEXP ressource
  */
 class BREGEXP {
 public:
-   POOLMEM *result;             /* match result */
-   bool success;                /* match is ok */
+   POOLMEM *result;             /**< match result */
+   bool success;                /**< match is ok */
 
-   char *replace(const char *fname); /* return this.result */
+   char *replace(const char *fname); /**< return this.result */
    void debug();
 
    /* private */
-   POOLMEM *expr;               /* search epression */
-   POOLMEM *subst;              /* substitution */
-   regex_t preg;                /* regex_t result of regcomp() */
-   regmatch_t regs[BREG_NREGS]; /* contains match */
-   char *eor;                   /* end of regexp in expr */
+   POOLMEM *expr;               /**< search epression */
+   POOLMEM *subst;              /**< substitution */
+   regex_t preg;                /**< regex_t result of regcomp() */
+   regmatch_t regs[BREG_NREGS]; /**< contains match */
+   char *eor;                   /**< end of regexp in expr */
 
-   char *return_fname(const char *fname, int len); /* return fname as result */
+   char *return_fname(const char *fname, int len); /**< return fname as result */
    char *edit_subst(const char *fname, regmatch_t pmatch[]);
    int compute_dest_len(const char *fname, regmatch_t pmatch[]);
    bool extract_regexp(const char *motif);

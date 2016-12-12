@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Routines for handling the autochanger.
- *
  * Kern Sibbald, August MMII
+ */
+/**
+ * @file
+ * Routines for handling the autochanger.
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -36,7 +38,7 @@ static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set);
 static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd,
                                         slot_number_t src_slot, slot_number_t dst_slot);
 
-/*
+/**
  * Init all the autochanger resources found
  */
 bool init_autochangers()
@@ -89,7 +91,7 @@ bool init_autochangers()
    return OK;
 }
 
-/*
+/**
  * Called here to do an autoload using the autochanger, if
  * configured, and if a Slot has been defined for this Volume.
  * On success this routine loads the indicated tape, but the
@@ -264,7 +266,7 @@ bail_out:
    return rtn_stat;
 }
 
-/*
+/**
  * Returns: -1 if error from changer command
  *          slot otherwise
  *
@@ -408,7 +410,7 @@ static bool unlock_changer(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Unload the volume, if any, in this drive
  * On entry: loaded == 0 -- nothing to do
  *           loaded  < 0 -- check if anything to do
@@ -503,7 +505,7 @@ bool unload_autochanger(DCR *dcr, slot_number_t loaded, bool lock_set)
    return retval;
 }
 
-/*
+/**
  * Unload the slot if mounted in a different drive
  */
 static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set)
@@ -582,7 +584,7 @@ static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set)
    return unload_dev(dcr, dev, lock_set);
 }
 
-/*
+/**
  * Unconditionally unload a specified drive
  */
 bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set)
@@ -681,7 +683,7 @@ bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set)
    return retval;
 }
 
-/*
+/**
  * List the Volumes that are in the autoloader possibly with their barcodes.
  * We assume that it is always the Console that is calling us.
  */
@@ -793,7 +795,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  * Transfer a volume from src_slot to dst_slot.
  * We assume that it is always the Console that is calling us.
  */
@@ -858,7 +860,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  * Special version of edit_device_codes for use with transfer subcommand.
  * Edit codes into ChangerCommand
  *  %% = %

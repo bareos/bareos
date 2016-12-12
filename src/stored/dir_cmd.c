@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MMI
+ */
+/**
+ * @file
  * This file handles accepting Director Commands
  *
  * Most Director commands are handled here, with the
@@ -35,8 +39,6 @@
  * we can do things to a blocked device. CAREFUL!!!!
  *
  * File daemon commands are handled in fd_cmds.c
- *
- * Kern Sibbald, May MMI
  */
 
 #include "bareos.h"
@@ -163,7 +165,7 @@ struct s_cmds {
    bool monitoraccess;                      /* set if monitors can access this cmd */
 };
 
-/*
+/**
  * The following are the recognized commands from the Director.
  *
  * Keywords are sorted first longest match when the keywords start with the same string.
@@ -174,30 +176,30 @@ static struct s_cmds cmds[] = {
    { "bootstrap", bootstrap_cmd, false },
    { "cancel", cancel_cmd, false },
    { ".die", die_cmd, false },
-   { "finish", finish_cmd, false },         /* End of backup */
-   { "JobId=", job_cmd, false },            /* Start Job */
-   { "label", label_cmd, false },           /* Label a tape */
-   { "listen", listen_cmd, false },         /* Listen for an incoming Storage Job */
+   { "finish", finish_cmd, false },         /**< End of backup */
+   { "JobId=", job_cmd, false },            /**< Start Job */
+   { "label", label_cmd, false },           /**< Label a tape */
+   { "listen", listen_cmd, false },         /**< Listen for an incoming Storage Job */
    { "mount", mount_cmd, false },
-   { "nextrun", nextrun_cmd, false },       /* Prepare for next backup/restore part of same Job */
+   { "nextrun", nextrun_cmd, false },       /**< Prepare for next backup/restore part of same Job */
    { "passive", passive_cmd, false },
    { "pluginoptions", pluginoptions_cmd, false },
 // { "query", query_cmd, false },
    { "readlabel", readlabel_cmd, false },
-   { "relabel", relabel_cmd, false },       /* Relabel a tape */
+   { "relabel", relabel_cmd, false },       /**< Relabel a tape */
    { "release", release_cmd, false },
    { "resolve", resolve_cmd, false },
-   { "replicate", replicate_cmd, false },   /* Replicate data to an external SD */
-   { "run", run_cmd, false },               /* Start of Job */
+   { "replicate", replicate_cmd, false },   /**< Replicate data to an external SD */
+   { "run", run_cmd, false },               /**< Start of Job */
    { "getSecureEraseCmd", secureerasereq_cmd, false },
    { "setbandwidth=", setbandwidth_cmd, false },
-   { "setdebug=", setdebug_cmd, false },    /* Set debug level */
+   { "setdebug=", setdebug_cmd, false },    /**< Set debug level */
    { "stats", stats_cmd, false },
    { "status", status_cmd, true },
    { ".status", dotstatus_cmd, true },
    { "unmount", unmount_cmd, false },
    { "use storage=", use_cmd, false },
-   { NULL, NULL, false } /* list terminator */
+   { NULL, NULL, false } /**< list terminator */
 };
 
  /*
@@ -216,7 +218,7 @@ static inline bool count_running_jobs()
    return (cnt >= me->MaxConcurrentJobs) ? false : true;
 }
 
-/*
+/**
  * Connection request from an director.
  *
  * Basic tasks done here:
@@ -335,7 +337,7 @@ bail_out:
    return NULL;
 }
 
-/*
+/**
  * Force SD to die, and hopefully dump itself.  Turned on only in development version.
  */
 static bool die_cmd(JCR *jcr)
@@ -360,7 +362,7 @@ static bool die_cmd(JCR *jcr)
 }
 
 
-/*
+/**
  * Handles the secureerase request
  * replies the configured secure erase command
  * or "*None*"
@@ -410,7 +412,7 @@ static bool setbandwidth_cmd(JCR *jcr)
    return dir->fsend(OKBandwidth);
 }
 
-/*
+/**
  * Set debug level as requested by the Director
  */
 static bool setdebug_cmd(JCR *jcr)
@@ -444,7 +446,7 @@ static bool setdebug_cmd(JCR *jcr)
    }
 }
 
-/*
+/**
  * Cancel a Job
  *   Be careful, we switch to using the job's JCR! So, using
  *   BSOCKs on that jcr can have two threads in the same code.
@@ -548,7 +550,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  * Resolve a hostname
  */
 static bool resolve_cmd(JCR *jcr)
@@ -671,7 +673,7 @@ static bool do_label(JCR *jcr, bool relabel)
    return true;
 }
 
-/*
+/**
  * Label a Volume
  */
 static bool label_cmd(JCR *jcr)
@@ -684,7 +686,7 @@ static bool relabel_cmd(JCR *jcr)
    return do_label(jcr, true);
 }
 
-/*
+/**
  * Read the tape label and determine if we can safely
  * label the tape (not a Bareos volume), then label it.
  *
@@ -808,7 +810,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Read the tape label
  *
  *  Enter with the mutex set
@@ -841,7 +843,7 @@ static bool read_label(DCR *dcr)
    return ok;
 }
 
-/*
+/**
  * Searches for device by name, and if found, creates a dcr and returns it.
  */
 static DCR *find_device(JCR *jcr, POOL_MEM &devname, drive_number_t drive, BLOCKSIZES *blocksizes)
@@ -920,7 +922,7 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, drive_number_t drive, BLOCK
    return dcr;
 }
 
-/*
+/**
  * Mount command from Director
  */
 static bool mount_cmd(JCR *jcr)
@@ -1066,7 +1068,7 @@ static bool mount_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * unmount command from Director
  */
 static bool unmount_cmd(JCR *jcr)
@@ -1155,7 +1157,7 @@ static bool unmount_cmd(JCR *jcr)
 }
 
 #if 0
-/*
+/**
  * The truncate command will recycle a volume. The director can call this
  * after purging a volume so that disk space will not be wasted. Only useful
  * for File Storage, of course.
@@ -1192,7 +1194,7 @@ done:
 }
 #endif
 
-/*
+/**
  * Release command from Director. This rewinds the device and if
  *   configured does a offline and ensures that Bareos will
  *   re-read the label of the tape before continuing. This gives
@@ -1325,7 +1327,7 @@ static bool bootstrap_cmd(JCR *jcr)
    return get_bootstrap_file(jcr, jcr->dir_bsock);
 }
 
-/*
+/**
  * Autochanger command from Director
  */
 static bool changer_cmd(JCR *jcr)
@@ -1398,7 +1400,7 @@ static bool changer_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Read and return the Volume label
  */
 static bool readlabel_cmd(JCR *jcr)
@@ -1439,7 +1441,7 @@ static bool readlabel_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Read the tape label
  *
  *  Enter with the mutex set
@@ -1479,7 +1481,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Try autoloading a device.
  *
  * Returns: 1 on success
@@ -1552,7 +1554,7 @@ static inline void set_storage_auth_key(JCR *jcr, char *key)
    Dmsg0(5, "set sd auth key\n");
 }
 
-/*
+/**
  * Listen for incoming replication session from other SD.
  */
 static bool listen_cmd(JCR *jcr)
@@ -1562,7 +1564,7 @@ static bool listen_cmd(JCR *jcr)
    return do_listen_run(jcr);
 }
 
-/*
+/**
  * Get address of storage daemon from Director
  */
 static bool replicate_cmd(JCR *jcr)

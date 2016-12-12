@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Read code for Storage daemon
- *
  * Kern Sibbald, November MM
+ */
+/**
+ * @file
+ * Read code for Storage daemon
  */
 
 #include "bareos.h"
@@ -40,7 +42,7 @@ static char FD_error[] =
 static char rec_header[] =
    "rechdr %ld %ld %ld %ld %ld";
 
-/*
+/**
  * Read Data and send to File Daemon
  *
  * Returns: false on failure
@@ -103,7 +105,7 @@ bool do_read_data(JCR *jcr)
    return ok;
 }
 
-/*
+/**
  * Called here for each record from read_records()
  *
  * Returns: true if OK

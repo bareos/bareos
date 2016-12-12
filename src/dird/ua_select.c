@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Prompt and Selection code
- *
  * Kern Sibbald, October MMI
+ */
+/**
+ * @file
+ * User Agent Prompt and Selection code
  */
 
 #include "bareos.h"
@@ -33,7 +35,7 @@
 extern struct s_jt jobtypes[];
 extern struct s_jl joblevels[];
 
-/*
+/**
  * Confirm a retention period
  */
 bool confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
@@ -73,7 +75,7 @@ bool confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
     return true;
 }
 
-/*
+/**
  * Given a list of keywords, find the first one that is in the argument list.
  *
  * Returns: -1 if not found
@@ -92,7 +94,7 @@ int find_arg_keyword(UAContext *ua, const char **list)
    return -1;
 }
 
-/*
+/**
  * Given one keyword, find the first one that is in the argument list.
  *
  * Returns: argk index (always gt 0)
@@ -109,7 +111,7 @@ int find_arg(UAContext *ua, const char *keyword)
    return -1;
 }
 
-/*
+/**
  * Given a single keyword, find it in the argument list, but it must have a value
  *
  * Returns: -1 if not found or no value
@@ -130,7 +132,7 @@ int find_arg_with_value(UAContext *ua, const char *keyword)
    return -1;
 }
 
-/*
+/**
  * Given a list of keywords, prompt the user to choose one.
  *
  * Returns: -1 on failure
@@ -146,7 +148,7 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
    return do_prompt(ua, "", msg, NULL, 0);
 }
 
-/*
+/**
  * Select a Storage resource from prompt list
  */
 STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
@@ -180,7 +182,7 @@ STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
    return store;
 }
 
-/*
+/**
  * Select a FileSet resource from prompt list
  */
 FILESETRES *select_fileset_resource(UAContext *ua)
@@ -207,7 +209,7 @@ FILESETRES *select_fileset_resource(UAContext *ua)
    return fs;
 }
 
-/*
+/**
  * Get a catalog resource from prompt list
  */
 CATRES *get_catalog_resource(UAContext *ua)
@@ -261,7 +263,7 @@ CATRES *get_catalog_resource(UAContext *ua)
    return catalog;
 }
 
-/*
+/**
  * Select a job to enable or disable
  */
 JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
@@ -292,7 +294,7 @@ JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
    return job;
 }
 
-/*
+/**
  * Select a Job resource from prompt list
  */
 JOBRES *select_job_resource(UAContext *ua)
@@ -319,7 +321,7 @@ JOBRES *select_job_resource(UAContext *ua)
    return job;
 }
 
-/*
+/**
  * Select a Restore Job resource from argument or prompt
  */
 JOBRES *get_restore_job(UAContext *ua)
@@ -339,7 +341,7 @@ JOBRES *get_restore_job(UAContext *ua)
    return select_restore_job_resource(ua);
 }
 
-/*
+/**
  * Select a Restore Job resource from prompt list
  */
 JOBRES *select_restore_job_resource(UAContext *ua)
@@ -366,7 +368,7 @@ JOBRES *select_restore_job_resource(UAContext *ua)
    return job;
 }
 
-/*
+/**
  * Select a client resource from prompt list
  */
 CLIENTRES *select_client_resource(UAContext *ua)
@@ -393,7 +395,7 @@ CLIENTRES *select_client_resource(UAContext *ua)
    return client;
 }
 
-/*
+/**
  * Select a client to enable or disable
  */
 CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
@@ -424,7 +426,7 @@ CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
    return client;
 }
 
-/*
+/**
  *  Get client resource, start by looking for
  *   client=<client-name>
  *  if we don't find the keyword, we prompt the user.
@@ -450,7 +452,7 @@ CLIENTRES *get_client_resource(UAContext *ua)
    return select_client_resource(ua);
 }
 
-/*
+/**
  * Select a schedule to enable or disable
  */
 SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
@@ -481,7 +483,7 @@ SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
    return sched;
 }
 
-/*
+/**
  * Scan what the user has entered looking for:
  *
  * client=<client-name>
@@ -524,7 +526,7 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    return true;
 }
 
-/*
+/**
  * Select a Client record from the catalog
  *
  * Returns true on success
@@ -576,7 +578,7 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
    return true;
 }
 
-/*
+/**
  * Scan what the user has entered looking for:
  *
  * argk=<storage-name>
@@ -605,7 +607,7 @@ bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    return true;
 }
 
-/*
+/**
  * Scan what the user has entered looking for:
  *
  * argk=<pool-name>
@@ -634,7 +636,7 @@ bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    return true;
 }
 
-/*
+/**
  * Select a Pool record from catalog
  * argk can be pool, recyclepool, scratchpool etc..
  */
@@ -709,7 +711,7 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
    return true;
 }
 
-/*
+/**
  * Select a Pool and a Media (Volume) record from the database
  */
 bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
@@ -733,7 +735,7 @@ bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
    return true;
 }
 
-/*
+/**
  * Select a Storage record from catalog
  * argk can be storage
  */
@@ -808,7 +810,7 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
    return true;
 }
 
-/*
+/**
  * Select a Media (Volume) record from the database
  */
 bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
@@ -870,7 +872,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Select a pool resource from prompt list
  */
 POOLRES *select_pool_resource(UAContext *ua)
@@ -896,7 +898,7 @@ POOLRES *select_pool_resource(UAContext *ua)
    return pool;
 }
 
-/*
+/**
  *  If you are thinking about using it, you
  *  probably want to use select_pool_dbr()
  *  or get_pool_dbr() above.
@@ -918,7 +920,7 @@ POOLRES *get_pool_resource(UAContext *ua)
    return select_pool_resource(ua);
 }
 
-/*
+/**
  * List all jobs and ask user to select one
  */
 int select_job_dbr(UAContext *ua, JOB_DBR *jr)
@@ -937,7 +939,7 @@ int select_job_dbr(UAContext *ua, JOB_DBR *jr)
    return jr->JobId;
 }
 
-/*
+/**
  * Scan what the user has entered looking for:
  *
  * jobid=nn
@@ -990,7 +992,7 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr)
    return jr->JobId;
 }
 
-/*
+/**
  * Implement unique set of prompts
  */
 void start_prompt(UAContext *ua, const char *msg)
@@ -1003,7 +1005,7 @@ void start_prompt(UAContext *ua, const char *msg)
   ua->prompt[0] = bstrdup(msg);
 }
 
-/*
+/**
  * Add to prompts -- keeping them unique
  */
 void add_prompt(UAContext *ua, const char *prompt)
@@ -1023,7 +1025,7 @@ void add_prompt(UAContext *ua, const char *prompt)
    ua->prompt[ua->num_prompts++] = bstrdup(prompt);
 }
 
-/*
+/**
  * Display prompts and get user's choice
  *
  * Returns: -1 on error
@@ -1139,7 +1141,7 @@ done:
    return (item > 0) ? (item - 1) : item;
 }
 
-/*
+/**
  * We scan what the user has entered looking for :
  * - storage=<storage-resource>
  * - job=<job_name>
@@ -1266,7 +1268,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochanger
    return store;
 }
 
-/*
+/**
  * Get drive that we are working with for this storage
  */
 drive_number_t get_storage_drive(UAContext *ua, STORERES *store)
@@ -1316,7 +1318,7 @@ drive_number_t get_storage_drive(UAContext *ua, STORERES *store)
    return drive;
 }
 
-/*
+/**
  * Get slot that we are working with for this storage
  */
 slot_number_t get_storage_slot(UAContext *ua, STORERES *store)
@@ -1345,7 +1347,7 @@ slot_number_t get_storage_slot(UAContext *ua, STORERES *store)
    return slot;
 }
 
-/*
+/**
  * Scan looking for mediatype=
  *
  *  if not found or error, put up selection list
@@ -1395,7 +1397,7 @@ bool get_level_from_name(JCR *jcr, const char *level_name)
    return found;
 }
 
-/*
+/**
  * Insert an JobId into the list of selected JobIds when its a unique new id.
  */
 static inline bool insert_selected_jobid(alist *selected_jobids, JobId_t JobId)
@@ -1421,7 +1423,7 @@ static inline bool insert_selected_jobid(alist *selected_jobids, JobId_t JobId)
    return false;
 }
 
-/*
+/**
  * Get a job selection, "reason" is used in user messages and can be: cancel, limit, ...
  *
  * Returns: NULL on error
@@ -1704,7 +1706,7 @@ bail_out:
    return NULL;
 }
 
-/*
+/**
  * Get a slot selection.
  *
  * Returns: false on error

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * Drive reservation functions for Storage Daemon
- *
  * Kern Sibbald, MM
- *
  * Split from job.c and acquire.c June 2005
+ */
+/**
+ * @file
+ * Drive reservation functions for Storage Daemon
  */
 
 #include "bareos.h"
@@ -79,7 +81,7 @@ bool use_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * This allows a given thread to recursively call lock_reservations.
  * It must, of course, call unlock_... the same number of times.
  */
@@ -101,7 +103,7 @@ void term_reservations_lock()
    term_vol_list_lock();
 }
 
-/*
+/**
  * This applies to a drive and to Volumes
  */
 void _lock_reservations(const char *file, int line)
@@ -142,7 +144,7 @@ void DCR::clear_reserved()
    }
 }
 
-/*
+/**
  * Remove any reservation from a drive and tell the system
  * that the volume is unused at least by us.
  */
@@ -172,7 +174,7 @@ void DCR::unreserve_device()
    dev->Unlock();
 }
 
-/*
+/**
  * We get the following type of information:
  *
  * use storage=xxx media_type=yyy pool_name=xxx pool_type=yyy append=1 copy=0 strip=0
@@ -412,7 +414,7 @@ static bool use_device_cmd(JCR *jcr)
    return ok;
 }
 
-/*
+/**
  * Walk through the autochanger resources and check if the volume is in one of them.
  *
  * Returns:  true  if volume is in device
@@ -438,7 +440,7 @@ static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
    return false;
 }
 
-/*
+/**
  * Search for a device suitable for this job.
  *
  * Note, this routine sets sets rctx.suitable_device if any
@@ -586,7 +588,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
    return ok;
 }
 
-/*
+/**
  * Search for a particular storage device with particular storage characteristics (MediaType).
  */
 int search_res_for_device(RCTX &rctx)
@@ -695,7 +697,7 @@ int search_res_for_device(RCTX &rctx)
    return -1;                                 /* Nothing found */
 }
 
-/*
+/**
  * Try to reserve a specific device.
  *
  * Returns: 1 -- OK, have DCR
@@ -862,7 +864,7 @@ bail_out:
    return 0;
 }
 
-/*
+/**
  * We "reserve" the drive by setting the ST_READREADY bit.
  * No one else should touch the drive until that is cleared.
  * This allows the DIR to "reserve" the device before actually starting the job.
@@ -915,7 +917,7 @@ bail_out:
    return ok;
 }
 
-/*
+/**
  * We reserve the device for appending by incrementing
  * num_reserved(). We do virtually all the same work that
  * is done in acquire_device_for_append(), but we do
@@ -1059,7 +1061,7 @@ static bool is_max_jobs_ok(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Returns: 1 if drive can be reserved
  *          0 if we should wait
  *         -1 on error or impossibility
@@ -1222,7 +1224,7 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
    }
 }
 
-/*
+/**
  * Queue a reservation error or failure message for this jcr
  */
 static void queue_reserve_message(JCR *jcr)
@@ -1263,7 +1265,7 @@ bail_out:
    jcr->unlock();
 }
 
-/*
+/**
  * Pop and release any reservations messages
  */
 static void pop_reserve_messages(JCR *jcr)
@@ -1283,7 +1285,7 @@ bail_out:
    jcr->unlock();
 }
 
-/*
+/**
  * Also called from acquire.c
  */
 void release_reserve_messages(JCR *jcr)

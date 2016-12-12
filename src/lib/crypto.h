@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2005-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * crypto.h Encryption support functions
- *
  * Author: Landon Fuller <landonf@opendarwin.org>
+ */
+/**
+ * @file
+ * crypto.h Encryption support functions
  */
 
 #ifndef __CRYPTO_H_
@@ -98,7 +101,7 @@ typedef enum {
 
 #else /* HAVE_OPENSSL */
 
-/*
+/**
  * This must be kept in sync with the available message digest algorithms.
  * Just in case someone forgets, I've added assertions
  * to crypto_digest_finalize().

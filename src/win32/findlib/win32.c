@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,7 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * @file
  * Windows specific functions.
  */
 
@@ -30,7 +31,7 @@
 #include "find.h"
 #include "lib/cbuf.h"
 
-/*
+/**
  * We need to analyze if a fileset contains onefs=no as option, because only then
  * we need to snapshot submounted vmps
  */
@@ -54,7 +55,7 @@ bool win32_onefs_is_disabled(findFILESET *fileset)
    return false;
 }
 
-/*
+/**
  * For VSS we need to know which windows drives are used, because we create a snapshot
  * of all used drives. This function returns the number of used drives and fills
  * szDrives with up to 26 (A..Z) drive names.
@@ -155,7 +156,7 @@ int get_win32_driveletters(findFILESET *fileset, char *szDrives)
    return nCount;
 }
 
-/*
+/**
  * For VSS we need to know which windows virtual mountpoints are used, because we create
  * a snapshot of all used drives and virtual mountpoints. This function returns the number
  * of used virtual mountpoints and fills szVmps with a list of all virtual mountpoints.
@@ -332,7 +333,7 @@ static inline int count_include_list_file_entries(FF_PKT *ff)
    return cnt;
 }
 
-/*
+/**
  * Automatically exclude all files and paths defined in Registry Key
  * "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
  *
@@ -542,7 +543,7 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
    return retval;
 }
 
-/*
+/**
  * Windows specific code for restoring EFS data.
  */
 struct CP_THREAD_SAVE_DATA {
@@ -563,7 +564,7 @@ struct CP_THREAD_CTX {
    pthread_cond_t flush;                  /* Flush data from the Circular buffer */
 };
 
-/*
+/**
  * Callback method for WriteEncryptedFileRaw()
  */
 static DWORD WINAPI receive_efs_data(PBYTE pbData, PVOID pvCallbackContext, PULONG ulLength)
@@ -591,7 +592,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData, PVOID pvCallbackContext, PULO
    return ERROR_SUCCESS;
 }
 
-/*
+/**
  * Copy thread cancel handler.
  */
 static void copy_cleanup_thread(void *data)
@@ -601,7 +602,7 @@ static void copy_cleanup_thread(void *data)
    pthread_mutex_unlock(&context->lock);
 }
 
-/*
+/**
  * Actual copy thread that restores EFS data.
  */
 static void *copy_thread(void *data)
@@ -654,7 +655,7 @@ bail_out:
    return NULL;
 }
 
-/*
+/**
  * Create a copy thread that restores the EFS data.
  */
 static inline bool setup_copy_thread(JCR *jcr, BFILE *bfd)
@@ -699,7 +700,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Send data to the copy thread that restores EFS data.
  */
 int win32_send_to_copy_thread(JCR *jcr, BFILE *bfd, char *data, const int32_t length)
@@ -759,7 +760,7 @@ int win32_send_to_copy_thread(JCR *jcr, BFILE *bfd, char *data, const int32_t le
    return length;
 }
 
-/*
+/**
  * Flush the copy thread so we can close the BFD.
  */
 void win32_flush_copy_thread(JCR *jcr)
@@ -790,7 +791,7 @@ void win32_flush_copy_thread(JCR *jcr)
    pthread_mutex_unlock(&context->lock);
 }
 
-/*
+/**
  * Cleanup all data allocated for the copy thread.
  */
 void win32_cleanup_copy_thread(JCR *jcr)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * dev.c  -- low level operations on device (storage device)
- *
  * Kern Sibbald, MM
+ */
+/**
+ * @file
+ * low level operations on device (storage device)
  *
  * NOTE!!!! None of these routines are reentrant. You must
  * use dev->rLock() and dev->Unlock() at a higher level,
@@ -398,7 +400,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
    return dev;
 }
 
-/*
+/**
  * Allocate and initialize the DEVICE structure
  * Note, if dev is non-NULL, it is already allocated,
  * thus we neither allocate it nor free it. This allows
@@ -416,7 +418,7 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device)
    return dev;
 }
 
-/*
+/**
  * Set the block size of the device.
  * If the volume block size is zero, we set the max block size to what is
  * configured in the device resource i.e. dev->device->max_block_size.
@@ -490,7 +492,7 @@ void DEVICE::set_blocksizes(DCR *dcr) {
    }
 }
 
-/*
+/**
  * Set the block size of the device to the label_block_size
  * to read labels as we want to always use that blocksize when
  * writing volume labels
@@ -518,7 +520,7 @@ void DEVICE::set_label_blocksize(DCR *dcr)
    }
 }
 
-/*
+/**
  * Open the device with the operating system and
  * initialize buffer pointers.
  *
@@ -611,7 +613,7 @@ void DEVICE::set_mode(int mode)
    }
 }
 
-/*
+/**
  * Open a device.
  */
 void DEVICE::open_device(DCR *dcr, int omode)
@@ -671,7 +673,7 @@ void DEVICE::open_device(DCR *dcr, int omode)
    Dmsg1(100, "open dev: disk fd=%d opened\n", m_fd);
 }
 
-/*
+/**
  * Rewind the device.
  *
  * Returns: true  on success
@@ -710,7 +712,7 @@ bool DEVICE::rewind(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Called to indicate that we have just read an EOF from the device.
  */
 void DEVICE::set_ateof()
@@ -721,7 +723,7 @@ void DEVICE::set_ateof()
    block_num = 0;
 }
 
-/*
+/**
  * Called to indicate we are now at the end of the volume, and writing is not possible.
  */
 void DEVICE::set_ateot()
@@ -735,7 +737,7 @@ void DEVICE::set_ateot()
    clear_append();
 }
 
-/*
+/**
  * Position device to end of medium (end of data)
  *
  * Returns: true  on succes
@@ -783,7 +785,7 @@ bool DEVICE::eod(DCR *dcr)
    return false;
 }
 
-/*
+/**
  * Set the position of the device.
  *
  * Returns: true  on succes
@@ -882,7 +884,7 @@ void DEVICE::clear_slot()
    }
 }
 
-/*
+/**
  * Reposition the device to file, block
  *
  * Returns: false on failure
@@ -915,7 +917,7 @@ bool DEVICE::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
    return true;
 }
 
-/*
+/**
  * Set to unload the current volume in the drive.
  */
 void DEVICE::set_unload()
@@ -926,7 +928,7 @@ void DEVICE::set_unload()
    }
 }
 
-/*
+/**
  * Clear volume header.
  */
 void DEVICE::clear_volhdr()
@@ -936,7 +938,7 @@ void DEVICE::clear_volhdr()
    setVolCatInfo(false);
 }
 
-/*
+/**
  * Close the device.
  */
 bool DEVICE::close(DCR *dcr)
@@ -1015,7 +1017,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Mount the device.
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
@@ -1050,7 +1052,7 @@ bool DEVICE::mount(DCR *dcr, int timeout)
    return retval;
 }
 
-/*
+/**
  * Unmount the device
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
@@ -1090,7 +1092,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Edit codes into (Un)MountCommand
  *  %% = %
  *  %a = archive device name
@@ -1140,7 +1142,7 @@ void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
    }
 }
 
-/*
+/**
  * Return the last timer interval (ms) or 0 if something goes wrong
  */
 btime_t DEVICE::get_timer_count()
@@ -1152,7 +1154,7 @@ btime_t DEVICE::get_timer_count()
    return (temp > 0) ? temp : 0; /* take care of skewed clock */
 }
 
-/*
+/**
  * Read from device.
  */
 ssize_t DEVICE::read(void *buf, size_t len)
@@ -1175,7 +1177,7 @@ ssize_t DEVICE::read(void *buf, size_t len)
    return read_len;
 }
 
-/*
+/**
  * Write to device.
  */
 ssize_t DEVICE::write(const void *buf, size_t len)
@@ -1198,7 +1200,7 @@ ssize_t DEVICE::write(const void *buf, size_t len)
    return write_len;
 }
 
-/*
+/**
  * Return the resource name for the device
  */
 const char *DEVICE::name() const
@@ -1206,7 +1208,7 @@ const char *DEVICE::name() const
    return device->name();
 }
 
-/*
+/**
  * Free memory allocated for the device
  */
 void DEVICE::term()
@@ -1254,7 +1256,7 @@ void DEVICE::term()
    delete this;
 }
 
-/*
+/**
  * This routine initializes the device wait timers
  */
 void init_device_wait_timers(DCR *dcr)
@@ -1290,7 +1292,7 @@ void init_jcr_device_wait_timers(JCR *jcr)
    jcr->num_wait = 0;
 }
 
-/*
+/**
  * The dev timers are used for waiting on a particular device
  *
  * Returns: true if time doubled

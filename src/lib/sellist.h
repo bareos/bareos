@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,13 +21,16 @@
 */
 /*
  * Kern Sibbald, January  MMXII
+ */
+/**
+ * @file
  *
  * Selection list. A string of integers separated by commas
  * representing items selected. Ranges of the form nn-mm
  * are also permitted.
  */
 
-/*
+/**
  * Loop var through each member of list
  */
 #define foreach_sellist(var, list) \
@@ -55,7 +59,7 @@ public:
    const char *get_errmsg() { return errmsg; };
 };
 
-/*
+/**
  * Initialize the list structure
  */
 inline sellist::sellist()
@@ -67,7 +71,7 @@ inline sellist::sellist()
    errmsg = NULL;
 }
 
-/*
+/**
  * Destroy the list
  */
 inline sellist::~sellist()
@@ -78,7 +82,7 @@ inline sellist::~sellist()
    }
 }
 
-/*
+/**
  * Returns first item
  *   error if returns -1 and errmsg set
  *   end of items if returns -1 and errmsg NULL
@@ -89,7 +93,7 @@ inline int64_t sellist::first()
    return next();
 }
 
-/*
+/**
  * Reset to walk list from beginning
  */
 inline void sellist::begin()

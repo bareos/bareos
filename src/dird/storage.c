@@ -21,11 +21,12 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Storage specific routines.
- *
  * Kern Sibbald, October MM
- *
  * Extracted from other source files by Marco van Wieringen, February 2016
+ */
+/**
+ * @file
+ * Storage specific routines.
  */
 
 #include "bareos.h"
@@ -33,7 +34,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_rwstorage(JCR *jcr, alist *storage, const char *where)
@@ -44,7 +45,7 @@ void copy_rwstorage(JCR *jcr, alist *storage, const char *where)
    copy_wstorage(jcr, storage, where);
 }
 
-/*
+/**
  * Set storage override.
  * Releases any previous storage definition.
  */
@@ -66,7 +67,7 @@ void free_rwstorage(JCR *jcr)
    free_wstorage(jcr);
 }
 
-/*
+/**
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_rstorage(JCR *jcr, alist *storage, const char *where)
@@ -90,7 +91,7 @@ void copy_rstorage(JCR *jcr, alist *storage, const char *where)
    }
 }
 
-/*
+/**
  * Set storage override.
  * Remove all previous storage.
  */
@@ -130,7 +131,7 @@ void free_rstorage(JCR *jcr)
    jcr->res.rstore = NULL;
 }
 
-/*
+/**
  * Copy the storage definitions from an alist to the JCR
  */
 void copy_wstorage(JCR *jcr, alist *storage, const char *where)
@@ -156,7 +157,7 @@ void copy_wstorage(JCR *jcr, alist *storage, const char *where)
    }
 }
 
-/*
+/**
  * Set storage override.
  * Remove all previous storage.
  */
@@ -200,7 +201,7 @@ void free_wstorage(JCR *jcr)
    jcr->res.wstore = NULL;
 }
 
-/*
+/**
  * For NDMP backup we can setup the backup to run to a NDMP instance
  * of the same Storage Daemon that also does native native backups.
  * This way a Normal Storage Daemon can perform NDMP protocol based
@@ -330,7 +331,7 @@ void set_paired_storage(JCR *jcr)
    }
 }
 
-/*
+/**
  * This performs an undo of the actions the set_paired_storage() function
  * performed. We reset the storage write storage back to its original
  * and remove the paired storage override if any.
@@ -391,7 +392,7 @@ void free_paired_storage(JCR *jcr)
    }
 }
 
-/*
+/**
  * Check if every possible storage has paired storage associated.
  */
 bool has_paired_storage(JCR *jcr)
@@ -442,7 +443,7 @@ bool has_paired_storage(JCR *jcr)
 
 #define MAX_TRIES 6 * 360   /* 6 hours (10 sec intervals) */
 
-/*
+/**
  * Change the read storage resource for the current job.
  */
 bool select_next_rstore(JCR *jcr, bootstrap_info &info)
@@ -519,7 +520,7 @@ void storage_status(UAContext *ua, STORERES *store, char *cmd)
    }
 }
 
-/*
+/**
  * Simple comparison function for binary insert of vol_list_t
  */
 int storage_compare_vol_list_entry(void *e1, void *e2)
@@ -557,7 +558,7 @@ static inline void free_vol_list(changer_vol_list_t *vol_list)
    }
 }
 
-/*
+/**
  * Generic routine to get the content of a storage autochanger.
  */
 changer_vol_list_t *get_vol_list_from_storage(UAContext *ua, STORERES *store, bool listall, bool scan, bool cached)
@@ -767,7 +768,7 @@ bool do_autochanger_volume_operation(UAContext *ua, STORERES *store, const char 
    return retval;
 }
 
-/*
+/**
  * See if a specific slot is loaded in one of the drives.
  */
 vol_list_t *vol_is_loaded_in_drive(STORERES *store, changer_vol_list_t *vol_list, slot_number_t slot)
@@ -792,7 +793,7 @@ vol_list_t *vol_is_loaded_in_drive(STORERES *store, changer_vol_list_t *vol_list
    return NULL;
 }
 
-/*
+/**
  * Release the reference to the volume list returned from get_vol_list_from_storage()
  */
 void storage_release_vol_list(STORERES *store, changer_vol_list_t *vol_list)
@@ -821,7 +822,7 @@ void storage_release_vol_list(STORERES *store, changer_vol_list_t *vol_list)
    V(store->rss->changer_lock);
 }
 
-/*
+/**
  * Destroy the volume list returned from get_vol_list_from_storage()
  */
 void storage_free_vol_list(STORERES *store, changer_vol_list_t *vol_list)
@@ -842,7 +843,7 @@ void storage_free_vol_list(STORERES *store, changer_vol_list_t *vol_list)
    V(store->rss->changer_lock);
 }
 
-/*
+/**
  * Invalidate a cached volume list returned from get_vol_list_from_storage()
  * Called by functions that change the content of the storage like mount, umount, release.
  */
@@ -868,7 +869,7 @@ void invalidate_vol_list(STORERES *store)
    V(store->rss->changer_lock);
 }
 
-/*
+/**
  * Simple comparison function for binary insert of storage_mapping_t
  */
 int compare_storage_mapping(void *e1, void *e2)
@@ -888,7 +889,7 @@ int compare_storage_mapping(void *e1, void *e2)
    }
 }
 
-/*
+/**
  * Map a slotnr from Logical to Physical or the other way around based on
  * the s_mapping_type type given.
  */

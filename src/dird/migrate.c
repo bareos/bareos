@@ -22,11 +22,15 @@
 */
 /*
  * BAREOS Director -- migrate.c -- responsible for doing migration and copy jobs.
- *
  * Also handles Copy jobs (March 2008)
- *
  * Kern Sibbald, September 2004
  * SD-SD Migration by Marco van Wieringen, November 2012
+ */
+/**
+ * @file
+ * responsible for doing migration and copy jobs.
+ *
+ * Also handles Copy jobs
  *
  * Basic tasks done here:
  *    Open DB and create records for this job.
@@ -47,14 +51,14 @@
 static char replicatecmd[]  =
    "replicate Job=%s address=%s port=%d ssl=%d Authorization=%s\n";
 
-/*
+/**
  * Get Job names in Pool
  */
 static const char *sql_job =
    "SELECT DISTINCT Job.Name from Job,Pool"
    " WHERE Pool.Name='%s' AND Job.PoolId=Pool.PoolId";
 
-/*
+/**
  * Get JobIds from regex'ed Job names
  */
 static const char *sql_jobids_from_job =
@@ -62,7 +66,7 @@ static const char *sql_jobids_from_job =
    " WHERE Job.Name='%s' AND Pool.Name='%s' AND Job.PoolId=Pool.PoolId"
    " ORDER by Job.StartTime";
 
-/*
+/**
  * Get Client names in Pool
  */
 static const char *sql_client =
@@ -70,7 +74,7 @@ static const char *sql_client =
    " WHERE Pool.Name='%s' AND Job.ClientId=Client.ClientId AND"
    " Job.PoolId=Pool.PoolId";
 
-/*
+/**
  * Get JobIds from regex'ed Client names
  */
 static const char *sql_jobids_from_client =
@@ -80,7 +84,7 @@ static const char *sql_jobids_from_client =
    " AND Job.JobStatus IN ('T','W')"
    " ORDER by Job.StartTime";
 
-/*
+/**
  * Get Volume names in Pool
  */
 static const char *sql_vol =
@@ -88,7 +92,7 @@ static const char *sql_vol =
    " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'";
 
-/*
+/**
  * Get JobIds from regex'ed Volume names
  */
 static const char *sql_jobids_from_vol =
@@ -98,7 +102,7 @@ static const char *sql_jobids_from_vol =
    " AND Job.JobStatus IN ('T','W') AND Media.Enabled=1"
    " ORDER by Job.StartTime";
 
-/*
+/**
  * Get JobIds from the smallest volume
  */
 static const char *sql_smallest_vol =
@@ -108,7 +112,7 @@ static const char *sql_smallest_vol =
    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
    " ORDER BY VolBytes ASC LIMIT 1";
 
-/*
+/**
  * Get JobIds from the oldest volume
  */
 static const char *sql_oldest_vol =
@@ -118,7 +122,7 @@ static const char *sql_oldest_vol =
    " Media.PoolId=Pool.PoolId AND Pool.Name='%s'"
    " ORDER BY LastWritten ASC LIMIT 1";
 
-/*
+/**
  * Get JobIds when we have selected MediaId
  */
 static const char *sql_jobids_from_mediaid =
@@ -127,7 +131,7 @@ static const char *sql_jobids_from_mediaid =
    " AND Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W')"
    " ORDER by Job.StartTime";
 
-/*
+/**
  * Get the number of bytes in the pool
  */
 static const char *sql_pool_bytes =
@@ -138,13 +142,13 @@ static const char *sql_pool_bytes =
    " Job.Type IN ('B','C') AND Job.JobStatus IN ('T','W') AND"
    " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId)";
 
-/*
+/**
  * Get the number of bytes in the Jobs
  */
 static const char *sql_job_bytes =
    "SELECT SUM(JobBytes) FROM Job WHERE JobId IN (%s)";
 
-/*
+/**
  * Get Media Ids in Pool
  */
 static const char *sql_mediaids =
@@ -152,7 +156,7 @@ static const char *sql_mediaids =
    " VolStatus in ('Full','Used','Error') AND Media.Enabled=1 AND"
    " Media.PoolId=Pool.PoolId AND Pool.Name='%s' ORDER BY LastWritten ASC";
 
-/*
+/**
  * Get JobIds in Pool longer than specified time
  */
 static const char *sql_pool_time =
@@ -163,7 +167,7 @@ static const char *sql_pool_time =
    " JobMedia.JobId=Job.JobId AND Job.PoolId=Media.PoolId"
    " AND Job.RealEndTime<='%s'";
 
-/*
+/**
  * Get JobIds from successfully completed backup jobs which have not been copied before
  */
 static const char *sql_jobids_of_pool_uncopied_jobs =
@@ -177,7 +181,7 @@ static const char *sql_jobids_of_pool_uncopied_jobs =
    " AND PriorJobId != 0)"
    " ORDER by Job.StartTime";
 
-/*
+/**
  * Migrate NDMP Job MetaData.
  */
 static const char *sql_migrate_ndmp_metadata =
@@ -188,7 +192,7 @@ static const char *sql_migrate_ndmp_metadata =
    "FROM File "
    "WHERE JobId=%s)";
 
-/*
+/**
  * Copy NDMP Job MetaData.
  */
 static const char *sql_copy_ndmp_metadata =
@@ -208,7 +212,7 @@ struct idpkt {
    uint32_t count;
 };
 
-/*
+/**
  * See if two storage definitions point to the same Storage Daemon.
  *
  * We compare:
@@ -242,7 +246,7 @@ bool set_migration_wstorage(JCR *jcr, POOLRES *pool, POOLRES *next_pool, const c
    return true;
 }
 
-/*
+/**
  * set_migration_next_pool() called by do_migration_init()
  * at differents stages.
  *
@@ -328,7 +332,7 @@ static inline bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
    return true;
 }
 
-/*
+/**
  * Sanity check that we are not using the same storage for reading and writing.
  */
 static inline bool same_storage(JCR *jcr)
@@ -392,7 +396,7 @@ static inline void start_new_migration_job(JCR *jcr)
    free_ua_context(ua);
 }
 
-/*
+/**
  * Return next DBId from comma separated list
  *
  * Returns:
@@ -431,7 +435,7 @@ static inline int get_next_dbid_from_list(char **p, DBId_t *DBId)
    return 1;
 }
 
-/*
+/**
  * Add an item to the list if it is unique
  */
 static void add_unique_id(idpkt *ids, char *item)
@@ -475,7 +479,7 @@ static void add_unique_id(idpkt *ids, char *item)
    return;
 }
 
-/*
+/**
  * Callback handler make list of DB Ids
  */
 static int unique_dbid_handler(void *ctx, int num_fields, char **row)
@@ -529,7 +533,7 @@ static int unique_name_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * This routine returns:
  *    false       if an error occurred
  *    true        otherwise
@@ -590,7 +594,7 @@ bail_out:
    return ok;
 }
 
-/*
+/**
  * This routine returns:
  *    false       if an error occurred
  *    true        otherwise
@@ -740,7 +744,7 @@ bail_out:
    return ok;
 }
 
-/*
+/**
  * This is the central piece of code that finds jobs actually JobIds to migrate.
  * It examines the Selection Type to see what kind of migration we are doing
  * (Volume, Job, Client, ...) and applies any Selection Pattern if appropriate
@@ -1025,7 +1029,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Called here before the job is run to do the job
  * specific setup. Note, one of the important things to
  * complete in this init code is to make the definitive
@@ -1249,7 +1253,7 @@ bool do_migration_init(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Do a Migration of a previous job
  *
  * - previous_jr refers to the job DB record of the Job that is
@@ -1602,7 +1606,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Select the Jobs to Migrate/Copy using the getJobs_to_migrate function and then exit.
  */
 static inline bool do_migration_selection(JCR *jcr)
@@ -1752,7 +1756,7 @@ static inline void generate_migrate_summary(JCR *jcr, MEDIA_DBR *mr, int msg_typ
    }
 }
 
-/*
+/**
  * Release resources allocated during backup.
  */
 void migration_cleanup(JCR *jcr, int TermCode)

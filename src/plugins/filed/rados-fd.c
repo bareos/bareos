@@ -19,7 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * @file
  * CEPH rados plugin for the Bareos File Daemon
  */
 #include "bareos.h"
@@ -37,7 +38,7 @@ static const int dbglvl = 150;
 #define PLUGIN_DESCRIPTION  "Bareos CEPH rados File Daemon Plugin"
 #define PLUGIN_USAGE        "rados:conffile=<ceph_conf_file>:namespace=<name_space>:clientid=<client_id>:clustername=<clustername>:username=<username>:snapshotname=<snapshot_name>:"
 
-/*
+/**
  * Use for versions lower then 0.68.0 of the API the old format and otherwise the new one.
  */
 #if LIBRADOS_VERSION_CODE < 17408
@@ -47,7 +48,7 @@ static const int dbglvl = 150;
 #define DEFAULT_USERNAME "client.admin"
 #endif
 
-/*
+/**
  * Forward referenced functions
  */
 static bRC newPlugin(bpContext *ctx);
@@ -73,13 +74,13 @@ static bRC setup_backup(bpContext *ctx, void *value);
 static bRC setup_restore(bpContext *ctx, void *value);
 static bRC end_restore_job(bpContext *ctx, void *value);
 
-/*
+/**
  * Pointers to Bareos functions
  */
 static bFuncs *bfuncs = NULL;
 static bInfo  *binfo = NULL;
 
-/*
+/**
  * Plugin Information block
  */
 static genpInfo pluginInfo = {
@@ -94,7 +95,7 @@ static genpInfo pluginInfo = {
    PLUGIN_USAGE
 };
 
-/*
+/**
  * Plugin entry points for Bareos
  */
 static pFuncs pluginFuncs = {
@@ -121,7 +122,7 @@ static pFuncs pluginFuncs = {
    setXattr
 };
 
-/*
+/**
  * Plugin private context
  */
 struct plugin_ctx {
@@ -149,7 +150,7 @@ struct plugin_ctx {
    boffset_t offset;
 };
 
-/*
+/**
  * This defines the arguments that the plugin parser understands.
  */
 enum plugin_argument_type {
@@ -183,7 +184,7 @@ static plugin_argument plugin_arguments[] = {
 extern "C" {
 #endif
 
-/*
+/**
  * loadPlugin() and unloadPlugin() are entry points that are exported, so Bareos can
  * directly call these two entry points they are common to all Bareos plugins.
  *
@@ -202,7 +203,7 @@ bRC DLL_IMP_EXP loadPlugin(bInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP unloadPlugin()
@@ -214,7 +215,7 @@ bRC DLL_IMP_EXP unloadPlugin()
 }
 #endif
 
-/*
+/**
  * The following entry points are accessed through the function pointers we supplied to Bareos.
  * Each plugin type (dir, fd, sd) has its own set of entry points that the plugin must define.
  *
@@ -250,7 +251,7 @@ static bRC newPlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Free a plugin instance, i.e. release our private storage
  */
 static bRC freePlugin(bpContext *ctx)
@@ -314,7 +315,7 @@ static bRC freePlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Return some plugin value (none defined)
  */
 static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
@@ -322,7 +323,7 @@ static bRC getPluginValue(bpContext *ctx, pVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Set a plugin value (none defined)
  */
 static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
@@ -330,7 +331,7 @@ static bRC setPluginValue(bpContext *ctx, pVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Handle an event that was generated in Bareos
  */
 static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
@@ -395,7 +396,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
    return retval;
 }
 
-/*
+/**
  * Get the next object to backup.
  * - Get the next objectname from the list iterator.
  * - Check using AcceptFile if it matches the fileset.
@@ -467,7 +468,7 @@ static bRC get_next_object_to_backup(bpContext *ctx)
    return bRC_More;
 }
 
-/*
+/**
  * Start the backup of a specific file
  */
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
@@ -512,7 +513,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    return bRC_OK;
 }
 
-/*
+/**
  * Done with backup of this file
  */
 static bRC endBackupFile(bpContext *ctx)
@@ -526,7 +527,7 @@ static bRC endBackupFile(bpContext *ctx)
    return get_next_object_to_backup(ctx);
 }
 
-/*
+/**
  * Strip any backslashes in the string.
  */
 static inline void strip_back_slashes(char *value)
@@ -547,7 +548,7 @@ static inline void strip_back_slashes(char *value)
    }
 }
 
-/*
+/**
  * Only set destination to value when it has no previous setting.
  */
 static inline void set_string_if_null(char **destination, char *value)
@@ -558,7 +559,7 @@ static inline void set_string_if_null(char **destination, char *value)
    }
 }
 
-/*
+/**
  * Always set destination to value and clean any previous one.
  */
 static inline void set_string(char **destination, char *value)
@@ -571,7 +572,7 @@ static inline void set_string(char **destination, char *value)
    strip_back_slashes(*destination);
 }
 
-/*
+/**
  * Parse the plugin definition passed in.
  *
  * The definition is in this form:
@@ -711,7 +712,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * Connect via RADOS protocol to a CEPH cluster.
  */
 static bRC connect_to_rados(bpContext *ctx)
@@ -800,7 +801,7 @@ static bRC connect_to_rados(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Generic setup for performing a backup.
  */
 static bRC setup_backup(bpContext *ctx, void *value)
@@ -893,7 +894,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * Generic setup for performing a restore.
  */
 static bRC setup_restore(bpContext *ctx, void *value)
@@ -911,7 +912,7 @@ static bRC setup_restore(bpContext *ctx, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Bareos is calling us to do the actual I/O
  */
 static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
@@ -979,7 +980,7 @@ bail_out:
    return bRC_Error;
 }
 
-/*
+/**
  * See if we need to do any postprocessing after the restore.
  */
 static bRC end_restore_job(bpContext *ctx, void *value)
@@ -998,7 +999,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
    return retval;
 }
 
-/*
+/**
  * Bareos is notifying us that a plugin name string was found,
  * and passing us the plugin command, so we can prepare for a restore.
  */
@@ -1007,7 +1008,7 @@ static bRC startRestoreFile(bpContext *ctx, const char *cmd)
    return bRC_OK;
 }
 
-/*
+/**
  * Bareos is notifying us that the plugin data has terminated,
  * so the restore for this particular file is done.
  */
@@ -1016,7 +1017,7 @@ static bRC endRestoreFile(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * This is called during restore to create the file (if necessary) We must return in rp->create_status:
  *
  *  CF_ERROR    -- error
@@ -1113,7 +1114,7 @@ static bRC setFileAttributes(bpContext *ctx, struct restore_pkt *rp)
    return bRC_OK;
 }
 
-/*
+/**
  * When using Incremental dump, all previous dumps are necessary
  */
 static bRC checkFile(bpContext *ctx, char *fname)

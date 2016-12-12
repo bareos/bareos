@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,12 +20,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Functions to handle compression/decompression of data.
- *
+/*
  * Kern Sibbald, March MM
- *
  * Extracted from other source files by Marco van Wieringen, June 2011
+ */
+/**
+ * @file
+ * Functions to handle compression/decompression of data.
  */
 
 #include "bareos.h"
@@ -41,7 +42,7 @@
 #include <fastlzlib.h>
 #endif
 
-/*
+/**
  * For compression we enable all used compressors in the fileset.
  */
 bool adjust_compression_buffers(JCR *jcr)
@@ -73,7 +74,7 @@ bool adjust_compression_buffers(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * For decompression we use the same decompression buffer for each algorithm.
  */
 bool adjust_decompression_buffers(JCR *jcr)

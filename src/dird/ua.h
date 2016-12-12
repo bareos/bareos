@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Includes specific to the Director User Agent Server
- *
  * Kern Sibbald, August MMI
+ */
+/**
+ * @file
+ * Includes specific to the Director User Agent Server
  */
 
 #ifndef __UA_H_
@@ -32,12 +34,12 @@
 #define MAX_ID_LIST_LEN 2000000
 
 struct ua_cmdstruct {
-   const char *key; /* Command */
-   bool (*func)(UAContext *ua, const char *cmd); /* Handler */
-   const char *help; /* Main purpose */
-   const char *usage; /* All arguments to build usage */
-   const bool use_in_rs; /* Can use it in Console RunScript */
-   const bool audit_event; /* Log an audit event when this Command is executed */
+   const char *key; /**< Command */
+   bool (*func)(UAContext *ua, const char *cmd); /**< Handler */
+   const char *help; /**< Main purpose */
+   const char *usage; /**< All arguments to build usage */
+   const bool use_in_rs; /**< Can use it in Console RunScript */
+   const bool audit_event; /**< Log an audit event when this Command is executed */
 };
 
 class UAContext {
@@ -49,39 +51,39 @@ public:
    BSOCK *sd;
    JCR *jcr;
    B_DB *db;
-   B_DB *shared_db;                   /* Shared database connection used by multiple ua's */
-   B_DB *private_db;                  /* Private database connection only used by this ua */
+   B_DB *shared_db;                   /**< Shared database connection used by multiple ua's */
+   B_DB *private_db;                  /**< Private database connection only used by this ua */
    CATRES *catalog;
-   CONRES *cons;                      /* Console resource */
-   POOLMEM *cmd;                      /* Return command/name buffer */
-   POOLMEM *args;                     /* Command line arguments */
-   POOLMEM *errmsg;                   /* Store error message */
-   guid_list *guid;                   /* User and Group Name mapping cache */
-   char *argk[MAX_CMD_ARGS];          /* Argument keywords */
-   char *argv[MAX_CMD_ARGS];          /* Argument values */
-   int argc;                          /* Number of arguments */
-   char **prompt;                     /* List of prompts */
-   int max_prompts;                   /* Max size of list */
-   int num_prompts;                   /* Current number in list */
-   int api;                           /* For programs want an API */
-   bool auto_display_messages;        /* If set, display messages */
-   bool user_notified_msg_pending;    /* Set when user notified */
-   bool automount;                    /* If set, mount after label */
-   bool quit;                         /* If set, quit */
-   bool verbose;                      /* Set for normal UA verbosity */
-   bool batch;                        /* Set for non-interactive mode */
-   bool gui;                          /* Set if talking to GUI program */
-   bool runscript;                    /* Set if we are in runscript */
-   uint32_t pint32_val;               /* Positive integer */
-   int32_t int32_val;                 /* Positive/negative */
-   int64_t int64_val;                 /* Big int */
-   OUTPUT_FORMATTER *send;            /* object instance to handle output */
+   CONRES *cons;                      /**< Console resource */
+   POOLMEM *cmd;                      /**< Return command/name buffer */
+   POOLMEM *args;                     /**< Command line arguments */
+   POOLMEM *errmsg;                   /**< Store error message */
+   guid_list *guid;                   /**< User and Group Name mapping cache */
+   char *argk[MAX_CMD_ARGS];          /**< Argument keywords */
+   char *argv[MAX_CMD_ARGS];          /**< Argument values */
+   int argc;                          /**< Number of arguments */
+   char **prompt;                     /**< List of prompts */
+   int max_prompts;                   /**< Max size of list */
+   int num_prompts;                   /**< Current number in list */
+   int api;                           /**< For programs want an API */
+   bool auto_display_messages;        /**< If set, display messages */
+   bool user_notified_msg_pending;    /**< Set when user notified */
+   bool automount;                    /**< If set, mount after label */
+   bool quit;                         /**< If set, quit */
+   bool verbose;                      /**< Set for normal UA verbosity */
+   bool batch;                        /**< Set for non-interactive mode */
+   bool gui;                          /**< Set if talking to GUI program */
+   bool runscript;                    /**< Set if we are in runscript */
+   uint32_t pint32_val;               /**< Positive integer */
+   int32_t int32_val;                 /**< Positive/negative */
+   int64_t int64_val;                 /**< Big int */
+   OUTPUT_FORMATTER *send;            /**< object instance to handle output */
 
 private:
    /*
     * Members
     */
-   ua_cmdstruct *cmddef;              /* Definition of the currently executed command */
+   ua_cmdstruct *cmddef;              /**< Definition of the currently executed command */
 
    /*
     * Methods
@@ -140,24 +142,24 @@ public:
  * Context for insert_tree_handler()
  */
 struct TREE_CTX {
-   TREE_ROOT *root;                   /* Root */
-   TREE_NODE *node;                   /* Current node */
-   TREE_NODE *avail_node;             /* Unused node last insert */
-   int cnt;                           /* Count for user feedback */
-   bool all;                          /* If set mark all as default */
+   TREE_ROOT *root;                   /**< Root */
+   TREE_NODE *node;                   /**< Current node */
+   TREE_NODE *avail_node;             /**< Unused node last insert */
+   int cnt;                           /**< Count for user feedback */
+   bool all;                          /**< If set mark all as default */
    UAContext *ua;
-   uint32_t FileEstimate;             /* Estimate of number of files */
-   uint32_t FileCount;                /* Current count of files */
-   uint32_t LastCount;                /* Last count of files */
-   uint32_t DeltaCount;               /* Trigger for printing */
+   uint32_t FileEstimate;             /**< Estimate of number of files */
+   uint32_t FileCount;                /**< Current count of files */
+   uint32_t LastCount;                /**< Last count of files */
+   uint32_t DeltaCount;               /**< Trigger for printing */
 };
 
 struct NAME_LIST {
-   char **name;                       /* List of names */
-   int num_ids;                       /* Ids stored */
-   int max_ids;                       /* Size of array */
-   int num_del;                       /* Number deleted */
-   int tot_ids;                       /* Total to process */
+   char **name;                       /**< List of names */
+   int num_ids;                       /**< Ids stored */
+   int max_ids;                       /**< Size of array */
+   int num_del;                       /**< Number deleted */
+   int tot_ids;                       /**< Total to process */
 };
 
 /*
@@ -168,11 +170,11 @@ struct RESTORE_CTX {
    uint32_t TotalFiles;
    JobId_t JobId;
    char *backup_format;
-   char *ClientName;                  /* Backup client */
-   char *RestoreClientName;           /* Restore client */
+   char *ClientName;                  /**< Backup client */
+   char *RestoreClientName;           /**< Restore client */
    char last_jobid[20];
-   POOLMEM *JobIds;                   /* User entered string of JobIds */
-   POOLMEM *BaseJobIds;               /* Base jobids */
+   POOLMEM *JobIds;                   /**< User entered string of JobIds */
+   POOLMEM *BaseJobIds;               /**< Base jobids */
    STORERES *store;
    JOBRES *restore_job;
    POOLRES *pool;
@@ -184,13 +186,13 @@ struct RESTORE_CTX {
    char *replace;
    char *plugin_options;
    RBSR *bsr;
-   POOLMEM *fname;                    /* Filename only */
-   POOLMEM *path;                     /* Path only */
+   POOLMEM *fname;                    /**< Filename only */
+   POOLMEM *path;                     /**< Path only */
    POOLMEM *query;
-   int fnl;                           /* Filename length */
-   int pnl;                           /* Path length */
+   int fnl;                           /**< Filename length */
+   int pnl;                           /**< Path length */
    bool found;
-   bool all;                          /* Mark all as default */
+   bool all;                          /**< Mark all as default */
    NAME_LIST name_list;
 };
 

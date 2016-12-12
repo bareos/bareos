@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,8 +20,44 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * bareos.h -- main header file to include in all Bareos source
+/**
+ * @file
+ * main header file to include in all Bareos source
+ *
+ */
+/**
+ * @brief BAREOS® - Backup Archiving REcovery Open Sourced
+ * @mainpage BAREOS® - Backup Archiving REcovery Open Sourced
+ * @section intro_sec Introduction
+ *
+ * Bareos is open source network backup software licensed AGPLv3.
+ *
+ * The sourcecode is available on <A HREF="https://github.com/bareos/bareos"> github </A>
+ *
+ * Bareos is being developed and maintained by Bareos GmbH & Co. KG.
+ *
+ * There is true open source software and as such there is only one version of Bareos.
+ * Other than other "open core" software, there is no "enterprise" or "professional" version
+ * that contain parts that are licensed proprietary and by doing that lose all advantages
+ * that open source software gives you.
+ *
+ * @section binaries
+ * In addition to the source code, Bareos GmbH & Co. KG releases binary packages of every major release.
+ * Usually, a major release is released once a year.
+ *
+ * The binary packages can be downloaded on http://download.bareos.org/bareos/release/
+ *
+ * Maintenance releases are available in sourcecode.
+ *
+ * Binary packages of maintenance releases are available in the Bareos Subscription repositories.
+ *
+ * For more information about subscriptions, consulting, funded development and trainings please see http://www.bareos.com
+ *
+ * @section developer documentation
+ * @author Bareos GmbH & Co. KG and others, see
+ * <A HREF="https://github.com/bareos/bareos/blob/master/AUTHORS"> AUTHORS </A> file
+ *
+ * @copyright 2012-2016 Bareos GmbH & Co. KG
  *
  */
 
@@ -138,7 +174,7 @@ extern "C" {
 #include <windows.h>
 #endif
 
-/*
+/**
  * Local Bareos includes. Be sure to put all the system includes before these.
  */
 #include "version.h"
@@ -151,7 +187,7 @@ extern "C" {
 #include "baconfig.h"
 #include "lib/lib.h"
 
-/*
+/**
  * For wx-console compiles, we undo some Bareos defines.
  *  This prevents conflicts between wx-Widgets and Bareos.
  *  In wx-console files that malloc or free() Bareos structures

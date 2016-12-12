@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Sample Storage daemon Plugin program
- *
  *  Kern Sibbald, October 2007
- *
+ */
+/**
+ * @file
+ * Sample Storage daemon Plugin program
  */
 #include "bareos.h"
 #include "stored.h"
@@ -72,7 +74,7 @@ static psdFuncs pluginFuncs = {
 extern "C" {
 #endif
 
-/*
+/**
  * loadPlugin() and unloadPlugin() are entry points that are
  *  exported, so Bareos can directly call these two entry points
  *  they are common to all Bareos plugins.
@@ -93,7 +95,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
    return bRC_OK;
 }
 
-/*
+/**
  * External entry point to unload the plugin
  */
 bRC DLL_IMP_EXP unloadPlugin()
@@ -106,12 +108,12 @@ bRC DLL_IMP_EXP unloadPlugin()
 }
 #endif
 
-/*
+/**
  * The following entry points are accessed through the function
  *   pointers we supplied to Bareos. Each plugin type (dir, fd, sd)
  *   has its own set of entry points that the plugin must define.
  */
-/*
+/**
  * Create a new instance of the plugin i.e. allocate our private storage
  */
 static bRC newPlugin(bpContext *ctx)
@@ -126,7 +128,7 @@ static bRC newPlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Free a plugin instance, i.e. release our private storage
  */
 static bRC freePlugin(bpContext *ctx)
@@ -137,7 +139,7 @@ static bRC freePlugin(bpContext *ctx)
    return bRC_OK;
 }
 
-/*
+/**
  * Return some plugin value (none defined)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
@@ -146,7 +148,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Set a plugin value (none defined)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
@@ -155,7 +157,7 @@ static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
    return bRC_OK;
 }
 
-/*
+/**
  * Handle an event that was generated in Bareos
  */
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)

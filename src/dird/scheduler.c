@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,13 +21,15 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MM, major revision December MMIII
+ */
+/**
+ * @file
  * BAREOS scheduler
  *
  * It looks at what jobs are to be run and when
  * and waits around until it is time to
  * fire them up.
- *
- * Kern Sibbald, May MM, major revision December MMIII
  */
 
 #include "bareos.h"
@@ -81,7 +83,7 @@ void invalidate_schedules(void) {
     schedules_invalidated = true;
 }
 
-/*********************************************************************
+/**
  *
  *         Main Bareos Scheduler
  *
@@ -146,7 +148,7 @@ again:
    /* Now wait for the time to run the job */
    for (;;) {
       time_t twait;
-      /** discard scheduled queue and rebuild with new schedule objects. **/
+      /* discard scheduled queue and rebuild with new schedule objects. */
       lock_jobs();
       if (schedules_invalidated) {
           dump_job(next_job, "Invalidated job");
@@ -264,7 +266,7 @@ again:
    return jcr;
 }
 
-/*
+/**
  * Shutdown the scheduler
  */
 void term_scheduler()
@@ -274,7 +276,7 @@ void term_scheduler()
    }
 }
 
-/*
+/**
  * check if given day of year is in last week of the month in the current year
  * depending if the year is leap year or not, the doy of the last day of the month
  * is varying one day.
@@ -305,7 +307,7 @@ bool is_doy_in_last_week(int year, int doy)
    return false;
 }
 
-/*
+/**
  * Find all jobs to be run this hour and the next hour.
  */
 static void find_runs()

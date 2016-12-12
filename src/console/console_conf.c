@@ -21,6 +21,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, January MM, September MM
+ */
+/**
+ * @file
  * Main configuration file parser for Bareos User Agent
  * some parts may be split into separate files such as
  * the schedule configuration (sch_config.c).
@@ -37,15 +41,13 @@
  * 3. The daemon specific file, which contains the Resource
  *    definitions as well as any specific store routines
  *    for the resource records.
- *
- * Kern Sibbald, January MM, September MM
  */
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "console_conf.h"
 
-/*
+/**
  * Define the first and last resource ID record
  * types. Note, these should be unique for each
  * daemon though not a requirement.
@@ -95,7 +97,7 @@ static RES_ITEM dir_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-/*
+/**
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
@@ -105,7 +107,7 @@ static RES_TABLE resources[] = {
    { NULL, NULL, 0 }
 };
 
-/*
+/**
  * Dump contents of resource
  */
 void dump_resource(int type, RES *reshdr,
@@ -139,7 +141,7 @@ void dump_resource(int type, RES *reshdr,
    }
 }
 
-/*
+/**
  * Free memory of resource.
  * NB, we don't need to worry about freeing any references
  * to other resources as they will be freed when that
@@ -189,7 +191,7 @@ void free_resource(RES *sres, int type)
    }
 }
 
-/*
+/**
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
@@ -306,7 +308,7 @@ bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
    return config->parse_config();
 }
 
-/*
+/**
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON

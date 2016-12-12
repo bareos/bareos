@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,11 +20,12 @@
    02110-1301, USA.
 */
 /*
- * This file handles external connections made to the storage daemon.
- *
  * Kern Sibbald, May MMI
- *
  * Extracted from other source files by Marco van Wieringen, October 2014
+ */
+/**
+ * @file
+ * This file handles external connections made to the storage daemon.
  */
 
 #include "bareos.h"
@@ -35,17 +36,17 @@ static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
 
-/*
+/**
  * Sanity check for the lengths of the Hello messages.
  */
 #define MIN_MSG_LEN 25
 #define MAX_MSG_LEN (int)sizeof(name) + 30
 
-/*
+/**
  * Connection request. We accept connections either from the
  * Director, Storage Daemon or a Client (File daemon).
  *
- * Note, we are running as a seperate thread of the Storage daemon.
+ * Note, we are running as a separate thread of the Storage daemon.
  *
  * Basic tasks done here:
  *  - If it was a connection from the FD, call handle_filed_connection()

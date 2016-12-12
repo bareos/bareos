@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Routines to acquire and release a device for read/write
- *
  * Kern Sibbald, August MMII
+ */
+/**
+ * @file
+ * Routines to acquire and release a device for read/write
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -36,7 +38,7 @@ static void attach_dcr_to_dev(DCR *dcr);
 static void detach_dcr_from_dev(DCR *dcr);
 static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol);
 
-/*********************************************************************
+/**
  * Acquire device for reading.
  *  The drive should have previously been reserved by calling
  *  reserve_device_for_read(). We read the Volume label from the block and
@@ -378,7 +380,7 @@ get_out:
    return retval;
 }
 
-/*
+/**
  * Acquire device for writing. We permit multiple writers.
  *  If this is the first one, we read the label.
  *
@@ -475,7 +477,7 @@ get_out:
    return retval ? dcr : NULL;
 }
 
-/*
+/**
  * This job is done, so release the device. From a Unix standpoint, the device remains open.
  *
  * Note, if we were spooling, we may enter with the device blocked.
@@ -654,7 +656,7 @@ bool release_device(DCR *dcr)
    return retval;
 }
 
-/*
+/**
  * Clean up the device for reuse without freeing the memory
  */
 bool clean_device(DCR *dcr)
@@ -668,7 +670,7 @@ bool clean_device(DCR *dcr)
    return retval;
 }
 
-/*
+/**
  * DCR Constructor.
  */
 DCR::DCR()
@@ -693,7 +695,7 @@ DCR::DCR()
    }
 }
 
-/*
+/**
  * Setup DCR with a new device.
  */
 void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
@@ -752,7 +754,7 @@ void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksize
    }
 }
 
-/*
+/**
  * Search the dcrs list for the given dcr. If it is found,
  *  as it should be, then remove it. Also zap the jcr pointer
  *  to the dcr if it is the same one.
@@ -802,7 +804,7 @@ static void attach_dcr_to_dev(DCR *dcr)
    V(dcr->m_mutex);
 }
 
-/*
+/**
  * DCR is locked before calling this routine
  */
 static void locked_detach_dcr_from_dev(DCR *dcr)
@@ -834,7 +836,7 @@ static void detach_dcr_from_dev(DCR *dcr)
    V(dcr->m_mutex);
 }
 
-/*
+/**
  * Free up all aspects of the given dcr -- i.e. dechain it,
  *  release allocated memory, zap pointers, ...
  */

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,19 +20,20 @@
    02110-1301, USA.
 */
 /*
- * BAREOS wait queue routines. Permits waiting for something
- * to be done. I.e. for operator to mount new volume.
- *
  * Kern Sibbald, March MMI
- *
  * This code inspired from "Programming with POSIX Threads", by
  * David R. Butenhof
+ */
+/**
+ * @file
+ * BAREOS wait queue routines. Permits waiting for something
+ * to be done. I.e. for operator to mount new volume.
  */
 
 #ifndef __WAITQ_H
 #define __WAITQ_H 1
 
-/*
+/**
  * Structure to keep track of wait queue request
  */
 typedef struct waitq_ele_tag {
@@ -41,7 +43,7 @@ typedef struct waitq_ele_tag {
    void             *msg;             /* message to be passed */
 } waitq_ele_t;
 
-/*
+/**
  * Structure describing a wait queue
  */
 typedef struct workq_tag {

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MM
+ */
+/**
+ * @file
  * Configuration parser for Director Run Configuration
  * directives, which are part of the Schedule Resource
- *
- * Kern Sibbald, May MM
  */
 
 #include "bareos.h"
@@ -136,7 +138,7 @@ static void set_defaults()
    set_bits(0, 53, lrun.woy);
 }
 
-/*
+/**
  * Keywords (RHS) permitted in Run records
  */
 struct s_kw RunFields[] = {
@@ -155,7 +157,7 @@ struct s_kw RunFields[] = {
    { NULL, 0 }
 };
 
-/*
+/**
  * Store Schedule Run information
  *
  * Parse Run statement:

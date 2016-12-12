@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Import/Export and Move functions.
- *
  * Written by Marco van Wieringen, December 2011
+ */
+/**
+ * @file
+ * BAREOS Director -- Import/Export and Move functions.
  */
 
 #include "bareos.h"
@@ -30,7 +32,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Import/Export and Move volumes in an autochanger.
  *
  * The following things apply here:
@@ -55,7 +57,7 @@
  * both the source and destination.
  */
 
-/*
+/**
  * Walk the slot list and count the number of slots enabled in
  * the list.
  */
@@ -73,7 +75,7 @@ static inline slot_number_t count_enabled_slots(char *slot_list,
    return cnt;
 }
 
-/*
+/**
  * See if a selected slot list has the wanted content and
  * deselect any slot which has not.
  */
@@ -149,7 +151,7 @@ static inline void validate_slot_list(UAContext *ua,
    }
 }
 
-/*
+/**
  * See where a certain slot is referenced.
  * For a drive slot we check the loaded variable
  * and for all other slots the exact slotnr.
@@ -183,7 +185,7 @@ static inline vol_list_t *find_slot_in_list(changer_vol_list_t *vol_list,
    return NULL;
 }
 
-/*
+/**
  * Check if a source and destination slot list overlap.
  * An overlap is solved when there is a slot enabled
  * in either the source or destination slot list before
@@ -221,7 +223,7 @@ static inline bool slot_lists_overlap(char *src_slot_list,
    return false;
 }
 
-/*
+/**
  * Scan all slots that are not empty for the exact volumename
  * by reading the label of the volume replacing the scanned
  * barcode when available. When a valid source slot list
@@ -415,7 +417,7 @@ static inline changer_vol_list_t *scan_slots_for_volnames(UAContext *ua,
    return new_vol_list;
 }
 
-/*
+/**
  * Convert a volume name into a slot selection.
  */
 static inline bool get_slot_list_using_volname(UAContext *ua,
@@ -507,7 +509,7 @@ static inline bool get_slot_list_using_volname(UAContext *ua,
    return found;
 }
 
-/*
+/**
  * Convert a number of volume names into a slot selection.
  */
 static inline slot_number_t get_slot_list_using_volnames(UAContext *ua,
@@ -569,7 +571,7 @@ static inline slot_number_t get_slot_list_using_volnames(UAContext *ua,
    return cnt;
 }
 
-/*
+/**
  * Create a slot list selection based on the slot type
  * and slot content. All slots which have the wanted
  * slot type and wanted slot content are selected.
@@ -622,7 +624,7 @@ static inline slot_number_t auto_fill_slot_selection(STORERES *store,
    return cnt;
 }
 
-/*
+/**
  * Verify if all slots in the given slot list are of a certain
  * type and have a given content.
  */
@@ -698,7 +700,7 @@ static inline bool verify_slot_list(STORERES *store,
    return true;
 }
 
-/*
+/**
  * Perform an internal update of our view of the autochanger on a move instruction
  * without requesting the new status from the SD again.
  */
@@ -759,7 +761,7 @@ static inline bool update_internal_slot_list(changer_vol_list_t *vol_list,
    return false;
 }
 
-/*
+/**
  * Unload a volume currently loaded in a drive.
  */
 static bool release_loaded_volume(UAContext *ua,
@@ -832,7 +834,7 @@ static bool release_loaded_volume(UAContext *ua,
    return false;
 }
 
-/*
+/**
  * Ask the autochanger to move volume from a source slot
  * to a destination slot by walking the two filled
  * slot lists and marking every visited slot.
@@ -965,7 +967,7 @@ static char *move_volumes_in_autochanger(UAContext *ua,
    return visited_slot_list;
 }
 
-/*
+/**
  * Perform the actual move operation which is either a:
  * - import of import slots into normal slots
  * - export of normal slots into export slots
@@ -1305,7 +1307,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Import volumes from Import/Export Slots into normal Slots.
  */
 bool import_cmd(UAContext *ua, const char *cmd)
@@ -1313,7 +1315,7 @@ bool import_cmd(UAContext *ua, const char *cmd)
    return perform_move_operation(ua, VOLUME_IMPORT);
 }
 
-/*
+/**
  * Export volumes from normal slots to Import/Export Slots.
  */
 bool export_cmd(UAContext *ua, const char *cmd)
@@ -1321,7 +1323,7 @@ bool export_cmd(UAContext *ua, const char *cmd)
    return perform_move_operation(ua, VOLUME_EXPORT);
 }
 
-/*
+/**
  * Move volume from one slot to another.
  */
 bool move_cmd(UAContext *ua, const char *cmd)

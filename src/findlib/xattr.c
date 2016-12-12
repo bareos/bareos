@@ -3,7 +3,7 @@
 
    Copyright (C) 2008-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,19 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ * Functions to handle Extended Attributes for bareos.
+ *
+ * Extended Attributes are so OS specific we only restore Extended Attributes if
+ * they were saved using a filed on the same platform.
+ *
+ * Currently we support the following OSes:
+ *   Written by Marco van Wieringen, November 2008
+ *   Major overhaul January 2012 + June 2012
+ *   Moved into findlib so it can be used from other programs, May 2012
+ */
 /**
+ * @file
  * Functions to handle Extended Attributes for bareos.
  *
  * Extended Attributes are so OS specific we only restore Extended Attributes if
@@ -42,10 +54,6 @@
  *      the same interface as FreeBSD and NetBSD.
  *   - Solaris (Extended Attributes and Extensible Attributes)
  *   - Tru64 (Extended Attributes)
- *
- *   Written by Marco van Wieringen, November 2008
- *   Major overhaul January 2012 + June 2012
- *   Moved into findlib so it can be used from other programs, May 2012
  */
 
 #include "bareos.h"
@@ -304,7 +312,7 @@ bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
    return bxattr_exit_ok;
 }
 
-/*
+/**
  * This is a supported OS, See what kind of interface we should use.
  */
 #if defined(HAVE_AIX_OS)
@@ -321,14 +329,14 @@ bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
 #error "Missing sys/ea.h header file"
 #endif
 
-/*
+/**
  * Define the supported XATTR streams for this OS
  */
 static int os_default_xattr_streams[1] = {
    STREAM_XATTR_AIX
 };
 
-/*
+/**
  * Fallback to the non l-functions when those are not available.
  */
 #if defined(HAVE_GETEA) && !defined(HAVE_LGETEA)
@@ -665,7 +673,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -680,7 +688,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 
 #include <sys/attributes.h>
 
-/*
+/**
  * Define the supported XATTR streams for this OS
  */
 static int os_default_xattr_streams[1] = {
@@ -1039,7 +1047,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -1066,7 +1074,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 #error "Missing sys/xattr.h header file"
 #endif
 
-/*
+/**
  * Define the supported XATTR streams for this OS
  */
 #if defined(HAVE_DARWIN_OS)
@@ -1106,7 +1114,7 @@ static const char *xattr_skiplist[1] = {
 };
 #endif
 
-/*
+/**
  * OSX doesn't have llistxattr, lgetxattr and lsetxattr but has
  * listxattr, getxattr and setxattr with an extra options argument
  * which mimics the l variants of the functions when we specify
@@ -1468,7 +1476,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -1981,7 +1989,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -2008,7 +2016,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 #error "Missing sys/proplist.h header file"
 #endif
 
-/*
+/**
  * Define the supported XATTR streams for this OS
  */
 static int os_default_xattr_streams[1] = {
@@ -2342,7 +2350,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -2354,7 +2362,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
                         tru64_parse_xattr_streams;
 
 #elif defined(HAVE_SUN_OS)
-/*
+/**
  * Solaris extended attributes were introduced in Solaris 9
  * by PSARC 1999/209
  *
@@ -2456,7 +2464,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 #error "Unable to compile code because of missing openat, unlinkat, fchownat or futimesat function"
 #endif
 
-/*
+/**
  * Define the supported XATTR streams for this OS
  */
 #if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
@@ -2470,7 +2478,7 @@ static int os_default_xattr_streams[1] = {
 };
 #endif /* defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED) */
 
-/*
+/**
  * This code creates a temporary cache with entries for each xattr which has
  * a link count > 1 (which indicates it has one or more hard linked counterpart(s))
  */
@@ -2521,7 +2529,7 @@ static inline void drop_xattr_link_cache(xattr_data_t *xattr_data)
 }
 
 #if defined(HAVE_SYS_NVPAIR_H) && defined(_PC_SATTR_ENABLED)
-/*
+/**
  * This function returns true if a non default extended system attribute
  * list is associated with fd and returns false when an error has occured
  * or when only extended system attributes other than archive,
@@ -2594,7 +2602,7 @@ bail_out:
 #endif /* HAVE_SYS_NVPAIR_H && _PC_SATTR_ENABLED */
 
 #if defined(HAVE_ACL) && !defined(HAVE_EXTENDED_ACL)
-/*
+/**
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
@@ -2741,7 +2749,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Forward declaration for recursive function call.
  */
 static bxattr_exit_code solaris_save_xattrs(JCR *jcr,
@@ -2749,7 +2757,7 @@ static bxattr_exit_code solaris_save_xattrs(JCR *jcr,
                                             const char *xattr_namespace,
                                             const char *attr_parent);
 
-/*
+/**
  * Save an extended or extensible attribute.
  * This is stored as an opaque stream of bytes with the following encoding:
  *
@@ -3823,7 +3831,7 @@ bail_out:
 }
 
 
-/*
+/**
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
@@ -3836,7 +3844,7 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 
 #endif /* defined(HAVE_SUN_OS) */
 
-/*
+/**
  * Entry points when compiled with support for XATTRs on a supported platform.
  */
 bxattr_exit_code build_xattr_streams(JCR *jcr,

@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, April MMIII
+ */
+/**
+ * @file
  * Bareos low level File I/O routines.  This routine simulates
  * open(), read(), write(), and close(), but using native routines.
  * I.e. on Windows, we use Windows APIs.
- *
- * Kern Sibbald, April MMIII
  */
 
 #include "bareos.h"
@@ -373,7 +375,7 @@ void binit(BFILE *bfd)
    bfd->pvContext = NULL;
 }
 
-/*
+/**
  * Enables using the Backup API (win32_data).
  *   Returns 1 if function worked
  *   Returns 0 if failed (i.e. do not have Backup API on this machine)
@@ -398,7 +400,7 @@ bool set_cmd_plugin(BFILE *bfd, JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Return 1 if we are NOT using Win32 BackupWrite()
  * return 0 if are
  */
@@ -412,7 +414,7 @@ bool have_win32_api()
    return p_BackupRead && p_BackupWrite;
 }
 
-/*
+/**
  * Return true  if we support the stream
  *        false if we do not support the stream
  *
@@ -479,7 +481,7 @@ HANDLE bget_handle(BFILE *bfd)
    return (bfd->mode == BF_CLOSED) ? INVALID_HANDLE_VALUE : bfd->fh;
 }
 
-/*
+/**
  * Windows flags for the OpenEncryptedFileRaw functions.
  */
 #ifndef CREATE_FOR_EXPORT
@@ -780,7 +782,7 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
    }
 }
 
-/*
+/**
  * Returns  0 on success
  *         -1 on error
  */
@@ -803,7 +805,7 @@ static inline int bclose_encrypted(BFILE *bfd)
    return 0;
 }
 
-/*
+/**
  * Returns  0 on success
  *         -1 on error
  */
@@ -869,7 +871,7 @@ all_done:
    return status;
 }
 
-/*
+/**
  * Returns  0 on success
  *         -1 on error
  */
@@ -995,7 +997,7 @@ bool have_win32_api()
    return false;                       /* no can do */
 }
 
-/*
+/**
  * Enables using the Backup API (win32_data).
  *   Returns true  if function worked
  *   Returns false if failed (i.e. do not have Backup API on this machine)
@@ -1010,7 +1012,7 @@ bool set_portable_backup(BFILE *bfd)
    return true;                        /* no problem */
 }
 
-/*
+/**
  * Return true  if we are writing in portable format
  * return false if not
  */
@@ -1031,7 +1033,7 @@ bool set_cmd_plugin(BFILE *bfd, JCR *jcr)
    return true;
 }
 
-/*
+/**
  * This code is running on a non-Win32 machine
  */
 bool is_restore_stream_supported(int stream)
@@ -1147,7 +1149,7 @@ int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
 }
 
 #ifdef HAVE_DARWIN_OS
-/*
+/**
  * Open the resource fork of a file.
  */
 int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode)

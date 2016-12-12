@@ -21,11 +21,14 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Database File tree for Restore
+ * Kern Sibbald, July MMII
+ */
+/**
+ * @file
+ * User Agent Database File tree for Restore
  *                    command. This file interacts with the user implementing the
  *                    UA tree commands.
  *
- * Kern Sibbald, July MMII
  */
 
 #include "bareos.h"
@@ -95,7 +98,7 @@ static struct cmdstruct commands[] = {
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
-/*
+/**
  * Enter a prompt mode where the user can select/deselect
  * files to be restored. This is sort of like a mini-shell
  * that allows "cd", "pwd", "add", "rm", ...
@@ -192,7 +195,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
    return status;
 }
 
-/*
+/**
  * This callback routine is responsible for inserting the
  * items it gets into the directory tree. For each JobId selected
  * this routine is called once for each file. We do not allow
@@ -341,7 +344,7 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Set extract to value passed. We recursively walk down the tree setting all children
  * if the node is a directory.
  */
@@ -450,7 +453,7 @@ static void strip_trailing_slash(char *arg)
    }
 }
 
-/*
+/**
  * Recursively mark the current directory to be restored as
  *  well as all directories and files below it.
  */
@@ -707,7 +710,7 @@ static int lscmd(UAContext *ua, TREE_CTX *tree)
    return 1;
 }
 
-/*
+/**
  * Ls command that lists only the marked files
  */
 static int dot_lsmarkcmd(UAContext *ua, TREE_CTX *tree)
@@ -725,7 +728,7 @@ static int dot_lsmarkcmd(UAContext *ua, TREE_CTX *tree)
    return 1;
 }
 
-/*
+/**
  * This recursive ls command that lists only the marked files
  */
 static void rlsmark(UAContext *ua, TREE_NODE *tnode, int level)
@@ -772,7 +775,7 @@ static int lsmarkcmd(UAContext *ua, TREE_CTX *tree)
    return 1;
 }
 
-/*
+/**
  * This is actually the long form used for "dir"
  */
 static inline void ls_output(guid_list *guid, POOLMEM *&buf,
@@ -826,7 +829,7 @@ static inline void ls_output(guid_list *guid, POOLMEM *&buf,
    }
 }
 
-/*
+/**
  * Like ls command, but give more detail on each file
  */
 static int do_dircmd(UAContext *ua, TREE_CTX *tree, bool dot_cmd)
@@ -975,7 +978,7 @@ static int helpcmd(UAContext *ua, TREE_CTX *tree)
    return 1;
 }
 
-/*
+/**
  * Change directories.  Note, if the user specifies x: and it fails,
  * we assume it is a Win32 absolute cd rather than relative and
  * try a second time with /x: ...  Win32 kludge.

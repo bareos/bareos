@@ -19,18 +19,19 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-
 /*
- * NDMP internal routines used by the different NDMP components.
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * NDMP internal routines used by the different NDMP components.
  */
 
 #ifndef BNDMP_DMA_PRIV_H
 #define BNDMP_DMA_PRIV_H 1
 
 #ifdef NDMP_NEED_ENV_KEYWORDS
-/*
+/**
  * Array used for storing fixed NDMP env keywords.
  * Anything special should go into a so called meta-tag in the fileset options.
  */
@@ -46,7 +47,7 @@ static char *ndmp_env_keywords[] = {
    (char *)"PREFIX"
 };
 
-/*
+/**
  * Index values for above keyword.
  */
 enum {
@@ -61,7 +62,7 @@ enum {
    NDMP_ENV_KW_PREFIX
 };
 
-/*
+/**
  * Array used for storing fixed NDMP env values.
  * Anything special should go into a so called meta-tag in the fileset options.
  */
@@ -70,7 +71,7 @@ static char *ndmp_env_values[] = {
    (char *)"y"
 };
 
-/*
+/**
  * Index values for above values.
  */
 enum {
@@ -87,7 +88,7 @@ struct ndmp_backup_format_option {
    bool needs_namelist;
 };
 
-/*
+/**
  * Internal structure to keep track of private data.
  */
 struct ndmp_internal_state {

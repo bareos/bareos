@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -18,11 +19,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ * Kern Sibbald, October MMII
+ */
 /**
+ * @file
  * Encode and decode Extended attributes for Win32 and
  * other non-Unix systems, or Unix systems with ACLs, ...
- *
- * Kern Sibbald, October MMII
  */
 
 #include "bareos.h"
@@ -44,14 +47,14 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
 void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
 #endif /* HAVE_WIN32 */
 
-/*
+/**
  * For old systems that don't have lchown() use chown()
  */
 #ifndef HAVE_LCHOWN
 #define lchown chown
 #endif
 
-/*
+/**
  * For old systems that don't have lchmod() use chmod()
  */
 #ifndef HAVE_LCHMOD
@@ -199,7 +202,7 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
    return stream;
 }
 
-/*
+/**
  * Restore all file attributes like owner, mode and file times.
  */
 static inline bool restore_file_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
@@ -609,7 +612,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
    return STREAM_UNIX_ATTRIBUTES_EX;
 }
 
-/*
+/**
  * Do casting according to unknown type to keep compiler happy
  */
 #ifdef HAVE_TYPEOF

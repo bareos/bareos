@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,7 +23,9 @@
 
 /*
  * Contributed in 2012 by Inteos sp. z o.o.
- *
+ */
+
+/**
  * Utility tool display various information about Bareos plugin,
  * including but not limited to:
  * - Name and Author of the plugin

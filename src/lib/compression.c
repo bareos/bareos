@@ -20,12 +20,13 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/**
- * Functions to handle compression/decompression of data.
- *
+/*
  * Kern Sibbald, November MM
- *
  * Extracted from other source files by Marco van Wieringen, May 2013
+ */
+/**
+ * @file
+ * Functions to handle compression/decompression of data.
  */
 
 #include "bareos.h"
@@ -72,7 +73,7 @@ const char *cmprs_algo_to_text(uint32_t compression_algorithm)
    }
 }
 
-/*
+/**
  * Convert ZLIB error code into an ASCII message
  */
 static const char *zlib_strerror(int stat)

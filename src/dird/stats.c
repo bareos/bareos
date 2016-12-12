@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Statistics collector thread.
- *
  * Written by Marco van Wieringen and Philipp Storz, April 2014
+ */
+/**
+ * @file
+ * Statistics collector thread.
  */
 
 #include "bareos.h"
@@ -97,7 +99,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Wait for the next run.
  */
 static inline void wait_for_next_run()
@@ -119,8 +121,8 @@ static inline void wait_for_next_run()
    V(mutex);
 }
 
-/*
- * Entry point for a seperate statistics thread.
+/**
+ * Entry point for a separate statistics thread.
  */
 extern "C"
 void *statistics_thread_runner(void *arg)

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +22,11 @@
 /*
  *  Written by John Walker MM
  */
-
-/*
+/**
+ * @file
  * General purpose queue
  */
+
 struct b_queue {
    struct b_queue *qnext;     /* Next item in queue */
    struct b_queue *qprev;     /* Previous item in queue */
@@ -32,7 +34,7 @@ struct b_queue {
 
 typedef struct b_queue BQUEUE;
 
-/*
+/**
  * Queue functions
  */
 void qinsert(BQUEUE *qhead, BQUEUE *object);

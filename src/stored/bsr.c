@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, June MMII
+ */
+
+/**
+ * @file
  * Match Bootstrap Records (used for restores) against
  * Volume Records
- *
- * Kern Sibbald, June MMII
  */
 
 /*
@@ -57,7 +61,7 @@ static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *blo
 static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block);
 static BSR *find_smallest_volfile(BSR *fbsr, BSR *bsr);
 
-/*********************************************************************
+/**
  *
  *  If possible, position the archive device (tape) to read the
  *  next block.
@@ -67,7 +71,7 @@ void position_bsr_block(BSR *bsr, DEV_BLOCK *block)
    /* To be implemented */
 }
 
-/*********************************************************************
+/**
  *
  *  Do fast block rejection based on bootstrap records.
  *    use_fast_rejection will be set if we have VolSessionId and VolSessTime
@@ -155,7 +159,7 @@ static int match_fileregex(BSR *bsr, DEV_RECORD *rec, JCR *jcr)
    return 1;
 }
 
-/*********************************************************************
+/**
  *
  *      Match Bootstrap records
  *        returns  1 on match
@@ -189,7 +193,7 @@ int match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *se
    return status;
 }
 
-/*
+/**
  * Find the next bsr that applies to the current tape.
  *   It is the one with the smallest VolFile position.
  */
@@ -232,7 +236,7 @@ BSR *find_next_bsr(BSR *root_bsr, DEVICE *dev)
    return found_bsr;
 }
 
-/*
+/**
  * Get the smallest address from this voladdr part
  * Don't use "done" elements
  */
@@ -333,7 +337,7 @@ static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
    return return_bsr;
 }
 
-/*
+/**
  * Called after the signature record so that
  *   we can see if the current bsr has been
  *   fully processed (i.e. is done).
@@ -364,7 +368,7 @@ bool is_this_bsr_done(BSR *bsr, DEV_RECORD *rec)
    return false;
 }
 
-/*
+/**
  * Match all the components of current record
  *   returns  1 on match
  *   returns  0 no match
@@ -583,7 +587,7 @@ static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool d
    if (!volfile) {
       return 1;                       /* no specification matches all */
    }
-/*
+/**
  * The following code is turned off because this should now work
  *   with disk files too, though since a "volfile" is 4GB, it does
  *   not improve performance much.
@@ -698,7 +702,7 @@ static int match_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_RECORD *rec, boo
    return 0;
 }
 
-/*
+/**
  * Note, we cannot mark bsr done based on session id because we may
  *  have interleaved records, and there may be more of what we want
  *  later.
@@ -717,7 +721,7 @@ static int match_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_RECORD *rec)
    return 0;
 }
 
-/*
+/**
  * When reading the Volume, the Volume Findex (rec->FileIndex) always
  *   are found in sequential order. Thus we can make optimizations.
  *
@@ -776,7 +780,7 @@ uint64_t get_bsr_start_addr(BSR *bsr, uint32_t *file, uint32_t *block)
    return bsr_addr;
 }
 
-/*****************************************************************
+/* ****************************************************************
  * Routines for handling volumes
  */
 static VOL_LIST *new_restore_volume()
@@ -787,7 +791,7 @@ static VOL_LIST *new_restore_volume()
    return vol;
 }
 
-/*
+/**
  * Add current volume to end of list, only if the Volume
  * is not already in the list.
  *
@@ -826,7 +830,7 @@ static bool add_restore_volume(JCR *jcr, VOL_LIST *vol)
    return true;
 }
 
-/*
+/**
  * Create a list of Volumes (and Slots and Start positions) to be
  *  used in the current restore job.
  */

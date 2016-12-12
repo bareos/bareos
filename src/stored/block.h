@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,16 +20,17 @@
    02110-1301, USA.
 */
 /*
- * Block definitions for Bareos media data format.
- *
  * Kern Sibbald, MM
  */
-
+/**
+ * @file
+ * Block definitions for Bareos media data format.
+ */
 #ifndef __BLOCK_H
 #define __BLOCK_H 1
 
-#define MAX_BLOCK_LENGTH  20000000      /* this is a sort of sanity check */
-#define DEFAULT_BLOCK_SIZE (512 * 126)  /* 64,512 N.B. do not use 65,536 here
+#define MAX_BLOCK_LENGTH  20000000      /**< this is a sort of sanity check */
+#define DEFAULT_BLOCK_SIZE (512 * 126)  /**< 64,512 N.B. do not use 65,536 here
                                            the POSIX standard defaults the size of a
                                            tape record to 126 blocks (63k). */
 
@@ -36,9 +38,9 @@
 #define BLKHDR1_ID                       "BB01"
 #define BLKHDR2_ID                       "BB02"
 #define BLKHDR_ID_LENGTH                  4
-#define BLKHDR_CS_LENGTH                  4     /* checksum length */
-#define BLKHDR1_LENGTH                   16     /* Total length */
-#define BLKHDR2_LENGTH                   24     /* Total length */
+#define BLKHDR_CS_LENGTH                  4     /**< checksum length */
+#define BLKHDR1_LENGTH                   16     /**< Total length */
+#define BLKHDR2_LENGTH                   24     /**< Total length */
 
 #define WRITE_BLKHDR_ID     BLKHDR2_ID
 #define WRITE_BLKHDR_LENGTH BLKHDR2_LENGTH
@@ -58,7 +60,7 @@
 #define OldCompatibleBareosTapeVersion2  10
 #define OldCompatibleBareosTapeVersion3  9
 
-/*
+/**
  * This is the Media structure for a block header
  *  Note, when written, it is serialized.
 
@@ -75,7 +77,7 @@
 
 class DEVICE;                         /* for forward reference */
 
-/*
+/**
  * DEV_BLOCK for reading and writing blocks.
  * This is the basic unit that is written to the device, and
  * it contains a Block Header followd by Records.  Note,

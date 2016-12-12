@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,11 +20,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MM
+ */
+/**
+ * @file
  * BAREOS Sock Class definition
  * Note, the old non-class code is in bnet.c, and the
  * new class code associated with this file is in bsock.c
- *
- * Kern Sibbald, May MM
  *
  * Zero msglen from other end indicates soft eof (usually
  * end of some binary data stream, but not end of conversation).
@@ -42,7 +45,7 @@ void stop_bsock_timer(btimer_t *wid);
 
 
 class BSOCK : public SMARTALLOC {
-/*
+/**
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.
  */
@@ -184,7 +187,7 @@ public:
    void stop_timer() { stop_bsock_timer(m_tid); };
 };
 
-/*
+/**
  *  Signal definitions for use in bnet_sig()
  *  Note! These must be negative.  There are signals that are generated
  *   by the bsock software not by the OS ...
@@ -223,7 +226,7 @@ enum {
 #define BNET_SETBUF_READ  1           /* Arg for bnet_set_buffer_size */
 #define BNET_SETBUF_WRITE 2           /* Arg for bnet_set_buffer_size */
 
-/*
+/**
  * Return status from bnet_recv()
  * Note, the HARDEOF and ERROR refer to comm status/problems
  *  rather than the BNET_xxx above, which are software signals.
@@ -234,7 +237,7 @@ enum {
    BNET_ERROR          = -3
 };
 
-/*
+/**
  * TLS enabling values. Value is important for comparison, ie:
  * if (tls_remote_need < BNET_TLS_REQUIRED) { ... }
  */

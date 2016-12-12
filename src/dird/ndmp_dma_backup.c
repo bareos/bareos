@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Backup specific NDMP Data Management Application (DMA) routines
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * Backup specific NDMP Data Management Application (DMA) routines
  */
 
 #include "bareos.h"
@@ -41,7 +43,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 /* Forward referenced functions */
 
-/*
+/**
  * This glues the NDMP File Handle DB with internal code.
  */
 static inline void register_callback_hooks(struct ndmlog *ixlog)
@@ -124,7 +126,7 @@ static inline int native_to_ndmp_level(JCR *jcr, char *filesystem)
    return level;
 }
 
-/*
+/**
  * Fill the NDMP backup environment table with the data for the data agent to act on.
  */
 static inline bool fill_backup_environment(JCR *jcr,
@@ -286,7 +288,7 @@ static inline bool fill_backup_environment(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Extract any post backup statistics.
  */
 static inline bool extract_post_backup_stats(JCR *jcr,
@@ -355,7 +357,7 @@ static inline bool extract_post_backup_stats(JCR *jcr,
    return retval;
 }
 
-/*
+/**
  * Setup a NDMP backup session.
  */
 bool do_ndmp_backup_init(JCR *jcr)
@@ -412,7 +414,7 @@ bool do_ndmp_backup_init(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Run a NDMP backup session.
  */
 bool do_ndmp_backup(JCR *jcr)
@@ -773,7 +775,7 @@ ok_out:
    return retval;
 }
 
-/*
+/**
  * Cleanup a NDMP backup session.
  */
 void ndmp_backup_cleanup(JCR *jcr, int TermCode)

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,14 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ *   Original written by Preben 'Peppe' Guldberg, December 2004
+ *   Major rewrite by Marco van Wieringen, November 2008
+ *   Major overhaul by Marco van Wieringen, January 2012
+ *   Moved into findlib so it can be used from other programs, May 2012
+ */
 /**
+ * @file
  * Functions to handle ACLs for bareos.
  *
  * Currently we support the following OSes:
@@ -52,11 +59,6 @@
  * Its also interesting to see what the exact format of acl text is on
  * certain platforms and if they use they same encoding we might allow
  * different platform streams to be decoded on another similar platform.
- *
- *   Original written by Preben 'Peppe' Guldberg, December 2004
- *   Major rewrite by Marco van Wieringen, November 2008
- *   Major overhaul by Marco van Wieringen, January 2012
- *   Moved into findlib so it can be used from other programs, May 2012
  */
 
 #include "bareos.h"
@@ -137,7 +139,7 @@ bacl_exit_code send_acl_stream(JCR *jcr, acl_data_t *acl_data, int stream)
    return bacl_exit_ok;
 }
 
-/*
+/**
  * First the native ACLs.
  */
 #if defined(HAVE_ACL)
@@ -182,7 +184,7 @@ static bool acl_nfs4_is_trivial(nfs4_acl_int_t *acl)
 #endif
 }
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[3] = {
@@ -348,7 +350,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * See if a specific type of ACLs are supported on the filesystem
  * the file is located on.
  */
@@ -513,7 +515,7 @@ bail_out:
 
 #include <sys/access.h>
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[1] = {
@@ -551,7 +553,7 @@ static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
 }
 #endif /* HAVE_EXTENDED_ACL */
 
-/*
+/**
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -576,14 +578,14 @@ static bacl_exit_code (*os_parse_acl_streams)
 #error "configure failed to detect availability of sys/acl.h"
 #endif
 
-/*
+/**
  * On IRIX we can get shortened ACLs
  */
 #if defined(HAVE_IRIX_OS) && defined(BACL_WANT_SHORT_ACLS)
 #define acl_to_text(acl,len)     acl_to_short_text((acl), (len))
 #endif
 
-/*
+/**
  * On Linux we can get numeric and/or shorted ACLs
  */
 #if defined(HAVE_LINUX_OS)
@@ -600,7 +602,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 #endif
 #endif
 
-/*
+/**
  * On FreeBSD we can get numeric ACLs
  */
 #if defined(HAVE_FREEBSD_OS)
@@ -612,7 +614,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 #endif
 #endif
 
-/*
+/**
  * Some generic functions used by multiple OSes.
  */
 static acl_type_t bac_to_os_acltype(bacl_type acltype)
@@ -693,7 +695,7 @@ static int acl_count_entries(acl_t acl)
 }
 
 #if !defined(HAVE_DARWIN_OS)
-/*
+/**
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
@@ -1078,7 +1080,7 @@ static bacl_exit_code darwin_parse_acl_streams(JCR *jcr,
 #endif
 }
 
-/*
+/**
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -1089,7 +1091,7 @@ static bacl_exit_code (*os_parse_acl_streams)
                       darwin_parse_acl_streams;
 
 #elif defined(HAVE_FREEBSD_OS)
-/*
+/**
  * Define the supported ACL streams for these OSes
  */
 static int os_access_acl_streams[2] = {
@@ -1309,7 +1311,7 @@ static bacl_exit_code freebsd_parse_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-/*
+/**
  * For this OSes setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -1322,7 +1324,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 #elif defined(HAVE_IRIX_OS) || \
       defined(HAVE_LINUX_OS) || \
       defined(HAVE_HURD_OS)
-/*
+/**
  * Define the supported ACL streams for these OSes
  */
 #if defined(HAVE_IRIX_OS)
@@ -1413,7 +1415,7 @@ static bacl_exit_code generic_parse_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-/*
+/**
  * For this OSes setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -1425,7 +1427,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 
 #elif defined(HAVE_OSF1_OS)
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[1] = {
@@ -1495,7 +1497,7 @@ static bacl_exit_code tru64_parse_acl_streams(JCR *jcr,
                                    content, content_length);
 }
 
-/*
+/**
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -1516,7 +1518,7 @@ static bacl_exit_code (*os_parse_acl_streams)
 
 #include <acllib.h>
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[1] = {
@@ -1526,7 +1528,7 @@ static int os_default_acl_streams[1] = {
    -1
 };
 
-/*
+/**
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
@@ -1548,7 +1550,7 @@ static bool acl_is_trivial(int count, struct acl_entry *entries, struct stat sb)
    return true;
 }
 
-/*
+/**
  * OS specific functions for handling different types of acl streams.
  */
 static bacl_exit_code hpux_build_acl_streams(JCR *jcr,
@@ -1699,7 +1701,7 @@ static bacl_exit_code hpux_parse_acl_streams(JCR *jcr,
    return bacl_exit_ok;
 }
 
-/*
+/**
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
@@ -1744,7 +1746,7 @@ int acl_type(acl_t *);
 char *acl_strerror(int);
 }
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[2] = {
@@ -2012,7 +2014,7 @@ static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
 
 #else /* HAVE_EXTENDED_ACL */
 
-/*
+/**
  * Define the supported ACL streams for this OS
  */
 static int os_access_acl_streams[1] = {
@@ -2022,7 +2024,7 @@ static int os_default_acl_streams[1] = {
    -1
 };
 
-/*
+/**
  * See if an acl is a trivial one (e.g. just the stat bits encoded as acl.)
  * There is no need to store those acls as we already store the stat bits too.
  */
@@ -2043,7 +2045,7 @@ static bool acl_is_trivial(int count, aclent_t *entries)
    return true;
 }
 
-/*
+/**
  * OS specific functions for handling different types of acl streams.
  */
 static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
@@ -2139,7 +2141,7 @@ static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
 }
 #endif /* HAVE_EXTENDED_ACL */
 
-/*
+/**
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)

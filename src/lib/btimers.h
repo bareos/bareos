@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2007 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,23 +20,25 @@
    02110-1301, USA.
 */
 /*
- * Process and thread timer routines, built on top of watchdogs.
- *
  * Nic Bellamy <nic@bellamy.co.nz>, October 2003.
  *
+*/
+/**
+ * @file
+ * Process and thread timer routines, built on top of watchdogs.
 */
 
 #ifndef __BTIMERS_H_
 #define __BTIMERS_H_
 
 struct btimer_t {
-   watchdog_t *wd;                    /* Parent watchdog */
+   watchdog_t *wd;                    /**< Parent watchdog */
    int type;
    bool killed;
-   pid_t pid;                         /* process id if TYPE_CHILD */
-   pthread_t tid;                     /* thread id if TYPE_PTHREAD */
-   BSOCK *bsock;                      /* Pointer to BSOCK */
-   JCR *jcr;                          /* Pointer to job control record */
+   pid_t pid;                         /**< process id if TYPE_CHILD */
+   pthread_t tid;                     /**< thread id if TYPE_PTHREAD */
+   BSOCK *bsock;                      /**< Pointer to BSOCK */
+   JCR *jcr;                          /**< Pointer to job control record */
 };
 
 #endif /* __BTIMERS_H_ */

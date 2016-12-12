@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- Automatic Pruning Applies retention periods
- *
  * Kern Sibbald, May MMII
+ */
+/**
+ * @file
+ * Automatic Pruning Applies retention periods
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Auto Prune Jobs and Files. This is called at the end of every
  *   Job.  We do not prune volumes here.
  */
@@ -70,7 +72,7 @@ void do_autoprune(JCR *jcr)
    return;
 }
 
-/*
+/**
  * Prune at least one Volume in current Pool. This is called from catreq.c => next_vol.c
  * when the Storage daemon is asking for another volume and no appendable volumes are available.
  */

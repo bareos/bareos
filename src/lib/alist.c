@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +20,20 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, June MMIII
+ */
+/**
+ * @file
  * BAREOS array list routines
  *
  * alist is a simple malloc'ed array of pointers.  For the moment,
  * it simply malloc's a bigger array controlled by num_grow.
  * Default is to realloc the pointer array for each new member.
- *
- * Kern Sibbald, June MMIII
  */
 
 #include "bareos.h"
 
-/*
+/**
  * Private grow list function. Used to insure that
  *   at least one more "slot" is available.
  */
@@ -86,7 +89,7 @@ void *alist::prev()
    }
 }
 
-/*
+/**
  * prepend an item to the list -- i.e. add to beginning
  */
 void alist::prepend(void *item) {
@@ -103,7 +106,7 @@ void alist::prepend(void *item) {
 }
 
 
-/*
+/**
  * Append an item to the list
  */
 void alist::append(void *item) {

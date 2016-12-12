@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
- * SD -- mac.c --  responsible for doing
- * migration, archive, copy, and virtual backup jobs.
- *
  * Kern Sibbald, January MMVI
+ */
+/**
+ * @file
+ * responsible for doing
+ * migration, archive, copy, and virtual backup jobs.
  */
 
 #include "bareos.h"
@@ -34,13 +36,13 @@
 
 /* Forward referenced subroutines */
 
-/*
+/**
  * Responses sent to the Director
  */
 static char Job_end[] =
    "3099 Job %s end JobStatus=%d JobFiles=%d JobBytes=%s JobErrors=%u\n";
 
-/*
+/**
  * Responses received from Storage Daemon
  */
 static char OK_start_replicate[] =
@@ -52,7 +54,7 @@ static char OK_replicate[] =
 static char OK_end_replicate[] =
    "3000 OK end replicate\n";
 
-/*
+/**
  * Commands sent to Storage Daemon
  */
 static char start_replicate[] =
@@ -62,7 +64,7 @@ static char replicate_data[] =
 static char end_replicate[] =
    "end replicate\n";
 
-/*
+/**
  * Get response from Storage daemon to a command we sent.
  * Check that the response is OK.
  *
@@ -93,7 +95,7 @@ static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
    return false;
 }
 
-/*
+/**
  * Called here for each record from read_records()
  * This function is used when we do a internal clone of a Job e.g.
  * this SD is both the reading and writing SD.
@@ -199,7 +201,7 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
    return true;
 }
 
-/*
+/**
  * Called here for each record from read_records()
  * This function is used when we do a external clone of a Job e.g.
  * this SD is the reading SD. And a remote SD is the writing SD.
@@ -338,7 +340,7 @@ static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
    return true;
 }
 
-/*
+/**
  * Check autoinflation/autodeflation settings.
  */
 static inline void check_auto_xflation(JCR *jcr)
@@ -402,7 +404,7 @@ static inline void check_auto_xflation(JCR *jcr)
    }
 }
 
-/*
+/**
  * Read Data and commit to new job.
  */
 bool do_mac_run(JCR *jcr)

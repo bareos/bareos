@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Gluster Filesystem API device abstraction.
- *
  * Marco van Wieringen, February 2014
+ */
+/**
+ * @file
+ * Gluster Filesystem API device abstraction.
  */
 
 #include "bareos.h"
@@ -31,7 +33,7 @@
 #include "stored.h"
 #include "backends/gfapi_device.h"
 
-/*
+/**
  * Options that can be specified for this device type.
  */
 enum device_option_type {
@@ -50,7 +52,7 @@ static device_option device_options[] = {
    { NULL, argument_none }
 };
 
-/*
+/**
  * Parse a gluster definition into something we can use for setting
  * up the right connection to a gluster management server and get access
  * to a gluster volume.
@@ -256,7 +258,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Create a parent directory using the gfapi.
  */
 static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
@@ -315,7 +317,7 @@ static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
    return retval;
 }
 
-/*
+/**
  * Open a volume using gfapi.
  */
 int gfapi_device::d_open(const char *pathname, int flags, int mode)
@@ -485,7 +487,7 @@ bail_out:
    return -1;
 }
 
-/*
+/**
  * Read data from a volume using gfapi.
  */
 ssize_t gfapi_device::d_read(int fd, void *buffer, size_t count)
@@ -498,7 +500,7 @@ ssize_t gfapi_device::d_read(int fd, void *buffer, size_t count)
    }
 }
 
-/*
+/**
  * Write data to a volume using gfapi.
  */
 ssize_t gfapi_device::d_write(int fd, const void *buffer, size_t count)

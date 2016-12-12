@@ -1,11 +1,8 @@
 /*
- * Taken from the public domain ansitape program for
- *   integration into Bareos. KES - Mar 2005
- */
-/*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2006-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +20,14 @@
    02110-1301, USA.
 */
 
+/*
+ * Taken from the public domain ansitape program for
+ *   integration into Bareos. KES - Mar 2005
+ */
+/**
+ * @file
+ * ebcdic <-> ascii conversion routines
+ */
 
 /* Mapping of EBCDIC codes to ASCII equivalents. */
 static char to_ascii_table[256] = {
@@ -162,7 +167,7 @@ static char to_ebcdic_table[256] = {
 };
 
 
-/*
+/**
  * Convert from ASCII to EBCDIC
  */
 void ascii_to_ebcdic(char *dst, char *src, int count)
@@ -173,7 +178,7 @@ void ascii_to_ebcdic(char *dst, char *src, int count)
 }
 
 
-/*
+/**
  * Convert from EBCDIC to ASCII
  */
 void ebcdic_to_ascii(char *dst, char *src, int count)

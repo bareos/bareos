@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, May MMI previously in src/stored/fdmsg.c
+ */
+/**
+ * @file
  * Subroutines to receive network data and handle
  * network signals for the FD and the SD.
- *
- * Kern Sibbald, May MMI previously in src/stored/fdmsg.c
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -32,7 +35,7 @@ static char TERM_msg[] = "2999 Terminate\n";
 
 #define msglvl 500
 
-/*
+/**
  * This routine does a bnet_recv(), then if a signal was
  *   sent, it handles it.  The return codes are the same as
  *   bne_recv() except the BNET_SIGNAL messages that can

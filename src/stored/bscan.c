@@ -21,11 +21,13 @@
    02110-1301, USA.
 */
 /*
+ * Kern E. Sibbald, December 2001
+ */
+/**
+ * @file
  * Program to scan a Bareos Volume and compare it with
  * the catalog and optionally synchronize the catalog
  * with the tape.
- *
- * Kern E. Sibbald, December 2001
  */
 
 #include "bareos.h"
@@ -374,7 +376,7 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-/*
+/**
  * We are at the end of reading a tape. Now, we simulate handling
  * the end of writing a tape by wiffling through the attached
  * jcrs creating jobmedia records.
@@ -450,7 +452,7 @@ static void do_scan()
    free_attr(attr);
 }
 
-/*
+/**
  * Returns: true  if OK
  *          false if error
  */
@@ -485,7 +487,7 @@ static inline bool unpack_restore_object(JCR *jcr, int32_t stream, char *rec, in
    return true;
 }
 
-/*
+/**
  * Returns: true  if OK
  *          false if error
  */
@@ -1009,7 +1011,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    return true;
 }
 
-/*
+/**
  * Free the Job Control Record if no one is still using it.
  *  Called from main free_jcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
@@ -1049,7 +1051,7 @@ static void bscan_free_jcr(JCR *jcr)
    Dmsg0(200, "End bscan free_jcr\n");
 }
 
-/*
+/**
  * We got a File Attributes record on the tape.  Now, lookup the Job
  * record, and then create the attributes record.
  */
@@ -1092,7 +1094,7 @@ static bool create_file_attributes_record(B_DB *db, JCR *mjcr,
    return true;
 }
 
-/*
+/**
  * For each Volume we see, we create a Medium record
  */
 static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
@@ -1152,7 +1154,7 @@ static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
    return true;
 }
 
-/*
+/**
  * Called at end of media to update it
  */
 static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
@@ -1196,7 +1198,7 @@ static bool create_pool_record(B_DB *db, POOL_DBR *pr)
    return true;
 }
 
-/*
+/**
  * Called from SOS to create a client for the current Job
  */
 static bool create_client_record(B_DB *db, CLIENT_DBR *cr)
@@ -1257,7 +1259,7 @@ static bool create_fileset_record(B_DB *db, FILESET_DBR *fsr)
    return true;
 }
 
-/*
+/**
  * Simulate the two calls on the database to create the Job record and
  * to update it when the Job actually begins running.
  */
@@ -1316,7 +1318,7 @@ static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label, DEV_R
    return mjcr;
 }
 
-/*
+/**
  * Simulate the database call that updates the Job at Job termination time.
  */
 static bool update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
@@ -1469,7 +1471,7 @@ static bool create_jobmedia_record(B_DB *db, JCR *mjcr)
    return true;
 }
 
-/*
+/**
  * Simulate the database call that updates the MD5/SHA1 record
  */
 static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type)
@@ -1506,7 +1508,7 @@ static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int ty
    return true;
 }
 
-/*
+/**
  * Create a JCR as if we are really starting the job
  */
 static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)

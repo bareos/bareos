@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,7 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- routines to receive network data and
+ * Kern Sibbald, August MM
+ */
+/**
+ * @file
+ * routines to receive network data and
  * handle network signals. These routines handle the connections
  * to the Storage daemon and the File daemon.
  *
@@ -110,7 +114,7 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
    }
 }
 
-/*
+/**
  * Get a message
  *  Call appropriate processing routine
  *  If it is not a Jmsg or a ReqCat message,
@@ -366,7 +370,7 @@ static char *find_msg_start(char *msg)
    return p;
 }
 
-/*
+/**
  * Get response from FD or SD to a command we
  * sent. Check that the response agrees with what we expect.
  *

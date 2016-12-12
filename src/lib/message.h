@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Define Message Types for BAREOS
- *
  * Kern Sibbald, 2000
+ */
+/**
+ * @file
+ * Define Message Types for BAREOS
  */
 #include "bits.h"
 
@@ -42,7 +44,7 @@
 #undef M_VOLMGMT
 #undef M_AUDIT
 
-/*
+/**
  * Most of these message levels are more or less obvious.
  * They have evolved somewhat during the development of BAREOS,
  * and here are some of the details of where I am trying to
@@ -100,7 +102,7 @@ enum {
 #define M_MAX M_AUDIT                 /* keep this updated ! */
 #define NR_MSG_TYPES nbytes_for_bits(M_MAX + 1)
 
-/*
+/**
  * Define message destination structure
  */
 /* *** FIXME **** where should be extended to handle multiple values */
@@ -117,7 +119,7 @@ typedef struct s_dest {
    POOLMEM *mail_filename;            /* Unique mail filename */
 } DEST;
 
-/*
+/**
  * Message Destination values for dest field of DEST
  *
  * MD_SYSLOG          Send msg to syslog
@@ -148,7 +150,7 @@ enum {
    MD_CATALOG
 };
 
-/*
+/**
  * Queued message item
  */
 struct MQUEUE_ITEM {

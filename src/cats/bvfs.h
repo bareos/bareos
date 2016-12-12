@@ -43,15 +43,15 @@ typedef enum {
 } bvfs_handler_type;
 
 typedef enum {
-   BVFS_Type    = 0,            /* Could be D, F, V */
+   BVFS_Type    = 0,            /**< Could be D, F, V */
    BVFS_PathId  = 1,
    BVFS_FilenameId = 2,
 
    BVFS_Name    = 3,
    BVFS_JobId   = 4,
 
-   BVFS_LStat   = 5,            /* Can be empty for missing directories */
-   BVFS_FileId  = 6,            /* Can be empty for missing directories */
+   BVFS_LStat   = 5,            /**< Can be empty for missing directories */
+   BVFS_FileId  = 6,            /**< Can be empty for missing directories */
 
    /* Only if File Version record */
    BVFS_Md5     = 3,

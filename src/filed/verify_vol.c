@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2010 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,10 +20,12 @@
    02110-1301, USA.
 */
 /*
- * Bareos File Daemon  verify-vol.c Verify files on a Volume
- * versus attributes in Catalog
- *
  * Kern Sibbald, July MMII
+ */
+/**
+ * @file
+ * Verify files on a Volume
+ * versus attributes in Catalog
  */
 
 #include "bareos.h"
@@ -35,7 +38,7 @@ static char rec_header[] =
 /* Forward referenced functions */
 
 
-/*
+/**
  * Verify attributes of the requested files on the Volume
  *
  */

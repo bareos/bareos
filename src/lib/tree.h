@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2009 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Directory tree build/traverse routines
- *
  * Kern Sibbald, June MMII
+ */
+/**
+ * @file
+ * Directory tree build/traverse routines
  */
 
 #include "htable.h"
@@ -50,7 +53,7 @@ struct delta_list {
    int32_t FileIndex;
 };
 
-/*
+/**
  * Keep this node as small as possible because
  *   there is one for each file.
  */
@@ -138,7 +141,7 @@ void free_tree(TREE_ROOT *root);
 POOLMEM *tree_getpath(TREE_NODE *node);
 void tree_remove_node(TREE_ROOT *root, TREE_NODE *node);
 
-/*
+/**
  * Use the following for traversing the whole tree. It will be
  *   traversed in the order the entries were inserted into the
  *   tree.

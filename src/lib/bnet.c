@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,6 +28,10 @@
  * Adapted and enhanced for BAREOS, originally written
  * for inclusion in the Apcupsd package
  */
+/**
+ * @file
+ * Network Utility Routines
+ */
 
 #include "bareos.h"
 #include "jcr.h"
@@ -41,7 +45,7 @@
 static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
 #endif
 
-/*
+/**
  * Receive a message from the other end. Each message consists of
  * two packets. The first is a header that contains the size
  * of the data that follows in the second packet.
@@ -64,7 +68,7 @@ int32_t bnet_recv(BSOCK * bsock)
 }
 
 
-/*
+/**
  * Return 1 if there are errors on this bsock or it is closed,
  *   i.e. stop communicating on this line.
  */
@@ -73,7 +77,7 @@ bool is_bnet_stop(BSOCK * bsock)
    return bsock->is_stop();
 }
 
-/*
+/**
  * Return number of errors on socket
  */
 int is_bnet_error(BSOCK * bsock)
@@ -81,7 +85,7 @@ int is_bnet_error(BSOCK * bsock)
    return bsock->is_error();
 }
 
-/*
+/**
  * Call here after error during closing to suppress error
  *  messages which are due to the other end shutting down too.
  */
@@ -90,7 +94,7 @@ void bnet_suppress_error_messages(BSOCK * bsock, bool flag)
    bsock->m_suppress_error_msgs = flag;
 }
 
-/*
+/**
  * Send a message over the network. The send consists of
  * two network packets. The first is sends a 32 bit integer containing
  * the length of the data packet which follows.
@@ -104,7 +108,7 @@ bool bnet_send(BSOCK *bsock)
 }
 
 
-/*
+/**
  * Establish a TLS connection -- server side
  *  Returns: true  on success
  *           false on failure
@@ -149,7 +153,7 @@ err:
    return false;
 }
 
-/*
+/**
  * Establish a TLS connection -- client side
  * Returns: true  on success
  *          false on failure
@@ -217,7 +221,7 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *ve
 }
 #endif /* HAVE_TLS */
 
-/*
+/**
  * Wait for a specified time for data to appear on
  * the BSOCK connection.
  *
@@ -230,7 +234,7 @@ int bnet_wait_data(BSOCK * bsock, int sec)
    return bsock->wait_data(sec);
 }
 
-/*
+/**
  * As above, but returns on interrupt
  */
 int bnet_wait_data_intr(BSOCK * bsock, int sec)
@@ -315,7 +319,7 @@ const char *resolv_host(int family, const char *host, dlist *addr_list)
    return NULL;
 }
 #else
-/*
+/**
  * Get human readable error for gethostbyname()
  */
 static const char *gethost_strerror()
@@ -398,7 +402,7 @@ static IPADDR *add_any(int family)
    return addr;
 }
 
-/*
+/**
  * i host = 0 mean INADDR_ANY only ipv4
  */
 dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
@@ -464,7 +468,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
    return addr_list;
 }
 
-/*
+/**
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
@@ -473,7 +477,7 @@ const char *bnet_strerror(BSOCK * bsock)
    return bsock->bstrerror();
 }
 
-/*
+/**
  * Format and send a message
  *  Returns: false on error
  *           true  on success
@@ -509,7 +513,7 @@ int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen)
    return bs->get_peer(buf, buflen);
 }
 
-/*
+/**
  * Set the network buffer size, suggested size is in size.
  *  Actual size obtained is returned in bs->msglen
  *
@@ -521,7 +525,7 @@ bool bnet_set_buffer_size(BSOCK * bs, uint32_t size, int rw)
    return bs->set_buffer_size(size, rw);
 }
 
-/*
+/**
  * Set socket non-blocking
  * Returns previous socket flag
  */
@@ -530,7 +534,7 @@ int bnet_set_nonblocking(BSOCK *bsock)
    return bsock->set_nonblocking();
 }
 
-/*
+/**
  * Set socket blocking
  * Returns previous socket flags
  */
@@ -539,7 +543,7 @@ int bnet_set_blocking(BSOCK *bsock)
    return bsock->set_blocking();
 }
 
-/*
+/**
  * Restores socket flags
  */
 void bnet_restore_blocking (BSOCK *bsock, int flags)
@@ -547,7 +551,7 @@ void bnet_restore_blocking (BSOCK *bsock, int flags)
    bsock->restore_blocking(flags);
 }
 
-/*
+/**
  * Send a network "signal" to the other end
  *  This consists of sending a negative packet length
  *
@@ -559,7 +563,7 @@ bool bnet_sig(BSOCK * bs, int signal)
    return bs->signal(signal);
 }
 
-/*
+/**
  * Convert a network "signal" code into
  * human readable ASCII.
  */

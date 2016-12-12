@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2008 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,6 +20,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March MM
+ */
+/**
+ * @file
  * Define integer types for Bareos
  *
  * Integer types.  These types should be be used in all
@@ -32,8 +37,6 @@
  * uint8_t, uint16_t, uint32_t, uint64_t
  *
  * Also, we define types such as file address lengths.
- *
- * Kern Sibbald, March MM
  */
 
 #ifndef __bc_types_INCLUDED
@@ -80,7 +83,7 @@ typedef unsigned short u_int16_t;
 #endif
 #endif /* HAVE_WIN32 */
 
-/*
+/**
  * These are the sizes of the current definitions of database
  *  Ids.  In general, FileId_t can be set to uint64_t and it
  *  *should* work.  Users have reported back that it does work
@@ -272,16 +275,16 @@ typedef float             float32_t;
 #endif
 #endif /* HAVE_WIN32 */
 
-/*
+/**
  * Status codes returned by create_file()
  *   Used in findlib, filed, and plugins
  */
 enum {
-   CF_SKIP = 1,                   /* skip file (not newer or something) */
-   CF_ERROR,                      /* error creating file */
-   CF_EXTRACT,                    /* file created, data to extract */
-   CF_CREATED,                    /* file created, no data to extract */
-   CF_CORE                        /* let bareos core handle the file creation */
+   CF_SKIP = 1,                   /**< skip file (not newer or something) */
+   CF_ERROR,                      /**< error creating file */
+   CF_EXTRACT,                    /**< file created, data to extract */
+   CF_CREATED,                    /**< file created, no data to extract */
+   CF_CORE                        /**< let bareos core handle the file creation */
 };
 
 #ifndef MAX

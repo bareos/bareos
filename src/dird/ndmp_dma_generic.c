@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Generic NDMP Data Management Application (DMA) routines
- *
  * Marco van Wieringen, May 2015
+ */
+/**
+ * @file
+ * Generic NDMP Data Management Application (DMA) routines
  */
 
 #include "bareos.h"
@@ -30,9 +32,9 @@
 
 #if HAVE_NDMP
 
-#define SMTAPE_MIN_BLOCKSIZE 4096 /* 4 Kb */
-#define SMTAPE_MAX_BLOCKSIZE 262144 /* 256 Kb */
-#define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /* 4 Kb */
+#define SMTAPE_MIN_BLOCKSIZE 4096 /**< 4 Kb */
+#define SMTAPE_MAX_BLOCKSIZE 262144 /**< 256 Kb */
+#define SMTAPE_BLOCKSIZE_INCREMENTS 4096 /**< 4 Kb */
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
@@ -41,7 +43,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * Per NDMP format specific options.
  */
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
@@ -54,6 +56,11 @@ static ndmp_backup_format_option ndmp_backup_format_options[] = {
    { NULL, false, false, false }
 };
 
+/**
+ * find ndmp_backup_format_option for given format
+ * @param [in] backup_format string specifying the backup format
+ * @return returns a pointer to the ndmp_backup_format_option
+ */
 ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_format)
 {
    int i = 0;
@@ -72,7 +79,7 @@ ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_
    return (ndmp_backup_format_option *)NULL;
 }
 
-/*
+/**
  * Validation functions.
  */
 bool ndmp_validate_client(JCR *jcr)
@@ -166,7 +173,7 @@ bool ndmp_validate_job(JCR *jcr, struct ndm_job_param *job)
    return true;
 }
 
-/*
+/**
  * Fill a ndmagent structure with the correct info. Instead of calling ndmagent_from_str
  * we fill the structure ourself from info provides in a resource.
  */
@@ -221,7 +228,7 @@ static inline bool fill_ndmp_agent_config(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Parse a meta-tag and convert it into a ndmp_pval
  */
 void ndmp_parse_meta_tag(struct ndm_env_table *env_tab, char *meta_tag)
@@ -250,7 +257,7 @@ void ndmp_parse_meta_tag(struct ndm_env_table *env_tab, char *meta_tag)
    *p = '=';
 }
 
-/*
+/**
  * Calculate the wanted NDMP loglevel from the current debug level and
  * any configure minimum level.
  */
@@ -399,7 +406,7 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
@@ -476,7 +483,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
    Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
 
-/*
+/**
  * Interface function which glues the logging infra of the NDMP lib with the user context.
  */
 extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int lev, char *msg)
@@ -494,7 +501,7 @@ extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int le
    nis->ua->send_msg("%s\n", msg);
 }
 
-/*
+/**
  * Generic function to query the NDMP server using the NDM_JOB_OP_QUERY_AGENTS
  * operation. Callback is the above ndmp_client_status_handler which prints
  * the data to the user context.
@@ -577,7 +584,7 @@ bail_out:
    ndmp_sess.param = NULL;
 }
 
-/*
+/**
  * Output the status of a NDMP client. Query the DATA agent of a
  * native NDMP server to give some info.
  */

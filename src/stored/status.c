@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * This file handles the status command
- *
  * Kern Sibbald, May MMIII
+ */
+/**
+ * @file
+ * This file handles the status command
  */
 
 #include "bareos.h"
@@ -67,7 +69,7 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames);
 
 static const char *level_to_str(int level);
 
-/*
+/**
  * Status command from Director
  */
 static void output_status(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
@@ -964,7 +966,7 @@ static void list_terminated_jobs(STATUS_PKT *sp)
    }
 }
 
-/*
+/**
  * Convert Job Level into a string
  */
 static const char *level_to_str(int level)
@@ -1012,7 +1014,7 @@ static const char *level_to_str(int level)
    return str;
 }
 
-/*
+/**
  * Send to Director
  */
 static void sendit(const char *msg, int len, STATUS_PKT *sp)
@@ -1046,7 +1048,7 @@ static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
    }
 }
 
-/*
+/**
  * Status command from Director
  */
 bool status_cmd(JCR *jcr)
@@ -1073,7 +1075,7 @@ bool status_cmd(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * .status command from Director
  */
 bool dotstatus_cmd(JCR *jcr)
@@ -1149,7 +1151,7 @@ bool dotstatus_cmd(JCR *jcr)
 #if defined(HAVE_WIN32)
 int bareosstat = 0;
 
-/*
+/**
  * Return a one line status for the tray monitor
  */
 char *bareos_status(char *buf, int buf_len)

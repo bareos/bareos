@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,10 @@
    02110-1301, USA.
 */
 /*
- * Interface definition for Bareos SD Plugins
- *
  * Kern Sibbald, October 2007
+ */
+/**
+ * Interface definition for Bareos SD Plugins
  */
 
 #ifndef __SD_PLUGINS_H
@@ -47,13 +48,11 @@
 #include "bc_types.h"
 #include "lib/plugins.h"
 
-/****************************************************************************
- *                                                                          *
- *                Bareos definitions                                        *
- *                                                                          *
- ****************************************************************************/
-
 /*
+ * Bareos definitions
+ */
+
+/**
  * Bareos Variable Ids (Read)
  */
 typedef enum {
@@ -76,7 +75,7 @@ typedef enum {
    bsdVarPluginDir = 17
 } bsdrVariable;
 
-/*
+/**
  * Bareos Variable Ids (Write)
  */
 typedef enum {
@@ -86,7 +85,7 @@ typedef enum {
    bsdwVarJobLevel = 4
 } bsdwVariable;
 
-/*
+/**
  * Events that are passed to plugin
  */
 typedef enum {
@@ -116,7 +115,7 @@ typedef enum {
    bsdEventChangerUnlock = 24
 } bsdEventType;
 
-#define SD_NR_EVENTS bsdEventChangerUnlock /* keep this updated ! */
+#define SD_NR_EVENTS bsdEventChangerUnlock /**< keep this updated ! */
 
 typedef struct s_bsdEvent {
    uint32_t eventType;
@@ -131,7 +130,7 @@ typedef struct s_sdbareosInfo {
 extern "C" {
 #endif
 
-/*
+/**
  * Bareos interface version and function pointers
  */
 class DCR;
@@ -173,11 +172,9 @@ bRC generate_plugin_event(JCR *jcr, bsdEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 
-/****************************************************************************
- *                                                                          *
- *                Plugin definitions                                        *
- *                                                                          *
- ****************************************************************************/
+/*
+ * Plugin definitions
+ */
 
 typedef enum {
   psdVarName = 1,

@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,18 +20,20 @@
    02110-1301, USA.
 */
 /*
- * Bareos job queue routines.
- *
  * Kern Sibbald, July MMIII
  *
  * This code adapted from Bareos work queue code, which was
  * adapted from "Programming with POSIX Threads", by David R. Butenhof
  */
+/**
+ * @file
+ * Bareos job queue routines.
+ */
 
 #ifndef __JOBQ_H
 #define __JOBQ_H 1
 
-/*
+/**
  * Structure to keep track of job queue request
  */
 struct jobq_item_t {
@@ -38,7 +41,7 @@ struct jobq_item_t {
    JCR *jcr;
 };
 
-/*
+/**
  * Structure describing a work queue
  */
 struct jobq_t {

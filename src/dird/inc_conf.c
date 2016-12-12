@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, March MMIII
+ */
+/*
+ * @file
  * Configuration file parser for new and old Include and
  * Exclude records
- *
- * Kern Sibbald, March MMIII
  */
 
 #include "bareos.h"
@@ -107,7 +109,7 @@ RES_ITEM options_items[] = {
 
 #include "inc_conf.h"
 
-/*
+/**
  * determine used compression algorithms
  */
 void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
@@ -162,7 +164,7 @@ void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
    }
 }
 
-/*
+/**
  * Check if the configured options are valid.
  */
 static inline void is_in_permitted_set(LEX *lc, const char *set_type, const char *permitted_set)
@@ -186,7 +188,7 @@ static inline void is_in_permitted_set(LEX *lc, const char *set_type, const char
    }
 }
 
-/*
+/**
  * Scan for right hand side of Include options (keyword=option) is
  * converted into one or two characters. Verifyopts=xxxx is Vxxxx:
  * Whatever is found is concatenated to the opts string.
@@ -265,7 +267,9 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
    }
 }
 
-/* Store regex info */
+/**
+ * Store regex info
+ */
 static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token, rc;
@@ -313,7 +317,9 @@ static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store Base info */
+/**
+ * Store Base info
+ */
 static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
 {
 
@@ -327,7 +333,9 @@ static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store reader info */
+/**
+ * Store reader info
+ */
 static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
 {
 
@@ -341,7 +349,9 @@ static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store Wild-card info */
+/**
+ * Store Wild-card info
+ */
 static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
@@ -386,7 +396,9 @@ static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store fstype info */
+/**
+ * Store fstype info
+ */
 static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
@@ -409,7 +421,9 @@ static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/* Store drivetype info */
+/**
+ * Store drivetype info
+ */
 static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int token;
@@ -454,7 +468,7 @@ static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * New style options come here
  */
 static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -492,7 +506,7 @@ static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-/*
+/**
  * If current_opts not defined, create first entry
  */
 static void setup_current_opts(void)
@@ -520,7 +534,7 @@ static void setup_current_opts(void)
    res_incexe.opts_list[res_incexe.num_opts++] = fo;
 }
 
-/*
+/**
  * Come here when Options seen in Include/Exclude
  */
 static void store_options_res(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
@@ -595,7 +609,7 @@ static void store_options_res(LEX *lc, RES_ITEM *item, int index, int pass, bool
    }
 }
 
-/*
+/**
  * Store Filename info. Note, for minor efficiency reasons, we
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
@@ -635,7 +649,7 @@ static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclu
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store Filename info. Note, for minor efficiency reasons, we
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
@@ -680,7 +694,9 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
    scan_to_eol(lc);
 }
 
-/* Store exclude directory containing  info */
+/**
+ * Store exclude directory containing info
+ */
 static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
 {
    INCEXE *incexe;
@@ -703,7 +719,7 @@ static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool 
    scan_to_eol(lc);
 }
 
-/*
+/**
  * Store new style FileSet Include/Exclude info
  *
  *  Note, when this routine is called, we are inside a FileSet
@@ -794,7 +810,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all->hdr.inherit_content);
 }
 
-/*
+/**
  * Store FileSet Include/Exclude info
  *  new style includes are handled in store_newinc()
  */

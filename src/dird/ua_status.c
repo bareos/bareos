@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- User Agent Status Command
- *
  * Kern Sibbald, August MMI
+ */
+/**
+ * @file
+ * User Agent Status Command
  */
 
 #include "bareos.h"
@@ -66,7 +68,7 @@ static void client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    }
 }
 
-/*
+/**
  * .status command
  */
 bool dot_status_cmd(UAContext *ua, const char *cmd)
@@ -139,7 +141,7 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * status command
  */
 bool status_cmd(UAContext *ua, const char *cmd)
@@ -499,7 +501,7 @@ static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
    return true;
 }
 
-/*
+/**
  * Check the number of clients in the DB against the configured number of subscriptions
  *
  * Return true if (number of clients < number of subscriptions), else
@@ -846,7 +848,7 @@ static void prt_runtime(UAContext *ua, sched_pkt *sp)
    jcr->setJobType(orig_jobtype);
 }
 
-/*
+/**
  * Sort items by runtime, priority
  */
 static int compare_by_runtime_priority(void *item1, void *item2)
@@ -869,7 +871,7 @@ static int compare_by_runtime_priority(void *item1, void *item2)
    return 0;
 }
 
-/*
+/**
  * Find all jobs to be run in roughly the next 24 hours.
  */
 static void list_scheduled_jobs(UAContext *ua)
@@ -1363,7 +1365,7 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
    }
 }
 
-/*
+/**
  * Input (output of mxt-changer listall):
  *
  * Drive content:         D:Drive num:F:Slot loaded:Volume Name
@@ -1601,7 +1603,7 @@ bail_out:
    return;
 }
 
-/*
+/**
  * Print slots from AutoChanger
  */
 static void status_slots(UAContext *ua, STORERES *store)

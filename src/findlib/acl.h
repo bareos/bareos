@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,21 +20,22 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
+ * @file
  * Properties we use for getting and setting ACLs.
  */
 
 #ifndef __ACL_H
 #define __ACL_H
 
-/*
- *  * Number of acl errors to report per job.
- *   */
+/**
+ * Number of acl errors to report per job.
+ */
 #define ACL_REPORT_ERR_MAX_PER_JOB      25
 
-/*
- *  * Return codes from acl subroutines.
- *   */
+/**
+ * Return codes from acl subroutines.
+ */
 typedef enum {
    bacl_exit_fatal = -1,
    bacl_exit_error = 0,
@@ -47,7 +48,7 @@ typedef enum {
 /* For numeric user/group ids when possible, define BACL_WANT_NUMERIC_IDS */
 /* #define BACL_WANT_NUMERIC_IDS */
 
-/*
+/**
  * We support the following types of ACLs
  */
 typedef enum {
@@ -59,7 +60,7 @@ typedef enum {
    BACL_TYPE_NFS4 = 5
 } bacl_type;
 
-/*
+/**
  * This value is used as ostype when we encounter an invalid acl type.
  * The way the code is build this should never happen.
  */
@@ -91,7 +92,7 @@ struct acl_parse_data_t {
    uint32_t nr_errors;
 };
 
-/*
+/**
  * Internal tracking data.
  */
 struct acl_data_t {

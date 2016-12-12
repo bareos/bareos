@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,13 +21,15 @@
    02110-1301, USA.
 */
 /*
+ * Kern E. Sibbald, MM
+ */
+/**
+ * @file
  * Main routine for finding files on a file system.
  * The heart of the work to find the files on the
  * system is done in find_one.c. Here we have the
  * higher level control as well as the matching
  * routines for the new syntax Options resource.
- *
- * Kern E. Sibbald, MM
  */
 
 #include "bareos.h"
@@ -47,7 +49,7 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level);
 
 static const int fnmode = 0;
 
-/*
+/**
  * Initialize the find files "global" variables
  */
 FF_PKT *init_find_files()
@@ -76,7 +78,7 @@ FF_PKT *init_find_files()
   return ff;
 }
 
-/*
+/**
  * Set find_files options. For the moment, we only
  * provide for full/incremental saves, and setting
  * of save_time. For additional options, see above
@@ -95,7 +97,7 @@ void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
    ff->check_fct = check_fct;
 }
 
-/*
+/**
  * Call this subroutine with a callback subroutine as the first
  * argument and a packet as the second argument, this packet
  * will be passed back to the callback subroutine as the last
@@ -195,7 +197,7 @@ int find_files(JCR *jcr, FF_PKT *ff,
    return 1;
 }
 
-/*
+/**
  * Test if the currently selected directory (in ff->fname) is
  * explicitly in the Include list or explicitly in the Exclude list.
  */
@@ -383,7 +385,7 @@ bool accept_file(FF_PKT *ff)
    return true;
 }
 
-/*
+/**
  * The code comes here for each file examined.
  * We filter the files, then call the user's callback if the file is included.
  */
@@ -431,7 +433,7 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
    }
 }
 
-/*
+/**
  * Terminate find_files() and release all allocated memory
  */
 int term_find_files(FF_PKT *ff)
@@ -516,7 +518,7 @@ findINCEXE *new_preinclude(findFILESET *fileset)
    return fileset->incexe;
 }
 
-/*
+/**
  * Create a new exclude block and prepend it to the list of exclude blocks.
  */
 findINCEXE *new_preexclude(findFILESET *fileset)
@@ -556,7 +558,7 @@ findFOPTS *start_options(FF_PKT *ff)
    return incexe->current_opts;
 }
 
-/*
+/**
  * Used by plugins to define a new options block
  */
 void new_options(FF_PKT *ff, findINCEXE *incexe)

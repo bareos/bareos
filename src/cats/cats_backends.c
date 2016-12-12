@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Dynamic loading of catalog plugins.
- *
  * Marco van Wieringen, November 2010
+ */
+/**
+ * @file
+ * Dynamic loading of catalog plugins.
  */
 
 #include "bareos.h"
@@ -40,7 +42,7 @@
 #define RTLD_NOW 2
 #endif
 
-/*
+/**
  * All loaded backends.
  */
 static alist *loaded_backends = NULL;
@@ -278,7 +280,7 @@ void db_flush_backends(void)
    }
 }
 #else
-/*
+/**
  * Dummy bareos backend function replaced with the correct one at install time.
  */
 B_DB *db_init_database(JCR *jcr,

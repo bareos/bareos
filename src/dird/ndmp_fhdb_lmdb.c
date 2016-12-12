@@ -20,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * FHDB using LMDB for NDMP Data Management Application (DMA)
- *
  * Marco van Wieringen & Philipp Storz, May 2015
+ */
+/*
+ * @file
+ * FHDB using LMDB for NDMP Data Management Application (DMA)
  */
 
 #include "bareos.h"
@@ -365,7 +367,7 @@ bail_out:
    return 1;
 }
 
-/*
+/**
  * This glues the NDMP File Handle DB with internal code.
  */
 void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)

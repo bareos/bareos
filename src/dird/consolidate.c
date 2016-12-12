@@ -19,13 +19,15 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- consolidate.c -- responsible for doing consolidation jobs
- *
- * based on admin.c
  * Philipp Storz, May 2016
+ */
+/** @file
+ * responsible for doing consolidation jobs
  *
  * Basic tasks done here:
  *   run a virtual full job for all jobs that are configured to be always incremental
+ * based on admin.c
+ *
  */
 
 #include "bareos.h"
@@ -42,6 +44,10 @@ bool do_consolidate_init(JCR *jcr)
    return true;
 }
 
+/**
+ * Start a Virtual(Full) Job that creates a new virtual backup
+ * containing the jobids given in jcr->vf_jobids
+ */
 static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
 {
    JobId_t jobid;
@@ -65,7 +71,9 @@ static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
    free_ua_context(ua);
 }
 
-/*
+/**
+ * The actual consolidation worker
+ *
  * Returns: false on failure
  *          true  on success
  */
@@ -152,7 +160,7 @@ bool do_consolidate(JCR *jcr)
          jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
          Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
-         /*
+         /**
           * Consolidation of zero or one job does not make sense, we leave it like it is
           */
          if (incrementals_total < 1) {
@@ -160,7 +168,7 @@ bool do_consolidate(JCR *jcr)
             continue;
          }
 
-         /*
+         /**
           * Calculate limit for query. We specify how many incrementals should be left.
           * the limit is total number of incrementals - number required - 1
           */
@@ -191,7 +199,7 @@ bool do_consolidate(JCR *jcr)
          jobids = bstrdup(jobids_ctx.list);
          p = jobids;
 
-         /*
+         /**
           * Check if we need to skip the first (full) job from consolidation
           */
          if (job->AlwaysIncrementalMaxFullAge) {
@@ -211,7 +219,7 @@ bool do_consolidate(JCR *jcr)
                *p = '\0';
             }
 
-            /*
+            /**
              * Get db record of oldest jobid and check its age
              */
             memset(&jcr->previous_jr, 0, sizeof(jcr->previous_jr));
@@ -228,7 +236,7 @@ bool do_consolidate(JCR *jcr)
             bstrftimes(sdt_allowed, sizeof(sdt_allowed), oldest_allowed_starttime);
             bstrftimes(sdt_starttime, sizeof(sdt_starttime), starttime);
 
-            /*
+            /**
              * Check if job is older than AlwaysIncrementalMaxFullAge
              */
             Jmsg(jcr, M_INFO, 0,  _("check full age: full is %s, allowed is %s\n"), sdt_starttime, sdt_allowed);
@@ -257,7 +265,7 @@ bool do_consolidate(JCR *jcr)
             Jmsg(jcr, M_INFO, 0, _("after ConsolidateFull: jobids: %s\n"), p);
          }
 
-         /*
+         /**
           * Set the virtualfull jobids to be consolidated
           */
          if (!jcr->vf_jobids) {
@@ -271,7 +279,7 @@ bool do_consolidate(JCR *jcr)
    }
 
 bail_out:
-   /*
+   /**
     * Restore original job back to jcr.
     */
    jcr->res.job = tmpjob;
@@ -285,7 +293,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Release resources allocated during backup.
  */
 void consolidate_cleanup(JCR *jcr, int TermCode)

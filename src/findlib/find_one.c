@@ -21,10 +21,12 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MM
+ */
+/**
+ * @file
  * This file was derived from GNU TAR source code. Except for a few key
  * ideas, it has been entirely rewritten for Bareos.
- *
- * Kern Sibbald, MM
  *
  * Thanks to the TAR programmers.
  */
@@ -41,7 +43,7 @@
 extern int32_t name_max;              /* filename max length */
 extern int32_t path_max;              /* path name max length */
 
-/*
+/**
  * Create a new directory Find File packet, but copy
  * some of the essential info from the current packet.
  * However, be careful to zero out the rest of the
@@ -67,7 +69,7 @@ static inline FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
    return dir_ff_pkt;
 }
 
-/*
+/**
  * Free the temp directory ff_pkt
  */
 static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
@@ -87,7 +89,7 @@ static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
    free(dir_ff_pkt);
 }
 
-/*
+/**
  * Check to see if we allow the file system type of a file or directory.
  * If we do not have a list of file system types, we accept anything.
  */
@@ -124,7 +126,7 @@ static bool accept_fstype(FF_PKT *ff, void *dummy)
 }
 #endif
 
-/*
+/**
  * Check to see if we allow the drive type of a file or directory.
  * If we do not have a list of drive types, we accept anything.
  */
@@ -161,7 +163,7 @@ static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
 }
 #endif
 
-/*
+/**
  * This function determines whether we can use getattrlist()
  * It's odd, but we have to use the function to determine that...
  * Also, the man pages talk about things as if they were implemented.
@@ -196,7 +198,7 @@ static bool volume_has_attrlist(const char *fname)
    return false;
 }
 
-/*
+/**
  * check for BSD nodump flag
  */
 static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
@@ -212,7 +214,7 @@ static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
    return false;                      /* do backup */
 }
 
-/*
+/**
  * check for sizes
  */
 static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
@@ -264,7 +266,7 @@ static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
    }
 }
 
-/*
+/**
  * Check if a file have changed during backup and display an error
  */
 bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
@@ -316,7 +318,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
    return false;
 }
 
-/*
+/**
  * For incremental/diffential or accurate backups, we
  * determine if the current file has changed.
  */
@@ -374,7 +376,7 @@ static inline bool have_ignoredir(FF_PKT *ff_pkt)
    return false;
 }
 
-/*
+/**
  * Restore file times.
  */
 static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
@@ -408,7 +410,7 @@ static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
 }
 
 #ifdef HAVE_DARWIN_OS
-/*
+/**
  * Handling of a HFS+ attributes.
  */
 static inline int process_hfsattributes(JCR *jcr, FF_PKT *ff_pkt,
@@ -435,7 +437,7 @@ static inline int process_hfsattributes(JCR *jcr, FF_PKT *ff_pkt,
 }
 #endif
 
-/*
+/**
  * Handling of a hardlinked file.
  */
 static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
@@ -480,7 +482,7 @@ static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
    return rtn_stat;
 }
 
-/*
+/**
  * Handling of a regular file.
  */
 static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
@@ -518,7 +520,7 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
    return rtn_stat;
 }
 
-/*
+/**
  * Handling of a symlink.
  */
 static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
@@ -555,7 +557,7 @@ static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
    return rtn_stat;
 }
 
-/*
+/**
  * Handling of a directory.
  */
 static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
@@ -802,7 +804,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    return rtn_stat;
 }
 
-/*
+/**
  * Handling of a special file.
  */
 static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
@@ -849,7 +851,7 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
    return rtn_stat;
 }
 
-/*
+/**
  * See if we need to perform any processing for a given file.
  */
 static inline bool needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
@@ -895,7 +897,7 @@ static inline bool needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
    return true;
 }
 
-/*
+/**
  * Find a single file.
  *
  * handle_file is the callback for handling the file.

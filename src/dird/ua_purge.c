@@ -21,13 +21,15 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, February MMII
+ */
+/**
+ * @file
  * BAREOS Director -- User Agent Database Purge Command
  *
  * Purges Files from specific JobIds
  * or
  * Purges Jobs from Volumes
- *
- * Kern Sibbald, February MMII
  */
 
 #include "bareos.h"
@@ -48,7 +50,7 @@ static const char *select_jobs_from_client =
    "SELECT JobId, PurgedFiles FROM Job "
    "WHERE ClientId=%s";
 
-/*
+/**
  * Purge records from database
  *
  */
@@ -245,7 +247,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Purge File records from the database. For any Job which
  * is older than the retention period, we unconditionally delete
  * all File records for that Job.  This is simple enough that no
@@ -294,7 +296,7 @@ static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
 
 
 
-/*
+/**
  * Purge Job records from the database. For any Job which
  * is older than the retention period, we unconditionally delete
  * it and all File records for that Job.  This is simple enough that no
@@ -346,7 +348,7 @@ static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
 }
 
 
-/*
+/**
  * Remove File records from a list of JobIds
  */
 void purge_files_from_jobs(UAContext *ua, char *jobs)
@@ -372,7 +374,7 @@ void purge_files_from_jobs(UAContext *ua, char *jobs)
    Dmsg1(050, "Mark purged sql=%s\n", query.c_str());
 }
 
-/*
+/**
  * Delete jobs (all records) from the catalog in groups of 1000
  *  at a time.
  */
@@ -403,7 +405,7 @@ void purge_job_list_from_catalog(UAContext *ua, del_ctx &del)
    }
 }
 
-/*
+/**
  * Delete files from a list of jobs in groups of 1000
  *  at a time.
  */
@@ -435,7 +437,7 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del)
    }
 }
 
-/*
+/**
  * This resets quotas in the database table Quota for the matching client
  * It is necessary to purge this if you want to reset the quota and let it count
  * from scratch.
@@ -465,7 +467,7 @@ static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client)
    return true;
 }
 
-/*
+/**
  * Change the type of the next copy job to backup.
  * We need to upgrade the next copy of a normal job,
  * and also upgrade the next copy when the normal job
@@ -505,7 +507,7 @@ void upgrade_copies(UAContext *ua, char *jobs)
    db_unlock(ua->db);
 }
 
-/*
+/**
  * Remove all records from catalog for a list of JobIds
  */
 void purge_jobs_from_catalog(UAContext *ua, char *jobs)
@@ -551,7 +553,7 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
 void purge_files_from_volume(UAContext *ua, MEDIA_DBR *mr )
 {} /* ***FIXME*** implement */
 
-/*
+/**
  * Returns: 1 if Volume purged
  *          0 if Volume not purged
  */
@@ -606,7 +608,7 @@ bail_out:
    return purged;
 }
 
-/*
+/**
  * This routine will check the JobMedia records to see if the
  *   Volume has been purged. If so, it marks it as such and
  *
@@ -656,7 +658,7 @@ bail_out:
    return purged;
 }
 
-/*
+/**
  * Called here to send the appropriate commands to the SD
  *  to do truncate on purge.
  */
@@ -737,7 +739,7 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
    }
 }
 
-/*
+/**
  * Implement Bareos bconsole command  purge action
  * purge action= pool= volume= storage= devicetype=
  */
@@ -884,7 +886,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  * If volume status is Append, Full, Used, or Error, mark it Purged
  * Purged volumes can then be recycled (if enabled).
  */

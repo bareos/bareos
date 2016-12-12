@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,12 +21,13 @@
 /*
  * Marco van Wieringen, August 2013.
  */
-
-/*
+/**
+ * @file
  * Circular buffer used for producer/consumer problem with pthread.
  */
 
-#define QSIZE 10              /* # of pointers in the queue */
+
+#define QSIZE 10              /**< # of pointers in the queue */
 
 class circbuf : public SMARTALLOC {
    int m_size;
@@ -34,10 +35,10 @@ class circbuf : public SMARTALLOC {
    int m_next_out;
    int m_capacity;
    bool m_flush;
-   pthread_mutex_t m_lock;    /* Lock the structure */
-   pthread_cond_t m_notfull;  /* Full -> not full condition */
-   pthread_cond_t m_notempty; /* Empty -> not empty condition */
-   void *m_data[QSIZE];       /* Circular buffer of pointers */
+   pthread_mutex_t m_lock;    /**< Lock the structure */
+   pthread_cond_t m_notfull;  /**< Full -> not full condition */
+   pthread_cond_t m_notempty; /**< Empty -> not empty condition */
+   void *m_data[QSIZE];       /**< Circular buffer of pointers */
 
 public:
    circbuf();
@@ -53,7 +54,7 @@ public:
    int capacity() const { return m_capacity; };
 };
 
-/*
+/**
  * Constructor
  */
 inline circbuf::circbuf()
@@ -61,7 +62,7 @@ inline circbuf::circbuf()
    init();
 }
 
-/*
+/**
  * Destructor
  */
 inline circbuf::~circbuf()

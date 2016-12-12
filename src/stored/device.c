@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,6 +21,10 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, MM, MMI
+ */
+/**
+ * @file
  * Higher Level Device routines.
  * Knows about Bareos tape labels and such
  *
@@ -43,8 +47,6 @@
  * volume, ...) locking a device is done for an operation
  * that takes a short time such as writing data to the
  * device.
- *
- * Kern Sibbald, MM, MMI
  */
 
 #include "bareos.h"                   /* pull in global headers */
@@ -52,7 +54,7 @@
 
 /* Forward referenced functions */
 
-/*
+/**
  * This is the dreaded moment. We either have an end of
  * medium condition or worse, an error condition.
  * Attempt to "recover" by obtaining a new Volume.
@@ -212,7 +214,7 @@ void set_start_vol_position(DCR *dcr)
    }
 }
 
-/*
+/**
  * We have a new Volume mounted, so reset the Volume parameters
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
@@ -228,7 +230,7 @@ void set_new_volume_parameters(DCR *dcr)
    dcr->NewVol = false;
 }
 
-/*
+/**
  * We are now in a new Volume file, so reset the Volume parameters
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
@@ -244,7 +246,7 @@ void set_new_file_parameters(DCR *dcr)
    dcr->WroteVol = false;
 }
 
-/*
+/**
  *   First Open of the device. Expect dev to already be initialized.
  *
  *   This routine is used only when the Storage daemon starts
@@ -295,7 +297,7 @@ bail_out:
    return ok;
 }
 
-/*
+/**
  * Make sure device is open, if not do so
  */
 bool open_device(DCR *dcr)
@@ -321,7 +323,7 @@ bool open_device(DCR *dcr)
    return true;
 }
 
-/*
+/**
  * Position to the first file on this volume
  */
 BSR *position_device_to_first_file(JCR *jcr, DCR *dcr)
@@ -345,7 +347,7 @@ BSR *position_device_to_first_file(JCR *jcr, DCR *dcr)
    return bsr;
 }
 
-/*
+/**
  * See if we can reposition.
  *
  * Returns: true  if at end of volume

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,10 @@
  /*
   * Originally written by Kern Sibbald for inclusion in apcupsd,
   * but heavily modified for BAREOS
+  */
+ /*
+  * @file
+  * tcp server code
   */
 
 #include "bareos.h"
@@ -59,7 +63,7 @@ struct s_sockfd {
    int port;
 };
 
-/*
+/**
  * Stop the Threaded Network Server if its realy running in a seperate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
@@ -71,7 +75,7 @@ void bnet_stop_thread_server_tcp(pthread_t tid)
    }
 }
 
-/*
+/**
  * Perform a cleanup for the Threaded Network Server check if there is still
  * something to do or that the cleanup already took place.
  */
@@ -108,7 +112,7 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
    Dmsg0(100, "cleanup_bnet_thread_server_tcp: finish\n");
 }
 
-/*
+/**
  * Become Threaded Network Server
  *
  * This function is able to handle multiple server ips in

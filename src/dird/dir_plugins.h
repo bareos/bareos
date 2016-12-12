@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Interface definition for Bareos DIR Plugins
- *
  * Kern Sibbald, October 2007
+ */
+/**
+ * @file
+ * Interface definition for Bareos DIR Plugins
  */
 
 #ifndef __DIR_PLUGINS_H
@@ -47,13 +49,11 @@
 #include "bc_types.h"
 #include "lib/plugins.h"
 
-/****************************************************************************
- *                                                                          *
- *                Bareos definitions                                        *
- *                                                                          *
- ****************************************************************************/
-
 /*
+ *  Bareos definitions
+ */
+
+/**
  * Bareos Variable Ids (Read)
  */
 typedef enum {
@@ -86,7 +86,7 @@ typedef enum {
    bDirVarReadBytes = 27
 } brDirVariable;
 
-/*
+/**
  * Bareos Variable Ids (Write)
  */
 typedef enum {
@@ -96,7 +96,7 @@ typedef enum {
    bwDirVarJobLevel = 4
 } bwDirVariable;
 
-/*
+/**
  * Events that are passed to plugin
  */
 typedef enum {
@@ -128,7 +128,7 @@ typedef struct s_dirbareosInfo {
 extern "C" {
 #endif
 
-/*
+/**
  * Bareos interface version and function pointers
  */
 typedef struct s_dirbareosFuncs {
@@ -145,7 +145,7 @@ typedef struct s_dirbareosFuncs {
                        int level, const char *fmt, ...);
 } bDirFuncs;
 
-/*
+/**
  * Bareos Core Routines -- not used within a plugin
  */
 #ifdef DIRECTOR_DAEMON
@@ -159,12 +159,9 @@ bRC generate_plugin_event(JCR *jcr, bDirEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 
-/****************************************************************************
- *                                                                          *
- *                Plugin definitions                                        *
- *                                                                          *
- ****************************************************************************/
-
+/**
+ * Plugin definitions
+ */
 typedef enum {
   pDirVarName = 1,
   pDirVarDescription = 2

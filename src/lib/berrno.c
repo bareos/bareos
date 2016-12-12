@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,14 +20,16 @@
    02110-1301, USA.
 */
 /*
+ * Kern Sibbald, July MMIV
+ */
+/**
+ * @file
  * BAREOS errno handler
  *
  * berrno is a simplistic errno handler that works for
  * Unix, Win32, and BAREOS bpipes.
  *
  * See berrno.h for how to use berrno.
- *
- * Kern Sibbald, July MMIV
  */
 
 #include "bareos.h"

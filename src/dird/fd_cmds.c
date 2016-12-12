@@ -21,9 +21,10 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Director -- fd_cmds.c -- send commands to File daemon
- *
  * Kern Sibbald, October MM
+ */
+/**
+ * fd_cmds.c -- send commands to File daemon
  *
  * This routine is run as a separate thread.  There may be more
  * work to be done to make it totally reentrant!!!!
@@ -31,6 +32,7 @@
  * Utility functions for sending info to File Daemon.
  * These functions are used by both backup and verify.
  */
+
 
 #include "bareos.h"
 #include "dird.h"
@@ -101,7 +103,7 @@ static inline utime_t get_heartbeat_interval(CLIENTRES *res)
    return heartbeat;
 }
 
-/*
+/**
  * Open connection to File daemon.
  *
  * Try connecting every retry_interval (default 10 sec), and
@@ -321,7 +323,7 @@ static inline void send_since_time(JCR *jcr)
    }
 }
 
-/*
+/**
  * Send level command to FD.
  * Used for backup jobs and estimate command.
  */
@@ -370,7 +372,7 @@ bool send_level_command(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Send either an Included or an Excluded list to FD
  */
 static bool send_fileset(JCR *jcr)
@@ -621,7 +623,7 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
    return true;
 }
 
-/*
+/**
  * Send include list to File daemon
  */
 bool send_include_list(JCR *jcr)
@@ -634,7 +636,7 @@ bool send_include_list(JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Send exclude list to File daemon
  *   Under the new scheme, the Exclude list
  *   is part of the FileSet sent with the
@@ -666,7 +668,7 @@ static inline bool have_client_runscripts(alist *run_scripts)
    return retval;
 }
 
-/*
+/**
  * Send RunScripts to File daemon
  * 1) We send all runscript to FD, they can be executed Before, After, or twice
  * 2) Then, we send a "RunBeforeNow" command to the FD to tell him to do the
@@ -759,7 +761,7 @@ struct OBJ_CTX {
    int count;
 };
 
-/*
+/**
  * restore_object_handler is called for each file found
  */
 static int restore_object_handler(void *ctx, int num_fields, char **row)
@@ -919,7 +921,7 @@ bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global)
    return true;
 }
 
-/*
+/**
  * Read the attributes from the File daemon for
  * a Verify job and store them in the catalog.
  */
@@ -1053,7 +1055,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    return 1;
 }
 
-/*
+/**
  * Cancel a job running in the File daemon
  */
 bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
@@ -1080,7 +1082,7 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
    return true;
 }
 
-/*
+/**
  * Get the status of a remote File Daemon.
  */
 void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
@@ -1131,7 +1133,7 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
    return;
 }
 
-/*
+/**
  * resolve a host on a filedaemon
  */
 void do_client_resolve(UAContext *ua, CLIENTRES *client)
@@ -1184,7 +1186,7 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
    return;
 }
 
-/*
+/**
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
  */

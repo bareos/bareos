@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * Common plugin definitions
- *
  * Kern Sibbald, October 2007
+ */
+/**
+ * @file
+ * Common plugin definitions
  */
 #ifndef __PLUGINS_H
 #define __PLUGINS_H
@@ -34,7 +36,7 @@
  *                                                                          *
  ****************************************************************************/
 
-/*
+/**
  * Universal return codes from all plugin functions
  */
 typedef enum {
@@ -69,7 +71,7 @@ public:
    void *pHandle;
 };
 
-/*
+/**
  * Context packet as first argument of all functions
  */
 struct bpContext {

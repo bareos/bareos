@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,9 +20,11 @@
    02110-1301, USA.
 */
 /*
- * Bareos File Daemon  verify.c  Verify files.
- *
  * Kern Sibbald, October MM
+ */
+/**
+ * @file
+ * Verify files.
  */
 
 #include "bareos.h"
@@ -39,7 +42,7 @@ static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
                                   DIGEST **digest, int *digest_stream,
                                   char **digest_buf, const char **digest_name);
 
-/*
+/**
  * Find all the requested files and send attributes
  * to the Director.
  *
@@ -65,7 +68,7 @@ void do_verify(JCR *jcr)
    jcr->setJobStatus(JS_Terminated);
 }
 
-/*
+/**
  * Called here by find() for each file.
  *
  *  Find the file, compute the MD5 or SHA1 and send it back to the Director
@@ -251,7 +254,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    return 1;
 }
 
-/*
+/**
  * Compute message digest for the file specified by ff_pkt.
  * In case of errors we need the job control record and file name.
  */
@@ -301,7 +304,7 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
    return 0;
 }
 
-/*
+/**
  * Read message digest of bfd, updating digest
  * In case of errors we need the job control record and file name.
  */
@@ -354,7 +357,7 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
    return 0;
 }
 
-/*
+/**
  * Calculate the chksum of a whole file and updates:
  * - digest
  * - digest_stream
@@ -409,7 +412,7 @@ static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt, DIGEST **digest,
    return true;
 }
 
-/*
+/**
  * Compare a files chksum against a stored chksum.
  *
  * Returns: true   if chksum matches.

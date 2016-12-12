@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,16 +20,18 @@
    02110-1301, USA.
 */
 /*
- * record.c -- Volume (tape/disk) record handling functions
- *
  * Kern Sibbald, April MMI
  * added BB02 format October MMII
+ */
+/**
+ * @file
+ * Volume (tape/disk) record handling functions
  */
 
 #include "bareos.h"
 #include "stored.h"
 
-/*
+/**
  * Convert a FileIndex into a printable
  * ASCII string.  Not reentrant.
  *
@@ -68,7 +71,7 @@ const char *FI_to_ascii(char *buf, int fi)
    }
 }
 
-/*
+/**
  * Convert a Stream ID into a printable
  * ASCII string. Not reentrant.
  *
@@ -287,7 +290,7 @@ void dump_record(const char *tag, const DEV_RECORD *rec)
    Dmsg2(100, "%-14s %s\n", "own_mempool", rec->own_mempool ? "true" : "false");
 }
 
-/*
+/**
  * Return a new record entity
  */
 DEV_RECORD *new_record(bool with_data)
@@ -345,7 +348,7 @@ void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src)
    dst->own_mempool = own_mempool;
 }
 
-/*
+/**
  * Free the record entity
  */
 void free_record(DEV_RECORD *rec)
@@ -434,7 +437,7 @@ static inline ssize_t write_data_to_block(DEV_BLOCK *block, const DEV_RECORD *re
    return len;
 }
 
-/*
+/**
  * Write a Record to the block
  *
  * Returns: false means the block could not be written to tape/disk.
@@ -498,7 +501,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Write a Record to the block
  *
  *  Returns: false on failure (none or partially written)
@@ -652,7 +655,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Test if we can write whole record to the block
  *
  *  Returns: false on failure
@@ -668,7 +671,7 @@ uint64_t get_record_address(const DEV_RECORD *rec)
    return ((uint64_t)rec->File)<<32 | rec->Block;
 }
 
-/*
+/**
  * Read a Record from the block
  *
  * Returns: false if nothing read or if the continuation record does not match.

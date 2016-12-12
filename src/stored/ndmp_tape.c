@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,6 +20,10 @@
    02110-1301, USA.
 */
 /*
+ * Marco van Wieringen, May 2012
+ */
+/**
+ * @file
  * ndmp_tape.c implements the NDMP TAPE service which interfaces to
  * the internal Bareos infrstructure. This is implemented as a seperate
  * daemon protocol on a different port (10000 NDMP by default) which
@@ -29,8 +33,6 @@
  * into records for NDMP packets travel via the NDMP protocol library
  * which is named libbareosndmp and the data gets turned into native Bareos
  * tape records.
- *
- * Marco van Wieringen, May 2012
  */
 
 #include "bareos.h"
@@ -59,7 +61,7 @@
 
 #include "ndmp/ndmagents.h"
 
-/*
+/**
  * Structure used to pass arguments to the ndmp_thread_server thread
  * via a void * argument. Things like the addresslist, maximum number
  * of clients and the client workqueue to use are passed using this
@@ -71,7 +73,7 @@ struct ndmp_thread_server_args {
    workq_t *client_wq;
 };
 
-/*
+/**
  * Internal structure to keep track of private data for a NDMP session.
  * Referenced via (struct ndm_session)->session_handle.
  */
@@ -84,7 +86,7 @@ struct ndmp_session_handle {
    JCR *jcr;                       /* Internal JCR bound to this NDMP session */
 };
 
-/*
+/**
  * Internal structure to keep track of private data.
  */
 struct ndmp_internal_state {
@@ -141,7 +143,7 @@ static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
    return level;
 }
 
-/*
+/**
  * Interface function which glues the logging infra of the NDMP lib with the daemon.
  */
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg)
@@ -218,7 +220,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
    Dmsg3(internal_level, "NDMP: [%s] [%d] %s\n", tag, level, msg);
 }
 
-/*
+/**
  * Clear text authentication callback.
  */
 extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass)
@@ -257,7 +259,7 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
    return 0;
 }
 
-/*
+/**
  * MD5 authentication callback.
  */
 extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[16])
@@ -302,7 +304,7 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
    return 0;
 }
 
-/*
+/**
  * Save a record using the native routines.
  */
 static inline bool bndmp_write_data_to_block(JCR *jcr,
@@ -351,7 +353,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Read a record using the native routines.
  *
  * data_length == 0 = EOF
@@ -462,7 +464,7 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
    return true;
 }
 
-/*
+/**
  * Generate virtual file attributes for the whole NDMP stream.
  */
 static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
@@ -527,7 +529,7 @@ static int bndmp_simu_flush_weof(struct ndm_session *sess)
    return 0;
 }
 
-/*
+/**
  * Search the JCRs for one with the given security key.
  */
 static inline JCR *get_jcr_by_security_key(char *security_key)
@@ -1254,8 +1256,8 @@ bail_out:
    return NULL;
 }
 
-/*
- * Create a seperate thread that accepts NDMP connections.
+/**
+ * Create a separate thread that accepts NDMP connections.
  * We don't use the Bareos native bnet_thread_server_tcp which
  * uses the bsock class which is a bit to much overhead
  * for simple sockets which we need and has all kinds of
