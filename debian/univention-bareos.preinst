@@ -1,7 +1,7 @@
 #!/bin/sh
 
 if [ "$1" = "install" ]; then
-	test -e /usr/lib/univention-install/63univention-bareos-uninstall.uinst && rm /usr/lib/univention-install/63univention-bareos-uninstall.uinst
+	test -f /usr/lib/univention-install/63univention-bareos-uninstall.uinst && rm /usr/lib/univention-install/63univention-bareos-uninstall.uinst
 fi
 
 # dh_installdeb will replace this with shell code automatically

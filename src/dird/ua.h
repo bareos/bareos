@@ -90,7 +90,7 @@ private:
    int rcode_to_acltype(int rcode);
    void log_audit_event_acl_failure(int acl, const char *item);
    void log_audit_event_acl_success(int acl, const char *item);
-   void set_command_definition(ua_cmdstruct *cmd) { cmddef = cmd; }
+   void set_command_definition(ua_cmdstruct *cmdstruct) { cmddef = cmdstruct; }
 
 public:
    /*

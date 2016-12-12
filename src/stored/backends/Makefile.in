@@ -75,7 +75,7 @@ STORED_RESTYPES = autochanger device director ndmp messages storage
 .c.lo:
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(ELASTO_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -84,12 +84,12 @@ $(ELASTO_LOBJS):
 $(CHEPHFS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(CEPHFS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
-	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(GFAPI_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
-	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(OBJECT_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -98,7 +98,7 @@ $(OBJECT_LOBJS):
 $(RADOS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(RADOS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
-	if [ -e "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 #-------------------------------------------------------------------------
 all: Makefile $(BUILD_BACKENDS)
@@ -186,7 +186,7 @@ install-config:
 		$(MKDIR) $$DESTCONFDIR; \
 		for RESTYPE in $(STORED_RESTYPES); do \
 			for f in $$SRCCONFDIR/$$RESTYPE/*.conf $$SRCCONFDIR/$$RESTYPE/*.conf.example; do \
-				if test -e "$$f"; then \
+				if test -f "$$f"; then \
 					RESDIR="$$DESTCONFDIR/$$RESTYPE"; \
 					$(MKDIR) "$$RESDIR"; \
 					RES=`basename "$$f"`; \
