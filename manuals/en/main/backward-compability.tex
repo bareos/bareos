@@ -56,19 +56,19 @@ If you want to be able to switch back from Bareos to Bacula after using a Bareos
 you have to enable the compatible mode in the Bareos storage daemon to have it write the data in the same
 format as the Bacula storage daemon.
 
-The Bareos File Daemon is compatible with all version of the Bacula director (tested with version 5.2.13 and lower)
-when you enable the compatible mode in the config of the file daemon.
-The compatible option was set by default in Bareos $<$ 15.2.0, and is disabled by default since Version
+The \bareosFd is compatible with all version of the Bacula director (tested with version 5.2.13 and lower)
+when you enable the compatible mode in the configuration of the \bareosFd.
+The compatible option was set by default in Bareos $<$ 15.2.0, and is disabled by default since
 \sinceVersion{fd}{Compatible = no}{15.2.0}.
-To be sure this is enabled you can explicitly set the compatible option
-by putting the following in the \file{bareos-fd.conf}:
 
-\begin{bconfig}{Compatibility directive}
-compatible=true
-\end{bconfig}
+To be sure this is enabled you can explicitly set the compatible option:
 
+\resourceDirectiveValue{Fd}{Client}{Compatible}{True}
 
-A Bareos director can only talk to Bacula file daemons of version 2.0 or higher.
+A \bareosDir can only talk to Bacula file daemons of version 2.0 or higher.
+Through a change in the Bacula network protocols,
+it is currently not possible to use a Bacula file daemon $\ge$ 6.0 with a \bareosDir.
+
 
 \newcommand{\bareoscolor}{\textcolor{blue}{Bareos\ }}
 \newcommand{\baculacolor}{\textcolor{red}{Bacula\ }}
@@ -83,7 +83,7 @@ These combinations of Bareos and Bacula are know to work together:
   \hline
   \bareoscolor & \bareoscolor & \bareoscolor & \\
   \hline
-  \bareoscolor & \bareoscolor & \baculacolor $\ge$ 2.0 & \\
+  \bareoscolor & \bareoscolor & 2.0 $\leq$ \baculacolor $<$ 6.0 & \\
   \hline
   \baculacolor & \baculacolor & \baculacolor & \\
   \hline
