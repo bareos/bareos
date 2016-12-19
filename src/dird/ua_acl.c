@@ -408,7 +408,7 @@ STORERES *UAContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
    memset(&storage_dbr, 0, sizeof(storage_dbr));
 
    storage_dbr.StorageId = id;
-   if (db_get_storage_record(jcr, db, &storage_dbr)) {
+   if (db->get_storage_record(jcr, &storage_dbr)) {
       return GetStoreResWithName(storage_dbr.Name, audit_event, lock);
    }
    return NULL;

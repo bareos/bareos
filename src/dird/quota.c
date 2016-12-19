@@ -21,16 +21,18 @@
    02110-1301, USA.
 */
 /*
- * Quota procesing routines.
- *
  * Matthew Ife Matthew.Ife@ukfast.co.uk
+ */
+/**
+ * @file
+ * Quota processing routines.
  */
 
 #include "bareos.h"
 #include "dird.h"
 
 #define dbglvl 100
-/*
+/**
  * This function returns the total number of bytes difference remaining before going over quota.
  * Returns: unsigned long long containing remaining bytes before going over quota.
  *          0 if over quota
@@ -91,7 +93,7 @@ uint64_t fetch_remaining_quotas(JCR *jcr)
    return remaining;
 }
 
-/*
+/**
  * This function returns a truth value depending on the state of hard quotas.
  * The function compares the total jobbytes against the hard quota.
  * If the value is true, the quota is reached and termination of the job should occur.
@@ -137,7 +139,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * This function returns a truth value depending on the state of soft quotas.
  * The function compares the total jobbytes against the soft quota.
  *
@@ -225,9 +227,9 @@ bool check_softquotas(JCR *jcr)
              * If gracetime has expired update else check more if not set softlimit yet then set and bail out.
              */
             if (jcr->res.client->QuotaLimit < 1) {
-               if (!db_update_quota_softlimit(jcr, jcr->db, &jcr->jr)) {
+               if (!jcr->db->update_quota_softlimit(jcr, &jcr->jr)) {
                   Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"),
-                        db_strerror(jcr->db));
+                        jcr->db->strerror());
                }
                Jmsg(jcr, M_WARNING, 0, _("Soft Quota exceeded and Grace Period expired.\n"));
                Jmsg(jcr, M_INFO, 0, _("Setting Burst Quota to %d Bytes.\n"),
@@ -265,9 +267,9 @@ bool check_softquotas(JCR *jcr)
       CLIENT_DBR cr;
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jcr->jr.ClientId;
-      if (!db_reset_quota_record(jcr, jcr->db, &cr)) {
+      if (!jcr->db->reset_quota_record(jcr, &cr)) {
          Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s\n"),
-            db_strerror(jcr->db));
+            jcr->db->strerror());
       } else {
          jcr->res.client->GraceTime = 0;
          Jmsg(jcr, M_INFO, 0, _("Soft Quota reset, Grace Period ends now.\n"));

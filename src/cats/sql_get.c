@@ -20,14 +20,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
+/*
+ * Kern Sibbald, March 2000
+ */
 /**
+ * @file
  * BAREOS Catalog Database Get record interface routines
  *
  * Note, these routines generally get a record by id or
  * by name.  If more logic is involved, the routine
  * should be in find.c
- *
- * Kern Sibbald, March 2000
  */
 
 #include "bareos.h"
@@ -960,13 +962,16 @@ int B_DB::get_num_media_records(JCR *jcr)
  */
 bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t *ids[])
 {
+   SQL_ROW row;
+   int i = 0;
    bool ok = true;
    char ed1[50];
    char esc[MAX_NAME_LENGTH * 2 + 1];
    POOL_MEM buf(PM_MESSAGE);
-
+   bool have_volumes = false;
    db_lock(this);
    *ids = NULL;
+   DBId_t *id;
 
    if (*volumes.c_str()) {
       have_volumes = true;
@@ -1068,30 +1073,6 @@ bool B_DB::get_query_dbids(JCR *jcr, POOL_MEM &query, dbid_list &ids)
    }
    db_unlock(this);
    return ok;
-}
-
-bool verify_media_ids_from_single_storage(JCR *jcr, B_DB *mdb, dbid_list &mediaIds)
-{
-   MEDIA_DBR mr;
-   DBId_t storageId = 0;
-
-   /*
-    * verify that all media use the same storage.
-    */
-   for (int i = 0; i < mediaIds.size(); i++) {
-      memset(&mr, 0, sizeof(mr));
-      mr.MediaId = mediaIds.get(i);
-      if (!db_get_media_record(jcr, mdb, &mr)) {
-         Mmsg1(mdb->errmsg, _("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
-         Jmsg(jcr, M_ERROR, 0, "%s", mdb->errmsg);
-         return false;
-      } else if (i == 0) {
-         storageId = mr.StorageId;
-      } else if (storageId != mr.StorageId) {
-         return false;
-      }
-   }
-   return true;
 }
 
 
@@ -1224,7 +1205,9 @@ bail_out:
    return retval;
 }
 
-/* Remove all MD5 from a query (can save lot of memory with many files) */
+/**
+ * Remove all MD5 from a query (can save lot of memory with many files)
+ */
 static void strip_md5(char *q)
 {
    char *p = q;
@@ -1472,7 +1455,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Get JobIds associated with a volume
  */
 bool B_DB::get_volume_jobids(JCR *jcr, MEDIA_DBR *mr, db_list_ctx *lst)
@@ -1731,4 +1714,118 @@ bool B_DB::get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER 
 bail_out:
    return retval;
 }
+
+/**
+ * This function creates a sql query string at mdb->cmd to return a list of all the Media records for
+ * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
+ * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
+ * over VolumeName. The caller must free ids if non-NULL.
+ */
+bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM *querystring, POOL_MEM &volumes)
+{
+   bool ok = true;
+   char ed1[50];
+   char esc[MAX_NAME_LENGTH * 2 + 1];
+   POOL_MEM buf(PM_MESSAGE);
+
+   /*
+    * columns we care of.
+    * Reduced, to be better displayable.
+    * Important:
+    * column 2: pool.name, column 3: storage.name,
+    * as this is used for ACL handling (counting starts at 0).
+    */
+   const char *columns =
+      "Media.MediaId,"
+      "Media.VolumeName,"
+      "Pool.Name AS Pool,"
+      "Storage.Name AS Storage,"
+      "Media.MediaType,"
+      /* "Media.DeviceId," */
+      /* "Media.FirstWritten, "*/
+      "Media.LastWritten,"
+      "Media.VolFiles,"
+      "Media.VolBytes,"
+      "Media.VolStatus,"
+      /* "Media.Recycle AS Recycle," */
+      "Media.ActionOnPurge,"
+      /* "Media.VolRetention," */
+      "Media.Comment";
+
+   Mmsg(querystring,
+        "SELECT DISTINCT %s FROM Media "
+        "LEFT JOIN Pool USING(PoolId) "
+        "LEFT JOIN Storage USING(StorageId) "
+        "WHERE Media.Recycle=%d AND Media.Enabled=%d ",
+        columns, mr->Recycle, mr->Enabled);
+
+   if (*mr->MediaType) {
+      escape_string(jcr, esc, mr->MediaType, strlen(mr->MediaType));
+      Mmsg(buf, "AND Media.MediaType='%s' ", esc);
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   if (mr->StorageId) {
+      Mmsg(buf, "AND Media.StorageId=%s ", edit_uint64(mr->StorageId, ed1));
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   if (mr->PoolId) {
+      Mmsg(buf, "AND Media.PoolId=%s ", edit_uint64(mr->PoolId, ed1));
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   if (mr->VolBytes) {
+      Mmsg(buf, "AND Media.VolBytes > %s ", edit_uint64(mr->VolBytes, ed1));
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   if (*mr->VolStatus) {
+      escape_string(jcr, esc, mr->VolStatus, strlen(mr->VolStatus));
+      Mmsg(buf, "AND Media.VolStatus = '%s' ", esc);
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   if (volumes.strlen() > 0) {
+      /* extra list of volumes given */
+      Mmsg(buf, "AND Media.VolumeName IN (%s) ", volumes.c_str());
+      pm_strcat(querystring, buf.c_str());
+   } else if (*mr->VolumeName) {
+      /* single volume given in media record */
+      escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
+      Mmsg(buf, "AND Media.VolumeName = '%s' ", esc);
+      pm_strcat(querystring, buf.c_str());
+   }
+
+   Dmsg1(100, "query=%s\n", querystring);
+
+   return ok;
+}
+
+/**
+ * verify that all media use the same storage.
+ */
+bool B_DB::verify_media_ids_from_single_storage(JCR *jcr, dbid_list &mediaIds)
+{
+   MEDIA_DBR mr;
+   DBId_t storageId = 0;
+
+   for (int i = 0; i < mediaIds.size(); i++) {
+      memset(&mr, 0, sizeof(mr));
+      mr.MediaId = mediaIds.get(i);
+      if (!get_media_record(jcr, &mr)) {
+         Mmsg1(errmsg, _("Failed to find MediaId=%lld\n"), (uint64_t)mr.MediaId);
+         Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+         return false;
+      } else if (i == 0) {
+         storageId = mr.StorageId;
+      } else if (storageId != mr.StorageId) {
+         return false;
+      }
+   }
+   return true;
+}
+
+
+
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI */

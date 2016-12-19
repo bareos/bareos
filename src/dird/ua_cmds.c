@@ -734,7 +734,7 @@ static inline bool cancel_jobs(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Cancel a job
  */
 static bool cancel_cmd(UAContext *ua, const char *cmd)
@@ -752,7 +752,7 @@ static bool cancel_cmd(UAContext *ua, const char *cmd)
    }
 }
 
-/*
+/**
  * Create a Pool Record in the database.
  * It is always created from the Resource record.
  */
@@ -951,7 +951,7 @@ static bool setbwlimit_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Set a new address in a Client resource. We do this only
  * if the Console name is the same as the Client name
  * and the Console can access the client.
@@ -1108,7 +1108,7 @@ static void do_storage_setdebug(UAContext *ua, STORERES *store, int level,
    return;
 }
 
-/*
+/**
  * For the client, we have the following values that can be set :
  *
  * level = debug level
@@ -1274,7 +1274,7 @@ static void do_all_setdebug(UAContext *ua, int level, int trace_flag,
    free(unique_client);
 }
 
-/*
+/**
  * setdebug level=nn all trace=1/0 timestamp=1/0
  */
 static bool setdebug_cmd(UAContext *ua, const char *cmd)
@@ -1443,7 +1443,7 @@ static bool setdebug_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Resolve a hostname.
  */
 static bool resolve_cmd(UAContext *ua, const char *cmd)
@@ -1515,7 +1515,7 @@ static bool resolve_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Turn debug tracing to file on/off
  */
 static bool trace_cmd(UAContext *ua, const char *cmd)
@@ -1781,7 +1781,7 @@ bail_out:
    return true;
 }
 
-/*
+/**
  * Print time
  */
 static bool time_cmd(UAContext *ua, const char *cmd)
@@ -1813,8 +1813,7 @@ static bool time_cmd(UAContext *ua, const char *cmd)
 }
 
 
-
-/*
+/**
  * truncate command. Truncates volumes (volume files) on the storage daemon.
  *
  * usage:
@@ -1914,7 +1913,7 @@ static bool truncate_cmd(UAContext *ua, const char *cmd)
    i = find_arg_with_value(ua, "volume");
    if (i >= 0) {
       if (is_name_valid(ua->argv[i])) {
-         db_escape_string(ua->jcr, ua->db, esc, ua->argv[i], strlen(ua->argv[i]));
+         ua->db->escape_string(ua->jcr, esc, ua->argv[i], strlen(ua->argv[i]));
          if (!*volumes.c_str()) {
             Mmsg(tmp, "'%s'", esc);
          } else {
@@ -1936,13 +1935,13 @@ static bool truncate_cmd(UAContext *ua, const char *cmd)
    }
 
    /* create sql query string (in ua->db->cmd) */
-   if (!prepare_media_sql_query(ua->jcr, ua->db, &mr, volumes)) {
+   if (!ua->db->prepare_media_sql_query(ua->jcr, &mr, &tmp , volumes)) {
       ua->error_msg(_("Invalid parameter (failed to create sql query).\n"));
       goto bail_out;
    }
 
    /* execute query and display result */
-   db_list_sql_query(ua->jcr, ua->db, ua->db->cmd,
+   ua->db->list_sql_query(ua->jcr, tmp.c_str(),
                      ua->send, HORZ_LIST, "volumes", true);
 
    /*
@@ -1950,8 +1949,8 @@ static bool truncate_cmd(UAContext *ua, const char *cmd)
     * Second execution is only required,
     * because function is also used in other contextes.
     */
-   tmp.strcpy(ua->db->cmd);
-   if (!db_get_query_dbids(ua->jcr, ua->db, tmp, mediaIds)) {
+   //tmp.strcpy(ua->db->cmd);
+   if (!ua->db->get_query_dbids(ua->jcr, tmp, mediaIds)) {
       Dmsg0(100, "No results from db_get_query_dbids\n");
       goto bail_out;
    };
@@ -1961,14 +1960,14 @@ static bool truncate_cmd(UAContext *ua, const char *cmd)
       goto bail_out;
    }
 
-   if (!verify_media_ids_from_single_storage(ua->jcr, ua->db, mediaIds)) {
+   if (!ua->db->verify_media_ids_from_single_storage(ua->jcr, mediaIds)) {
       ua->error_msg("Selected volumes are from different storages. "
                     "This is not supported. Please choose only volumes from a single storage.\n");
       goto bail_out;
    }
 
    mr.MediaId = mediaIds.get(0);
-   if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
+   if (!ua->db->get_media_record(ua->jcr, &mr)) {
       goto bail_out;
    }
 
@@ -1987,7 +1986,7 @@ static bool truncate_cmd(UAContext *ua, const char *cmd)
    for (int i = 0; i < mediaIds.size(); i++) {
       memset(&mr, 0, sizeof(mr));
       mr.MediaId = mediaIds.get(i);
-      if (!db_get_media_record(ua->jcr, ua->db, &mr)) {
+      if (!ua->db->get_media_record(ua->jcr, &mr)) {
          Dmsg1(0, "Can't find MediaId=%lld\n", (uint64_t) mr.MediaId);
       } else {
          do_truncate(ua, mr);
@@ -2002,7 +2001,6 @@ bail_out:
       delete ua->jcr->store_bsock;
       ua->jcr->store_bsock = NULL;
    }
-
    return result;
 }
 
@@ -2016,13 +2014,13 @@ static bool do_truncate(UAContext *ua, MEDIA_DBR &mr)
    memset(&pool_dbr, 0, sizeof(pool_dbr));
 
    storage_dbr.StorageId = mr.StorageId;
-   if (!db_get_storage_record(ua->jcr, ua->db, &storage_dbr)) {
+   if (!ua->db->get_storage_record(ua->jcr, &storage_dbr)) {
       ua->error_msg("failed to determine storage for id %lld\n", mr.StorageId);
       goto bail_out;
    }
 
    pool_dbr.PoolId = mr.PoolId;
-   if (!db_get_pool_record(ua->jcr, ua->db, &pool_dbr)) {
+   if (!ua->db->get_pool_record(ua->jcr, &pool_dbr)) {
       ua->error_msg("failed to determine pool for id %lld\n", mr.PoolId);
       goto bail_out;
    }
@@ -2056,7 +2054,7 @@ bail_out:
    return retval;
 }
 
-/*
+/**
  * Reload the conf file
  */
 static bool reload_cmd(UAContext *ua, const char *cmd)
@@ -2076,7 +2074,7 @@ static bool reload_cmd(UAContext *ua, const char *cmd)
    return result;
 }
 
-/*
+/**
  * Delete Pool records (should purge Media with it).
  *
  * delete pool=<pool-name>
@@ -2134,7 +2132,7 @@ static bool delete_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * delete_job has been modified to parse JobID lists like the following:
  * delete JobID=3,4,6,7-11,14
  *
@@ -2203,7 +2201,7 @@ static void delete_job(UAContext *ua)
    }
 }
 
-/*
+/**
  * We call delete_job_id_range to parse range tokens and iterate over ranges
  */
 static bool delete_job_id_range(UAContext *ua, char *tok)
@@ -2249,7 +2247,7 @@ static bool delete_job_id_range(UAContext *ua, char *tok)
    return true;
 }
 
-/*
+/**
  * do_job_delete now performs the actual delete operation atomically
  */
 static void do_job_delete(UAContext *ua, JobId_t JobId)
@@ -2261,7 +2259,7 @@ static void do_job_delete(UAContext *ua, JobId_t JobId)
    ua->send_msg(_("Jobid %s and associated records deleted from the catalog.\n"), ed1);
 }
 
-/*
+/**
  * Delete media records from database -- dangerous
  */
 static bool delete_volume(UAContext *ua)
@@ -2307,7 +2305,7 @@ static bool delete_volume(UAContext *ua)
    return true;
 }
 
-/*
+/**
  * Delete a pool record from the database -- dangerous
  */
 static bool delete_pool(UAContext *ua)
@@ -2389,7 +2387,7 @@ static void do_mount_cmd(UAContext *ua, const char *cmd)
    invalidate_vol_list(store.store);
 }
 
-/*
+/**
  * mount [storage=<name>] [drive=nn] [slot=mm]
  */
 static bool mount_cmd(UAContext *ua, const char *cmd)
@@ -2398,7 +2396,7 @@ static bool mount_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * unmount [storage=<name>] [drive=nn]
  */
 static bool unmount_cmd(UAContext *ua, const char *cmd)
@@ -2407,7 +2405,7 @@ static bool unmount_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Perform a NO-OP.
  */
 static bool noop_cmd(UAContext *ua, const char *cmd)
@@ -2423,7 +2421,7 @@ static bool noop_cmd(UAContext *ua, const char *cmd)
    return true;                    /* no op */
 }
 
-/*
+/**
  * release [storage=<name>] [drive=nn]
  */
 static bool release_cmd(UAContext *ua, const char *cmd)
@@ -2432,7 +2430,7 @@ static bool release_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Switch databases
  * use catalog=<name>
  */
@@ -2462,7 +2460,7 @@ bool quit_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-/*
+/**
  * Handler to get job status
  */
 static int status_handler(void *ctx, int num_fields, char **row)
@@ -2478,7 +2476,7 @@ static int status_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-/*
+/**
  * Wait until no job is running
  */
 static bool wait_cmd(UAContext *ua, const char *cmd)
@@ -2758,7 +2756,7 @@ static bool version_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 #else
-/*
+/**
  *  Test code -- turned on only for debug testing
  */
 static bool version_cmd(UAContext *ua, const char *cmd)

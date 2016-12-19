@@ -21,9 +21,11 @@
    02110-1301, USA.
 */
 /*
- * BAREOS Catalog Database List records interface routines
- *
  * Kern Sibbald, March 2000
+ */
+/**
+ * @file
+ * BAREOS Catalog Database List records interface routines
  */
 
 #include "bareos.h"
@@ -39,7 +41,7 @@
  * -----------------------------------------------------------------------
  */
 
-/*
+/**
  * Submit general SQL query
  */
 bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
@@ -95,8 +97,7 @@ bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
       if (verbose) {
          sendit->decoration(errmsg);
       }
-      db_unlock(mdb);
-      return false;
+      goto bail_out;
    }
 
    sendit->array_start(description);
@@ -206,7 +207,7 @@ bail_out:
    db_unlock(this);
 }
 
-/*
+/**
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId
  */
@@ -467,7 +468,7 @@ bail_out:
    db_unlock(this);
 }
 
-/*
+/**
  * List Job record(s) that match JOB_DBR
  */
 void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname, int jobstatus,
@@ -545,7 +546,7 @@ bail_out:
    db_unlock(this);
 }
 
-/*
+/**
  * List Job totals
  */
 void B_DB::list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit)
@@ -676,7 +677,7 @@ bail_out:
    db_unlock(this);
 }
 
-/*
+/**
  * List fileset
  */
 void B_DB::list_filesets(JCR *jcr, JOB_DBR *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type)

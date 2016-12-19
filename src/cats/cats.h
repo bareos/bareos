@@ -24,7 +24,10 @@
  * Catalog header file
  *
  * by Kern E. Sibbald
- *
+ */
+/**
+ * @file
+ * Catalog header file
  * Anyone who accesses the database will need to include
  * this file.
  */
@@ -41,7 +44,7 @@
 
 #define faddr_t long
 
-/*
+/**
  * Generic definitions of list types, list handlers and result handlers.
  */
 enum e_list_type {
@@ -51,52 +54,52 @@ enum e_list_type {
    VERT_LIST
 };
 
-/*
+/**
  * Structure used when calling db_get_query_ids()
  *  allows the subroutine to return a list of ids.
  */
 class dbid_list : public SMARTALLOC {
 public:
-   DBId_t *DBId;                      /* array of DBIds */
-   char *PurgedFiles;                 /* Array of PurgedFile flags */
-   int num_ids;                       /* num of ids actually stored */
-   int max_ids;                       /* size of id array */
-   int num_seen;                      /* number of ids processed */
-   int tot_ids;                       /* total to process */
+   DBId_t *DBId;                      /**< array of DBIds */
+   char *PurgedFiles;                 /**< Array of PurgedFile flags */
+   int num_ids;                       /**< num of ids actually stored */
+   int max_ids;                       /**< size of id array */
+   int num_seen;                      /**< number of ids processed */
+   int tot_ids;                       /**< total to process */
 
-   dbid_list();                       /* in sql.c */
-   ~dbid_list();                      /* in sql.c */
+   dbid_list();                       /**< in sql.c */
+   ~dbid_list();                      /**< in sql.c */
 
    int size() const { return num_ids; }
    DBId_t get(int i) const;
 };
 
-/*
+/**
  * Job information passed to create job record and update
  * job record at end of job. Note, although this record
  * contains all the fields found in the Job database record,
  * it also contains fields found in the JobMedia record.
  */
 
-/*
+/**
  * Job record
  */
 struct JOB_DBR {
    JobId_t JobId;
-   char Job[MAX_NAME_LENGTH];         /* Job unique name */
-   char Name[MAX_NAME_LENGTH];        /* Job base name */
-   int JobType;                       /* actually char(1) */
-   int JobLevel;                      /* actually char(1) */
-   int JobStatus;                     /* actually char(1) */
-   DBId_t ClientId;                   /* Id of client */
-   DBId_t PoolId;                     /* Id of pool */
-   DBId_t FileSetId;                  /* Id of FileSet */
-   DBId_t PriorJobId;                 /* Id of migrated (prior) job */
-   time_t SchedTime;                  /* Time job scheduled */
-   time_t StartTime;                  /* Job start time */
-   time_t EndTime;                    /* Job termination time of orig job */
-   time_t RealEndTime;                /* Job termination time of this job */
-   utime_t JobTDate;                  /* Backup time/date in seconds */
+   char Job[MAX_NAME_LENGTH];         /**< Job unique name */
+   char Name[MAX_NAME_LENGTH];        /**< Job base name */
+   int JobType;                       /**< actually char(1) */
+   int JobLevel;                      /**< actually char(1) */
+   int JobStatus;                     /**< actually char(1) */
+   DBId_t ClientId;                   /**< Id of client */
+   DBId_t PoolId;                     /**< Id of pool */
+   DBId_t FileSetId;                  /**< Id of FileSet */
+   DBId_t PriorJobId;                 /**< Id of migrated (prior) job */
+   time_t SchedTime;                  /**< Time job scheduled */
+   time_t StartTime;                  /**< Job start time */
+   time_t EndTime;                    /**< Job termination time of orig job */
+   time_t RealEndTime;                /**< Job termination time of this job */
+   utime_t JobTDate;                  /**< Backup time/date in seconds */
    uint32_t VolSessionId;
    uint32_t VolSessionTime;
    uint32_t JobFiles;
@@ -104,15 +107,15 @@ struct JOB_DBR {
    uint32_t JobMissingFiles;
    uint64_t JobBytes;
    uint64_t ReadBytes;
-   uint64_t JobSumTotalBytes;         /* Total sum in bytes of all jobs but this one */
+   uint64_t JobSumTotalBytes;         /**< Total sum in bytes of all jobs but this one */
    int PurgedFiles;
    int HasBase;
 
    /* Note, FirstIndex, LastIndex, Start/End File and Block
     * are only used in the JobMedia record.
     */
-   uint32_t FirstIndex;               /* First index this Volume */
-   uint32_t LastIndex;                /* Last index this Volume */
+   uint32_t FirstIndex;               /**< First index this Volume */
+   uint32_t LastIndex;                /**< Last index this Volume */
    uint32_t StartFile;
    uint32_t EndFile;
    uint32_t StartBlock;
@@ -126,56 +129,58 @@ struct JOB_DBR {
    /*
     * Extra stuff not in DB
     */
-   int limit;                         /* limit records to display */
+   int limit;                         /**< limit records to display */
    faddr_t rec_addr;
-   uint32_t FileIndex;                /* added during Verify */
+   uint32_t FileIndex;                /**< added during Verify */
 };
 
 /* Job Media information used to create the media records
  * for each Volume used for the job.
  */
-/*
+/**
  * JobMedia record
  */
 struct JOBMEDIA_DBR {
-   DBId_t JobMediaId;                 /* record id */
-   JobId_t  JobId;                    /* JobId */
-   DBId_t MediaId;                    /* MediaId */
-   uint32_t FirstIndex;               /* First index this Volume */
-   uint32_t LastIndex;                /* Last index this Volume */
-   uint32_t StartFile;                /* File for start of data */
-   uint32_t EndFile;                  /* End file on Volume */
-   uint32_t StartBlock;               /* start block on tape */
-   uint32_t EndBlock;                 /* last block */
-// uint32_t Copy;                     /* identical copy */
+   DBId_t JobMediaId;                 /**< record id */
+   JobId_t  JobId;                    /**< JobId */
+   DBId_t MediaId;                    /**< MediaId */
+   uint32_t FirstIndex;               /**< First index this Volume */
+   uint32_t LastIndex;                /**< Last index this Volume */
+   uint32_t StartFile;                /**< File for start of data */
+   uint32_t EndFile;                  /**< End file on Volume */
+   uint32_t StartBlock;               /**< start block on tape */
+   uint32_t EndBlock;                 /**< last block */
+// uint32_t Copy;                     /**< identical copy */
 };
 
 
-/* Volume Parameter structure */
+/**
+ * Volume Parameter structure
+ */
 struct VOL_PARAMS {
-   char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
-   char MediaType[MAX_NAME_LENGTH];   /* Media Type */
-   char Storage[MAX_NAME_LENGTH];     /* Storage name */
-   uint32_t VolIndex;                 /* Volume seqence no. */
-   uint32_t FirstIndex;               /* First index this Volume */
-   uint32_t LastIndex;                /* Last index this Volume */
-   int32_t Slot;                      /* Slot */
-   uint64_t StartAddr;                /* Start address */
-   uint64_t EndAddr;                  /* End address */
-   int32_t InChanger;                 /* InChanger flag */
-// uint32_t Copy;                     /* identical copy */
-// uint32_t Stripe;                   /* RAIT strip number */
+   char VolumeName[MAX_NAME_LENGTH];  /**< Volume name */
+   char MediaType[MAX_NAME_LENGTH];   /**< Media Type */
+   char Storage[MAX_NAME_LENGTH];     /**< Storage name */
+   uint32_t VolIndex;                 /**< Volume seqence no. */
+   uint32_t FirstIndex;               /**< First index this Volume */
+   uint32_t LastIndex;                /**< Last index this Volume */
+   int32_t Slot;                      /**< Slot */
+   uint64_t StartAddr;                /**< Start address */
+   uint64_t EndAddr;                  /**< End address */
+   int32_t InChanger;                 /**< InChanger flag */
+// uint32_t Copy;                     /**< identical copy */
+// uint32_t Stripe;                   /**< RAIT strip number */
 };
 
-/*
+/**
  * Attributes record -- NOT same as in database because
  * in general, this "record" creates multiple database
  * records (e.g. pathname, filename, fileattributes).
  */
 struct ATTR_DBR {
-   char *fname;                       /* full path & filename */
-   char *link;                        /* link if any */
-   char *attr;                        /* attributes statp */
+   char *fname;                       /**< full path & filename */
+   char *link;                        /**< link if any */
+   char *attr;                        /**< attributes statp */
    uint32_t FileIndex;
    uint32_t Stream;
    uint32_t FileType;
@@ -189,6 +194,9 @@ struct ATTR_DBR {
    int DigestType;
 };
 
+/**
+ * Restore object database record
+ */
 struct ROBJECT_DBR {
    char *object_name;
    char *object;
@@ -204,7 +212,7 @@ struct ROBJECT_DBR {
    DBId_t RestoreObjectId;
 };
 
-/*
+/**
  * File record -- same format as database
  */
 struct FILE_DBR {
@@ -217,35 +225,35 @@ struct FILE_DBR {
    uint32_t DeltaSeq;
    char LStat[256];
    char Digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
-   int DigestType;                    /* NO_SIG/MD5_SIG/SHA1_SIG */
+   int DigestType;                    /**< NO_SIG/MD5_SIG/SHA1_SIG */
 };
 
-/*
+/**
  * Pool record -- same format as database
  */
 struct POOL_DBR {
    DBId_t PoolId;
-   char Name[MAX_NAME_LENGTH];        /* Pool name */
-   uint32_t NumVols;                  /* total number of volumes */
-   uint32_t MaxVols;                  /* max allowed volumes */
-   int32_t LabelType;                 /* BAREOS/ANSI/IBM */
-   int32_t UseOnce;                   /* set to use once only */
-   int32_t UseCatalog;                /* set to use catalog */
-   int32_t AcceptAnyVolume;           /* set to accept any volume sequence */
-   int32_t AutoPrune;                 /* set to prune automatically */
-   int32_t Recycle;                   /* default Vol recycle flag */
-   uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
-   utime_t VolRetention;              /* retention period in seconds */
-   utime_t VolUseDuration;            /* time in secs volume can be used */
-   uint32_t MaxVolJobs;               /* Max Jobs on Volume */
-   uint32_t MaxVolFiles;              /* Max files on Volume */
-   uint64_t MaxVolBytes;              /* Max bytes on Volume */
-   DBId_t RecyclePoolId;              /* RecyclePool destination when media is purged */
-   DBId_t ScratchPoolId;              /* ScratchPool source when media is needed */
+   char Name[MAX_NAME_LENGTH];        /**< Pool name */
+   uint32_t NumVols;                  /**< total number of volumes */
+   uint32_t MaxVols;                  /**< max allowed volumes */
+   int32_t LabelType;                 /**< BAREOS/ANSI/IBM */
+   int32_t UseOnce;                   /**< set to use once only */
+   int32_t UseCatalog;                /**< set to use catalog */
+   int32_t AcceptAnyVolume;           /**< set to accept any volume sequence */
+   int32_t AutoPrune;                 /**< set to prune automatically */
+   int32_t Recycle;                   /**< default Vol recycle flag */
+   uint32_t ActionOnPurge;            /**< action on purge, e.g. truncate the disk volume */
+   utime_t VolRetention;              /**< retention period in seconds */
+   utime_t VolUseDuration;            /**< time in secs volume can be used */
+   uint32_t MaxVolJobs;               /**< Max Jobs on Volume */
+   uint32_t MaxVolFiles;              /**< Max files on Volume */
+   uint64_t MaxVolBytes;              /**< Max bytes on Volume */
+   DBId_t RecyclePoolId;              /**< RecyclePool destination when media is purged */
+   DBId_t ScratchPoolId;              /**< ScratchPool source when media is needed */
    char PoolType[MAX_NAME_LENGTH];
    char LabelFormat[MAX_NAME_LENGTH];
-   uint32_t MinBlocksize;             /* Minimum Block Size */
-   uint32_t MaxBlocksize;             /* Maximum Block Size */
+   uint32_t MinBlocksize;             /**< Minimum Block Size */
+   uint32_t MaxBlocksize;             /**< Maximum Block Size */
 
    /*
     * Extra stuff not in DB
@@ -253,118 +261,127 @@ struct POOL_DBR {
    faddr_t rec_addr;
 };
 
+/**
+ * Device record
+ */
 struct DEVICE_DBR {
    DBId_t DeviceId;
-   char Name[MAX_NAME_LENGTH];        /* Device name */
-   DBId_t MediaTypeId;                /* MediaType */
-   DBId_t StorageId;                  /* Storage id if autochanger */
-   uint32_t DevMounts;                /* Number of times mounted */
-   uint32_t DevErrors;                /* Number of read/write errors */
-   uint64_t DevReadBytes;             /* Number of bytes read */
-   uint64_t DevWriteBytes;            /* Number of bytes written */
-   uint64_t DevReadTime;              /* time spent reading volume */
-   uint64_t DevWriteTime;             /* time spent writing volume */
-   uint64_t DevReadTimeSincCleaning;  /* read time since cleaning */
-   uint64_t DevWriteTimeSincCleaning; /* write time since cleaning */
-   time_t CleaningDate;               /* time last cleaned */
-   utime_t CleaningPeriod;            /* time between cleanings */
+   char Name[MAX_NAME_LENGTH];        /**< Device name */
+   DBId_t MediaTypeId;                /**< MediaType */
+   DBId_t StorageId;                  /**< Storage id if autochanger */
+   uint32_t DevMounts;                /**< Number of times mounted */
+   uint32_t DevErrors;                /**< Number of read/write errors */
+   uint64_t DevReadBytes;             /**< Number of bytes read */
+   uint64_t DevWriteBytes;            /**< Number of bytes written */
+   uint64_t DevReadTime;              /**< time spent reading volume */
+   uint64_t DevWriteTime;             /**< time spent writing volume */
+   uint64_t DevReadTimeSincCleaning;  /**< read time since cleaning */
+   uint64_t DevWriteTimeSincCleaning; /**< write time since cleaning */
+   time_t CleaningDate;               /**< time last cleaned */
+   utime_t CleaningPeriod;            /**< time between cleanings */
 };
 
+/**
+ * Storage database record
+ */
 struct STORAGE_DBR {
    DBId_t StorageId;
-   char Name[MAX_NAME_LENGTH];        /* Device name */
-   int AutoChanger;                   /* Set if autochanger */
+   char Name[MAX_NAME_LENGTH];        /**< Device name */
+   int AutoChanger;                   /**< Set if autochanger */
 
    /*
     * Extra stuff not in DB
     */
-   bool created;                      /* set if created by db_create ... */
+   bool created;                      /**< set if created by db_create ... */
 };
 
+/**
+ * mediatype database record
+ */
 struct MEDIATYPE_DBR {
    DBId_t MediaTypeId;
-   char MediaType[MAX_NAME_LENGTH];   /* MediaType string */
-   int ReadOnly;                      /* Set if read-only */
+   char MediaType[MAX_NAME_LENGTH];   /**< MediaType string */
+   int ReadOnly;                      /**< Set if read-only */
 };
 
-/*
+/**
  * Media record -- same as the database
  */
 struct MEDIA_DBR {
-   DBId_t MediaId;                    /* Unique volume id */
-   char VolumeName[MAX_NAME_LENGTH];  /* Volume name */
-   char MediaType[MAX_NAME_LENGTH];   /* Media type */
-   char EncrKey[MAX_NAME_LENGTH];     /* Encryption Key */
-   DBId_t PoolId;                     /* Pool id */
-   time_t FirstWritten;               /* Time Volume first written this usage */
-   time_t LastWritten;                /* Time Volume last written */
-   time_t LabelDate;                  /* Date/Time Volume labeled */
-   time_t InitialWrite;               /* Date/Time Volume first written */
-   int32_t  LabelType;                /* Label (BAREOS/ANSI/IBM) */
-   uint32_t VolJobs;                  /* number of jobs on this medium */
-   uint32_t VolFiles;                 /* Number of files */
-   uint32_t VolBlocks;                /* Number of blocks */
-   uint32_t VolMounts;                /* Number of times mounted */
-   uint32_t VolErrors;                /* Number of read/write errors */
-   uint32_t VolWrites;                /* Number of writes */
-   uint32_t VolReads;                 /* Number of reads */
-   uint64_t VolBytes;                 /* Number of bytes written */
-   uint64_t MaxVolBytes;              /* Max bytes to write to Volume */
-   uint64_t VolCapacityBytes;         /* capacity estimate */
-   uint64_t VolReadTime;              /* time spent reading volume */
-   uint64_t VolWriteTime;             /* time spent writing volume */
-   utime_t VolRetention;              /* Volume retention in seconds */
-   utime_t VolUseDuration;            /* time in secs volume can be used */
-   uint32_t ActionOnPurge;            /* action on purge, e.g. truncate the disk volume */
-   uint32_t MaxVolJobs;               /* Max Jobs on Volume */
-   uint32_t MaxVolFiles;              /* Max files on Volume */
-   int32_t Recycle;                   /* recycle yes/no */
-   int32_t Slot;                      /* slot in changer */
-   int32_t Enabled;                   /* 0=disabled, 1=enabled, 2=archived */
-   int32_t InChanger;                 /* Volume currently in changer */
-   DBId_t StorageId;                  /* Storage record Id */
-   uint32_t EndFile;                  /* Last file on volume */
-   uint32_t EndBlock;                 /* Last block on volume */
-   uint32_t RecycleCount;             /* Number of times recycled */
-   uint32_t MinBlocksize;             /* Minimum Block Size */
-   uint32_t MaxBlocksize;             /* Maximum Block Size */
-   char VolStatus[20];                /* Volume status */
-   DBId_t DeviceId;                   /* Device where Vol last written */
-   DBId_t LocationId;                 /* Where Volume is -- user defined */
-   DBId_t ScratchPoolId;              /* Where to move if scratch */
-   DBId_t RecyclePoolId;              /* Where to move when recycled */
+   DBId_t MediaId;                    /**< Unique volume id */
+   char VolumeName[MAX_NAME_LENGTH];  /**< Volume name */
+   char MediaType[MAX_NAME_LENGTH];   /**< Media type */
+   char EncrKey[MAX_NAME_LENGTH];     /**< Encryption Key */
+   DBId_t PoolId;                     /**< Pool id */
+   time_t FirstWritten;               /**< Time Volume first written this usage */
+   time_t LastWritten;                /**< Time Volume last written */
+   time_t LabelDate;                  /**< Date/Time Volume labeled */
+   time_t InitialWrite;               /**< Date/Time Volume first written */
+   int32_t  LabelType;                /**< Label (BAREOS/ANSI/IBM) */
+   uint32_t VolJobs;                  /**< number of jobs on this medium */
+   uint32_t VolFiles;                 /**< Number of files */
+   uint32_t VolBlocks;                /**< Number of blocks */
+   uint32_t VolMounts;                /**< Number of times mounted */
+   uint32_t VolErrors;                /**< Number of read/write errors */
+   uint32_t VolWrites;                /**< Number of writes */
+   uint32_t VolReads;                 /**< Number of reads */
+   uint64_t VolBytes;                 /**< Number of bytes written */
+   uint64_t MaxVolBytes;              /**< Max bytes to write to Volume */
+   uint64_t VolCapacityBytes;         /**< capacity estimate */
+   uint64_t VolReadTime;              /**< time spent reading volume */
+   uint64_t VolWriteTime;             /**< time spent writing volume */
+   utime_t VolRetention;              /**< Volume retention in seconds */
+   utime_t VolUseDuration;            /**< time in secs volume can be used */
+   uint32_t ActionOnPurge;            /**< action on purge, e.g. truncate the disk volume */
+   uint32_t MaxVolJobs;               /**< Max Jobs on Volume */
+   uint32_t MaxVolFiles;              /**< Max files on Volume */
+   int32_t Recycle;                   /**< recycle yes/no */
+   int32_t Slot;                      /**< slot in changer */
+   int32_t Enabled;                   /**< 0=disabled, 1=enabled, 2=archived */
+   int32_t InChanger;                 /**< Volume currently in changer */
+   DBId_t StorageId;                  /**< Storage record Id */
+   uint32_t EndFile;                  /**< Last file on volume */
+   uint32_t EndBlock;                 /**< Last block on volume */
+   uint32_t RecycleCount;             /**< Number of times recycled */
+   uint32_t MinBlocksize;             /**< Minimum Block Size */
+   uint32_t MaxBlocksize;             /**< Maximum Block Size */
+   char VolStatus[20];                /**< Volume status */
+   DBId_t DeviceId;                   /**< Device where Vol last written */
+   DBId_t LocationId;                 /**< Where Volume is -- user defined */
+   DBId_t ScratchPoolId;              /**< Where to move if scratch */
+   DBId_t RecyclePoolId;              /**< Where to move when recycled */
 
    /*
     * Extra stuff not in DB
     */
-   faddr_t rec_addr;                  /* found record address */
+   faddr_t rec_addr;                  /**< found record address */
 
    /*
     * Since the database returns times as strings, this is how we pass them back.
     */
-   char cFirstWritten[MAX_TIME_LENGTH]; /* FirstWritten returned from DB */
-   char cLastWritten[MAX_TIME_LENGTH];  /* LastWritten returned from DB */
-   char cLabelDate[MAX_TIME_LENGTH];    /* LabelData returned from DB */
-   char cInitialWrite[MAX_TIME_LENGTH]; /* InitialWrite returned from DB */
+   char cFirstWritten[MAX_TIME_LENGTH]; /**< FirstWritten returned from DB */
+   char cLastWritten[MAX_TIME_LENGTH];  /**< LastWritten returned from DB */
+   char cLabelDate[MAX_TIME_LENGTH];    /**< LabelData returned from DB */
+   char cInitialWrite[MAX_TIME_LENGTH]; /**< InitialWrite returned from DB */
    bool set_first_written;
    bool set_label_date;
 };
 
-/*
+/**
  * Client record -- same as the database
  */
 struct CLIENT_DBR {
-   DBId_t ClientId;                   /* Unique Client id */
+   DBId_t ClientId;                   /**< Unique Client id */
    int AutoPrune;
-   utime_t GraceTime;                 /* Time remaining on gracetime */
-   uint32_t QuotaLimit;               /* The total softquota supplied if over grace */
+   utime_t GraceTime;                 /**< Time remaining on gracetime */
+   uint32_t QuotaLimit;               /**< The total softquota supplied if over grace */
    utime_t FileRetention;
    utime_t JobRetention;
-   char Name[MAX_NAME_LENGTH];        /* Client name */
-   char Uname[256];                   /* Uname for client */
+   char Name[MAX_NAME_LENGTH];        /**< Client name */
+   char Uname[256];                   /**< Uname for client */
 };
 
-/*
+/**
  * Counter record -- same as in database
  */
 struct COUNTER_DBR {
@@ -375,80 +392,80 @@ struct COUNTER_DBR {
    char WrapCounter[MAX_NAME_LENGTH];
 };
 
-/*
+/**
  * FileSet record -- same as the database
  */
 struct FILESET_DBR {
-   DBId_t FileSetId;                  /* Unique FileSet id */
-   char FileSet[MAX_NAME_LENGTH];     /* FileSet name */
-   char *FileSetText;                 /* FileSet as Text */
-   char MD5[50];                      /* MD5 signature of include/exclude */
-   time_t CreateTime;                 /* Date created */
+   DBId_t FileSetId;                  /**< Unique FileSet id */
+   char FileSet[MAX_NAME_LENGTH];     /**< FileSet name */
+   char *FileSetText;                 /**< FileSet as Text */
+   char MD5[50];                      /**< MD5 signature of include/exclude */
+   time_t CreateTime;                 /**< Date created */
    /*
     * This is where we return CreateTime
     */
-   char cCreateTime[MAX_TIME_LENGTH]; /* CreateTime as returned from DB */
+   char cCreateTime[MAX_TIME_LENGTH]; /**< CreateTime as returned from DB */
    /*
     * Not in DB but returned by db_create_fileset()
     */
-   bool created;                      /* set when record newly created */
+   bool created;                      /**< set when record newly created */
 };
 
-/*
+/**
  * Device Statistics record -- same as in database
  */
 struct DEVICE_STATS_DBR {
-   DBId_t DeviceId;                   /* Device record id */
-   time_t SampleTime;                 /* Timestamp statistic was captured */
-   uint64_t ReadTime;                 /* Time spent reading volume */
-   uint64_t WriteTime;                /* Time spent writing volume */
-   uint64_t ReadBytes;                /* Number of bytes read */
-   uint64_t WriteBytes;               /* Number of bytes written */
-   uint64_t SpoolSize;                /* Number of bytes spooled */
-   uint32_t NumWaiting;               /* Number of Jobs waiting for device */
-   uint32_t NumWriters;               /* Number of writers to device */
-   DBId_t MediaId;                    /* MediaId used */
-   uint64_t VolCatBytes;              /* Volume Bytes */
-   uint64_t VolCatFiles;              /* Volume Files */
-   uint64_t VolCatBlocks;             /* Volume Blocks */
+   DBId_t DeviceId;                   /**< Device record id */
+   time_t SampleTime;                 /**< Timestamp statistic was captured */
+   uint64_t ReadTime;                 /**< Time spent reading volume */
+   uint64_t WriteTime;                /**< Time spent writing volume */
+   uint64_t ReadBytes;                /**< Number of bytes read */
+   uint64_t WriteBytes;               /**< Number of bytes written */
+   uint64_t SpoolSize;                /**< Number of bytes spooled */
+   uint32_t NumWaiting;               /**< Number of Jobs waiting for device */
+   uint32_t NumWriters;               /**< Number of writers to device */
+   DBId_t MediaId;                    /**< MediaId used */
+   uint64_t VolCatBytes;              /**< Volume Bytes */
+   uint64_t VolCatFiles;              /**< Volume Files */
+   uint64_t VolCatBlocks;             /**< Volume Blocks */
 };
 
-/*
+/**
  * TapeAlert record -- same as in database
  */
 struct TAPEALERT_STATS_DBR {
-   DBId_t DeviceId;                   /* Device record id */
-   time_t SampleTime;                 /* Timestamp statistic was captured */
-   uint64_t AlertFlags;               /* Tape Alerts raised */
+   DBId_t DeviceId;                   /**< Device record id */
+   time_t SampleTime;                 /**< Timestamp statistic was captured */
+   uint64_t AlertFlags;               /**< Tape Alerts raised */
 };
 
-/*
+/**
  * Job Statistics record -- same as in database
  */
 struct JOB_STATS_DBR {
-   DBId_t DeviceId;                   /* Device record id */
-   time_t SampleTime;                 /* Timestamp statistic was captured */
-   JobId_t JobId;                     /* Job record id */
-   uint32_t JobFiles;                 /* Number of Files in Job */
-   uint64_t JobBytes;                 /* Number of Bytes in Job */
+   DBId_t DeviceId;                   /**< Device record id */
+   time_t SampleTime;                 /**< Timestamp statistic was captured */
+   JobId_t JobId;                     /**< Job record id */
+   uint32_t JobFiles;                 /**< Number of Files in Job */
+   uint64_t JobBytes;                 /**< Number of Bytes in Job */
 };
 
-/*
+/**
  * Call back context for getting a 32/64 bit value from the database
  */
 class db_int64_ctx {
 public:
-   int64_t value;                     /* value returned */
-   int count;                         /* number of values seen */
+   int64_t value;                     /**< value returned */
+   int count;                         /**< number of values seen */
 
    db_int64_ctx() : value(0), count(0) {};
    ~db_int64_ctx() {};
 private:
-   db_int64_ctx(const db_int64_ctx&);            /* prohibit pass by value */
-   db_int64_ctx &operator=(const db_int64_ctx&); /* prohibit class assignment */
+   db_int64_ctx(const db_int64_ctx&);            /**< prohibit pass by value */
+   db_int64_ctx &operator=(const db_int64_ctx&); /**< prohibit class assignment */
 };
 
-/*
+/**
  * Call back context for getting a list of comma separated strings from the database
  */
 class db_list_ctx {
@@ -476,8 +493,8 @@ public:
       count++;
    }
 private:
-   db_list_ctx(const db_list_ctx&);            /* prohibit pass by value */
-   db_list_ctx &operator=(const db_list_ctx&); /* prohibit class assignment */
+   db_list_ctx(const db_list_ctx&);            /**< prohibit pass by value */
+   db_list_ctx &operator=(const db_list_ctx&); /**< prohibit class assignment */
 };
 
 typedef enum {
@@ -510,7 +527,7 @@ class pathid_cache;
 #define QUERY_INITIAL_HASH_SIZE 1024
 #define QUERY_HTABLE_PAGES 128
 
-/*
+/**
  * Current database version number for all drivers
  */
 #define BDB_VERSION 2004
@@ -553,41 +570,41 @@ protected:
    /*
     * Members
     */
-   brwlock_t m_lock;                      /* Transaction lock */
-   dlink m_link;                          /* Queue control */
-   SQL_INTERFACETYPE m_db_interface_type; /* Type of backend used */
-   SQL_DBTYPE m_db_type;                  /* Database type */
-   uint32_t m_ref_count;                  /* Reference count */
-   bool m_connected;                      /* Connection made to db */
-   bool m_have_batch_insert;              /* Have batch insert support ? */
-   bool m_try_reconnect;                  /* Try reconnecting DB connection ? */
-   bool m_exit_on_fatal;                  /* Exit on FATAL DB errors ? */
-   char *m_db_driver;                     /* Database driver */
-   char *m_db_driverdir;                  /* Database driver dir */
-   char *m_db_name;                       /* Database name */
-   char *m_db_user;                       /* Database user */
-   char *m_db_address;                    /* Host name address */
-   char *m_db_socket;                     /* Socket for local access */
-   char *m_db_password;                   /* Database password */
-   char *m_last_query_text;               /* Last query text obtained from query table */
-   int m_db_port;                         /* Port for host name address */
-   int cached_path_len;                   /* Length of cached path */
-   int changes;                           /* Changes during transaction */
-   int fnl;                               /* File name length */
-   int pnl;                               /* Path name length */
-   bool m_disabled_batch_insert;          /* Explicitly disabled batch insert mode ? */
-   bool m_is_private;                     /* Private connection ? */
-   uint32_t cached_path_id;               /* Cached path id */
-   uint32_t m_last_hash_key;              /* Last hash key lookup on query table */
-   POOLMEM *fname;                        /* Filename only */
-   POOLMEM *path;                         /* Path only */
-   POOLMEM *cached_path;                  /* Cached path name */
-   POOLMEM *esc_name;                     /* Escaped file name */
-   POOLMEM *esc_path;                     /* Escaped path name */
-   POOLMEM *esc_obj;                      /* Escaped restore object */
-   POOLMEM *cmd;                          /* SQL command string */
-   POOLMEM *errmsg;                       /* Nicely edited error message */
-   BDB_QUERY_TABLE *m_query_table;        /* Dynamic loaded query table */
+   brwlock_t m_lock;                      /**< Transaction lock */
+   dlink m_link;                          /**< Queue control */
+   SQL_INTERFACETYPE m_db_interface_type; /**< Type of backend used */
+   SQL_DBTYPE m_db_type;                  /**< Database type */
+   uint32_t m_ref_count;                  /**< Reference count */
+   bool m_connected;                      /**< Connection made to db */
+   bool m_have_batch_insert;              /**< Have batch insert support ? */
+   bool m_try_reconnect;                  /**< Try reconnecting DB connection ? */
+   bool m_exit_on_fatal;                  /**< Exit on FATAL DB errors ? */
+   char *m_db_driver;                     /**< Database driver */
+   char *m_db_driverdir;                  /**< Database driver dir */
+   char *m_db_name;                       /**< Database name */
+   char *m_db_user;                       /**< Database user */
+   char *m_db_address;                    /**< Host name address */
+   char *m_db_socket;                     /**< Socket for local access */
+   char *m_db_password;                   /**< Database password */
+   char *m_last_query_text;               /**< Last query text obtained from query table */
+   int m_db_port;                         /**< Port for host name address */
+   int cached_path_len;                   /**< Length of cached path */
+   int changes;                           /**< Changes during transaction */
+   int fnl;                               /**< File name length */
+   int pnl;                               /**< Path name length */
+   bool m_disabled_batch_insert;          /**< Explicitly disabled batch insert mode ? */
+   bool m_is_private;                     /**< Private connection ? */
+   uint32_t cached_path_id;               /**< Cached path id */
+   uint32_t m_last_hash_key;              /**< Last hash key lookup on query table */
+   POOLMEM *fname;                        /**< Filename only */
+   POOLMEM *path;                         /**< Path only */
+   POOLMEM *cached_path;                  /**< Cached path name */
+   POOLMEM *esc_name;                     /**< Escaped file name */
+   POOLMEM *esc_path;                     /**< Escaped path name */
+   POOLMEM *esc_obj;                      /**< Escaped restore object */
+   POOLMEM *cmd;                          /**< SQL command string */
+   POOLMEM *errmsg;                       /**< Nicely edited error message */
+   BDB_QUERY_TABLE *m_query_table;        /**< Dynamic loaded query table */
 
 private:
    /*
@@ -708,6 +725,8 @@ public:
    bool get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetention);
    int get_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem);
    bool get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM *querystring, POOL_MEM &volumes);
+   bool verify_media_ids_from_single_storage(JCR *jcr, dbid_list &mediaIds);
 
    /* sql_list.c */
    void list_pool_records(JCR *jcr, POOL_DBR *pr, OUTPUT_FORMATTER *sendit, e_list_type type);
@@ -834,47 +853,47 @@ private:
 #define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
 #define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
 
-/*
+/**
  * Pooled backend connection.
  */
 struct SQL_POOL_ENTRY {
-   int id;                                /* Unique ID, connection numbering can have holes and the pool is not sorted on it */
-   int reference_count;                   /* Reference count for this entry */
-   time_t last_update;                    /* When was this connection last updated either used or put back on the pool */
-   B_DB *db_handle;                       /* Connection handle to the database */
-   dlink link;                            /* list management */
+   int id;                                /**< Unique ID, connection numbering can have holes and the pool is not sorted on it */
+   int reference_count;                   /**< Reference count for this entry */
+   time_t last_update;                    /**< When was this connection last updated either used or put back on the pool */
+   B_DB *db_handle;                       /**< Connection handle to the database */
+   dlink link;                            /**< list management */
 };
 
-/*
+/**
  * Pooled backend list descriptor (one defined per backend defined in config)
  */
 struct SQL_POOL_DESCRIPTOR {
-   dlist *pool_entries;                   /* Linked list of all pool entries */
-   bool active;                           /* Is this an active pool, after a config reload an pool is made inactive */
-   time_t last_update;                    /* When was this pool last updated */
-   int min_connections;                   /* Minimum number of connections in the connection pool */
-   int max_connections;                   /* Maximum number of connections in the connection pool */
-   int increment_connections;             /* Increase/Decrease the number of connection in the pool with this value */
-   int idle_timeout;                      /* Number of seconds to wait before tearing down a connection */
-   int validate_timeout;                  /* Number of seconds after which an idle connection should be validated */
-   int nr_connections;                    /* Number of active connections in the pool */
-   dlink link;                            /* list management */
+   dlist *pool_entries;                   /**< Linked list of all pool entries */
+   bool active;                           /**< Is this an active pool, after a config reload an pool is made inactive */
+   time_t last_update;                    /**< When was this pool last updated */
+   int min_connections;                   /**< Minimum number of connections in the connection pool */
+   int max_connections;                   /**< Maximum number of connections in the connection pool */
+   int increment_connections;             /**< Increase/Decrease the number of connection in the pool with this value */
+   int idle_timeout;                      /**< Number of seconds to wait before tearing down a connection */
+   int validate_timeout;                  /**< Number of seconds after which an idle connection should be validated */
+   int nr_connections;                    /**< Number of active connections in the pool */
+   dlink link;                            /**< list management */
 };
 
 #include "protos.h"
 #include "jcr.h"
 
-/*
+/**
  * Object used in db_list_xxx function
  */
 class LIST_CTX {
 public:
-   char line[256];              /* Used to print last dash line */
+   char line[256];              /**< Used to print last dash line */
    int32_t num_rows;
 
-   e_list_type type;            /* Vertical/Horizontal */
-   OUTPUT_FORMATTER *send;      /* send data back */
-   bool once;                   /* Used to print header one time */
+   e_list_type type;            /**< Vertical/Horizontal */
+   OUTPUT_FORMATTER *send;      /**< send data back */
+   bool once;                   /**< Used to print header one time */
    B_DB *mdb;
    JCR *jcr;
 
@@ -900,7 +919,7 @@ public:
    }
 };
 
-/*
+/**
  * Some functions exported by sql.c for use within the cats directory.
  */
 int list_result(void *vctx, int cols, char **row);
