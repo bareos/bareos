@@ -1,0 +1,14 @@
+DECLARE GLOBAL TEMPORARY TABLE btemp3%s AS
+ SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles
+   FROM Job
+   JOIN FileSet
+  USING (FileSetId)
+  WHERE ClientId          = %s
+    AND Level             = 'F'
+    AND JobStatus IN ('T','W')
+    AND Type              = 'B'
+    AND StartTime         < '%s'
+    AND FileSet.FileSetId = %s
+  ORDER BY Job.JobTDate DESC FETCH FIRST 1 ROW ONLY
+     ON COMMIT PRESERVE ROWS
+   WITH NORECOVERY

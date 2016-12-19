@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,7 +33,6 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
@@ -75,6 +74,7 @@ static ATTR *attr;
 static time_t lasttime = 0;
 
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
+static const char *backend_query_directory = _PATH_BAREOS_BACKENDQUERYDIR;
 static const char *db_driver = "NULL";
 static const char *db_name = "bareos";
 static const char *db_user = "bareos";
@@ -111,6 +111,7 @@ PROG_COPYRIGHT
 "       -D <director>     specify a director name specified in the storage daemon\n"
 "                         configuration file for the Key Encryption Key selection\n"
 "       -a <directory>    specify the database backend directory (default %s)\n"
+"       -q <directory>    specify the query backend directory (default %s)\n"
 "       -n <name>         specify the database name (default bareos)\n"
 "       -u <user>         specify database user name (default bareos)\n"
 "       -P <password>     specify database password (default none)\n"
@@ -125,7 +126,8 @@ PROG_COPYRIGHT
 "       -w <directory>    specify working directory (default from configuration file)\n"
 "       -?                print this message\n\n"
 "example:\n"
-"bscan -B postgresql -V Full-0001 FileStorage\n"), 2001, VERSION, BDATE, backend_directory);
+"bscan -B postgresql -V Full-0001 FileStorage\n"),
+            2001, VERSION, BDATE, backend_directory, backend_query_directory);
    exit(1);
 }
 
@@ -140,6 +142,7 @@ int main (int argc, char *argv[])
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    alist *backend_directories = NULL;
 #endif
+   alist *backend_query_directories = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -152,7 +155,7 @@ int main (int argc, char *argv[])
 
    OSDependentInit();
 
-   while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:rsSt:u:vV:w:?")) != -1) {
+   while ((ch = getopt(argc, argv, "a:B:b:c:d:D:h:p:mn:pP:q:rsSt:u:vV:w:?")) != -1) {
       switch (ch) {
       case 'a':
          backend_directory = optarg;
@@ -207,16 +210,16 @@ int main (int argc, char *argv[])
          db_name = optarg;
          break;
 
-      case 'u':
-         db_user = optarg;
-         break;
-
       case 'P':
          db_password = optarg;
          break;
 
       case 'p':
          forge_on = true;
+         break;
+
+      case 'q':
+         backend_query_directory = optarg;
          break;
 
       case 'r':
@@ -229,6 +232,10 @@ int main (int argc, char *argv[])
 
       case 's':
          update_db = true;
+         break;
+
+      case 'u':
+         db_user = optarg;
          break;
 
       case 'V':                    /* Volume name */
@@ -319,6 +326,10 @@ int main (int argc, char *argv[])
 
    db_set_backend_dirs(backend_directories);
 #endif
+   backend_query_directories = New(alist(10, owned_by_alist));
+   backend_query_directories->append((char *)backend_query_directory);
+
+   db_set_query_dirs(backend_query_directories);
 
    db = db_init_database(NULL,
                          db_driver,
@@ -335,8 +346,8 @@ int main (int argc, char *argv[])
    if (db == NULL) {
       Emsg0(M_ERROR_TERM, 0, _("Could not init Bareos database\n"));
    }
-   if (!db_open_database(NULL, db)) {
-      Emsg0(M_ERROR_TERM, 0, db_strerror(db));
+   if (!db->open_database(NULL)) {
+      Emsg0(M_ERROR_TERM, 0, db->strerror());
    }
    Dmsg0(200, "Database opened\n");
    if (verbose) {
@@ -433,7 +444,7 @@ static void do_scan()
    read_records(bjcr->read_dcr, record_cb, bscan_mount_next_read_volume);
 
    if (update_db) {
-      db_write_batch_file_records(bjcr); /* used by bulk batch file insert */
+      db->write_batch_file_records(bjcr); /* used by bulk batch file insert */
    }
 
    free_attr(attr);
@@ -530,7 +541,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          bstrncpy(pr.Name, dev->VolHdr.PoolName, sizeof(pr.Name));
          bstrncpy(pr.PoolType, dev->VolHdr.PoolType, sizeof(pr.PoolType));
          num_pools++;
-         if (db_get_pool_record(bjcr, db, &pr)) {
+         if (db->get_pool_record(bjcr, &pr)) {
             if (verbose) {
                Pmsg1(000, _("Pool record for %s found in DB.\n"), pr.Name);
             }
@@ -556,7 +567,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          bstrncpy(mr.VolumeName, dev->VolHdr.VolumeName, sizeof(mr.VolumeName));
          mr.PoolId = pr.PoolId;
          num_media++;
-         if (db_get_media_record(bjcr, db, &mr)) {
+         if (db->get_media_record(bjcr, &mr)) {
             if (verbose) {
                Pmsg1(000, _("Media record for %s found in DB.\n"), mr.VolumeName);
             }
@@ -609,7 +620,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             unser_session_label(&label, rec);
             memset(&jr, 0, sizeof(jr));
             bstrncpy(jr.Job, label.Job, sizeof(jr.Job));
-            if (db_get_job_record(bjcr, db, &jr)) {
+            if (db->get_job_record(bjcr, &jr)) {
                /*
                 * Job record already exists in DB
                 */
@@ -658,7 +669,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
              * has already been bscan'd
              */
             Mmsg(sql_buffer, "SELECT count(*) from JobMedia where JobId=%d", jr.JobId);
-            db_sql_query(db, sql_buffer.c_str(), db_int64_handler, &jmr_count);
+            db->sql_query(sql_buffer.c_str(), db_int64_handler, &jmr_count);
             if( jmr_count.value > 0 ) {
                mjcr->insert_jobmedia_records = false;
             } else {
@@ -745,8 +756,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
                jr.VolSessionTime = mjcr->VolSessionTime;
                jr.JobTDate = (utime_t)mjcr->start_time;
                jr.ClientId = mjcr->ClientId;
-               if (!db_update_job_end_record(bjcr, db, &jr)) {
-                  Pmsg1(0, _("Could not update job record. ERR=%s\n"), db_strerror(db));
+               if (!db->update_job_end_record(bjcr, &jr)) {
+                  Pmsg1(0, _("Could not update job record. ERR=%s\n"), db->strerror());
                }
                mjcr->read_dcr = NULL;
                free_jcr(mjcr);
@@ -820,7 +831,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
 
       if (update_db) {
-         db_create_restore_object_record(mjcr, db, &rop);
+         db->create_restore_object_record(mjcr, &rop);
       }
 
       num_restoreobjects++;
@@ -1068,8 +1079,8 @@ static bool create_file_attributes_record(B_DB *db, JCR *mjcr,
       return true;
    }
 
-   if (!db_create_file_attributes_record(bjcr, db, &ar)) {
-      Pmsg1(0, _("Could not create File Attributes record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_file_attributes_record(bjcr, &ar)) {
+      Pmsg1(0, _("Could not create File Attributes record. ERR=%s\n"), db->strerror());
       return false;
    }
    mjcr->FileId = ar.FileId;
@@ -1126,12 +1137,12 @@ static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
       return true;
    }
 
-   if (!db_create_media_record(bjcr, db, mr)) {
-      Pmsg1(000, _("Could not create media record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_media_record(bjcr, mr)) {
+      Pmsg1(000, _("Could not create media record. ERR=%s\n"), db->strerror());
       return false;
    }
-   if (!db_update_media_record(bjcr, db, mr)) {
-      Pmsg1(000, _("Could not update media record. ERR=%s\n"), db_strerror(db));
+   if (!db->update_media_record(bjcr, mr)) {
+      Pmsg1(000, _("Could not update media record. ERR=%s\n"), db->strerror());
       return false;
    }
    if (verbose) {
@@ -1151,8 +1162,8 @@ static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
    }
 
    mr->LastWritten = lasttime;
-   if (!db_update_media_record(bjcr, db, mr)) {
-      Pmsg1(000, _("Could not update media record. ERR=%s\n"), db_strerror(db));
+   if (!db->update_media_record(bjcr, mr)) {
+      Pmsg1(000, _("Could not update media record. ERR=%s\n"), db->strerror());
       return false;
    }
 
@@ -1173,8 +1184,8 @@ static bool create_pool_record(B_DB *db, POOL_DBR *pr)
       return true;
    }
 
-   if (!db_create_pool_record(bjcr, db, pr)) {
-      Pmsg1(000, _("Could not create pool record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_pool_record(bjcr, pr)) {
+      Pmsg1(000, _("Could not create pool record. ERR=%s\n"), db->strerror());
       return false;
    }
 
@@ -1196,16 +1207,16 @@ static bool create_client_record(B_DB *db, CLIENT_DBR *cr)
     */
    if (!update_db) {
       cr->ClientId = 0;
-      if (!db_get_client_record(bjcr, db, cr)) {
-        Pmsg1(0, _("Could not get Client record. ERR=%s\n"), db_strerror(db));
+      if (!db->get_client_record(bjcr, cr)) {
+        Pmsg1(0, _("Could not get Client record. ERR=%s\n"), db->strerror());
         return false;
       }
 
       return true;
    }
 
-   if (!db_create_client_record(bjcr, db, cr)) {
-      Pmsg1(000, _("Could not create Client record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_client_record(bjcr, cr)) {
+      Pmsg1(000, _("Could not create Client record. ERR=%s\n"), db->strerror());
       return false;
    }
 
@@ -1228,13 +1239,13 @@ static bool create_fileset_record(B_DB *db, FILESET_DBR *fsr)
       fsr->MD5[1] = 0;
    }
 
-   if (db_get_fileset_record(bjcr, db, fsr)) {
+   if (db->get_fileset_record(bjcr, fsr)) {
       if (verbose) {
          Pmsg1(000, _("Fileset \"%s\" already exists.\n"), fsr->FileSet);
       }
    } else {
-      if (!db_create_fileset_record(bjcr, db, fsr)) {
-         Pmsg2(000, _("Could not create FileSet record \"%s\". ERR=%s\n"), fsr->FileSet, db_strerror(db));
+      if (!db->create_fileset_record(bjcr, fsr)) {
+         Pmsg2(000, _("Could not create FileSet record \"%s\". ERR=%s\n"), fsr->FileSet, db->strerror());
          return false;
       }
 
@@ -1286,16 +1297,16 @@ static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label, DEV_R
    /*
     * This creates the bare essentials
     */
-   if (!db_create_job_record(bjcr, db, jr)) {
-      Pmsg1(0, _("Could not create JobId record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_job_record(bjcr, jr)) {
+      Pmsg1(0, _("Could not create JobId record. ERR=%s\n"), db->strerror());
       return mjcr;
    }
 
    /*
     * This adds the client, StartTime, JobTDate, ...
     */
-   if (!db_update_job_start_record(bjcr, db, jr)) {
-      Pmsg1(0, _("Could not update job start record. ERR=%s\n"), db_strerror(db));
+   if (!db->update_job_start_record(bjcr, jr)) {
+      Pmsg1(0, _("Could not update job start record. ERR=%s\n"), db->strerror());
       return mjcr;
    }
 
@@ -1352,8 +1363,8 @@ static bool update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
       return true;
    }
 
-   if (!db_update_job_end_record(bjcr, db, jr)) {
-      Pmsg2(0, _("Could not update JobId=%u record. ERR=%s\n"), jr->JobId,  db_strerror(db));
+   if (!db->update_job_end_record(bjcr, jr)) {
+      Pmsg2(0, _("Could not update JobId=%u record. ERR=%s\n"), jr->JobId,  db->strerror());
       free_jcr(mjcr);
       return false;
    }
@@ -1447,8 +1458,8 @@ static bool create_jobmedia_record(B_DB *db, JCR *mjcr)
       return true;
    }
 
-   if (!db_create_jobmedia_record(bjcr, db, &jmr)) {
-      Pmsg1(0, _("Could not create JobMedia record. ERR=%s\n"), db_strerror(db));
+   if (!db->create_jobmedia_record(bjcr, &jmr)) {
+      Pmsg1(0, _("Could not create JobMedia record. ERR=%s\n"), db->strerror());
       return false;
    }
    if (verbose) {
@@ -1481,8 +1492,8 @@ static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int ty
       return true;
    }
 
-   if (!db_add_digest_to_file_record(bjcr, db, mjcr->FileId, digest, type)) {
-      Pmsg1(0, _("Could not add MD5/SHA1 to File record. ERR=%s\n"), db_strerror(db));
+   if (!db->add_digest_to_file_record(bjcr, mjcr->FileId, digest, type)) {
+      Pmsg1(0, _("Could not add MD5/SHA1 to File record. ERR=%s\n"), db->strerror());
       free_jcr(mjcr);
       return false;
    }

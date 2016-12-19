@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -228,8 +228,8 @@ int send_job_info(JCR *jcr)
          cr.FileRetention = jcr->res.client->FileRetention;
          cr.JobRetention = jcr->res.client->JobRetention;
          bstrncpy(cr.Uname, fd->msg+strlen(OKjob)+1, sizeof(cr.Uname));
-         if (!db_update_client_record(jcr, jcr->db, &cr)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"), db_strerror(jcr->db));
+         if (!jcr->db->update_client_record(jcr, &cr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error updating Client record. ERR=%s\n"), jcr->db->strerror());
          }
       }
    } else {
@@ -802,12 +802,11 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
 
    Dmsg1(010, "Send obj: %s\n", fd->msg);
 
-   db_unescape_object(jcr,
-                      jcr->db,
-                      row[8],                /* Object  */
-                      str_to_uint64(row[1]), /* Object length */
-                      fd->msg,
-                      &fd->msglen);
+   jcr->db->unescape_object(jcr,
+                            row[8],                /* Object  */
+                            str_to_uint64(row[1]), /* Object length */
+                            fd->msg,
+                            &fd->msglen);
    fd->send();                           /* send object */
    octx->count++;
 
@@ -852,8 +851,8 @@ bool send_plugin_options(JCR *jcr)
 
 static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
 {
-   POOL_MEM query(PM_MESSAGE);
    char ed1[50];
+   POOL_MEM query(PM_MESSAGE);
 
    if (!jcr->JobIds || !jcr->JobIds[0]) {
       return;
@@ -862,35 +861,32 @@ static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
    /*
     * Send restore objects for all jobs involved
     */
-   Mmsg(query, get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->fill_query(query, 1, jcr->JobIds, FT_RESTORE_FIRST);
+   jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   Mmsg(query, get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->fill_query(query, 1, jcr->JobIds, FT_PLUGIN_CONFIG);
+   jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
    /*
     * Send config objects for the current restore job
     */
-   Mmsg(query, get_restore_objects,
-        edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->fill_query(query, 1, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
+   jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 
 static inline void send_job_specific_restore_objects(JCR *jcr, JobId_t JobId, OBJ_CTX *octx)
 {
-   POOL_MEM query(PM_MESSAGE);
    char ed1[50];
+   POOL_MEM query(PM_MESSAGE);
 
    /*
     * Send restore objects for specific JobId.
     */
-   Mmsg(query, get_restore_objects,
-        edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->fill_query(query, 1, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+   jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   Mmsg(query, get_restore_objects,
-        edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
-   db_sql_query(jcr->db, query.c_str(), restore_object_handler, (void *)octx);
+   jcr->db->fill_query(query, 1, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+   jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 
 bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global)
@@ -941,7 +937,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    /*
     * Start transaction allocates jcr->attr and jcr->ar if needed
     */
-   db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
+   jcr->db->start_transaction(jcr); /* start transaction if not already open */
    ar = jcr->ar;
 
    Dmsg0(120, "dird: waiting to receive file attributes\n");
@@ -977,8 +973,8 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          if (jcr->cached_attribute) {
             Dmsg3(dbglvl, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname,
                ar->attr);
-            if (!db_create_file_attributes_record(jcr, jcr->db, ar)) {
-               Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+            if (!jcr->db->create_file_attributes_record(jcr, ar)) {
+               Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->strerror());
             }
          }
 
@@ -1029,7 +1025,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          ar->DigestType = crypto_digest_stream_type(stream);
          length = strlen(Digest.c_str());
          digest.check_size(length * 2 + 1);
-         db_escape_string(jcr, jcr->db, digest.c_str(), Digest.c_str(), length);
+         jcr->db->escape_string(jcr, digest.c_str(), Digest.c_str(), length);
          Dmsg4(dbglvl, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
                strlen(digest.c_str()), digest.c_str(), ar->DigestType);
       }
@@ -1046,8 +1042,8 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
    if (jcr->cached_attribute) {
       Dmsg3(dbglvl, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,
          ar->fname, ar->attr);
-      if (!db_create_file_attributes_record(jcr, jcr->db, ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!jcr->db->create_file_attributes_record(jcr, ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->strerror());
       }
       jcr->cached_attribute = false;
    }

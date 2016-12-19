@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -31,11 +31,9 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
 
-bool B_DB::db_match_database(const char *db_driver, const char *db_name,
-                             const char *db_address, int db_port)
+bool B_DB::match_database(const char *db_driver, const char *db_name,
+                          const char *db_address, int db_port)
 {
    bool match;
 
@@ -58,10 +56,10 @@ bool B_DB::db_match_database(const char *db_driver, const char *db_name,
  * connection otherwise. We use a method so we can reference
  * the protected members of the class.
  */
-B_DB *B_DB::db_clone_database_connection(JCR *jcr,
-                                         bool mult_db_connections,
-                                         bool get_pooled_connection,
-                                         bool need_private)
+B_DB *B_DB::clone_database_connection(JCR *jcr,
+                                      bool mult_db_connections,
+                                      bool get_pooled_connection,
+                                      bool need_private)
 {
    /*
     * See if its a simple clone e.g. with mult_db_connections set to false
@@ -87,7 +85,7 @@ B_DB *B_DB::db_clone_database_connection(JCR *jcr,
    }
 }
 
-const char *B_DB::db_get_type(void)
+const char *B_DB::get_type(void)
 {
    switch (m_db_interface_type) {
    case SQL_INTERFACE_TYPE_MYSQL:
@@ -121,7 +119,7 @@ const char *B_DB::db_get_type(void)
  * thread without blocking, but must be unlocked the number of
  * times it was locked using db_unlock().
  */
-void B_DB::_db_lock(const char *file, int line)
+void B_DB::_lock_db(const char *file, int line)
 {
    int errstat;
 
@@ -137,7 +135,7 @@ void B_DB::_db_lock(const char *file, int line)
  * same thread up to the number of times that thread called
  * db_lock()/
  */
-void B_DB::_db_unlock(const char *file, int line)
+void B_DB::_unlock_db(const char *file, int line)
 {
    int errstat;
 
@@ -146,19 +144,6 @@ void B_DB::_db_unlock(const char *file, int line)
       e_msg(file, line, M_FATAL, 0, "rwl_writeunlock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
-}
-
-bool B_DB::db_sql_query(const char *query, int flags)
-{
-   bool retval;
-
-   db_lock(this);
-   retval = ((B_DB_PRIV *)this)->sql_query(query, flags);
-   if (!retval) {
-      Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, ((B_DB_PRIV *)this)->sql_strerror());
-   }
-   db_unlock(this);
-   return retval;
 }
 
 void B_DB::print_lock_info(FILE *fp)
@@ -175,7 +160,7 @@ void B_DB::print_lock_info(FILE *fp)
  *       string must be long enough (max 2*old+1) to hold
  *       the escaped output.
  */
-void B_DB::db_escape_string(JCR *jcr, char *snew, char *old, int len)
+void B_DB::escape_string(JCR *jcr, char *snew, char *old, int len)
 {
    char *n, *o;
 
@@ -206,7 +191,7 @@ void B_DB::db_escape_string(JCR *jcr, char *snew, char *old, int len)
  * We base64 encode the data so its normal ASCII
  * Memory is stored in B_DB struct, no need to free it.
  */
-char *B_DB::db_escape_object(JCR *jcr, char *old, int len)
+char *B_DB::escape_object(JCR *jcr, char *old, int len)
 {
    int length;
    int max_length;
@@ -223,8 +208,8 @@ char *B_DB::db_escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object
  * We base64 encode the data so its normal ASCII
  */
-void B_DB::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                              POOLMEM *&dest, int32_t *dest_len)
+void B_DB::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                           POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
       dest[0] = '\0';

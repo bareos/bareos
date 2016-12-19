@@ -1141,6 +1141,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %dir %{script_dir}/ddl/drops
 %dir %{script_dir}/ddl/grants
 %dir %{script_dir}/ddl/updates
+%dir %{script_dir}/dml
 %{script_dir}/create_bareos_database
 %{script_dir}/drop_bareos_database
 %{script_dir}/drop_bareos_tables
@@ -1153,6 +1154,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # postgresql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
+%{script_dir}/dml/postgresql.bdbqf
 %{backend_dir}/libbareoscats-postgresql.so
 %{backend_dir}/libbareoscats-postgresql-*.so
 
@@ -1160,6 +1162,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
+%{script_dir}/dml/mysql.bdbqf
 %{backend_dir}/libbareoscats-mysql.so
 %{backend_dir}/libbareoscats-mysql-*.so
 
@@ -1168,6 +1171,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # sqlite3 catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/sqlite3*.sql
+%{script_dir}/dml/sqlite3.bdbqf
 %{backend_dir}/libbareoscats-sqlite3.so
 %{backend_dir}/libbareoscats-sqlite3-*.so
 %endif

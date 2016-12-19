@@ -1,0 +1,3 @@
+SELECT JobId, FileIndex
+  FROM %s
+ ORDER BY JobId, FileIndex ASC

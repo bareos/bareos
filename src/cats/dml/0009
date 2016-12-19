@@ -1,0 +1,32 @@
+# "WHERE JobId > 0" is a dummy where clause,
+#                   to make it easier to extend the filter
+#                   (all filters starts with "AND ...")
+SELECT DISTINCT Job.JobId, Job.Name, Client.Name as Client, Job.StartTime, Job.Type, Job.Level, Job.JobFiles, Job.JobBytes,
+       Job.JobStatus
+  FROM Job
+  LEFT JOIN Client
+ USING (ClientId)
+  LEFT JOIN JobMedia
+ USING (JobId)
+  LEFT JOIN Media
+ USING (MediaId)
+  LEFT JOIN FileSet
+ USING (FileSetId)
+ INNER JOIN (
+      SELECT MAX(Job.JobId) as MaxJobId
+        FROM Job
+        LEFT JOIN Client
+       USING (ClientId)
+        LEFT JOIN Pool
+       USING (PoolId)
+        LEFT JOIN JobMedia
+       USING (JobId)
+        LEFT JOIN Media
+       USING (MediaId)
+        LEFT JOIN FileSet
+       USING (FileSetId)
+       WHERE Job.JobId > 0 %s
+       GROUP BY Job.Name
+       ) LastJob
+    ON Job.JobId = LastJob.MaxJobId
+ ORDER BY StartTime%s

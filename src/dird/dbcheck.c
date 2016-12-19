@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,7 +28,6 @@
 
 #include "bareos.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
 
@@ -226,6 +225,7 @@ int main (int argc, char *argv[])
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
          db_set_backend_dirs(me->backend_directories);
 #endif
+         db_set_query_dirs(me->backend_query_directories);
 
          /*
           * Print catalog information and exit (-B)
@@ -314,8 +314,8 @@ int main (int argc, char *argv[])
                          false,
                          false,
                          false);
-   if (!db_open_database(NULL, db)) {
-      Emsg1(M_FATAL, 0, "%s", db_strerror(db));
+   if (!db->open_database(NULL)) {
+      Emsg1(M_FATAL, 0, "%s", db->strerror());
       return 1;
    }
 
@@ -347,7 +347,7 @@ int main (int argc, char *argv[])
     */
    drop_tmp_idx("idxPIchk", "File");
 
-   db_close_database(NULL, db);
+   db->close_database(NULL);
    db_flush_backends();
    close_msg(NULL);
    term_msg();
@@ -375,9 +375,8 @@ static void print_catalog_details(CATRES *catalog, const char *working_dir)
                          catalog->try_reconnect,
                          catalog->exit_on_fatal);
    if (db) {
-      printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details),
-             db->db_get_type(), working_directory);
-      db_close_database(NULL, db);
+      printf("%sdb_type=%s\nworking_dir=%s\n", catalog->display(catalog_details), db->get_type(), working_directory);
+      db->close_database(NULL);
    }
    free_pool_memory(catalog_details);
 }
@@ -604,8 +603,8 @@ static int make_id_list(const char *query, ID_LIST *id_list)
    id_list->num_del = 0;
    id_list->tot_ids = 0;
 
-   if (!db_sql_query(db, query, id_list_handler, (void *)id_list)) {
-      printf("%s", db_strerror(db));
+   if (!db->sql_query(query, id_list_handler, (void *)id_list)) {
+      printf("%s", db->strerror());
       return 0;
    }
    return 1;
@@ -617,12 +616,13 @@ static int make_id_list(const char *query, ID_LIST *id_list)
 static int delete_id_list(const char *query, ID_LIST *id_list)
 {
    char ed1[50];
-   for (int i=0; i < id_list->num_ids; i++) {
+
+   for (int i = 0; i < id_list->num_ids; i++) {
       bsnprintf(buf, sizeof(buf), query, edit_int64(id_list->Id[i], ed1));
       if (verbose) {
          printf(_("Deleting: %s\n"), buf);
       }
-      db_sql_query(db, buf, NULL, NULL);
+      db->sql_query(buf, NULL, NULL);
    }
    return 1;
 }
@@ -659,8 +659,8 @@ static int make_name_list(const char *query, NAME_LIST *name_list)
    name_list->num_del = 0;
    name_list->tot_ids = 0;
 
-   if (!db_sql_query(db, query, name_list_handler, (void *)name_list)) {
-      printf("%s", db_strerror(db));
+   if (!db->sql_query(query, name_list_handler, (void *)name_list)) {
+      printf("%s", db->strerror());
       return 0;
    }
    return 1;
@@ -718,7 +718,7 @@ static void eliminate_duplicate_filenames()
          /*
           * Get all the Ids of each name
           */
-         db_escape_string(NULL, db, esc_name, name_list.name[i], strlen(name_list.name[i]));
+         db->escape_string(NULL, esc_name, name_list.name[i], strlen(name_list.name[i]));
          bsnprintf(buf, sizeof(buf), "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
          if (verbose > 1) {
             printf("%s\n", buf);
@@ -739,13 +739,13 @@ static void eliminate_duplicate_filenames()
             if (verbose > 1) {
                printf("%s\n", buf);
             }
-            db_sql_query(db, buf, NULL, NULL);
+            db->sql_query(buf, NULL, NULL);
             bsnprintf(buf, sizeof(buf), "DELETE FROM Filename WHERE FilenameId=%s",
                ed2);
             if (verbose > 2) {
                printf("%s\n", buf);
             }
-            db_sql_query(db, buf, NULL, NULL);
+            db->sql_query(buf, NULL, NULL);
          }
       }
    }
@@ -783,7 +783,7 @@ static void eliminate_duplicate_paths()
          /*
           * Get all the Ids of each name
           */
-         db_escape_string(NULL, db, esc_name, name_list.name[i], strlen(name_list.name[i]));
+         db->escape_string(NULL, esc_name, name_list.name[i], strlen(name_list.name[i]));
          bsnprintf(buf, sizeof(buf), "SELECT PathId FROM Path WHERE Path='%s'", esc_name);
          if (verbose > 1) {
             printf("%s\n", buf);
@@ -804,12 +804,12 @@ static void eliminate_duplicate_paths()
             if (verbose > 1) {
                printf("%s\n", buf);
             }
-            db_sql_query(db, buf, NULL, NULL);
+            db->sql_query(buf, NULL, NULL);
             bsnprintf(buf, sizeof(buf), "DELETE FROM Path WHERE PathId=%s", ed2);
             if (verbose > 2) {
                printf("%s\n", buf);
             }
-            db_sql_query(db, buf, NULL, NULL);
+            db->sql_query(buf, NULL, NULL);
          }
       }
    }
@@ -819,7 +819,7 @@ static void eliminate_duplicate_paths()
 static void eliminate_orphaned_jobmedia_records()
 {
    const char *query = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
-                "LEFT OUTER JOIN Job ON (JobMedia.JobId=Job.JobId) "
+                "LEFT OUTER JOIN Job USING(JobId) "
                 "WHERE Job.JobId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned JobMedia entries.\n"));
@@ -838,8 +838,8 @@ static void eliminate_orphaned_jobmedia_records()
 "SELECT JobMedia.JobMediaId,JobMedia.JobId,Media.VolumeName FROM JobMedia,Media "
 "WHERE JobMedia.JobMediaId=%s AND Media.MediaId=JobMedia.MediaId",
                edit_int64(id_list.Id[i], ed1));
-            if (!db_sql_query(db, buf, print_jobmedia_handler, NULL)) {
-               printf("%s\n", db_strerror(db));
+            if (!db->sql_query(buf, print_jobmedia_handler, NULL)) {
+               printf("%s\n", db->strerror());
             }
          }
       }
@@ -862,7 +862,7 @@ static void eliminate_orphaned_jobmedia_records()
 static void eliminate_orphaned_file_records()
 {
    const char *query = "SELECT File.FileId,Job.JobId FROM File "
-                "LEFT OUTER JOIN Job ON (File.JobId=Job.JobId) "
+                "LEFT OUTER JOIN Job USING (JobId) "
                "WHERE Job.JobId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned File entries. This may take some time!\n"));
@@ -884,8 +884,8 @@ static void eliminate_orphaned_file_records()
 "SELECT File.FileId,File.JobId,Filename.Name FROM File,Filename "
 "WHERE File.FileId=%s AND File.FilenameId=Filename.FilenameId",
                edit_int64(id_list.Id[i], ed1));
-            if (!db_sql_query(db, buf, print_file_handler, NULL)) {
-               printf("%s\n", db_strerror(db));
+            if (!db->sql_query(buf, print_file_handler, NULL)) {
+               printf("%s\n", db->strerror());
             }
          }
       }
@@ -907,10 +907,9 @@ static void eliminate_orphaned_file_records()
 static void eliminate_orphaned_path_records()
 {
    db_int64_ctx lctx;
-   lctx.count=0;
-   db_sql_query(db, "SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1",
-                db_int64_handler, &lctx);
 
+   lctx.count = 0;
+   db->sql_query("SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", db_int64_handler, &lctx);
    if (lctx.count == 1) {
       printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
       return;
@@ -930,7 +929,7 @@ static void eliminate_orphaned_path_records()
    }
 
    const char *query = "SELECT DISTINCT Path.PathId,File.PathId FROM Path "
-               "LEFT OUTER JOIN File ON (Path.PathId=File.PathId) "
+               "LEFT OUTER JOIN File USING(PathId) "
                "WHERE File.PathId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned Path entries. This may take some time!\n"));
@@ -949,8 +948,8 @@ static void eliminate_orphaned_path_records()
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
             bsnprintf(buf, sizeof(buf), "SELECT Path FROM Path WHERE PathId=%s",
-               edit_int64(id_list.Id[i], ed1));
-            db_sql_query(db, buf, print_name_handler, NULL);
+                      edit_int64(id_list.Id[i], ed1));
+            db->sql_query(buf, print_name_handler, NULL);
          }
       }
       if (quit) {
@@ -988,7 +987,7 @@ static void eliminate_orphaned_filename_records()
    }
 
    const char *query = "SELECT Filename.FilenameId,File.FilenameId FROM Filename "
-                "LEFT OUTER JOIN File ON (Filename.FilenameId=File.FilenameId) "
+                "LEFT OUTER JOIN File USING(FilenameId) "
                 "WHERE File.FilenameId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned Filename entries. This may take some time!\n"));
@@ -1008,7 +1007,7 @@ static void eliminate_orphaned_filename_records()
             char ed1[50];
             bsnprintf(buf, sizeof(buf), "SELECT Name FROM Filename WHERE FilenameId=%s",
                edit_int64(id_list.Id[i], ed1));
-            db_sql_query(db, buf, print_name_handler, NULL);
+            db->sql_query(buf, print_name_handler, NULL);
          }
       }
       if (quit) {
@@ -1037,7 +1036,7 @@ static void eliminate_orphaned_fileset_records()
 
    printf(_("Checking for orphaned FileSet entries. This takes some time!\n"));
    query = "SELECT FileSet.FileSetId,Job.FileSetId FROM FileSet "
-           "LEFT OUTER JOIN Job ON (FileSet.FileSetId=Job.FileSetId) "
+           "LEFT OUTER JOIN Job USING(FileSetId) "
            "WHERE Job.FileSetId IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1051,8 +1050,8 @@ static void eliminate_orphaned_fileset_records()
          char ed1[50];
          bsnprintf(buf, sizeof(buf), "SELECT FileSetId,FileSet,MD5 FROM FileSet "
                       "WHERE FileSetId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_fileset_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_fileset_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1079,7 +1078,7 @@ static void eliminate_orphaned_client_records()
     *   i.e. Job.Client is NULL
     */
    query = "SELECT Client.ClientId,Client.Name FROM Client "
-           "LEFT OUTER JOIN Job ON (Client.ClientId=Job.ClientId) "
+           "LEFT OUTER JOIN Job USING(ClientId) "
            "WHERE Job.ClientId IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1093,8 +1092,8 @@ static void eliminate_orphaned_client_records()
          char ed1[50];
          bsnprintf(buf, sizeof(buf), "SELECT ClientId,Name FROM Client "
                       "WHERE ClientId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_client_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_client_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1121,7 +1120,7 @@ static void eliminate_orphaned_job_records()
     *   i.e. Client.Name is NULL
     */
    query = "SELECT Job.JobId,Job.Name FROM Job "
-           "LEFT OUTER JOIN Client ON (Job.ClientId=Client.ClientId) "
+           "LEFT OUTER JOIN Client USING(ClientId) "
            "WHERE Client.Name IS NULL";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1135,8 +1134,8 @@ static void eliminate_orphaned_job_records()
          char ed1[50];
          bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_job_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_job_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1172,8 +1171,8 @@ static void eliminate_admin_records()
          char ed1[50];
          bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_job_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_job_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1205,8 +1204,8 @@ static void eliminate_restore_records()
          char ed1[50];
          bsnprintf(buf, sizeof(buf), "SELECT JobId,Name,StartTime FROM Job "
                       "WHERE JobId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_job_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_job_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1240,8 +1239,8 @@ static void repair_bad_filenames()
          bsnprintf(buf, sizeof(buf),
             "SELECT Name FROM Filename WHERE FilenameId=%s",
                 edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_name_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_name_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1258,8 +1257,8 @@ static void repair_bad_filenames()
          bsnprintf(buf, sizeof(buf),
             "SELECT Name FROM Filename WHERE FilenameId=%s",
                edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, get_name_handler, name)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, get_name_handler, name)) {
+            printf("%s\n", db->strerror());
          }
          /*
           * Strip trailing slash(es)
@@ -1272,7 +1271,7 @@ static void repair_bad_filenames()
             esc_name[1] = 0;
          } else {
             name[len-1] = 0;
-            db_escape_string(NULL, db, esc_name, name, len);
+            db->escape_string(NULL, esc_name, name, len);
          }
          bsnprintf(buf, sizeof(buf),
             "UPDATE Filename SET Name='%s' WHERE FilenameId=%s",
@@ -1280,7 +1279,7 @@ static void repair_bad_filenames()
          if (verbose > 1) {
             printf("%s\n", buf);
          }
-         db_sql_query(db, buf, NULL, NULL);
+         db->sql_query(buf, NULL, NULL);
       }
       free_pool_memory(name);
    }
@@ -1306,8 +1305,8 @@ static void repair_bad_paths()
          char ed1[50];
          bsnprintf(buf, sizeof(buf),
             "SELECT Path FROM Path WHERE PathId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, print_name_handler, NULL)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, print_name_handler, NULL)) {
+            printf("%s\n", db->strerror());
          }
       }
    }
@@ -1323,8 +1322,8 @@ static void repair_bad_paths()
          char ed1[50];
          bsnprintf(buf, sizeof(buf),
             "SELECT Path FROM Path WHERE PathId=%s", edit_int64(id_list.Id[i], ed1));
-         if (!db_sql_query(db, buf, get_name_handler, name)) {
-            printf("%s\n", db_strerror(db));
+         if (!db->sql_query(buf, get_name_handler, name)) {
+            printf("%s\n", db->strerror());
          }
          /*
           * Strip trailing blanks
@@ -1336,13 +1335,13 @@ static void repair_bad_paths()
           * Add trailing slash
           */
          len = pm_strcat(name, "/");
-         db_escape_string(NULL, db, esc_name, name, len);
+         db->escape_string(NULL, esc_name, name, len);
          bsnprintf(buf, sizeof(buf), "UPDATE Path SET Path='%s' WHERE PathId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));
          if (verbose > 1) {
             printf("%s\n", buf);
          }
-         db_sql_query(db, buf, NULL, NULL);
+         db->sql_query(buf, NULL, NULL);
       }
       free_pool_memory(name);
    }
@@ -1442,11 +1441,11 @@ static bool check_idx(const char *col_name)
    int found = false;
    const char *query = "SHOW INDEX FROM File";
 
-   switch (db_get_type_index(db)) {
+   switch (db->get_type_index()) {
    case SQL_TYPE_MYSQL:
       memset(&idx_list, 0, sizeof(idx_list));
-      if (!db_sql_query(db, query, check_idx_handler, (void *)col_name)) {
-         printf("%s\n", db_strerror(db));
+      if (!db->sql_query(query, check_idx_handler, (void *)col_name)) {
+         printf("%s\n", db->strerror());
       }
       for (i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)) ; i++) {
          /*
@@ -1484,13 +1483,13 @@ static bool create_tmp_idx(const char *idx_name, const char *table_name,
    if (verbose) {
       printf("%s\n", buf);
    }
-   if (db_sql_query(db, buf, NULL, NULL)) {
+   if (db->sql_query(buf, NULL, NULL)) {
       idx_tmp_name = idx_name;
       if (verbose) {
          printf(_("Temporary index created.\n"));
       }
    } else {
-      printf("%s\n", db_strerror(db));
+      printf("%s\n", db->strerror());
       return false;
    }
    return true;
@@ -1507,8 +1506,8 @@ static bool drop_tmp_idx(const char *idx_name, const char *table_name)
       if (verbose) {
          printf("%s\n", buf);
       }
-      if (!db_sql_query(db, buf, NULL, NULL)) {
-         printf("%s\n", db_strerror(db));
+      if (!db->sql_query(buf, NULL, NULL)) {
+         printf("%s\n", db->strerror());
          return false;
       } else {
          if (verbose) {

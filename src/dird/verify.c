@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -144,7 +144,7 @@ bool do_verify(JCR *jcr)
          Dmsg1(100, "Supplied jobid=%d\n", verify_jobid);
 
       } else {
-         if (!db_find_last_jobid(jcr, jcr->db, Name, &jr)) {
+         if (!jcr->db->find_last_jobid(jcr, Name, &jr)) {
             if (JobLevel == L_VERIFY_CATALOG) {
                Jmsg(jcr, M_FATAL, 0, _(
                        "Unable to find JobId of previous InitCatalog Job.\n"
@@ -165,9 +165,8 @@ bool do_verify(JCR *jcr)
        *   us. We use the verify_jobid that we found above.
        */
       jcr->previous_jr.JobId = verify_jobid;
-      if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-         Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"),
-              db_strerror(jcr->db));
+      if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+         Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), jcr->db->strerror());
          return false;
       }
       if (!(jcr->previous_jr.JobStatus == JS_Terminated ||
@@ -212,8 +211,8 @@ bool do_verify(JCR *jcr)
 
    Dmsg2(100, "ClientId=%u JobLevel=%c\n", jcr->previous_jr.ClientId, JobLevel);
 
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
@@ -450,8 +449,10 @@ bool do_verify(JCR *jcr)
       jcr->sd_msg_thread_done = true;   /* no SD msg thread, so it is done */
       jcr->SDJobStatus = JS_Terminated;
       get_attributes_and_put_in_catalog(jcr);
-      db_end_transaction(jcr, jcr->db);   /* terminate any open transaction */
-      db_write_batch_file_records(jcr);
+      jcr->db->end_transaction(jcr);   /* terminate any open transaction */
+      if (jcr->batch_started) {
+         jcr->db_batch->write_batch_file_records(jcr);
+      }
       break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unimplemented verify level %d\n"), JobLevel);
@@ -706,7 +707,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
           * Find equivalent record in the database
           */
          fdbr.FileId = 0;
-         if (!db_get_file_attributes_record(jcr, jcr->db, jcr->fname,
+         if (!jcr->db->get_file_attributes_record(jcr, jcr->fname,
               &jcr->previous_jr, &fdbr)) {
             Jmsg(jcr, M_INFO, 0, _("New file: %s\n"), jcr->fname);
             Dmsg1(020, _("File not in catalog: %s\n"), jcr->fname);
@@ -717,7 +718,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
              * mark file record as visited by stuffing the
              * current JobId, which is unique, into the MarkId field.
              */
-            db_mark_file_record(jcr, jcr->db, fdbr.FileId, jcr->JobId);
+            jcr->db->mark_file_record(jcr, fdbr.FileId, jcr->JobId);
          }
 
          Dmsg3(400, "Found %s in catalog. inx=%d Opts=%s\n",
@@ -846,7 +847,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
                goto bail_out;
             }
             if (do_Digest != CRYPTO_DIGEST_NONE) {
-               db_escape_string(jcr, jcr->db, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
+               jcr->db->escape_string(jcr, buf.c_str(), Opts_Digest.c_str(), strlen(Opts_Digest.c_str()));
                if (!bstrcmp(buf.c_str(), fdbr.Digest)) {
                   prt_fname(jcr);
                   Jmsg(jcr, M_INFO, 0, _("      %s differs. File=%s Cat=%s\n"),
@@ -873,13 +874,16 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     */
    jcr->fn_printed = false;
    Mmsg(buf,
-      "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
-      "WHERE File.JobId=%d AND File.FileIndex > 0 "
-      "AND File.MarkId!=%d AND File.PathId=Path.PathId "
-      "AND File.FilenameId=Filename.FilenameId",
-         JobId, jcr->JobId);
-   /* missing_handler is called for each file found */
-   db_sql_query(jcr->db, buf.c_str(), missing_handler, (void *)jcr);
+        "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
+        "WHERE File.JobId=%d AND File.FileIndex > 0 "
+        "AND File.MarkId!=%d AND File.PathId=Path.PathId "
+        "AND File.FilenameId=Filename.FilenameId",
+        JobId, jcr->JobId);
+
+   /*
+    * missing_handler is called for each file found
+    */
+   jcr->db->sql_query(buf.c_str(), missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }

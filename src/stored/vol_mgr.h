@@ -45,6 +45,9 @@ class VOLRES;
 VOLRES *vol_walk_start();
 VOLRES *vol_walk_next(VOLRES *prev_vol);
 void vol_walk_end(VOLRES *vol);
+VOLRES *read_vol_walk_start();
+VOLRES *read_vol_walk_next(VOLRES *prev_vol);
+void read_vol_walk_end(VOLRES *vol);
 
 /*
  * Volume reservation class -- see vol_mgr.c and reserve.c
@@ -87,8 +90,13 @@ public:
 };
 
 #define foreach_vol(vol) \
-   for (vol=vol_walk_start(); vol; (vol=vol_walk_next(vol)) )
+   for (vol=vol_walk_start(); vol; (vol = vol_walk_next(vol)) )
 
 #define endeach_vol(vol) vol_walk_end(vol)
+
+#define foreach_read_vol(vol) \
+   for (vol=read_vol_walk_start(); vol; (vol = read_vol_walk_next(vol)) )
+
+#define endeach_read_vol(vol) read_vol_walk_end(vol)
 
 #endif

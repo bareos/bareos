@@ -131,7 +131,7 @@ bool do_consolidate(JCR *jcr)
          /*
           * First determine the number of total incrementals
           */
-         db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+         jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
          incrementals_total = jobids_ctx.count - 1;
          Dmsg1(10, "unlimited jobids list:  %s.\n", jobids_ctx.list);
 
@@ -149,7 +149,7 @@ bool do_consolidate(JCR *jcr)
                   job->name(), jcr->jr.ClientId, jcr->jr.FileSetId, sdt);
          }
 
-         db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+         jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
          Dmsg1(10, "consolidate candidates:  %s.\n", jobids_ctx.list);
 
          /*
@@ -171,7 +171,7 @@ bool do_consolidate(JCR *jcr)
             jcr->jr.limit = max_incrementals_to_consolidate + 1;
             Dmsg3(10, "total: %d, to_consolidate: %d, limit: %d.\n", incrementals_total, max_incrementals_to_consolidate, jcr->jr.limit);
             jobids_ctx.reset();
-            db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids_ctx);
+            jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids_ctx);
             incrementals_to_consolidate = jobids_ctx.count - 1;
             Dmsg2(10, "%d consolidate ids after limit: %s.\n", jobids_ctx.count, jobids_ctx.list);
             if (incrementals_to_consolidate < 1) {
@@ -218,8 +218,8 @@ bool do_consolidate(JCR *jcr)
             jcr->previous_jr.JobId = str_to_int64(jobids);
             Dmsg1(10, "Previous JobId=%s\n", jobids);
 
-            if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-               Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), db_strerror(jcr->db));
+            if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+               Jmsg(jcr, M_FATAL, 0, _("Error getting Job record for first Job: ERR=%s"), jcr->db->strerror());
                goto bail_out;
             }
 
@@ -232,7 +232,6 @@ bool do_consolidate(JCR *jcr)
              * Check if job is older than AlwaysIncrementalMaxFullAge
              */
             Jmsg(jcr, M_INFO, 0,  _("check full age: full is %s, allowed is %s\n"), sdt_starttime, sdt_allowed);
-
             if (starttime > oldest_allowed_starttime) {
                Jmsg(jcr, M_INFO, 0, _("Full is newer than AlwaysIncrementalMaxFullAge -> skipping first jobid %s because of age\n"), jobids);
                if (p) {
@@ -300,9 +299,8 @@ void consolidate_cleanup(JCR *jcr, int TermCode)
 
    update_job_end(jcr, TermCode);
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 

@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -345,16 +345,16 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
 {
    db_list_ctx jobids;
 
-   if (!db_get_used_base_jobids(ua->jcr, ua->db, rx->JobIds, &jobids)) {
-      ua->warning_msg("%s", db_strerror(ua->db));
+   if (!ua->db->get_used_base_jobids(ua->jcr, rx->JobIds, &jobids)) {
+      ua->warning_msg("%s", ua->db->strerror());
    }
 
    if (jobids.count) {
-      POOL_MEM q;
+      POOL_MEM query(PM_MESSAGE);
 
-      Mmsg(q, uar_print_jobs, jobids.list);
       ua->send_msg(_("The restore will use the following job(s) as Base\n"));
-      db_list_sql_query(ua->jcr, ua->db, q.c_str(), ua->send, HORZ_LIST, true);
+      ua->db->fill_query(query, 17, jobids.list);
+      ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    }
    pm_strcpy(rx->BaseJobIds, jobids.list);
 }
@@ -417,7 +417,7 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
             return false;
          }
          bstrncpy(cr.Name, ua->argv[i], sizeof(cr.Name));
-         if (!db_get_client_record(ua->jcr, ua->db, &cr)) {
+         if (!ua->db->get_client_record(ua->jcr, &cr)) {
             ua->error_msg("invalid %s argument: %s\n", ua->argk[i], ua->argv[i]);
             return false;
          }
@@ -653,7 +653,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, uar_list_jobs, ua->send, HORZ_LIST, true);
+         ua->db->list_sql_query(ua->jcr, 16, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -666,12 +666,12 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          len = strlen(ua->cmd);
          fname = (char *)malloc(len * 2 + 1);
-         db_escape_string(ua->jcr, ua->db, fname, ua->cmd, len);
-         Mmsg(rx->query, uar_file[db_get_type_index(ua->db)], rx->ClientName, fname);
+         ua->db->escape_string(ua->jcr, fname, ua->cmd, len);
+         ua->db->fill_query(rx->query, 41, rx->ClientName, fname);
          free(fname);
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, rx->query, ua->send, HORZ_LIST, true);
+         ua->db->list_sql_query(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -691,7 +691,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         db_list_sql_query(ua->jcr, ua->db, ua->cmd, ua->send, HORZ_LIST, true);
+         ua->db->list_sql_query(ua->jcr, ua->cmd, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -828,15 +828,15 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
 
          memset(&jr, 0, sizeof(jr));
          jr.JobId = str_to_int64(ua->cmd);
-         if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+         if (!ua->db->get_job_record(ua->jcr, &jr)) {
             ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-                          ua->cmd, db_strerror(ua->db));
+                          ua->cmd, ua->db->strerror());
             return 0;
          }
          ua->send_msg(_("Selecting jobs to build the Full state at %s\n"),
                       jr.cStartTime);
          jr.JobLevel = L_INCREMENTAL; /* Take Full+Diff+Incr */
-         if (!db_accurate_get_jobids(ua->jcr, ua->db, &jr, &jobids)) {
+         if (!ua->db->accurate_get_jobids(ua->jcr, &jr, &jobids)) {
             return 0;
          }
          pm_strcpy(rx->JobIds, jobids.list);
@@ -871,9 +871,9 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
       }
       memset(&jr, 0, sizeof(jr));
       jr.JobId = JobId;
-      if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
+      if (!ua->db->get_job_record(ua->jcr, &jr)) {
          ua->error_msg(_("Unable to get Job record for JobId=%s: ERR=%s\n"),
-            edit_int64(JobId, ed1), db_strerror(ua->db));
+            edit_int64(JobId, ed1), ua->db->strerror());
          free_pool_memory(JobIds);
          return 0;
       }
@@ -972,30 +972,30 @@ static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, b
 
 /*
  * For a given file (path+filename), split into path and file, then
- *   lookup the most recent backup in the catalog to get the JobId
- *   and FileIndex, then insert them into the findex list.
+ * lookup the most recent backup in the catalog to get the JobId
+ * and FileIndex, then insert them into the findex list.
  */
-static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *file,
-                                        char *date)
+static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *file, char *date)
 {
    strip_trailing_newline(file);
    split_path_and_filename(ua, rx, file);
+
    if (*rx->JobIds == 0) {
-      Mmsg(rx->query, uar_jobid_fileindex, date, rx->path, rx->fname,
-           rx->ClientName);
+      ua->db->fill_query(rx->query, 31, date, rx->path, rx->fname, rx->ClientName);
    } else {
-      Mmsg(rx->query, uar_jobids_fileindex, rx->JobIds, date,
-           rx->path, rx->fname, rx->ClientName);
+      ua->db->fill_query(rx->query, 32, rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
    }
+
+   /*
+    * Find and insert jobid and File Index
+    */
    rx->found = false;
-   /* Find and insert jobid and File Index */
-   if (!db_sql_query(ua->db, rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->sql_query(rx->query, jobid_fileindex_handler, (void *)rx)) {
       ua->error_msg(_("Query failed: %s. ERR=%s\n"),
-         rx->query, db_strerror(ua->db));
+                    rx->query, ua->db->strerror());
    }
    if (!rx->found) {
       ua->error_msg(_("No database record found for: %s\n"), file);
-//    ua->error_msg("Query=%s\n", rx->query);
       return true;
    }
    return true;
@@ -1005,21 +1005,24 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
  * For a given path lookup the most recent backup in the catalog
  * to get the JobId and FileIndexes of all files in that directory.
  */
-static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *dir,
-                                        char *date)
+static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *dir, char *date)
 {
    strip_trailing_junk(dir);
+
    if (*rx->JobIds == 0) {
       ua->error_msg(_("No JobId specified cannot continue.\n"));
       return false;
    } else {
-      Mmsg(rx->query, uar_jobid_fileindex_from_dir[db_get_type_index(ua->db)], rx->JobIds, dir, rx->ClientName);
+      ua->db->fill_query(rx->query, 44, rx->JobIds, dir, rx->ClientName);
    }
+
+   /*
+    * Find and insert jobid and File Index
+    */
    rx->found = false;
-   /* Find and insert jobid and File Index */
-   if (!db_sql_query(ua->db, rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->sql_query(rx->query, jobid_fileindex_handler, (void *)rx)) {
       ua->error_msg(_("Query failed: %s. ERR=%s\n"),
-         rx->query, db_strerror(ua->db));
+                    rx->query, ua->db->strerror());
    }
    if (!rx->found) {
       ua->error_msg(_("No database record found for: %s\n"), dir);
@@ -1034,13 +1037,16 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
 static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
 {
    strip_trailing_junk(table);
-   Mmsg(rx->query, uar_jobid_fileindex_from_table, table);
 
+   ua->db->fill_query(rx->query, 33, table);
+
+   /*
+    * Find and insert jobid and File Index
+    */
    rx->found = false;
-   /* Find and insert jobid and File Index */
-   if (!db_sql_query(ua->db, rx->query, jobid_fileindex_handler, (void *)rx)) {
+   if (!ua->db->sql_query(rx->query, jobid_fileindex_handler, (void *)rx)) {
       ua->error_msg(_("Query failed: %s. ERR=%s\n"),
-         rx->query, db_strerror(ua->db));
+                    rx->query, ua->db->strerror());
    }
    if (!rx->found) {
       ua->error_msg(_("No table found: %s\n"), table);
@@ -1078,7 +1084,7 @@ static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *name)
    rx->fnl = p - f;
    if (rx->fnl > 0) {
       rx->fname = check_pool_memory_size(rx->fname, 2*(rx->fnl)+1);
-      db_escape_string(ua->jcr, ua->db, rx->fname, f, rx->fnl);
+      ua->db->escape_string(ua->jcr, rx->fname, f, rx->fnl);
    } else {
       rx->fname[0] = 0;
       rx->fnl = 0;
@@ -1087,7 +1093,7 @@ static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *name)
    rx->pnl = f - name;
    if (rx->pnl > 0) {
       rx->path = check_pool_memory_size(rx->path, 2*(rx->pnl)+1);
-      db_escape_string(ua->jcr, ua->db, rx->path, name, rx->pnl);
+      ua->db->escape_string(ua->jcr, rx->path, name, rx->pnl);
    } else {
       rx->path[0] = 0;
       rx->pnl = 0;
@@ -1183,9 +1189,9 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
       /*
        * Use first JobId as estimate of the number of files to restore
        */
-      Mmsg(rx->query, uar_count_files, edit_int64(JobId, ed1));
-      if (!db_sql_query(ua->db, rx->query, restore_count_handler, (void *)rx)) {
-         ua->error_msg("%s\n", db_strerror(ua->db));
+      ua->db->fill_query(rx->query, 15, edit_int64(JobId, ed1));
+      if (!ua->db->sql_query(rx->query, restore_count_handler, (void *)rx)) {
+         ua->error_msg("%s\n", ua->db->strerror());
       }
       if (rx->found) {
          /*
@@ -1196,14 +1202,11 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
       }
    }
 
-   ua->info_msg(_("\nBuilding directory tree for JobId(s) %s ...  "),
-                rx->JobIds);
+   ua->info_msg(_("\nBuilding directory tree for JobId(s) %s ...  "), rx->JobIds);
 
-   if (!db_get_file_list(ua->jcr, ua->db,
-                         rx->JobIds, false /* do not use md5 */,
-                         true /* get delta */,
-                         insert_tree_handler, (void *)&tree)) {
-      ua->error_msg("%s", db_strerror(ua->db));
+   if (!ua->db->get_file_list(ua->jcr, rx->JobIds, false /* do not use md5 */,
+                              true /* get delta */, insert_tree_handler, (void *)&tree)) {
+      ua->error_msg("%s", ua->db->strerror());
    }
 
    if (*rx->BaseJobIds) {
@@ -1228,8 +1231,8 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
        * Find out if any Job is purged
        */
       Mmsg(rx->query, "SELECT SUM(PurgedFiles) FROM Job WHERE JobId IN (%s)", rx->JobIds);
-      if (!db_sql_query(ua->db, rx->query, restore_count_handler, (void *)rx)) {
-         ua->error_msg("%s\n", db_strerror(ua->db));
+      if (!ua->db->sql_query(rx->query, restore_count_handler, (void *)rx)) {
+         ua->error_msg("%s\n", ua->db->strerror());
       }
       /*
        * rx->JobId is the PurgedFiles flag
@@ -1313,14 +1316,14 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Create temp tables
     */
-   db_sql_query(ua->db, uar_del_temp);
-   db_sql_query(ua->db, uar_del_temp1);
+   ua->db->sql_query(18);
+   ua->db->sql_query(19);
 
-   if (!db_sql_query(ua->db, uar_create_temp[db_get_type_index(ua->db)])) {
-      ua->error_msg("%s\n", db_strerror(ua->db));
+   if (!ua->db->sql_query(42)) {
+      ua->error_msg("%s\n", ua->db->strerror());
    }
-   if (!db_sql_query(ua->db, uar_create_temp1[db_get_type_index(ua->db)])) {
-      ua->error_msg("%s\n", db_strerror(ua->db));
+   if (!ua->db->sql_query(43)) {
+      ua->error_msg("%s\n", ua->db->strerror());
    }
    /*
     * Select Client from the Catalog
@@ -1339,8 +1342,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
 
    if (i >= 0 && is_name_valid(ua->argv[i], ua->errmsg)) {
       bstrncpy(fsr.FileSet, ua->argv[i], sizeof(fsr.FileSet));
-      if (!db_get_fileset_record(ua->jcr, ua->db, &fsr)) {
-         ua->error_msg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet, db_strerror(ua->db));
+      if (!ua->db->get_fileset_record(ua->jcr, &fsr)) {
+         ua->error_msg(_("Error getting FileSet \"%s\": ERR=%s\n"), fsr.FileSet, ua->db->strerror());
          i = -1;
       }
    } else if (i >= 0) {         /* name is invalid */
@@ -1348,11 +1351,11 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
    if (i < 0) {                       /* fileset not found */
-      edit_int64(cr.ClientId, ed1);
-      Mmsg(rx->query, uar_sel_fileset, ed1, ed1);
+      ua->db->fill_query(rx->query, 29, edit_int64(cr.ClientId, ed1), ed1);
+
       start_prompt(ua, _("The defined FileSet resources are:\n"));
-      if (!db_sql_query(ua->db, rx->query, fileset_handler, (void *)ua)) {
-         ua->error_msg("%s\n", db_strerror(ua->db));
+      if (!ua->db->sql_query(rx->query, fileset_handler, (void *)ua)) {
+         ua->error_msg("%s\n", ua->db->strerror());
       }
       if (do_prompt(ua, _("FileSet"), _("Select FileSet resource"),
                  fileset_name, sizeof(fileset_name)) < 0) {
@@ -1361,8 +1364,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       }
 
       bstrncpy(fsr.FileSet, fileset_name, sizeof(fsr.FileSet));
-      if (!db_get_fileset_record(ua->jcr, ua->db, &fsr)) {
-         ua->warning_msg(_("Error getting FileSet record: %s\n"), db_strerror(ua->db));
+      if (!ua->db->get_fileset_record(ua->jcr, &fsr)) {
+         ua->warning_msg(_("Error getting FileSet record: %s\n"), ua->db->strerror());
          ua->send_msg(_("This probably means you modified the FileSet.\n"
                         "Continuing anyway.\n"));
       }
@@ -1377,7 +1380,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
 
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
-      if (db_get_pool_record(ua->jcr, ua->db, &pr)) {
+      if (ua->db->get_pool_record(ua->jcr, &pr)) {
          bsnprintf(pool_select, sizeof(pool_select), "AND Media.PoolId=%s ", edit_int64(pr.PoolId, ed1));
       } else {
          ua->warning_msg(_("Pool \"%s\" not found, using any pool.\n"), pr.Name);
@@ -1388,17 +1391,17 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Find JobId of last Full backup for this client, fileset
     */
    if (pool_select[0]) {
-      edit_int64(cr.ClientId, ed1);
-      Mmsg(rx->query, uar_last_full, ed1, date, fsr.FileSet, pool_select);
-      if (!db_sql_query(ua->db, rx->query)) {
-         ua->error_msg("%s\n", db_strerror(ua->db));
+      ua->db->fill_query(rx->query, 20, edit_int64(cr.ClientId, ed1), date, fsr.FileSet, pool_select);
+
+      if (!ua->db->sql_query(rx->query)) {
+         ua->error_msg("%s\n", ua->db->strerror());
          goto bail_out;
       }
    } else {
-      edit_int64(cr.ClientId, ed1);
-      Mmsg(rx->query, uar_last_full_no_pool, ed1, date, fsr.FileSet);
-      if (!db_sql_query(ua->db, rx->query)) {
-         ua->error_msg("%s\n", db_strerror(ua->db));
+      ua->db->fill_query(rx->query, 21, edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
+
+      if (!ua->db->sql_query(rx->query)) {
+         ua->error_msg("%s\n", ua->db->strerror());
          goto bail_out;
       }
    }
@@ -1406,8 +1409,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Find all Volumes used by that JobId
     */
-   if (!db_sql_query(ua->db, uar_full)) {
-      ua->error_msg("%s\n", db_strerror(ua->db));
+   if (!ua->db->sql_query(22)) {
+      ua->error_msg("%s\n", ua->db->strerror());
       goto bail_out;
    }
 
@@ -1415,8 +1418,9 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Note, this is needed because I don't seem to get the callback from the call just above.
     */
    rx->JobTDate = 0;
-   if (!db_sql_query(ua->db, uar_sel_all_temp1, last_full_handler, (void *)rx)) {
-      ua->warning_msg("%s\n", db_strerror(ua->db));
+   ua->db->fill_query(rx->query, 27);
+   if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
+      ua->warning_msg("%s\n", ua->db->strerror());
    }
    if (rx->JobTDate == 0) {
       ua->error_msg(_("No Full backup before %s found.\n"), date);
@@ -1426,18 +1430,19 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find most recent Differental Job after Full save, if any
     */
-   Mmsg(rx->query, uar_dif, edit_uint64(rx->JobTDate, ed1), date,
-        edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
-   if (!db_sql_query(ua->db, rx->query)) {
-      ua->warning_msg("%s\n", db_strerror(ua->db));
+   ua->db->fill_query(rx->query, 23,  edit_uint64(rx->JobTDate, ed1), date,
+                      edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
+   if (!ua->db->sql_query(rx->query)) {
+      ua->warning_msg("%s\n", ua->db->strerror());
    }
 
    /*
     * Now update JobTDate to look into Differental, if any
     */
    rx->JobTDate = 0;
-   if (!db_sql_query(ua->db, uar_sel_all_temp, last_full_handler, (void *)rx)) {
-      ua->warning_msg("%s\n", db_strerror(ua->db));
+   ua->db->fill_query(rx->query, 28);
+   if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
+      ua->warning_msg("%s\n", ua->db->strerror());
    }
    if (rx->JobTDate == 0) {
       ua->error_msg(_("No Full backup before %s found.\n"), date);
@@ -1447,18 +1452,20 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find all Incremental Jobs after Full/dif save
     */
-   Mmsg(rx->query, uar_inc, edit_uint64(rx->JobTDate, ed1), date,
-        edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
-   if (!db_sql_query(ua->db, rx->query)) {
-      ua->warning_msg("%s\n", db_strerror(ua->db));
+   ua->db->fill_query(rx->query, 24, edit_uint64(rx->JobTDate, ed1), date,
+                      edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
+   if (!ua->db->sql_query(rx->query)) {
+      ua->warning_msg("%s\n", ua->db->strerror());
    }
 
    /*
     * Get the JobIds from that list
     */
    rx->last_jobid[0] = rx->JobIds[0] = 0;
-   if (!db_sql_query(ua->db, uar_sel_jobid_temp, jobid_handler, (void *)rx)) {
-      ua->warning_msg("%s\n", db_strerror(ua->db));
+
+   ua->db->fill_query(rx->query, 26);
+   if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
+      ua->warning_msg("%s\n", ua->db->strerror());
    }
 
    if (rx->JobIds[0] != 0) {
@@ -1466,7 +1473,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
          /*
           * Display a list of all copies
           */
-         db_list_copies_records(ua->jcr, ua->db, "", rx->JobIds, ua->send, HORZ_LIST);
+         ua->db->list_copies_records(ua->jcr, "", rx->JobIds, ua->send, HORZ_LIST);
 
          if (find_arg(ua, NT_("yes")) > 0) {
             ua->pint32_val = 1;
@@ -1482,9 +1489,9 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
              */
             pm_strcpy(JobIds, rx->JobIds);
             rx->last_jobid[0] = rx->JobIds[0] = 0;
-            Mmsg(rx->query, uar_sel_jobid_copies, JobIds.c_str());
-            if (!db_sql_query(ua->db, rx->query, jobid_handler, (void *)rx)) {
-               ua->warning_msg("%s\n", db_strerror(ua->db));
+            ua->db->fill_query(rx->query, 61, JobIds.c_str());
+            if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
+               ua->warning_msg("%s\n", ua->db->strerror());
             }
          }
       }
@@ -1492,8 +1499,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       /*
        * Display a list of Jobs selected for this restore
        */
-      Mmsg(rx->query, uar_list_jobs_by_idlist, rx->JobIds);
-      db_list_sql_query(ua->jcr, ua->db, rx->query, ua->send, HORZ_LIST, true);
+      ua->db->fill_query(rx->query, 25, rx->JobIds);
+      ua->db->list_sql_query(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
       ok = true;
    } else {
@@ -1501,8 +1508,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
 bail_out:
-   db_sql_query(ua->db, uar_del_temp);
-   db_sql_query(ua->db, uar_del_temp1);
+   ua->db->sql_query(18);
+   ua->db->sql_query(19);
 
    return ok;
 }

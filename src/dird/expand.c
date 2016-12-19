@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -264,9 +264,9 @@ static var_rc_t lookup_counter_var(var_t *ctx,
                } else {
                   cr.WrapCounter[0] = 0;
                }
-               if (!db_update_counter_record(jcr, jcr->db, &cr)) {
+               if (!jcr->db->update_counter_record(jcr, &cr)) {
                   Jmsg(jcr, M_ERROR, 0, _("Count not update counter %s: ERR=%s\n"),
-                     counter->name(), db_strerror(jcr->db));
+                       counter->name(), jcr->db->strerror());
                }
             }
          }

@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2004-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -263,9 +263,9 @@ static inline bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
     */
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = jcr->jr.PoolId;
-   if (!db_get_pool_record(jcr, jcr->db, &pr)) {
+   if (!jcr->db->get_pool_record(jcr, &pr)) {
       Jmsg(jcr, M_FATAL, 0, _("Pool for JobId %s not in database. ERR=%s\n"),
-           edit_int64(pr.PoolId, ed1), db_strerror(jcr->db));
+           edit_int64(pr.PoolId, ed1), jcr->db->strerror());
          return false;
    }
 
@@ -542,8 +542,8 @@ static bool find_jobids_from_mediaid_list(JCR *jcr, idpkt *ids, const char *type
 
    Mmsg(query, sql_jobids_from_mediaid, ids->list);
    ids->count = 0;
-   if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)ids)) {
-      Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+   if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)ids)) {
+      Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
    }
    if (ids->count == 0) {
@@ -568,8 +568,8 @@ static bool find_mediaid_then_jobids(JCR *jcr, idpkt *ids,
     * Basic query for MediaId
     */
    Mmsg(query, query1, jcr->res.rpool->name());
-   if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)ids)) {
-      Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+   if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)ids)) {
+      Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
    }
 
@@ -613,9 +613,9 @@ static inline bool find_jobids_of_pool_uncopied_jobs(JCR *jcr, idpkt *ids)
    Dmsg1(dbglevel, "copy selection pattern=%s\n", jcr->res.rpool->name());
    Mmsg(query, sql_jobids_of_pool_uncopied_jobs, jcr->res.rpool->name());
    Dmsg1(dbglevel, "get uncopied jobs query=%s\n", query.c_str());
-   if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)ids)) {
+   if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)ids)) {
       Jmsg(jcr, M_FATAL, 0,
-           _("SQL to get uncopied jobs failed. ERR=%s\n"), db_strerror(jcr->db));
+           _("SQL to get uncopied jobs failed. ERR=%s\n"), jcr->db->strerror());
       goto bail_out;
    }
    ok = true;
@@ -651,10 +651,10 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids,
     */
    Mmsg(query, query1, jcr->res.rpool->name());
    Dmsg1(dbglevel, "get name query1=%s\n", query.c_str());
-   if (!db_sql_query(jcr->db, query.c_str(), unique_name_handler,
+   if (!jcr->db->sql_query(query.c_str(), unique_name_handler,
         (void *)item_chain)) {
       Jmsg(jcr, M_FATAL, 0,
-           _("SQL to get %s failed. ERR=%s\n"), type, db_strerror(jcr->db));
+           _("SQL to get %s failed. ERR=%s\n"), type, jcr->db->strerror());
       goto bail_out;
    }
    Dmsg1(dbglevel, "query1 returned %d names\n", item_chain->size());
@@ -718,9 +718,9 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids,
       Dmsg2(dbglevel, "Got %s: %s\n", type, item->item);
       Mmsg(query, query2, item->item, jcr->res.rpool->name());
       Dmsg1(dbglevel, "get id from name query2=%s\n", query.c_str());
-      if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)ids)) {
+      if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)ids)) {
          Jmsg(jcr, M_FATAL, 0,
-              _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+              _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
    }
@@ -793,10 +793,10 @@ static inline bool getJobs_to_migrate(JCR *jcr)
          goto bail_out;
       }
       Dmsg1(dbglevel, "SQL=%s\n", jcr->res.job->selection_pattern);
-      if (!db_sql_query(jcr->db, jcr->res.job->selection_pattern,
+      if (!jcr->db->sql_query(jcr->res.job->selection_pattern,
            unique_dbid_handler, (void *)&ids)) {
          Jmsg(jcr, M_FATAL, 0,
-              _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+              _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
       break;
@@ -827,8 +827,8 @@ static inline bool getJobs_to_migrate(JCR *jcr)
        */
       Mmsg(query, sql_pool_bytes, jcr->res.rpool->name());
 
-      if (!db_sql_query(jcr->db, query.c_str(), db_int64_handler, (void *)&ctx)) {
-         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+      if (!jcr->db->sql_query(query.c_str(), db_int64_handler, (void *)&ctx)) {
+         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
 
@@ -856,8 +856,8 @@ static inline bool getJobs_to_migrate(JCR *jcr)
       Mmsg(query, sql_mediaids, jcr->res.rpool->name());
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)&ids)) {
-         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+      if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)&ids)) {
+         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
 
@@ -900,8 +900,8 @@ static inline bool getJobs_to_migrate(JCR *jcr)
           */
          Mmsg(query, sql_job_bytes, mid.list);
          Dmsg1(dbglevel, "Jobbytes query: %s\n", query.c_str());
-         if (!db_sql_query(jcr->db, query.c_str(), db_int64_handler, (void *)&ctx)) {
-            Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+         if (!jcr->db->sql_query(query.c_str(), db_int64_handler, (void *)&ctx)) {
+            Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
             goto bail_out;
          }
          pool_bytes -= ctx.value;
@@ -935,8 +935,8 @@ static inline bool getJobs_to_migrate(JCR *jcr)
       Mmsg(query, sql_pool_time, jcr->res.rpool->name(), dt);
       Dmsg1(dbglevel, "query=%s\n", query.c_str());
 
-      if (!db_sql_query(jcr->db, query.c_str(), unique_dbid_handler, (void *)&ids)) {
-         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), db_strerror(jcr->db));
+      if (!jcr->db->sql_query(query.c_str(), unique_dbid_handler, (void *)&ids)) {
+         Jmsg(jcr, M_FATAL, 0, _("SQL failed. ERR=%s\n"), jcr->db->strerror());
          goto bail_out;
       }
 
@@ -1076,10 +1076,10 @@ bool do_migration_init(JCR *jcr)
       jcr->previous_jr.JobId = jcr->MigrateJobId;
       Dmsg1(dbglevel, "Previous jobid=%d\n", (int)jcr->previous_jr.JobId);
 
-      if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
+      if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
          Jmsg(jcr, M_FATAL, 0, _("Could not get job record for JobId %s to %s. ERR=%s"),
               edit_int64(jcr->previous_jr.JobId, ed1),
-              jcr->get_ActionName(), db_strerror(jcr->db));
+              jcr->get_ActionName(), jcr->db->strerror());
          return false;
       }
 
@@ -1447,8 +1447,8 @@ static inline bool do_actual_migration(JCR *jcr)
    /*
     * Update job start record for this migration control job
     */
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
 
@@ -1465,8 +1465,8 @@ static inline bool do_actual_migration(JCR *jcr)
    /*
     * Update job start record for the real migration backup job
     */
-   if (!db_update_job_start_record(mig_jcr, mig_jcr->db, &mig_jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(mig_jcr->db));
+   if (!mig_jcr->db->update_job_start_record(mig_jcr, &mig_jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", mig_jcr->db->strerror());
       goto bail_out;
    }
 
@@ -1558,11 +1558,15 @@ static inline bool do_actual_migration(JCR *jcr)
       wait_for_storage_daemon_termination(jcr);
       wait_for_storage_daemon_termination(mig_jcr);
       jcr->setJobStatus(jcr->SDJobStatus);
-      db_write_batch_file_records(mig_jcr);
+      if (mig_jcr->batch_started) {
+         mig_jcr->db_batch->write_batch_file_records(jcr);
+      }
    } else {
       wait_for_storage_daemon_termination(jcr);
       jcr->setJobStatus(jcr->SDJobStatus);
-      db_write_batch_file_records(jcr);
+      if (jcr->batch_started) {
+         jcr->db_batch->write_batch_file_records(jcr);
+      }
    }
 
 bail_out:
@@ -1806,7 +1810,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
            jcr->previous_jr.cStartTime, jcr->previous_jr.cEndTime,
            edit_uint64(jcr->previous_jr.JobTDate, ec1),
            new_jobid);
-      db_sql_query(mig_jcr->db, query.c_str());
+      jcr->db->sql_query(query.c_str());
 
       if (jcr->is_terminated_ok()) {
          UAContext *ua;
@@ -1822,14 +1826,14 @@ void migration_cleanup(JCR *jcr, int TermCode)
              */
             Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
                  (char)JT_MIGRATED_JOB, old_jobid);
-            db_sql_query(mig_jcr->db, query.c_str());
+            mig_jcr->db->sql_query(query.c_str());
 
             /*
              * Move JobLog to new JobId
              */
             Mmsg(query, "UPDATE Log SET JobId=%s WHERE JobId=%s",
                  new_jobid, old_jobid);
-            db_sql_query(mig_jcr->db, query.c_str());
+            mig_jcr->db->sql_query(query.c_str());
 
             /*
              * If we just migrated a NDMP job, we need to move the file MetaData
@@ -1843,7 +1847,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
             case APT_NDMPV3:
             case APT_NDMPV4:
                Mmsg(query, sql_migrate_ndmp_metadata, new_jobid, old_jobid, new_jobid);
-               db_sql_query(mig_jcr->db, query.c_str());
+               mig_jcr->db->sql_query(query.c_str());
                break;
             default:
                break;
@@ -1874,7 +1878,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
             Mmsg(query, "INSERT INTO Log (JobId, Time, LogText ) "
                         "SELECT %s, Time, LogText FROM Log WHERE JobId=%s",
                  new_jobid, old_jobid);
-            db_sql_query(mig_jcr->db, query.c_str());
+            mig_jcr->db->sql_query(query.c_str());
 
             /*
              * If we just copied a NDMP job, we need to copy the file MetaData
@@ -1888,7 +1892,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
             case APT_NDMPV3:
             case APT_NDMPV4:
                Mmsg(query, sql_copy_ndmp_metadata, new_jobid, old_jobid, new_jobid);
-               db_sql_query(mig_jcr->db, query.c_str());
+               mig_jcr->db->sql_query(query.c_str());
                break;
             default:
                break;
@@ -1896,22 +1900,21 @@ void migration_cleanup(JCR *jcr, int TermCode)
 
             Mmsg(query, "UPDATE Job SET Type='%c' WHERE JobId=%s",
                  (char)JT_JOB_COPY, new_jobid);
-            db_sql_query(mig_jcr->db, query.c_str());
+            mig_jcr->db->sql_query(query.c_str());
             break;
          default:
             break;
          }
       }
 
-      if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
-         Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-              db_strerror(jcr->db));
+      if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+         Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
          jcr->setJobStatus(JS_ErrorTerminated);
       }
 
       update_bootstrap_file(mig_jcr);
 
-      if (!db_get_job_volume_names(mig_jcr, mig_jcr->db, mig_jcr->jr.JobId, mig_jcr->VolumeName)) {
+      if (!mig_jcr->db->get_job_volume_names(mig_jcr, mig_jcr->jr.JobId, mig_jcr->VolumeName)) {
          /*
           * Note, if the job has failed, most likely it did not write any
           * tape, so suppress this "error" message since in that case
@@ -1919,7 +1922,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
           * normal exit should we complain about this error.
           */
          if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {
-            Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(mig_jcr->db));
+            Jmsg(jcr, M_ERROR, 0, "%s", mig_jcr->db->strerror());
          }
          mig_jcr->VolumeName[0] = 0;         /* none */
       }
@@ -1935,9 +1938,9 @@ void migration_cleanup(JCR *jcr, int TermCode)
             p = mig_jcr->VolumeName;     /* no |, take full name */
          }
          bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
-         if (!db_get_media_record(jcr, jcr->db, &mr)) {
+         if (!jcr->db->get_media_record(jcr, &mr)) {
             Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
-                 mr.VolumeName, db_strerror(jcr->db));
+                 mr.VolumeName, jcr->db->strerror());
          }
       }
 

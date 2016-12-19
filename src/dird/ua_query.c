@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -126,8 +126,8 @@ bool query_cmd(UAContext *ua, const char *cmd)
          query = substitute_prompts(ua, query, prompt, nprompt);
          Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, VERT_LIST, false);
-         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, HORZ_LIST, true)) {
+            ua->db->list_sql_query(ua->jcr, query + 1, ua->send, VERT_LIST, false);
+         } else if (!ua->db->list_sql_query(ua->jcr, query, ua->send, HORZ_LIST, true)) {
             ua->send_msg("%s\n", query);
          }
          query[0] = 0;
@@ -138,8 +138,8 @@ bool query_cmd(UAContext *ua, const char *cmd)
       query = substitute_prompts(ua, query, prompt, nprompt);
       Dmsg1(100, "Query2=%s\n", query);
          if (query[0] == '!') {
-            db_list_sql_query(ua->jcr, ua->db, query+1, ua->send, VERT_LIST, false);
-         } else if (!db_list_sql_query(ua->jcr, ua->db, query, ua->send, HORZ_LIST, true)) {
+            ua->db->list_sql_query(ua->jcr, query + 1, ua->send, VERT_LIST, false);
+         } else if (!ua->db->list_sql_query(ua->jcr, query, ua->send, HORZ_LIST, true)) {
             ua->error_msg("%s\n", query);
          }
    }
@@ -155,8 +155,7 @@ bail_out:
    return true;
 }
 
-static POOLMEM *substitute_prompts(UAContext *ua,
-                       POOLMEM *query, char **prompt, int nprompt)
+static POOLMEM *substitute_prompts(UAContext *ua, POOLMEM *query, char **prompt, int nprompt)
 {
    char *p, *q, *o;
    POOLMEM *new_query;
@@ -166,9 +165,11 @@ static POOLMEM *substitute_prompts(UAContext *ua,
    if (nprompt == 0) {
       return query;
    }
-   for (i=0; i<9; i++) {
+
+   for (i = 0; i < 9; i++) {
       subst[i] = NULL;
    }
+
    new_query = get_pool_memory(PM_FNAME);
    o = new_query;
    for (q=query; (p=strchr(q, '%')); ) {
@@ -200,7 +201,7 @@ static POOLMEM *substitute_prompts(UAContext *ua,
                }
                len = strlen(ua->cmd);
                p = (char *)malloc(len * 2 + 1);
-               db_escape_string(ua->jcr, ua->db, p, ua->cmd, len);
+               ua->db->escape_string(ua->jcr, p, ua->cmd, len);
                subst[n] = p;
                olen = o - new_query;
                new_query = check_pool_memory_size(new_query, olen + strlen(p) + 10);
@@ -270,8 +271,10 @@ bool sqlquery_cmd(UAContext *ua, const char *cmd)
       pm_strcat(query, ua->cmd);
       if (ua->cmd[len-1] == ';') {
          ua->cmd[len-1] = 0;          /* zap ; */
-         /* Submit query */
-         db_list_sql_query(ua->jcr, ua->db, query.c_str(), ua->send, HORZ_LIST, true);
+         /*
+          * Submit query
+          */
+         ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
          *query.c_str() = 0;         /* start new query */
          msg = _("Enter SQL query: ");
       } else {

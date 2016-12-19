@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -391,7 +391,7 @@ extern "C" void msg_thread_cleanup(void *arg)
 {
    JCR *jcr = (JCR *)arg;
 
-   db_end_transaction(jcr, jcr->db);        /* terminate any open transaction */
+   jcr->db->end_transaction(jcr);           /* terminate any open transaction */
    jcr->lock();
    jcr->sd_msg_thread_done = true;
    jcr->SD_msg_chan_started = false;
@@ -399,7 +399,7 @@ extern "C" void msg_thread_cleanup(void *arg)
    pthread_cond_broadcast(&jcr->nextrun_ready); /* wakeup any waiting threads */
    pthread_cond_broadcast(&jcr->term_wait); /* wakeup any waiting threads */
    Dmsg2(100, "=== End msg_thread. JobId=%d usecnt=%d\n", jcr->JobId, jcr->use_count());
-   db_thread_cleanup(jcr->db);              /* remove thread specific data */
+   jcr->db->thread_cleanup();               /* remove thread specific data */
    free_jcr(jcr);                           /* release jcr */
 }
 

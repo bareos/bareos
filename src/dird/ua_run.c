@@ -1,8 +1,8 @@
 /* BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -54,9 +54,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    memset(&jr, 0, sizeof(jr));
    jr.JobId = JobId;
    ua->send_msg("rerunning jobid %d\n", jr.JobId);
-   if (!db_get_job_record(ua->jcr, ua->db, &jr)) {
-      Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Job record for Job rerun: ERR=%s"),
-           db_strerror(ua->jcr->db));
+   if (!ua->db->get_job_record(ua->jcr, &jr)) {
+      Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Job record for Job rerun: ERR=%s"), ua->db->strerror());
       goto bail_out;
    }
 
@@ -84,9 +83,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
 
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jr.ClientId;
-      if (!db_get_client_record(ua->jcr, ua->db, &cr)) {
-         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Client record for Job rerun: ERR=%s"),
-              db_strerror(ua->jcr->db));
+      if (!ua->db->get_client_record(ua->jcr, &cr)) {
+         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Client record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
       Mmsg(cmdline, " client=\"%s\"", cr.Name);
@@ -98,9 +96,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
 
       memset(&pr, 0, sizeof(pr));
       pr.PoolId = jr.PoolId;
-      if (!db_get_pool_record(ua->jcr, ua->db, &pr)) {
-         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Pool record for Job rerun: ERR=%s"),
-              db_strerror(ua->jcr->db));
+      if (!ua->db->get_pool_record(ua->jcr, &pr)) {
+         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting Pool record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
 
@@ -166,9 +163,8 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
 
       memset(&fs, 0, sizeof(fs));
       fs.FileSetId = jr.FileSetId;
-      if (!db_get_fileset_record(ua->jcr, ua->db, &fs)) {
-         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting FileSet record for Job rerun: ERR=%s"),
-              db_strerror(ua->jcr->db));
+      if (!ua->db->get_fileset_record(ua->jcr, &fs)) {
+         Jmsg(ua->jcr, M_WARNING, 0, _("Error getting FileSet record for Job rerun: ERR=%s"), ua->db->strerror());
          goto bail_out;
       }
       Mmsg(cmdline, " fileset=\"%s\"", fs.FileSet);
@@ -297,7 +293,7 @@ bool rerun_cmd(UAContext *ua, const char *cmd)
          Mmsg(query, "SELECT JobId FROM Job WHERE JobStatus = 'f' AND SchedTime > '%s' ORDER BY JobId", dt);
       }
 
-      db_get_query_dbids(ua->jcr, ua->db, query, ids);
+      ua->db->get_query_dbids(ua->jcr, query, ids);
 
       ua->send_msg("The following ids were selected for rerun:\n");
       for (i = 0; i < ids.num_ids; i++) {
@@ -1412,9 +1408,8 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
          } else if (jcr->RestoreJobId) { /* Display job name if jobid requested */
             memset(&jr, 0, sizeof(jr));
             jr.JobId = jcr->RestoreJobId;
-            if (!db_get_job_record(jcr, ua->db, &jr)) {
-               ua->error_msg(_("Could not get job record for selected JobId. ERR=%s"),
-                             db_strerror(ua->db));
+            if (!ua->db->get_job_record(jcr, &jr)) {
+               ua->error_msg(_("Could not get job record for selected JobId. ERR=%s"), ua->db->strerror());
                return false;
             }
             Name = jr.Job;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -627,7 +627,7 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
-         if (!db_get_pool_record(jcr, jcr->db, &pr)) {
+         if (!jcr->db->get_pool_record(jcr, &pr)) {
             retval = bRC_Error;
          }
          *((int *)value) = pr.NumVols;

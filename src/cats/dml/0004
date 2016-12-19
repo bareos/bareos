@@ -1,0 +1,21 @@
+#
+# For sql_update.c db_update_stats
+#
+INSERT INTO JobHisto (
+	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
+	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
+	       PriorJobId, PurgedFiles,
+	       HasBase, Reviewed, Comment
+       )
+SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
+       VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
+       HasBase,
+       Reviewed, Comment
+  FROM Job
+ WHERE JobStatus IN ('T','W','f','A','E')
+   AND NOT EXISTS (
+		SELECT JobHisto.JobId
+		  FROM JobHisto
+		 WHERE JobHisto.Jobid = Job.JobId
+       )
+   AND JobTDate       < %s

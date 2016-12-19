@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -385,6 +385,36 @@ bail_out:
    return false;
 }
 
+static inline bool validate_client(JCR *jcr)
+{
+   switch (jcr->res.client->Protocol) {
+   case APT_NATIVE:
+      return true;
+   default:
+      Jmsg(jcr, M_FATAL, 0, _("Client %s has illegal backup protocol %s for Native restore\n"),
+           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
+      return false;
+   }
+}
+
+static inline bool validate_storage(JCR *jcr)
+{
+   STORERES *store;
+
+   foreach_alist(store, jcr->res.rstorage) {
+      switch (store->Protocol) {
+      case APT_NATIVE:
+         continue;
+      default:
+         Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for Native restore\n"),
+              store->name(), auth_protocol_to_str(store->Protocol));
+         return false;
+      }
+   }
+
+   return true;
+}
+
 /**
  * Do a restore initialization.
  *
@@ -394,6 +424,13 @@ bail_out:
 bool do_native_restore_init(JCR *jcr)
 {
    free_wstorage(jcr);                /* we don't write */
+
+   /*
+    * Validate that we have a native client and storage(s).
+    */
+   if (!validate_client(jcr) || !validate_storage(jcr)) {
+      return false;
+   }
 
    return true;
 }
@@ -411,8 +448,8 @@ bool do_native_restore(JCR *jcr)
 
    memset(&rjr, 0, sizeof(rjr));
    jcr->jr.JobLevel = L_FULL;         /* Full restore */
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
    Dmsg0(20, "Updated job start record\n");

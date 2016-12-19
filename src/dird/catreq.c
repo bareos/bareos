@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,7 +140,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
       unbash_spaces(pr.Name);
-      ok = db_get_pool_record(jcr, jcr->db, &pr);
+      ok = jcr->db->get_pool_record(jcr, &pr);
       if (ok) {
          mr.PoolId = pr.PoolId;
          set_storageid_in_mr(jcr->res.wstore, &mr);
@@ -168,7 +168,7 @@ void catalog_request(JCR *jcr, BSOCK *bs)
        * Find the Volume
        */
       unbash_spaces(mr.VolumeName);
-      if (db_get_media_record(jcr, jcr->db, &mr)) {
+      if (jcr->db->get_media_record(jcr, &mr)) {
          const char *reason = NULL;           /* detailed reason for rejection */
          /*
           * If we are reading, accept any volume (reason == NULL)
@@ -227,9 +227,9 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       Dmsg3(400, "Update media %s oldStat=%s newStat=%s\n", sdmr.VolumeName, mr.VolStatus, sdmr.VolStatus);
       bstrncpy(mr.VolumeName, sdmr.VolumeName, sizeof(mr.VolumeName)); /* copy Volume name */
       unbash_spaces(mr.VolumeName);
-      if (!db_get_media_record(jcr, jcr->db, &mr)) {
-         Jmsg(jcr, M_ERROR, 0, _("Unable to get Media record for Volume %s: ERR=%s\n"), mr.VolumeName, db_strerror(jcr->db));
-         bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName, db_strerror(jcr->db));
+      if (!jcr->db->get_media_record(jcr, &mr)) {
+         Jmsg(jcr, M_ERROR, 0, _("Unable to get Media record for Volume %s: ERR=%s\n"), mr.VolumeName, jcr->db->strerror());
+         bs->fsend(_("1991 Catalog Request for vol=%s failed: %s"), mr.VolumeName, jcr->db->strerror());
          goto bail_out;
 
       }
@@ -314,15 +314,14 @@ void catalog_request(JCR *jcr, BSOCK *bs)
       mr.VolReadTime  = sdmr.VolReadTime;
       mr.VolWriteTime = sdmr.VolWriteTime;
 
-      Dmsg2(400, "db_update_media_record. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
+      Dmsg2(400, "update_media_record. Stat=%s Vol=%s\n", mr.VolStatus, mr.VolumeName);
 
       /*
        * Update the database, then before sending the response to the SD,
        * check if the Volume has expired.
        */
-      if (!db_update_media_record(jcr, jcr->db, &mr)) {
-         Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"),
-            db_strerror(jcr->db));
+      if (!jcr->db->update_media_record(jcr, &mr)) {
+         Jmsg(jcr, M_FATAL, 0, _("Catalog error updating Media record. %s"), jcr->db->strerror());
          bs->fsend(_("1993 Update Media error\n"));
          Dmsg0(400, "send error\n");
       } else {
@@ -350,8 +349,8 @@ bail_out:
       jm.MediaId = MediaId;
       Dmsg6(400, "create_jobmedia JobId=%d MediaId=%d SF=%d EF=%d FI=%d LI=%d\n",
             jm.JobId, jm.MediaId, jm.StartFile, jm.EndFile, jm.FirstIndex, jm.LastIndex);
-      if (!db_create_jobmedia_record(jcr, jcr->db, &jm)) {
-         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"), db_strerror(jcr->db));
+      if (!jcr->db->create_jobmedia_record(jcr, &jm)) {
+         Jmsg(jcr, M_FATAL, 0, _("Catalog error creating JobMedia record. %s"), jcr->db->strerror());
          bs->fsend(_("1992 Create JobMedia error\n"));
       } else {
          Dmsg0(400, "JobMedia record created\n");
@@ -391,7 +390,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    /*
     * Start transaction allocates jcr->attr and jcr->ar if needed
     */
-   db_start_transaction(jcr, jcr->db);     /* start transaction if not already open */
+   jcr->db->start_transaction(jcr);   /* start transaction if not already open */
    ar = jcr->ar;
 
    /*
@@ -460,8 +459,8 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    case STREAM_UNIX_ATTRIBUTES_EX:
       if (jcr->cached_attribute) {
          Dmsg2(400, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname);
-         if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-            Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), db_strerror(jcr->db));
+         if (!jcr->db->create_attributes_record(jcr, ar)) {
+            Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
          }
          jcr->cached_attribute = false;
       }
@@ -563,8 +562,8 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       /*
        * Store it.
        */
-      if (!db_create_restore_object_record(jcr, jcr->db, &ro)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"), db_strerror(jcr->db));
+      if (!jcr->db->create_restore_object_record(jcr, &ro)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Restore object create error. %s"), jcr->db->strerror());
       }
       break;
    }
@@ -620,13 +619,13 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
                /*
                 * Update BaseFile table
                 */
-               if (!db_create_attributes_record(jcr, jcr->db, ar)) {
-                  Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"), db_strerror(jcr->db));
+               if (!jcr->db->create_attributes_record(jcr, ar)) {
+                  Jmsg1(jcr, M_FATAL, 0, _("attribute create error. %s"), jcr->db->strerror());
                }
                jcr->cached_attribute = false;
             } else {
-               if (!db_add_digest_to_file_record(jcr, jcr->db, ar->FileId, digestbuf, type)) {
-                  Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"), db_strerror(jcr->db));
+               if (!jcr->db->add_digest_to_file_record(jcr, ar->FileId, digestbuf, type)) {
+                  Jmsg(jcr, M_ERROR, 0, _("Catalog error updating file digest. %s"), jcr->db->strerror());
                }
             }
          }

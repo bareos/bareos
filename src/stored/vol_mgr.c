@@ -38,10 +38,17 @@ static dlist *read_vol_list = NULL;
 static bthread_mutex_t read_vol_lock = BTHREAD_MUTEX_PRIORITY(PRIO_SD_READ_VOL_LIST);
 
 /* Global static variables */
+#ifdef SD_DEBUG_LOCK
 int vol_list_lock_count = 0;
+int read_vol_list_lock_count = 0;
+#else
+static int vol_list_lock_count = 0;
+static int read_vol_list_lock_count = 0;
+#endif
 
 /* Forward referenced functions */
 static void free_vol_item(VOLRES *vol);
+static void free_read_vol_item(VOLRES *vol);
 static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName);
 static void debug_list_volumes(const char *imsg);
 
@@ -93,7 +100,7 @@ void init_vol_list_lock()
 {
    int errstat;
 
-   if ((errstat=rwl_init(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
+   if ((errstat = rwl_init(&vol_list_lock, PRIO_SD_VOL_LIST)) != 0) {
       berrno be;
       Emsg1(M_ABORT, 0, _("Unable to initialize volume list lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -113,10 +120,10 @@ void _lock_volumes(const char *file, int line)
    int errstat;
 
    vol_list_lock_count++;
-   if ((errstat=rwl_writelock_p(&vol_list_lock, file, line)) != 0) {
+   if ((errstat = rwl_writelock_p(&vol_list_lock, file, line)) != 0) {
       berrno be;
       Emsg2(M_ABORT, 0, "rwl_writelock failure. stat=%d: ERR=%s\n",
-           errstat, be.bstrerror(errstat));
+            errstat, be.bstrerror(errstat));
    }
 }
 
@@ -125,21 +132,22 @@ void _unlock_volumes()
    int errstat;
 
    vol_list_lock_count--;
-   if ((errstat=rwl_writeunlock(&vol_list_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&vol_list_lock)) != 0) {
       berrno be;
       Emsg2(M_ABORT, 0, "rwl_writeunlock failure. stat=%d: ERR=%s\n",
-           errstat, be.bstrerror(errstat));
+            errstat, be.bstrerror(errstat));
    }
 }
 
-#define lock_read_volumes() lock_read_volumes_p(__FILE__, __LINE__)
-static void lock_read_volumes_p(const char *file, int line)
+void _lock_read_volumes(const char *file, int line)
 {
+   read_vol_list_lock_count++;
    bthread_mutex_lock_p(&read_vol_lock, file, line);
 }
 
-static void unlock_read_volumes()
+void _unlock_read_volumes()
 {
+   read_vol_list_lock_count--;
    bthread_mutex_unlock(&read_vol_lock);
 }
 
@@ -165,7 +173,7 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
    lock_read_volumes();
    vol = (VOLRES *)read_vol_list->binary_insert(nvol, read_compare);
    if (vol != nvol) {
-      free_vol_item(nvol);
+      free_read_vol_item(nvol);
       Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
    } else {
       Dmsg2(dbglvl, "add read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
@@ -194,7 +202,7 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
    }
    if (fvol) {
       read_vol_list->remove(fvol);
-      free_vol_item(fvol);
+      free_read_vol_item(fvol);
    }
    unlock_read_volumes();
 // pthread_cond_broadcast(&wait_next_vol);
@@ -262,51 +270,6 @@ static void debug_list_volumes(const char *imsg)
 }
 
 /*
- * List Volumes -- this should be moved to status.c
- */
-void list_volumes(void sendit(const char *msg, int len, void *sarg), void *arg)
-{
-   VOLRES *vol;
-   POOL_MEM msg(PM_MESSAGE);
-   int len;
-
-   foreach_vol(vol) {
-      DEVICE *dev = vol->dev;
-      if (dev) {
-         len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
-         sendit(msg.c_str(), len, arg);
-         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      } else {
-         len = Mmsg(msg, "Volume %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      }
-   }
-   endeach_vol(vol);
-
-   lock_read_volumes();
-   foreach_dlist(vol, read_vol_list) {
-      DEVICE *dev = vol->dev;
-      if (dev) {
-         len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name, dev->print_name());
-         sendit(msg.c_str(), len, arg);
-         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
-                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
-                    vol->is_in_use(), vol->get_jobid());
-         sendit(msg.c_str(), len, arg);
-      } else {
-         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n",
-                    vol->vol_name, vol->is_in_use());
-         sendit(msg.c_str(), len, arg);
-      }
-   }
-   unlock_read_volumes();
-}
-
-/*
  * Create a Volume item to put in the Volume list
  * Ensure that the device points to it.
  */
@@ -329,6 +292,28 @@ static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName)
 }
 
 static void free_vol_item(VOLRES *vol)
+{
+   DEVICE *dev = NULL;
+
+   vol->dec_use_count();
+   vol->Lock();
+   if (vol->use_count() > 0) {
+      vol->Unlock();
+      return;
+   }
+   vol->Unlock();
+   free(vol->vol_name);
+   if (vol->dev) {
+      dev = vol->dev;
+   }
+   vol->destroy_mutex();
+   free(vol);
+   if (dev) {
+      dev->vol = NULL;
+   }
+}
+
+static void free_read_vol_item(VOLRES *vol)
 {
    DEVICE *dev = NULL;
 
@@ -657,6 +642,72 @@ void vol_walk_end(VOLRES *vol)
             vol->use_count(), vol->vol_name);
       free_vol_item(vol);
       unlock_volumes();
+   }
+}
+
+/*
+ * Start walk of vol chain
+ * The proper way to walk the vol chain is:
+ *
+ * VOLRES *vol;
+ * foreach_read_vol(vol) {
+ *    ...
+ * }
+ * endeach_read_vol(vol);
+ *
+ * It is possible to leave out the endeach_read_vol(vol), but in that case,
+ * the last vol referenced must be explicitly released with:
+ *
+ * free_read_vol_item(vol);
+ */
+VOLRES *read_vol_walk_start()
+{
+   VOLRES *vol;
+   lock_read_volumes();
+   vol = (VOLRES *)read_vol_list->first();
+   if (vol) {
+      vol->inc_use_count();
+      Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+   }
+   unlock_read_volumes();
+
+   return vol;
+}
+
+/*
+ * Get next vol from chain, and release current one
+ */
+VOLRES *read_vol_walk_next(VOLRES *prev_vol)
+{
+   VOLRES *vol;
+
+   lock_read_volumes();
+   vol = (VOLRES *)read_vol_list->next(prev_vol);
+   if (vol) {
+      vol->inc_use_count();
+      Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+   }
+   if (prev_vol) {
+      free_read_vol_item(prev_vol);
+   }
+   unlock_read_volumes();
+
+   return vol;
+}
+
+/*
+ * Release last vol referenced
+ */
+void read_vol_walk_end(VOLRES *vol)
+{
+   if (vol) {
+      lock_read_volumes();
+      Dmsg2(dbglvl, "Free walk_end use_count=%d volname=%s\n",
+            vol->use_count(), vol->vol_name);
+      free_read_vol_item(vol);
+      unlock_read_volumes();
    }
 }
 

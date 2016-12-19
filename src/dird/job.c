@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -188,8 +188,8 @@ bool setup_job(JCR *jcr, bool suppress_output)
       }
    }
 
-   if (!db_create_job_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->create_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       goto bail_out;
    }
 
@@ -443,8 +443,8 @@ static void *job_thread(void *arg)
       jcr->res.job->RunScripts = New(alist(10, not_owned_by_alist));
    }
 
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
    /*
@@ -462,8 +462,8 @@ static void *job_thread(void *arg)
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
    generate_plugin_event(jcr, bDirEventJobRun);
@@ -850,11 +850,10 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
    bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
    Dmsg1(110, "get_or_create_pool=%s\n", pool_name);
 
-   while (!db_get_pool_record(jcr, jcr->db, &pr)) { /* get by Name */
+   while (!jcr->db->get_pool_record(jcr, &pr)) { /* get by Name */
       /* Try to create the pool */
       if (create_pool(jcr, jcr->db, jcr->res.pool, POOL_OP_CREATE) < 0) {
-         Jmsg(jcr, M_FATAL, 0, _("Pool \"%s\" not in database. ERR=%s"), pr.Name,
-            db_strerror(jcr->db));
+         Jmsg(jcr, M_FATAL, 0, _("Pool \"%s\" not in database. ERR=%s"), pr.Name, jcr->db->strerror());
          return 0;
       } else {
          Jmsg(jcr, M_INFO, 0, _("Created database record for Pool \"%s\".\n"), pr.Name);
@@ -1056,12 +1055,11 @@ bool get_level_since_time(JCR *jcr)
        * This is probably redundant, but some of the code below
        * uses jcr->stime, so don't remove unless you are sure.
        */
-      if (!db_find_job_start_time(jcr,jcr->db, &jcr->jr, jcr->stime, jcr->PrevJob)) {
+      if (!jcr->db->find_job_start_time(jcr, &jcr->jr, jcr->stime, jcr->PrevJob)) {
          do_full = true;
       }
 
-      have_full = db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
-                                              stime, prev_job, L_FULL);
+      have_full = jcr->db->find_last_job_start_time(jcr, &jcr->jr, stime, prev_job, L_FULL);
       if (have_full) {
          last_full_time = str_to_utime(stime);
       } else {
@@ -1078,8 +1076,7 @@ bool get_level_since_time(JCR *jcr)
          /*
           * Lookup last diff job
           */
-         if (db_find_last_job_start_time(jcr, jcr->db, &jcr->jr,
-                                         stime, prev_job, L_DIFFERENTIAL)) {
+         if (jcr->db->find_last_job_start_time(jcr, &jcr->jr, stime, prev_job, L_DIFFERENTIAL)) {
             last_diff_time = str_to_utime(stime);
             /*
              * If no Diff since Full, use Full time
@@ -1114,7 +1111,7 @@ bool get_level_since_time(JCR *jcr)
          /*
           * No recent Full job found, so upgrade this one to Full
           */
-         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing FULL backup.\n"));
          bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
          jcr->setJobLevel(jcr->jr.JobLevel = L_FULL);
@@ -1123,7 +1120,7 @@ bool get_level_since_time(JCR *jcr)
          /*
           * No recent Full job found, and MaxVirtualFull is set so upgrade this one to Virtual Full
           */
-         Jmsg(jcr, M_INFO, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_INFO, 0, "%s", jcr->db->strerror());
          Jmsg(jcr, M_INFO, 0, _("No prior or suitable Full backup found in catalog. Doing Virtual FULL backup.\n"));
          bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(jcr->getJobLevel()));
          jcr->setJobLevel(jcr->jr.JobLevel = L_VIRTUAL_FULL);
@@ -1146,7 +1143,7 @@ bool get_level_since_time(JCR *jcr)
          pool_updated = true;
       } else {
          if (jcr->res.job->rerun_failed_levels) {
-            if (db_find_failed_job_since(jcr, jcr->db, &jcr->jr, jcr->stime, JobLevel)) {
+            if (jcr->db->find_failed_job_since(jcr, &jcr->jr, jcr->stime, JobLevel)) {
                Jmsg(jcr, M_INFO, 0, _("Prior failed job found in catalog. Upgrading to %s.\n"), level_to_str(JobLevel));
                bsnprintf(jcr->since, sizeof(jcr->since), _(" (upgraded from %s)"), level_to_str(JobLevel));
                jcr->setJobLevel(jcr->jr.JobLevel = JobLevel);
@@ -1166,8 +1163,8 @@ bool get_level_since_time(JCR *jcr)
        */
       if (jcr->PrevJob[0]) {
          bstrncpy(jcr->previous_jr.Job, jcr->PrevJob, sizeof(jcr->previous_jr.Job));
-         if (!db_get_job_record(jcr, jcr->db, &jcr->previous_jr)) {
-            Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), db_strerror(jcr->db));
+         if (!jcr->db->get_job_record(jcr, &jcr->previous_jr)) {
+            Jmsg(jcr, M_FATAL, 0, _("Could not get job record for previous Job. ERR=%s"), jcr->db->strerror());
          }
       }
 
@@ -1287,9 +1284,8 @@ bool get_or_create_client_record(JCR *jcr)
       jcr->client_name = get_pool_memory(PM_NAME);
    }
    pm_strcpy(jcr->client_name, jcr->res.client->hdr.name);
-   if (!db_create_client_record(jcr, jcr->db, &cr)) {
-      Jmsg(jcr, M_FATAL, 0, _("Could not create Client record. ERR=%s\n"),
-         db_strerror(jcr->db));
+   if (!jcr->db->create_client_record(jcr, &cr)) {
+      Jmsg(jcr, M_FATAL, 0, _("Could not create Client record. ERR=%s\n"), jcr->db->strerror());
       return false;
    }
    /*
@@ -1297,10 +1293,9 @@ bool get_or_create_client_record(JCR *jcr)
     */
    if (jcr->res.client->HardQuota != 0 ||
        jcr->res.client->SoftQuota != 0) {
-      if (!db_get_quota_record(jcr, jcr->db, &cr)) {
-         if (!db_create_quota_record(jcr, jcr->db, &cr)) {
-            Jmsg(jcr, M_FATAL, 0, _("Could not create Quota record. ERR=%s\n"),
-               db_strerror(jcr->db));
+      if (!jcr->db->get_quota_record(jcr, &cr)) {
+         if (!jcr->db->create_quota_record(jcr, &cr)) {
+            Jmsg(jcr, M_FATAL, 0, _("Could not create Quota record. ERR=%s\n"), jcr->db->strerror());
          }
          jcr->res.client->QuotaLimit = 0;
          jcr->res.client->GraceTime = 0;
@@ -1344,15 +1339,15 @@ bool get_or_create_fileset_record(JCR *jcr)
       Jmsg(jcr, M_WARNING, 0, _("FileSet MD5 digest not found.\n"));
    }
    if (!jcr->res.fileset->ignore_fs_changes ||
-       !db_get_fileset_record(jcr, jcr->db, &fsr)) {
+       !jcr->db->get_fileset_record(jcr, &fsr)) {
       POOL_MEM FileSetText(PM_MESSAGE);
 
       jcr->res.fileset->print_config(FileSetText, false, false);
       fsr.FileSetText = FileSetText.c_str();
 
-      if (!db_create_fileset_record(jcr, jcr->db, &fsr)) {
+      if (!jcr->db->create_fileset_record(jcr, &fsr)) {
          Jmsg(jcr, M_ERROR, 0, _("Could not create FileSet \"%s\" record. ERR=%s\n"),
-              fsr.FileSet, db_strerror(jcr->db));
+              fsr.FileSet, jcr->db->strerror());
          return false;
       }
    }
@@ -1395,9 +1390,8 @@ void update_job_end_record(JCR *jcr)
    jcr->jr.VolSessionTime = jcr->VolSessionTime;
    jcr->jr.JobErrors = jcr->JobErrors;
    jcr->jr.HasBase = jcr->HasBase;
-   if (!db_update_job_end_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->update_job_end_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error updating job record. %s"), jcr->db->strerror());
    }
 }
 

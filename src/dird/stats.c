@@ -1,7 +1,8 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2016 Planets Communications B.V.
+   Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -75,7 +76,7 @@ static inline bool lookup_device(JCR *jcr, const char *device_name, DBId_t Stora
     */
    dr.StorageId = StorageId;
    bstrncpy(dr.Name, device_name, sizeof(dr.Name));
-   if (!db_create_device_record(jcr, jcr->db, &dr)){
+   if (!jcr->db->create_device_record(jcr, &dr)){
       Dmsg0(100, "Failed to create new Device record\n");
       goto bail_out;
    }
@@ -264,7 +265,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!db_create_device_statistics(jcr, jcr->db, &dsr)) {
+                     if (!jcr->db->create_device_statistics(jcr, &dsr)) {
                         continue;
                      }
                   } else {
@@ -285,7 +286,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!db_create_tapealert_statistics(jcr, jcr->db, &tsr)) {
+                     if (!jcr->db->create_tapealert_statistics(jcr, &tsr)) {
                         continue;
                      }
                   } else {
@@ -306,7 +307,7 @@ void *statistics_thread_runner(void *arg)
                         continue;
                      }
 
-                     if (!db_create_job_statistics(jcr, jcr->db, &jsr)) {
+                     if (!jcr->db->create_job_statistics(jcr, &jsr)) {
                         continue;
                      }
                   } else {

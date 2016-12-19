@@ -63,6 +63,7 @@ static void list_running_jobs(STATUS_PKT *sp);
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp);
 static void list_status_header(STATUS_PKT *sp);
 static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames);
+static void list_volumes(STATUS_PKT *sp, const char *devicenames);
 
 static const char *level_to_str(int level);
 
@@ -101,7 +102,7 @@ static void output_status(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
       sendit(msg, len, sp);
    }
 
-   list_volumes(sendit, (void *)sp);
+   list_volumes(sp, devicenames);
    if (!sp->api) {
       len = pm_strcpy(msg, "====\n\n");
       sendit(msg, len, sp);
@@ -163,6 +164,9 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
    char *cur, *bp;
    POOL_MEM namelist;
 
+   Dmsg2(200, "need_to_list_device devicenames %s, devicename %s\n",
+         devicenames, devicename);
+
    /*
     * Make a local copy that we can split on ','
     */
@@ -184,6 +188,8 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
 
       cur = bp;
    }
+
+   Dmsg0(200, "need_to_list_device no listing needed\n");
 
    return false;
 }
@@ -358,6 +364,60 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
       len = pm_strcpy(msg, "====\n\n");
       sendit(msg, len, sp);
    }
+}
+
+/*
+ * List Volumes
+ */
+static void list_volumes(STATUS_PKT *sp, const char *devicenames)
+{
+   int len;
+   VOLRES *vol;
+   POOL_MEM msg(PM_MESSAGE);
+
+   foreach_vol(vol) {
+      DEVICE *dev = vol->dev;
+
+      if (dev) {
+         if (devicenames && !need_to_list_device(devicenames, dev->device)) {
+            continue;
+         }
+
+         len = Mmsg(msg, "%s on device %s\n", vol->vol_name, dev->print_name());
+         sendit(msg.c_str(), len, sp);
+         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d\n",
+                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
+                    vol->is_in_use());
+         sendit(msg.c_str(), len, sp);
+      } else {
+         len = Mmsg(msg, "Volume %s no device. volinuse= %d\n",
+                    vol->vol_name, vol->is_in_use());
+         sendit(msg.c_str(), len, sp);
+      }
+   }
+   endeach_vol(vol);
+
+   foreach_read_vol(vol) {
+      DEVICE *dev = vol->dev;
+
+      if (dev) {
+         if (devicenames && !need_to_list_device(devicenames, dev->device)) {
+            continue;
+         }
+
+         len = Mmsg(msg, "Read volume: %s on device %s\n", vol->vol_name, dev->print_name());
+         sendit(msg.c_str(), len, sp);
+         len = Mmsg(msg, "    Reader=%d writers=%d reserves=%d volinuse=%d JobId=%d\n",
+                    dev->can_read() ? 1 : 0, dev->num_writers, dev->num_reserved(),
+                    vol->is_in_use(), vol->get_jobid());
+         sendit(msg.c_str(), len, sp);
+      } else {
+         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n",
+                    vol->vol_name, vol->is_in_use());
+         sendit(msg.c_str(), len, sp);
+      }
+   }
+   endeach_read_vol(vol);
 }
 
 static void list_status_header(STATUS_PKT *sp)
@@ -744,6 +804,34 @@ static void list_running_jobs(STATUS_PKT *sp)
    }
 }
 
+/*
+ * Send any reservation messages queued for this jcr
+ */
+static inline void send_drive_reserve_messages(JCR *jcr, STATUS_PKT *sp)
+{
+   int i;
+   alist *msgs;
+   char *msg;
+
+   jcr->lock();
+   msgs = jcr->reserve_msgs;
+   if (!msgs || msgs->size() == 0) {
+      goto bail_out;
+   }
+   for (i = msgs->size() - 1; i >= 0; i--) {
+      msg = (char *)msgs->get(i);
+      if (msg) {
+         sendit("   ", 3, sp);
+         sendit(msg, strlen(msg), sp);
+      } else {
+         break;
+      }
+   }
+
+bail_out:
+   jcr->unlock();
+}
+
 static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
 {
    int len;
@@ -759,7 +847,7 @@ static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
       if (!jcr->reserve_msgs) {
          continue;
       }
-      send_drive_reserve_messages(jcr, sendit, sp);
+      send_drive_reserve_messages(jcr, sp);
    }
    endeach_jcr(jcr);
 
@@ -1037,7 +1125,7 @@ bool dotstatus_cmd(JCR *jcr)
        list_devices(jcr, &sp, NULL);
    } else if (bstrcasecmp(cmd.c_str(), "volumes")) {
        sp.api = true;
-       list_volumes(sendit, &sp);
+       list_volumes(&sp, NULL);
    } else if (bstrcasecmp(cmd.c_str(), "spooling")) {
        sp.api = true;
        list_spool_stats(sendit, &sp);

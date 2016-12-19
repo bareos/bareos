@@ -1,0 +1,22 @@
+Installing the SQL formatter in your vim install.
+
+Edit your .vimrc
+
+set nocp
+filetype plugin on
+
+Install the Align.vba
+
+vim Align.vba
+:so %
+:q
+
+Install the SQL stuff
+
+cp sqlutil_400/autoload/SQLUtilities.vim ~/.vim/autoload
+cp sqlutil_400/plugin/SQLUtilities.vim ~/.vim/plugin
+
+We use a small modification to the original 4.00 versions
+of the sql scripts which sets the text width to 132 instead
+of using the terminal width for splitting the queries in a
+known way and not in a terminal dependend way.

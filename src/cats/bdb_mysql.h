@@ -2,6 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2009-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2016-2016 Planets Communications B.V.
+   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,11 +32,46 @@
 
 class B_DB_MYSQL: public B_DB_PRIV {
 private:
+   /*
+    * Members.
+    */
    MYSQL *m_db_handle;
    MYSQL m_instance;
    MYSQL_RES *m_result;
 
+private:
+   /*
+    * Methods.
+    */
+   bool open_database(JCR *jcr);
+   void close_database(JCR *jcr);
+   bool validate_connection(void);
+   void thread_cleanup(void);
+   void escape_string(JCR *jcr, char *snew, char *old, int len);
+   char *escape_object(JCR *jcr, char *old, int len);
+   void unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                        POOLMEM *&dest, int32_t *len);
+   void start_transaction(JCR *jcr);
+   void end_transaction(JCR *jcr);
+   bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool sql_query_without_handler(const char *query, int flags = 0);
+   void sql_free_result(void);
+   SQL_ROW sql_fetch_row(void);
+   const char *sql_strerror(void);
+   void sql_data_seek(int row);
+   int sql_affected_rows(void);
+   uint64_t sql_insert_autokey_record(const char *query, const char *table_name);
+   SQL_FIELD *sql_fetch_field(void);
+   bool sql_field_is_not_null(int field_type);
+   bool sql_field_is_numeric(int field_type);
+   bool sql_batch_start(JCR *jcr);
+   bool sql_batch_end(JCR *jcr, const char *error);
+   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
+
 public:
+   /*
+    * Methods.
+    */
    B_DB_MYSQL(JCR *jcr,
               const char *db_driver,
               const char *db_name,
@@ -49,35 +86,6 @@ public:
               bool exit_on_fatal,
               bool need_private);
    ~B_DB_MYSQL();
-
-   /* low level operations */
-   bool db_open_database(JCR *jcr);
-   void db_close_database(JCR *jcr);
-   bool db_validate_connection(void);
-   void db_thread_cleanup(void);
-   void db_escape_string(JCR *jcr, char *snew, char *old, int len);
-   char *db_escape_object(JCR *jcr, char *old, int len);
-   void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                           POOLMEM *&dest, int32_t *len);
-   void db_start_transaction(JCR *jcr);
-   void db_end_transaction(JCR *jcr);
-   bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
-   void sql_free_result(void);
-   SQL_ROW sql_fetch_row(void);
-   bool sql_query(const char *query, int flags=0);
-   const char *sql_strerror(void);
-   int sql_num_rows(void);
-   void sql_data_seek(int row);
-   int sql_affected_rows(void);
-   uint64_t sql_insert_autokey_record(const char *query, const char *table_name);
-   void sql_field_seek(int field);
-   SQL_FIELD *sql_fetch_field(void);
-   int sql_num_fields(void);
-   bool sql_field_is_not_null(int field_type);
-   bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JCR *jcr);
-   bool sql_batch_end(JCR *jcr, const char *error);
-   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
 };
 
 #endif /* __BDB_MYSQL_H_ */

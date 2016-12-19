@@ -1,0 +1,41 @@
+#
+@MCOMMON@
+
+srcdir =	.
+.PATH:		.
+
+# one up
+basedir = ..
+# top dir
+topdir = ../..
+# this dir relative to top dir
+thisdir = src/cats/dml
+
+#-------------------------------------------------------------------------
+all: Makefile
+	for db_type in @BACKEND_QUERY_FILES@; do \
+	    ./create_query_table $${db_type}; \
+	done
+	@echo "==== Make of query tables is good ===="
+	@echo " "
+
+clean:
+	@$(RMF) *.bdbqf
+
+realclean: clean
+
+distclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+devclean: realclean
+	if test $(srcdir) = .; then $(MAKE) realclean; fi
+	(cd $(srcdir); $(RMF) Makefile)
+
+install: all
+	$(MKDIR) $(DESTDIR)$(backendquerydir)
+	for db_type in @BACKEND_QUERY_FILES@; do \
+	    $(INSTALL_LIB) $${db_type}.bdbqf $(DESTDIR)$(backendquerydir); \
+	done
+
+depend:

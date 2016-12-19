@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2013 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -51,7 +51,6 @@
 #ifdef HAVE_DBI
 
 #include "cats.h"
-#include "bdb_priv.h"
 #include <dbi/dbi.h>
 #include <dbi/dbi-dev.h>
 #include <bdb_dbi.h>
@@ -199,7 +198,7 @@ B_DB_DBI::~B_DB_DBI()
  *
  * DO NOT close the database or delete mdb here  !!!!
  */
-bool B_DB_DBI::db_open_database(JCR *jcr)
+bool B_DB_DBI::open_database(JCR *jcr)
 {
    bool retval = false;
    int errstat;
@@ -312,8 +311,8 @@ bool B_DB_DBI::db_open_database(JCR *jcr)
       /*
        * Set connection timeout to 8 days specialy for batch mode
        */
-      sql_query("SET wait_timeout=691200");
-      sql_query("SET interactive_timeout=691200");
+      sql_query_without_handler("SET wait_timeout=691200");
+      sql_query_without_handler("SET interactive_timeout=691200");
       break;
    case SQL_TYPE_POSTGRESQL:
       /*
@@ -321,8 +320,8 @@ bool B_DB_DBI::db_open_database(JCR *jcr)
        * and avoid warnings such as:
        * WARNING:  nonstandard use of \\ in a string literal
        */
-      sql_query("SET datestyle TO 'ISO, YMD'");
-      sql_query("SET standard_conforming_strings=on");
+      sql_query_without_handler("SET datestyle TO 'ISO, YMD'");
+      sql_query_without_handler("SET standard_conforming_strings=on");
       break;
    }
 
@@ -333,10 +332,10 @@ bail_out:
    return retval;
 }
 
-void B_DB_DBI::db_close_database(JCR *jcr)
+void B_DB_DBI::close_database(JCR *jcr)
 {
    if (m_connected) {
-      db_end_transaction(jcr);
+      end_transaction(jcr);
    }
    P(mutex);
    m_ref_count--;
@@ -391,7 +390,7 @@ void B_DB_DBI::db_close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_DBI::db_validate_connection(void)
+bool B_DB_DBI::validate_connection(void)
 {
    bool retval;
 
@@ -420,7 +419,7 @@ bail_out:
  * We need copy the value of pointer to snew because libdbi change the
  * pointer
  */
-void B_DB_DBI::db_escape_string(JCR *jcr, char *snew, char *old, int len)
+void B_DB_DBI::escape_string(JCR *jcr, char *snew, char *old, int len)
 {
    char *inew;
    char *pnew;
@@ -451,7 +450,7 @@ void B_DB_DBI::db_escape_string(JCR *jcr, char *snew, char *old, int len)
  * Escape binary object so that DBI is happy
  * Memory is stored in B_DB struct, no need to free it
  */
-char *B_DB_DBI::db_escape_object(JCR *jcr, char *old, int len)
+char *B_DB_DBI::escape_object(JCR *jcr, char *old, int len)
 {
    size_t new_len;
    char *pnew;
@@ -470,8 +469,8 @@ char *B_DB_DBI::db_escape_object(JCR *jcr, char *old, int len)
 /*
  * Unescape binary object so that DBI is happy
  */
-void B_DB_DBI::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                  POOLMEM *&dest, int32_t *dest_len)
+void B_DB_DBI::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                               POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
       dest[0] = '\0';
@@ -489,7 +488,7 @@ void B_DB_DBI::db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_DBI::db_start_transaction(JCR *jcr)
+void B_DB_DBI::start_transaction(JCR *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
@@ -509,10 +508,10 @@ void B_DB_DBI::db_start_transaction(JCR *jcr)
        * Allow only 10,000 changes per transaction
        */
       if (m_transaction && changes > 10000) {
-         db_end_transaction(jcr);
+         end_transaction(jcr);
       }
       if (!m_transaction) {
-         sql_query("BEGIN");  /* begin transaction */
+         sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start SQLite transaction\n");
          m_transaction = true;
       }
@@ -532,10 +531,10 @@ void B_DB_DBI::db_start_transaction(JCR *jcr)
        * Allow only 25,000 changes per transaction
        */
       if (m_transaction && changes > 25000) {
-         db_end_transaction(jcr);
+         end_transaction(jcr);
       }
       if (!m_transaction) {
-         sql_query("BEGIN");  /* begin transaction */
+         sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start PosgreSQL transaction\n");
          m_transaction = true;
       }
@@ -551,10 +550,10 @@ void B_DB_DBI::db_start_transaction(JCR *jcr)
        * Allow only 25,000 changes per transaction
        */
       if (m_transaction && changes > 25000) {
-         db_end_transaction(jcr);
+         end_transaction(jcr);
       }
       if (!m_transaction) {
-         sql_query("BEGIN");  /* begin transaction */
+         sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start Ingres transaction\n");
          m_transaction = true;
       }
@@ -565,12 +564,12 @@ void B_DB_DBI::db_start_transaction(JCR *jcr)
    }
 }
 
-void B_DB_DBI::db_end_transaction(JCR *jcr)
+void B_DB_DBI::end_transaction(JCR *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
-      if (!db_create_attributes_record(jcr, this, jcr->ar)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), db_strerror(jcr->db));
+      if (!create_attributes_record(jcr, jcr->ar)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), strerror());
       }
       jcr->cached_attribute = false;
    }
@@ -583,7 +582,7 @@ void B_DB_DBI::db_end_transaction(JCR *jcr)
 
       db_lock(this);
       if (m_transaction) {
-         sql_query("COMMIT"); /* end transaction */
+         sql_query_without_handler("COMMIT"); /* end transaction */
          m_transaction = false;
          Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
       }
@@ -597,7 +596,7 @@ void B_DB_DBI::db_end_transaction(JCR *jcr)
 
       db_lock(this);
       if (m_transaction) {
-         sql_query("COMMIT"); /* end transaction */
+         sql_query_without_handler("COMMIT"); /* end transaction */
          m_transaction = false;
          Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
       }
@@ -611,7 +610,7 @@ void B_DB_DBI::db_end_transaction(JCR *jcr)
 
       db_lock(this);
       if (m_transaction) {
-         sql_query("COMMIT"); /* end transaction */
+         sql_query_without_handler("COMMIT"); /* end transaction */
          m_transaction = false;
          Dmsg1(400, "End Ingres transaction changes=%d\n", changes);
       }
@@ -627,34 +626,34 @@ void B_DB_DBI::db_end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_DBI::db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool B_DB_DBI::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = true;
    SQL_ROW row;
 
-   Dmsg1(500, "db_sql_query starts with %s\n", query);
+   Dmsg1(500, "sql_query_with_handler starts with %s\n", query);
 
    db_lock(this);
-   if (!sql_query(query, QF_STORE_RESULT)) {
+   if (!sql_query_without_handler(query, QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), query, sql_strerror());
-      Dmsg0(500, "db_sql_query failed\n");
+      Dmsg0(500, "sql_query_with_handler failed\n");
       retval = false;
       goto bail_out;
    }
 
-   Dmsg0(500, "db_sql_query succeeded. checking handler\n");
+   Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
-      Dmsg0(500, "db_sql_query invoking handler\n");
+      Dmsg0(500, "sql_query_with_handler invoking handler\n");
       while ((row = sql_fetch_row()) != NULL) {
-         Dmsg0(500, "db_sql_query sql_fetch_row worked\n");
+         Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
          if (result_handler(ctx, m_num_fields, row))
             break;
       }
       sql_free_result();
    }
 
-   Dmsg0(500, "db_sql_query finished\n");
+   Dmsg0(500, "sql_query_with_handler finished\n");
 
 bail_out:
    db_unlock(this);
@@ -668,12 +667,12 @@ bail_out:
  *  Returns:  true on success
  *            false on failure
  */
-bool B_DB_DBI::sql_query(const char *query, int flags)
+bool B_DB_DBI::sql_query_without_handler(const char *query, int flags)
 {
    bool retval = false;
    const char *dbi_errmsg;
 
-   Dmsg1(500, "sql_query starts with %s\n", query);
+   Dmsg1(500, "sql_query_without_handler starts with %s\n", query);
 
    /*
     * We are starting a new query.  reset everything.
@@ -716,14 +715,14 @@ bool B_DB_DBI::sql_query(const char *query, int flags)
       goto bail_out;
    }
 
-   Dmsg0(500, "sql_query finishing\n");
+   Dmsg0(500, "sql_query_without_handler finishing\n");
    retval = true;
    goto ok_out;
 
 bail_out:
    m_status = (dbi_error_flag) dbi_conn_error(m_db_handle, &dbi_errmsg);
    //dbi_conn_error(m_db_handle, &dbi_errmsg);
-   Dmsg4(500, "sql_query we failed dbi error: "
+   Dmsg4(500, "sql_query_without_handler we failed dbi error: "
                    "'%s' '%p' '%d' flag '%d''\n", dbi_errmsg, m_result, m_result, m_status);
    dbi_result_free(m_result);
    m_result = NULL;
@@ -981,7 +980,7 @@ uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *tabl
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (!sql_query(query)) {
+   if (!sql_query_without_handler(query)) {
       return 0;
    }
 
@@ -1201,28 +1200,28 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
    db_lock(this);
    switch (m_db_type) {
    case SQL_TYPE_MYSQL:
-      if (!sql_query("CREATE TEMPORARY TABLE batch ("
-                             "FileIndex integer,"
-                             "JobId integer,"
-                             "Path blob,"
-                             "Name blob,"
-                             "LStat tinyblob,"
-                             "MD5 tinyblob,"
-                             "DeltaSeq smallint)")) {
+      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+                                     "FileIndex integer,"
+                                     "JobId integer,"
+                                     "Path blob,"
+                                     "Name blob,"
+                                     "LStat tinyblob,"
+                                     "MD5 tinyblob,"
+                                     "DeltaSeq smallint)")) {
          Dmsg0(500, "sql_batch_start failed\n");
          goto bail_out;
       }
       Dmsg0(500, "sql_batch_start finishing\n");
       goto ok_out;
    case SQL_TYPE_POSTGRESQL:
-      if (!sql_query("CREATE TEMPORARY TABLE batch ("
-                             "FileIndex int,"
-                             "JobId int,"
-                             "Path varchar,"
-                             "Name varchar,"
-                             "LStat varchar,"
-                             "MD5 varchar,"
-                             "DeltaSeq int)")) {
+      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+                                     "FileIndex int,"
+                                     "JobId int,"
+                                     "Path varchar,"
+                                     "Name varchar,"
+                                     "LStat varchar,"
+                                     "MD5 varchar,"
+                                     "DeltaSeq int)")) {
          Dmsg0(500, "sql_batch_start failed\n");
          goto bail_out;
       }
@@ -1237,7 +1236,7 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
       sql_free_result();
 
       for (int i=0; i < 10; i++) {
-         sql_query(query);
+         sql_query_without_handler(query);
          if (m_result) {
             break;
          }
@@ -1266,14 +1265,14 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
       Dmsg0(500, "sql_batch_start finishing\n");
       goto ok_out;
    case SQL_TYPE_SQLITE3:
-      if (!sql_query("CREATE TEMPORARY TABLE batch ("
-                             "FileIndex integer,"
-                             "JobId integer,"
-                             "Path blob,"
-                             "Name blob,"
-                             "LStat tinyblob,"
-                             "MD5 tinyblob,"
-                             "DeltaSeq smallint)")) {
+      if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
+                                     "FileIndex integer,"
+                                     "JobId integer,"
+                                     "Path blob,"
+                                     "Name blob,"
+                                     "LStat tinyblob,"
+                                     "MD5 tinyblob,"
+                                     "DeltaSeq smallint)")) {
          Dmsg0(500, "sql_batch_start failed\n");
          goto bail_out;
       }
@@ -1373,7 +1372,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
                       ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
-      if (!sql_query(cmd))
+      if (!sql_query_without_handler(cmd))
       {
          Dmsg0(500, "sql_batch_start failed\n");
          goto bail_out;
@@ -1431,7 +1430,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
                       ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
                       esc_name, ar->attr, digest, ar->DeltaSeq);
 
-      if (!sql_query(cmd))
+      if (!sql_query_without_handler(cmd))
       {
          Dmsg0(500, "sql_batch_insert failed\n");
          goto bail_out;
@@ -1511,7 +1510,7 @@ B_DB *db_init_database(JCR *jcr,
             continue;
          }
 
-         if (mdb->db_match_database(db_driver, db_name, db_address, db_port)) {
+         if (mdb->match_database(db_driver, db_name, db_address, db_port)) {
             Dmsg1(100, "DB REopen %s\n", db_name);
             mdb->increment_refcount();
             goto bail_out;

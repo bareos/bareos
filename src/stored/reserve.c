@@ -31,6 +31,13 @@
 
 const int dbglvl = 150;
 
+/* Global static variables */
+#ifdef SD_DEBUG_LOCK
+int reservations_lock_count = 0;
+#else
+static int reservations_lock_count = 0;
+#endif
+
 static brwlock_t reservation_lock;
 
 /* Forward referenced functions */
@@ -93,8 +100,6 @@ void term_reservations_lock()
    rwl_destroy(&reservation_lock);
    term_vol_list_lock();
 }
-
-int reservations_lock_count = 0;
 
 /*
  * This applies to a drive and to Volumes
@@ -1253,34 +1258,6 @@ static void queue_reserve_message(JCR *jcr)
     * Message unique, so insert it.
     */
    jcr->reserve_msgs->push(bstrdup(jcr->errmsg));
-
-bail_out:
-   jcr->unlock();
-}
-
-/*
- * Send any reservation messages queued for this jcr
- */
-void send_drive_reserve_messages(JCR *jcr, void sendit(const char *msg, int len, void *sarg), void *arg)
-{
-   int i;
-   alist *msgs;
-   char *msg;
-
-   jcr->lock();
-   msgs = jcr->reserve_msgs;
-   if (!msgs || msgs->size() == 0) {
-      goto bail_out;
-   }
-   for (i=msgs->size()-1; i >= 0; i--) {
-      msg = (char *)msgs->get(i);
-      if (msg) {
-         sendit("   ", 3, arg);
-         sendit(msg, strlen(msg), arg);
-      } else {
-         break;
-      }
-   }
 
 bail_out:
    jcr->unlock();

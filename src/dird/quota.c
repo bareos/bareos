@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version two of the GNU General Public
@@ -113,17 +113,13 @@ bool check_hardquotas(JCR *jcr)
    Dmsg1(dbglvl, "Checking hard quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!db_get_quota_jobbytes(jcr, jcr->db, &jcr->jr,
-                                    jcr->res.client->JobRetention)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
-                 db_strerror(jcr->db));
+         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
       } else {
-         if (!db_get_quota_jobbytes_nofailed(jcr, jcr->db, &jcr->jr,
-                                             jcr->res.client->JobRetention)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
-                 db_strerror(jcr->db));
+         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
       }
@@ -170,18 +166,14 @@ bool check_softquotas(JCR *jcr)
    Dmsg1(dbglvl, "Checking soft quotas for JobId %d\n", jcr->JobId);
    if (!jcr->HasQuota) {
       if (jcr->res.client->QuotaIncludeFailedJobs) {
-         if (!db_get_quota_jobbytes(jcr, jcr->db, &jcr->jr,
-                                    jcr->res.client->JobRetention)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
-                 db_strerror(jcr->db));
+         if (!jcr->db->get_quota_jobbytes(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
          Dmsg0(dbglvl, "Quota Includes Failed Jobs\n");
       } else {
-         if (!db_get_quota_jobbytes_nofailed(jcr, jcr->db, &jcr->jr,
-                                             jcr->res.client->JobRetention)) {
-            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"),
-                 db_strerror(jcr->db));
+         if (!jcr->db->get_quota_jobbytes_nofailed(jcr, &jcr->jr, jcr->res.client->JobRetention)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error getting Quota value: ERR=%s"), jcr->db->strerror());
             goto bail_out;
          }
          Jmsg(jcr, M_INFO, 0, _("Quota does NOT include Failed Jobs\n"));
@@ -201,20 +193,34 @@ bool check_softquotas(JCR *jcr)
        * Only warn once about softquotas in the job
        * Check if gracetime has been set
        */
-      if (jcr->res.client->SoftQuotaGracePeriod) {
-         if (jcr->res.client->GraceTime == 0) {
-            Dmsg1(dbglvl, "update_quota_gracetime: %d\n", now);
-            if (!db_update_quota_gracetime(jcr, jcr->db, &jcr->jr)) {
-               Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s"),
-                     db_strerror(jcr->db));
-            } else {
-               Jmsg(jcr, M_ERROR, 0, _("Soft Quota exceeded, Grace Period starts now.\n"));
-            }
-            jcr->res.client->GraceTime = now;
-            goto bail_out;
-         } else if ((now - (uint64_t)jcr->res.client->GraceTime) < (uint64_t)jcr->res.client->SoftQuotaGracePeriod) {
-            Jmsg(jcr, M_ERROR, 0, _("Soft Quota exceeded, will be enforced after Grace Period expires.\n"));
-         } else if ((now - (uint64_t)jcr->res.client->GraceTime) > (uint64_t)jcr->res.client->SoftQuotaGracePeriod) {
+      if (jcr->res.client->GraceTime == 0 && jcr->res.client->SoftQuotaGracePeriod) {
+         Dmsg1(dbglvl, "update_quota_gracetime: %d\n", now);
+         if (!jcr->db->update_quota_gracetime(jcr, &jcr->jr)) {
+            Jmsg(jcr, M_WARNING, 0, _("Error setting Quota gracetime: ERR=%s"), jcr->db->strerror());
+         } else {
+             Jmsg(jcr, M_ERROR, 0, _("Softquota Exceeded, Grace Period starts now.\n"));
+         }
+         jcr->res.client->GraceTime = now;
+         goto bail_out;
+      } else if (jcr->res.client->SoftQuotaGracePeriod &&
+                (now - (uint64_t)jcr->res.client->GraceTime) < (uint64_t)jcr->res.client->SoftQuotaGracePeriod) {
+         Jmsg(jcr, M_ERROR, 0, _("Softquota Exceeded, will be enforced after Grace Period expires.\n"));
+      } else if (jcr->res.client->SoftQuotaGracePeriod &&
+                (now - (uint64_t)jcr->res.client->GraceTime) > (uint64_t)jcr->res.client->SoftQuotaGracePeriod) {
+         /*
+          * If gracetime has expired update else check more if not set softlimit yet then set and bail out.
+          */
+         if (jcr->res.client->QuotaLimit < 1) {
+           if (!jcr->db->update_quota_softlimit(jcr, &jcr->jr)) {
+               Jmsg(jcr, M_WARNING, 0, _("Error setting Quota Softlimit: ERR=%s"), jcr->db->strerror());
+           }
+           Jmsg(jcr, M_WARNING, 0, _("Softquota Exceeded and Grace Period expired.\n"));
+           Jmsg(jcr, M_INFO, 0, _("Setting Burst Quota to %d Bytes.\n"),
+                jcr->jr.JobSumTotalBytes);
+           jcr->res.client->QuotaLimit = jcr->jr.JobSumTotalBytes;
+           retval = true;
+           goto bail_out;
+         } else {
             /*
              * If gracetime has expired update else check more if not set softlimit yet then set and bail out.
              */

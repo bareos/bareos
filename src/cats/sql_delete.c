@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,8 +31,6 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
-#include "bdb_priv.h"
-#include "sql_glue.h"
 
 /* -----------------------------------------------------------------------
  *
@@ -50,57 +48,54 @@
  *           PoolId = number of Pools deleted (should be 1)
  *           NumVols = number of Media records deleted
  */
-bool db_delete_pool_record(JCR *jcr, B_DB *mdb, POOL_DBR *pr)
+bool B_DB::delete_pool_record(JCR *jcr, POOL_DBR *pr)
 {
    bool retval = false;
    SQL_ROW row;
    int num_rows;
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
-   db_lock(mdb);
-   mdb->db_escape_string(jcr, esc, pr->Name, strlen(pr->Name));
-   Mmsg(mdb->cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
-   Dmsg1(10, "selectpool: %s\n", mdb->cmd);
+   db_lock(this);
+   escape_string(jcr, esc, pr->Name, strlen(pr->Name));
+   Mmsg(cmd, "SELECT PoolId FROM Pool WHERE Name='%s'", esc);
+   Dmsg1(10, "selectpool: %s\n", cmd);
 
    pr->PoolId = pr->NumVols = 0;
 
-   if (QUERY_DB(jcr, mdb, mdb->cmd)) {
-
-      num_rows = sql_num_rows(mdb);
+   if (QUERY_DB(jcr, cmd)) {
+      num_rows = sql_num_rows();
       if (num_rows == 0) {
-         Mmsg(mdb->errmsg, _("No pool record %s exists\n"), pr->Name);
-         sql_free_result(mdb);
+         Mmsg(errmsg, _("No pool record %s exists\n"), pr->Name);
+         sql_free_result();
          goto bail_out;
       } else if (num_rows != 1) {
-         Mmsg(mdb->errmsg, _("Expecting one pool record, got %d\n"), num_rows);
-         sql_free_result(mdb);
+         Mmsg(errmsg, _("Expecting one pool record, got %d\n"), num_rows);
+         sql_free_result();
          goto bail_out;
       }
-      if ((row = sql_fetch_row(mdb)) == NULL) {
-         Mmsg1(mdb->errmsg, _("Error fetching row %s\n"), sql_strerror(mdb));
+      if ((row = sql_fetch_row()) == NULL) {
+         Mmsg1(errmsg, _("Error fetching row %s\n"), sql_strerror());
          goto bail_out;
       }
       pr->PoolId = str_to_int64(row[0]);
-      sql_free_result(mdb);
+      sql_free_result();
    }
 
    /* Delete Media owned by this pool */
-   Mmsg(mdb->cmd,
-"DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
+   Mmsg(cmd, "DELETE FROM Media WHERE Media.PoolId = %d", pr->PoolId);
 
-   pr->NumVols = DELETE_DB(jcr, mdb, mdb->cmd);
+   pr->NumVols = DELETE_DB(jcr, cmd);
    Dmsg1(200, "Deleted %d Media records\n", pr->NumVols);
 
    /* Delete Pool */
-   Mmsg(mdb->cmd,
-"DELETE FROM Pool WHERE Pool.PoolId = %d", pr->PoolId);
-   pr->PoolId = DELETE_DB(jcr, mdb, mdb->cmd);
+   Mmsg(cmd, "DELETE FROM Pool WHERE Pool.PoolId = %d", pr->PoolId);
+   pr->PoolId = DELETE_DB(jcr, cmd);
    Dmsg1(200, "Deleted %d Pool records\n", pr->PoolId);
 
    retval = true;
 
 bail_out:
-   db_unlock(mdb);
+   db_unlock(this);
    return retval;
 }
 
@@ -149,16 +144,18 @@ static int delete_handler(void *ctx, int num_fields, char **row)
  */
 static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
 {
-   POOLMEM *query = get_pool_memory(PM_MESSAGE);
-   struct s_del_ctx del;
-   char ed1[50];
    int i;
+   char ed1[50];
+   struct s_del_ctx del;
+   POOL_MEM query(PM_MESSAGE);
 
    del.num_ids = 0;
    del.tot_ids = 0;
    del.num_del = 0;
    del.max_ids = 0;
-   Mmsg(mdb->cmd, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
+
+   Mmsg(query, "SELECT JobId from JobMedia WHERE MediaId=%d", mr->MediaId);
+
    del.max_ids = mr->VolJobs;
    if (del.max_ids < 100) {
       del.max_ids = 100;
@@ -166,19 +163,23 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
       del.max_ids = MAX_DEL_LIST_LEN;
    }
    del.JobId = (JobId_t *)malloc(sizeof(JobId_t) * del.max_ids);
-   db_sql_query(mdb, mdb->cmd, delete_handler, (void *)&del);
 
-   for (i=0; i < del.num_ids; i++) {
+   mdb->sql_query(query.c_str(), delete_handler, (void *)&del);
+
+   for (i = 0; i < del.num_ids; i++) {
       Dmsg1(400, "Delete JobId=%d\n", del.JobId[i]);
       Mmsg(query, "DELETE FROM Job WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query);
+      mdb->sql_query(query.c_str());
+
       Mmsg(query, "DELETE FROM File WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query);
+      mdb->sql_query(query.c_str());
+
       Mmsg(query, "DELETE FROM JobMedia WHERE JobId=%s", edit_int64(del.JobId[i], ed1));
-      db_sql_query(mdb, query);
+      mdb->sql_query(query.c_str());
    }
+
    free(del.JobId);
-   free_pool_memory(query);
+
    return 1;
 }
 
@@ -187,26 +188,26 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
  * Returns: false on error
  *          true on success
  */
-bool db_delete_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+bool B_DB::delete_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
    bool retval = false;
 
-   db_lock(mdb);
-   if (mr->MediaId == 0 && !db_get_media_record(jcr, mdb, mr)) {
+   db_lock(this);
+   if (mr->MediaId == 0 && !get_media_record(jcr, mr)) {
       goto bail_out;
    }
    /* Do purge if not already purged */
    if (!bstrcmp(mr->VolStatus, "Purged")) {
       /* Delete associated records */
-      do_media_purge(mdb, mr);
+      do_media_purge(this, mr);
    }
 
-   Mmsg(mdb->cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
-   db_sql_query(mdb, mdb->cmd);
+   Mmsg(cmd, "DELETE FROM Media WHERE MediaId=%d", mr->MediaId);
+   sql_query(cmd);
    retval = true;
 
 bail_out:
-   db_unlock(mdb);
+   db_unlock(this);
    return retval;
 }
 
@@ -216,29 +217,32 @@ bail_out:
  * media record itself. But the media status
  * is changed to "Purged".
  */
-bool db_purge_media_record(JCR *jcr, B_DB *mdb, MEDIA_DBR *mr)
+bool B_DB::purge_media_record(JCR *jcr, MEDIA_DBR *mr)
 {
    bool retval = false;
 
-   db_lock(mdb);
-   if (mr->MediaId == 0 && !db_get_media_record(jcr, mdb, mr)) {
+   db_lock(this);
+   if (mr->MediaId == 0 && !get_media_record(jcr, mr)) {
       goto bail_out;
    }
-   /* Delete associated records */
-   do_media_purge(mdb, mr);           /* Note, always purge */
 
-   /* Mark Volume as purged */
+   /*
+    * Delete associated records
+    */
+   do_media_purge(this, mr);           /* Note, always purge */
+
+   /*
+    * Mark Volume as purged
+    */
    strcpy(mr->VolStatus, "Purged");
-   if (!db_update_media_record(jcr, mdb, mr)) {
+   if (!update_media_record(jcr, mr)) {
       goto bail_out;
    }
 
    retval = true;
 
 bail_out:
-   db_unlock(mdb);
+   db_unlock(this);
    return retval;
 }
-
-
 #endif /* HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES */

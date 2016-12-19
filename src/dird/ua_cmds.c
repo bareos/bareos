@@ -642,15 +642,15 @@ static bool add_cmd(UAContext *ua, const char *cmd)
       mr.Enabled = VOL_ENABLED;
       set_storageid_in_mr(store, &mr);
       Dmsg1(200, "Create Volume %s\n", mr.VolumeName);
-      if (!db_create_media_record(ua->jcr, ua->db, &mr)) {
-         ua->error_msg("%s", db_strerror(ua->db));
+      if (!ua->db->create_media_record(ua->jcr, &mr)) {
+         ua->error_msg("%s", ua->db->strerror());
          return true;
       }
    }
    pr.NumVols += num;
    Dmsg0(200, "Update pool record.\n");
-   if (db_update_pool_record(ua->jcr, ua->db, &pr) != 1) {
-      ua->warning_msg("%s", db_strerror(ua->db));
+   if (ua->db->update_pool_record(ua->jcr, &pr) != 1) {
+      ua->warning_msg("%s", ua->db->strerror());
       return true;
    }
    ua->send_msg(_("%d Volumes created in pool %s\n"), num, pr.Name);
@@ -776,7 +776,7 @@ static bool create_cmd(UAContext *ua, const char *cmd)
       break;
 
    case -1:
-      ua->error_msg("%s", db_strerror(ua->db));
+      ua->error_msg("%s", ua->db->strerror());
       break;
 
    default:
@@ -2294,7 +2294,7 @@ static bool delete_volume(UAContext *ua)
     * If not purged, do it
     */
    if (!bstrcmp(mr.VolStatus, "Purged")) {
-      if (!db_get_volume_jobids(ua->jcr, ua->db, &mr, &lst)) {
+      if (!ua->db->get_volume_jobids(ua->jcr, &mr, &lst)) {
          ua->error_msg(_("Can't list jobs on this volume\n"));
          return true;
       }
@@ -2303,7 +2303,7 @@ static bool delete_volume(UAContext *ua)
       }
    }
 
-   db_delete_media_record(ua->jcr, ua->db, &mr);
+   ua->db->delete_media_record(ua->jcr, &mr);
    return true;
 }
 
@@ -2326,7 +2326,7 @@ static bool delete_pool(UAContext *ua)
       return true;
    }
    if (ua->pint32_val) {
-      db_delete_pool_record(ua->jcr, ua->db, &pr);
+      ua->db->delete_pool_record(ua->jcr, &pr);
    }
    return true;
 }
@@ -2609,7 +2609,7 @@ static bool wait_cmd(UAContext *ua, const char *cmd)
     * We have to get JobStatus
     */
    Mmsg(temp, "SELECT JobStatus FROM Job WHERE JobId='%s'", edit_int64(JobId, ed1));
-   db_sql_query(ua->db, temp.c_str(), status_handler, (void *)&jobstatus);
+   ua->db->sql_query(temp.c_str(), status_handler, (void *)&jobstatus);
 
    switch (jobstatus) {
    case JS_Error:
@@ -2767,7 +2767,7 @@ static bool version_cmd(UAContext *ua, const char *cmd)
    POOL_MEM query(PM_MESSAGE);
    open_db(ua);
    Mmsg(query, "select MediaId from Media,Pool where Pool.PoolId=Media.PoolId and Pool.Name='Full'");
-   db_get_query_dbids(ua->jcr, ua->db, query, ids);
+   get_query_dbids(ua->jcr, ua->db, query, ids);
    ua->send_msg("num_ids=%d max_ids=%d tot_ids=%d\n", ids.num_ids, ids.max_ids, ids.tot_ids);
    for (int i=0; i < ids.num_ids; i++) {
       ua->send_msg("id=%d\n", ids.DBId[i]);

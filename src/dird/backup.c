@@ -2,8 +2,8 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2011-2016 Planets Communications B.V.
+   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -141,7 +141,7 @@ static bool get_base_jobids(JCR *jcr, db_list_ctx *jobids)
 
    foreach_alist(job, jcr->res.job->base) {
       bstrncpy(jr.Name, job->name(), sizeof(jr.Name));
-      db_get_base_jobid(jcr, jcr->db, &jr, &id);
+      jcr->db->get_base_jobid(jcr, &jr, &id);
 
       if (id) {
          if (jobids->count) {
@@ -285,7 +285,7 @@ bool send_accurate_current_files(JCR *jcr)
       /*
        * For Incr/Diff level, we search for older jobs
        */
-      db_accurate_get_jobids(jcr, jcr->db, &jcr->jr, &jobids);
+      jcr->db->accurate_get_jobids(jcr, &jcr->jr, &jobids);
 
       /*
        * We are in Incr/Diff, but no Full to build the accurate list...
@@ -308,24 +308,23 @@ bool send_accurate_current_files(JCR *jcr)
     * To be able to allocate the right size for htable
     */
    Mmsg(buf, "SELECT sum(JobFiles) FROM Job WHERE JobId IN (%s)", jobids.list);
-   db_sql_query(jcr->db, buf.c_str(), db_list_handler, &nb);
+   jcr->db->sql_query(buf.c_str(), db_list_handler, &nb);
    Dmsg2(200, "jobids=%s nb=%s\n", jobids.list, nb.list);
    jcr->file_bsock->fsend("accurate files=%s\n", nb.list);
 
    if (jcr->HasBase) {
       jcr->nb_base_files = str_to_int64(nb.list);
-      db_create_base_file_list(jcr, jcr->db, jobids.list);
-      db_get_base_file_list(jcr, jcr->db, jcr->use_accurate_chksum,
-                            accurate_list_handler, (void *)jcr);
+      jcr->db->create_base_file_list(jcr, jobids.list);
+      jcr->db->get_base_file_list(jcr, jcr->use_accurate_chksum,
+                                  accurate_list_handler, (void *)jcr);
    } else {
-      if (!db_open_batch_connection(jcr, jcr->db)) {
+      if (!jcr->db->open_batch_connection(jcr)) {
          Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
          return false;  /* Fail */
       }
 
-      db_get_file_list(jcr, jcr->db_batch,
-                       jobids.list, jcr->use_accurate_chksum, false /* no delta */,
-                       accurate_list_handler, (void *)jcr);
+      jcr->db_batch->get_file_list(jcr, jobids.list, jcr->use_accurate_chksum,
+                                   false /* no delta */, accurate_list_handler, (void *)jcr);
    }
 
    jcr->file_bsock->signal(BNET_EOD);
@@ -356,8 +355,8 @@ bool do_native_backup(JCR *jcr)
 
    jcr->setJobStatus(JS_Running);
    Dmsg2(100, "JobId=%d JobLevel=%c\n", jcr->jr.JobId, jcr->jr.JobLevel);
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
       return false;
    }
 
@@ -569,8 +568,8 @@ bool do_native_backup(JCR *jcr)
     */
    jcr->start_time = time(NULL);
    jcr->jr.StartTime = jcr->start_time;
-   if (!db_update_job_start_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (!jcr->db->update_job_start_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
    /*
@@ -594,10 +593,12 @@ bool do_native_backup(JCR *jcr)
     * Pickup Job termination data
     */
    status = wait_for_job_termination(jcr);
-   db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
+   if (jcr->batch_started) {
+      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
+   }
 
-   if (jcr->HasBase && !db_commit_base_file_attributes_record(jcr, jcr->db))  {
-      Jmsg(jcr, M_FATAL, 0, "%s", db_strerror(jcr->db));
+   if (jcr->HasBase && !jcr->db->commit_base_file_attributes_record(jcr))  {
+      Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());
    }
 
    /*
@@ -758,16 +759,14 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
 
    update_job_end(jcr, TermCode);
 
-   if (!db_get_job_record(jcr, jcr->db, &jcr->jr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"), jcr->db->strerror());
       jcr->setJobStatus(JS_ErrorTerminated);
    }
 
    bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
-   if (!db_get_client_record(jcr, jcr->db, &cr)) {
-      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
-         db_strerror(jcr->db));
+   if (!jcr->db->get_client_record(jcr, &cr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"), jcr->db->strerror());
    }
 
    update_bootstrap_file(jcr);
@@ -839,11 +838,10 @@ void update_bootstrap_file(JCR *jcr)
          fd = fopen(fname, jcr->is_JobLevel(L_FULL)?"w+b":"a+b");
       }
       if (fd) {
-         VolCount = db_get_job_volume_parameters(jcr, jcr->db, jcr->JobId,
-                    &VolParams);
+         VolCount = jcr->db->get_job_volume_parameters(jcr, jcr->JobId, &VolParams);
          if (VolCount == 0) {
             Jmsg(jcr, M_ERROR, 0, _("Could not get Job Volume Parameters to "
-                 "update Bootstrap file. ERR=%s\n"), db_strerror(jcr->db));
+                 "update Bootstrap file. ERR=%s\n"), jcr->db->strerror());
              if (jcr->SDJobFiles != 0) {
                 jcr->setJobStatus(JS_ErrorTerminated);
              }
@@ -926,7 +924,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
       kbps = ((double)jcr->jr.JobBytes) / (1000.0 * (double)RunTime);
    }
 
-   if (!db_get_job_volume_names(jcr, jcr->db, jcr->jr.JobId, jcr->VolumeName)) {
+   if (!jcr->db->get_job_volume_names(jcr, jcr->jr.JobId, jcr->VolumeName)) {
       /*
        * Note, if the job has erred, most likely it did not write any
        * tape, so suppress this "error" message since in that case
@@ -934,7 +932,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
        * normal exit should we complain about this error.
        */
       if (jcr->is_terminated_ok() && jcr->jr.JobBytes) {
-         Jmsg(jcr, M_ERROR, 0, "%s", db_strerror(jcr->db));
+         Jmsg(jcr, M_ERROR, 0, "%s", jcr->db->strerror());
       }
       jcr->VolumeName[0] = 0;         /* none */
    }
@@ -950,9 +948,9 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
          p = jcr->VolumeName;     /* no |, take full name */
       }
       bstrncpy(mr.VolumeName, p, sizeof(mr.VolumeName));
-      if (!db_get_media_record(jcr, jcr->db, &mr)) {
+      if (!jcr->db->get_media_record(jcr, &mr)) {
          Jmsg(jcr, M_WARNING, 0, _("Error getting Media record for Volume \"%s\": ERR=%s"),
-              mr.VolumeName, db_strerror(jcr->db));
+              mr.VolumeName, jcr->db->strerror());
       }
    }
 

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2011-2012 Planets Communications B.V.
+   Copyright (C) 2011-2016 Planets Communications B.V.
    Copyright (C) 2013-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -499,52 +499,114 @@ typedef enum {
 typedef void (DB_LIST_HANDLER)(void *, const char *);
 typedef int (DB_RESULT_HANDLER)(void *, int, char **);
 
-#define db_lock(mdb)   mdb->_db_lock(__FILE__, __LINE__)
-#define db_unlock(mdb) mdb->_db_unlock(__FILE__, __LINE__)
+#define db_lock(mdb)   mdb->_lock_db(__FILE__, __LINE__)
+#define db_unlock(mdb) mdb->_unlock_db(__FILE__, __LINE__)
+
+class pathid_cache;
+
+/*
+ * Initial size of query hash table and hint for number of pages.
+ */
+#define QUERY_INITIAL_HASH_SIZE 1024
+#define QUERY_HTABLE_PAGES 128
 
 /*
  * Current database version number for all drivers
  */
 #define BDB_VERSION 2004
 
+#ifdef _BDB_PRIV_INTERFACE_
+/*
+ * Generic definition of a sql_row.
+ */
+typedef char ** SQL_ROW;
+
+/*
+ * Generic definition of a a sql_field.
+ */
+typedef struct sql_field {
+   char *name;                        /* name of column */
+   int max_length;                    /* max length */
+   uint32_t type;                     /* type */
+   uint32_t flags;                    /* flags */
+} SQL_FIELD;
+#endif
+
+/*
+ * Dynamic loaded query from a query table.
+ */
+struct BDB_QUERY {
+   char *query_text;                      /* Query text as loaded from the loadable query table with leading and trailing spaces removed */
+   hlink link;                            /* List management */
+};
+
+/*
+ * Dynamic loaded query table.
+ */
+struct BDB_QUERY_TABLE {
+   htable *table;                         /* Dynamic loaded query table */
+   brwlock_t lock;                        /* Transaction lock */
+};
+
 class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:
-   brwlock_t m_lock;                      /* transaction lock */
-   dlink m_link;                          /* queue control */
-   SQL_INTERFACETYPE m_db_interface_type; /* type of backend used */
-   SQL_DBTYPE m_db_type;                  /* database type */
-   int m_ref_count;                       /* reference count */
-   bool m_connected;                      /* connection made to db */
-   bool m_have_batch_insert;              /* have batch insert support ? */
+   /*
+    * Members
+    */
+   brwlock_t m_lock;                      /* Transaction lock */
+   dlink m_link;                          /* Queue control */
+   SQL_INTERFACETYPE m_db_interface_type; /* Type of backend used */
+   SQL_DBTYPE m_db_type;                  /* Database type */
+   uint32_t m_ref_count;                  /* Reference count */
+   bool m_connected;                      /* Connection made to db */
+   bool m_have_batch_insert;              /* Have batch insert support ? */
    bool m_try_reconnect;                  /* Try reconnecting DB connection ? */
    bool m_exit_on_fatal;                  /* Exit on FATAL DB errors ? */
-   char *m_db_driver;                     /* database driver */
-   char *m_db_driverdir;                  /* database driver dir */
-   char *m_db_name;                       /* database name */
-   char *m_db_user;                       /* database user */
-   char *m_db_address;                    /* host name address */
-   char *m_db_socket;                     /* socket for local access */
-   char *m_db_password;                   /* database password */
-   int m_db_port;                         /* port for host name address */
-   bool m_disabled_batch_insert;          /* explicitly disabled batch insert mode ? */
-   bool m_is_private;                     /* private connection ? */
-
-public:
-   POOLMEM *errmsg;                       /* nicely edited error message */
-   POOLMEM *cmd;                          /* SQL command string */
-   POOLMEM *cached_path;                  /* cached path name */
-   int cached_path_len;                   /* length of cached path */
-   uint32_t cached_path_id;               /* cached path id */
-   int changes;                           /* changes during transaction */
+   char *m_db_driver;                     /* Database driver */
+   char *m_db_driverdir;                  /* Database driver dir */
+   char *m_db_name;                       /* Database name */
+   char *m_db_user;                       /* Database user */
+   char *m_db_address;                    /* Host name address */
+   char *m_db_socket;                     /* Socket for local access */
+   char *m_db_password;                   /* Database password */
+   char *m_last_query_text;               /* Last query text obtained from query table */
+   int m_db_port;                         /* Port for host name address */
+   int cached_path_len;                   /* Length of cached path */
+   int changes;                           /* Changes during transaction */
+   int fnl;                               /* File name length */
+   int pnl;                               /* Path name length */
+   bool m_disabled_batch_insert;          /* Explicitly disabled batch insert mode ? */
+   bool m_is_private;                     /* Private connection ? */
+   uint32_t cached_path_id;               /* Cached path id */
+   uint32_t m_last_hash_key;              /* Last hash key lookup on query table */
    POOLMEM *fname;                        /* Filename only */
    POOLMEM *path;                         /* Path only */
+   POOLMEM *cached_path;                  /* Cached path name */
    POOLMEM *esc_name;                     /* Escaped file name */
    POOLMEM *esc_path;                     /* Escaped path name */
    POOLMEM *esc_obj;                      /* Escaped restore object */
-   int fnl;                               /* file name length */
-   int pnl;                               /* path name length */
+   POOLMEM *cmd;                          /* SQL command string */
+   POOLMEM *errmsg;                       /* Nicely edited error message */
+   BDB_QUERY_TABLE *m_query_table;        /* Dynamic loaded query table */
 
-   /* methods */
+private:
+   /*
+    * Methods
+    */
+   int get_filename_record(JCR *jcr);
+   bool get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr);
+   bool create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar);
+   bool create_filename_record(JCR *jcr, ATTR_DBR *ar);
+   bool create_file_record(JCR *jcr, ATTR_DBR *ar);
+   void cleanup_base_file(JCR *jcr);
+   void build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache, char *org_pathid, char *path);
+   bool update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, JobId_t JobId);
+   char *lookup_query(uint32_t hash_key);
+
+public:
+   /*
+    * Methods
+    */
    B_DB() {};
    virtual ~B_DB() {};
    const char *get_db_name(void) { return m_db_name; };
@@ -555,41 +617,209 @@ public:
    void set_private(bool is_private) { m_is_private = is_private; };
    void increment_refcount(void) { m_ref_count++; };
 
-   /* low level methods */
-   bool db_match_database(const char *db_driver, const char *db_name,
-                          const char *db_address, int db_port);
-   B_DB *db_clone_database_connection(JCR *jcr,
-                                      bool mult_db_connections,
-                                      bool get_pooled_connection = true,
-                                      bool need_private = false);
-   int db_get_type_index(void) { return m_db_type; };
-   const char *db_get_type(void);
-   void _db_lock(const char *file, int line);
-   void _db_unlock(const char *file, int line);
-   bool db_sql_query(const char *query, int flags=0);
+   /* bvfs.c */
+   bool bvfs_update_path_hierarchy_cache(JCR *jcr, char *jobids);
+   void bvfs_update_cache(JCR *jcr);
+   int bvfs_ls_dirs(POOL_MEM &query, void *ctx);
+   int bvfs_build_ls_file_query(POOL_MEM &query, DB_RESULT_HANDLER *result_handler, void *ctx);
+
+   /* sql.c */
+   char *strerror();
+   bool check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs);
+   bool check_tables_version(JCR *jcr);
+   bool QueryDB(const char *file, int line, JCR *jcr, const char *select_cmd);
+   bool InsertDB(const char *file, int line, JCR *jcr, const char *select_cmd);
+   int DeleteDB(const char *file, int line, JCR *jcr, const char *delete_cmd);
+   bool UpdateDB(const char *file, int line, JCR *jcr, const char *update_cmd, int nr_afr);
+   int get_sql_record_max(JCR *jcr);
+   void split_path_and_file(JCR *jcr, const char *fname);
+   void list_dashes(OUTPUT_FORMATTER *send);
+   int list_result(void *vctx, int nb_col, char **row);
+   int list_result(JCR *jcr, OUTPUT_FORMATTER *send, e_list_type type);
+   bool open_batch_connection(JCR *jcr);
+   void db_debug_print(FILE *fp);
+
+   /* sql_create.c */
+   bool create_path_record(JCR *jcr, ATTR_DBR *ar);
+   bool create_file_attributes_record(JCR *jcr, ATTR_DBR *ar);
+   bool create_job_record(JCR *jcr, JOB_DBR *jr);
+   bool create_media_record(JCR *jcr, MEDIA_DBR *media_dbr);
+   bool create_client_record(JCR *jcr, CLIENT_DBR *cr);
+   bool create_fileset_record(JCR *jcr, FILESET_DBR *fsr);
+   bool create_pool_record(JCR *jcr, POOL_DBR *pool_dbr);
+   bool create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jr);
+   bool create_counter_record(JCR *jcr, COUNTER_DBR *cr);
+   bool create_device_record(JCR *jcr, DEVICE_DBR *dr);
+   bool create_storage_record(JCR *jcr, STORAGE_DBR *sr);
+   bool create_mediatype_record(JCR *jcr, MEDIATYPE_DBR *mr);
+   bool write_batch_file_records(JCR *jcr);
+   bool create_attributes_record(JCR *jcr, ATTR_DBR *ar);
+   bool create_restore_object_record(JCR *jcr, ROBJECT_DBR *ar);
+   bool create_base_file_attributes_record(JCR *jcr, ATTR_DBR *ar);
+   bool commit_base_file_attributes_record(JCR *jcr);
+   bool create_base_file_list(JCR *jcr, char *jobids);
+   bool create_quota_record(JCR *jcr, CLIENT_DBR *cr);
+   bool create_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem);
+   bool create_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, char *name, char *value);
+   bool create_job_statistics(JCR *jcr, JOB_STATS_DBR *jsr);
+   bool create_device_statistics(JCR *jcr, DEVICE_STATS_DBR *dsr);
+   bool create_tapealert_statistics(JCR *jcr, TAPEALERT_STATS_DBR *tsr);
+
+   /* sql_delete.c */
+   bool delete_pool_record(JCR *jcr, POOL_DBR *pool_dbr);
+   bool delete_media_record(JCR *jcr, MEDIA_DBR *mr);
+   bool purge_media_record(JCR *jcr, MEDIA_DBR *mr);
+
+   /* sql_find.c */
+   bool find_last_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM *&stime, char *job, int JobLevel);
+   bool find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM *&stime, char *job);
+   bool find_last_jobid(JCR *jcr, const char *Name, JOB_DBR *jr);
+   int find_next_volume(JCR *jcr, int index, bool InChanger, MEDIA_DBR *mr, const char *unwanted_volumes);
+   bool find_failed_job_since(JCR *jcr, JOB_DBR *jr, POOLMEM *stime, int &JobLevel);
+
+   /* sql_get.c */
+   bool get_volume_jobids(JCR *jcr, MEDIA_DBR *mr, db_list_ctx *lst);
+   bool get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler,void *ctx);
+   int get_path_record(JCR *jcr);
+   int get_path_record(JCR *jcr, const char *new_path);
+   bool get_pool_record(JCR *jcr, POOL_DBR *pdbr);
+   bool get_storage_record(JCR *jcr, STORAGE_DBR *sdbr);
+   bool get_job_record(JCR *jcr, JOB_DBR *jr);
+   int get_job_volume_names(JCR *jcr, JobId_t JobId, POOLMEM *&VolumeNames);
+   bool get_file_attributes_record(JCR *jcr, char *filename, JOB_DBR *jr, FILE_DBR *fdbr);
+   int get_fileset_record(JCR *jcr, FILESET_DBR *fsr);
+   bool get_media_record(JCR *jcr, MEDIA_DBR *mr);
+   int get_num_media_records(JCR *jcr);
+   int get_num_pool_records(JCR *jcr);
+   int get_pool_ids(JCR *jcr, int *num_ids, DBId_t **ids);
+   bool get_client_ids(JCR *jcr, int *num_ids, DBId_t **ids);
+   int get_storage_ids(JCR *jcr, int *num_ids, DBId_t **ids);
+   bool get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t **ids);
+   int get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolParams);
+   bool get_client_record(JCR *jcr, CLIENT_DBR *cdbr);
+   bool get_counter_record(JCR *jcr, COUNTER_DBR *cr);
+   bool get_query_dbids(JCR *jcr, POOL_MEM &query, dbid_list &ids);
+   bool get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool get_base_jobid(JCR *jcr, JOB_DBR *jr, JobId_t *jobid);
+   bool accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids);
+   bool get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result);
+   bool get_quota_record(JCR *jcr, CLIENT_DBR *cr);
+   bool get_quota_jobbytes(JCR *jcr, JOB_DBR *jr, utime_t JobRetention);
+   bool get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetention);
+   int get_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem);
+   bool get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
+
+   /* sql_list.c */
+   void list_pool_records(JCR *jcr, POOL_DBR *pr, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname,
+                            int jobstatus, const char* volumename, utime_t since_time, bool last,
+                            bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit);
+   void list_files_for_job(JCR *jcr, uint32_t jobid, OUTPUT_FORMATTER *sendit);
+   void list_filesets(JCR *jcr, JOB_DBR *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_storage_records(JCR *jcr, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_jobmedia_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_joblog_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_log_records(JCR *jcr, const char *clientname, const char *range,
+                         bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
+   bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,
+                       const char *description, bool verbose = false);
+   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type,
+                       const char *description, bool verbose = false);
+   void list_client_records(JCR *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_copies_records(JCR *jcr, const char *range, const char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit);
+
+   /* sql_query.c */
+   void fill_query(uint32_t hash_key, ...);
+   void fill_query(POOLMEM *&query, uint32_t hash_key, ...);
+   void fill_query(POOL_MEM &query, uint32_t hash_key, ...);
+   bool sql_query(uint32_t hash_key, ...);
+   bool sql_query(const char *query, int flags = 0);
+   bool sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
+
+   /* sql_update.c */
+   bool update_job_start_record(JCR *jcr, JOB_DBR *jr);
+   bool update_job_end_record(JCR *jcr, JOB_DBR *jr);
+   bool update_client_record(JCR *jcr, CLIENT_DBR *cr);
+   bool update_pool_record(JCR *jcr, POOL_DBR *pr);
+   bool update_storage_record(JCR *jcr, STORAGE_DBR *sr);
+   bool update_media_record(JCR *jcr, MEDIA_DBR *mr);
+   bool update_media_defaults(JCR *jcr, MEDIA_DBR *mr);
+   bool update_counter_record(JCR *jcr, COUNTER_DBR *cr);
+   bool update_quota_gracetime(JCR *jcr, JOB_DBR *jr);
+   bool update_quota_softlimit(JCR *jcr, JOB_DBR *jr);
+   bool reset_quota_record(JCR *jcr, CLIENT_DBR *jr);
+   bool update_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem, int level);
+   bool add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest, int type);
+   bool mark_file_record(JCR *jcr, FileId_t FileId, JobId_t JobId);
+   void make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr);
+   int update_stats(JCR *jcr, utime_t age);
+
+   /* Low level methods */
+   bool match_database(const char *db_driver, const char *db_name,
+                       const char *db_address, int db_port);
+   B_DB *clone_database_connection(JCR *jcr,
+                                   bool mult_db_connections,
+                                   bool get_pooled_connection = true,
+                                   bool need_private = false);
+   int get_type_index(void) { return m_db_type; };
+   const char *get_type(void);
+   void _lock_db(const char *file, int line);
+   void _unlock_db(const char *file, int line);
    void print_lock_info(FILE *fp);
 
    /* Virtual low level methods */
-   virtual void db_thread_cleanup(void) {};
-   virtual void db_escape_string(JCR *jcr, char *snew, char *old, int len);
-   virtual char *db_escape_object(JCR *jcr, char *old, int len);
-   virtual void db_unescape_object(JCR *jcr, char *from, int32_t expected_len,
-                                   POOLMEM *&dest, int32_t *len);
+   virtual void thread_cleanup(void) {};
+   virtual void escape_string(JCR *jcr, char *snew, char *old, int len);
+   virtual char *escape_object(JCR *jcr, char *old, int len);
+   virtual void unescape_object(JCR *jcr, char *from, int32_t expected_len,
+                                POOLMEM *&dest, int32_t *len);
 
    /* Pure virtual low level methods */
-   virtual bool db_open_database(JCR *jcr) = 0;
-   virtual void db_close_database(JCR *jcr) = 0;
-   virtual bool db_validate_connection(void) = 0;
-   virtual void db_start_transaction(JCR *jcr) = 0;
-   virtual void db_end_transaction(JCR *jcr) = 0;
-   virtual bool db_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual bool open_database(JCR *jcr) = 0;
+   virtual void close_database(JCR *jcr) = 0;
+   virtual bool validate_connection(void) = 0;
+   virtual void start_transaction(JCR *jcr) = 0;
+   virtual void end_transaction(JCR *jcr) = 0;
 
    /* By default, we use db_sql_query */
-   virtual bool db_big_sql_query(const char *query,
-                                 DB_RESULT_HANDLER *result_handler, void *ctx) {
-      return db_sql_query(query, result_handler, ctx);
+   virtual bool big_sql_query(const char *query,
+                              DB_RESULT_HANDLER *result_handler, void *ctx) {
+      return sql_query(query, result_handler, ctx);
    };
+
+#ifdef _BDB_PRIV_INTERFACE_
+   /*
+    * Backend methods
+    */
+private:
+   virtual int sql_num_rows(void) = 0;
+   virtual void sql_field_seek(int field) = 0;
+   virtual int sql_num_fields(void) = 0;
+   virtual void sql_free_result(void) = 0;
+   virtual SQL_ROW sql_fetch_row(void) = 0;
+   virtual bool sql_query_without_handler(const char *query, int flags = 0) = 0;
+   virtual bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
+   virtual const char *sql_strerror(void) = 0;
+   virtual void sql_data_seek(int row) = 0;
+   virtual int sql_affected_rows(void) = 0;
+   virtual uint64_t sql_insert_autokey_record(const char *query, const char *table_name) = 0;
+   virtual SQL_FIELD *sql_fetch_field(void) = 0;
+   virtual bool sql_field_is_not_null(int field_type) = 0;
+   virtual bool sql_field_is_numeric(int field_type) = 0;
+   virtual bool sql_batch_start(JCR *jcr) = 0;
+   virtual bool sql_batch_end(JCR *jcr, const char *error) = 0;
+   virtual bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar) = 0;
+#endif
 };
+
+#ifdef _BDB_PRIV_INTERFACE_
+#include "bdb_priv.h"
+#endif
 
 /* sql_query Query Flags */
 #define QF_STORE_RESULT 0x01
@@ -598,11 +828,11 @@ public:
 #define BATCH_FLUSH 800000
 
 /* Use for better error location printing */
-#define UPDATE_DB(jcr, db, cmd) UpdateDB(__FILE__, __LINE__, jcr, db, cmd, 1)
-#define UPDATE_DB_NO_AFR(jcr, db, cmd) UpdateDB(__FILE__, __LINE__, jcr, db, cmd, 0)
-#define INSERT_DB(jcr, db, cmd) InsertDB(__FILE__, __LINE__, jcr, db, cmd)
-#define QUERY_DB(jcr, db, cmd) QueryDB(__FILE__, __LINE__, jcr, db, cmd)
-#define DELETE_DB(jcr, db, cmd) DeleteDB(__FILE__, __LINE__, jcr, db, cmd)
+#define UPDATE_DB(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd, 1)
+#define UPDATE_DB_NO_AFR(jcr, cmd) UpdateDB(__FILE__, __LINE__, jcr, cmd, 0)
+#define INSERT_DB(jcr, cmd) InsertDB(__FILE__, __LINE__, jcr,  cmd)
+#define QUERY_DB(jcr, cmd) QueryDB(__FILE__, __LINE__, jcr, cmd)
+#define DELETE_DB(jcr, cmd) DeleteDB(__FILE__, __LINE__, jcr, cmd)
 
 /*
  * Pooled backend connection.
@@ -633,7 +863,6 @@ struct SQL_POOL_DESCRIPTOR {
 
 #include "protos.h"
 #include "jcr.h"
-#include "sql_cmds.h"
 
 /*
  * Object used in db_list_xxx function
@@ -676,15 +905,4 @@ public:
  */
 int list_result(void *vctx, int cols, char **row);
 int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type);
-int get_sql_record_max(JCR *jcr, B_DB *mdb);
-bool check_tables_version(JCR *jcr, B_DB *mdb);
-bool db_check_max_connections(JCR *jcr, B_DB *mdb, uint32_t nb);
-
-void print_dashes(B_DB *mdb);
-void print_result(B_DB *mdb);
-bool QueryDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
-bool InsertDB(const char *file, int line, JCR *jcr, B_DB *db, char *select_cmd);
-int DeleteDB(const char *file, int line, JCR *jcr, B_DB *db, char *delete_cmd);
-bool UpdateDB(const char *file, int line, JCR *jcr, B_DB *db, char *update_cmd, int nr_afr);
-void split_path_and_file(JCR *jcr, B_DB *mdb, const char *fname);
 #endif /* __CATS_H_ */
