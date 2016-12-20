@@ -693,7 +693,7 @@ bool B_DB::create_counter_record(JCR *jcr, COUNTER_DBR *cr)
    /*
     * Must create it
     */
-   fill_query(56, esc, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
+   table_fill_query("insert_counter_values", esc, cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter);
 
    if (!INSERT_DB(jcr, cmd)) {
       Mmsg2(errmsg, _("Create DB Counters record %s failed. ERR=%s\n"), cmd, sql_strerror());
@@ -835,18 +835,18 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
-   if (!sql_query(49)) {
+   if (!sql_table_query("batch_lock_path_query")) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query(52)) {
+   if (!sql_table_query("batch_fill_path_query")) {
       Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n",errmsg);
-      sql_query(51);
+      sql_table_query("batch_unlock_tables_query");
       goto bail_out;
    }
 
-   if (!sql_query(51)) {
+   if (!sql_table_query("batch_unlock_tables_query")) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
       goto bail_out;
    }
@@ -854,18 +854,18 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
-   if (!sql_query(50)) {
+   if (!sql_table_query("batch_lock_filename_query")) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query(53)) {
+   if (!sql_table_query("batch_fill_filename_query")) {
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n", errmsg);
-      sql_query(51);
+      sql_table_query("batch_unlock_tables_query");
       goto bail_out;
    }
 
-   if (!sql_query(51)) {
+   if (!sql_table_query("batch_unlock_tables_query")) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", errmsg);
       goto bail_out;
    }
@@ -1205,13 +1205,13 @@ bool B_DB::create_base_file_list(JCR *jcr, char *jobids)
       goto bail_out;
    }
 
-   fill_query(38, (uint64_t) jcr->JobId);
+   table_fill_query("create_temp_basefile", (uint64_t) jcr->JobId);
    if (!sql_query(cmd)) {
       goto bail_out;
    }
 
-   fill_query(buf, 36, jobids, jobids);
-   fill_query(39, (uint64_t)jcr->JobId, buf.c_str());
+   fill_query(buf, "select_recent_version", jobids, jobids);
+   table_fill_query("create_temp_new_basefile", (uint64_t)jcr->JobId, buf.c_str());
 
    retval = sql_query(cmd);
 

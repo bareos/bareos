@@ -392,7 +392,7 @@ retry_fetch:
           bstrcmp(mr->VolStatus, "Purged")) {
          pm_strcpy(order, "AND Recycle=1 ORDER BY LastWritten ASC,MediaId"); /* Take oldest that can be recycled */
       } else {
-         fill_query(order, 45);                                              /* Take most recently written */
+         fill_query(order, "sql_media_order_most_recently_written");    /* Take most recently written */
       }
 
       Mmsg(cmd, "SELECT MediaId,VolumeName,VolJobs,VolFiles,VolBlocks,"

@@ -942,7 +942,7 @@ static bool update_pool(UAContext *ua)
    if (id <= 0) {
       ua->error_msg(_("update_pool_record returned %d. ERR=%s\n"), id, ua->db->strerror());
    }
-   ua->db->fill_query(query, 5, edit_int64(pr.PoolId, ed1));
+   ua->db->fill_query(query, "list_pool", edit_int64(pr.PoolId, ed1));
    ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    ua->info_msg(_("Pool DB record updated from resource.\n"));
 

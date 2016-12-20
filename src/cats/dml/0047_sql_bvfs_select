@@ -1,0 +1,18 @@
+CREATE TABLE %s AS
+SELECT File.JobId, File.FileIndex, File.FileId
+  FROM Job, File, (
+      SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId
+        FROM btemp%s
+       GROUP BY PathId, FilenameId
+       ) AS T1
+  JOIN Filename
+ USING (FilenameId)
+ WHERE T1.JobTDate    = Job.JobTDate
+   AND Job.JobId      = File.JobId
+   AND T1.PathId      = File.PathId
+   AND T1.FilenameId  = File.FilenameId
+   AND File.FileIndex > 0
+   AND Job.JobId IN (
+      SELECT DISTINCT JobId
+        FROM btemp%s
+       )

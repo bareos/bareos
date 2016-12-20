@@ -1,0 +1,14 @@
+CREATE TEMPORARY TABLE cpy_tmp AS
+SELECT MIN(JobId) AS JobId
+  FROM Job
+ WHERE Type = '%c'
+   AND (
+          PriorJobId IN (%s)
+       OR PriorJobId IN (
+         SELECT PriorJobId
+           FROM Job
+          WHERE JobId IN (%s)
+            AND Type = 'B'
+          )
+       )
+ GROUP BY PriorJobId

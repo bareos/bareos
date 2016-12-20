@@ -105,7 +105,4 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
 void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort = false);
 
 /* sql_query.c */
-void db_set_query_dirs(alist *new_query_dirs);
-BDB_QUERY_TABLE *load_query_table(const char *database_type);
-void unload_query_table(BDB_QUERY_TABLE *query_table);
 #endif /* __SQL_PROTOS_H */

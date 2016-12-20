@@ -1,0 +1,6 @@
+INSERT INTO Filename (Name)
+SELECT DISTINCT Name
+  FROM batch
+EXCEPT
+SELECT Name
+  FROM Filename

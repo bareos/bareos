@@ -744,7 +744,6 @@ plugindir
 logdir
 bsrdir
 backenddir
-backendquerydir
 scriptdir
 hostname
 basename
@@ -1043,7 +1042,6 @@ with_archivedir
 with_basename
 with_hostname
 with_scriptdir
-with_backendquerydir
 with_backenddir
 with_bsrdir
 with_logdir
@@ -1810,8 +1808,6 @@ Optional Packages:
   --with-basename=RESNAME specify base resource name for daemons
   --with-hostname=RESNAME specify host name for daemons
   --with-scriptdir=PATH   specify path of Bareos scripts directory
-  --with-backendquerydir=PATH
-                          specify path of Bareos backend query directory
   --with-backenddir=PATH  specify path of Bareos backends directory
   --with-bsrdir=PATH      specify path of Bareos bsrs directory
   --with-logdir=PATH      specify path of Bareos logs directory
@@ -24795,25 +24791,6 @@ fi
 
 
 
-backendquerydir=`eval echo ${scriptdir}/dml`
-
-# Check whether --with-backendquerydir was given.
-if test "${with_backendquerydir+set}" = set; then :
-  withval=$with_backendquerydir;
-       if test "x$withval" != "xno" ; then
-	  backendquerydir=$withval
-       fi
-
-
-fi
-
-
-
-cat >>confdefs.h <<_ACEOF
-#define _PATH_BAREOS_BACKENDQUERYDIR "$backendquerydir"
-_ACEOF
-
-
 
 # ------------------------------------------
 # Where to place backenddir (backend library files)
@@ -33371,9 +33348,9 @@ fi
 CFLAGS=${CFLAGS--O}
 
 if test x$have_gcc = xyes ; then
-   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing -fno-exceptions"
-   CFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions"
-   CXXFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
+   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing"
+   CFLAGS="$CFLAGS -fno-strict-aliasing"
+   CXXFLAGS="$CFLAGS -fno-strict-aliasing"
 fi
 LDFLAGS=${LDFLAGS--O}
 CPPFLAGS="$CPPFLAGS"
@@ -33892,7 +33869,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf src/defaultconfigs/bareos-dir.d/messages/Daemon.conf src/defaultconfigs/bareos-dir.d/messages/Standard.conf src/defaultconfigs/bareos-dir.d/storage/File.conf src/defaultconfigs/bareos-sd.d/device/FileStorage.conf src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf src/defaultconfigs/bareos-fd.d/client/myself.conf src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf src/defaultconfigs/tray-monitor.d/director/Director-local.conf src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/cats/dml/Makefile src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf src/defaultconfigs/bareos-dir.d/messages/Daemon.conf src/defaultconfigs/bareos-dir.d/messages/Standard.conf src/defaultconfigs/bareos-dir.d/storage/File.conf src/defaultconfigs/bareos-sd.d/device/FileStorage.conf src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf src/defaultconfigs/bareos-fd.d/client/myself.conf src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf src/defaultconfigs/tray-monitor.d/director/Director-local.conf src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -35062,7 +35039,6 @@ do
     "src/cats/drop_bareos_database") CONFIG_FILES="$CONFIG_FILES src/cats/drop_bareos_database" ;;
     "src/cats/install-default-backend") CONFIG_FILES="$CONFIG_FILES src/cats/install-default-backend" ;;
     "src/cats/ddl/versions.map") CONFIG_FILES="$CONFIG_FILES src/cats/ddl/versions.map" ;;
-    "src/cats/dml/Makefile") CONFIG_FILES="$CONFIG_FILES src/cats/dml/Makefile" ;;
     "src/findlib/Makefile") CONFIG_FILES="$CONFIG_FILES src/findlib/Makefile" ;;
     "src/findlib/unittests/Makefile") CONFIG_FILES="$CONFIG_FILES src/findlib/unittests/Makefile" ;;
     "src/lmdb/Makefile") CONFIG_FILES="$CONFIG_FILES src/lmdb/Makefile" ;;

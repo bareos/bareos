@@ -381,8 +381,6 @@ int main (int argc, char *argv[])
 
    db_set_backend_dirs(me->backend_directories);
 #endif
-   db_set_query_dirs(me->backend_query_directories);
-
    load_dir_plugins(me->plugin_directory, me->plugin_names);
 
    /*
@@ -1288,8 +1286,8 @@ static bool check_catalog(cat_op mode)
       }
       /* cleanup old job records */
       if (mode == UPDATE_AND_FIX) {
-         db->sql_query(2);
-         db->sql_query(3);
+         db->sql_table_query("cleanup_created_job");
+         db->sql_table_query("cleanup_running_job");
       }
 
       /* Set type in global for debugging */

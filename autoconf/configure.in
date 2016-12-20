@@ -1482,21 +1482,6 @@ AC_ARG_WITH(scriptdir,
 
 AC_SUBST(scriptdir)
 
-dnl ------------------------------------------
-dnl Where to place query files
-dnl ------------------------------------------
-backendquerydir=`eval echo ${scriptdir}/dml`
-AC_ARG_WITH(backendquerydir,
-   AC_HELP_STRING([--with-backendquerydir=PATH], [specify path of Bareos backend query directory]),
-   [
-       if test "x$withval" != "xno" ; then
-	  backendquerydir=$withval
-       fi
-   ]
-)
-
-AC_DEFINE_UNQUOTED(_PATH_BAREOS_BACKENDQUERYDIR, "$backendquerydir", [Directory for backend query files])
-AC_SUBST(backendquerydir)
 
 # ------------------------------------------
 # Where to place backenddir (backend library files)
@@ -4171,9 +4156,9 @@ AC_SUBST(CAP_LIBS)
 CFLAGS=${CFLAGS--O}
 
 if test x$have_gcc = xyes ; then
-   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing -fno-exceptions"
-   CFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions"
-   CXXFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
+   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing"
+   CFLAGS="$CFLAGS -fno-strict-aliasing"
+   CXXFLAGS="$CFLAGS -fno-strict-aliasing"
 fi
 LDFLAGS=${LDFLAGS--O}
 CPPFLAGS="$CPPFLAGS"
@@ -4716,7 +4701,6 @@ src/cats/drop_bareos_tables \
 src/cats/drop_bareos_database \
 src/cats/install-default-backend \
 src/cats/ddl/versions.map \
-src/cats/dml/Makefile \
 src/findlib/Makefile \
 src/findlib/unittests/Makefile \
 src/lmdb/Makefile \

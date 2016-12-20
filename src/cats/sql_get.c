@@ -843,7 +843,7 @@ bool B_DB::get_counter_record(JCR *jcr, COUNTER_DBR *cr)
    db_lock(this);
    escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
 
-   fill_query(57, esc);
+   table_fill_query("select_counter_values", esc);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
 
@@ -1241,9 +1241,9 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
    }
 
    if (use_delta) {
-      fill_query(query2, 35, jobids, jobids, jobids, jobids);
+      fill_query(query2, "select_recent_version_with_basejob_and_delta", jobids, jobids, jobids, jobids);
    } else {
-      fill_query(query2, 34, jobids, jobids, jobids, jobids);
+      fill_query(query2, "select_recent_version_with_basejob", jobids, jobids, jobids, jobids);
    }
 
    /*
@@ -1315,7 +1315,7 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
    /*
     * First, find the last good Full backup for this job/client/fileset
     */
-   fill_query(query, 37, edit_uint64(jcr->JobId, jobid),
+   fill_query(query, "create_temp_accurate_jobids", edit_uint64(jcr->JobId, jobid),
               edit_uint64(jr->ClientId, clientid), date, edit_uint64(jr->FileSetId, filesetid));
 
    if (!sql_query(query.c_str())) {
@@ -1503,7 +1503,7 @@ bool B_DB::get_quota_jobbytes(JCR *jcr, JOB_DBR *jr, utime_t JobRetention)
 
    db_lock(this);
 
-   fill_query(59, edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
+   table_fill_query("get_quota_jobbytes", edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
       if (num_rows == 1) {
@@ -1555,7 +1555,7 @@ bool B_DB::get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetenti
 
    db_lock(this);
 
-   fill_query(60, edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
+   table_fill_query("get_quota_jobbytes_nofailed", edit_uint64(jr->ClientId, ed1), edit_uint64(jr->JobId, ed2), dt);
    if (QUERY_DB(jcr, cmd)) {
       num_rows = sql_num_rows();
       if (num_rows == 1) {

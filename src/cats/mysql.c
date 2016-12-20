@@ -40,6 +40,7 @@
 #include <errmsg.h>
 #include <bdb_mysql.h>
 
+#include <iostream>
 /* -----------------------------------------------------------------------
  *
  *   MySQL dependent defines and subroutines
@@ -54,8 +55,6 @@ static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static BDB_QUERY_TABLE *mysql_query_table = NULL;
-
 B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
                        const char *db_driver,
                        const char *db_name,
@@ -68,7 +67,8 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
                        bool disable_batch_insert,
                        bool try_reconnect,
                        bool exit_on_fatal,
-                       bool need_private)
+                       bool need_private
+                       )
 {
    /*
     * Initialize the parent class members.
@@ -119,7 +119,6 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    m_is_private = need_private;
    m_try_reconnect = try_reconnect;
    m_exit_on_fatal = exit_on_fatal;
-   m_query_table = mysql_query_table;
    m_last_hash_key = 0;
    m_last_query_text = NULL;
 
@@ -136,6 +135,15 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
       db_list = New(dlist(this, &this->m_link));
    }
    db_list->append(this);
+
+   /* initialize query table */
+   std::map <std::string, std::string>::iterator it;
+
+   const char** qu = queries;
+
+   for (const char **query = query_names; *query; ) {
+      m_query_table.insert(std::make_pair(*query++, *qu++));
+   }
 }
 
 B_DB_MYSQL::~B_DB_MYSQL()
@@ -836,13 +844,6 @@ B_DB *db_init_database(JCR *jcr,
    }
    P(mutex);                          /* lock DB queue */
 
-   if (!mysql_query_table) {
-      mysql_query_table = load_query_table("mysql");
-      if (!mysql_query_table) {
-         goto bail_out;
-      }
-   }
-
    /*
     * Look to see if DB already open
     */
@@ -872,7 +873,8 @@ B_DB *db_init_database(JCR *jcr,
                         disable_batch_insert,
                         try_reconnect,
                         exit_on_fatal,
-                        need_private));
+                        need_private
+                        ));
 
 bail_out:
    V(mutex);
@@ -885,10 +887,6 @@ extern "C" void CATS_IMP_EXP flush_backend(void)
 void db_flush_backends(void)
 #endif
 {
-   if (mysql_query_table) {
-      unload_query_table(mysql_query_table);
-      mysql_query_table = NULL;
-   }
 }
 
 #endif /* HAVE_MYSQL */

@@ -1,0 +1,3 @@
+UPDATE Job
+   SET JobStatus = 'f', EndTime = StartTime
+ WHERE JobStatus = 'R'

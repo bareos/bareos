@@ -1,0 +1,6 @@
+SELECT DISTINCT FileSet.FileSet
+  FROM Job, Client, FileSet
+ WHERE Job.FileSetId   = FileSet.FileSetId
+   AND Job.ClientId    = %s
+   AND Client.ClientId = %s
+ ORDER BY FileSet.FileSet

@@ -31,7 +31,8 @@ private:
    PGconn *m_db_handle;
    PGresult *m_result;
    POOLMEM *m_buf;                        /* Buffer to manipulate queries */
-
+   static const char *query_names []; /**<< table of query names */
+   static const char *queries [];     /**<< table of query texts */
 private:
    /*
     * Methods.
@@ -78,7 +79,12 @@ public:
                    bool disable_batch_insert,
                    bool try_reconnect,
                    bool exit_on_fatal,
-                   bool need_private);
+                   bool need_private
+                   );
    ~B_DB_POSTGRESQL();
 };
+
+/* pull in the generated query_names and queries definitions */
+#include "postgresql_queries.c"
+
 #endif /* __BDB_POSTGRESQL_H_ */

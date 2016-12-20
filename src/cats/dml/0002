@@ -1,6 +1,0 @@
-#
-# Cleanup created jobs
-#
-UPDATE Job
-   SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime
- WHERE JobStatus = 'C'

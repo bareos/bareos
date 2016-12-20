@@ -37,6 +37,7 @@
 #include <sqlite3.h>
 #include "bdb_sqlite.h"
 
+#include <iostream>
 /* -----------------------------------------------------------------------
  *
  *    SQLite dependent defines and subroutines
@@ -50,8 +51,6 @@
 static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
-
-static BDB_QUERY_TABLE *sqlite_query_table = NULL;
 
 /*
  * When using mult_db_connections = true,
@@ -75,7 +74,8 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
                          bool disable_batch_insert,
                          bool try_reconnect,
                          bool exit_on_fatal,
-                         bool need_private)
+                         bool need_private
+                         )
 {
    /*
     * Initialize the parent class members.
@@ -114,9 +114,6 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
    m_is_private = need_private;
    m_try_reconnect = try_reconnect;
    m_exit_on_fatal = exit_on_fatal;
-   m_query_table = sqlite_query_table;
-   m_last_hash_key = 0;
-   m_last_query_text = NULL;
 
    /*
     * Initialize the private members.
@@ -132,6 +129,16 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
       db_list = New(dlist(this, &this->m_link));
    }
    db_list->append(this);
+
+
+   /* initialize query table */
+   std::map <std::string, std::string>::iterator it;
+
+   const char** qu = queries;
+
+   for (const char **query = query_names; *query; ) {
+      m_query_table.insert(std::make_pair(*query++, *qu++));
+   }
 }
 
 B_DB_SQLITE::~B_DB_SQLITE()
@@ -694,13 +701,6 @@ B_DB *db_init_database(JCR *jcr,
 
    P(mutex);                          /* lock DB queue */
 
-   if (!sqlite_query_table) {
-      sqlite_query_table = load_query_table("sqlite3");
-      if (!sqlite_query_table) {
-         goto bail_out;
-      }
-   }
-
    /*
     * Look to see if DB already open
     */
@@ -730,7 +730,8 @@ B_DB *db_init_database(JCR *jcr,
                          disable_batch_insert,
                          try_reconnect,
                          exit_on_fatal,
-                         need_private));
+                         need_private
+                         ));
 
 bail_out:
    V(mutex);
@@ -743,10 +744,6 @@ extern "C" void CATS_IMP_EXP flush_backend(void)
 void db_flush_backends(void)
 #endif
 {
-   if (sqlite_query_table) {
-      unload_query_table(sqlite_query_table);
-      sqlite_query_table = NULL;
-   }
 }
 
 #endif /* HAVE_SQLITE3 */

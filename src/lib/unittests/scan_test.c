@@ -122,4 +122,19 @@ void test_scan(void **state) {
    sprintf(assertbuf, "cnt=%d Vol=%s", cnt, vol.VolCatName);
    assert_string_equal("cnt=17 Vol=TestVolume001", assertbuf);
 
+
+   char pool_name[100];
+   char MediaType[100];
+   char unwanted_volumes[100];
+   uint32_t index;
+
+   static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s unwanted_volumes=%s\n";
+   char *catreq_findmedia = "CatReq Job=BackupCatalog.2016-12-23_10.52.45_23 FindMedia=1 pool_name=Full media_type=Full unwanted_volumes=\n";
+   cnt = bsscanf(catreq_findmedia, Find_media, &Job, &index, &pool_name, &MediaType, unwanted_volumes);
+
+   sprintf(assertbuf,"cnt=%d Job=%s MediaType=%s\n", cnt, Job, MediaType);
+   assert_string_equal("cnt=5 Job=BackupCatalog.2016-12-23_10.52.45_23 MediaType=Full\n", assertbuf);
+
+
+
 }

@@ -33,7 +33,6 @@ includedir = @includedir@
 sysconfdir = @sysconfdir@
 confdir = @confdir@
 backenddir = @backenddir@
-backendquerydir = @backendquerydir@
 plugindir = @plugindir@
 scriptdir = @scriptdir@
 archivedir = @archivedir@

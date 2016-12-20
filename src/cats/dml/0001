@@ -1,5 +1,0 @@
-SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, ObjectCompression, FileIndex, ObjectName, RestoreObject
-  FROM RestoreObject
- WHERE JobId IN (%s)
-   AND ObjectType = %d
- ORDER BY ObjectIndex ASC

@@ -1,0 +1,6 @@
+SELECT MAX(FileSet.FileSetId)
+  FROM FileSet
+  JOIN Job
+ USING (FileSetId)
+ WHERE Job.ClientId = %s
+ GROUP BY FileSet

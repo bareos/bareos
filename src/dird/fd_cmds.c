@@ -863,16 +863,16 @@ static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
    /*
     * Send restore objects for all jobs involved
     */
-   jcr->db->fill_query(query, 1, jcr->JobIds, FT_RESTORE_FIRST);
+   jcr->db->fill_query(query, "get_restore_objects", jcr->JobIds, FT_RESTORE_FIRST);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   jcr->db->fill_query(query, 1, jcr->JobIds, FT_PLUGIN_CONFIG);
+   jcr->db->fill_query(query, "get_restore_objects", jcr->JobIds, FT_PLUGIN_CONFIG);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
    /*
     * Send config objects for the current restore job
     */
-   jcr->db->fill_query(query, 1, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
+   jcr->db->fill_query(query, "get_restore_objects", edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 
@@ -884,10 +884,10 @@ static inline void send_job_specific_restore_objects(JCR *jcr, JobId_t JobId, OB
    /*
     * Send restore objects for specific JobId.
     */
-   jcr->db->fill_query(query, 1, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+   jcr->db->fill_query(query, "get_restore_objects", edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   jcr->db->fill_query(query, 1, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+   jcr->db->fill_query(query, "get_restore_objects", edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 

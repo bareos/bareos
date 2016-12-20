@@ -1,7 +1,9 @@
-All queries in this directory are the original queries extracted from the BAREOS source
-and then reformated using the VIM sql formatting tools. The VIM stuff is located in
-the vim subfolder of this directory and contains the 2 VIM packages used.
+This directory contains individual sql queries,
 
-After creating a new query you can format the query using the following cmd in VIM:
+These queries are translated into .c files into
+../ by the following scripts:
 
-:.,$SQLUFormatter
+create_queryfiles.sh
+
+The .c files only need to be updated when the queries
+are altered or new ones are added.

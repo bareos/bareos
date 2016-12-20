@@ -174,6 +174,7 @@ extern "C" {
 #include <windows.h>
 #endif
 
+
 /**
  * Local Bareos includes. Be sure to put all the system includes before these.
  */
@@ -182,10 +183,24 @@ extern "C" {
 #if defined(HAVE_WIN32)
 #include "compat.h"
 #endif
+
+/* c++ includes */
+
+#ifdef HAVE_WIN32
+#undef setlocale
+#endif
+
+#include <map>
+
+#if !defined(ENABLE_NLS)
+#define setlocale(p, d)
+#endif
+
 #include "streams.h"
 #include "filetypes.h"
 #include "baconfig.h"
 #include "lib/lib.h"
+
 
 /**
  * For wx-console compiles, we undo some Bareos defines.

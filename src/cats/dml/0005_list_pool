@@ -1,0 +1,3 @@
+SELECT *
+  FROM Pool
+ WHERE PoolId = %s

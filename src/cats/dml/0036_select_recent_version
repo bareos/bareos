@@ -1,0 +1,15 @@
+SELECT j1.JobId AS JobId, f1.FileId AS FileId, f1.FileIndex AS FileIndex, f1.PathId AS PathId, f1.FilenameId AS FilenameId,
+       f1.LStat AS LStat, f1.MD5 AS MD5, j1.JobTDate
+  FROM (
+      SELECT max(JobTDate) AS JobTDate, PathId, FilenameId
+        FROM File
+        JOIN Job
+       USING (JobId)
+       WHERE File.JobId IN (%s)
+       GROUP BY PathId, FilenameId
+       ) AS t1, Job AS j1, File AS f1
+ WHERE t1.JobTDate   = j1.JobTDate
+   AND j1.JobId IN (%s)
+   AND t1.FilenameId = f1.FilenameId
+   AND t1.PathId     = f1.PathId
+   AND j1.JobId      = f1.JobId

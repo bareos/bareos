@@ -28,12 +28,19 @@ TESTS = test_lib
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include
 
 .SUFFIXES:	.c .o
+.SUFFIXES:	.cc .o
 .PHONY:
 .DONTCARE:
 
 TEST_SRCS = alist_test.c passphrase_test.c dlist_test.c htable_test.c rblist_test.c edit_test.c bsnprintf_test.c \
 				sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c junction_test.c
 TEST_OBJS = $(TEST_SRCS:.c=.o)
+
+GTEST_SRCS = gtest_main.cc gtest.cc
+
+GTEST_OBJS = $(GTEST_SRCS:.cc=.o)
+
+GTEST = googletest
 
 TEST = test_lib
 LDFLAGS += @CMOCKA_LIBS@
@@ -45,11 +52,15 @@ CXXFLAGS += -Wno-write-strings
 	@echo "Compiling $<"
 	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
+.cc.o:
+	@echo "Compiling $<"
+	$(CXX) $(DEFS) $(DEBUG) -c $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
+
 #-------------------------------------------------------------------------
 all: Makefile $(TEST) $(TEST_OBJS)
 	@echo "==== Make of tests is good ===="
 	@echo " "
-#	for test in $(TESTS); do ./$${test}; done
 
 check: $(TEST)
 	./$(TEST)
@@ -59,10 +70,14 @@ Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 test_lib: Makefile test_lib.o $(basedir)/lib/libbareos$(DEFAULT_ARCHIVE_TYPE) $(TEST_OBJS)
-
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L$(basedir)/lib -o $@ test_lib.o $(TEST_OBJS)\
-      $(DLIB) -lbareos -lm $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
+      $(DLIB) -lbareos -lm  $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
+
+googletest: Makefile $(basedir)/lib/libbareos$(DEFAULT_ARCHIVE_TYPE) $(GTEST_OBJS)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(LDFLAGS) -L. -L$(basedir)/lib -o $@ $(GTEST_OBJS)\
+      $(DLIB) -lbareos -lm -lgtest $(LIBS) $(GETTEXT_LIBS) $(OPENSSL_LIBS_NONSHARED) $(GNUTLS_LIBS_NONSHARED)
 
 libtool-clean:
 	@$(RMF) -r .libs _libs

@@ -226,7 +226,6 @@ int main (int argc, char *argv[])
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
          db_set_backend_dirs(me->backend_directories);
 #endif
-         db_set_query_dirs(me->backend_query_directories);
 
          /*
           * Print catalog information and exit (-B)

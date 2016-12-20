@@ -35,12 +35,29 @@
 #ifndef __CATS_H_
 #define __CATS_H_ 1
 
+
+#define _GLIBCXX_GTHREAD_USE_WEAK 0
+
+
+#ifdef HAVE_WIN32
+#undef setlocale
+#endif
+
+#include <string>
+#include <map>
+
+#if !defined(ENABLE_NLS)
+#define setlocale(p, d)
+#endif
+
 /* ==============================================================
  *
  *  What follows are definitions that are used "globally" for all
  *   the different SQL engines and both inside and external to the
  *   cats directory.
  */
+
+
 
 #define faddr_t long
 
@@ -560,10 +577,7 @@ struct BDB_QUERY {
 /*
  * Dynamic loaded query table.
  */
-struct BDB_QUERY_TABLE {
-   htable *table;                         /* Dynamic loaded query table */
-   brwlock_t lock;                        /* Transaction lock */
-};
+typedef std::map <std::string, std::string> BDB_QUERY_TABLE;
 
 class CATS_IMP_EXP B_DB: public SMARTALLOC {
 protected:
@@ -604,7 +618,7 @@ protected:
    POOLMEM *esc_obj;                      /**< Escaped restore object */
    POOLMEM *cmd;                          /**< SQL command string */
    POOLMEM *errmsg;                       /**< Nicely edited error message */
-   BDB_QUERY_TABLE *m_query_table;        /**< Dynamic loaded query table */
+   BDB_QUERY_TABLE m_query_table;        /**< Dynamic loaded query table */
 
 private:
    /*
@@ -618,7 +632,7 @@ private:
    void cleanup_base_file(JCR *jcr);
    void build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache, char *org_pathid, char *path);
    bool update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, JobId_t JobId);
-   char *lookup_query(uint32_t hash_key);
+   char *lookup_query(const char *query_name);
 
 public:
    /*
@@ -743,20 +757,21 @@ public:
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
-   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
+   bool list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose = false);
-   bool list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit, e_list_type type,
+   bool list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose = false);
    void list_client_records(JCR *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_copies_records(JCR *jcr, const char *range, const char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit);
 
    /* sql_query.c */
-   void fill_query(uint32_t hash_key, ...);
-   void fill_query(POOLMEM *&query, uint32_t hash_key, ...);
-   void fill_query(POOL_MEM &query, uint32_t hash_key, ...);
-   bool sql_query(uint32_t hash_key, ...);
+   void table_fill_query(const char* query_name, ...);
+   void fill_query(POOLMEM *&query, const char *query_name, ...);
+   void fill_query(POOL_MEM &query, const char *query_name, ...);
+
+   bool sql_table_query(const char *query_name, ...);
    bool sql_query(const char *query, int flags = 0);
    bool sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
 

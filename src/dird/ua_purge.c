@@ -490,7 +490,7 @@ void upgrade_copies(UAContext *ua, char *jobs)
    db_lock(ua->db);
 
    /* Do it in two times for mysql */
-   ua->db->fill_query(query, 40, JT_JOB_COPY, jobs, jobs);
+   ua->db->fill_query(query, "uap_upgrade_copies_oldest_job", JT_JOB_COPY, jobs, jobs);
 
    ua->db->sql_query(query.c_str());
    Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());

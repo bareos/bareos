@@ -1209,9 +1209,6 @@
 /* Directory for backend files */
 #undef _PATH_BAREOS_BACKENDDIR
 
-/* Directory for backend query files */
-#undef _PATH_BAREOS_BACKENDQUERYDIR
-
 /* Directory for PID files */
 #undef _PATH_BAREOS_PIDDIR
 

@@ -638,7 +638,7 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
        * If we have the "all" option, we do a search on all defined fileset for this client
        */
       if (find_arg(ua, "all") > 0) {
-         ua->db->fill_query(query, 30, edit_int64(jr.ClientId, ed1));
+         ua->db->fill_query(query, "uar_sel_filesetid", edit_int64(jr.ClientId, ed1));
          ua->db->get_query_dbids(ua->jcr, query, ids);
       } else {
          ids.num_ids = 1;
@@ -996,7 +996,7 @@ bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   ua->db->fill_query(select, 62, where.c_str());
+   ua->db->fill_query(select, "get_jobstatus_details", where.c_str());
 
    if (!open_client_db(ua)) {
       return false;

@@ -424,9 +424,6 @@
 /* Directory for backend drivers */
 #define _PATH_BAREOS_BACKENDDIR "."
 
-/* Directory for backend query files */
-#define _PATH_BAREOS_BACKENDQUERYDIR "%APPDATA%\\Bareos\\dml"
-
 /* Define to 1 if dynamic loading of catalog backends is enabled */
 #define HAVE_DYNAMIC_CATS_BACKENDS 1
 

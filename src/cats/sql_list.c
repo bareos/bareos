@@ -50,10 +50,10 @@ bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
+bool B_DB::list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit,
                           e_list_type type, bool verbose)
 {
-   return list_sql_query(jcr, hash_key, sendit, type, "query", verbose);
+   return list_sql_query(jcr, query_name, sendit, type, "query", verbose);
 }
 
 bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
@@ -82,7 +82,7 @@ bail_out:
    return retval;
 }
 
-bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
+bool B_DB::list_sql_table_query(JCR *jcr, const char *queryname, OUTPUT_FORMATTER *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    bool retval = false;
@@ -91,7 +91,7 @@ bool B_DB::list_sql_query(JCR *jcr, uint32_t hash_key, OUTPUT_FORMATTER *sendit,
 
    db_lock(this);
 
-   fill_query(query, hash_key);
+   fill_query(query, queryname);
    if (!sql_query(query.c_str(), QF_STORE_RESULT)) {
       Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
       if (verbose) {
@@ -517,18 +517,18 @@ void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char
    db_lock(this);
 
    if (count) {
-      fill_query(8, selection.c_str(), range);
+      table_fill_query("list_jobs_count", selection.c_str(), range);
    } else if (last) {
       if (type == VERT_LIST) {
-         fill_query(10, selection.c_str(), range);
+         table_fill_query("list_jobs_long_last", selection.c_str(), range);
       } else {
-         fill_query(9, selection.c_str(), range);
+         table_fill_query("list_jobs_last", selection.c_str(), range);
       }
    } else {
       if (type == VERT_LIST) {
-         fill_query(7, selection.c_str(), range);
+         table_fill_query("list_jobs_long", selection.c_str(), range);
       } else {
-         fill_query(6, selection.c_str(), range);
+         table_fill_query("list_jobs", selection.c_str(), range);
       }
    }
 
