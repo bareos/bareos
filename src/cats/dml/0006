@@ -2,16 +2,13 @@
 #                   to make it easier to extend the filter
 #                   (all filters starts with "AND ...")
 # JOIN with Media is required for filter to Media.Volumename.
-SELECT DISTINCT Job.JobId, Job.Name, Client.Name as Client, Job.StartTime, Job.Type, Job.Level, Job.JobFiles, Job.JobBytes,
-       Job.JobStatus
-  FROM Job
-  LEFT JOIN Client
- USING (ClientId)
-  LEFT JOIN JobMedia
- USING (JobId)
-  LEFT JOIN Media
- USING (MediaId)
-  LEFT JOIN FileSet
- USING (FileSetId)
- WHERE Job.JobId > 0 %s
- ORDER BY StartTime%s
+SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
+Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
+FROM Job
+LEFT JOIN Client ON Client.ClientId=Job.ClientId
+LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
+LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
+LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
+WHERE Job.JobId > 0
+%s
+ORDER BY StartTime%s;
