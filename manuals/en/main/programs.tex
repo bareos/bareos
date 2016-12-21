@@ -1294,23 +1294,22 @@ to the Bareos \linkResourceDirective{Dir}{Messages}{Mail Command} or \linkResour
 \index[general]{Catalog!database check}
 
 
-{\bf bareos-dbcheck} is a simple program that will search for logical
+\command{bareos-dbcheck} is a simple program that will search for logical
 inconsistencies in the Bareos tables in your database, and optionally fix them.
 It is a database maintenance routine, in the sense that it can
 detect and remove unused rows, but it is not a database repair
 routine. To repair a database, see the tools furnished by the
-database vendor.  Normally bareos-dbcheck should never need to be run,
+database vendor.  Normally \command{bareos-dbcheck} should never need to be run,
 but if Bareos has crashed or you have a lot of Clients, Pools, or
 Jobs that you have removed, it could be useful.
 
 It is called:
 
-\footnotesize
-\begin{verbatim}
-Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
+\begin{commands}{}
+Usage: bareos-dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
        -b                batch mode
        -C                catalog name in the director conf file
-       -c                Director conf filename
+       -c                Director configuration filename or configuration directory (e.g. /etc/bareos)
        -B                print catalog configuration and exit
        -d <nn>           set debug level to <nn>
        -dt               print a timestamp in debug output
@@ -1318,18 +1317,19 @@ Usage: dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver n
        -f                fix inconsistencies
        -v                verbose
        -?                print this message
-\end{verbatim}
-\normalsize
+\end{commands}
 
-As Bareos supports loading its database backend dynamically you need to specify
-the right database driver to use using the {\bf -D} option.
+When using the default configuration paths, it is not necesary to specify any
+options.
+Optionally, as Bareos supports loading its database backend dynamically you may specify
+the right database driver to use using the \parameter{-D} option.
 
-If the \textbf{-B} option is specified, bareos-dbcheck will print out catalog
+If the \parameter{-B} option is specified, \command{bareos-dbcheck} will print out catalog
 information in a simple text based format. This is useful to backup it in a
 secure way.
 
-\begin{verbatim}
- $ bareos-dbcheck -B
+\begin{commands}{}
+ # bareos-dbcheck -B
  catalog=MyCatalog
  db_type=SQLite
  db_name=regress
@@ -1339,23 +1339,41 @@ secure way.
  db_address=
  db_port=0
  db_socket=
-\end{verbatim} %$
+\end{commands}
 
-If the {\bf -c} option is given with the Director's conf file, there is no
+Note: When invoking \command{bareos-dbcheck} as root with any options except \parameter{-B}
+and using PostgreSQL DB on the same server, the following error message may appear:
+
+\begin{commands}{}
+21-Dec 15:33 dbcheck: Fatal Error at dbcheck.c:318 because:
+postgresql.c:246 Unable to connect to PostgreSQL server. Database=bareos User=bareos
+Possible causes: SQL server not running; password incorrect; max_connections exceeded.
+\end{commands}
+
+In that case switch to the bareos user before running \command{bareos-dbcheck} using
+
+\begin{commands}{}
+su -s /bin/bash - bareos
+\end{commands}
+
+Otherwise, it would be necesary to adapt the PostgreSQL configuration file
+\file{pg_hba.conf}
+
+If the \parameter{-c} option is given with the Director's conf file, there is no
 need to enter any of the command line arguments, in particular the working
-directory as dbcheck will read them from the file.
+directory as \command{bareos-dbcheck} will read them from the file.
 
-If the {\bf -f} option is specified, {\bf bareos-dbcheck} will repair ({\bf fix}) the
+If the \parameter{-f} option is specified, \command{bareos-dbcheck} will repair ({\bf fix}) the
 inconsistencies it finds. Otherwise, it will report only.
 
-If the {\bf -b} option is specified, {\bf bareos-dbcheck} will run in batch mode, and
-it will proceed to examine and fix (if -f is set) all programmed inconsistency
-checks. If the {\bf -b} option is not specified, {\bf bareos-dbcheck} will enter
+If the \parameter{-b} option is specified, \command{bareos-dbcheck} will run in batch mode, and
+it will proceed to examine and fix (if \parameter{-f} is set) all programmed inconsistency
+checks. If the \parameter{-b} option is not specified, \command{bareos-dbcheck} will enter
 interactive mode and prompt with the following:
 
-\footnotesize
-\begin{verbatim}
+\begin{commands}{}
 Hello, this is the database check/correct program.
+Modify database is off. Verbose is off.
 Please select the function you want to perform.
      1) Toggle modify database flag
      2) Toggle verbose flag
@@ -1375,14 +1393,17 @@ Please select the function you want to perform.
     16) All (3-15)
     17) Quit
 Select function number:
-\end{verbatim}
-\normalsize
+\end{commands}
 
-By entering 1 or 2, you can toggle the modify database flag (-f option) and
-the verbose flag (-v). It can be helpful and reassuring to turn off the modify
+By entering 1 or 2, you can toggle the modify database flag (\parameter{-f} option) and
+the verbose flag (\parameter{-v}). It can be helpful and reassuring to turn off the modify
 database flag, then select one or more of the consistency checks (items 3
 through 9) to see what will be done, then toggle the modify flag on and re-run
 the check.
+
+Since Bareos \sinceVersion{}{bareos-dbcheck -b -v}{16.2.5}, when running \command{bareos-dbcheck}
+with \parameter{-b} and \parameter{-v}, it will not interactively ask if results should be
+printed or not. Instead, it does not print any detail results.
 
 The inconsistencies examined are the following:
 
@@ -1452,8 +1473,9 @@ The inconsistencies examined are the following:
 \end{itemize}
 
 
-If you are using MySQL, \command{bareos-dbcheck} will ask you if you want to create temporary
-indexes to speed up orphaned Path and Filename elimination.
+If you are using MySQL, \command{bareos-dbcheck} in interactive mode will ask you if
+you want to create temporary indexes to speed up orphaned Path and Filename elimination.
+In batch mode (\parameter{-b}) the temporary indexes will be created without asking.
 
 %\index[general]{bvfs}
 If you are using bvfs (e.g. used by \ilink{bareos-webui}{sec:webui}),
@@ -1464,7 +1486,7 @@ have to rebuild \variable{brestore_pathvisibility} and
 Normally
 you should never need to run \command{bareos-dbcheck} in spite of the
 recommendations given above, which are given so that users don't
-waste their time running bareos-dbcheck too often.
+waste their time running \command{bareos-dbcheck} too often.
 
 \subsection{bregex}
 \label{bregex}
