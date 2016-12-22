@@ -31,45 +31,30 @@ rm -rf build bin
 #
 # See if this is a git clone
 #
-if [ -f .git/config ]; then
+if [ -f .git/config ] && type git >/dev/null 2>&1; then
    #
    # See if we have git available.
    #
-   GIT=`which git 2>/dev/null`
-   if [ ! -z "${GIT}" ] ; then
-      ${GIT} pull
+   git pull
+fi
 
-      #
-      # If the source dir is a seperate git repo update it now to the latest source
-      #
-      if [ -f ${BAREOS_SOURCE}/.git/config ]; then
-         (cd ${BAREOS_SOURCE}; ${GIT} pull)
-      fi
+#
+# Copy the source
+#
+echo "Copying source from ${BAREOS_SOURCE}"
+cp -rp ${BAREOS_SOURCE} build
 
-      #
-      # Copy new source
-      #
-      echo "Copying source from ${BAREOS_SOURCE}"
-      cp -rp ${BAREOS_SOURCE} build
-
-      ${GIT} show HEAD | grep commit | head -1 | awk '{print $2}' > build/git-version
-   else
-      #
-      # Copy new source
-      #
-      echo "Copying source from ${BAREOS_SOURCE}"
-      cp -rp ${BAREOS_SOURCE} build
-
-      echo "Git not found." > build/git-version
-   fi
+if [ -f build/.git/config ] && type git >/dev/null 2>&1; then
+    #
+    # update bareos sources
+    #
+    (
+        cd build;
+        git pull;
+        git show HEAD | grep commit | head -1 | awk '{print $2}' > git-version
+    )
 else
-   #
-   # Copy new source
-   #
-   echo "Copying source from ${BAREOS_SOURCE}"
-   cp -rp ${BAREOS_SOURCE} build
-
-   echo "Not a Git repository." > build/git-version
+    echo "Git not available." > build/git-version
 fi
 
 scripts/create_sed
@@ -85,7 +70,7 @@ cp tmp/o$$ build/src/include/version.h
 # Remove unneeded directories
 #
 rm -rf build/txt build/src/testprogs
-rm -rf build/.git
+#rm -rf build/.git
 sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
 chmod 755 scripts/regress-config
 cp scripts/regress-config build

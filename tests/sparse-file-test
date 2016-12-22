@@ -32,7 +32,7 @@ if [ $? != 0 ]; then
     exit 1
 fi
 
-if ! [ -e "${SPARSEFILE}" ]; then
+if [ ! -e "${SPARSEFILE}" ]; then
     set_error "Failed to create sparse file."
     exit 1
 fi

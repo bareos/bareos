@@ -82,7 +82,7 @@ check_two_logs
 check_restore_diff ${BackupDirectory}
 
 # do some manual testing
-if ! [ -d ${BackupDirectory} ]; then
+if [ ! -d ${BackupDirectory} ]; then
     set_error "Directory ${BackupDirectory} does not exists any more."
 fi
 

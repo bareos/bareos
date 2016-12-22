@@ -14,7 +14,7 @@ printf "$filename created.\n"
 printf "size=%s\n" "$size"
 printf "realsize=%s\n" "$realsize"
 
-if ! [ "$realsize" -lt "$size" ]; then
+if [ "$realsize" -gt "$size" ]; then
     printf "ERROR: realsize has to be smaller than size.\n"
     exit 1
 fi
