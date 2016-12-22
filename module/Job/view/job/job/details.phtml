@@ -274,7 +274,9 @@ $(document).ready(function() {
       "ordering": true,
       "info": true,
       "pagingType": "full_numbers",
-      "stateSave": true,
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
       "order": [[0, 'desc']],
       "columnDefs": [
          {

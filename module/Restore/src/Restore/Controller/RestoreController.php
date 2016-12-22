@@ -340,7 +340,7 @@ class RestoreController extends AbstractActionController
          foreach($files as $file) {
             $items .= '{';
             $items .= '"id":"' . $file["fileid"] . '"';
-            $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', $file["name"]) . '"';
+            $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', addslashes($file["name"])) . '"';
             $items .= ',"icon":"glyphicon glyphicon-file"';
             $items .= ',"state":""';
             $items .= ',"data":' . \Zend\Json\Json::encode($file, \Zend\Json\Json::TYPE_OBJECT);
