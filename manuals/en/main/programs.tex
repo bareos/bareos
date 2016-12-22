@@ -201,8 +201,7 @@ For further information regarding the Bareos Webui, please refer to the chapter 
 \index[general]{Command!bat}
 \label{bat}
 
-The Bacula/Bareos Administration Tool (\command{bat}) is a native GUI for Bareos. Please note that, although \command{bat} is still a part of Bareos and still receives maintenance bugfixes, the main development effort will be spent on bareos-webui. For \sinceVersion{dir}{bat vs. bareos-webui}{15.2.0} we therefore encourage the use of Bareos Webui, which will, in the long term, replace \command{bat}. By now Bareos Webui does not have all the features \command{bat} offers.
-
+The Bacula/Bareos Administration Tool (\command{bat}) is a native GUI for Bareos. Please note that, although \command{bat} is still a part of Bareos and still receives maintenance bugfixes, the main development effort will be spent on \bareosWebui. For \sinceVersion{dir}{bat vs. bareos-webui}{15.2.0} we therefore encourage the use of \bareosWebui.
 
 \section{Volume Utility Commands}
     \index[general]{Volume Utility Tools}
@@ -1303,8 +1302,16 @@ database vendor.  Normally \command{bareos-dbcheck} should never need to be run,
 but if Bareos has crashed or you have a lot of Clients, Pools, or
 Jobs that you have removed, it could be useful.
 
-It is called:
 
+\command{bareos-dbcheck} is best started as the same user, as the \bareosDir is running, normally \user{bareos}.
+If you are \user{root} on Linux, use the following command to switch to user \user{bareos}:
+\begin{commands}{Substitute user to bareos}
+su -s /bin/bash - bareos
+\end{commands}
+
+If not, problems of reading the Bareos configuration or accessing the database can arise.
+
+\command{bareos-dbcheck} supports following command line options:
 \begin{commands}{}
 Usage: bareos-dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D driver name] <working-directory> <bareos-database> <user> <password> [<dbhost>] [<dbport>]
        -b                batch mode
@@ -1319,47 +1326,27 @@ Usage: bareos-dbcheck [-c config ] [-B] [-C catalog name] [-d debug level] [-D d
        -?                print this message
 \end{commands}
 
-When using the default configuration paths, it is not necesary to specify any
+When using the default configuration paths, it is not necessary to specify any
 options.
 Optionally, as Bareos supports loading its database backend dynamically you may specify
 the right database driver to use using the \parameter{-D} option.
 
 If the \parameter{-B} option is specified, \command{bareos-dbcheck} will print out catalog
-information in a simple text based format. This is useful to backup it in a
-secure way.
-
+information in a simple text based format:
 \begin{commands}{}
- # bareos-dbcheck -B
- catalog=MyCatalog
- db_type=SQLite
- db_name=regress
- db_driver=
- db_user=regress
- db_password=
- db_address=
- db_port=0
- db_socket=
+# <input>bareos-dbcheck -B</input>
+catalog=MyCatalog
+db_type=SQLite
+db_name=bareos
+db_driver=
+db_user=bareos
+db_password=
+db_address=
+db_port=0
+db_socket=
 \end{commands}
 
-Note: When invoking \command{bareos-dbcheck} as root with any options except \parameter{-B}
-and using PostgreSQL DB on the same server, the following error message may appear:
-
-\begin{commands}{}
-21-Dec 15:33 dbcheck: Fatal Error at dbcheck.c:318 because:
-postgresql.c:246 Unable to connect to PostgreSQL server. Database=bareos User=bareos
-Possible causes: SQL server not running; password incorrect; max_connections exceeded.
-\end{commands}
-
-In that case switch to the bareos user before running \command{bareos-dbcheck} using
-
-\begin{commands}{}
-su -s /bin/bash - bareos
-\end{commands}
-
-Otherwise, it would be necesary to adapt the PostgreSQL configuration file
-\file{pg_hba.conf}
-
-If the \parameter{-c} option is given with the Director's conf file, there is no
+If the \parameter{-c} option is given with the \bareosDir configuration, there is no
 need to enter any of the command line arguments, in particular the working
 directory as \command{bareos-dbcheck} will read them from the file.
 
@@ -1398,7 +1385,7 @@ Select function number:
 By entering 1 or 2, you can toggle the modify database flag (\parameter{-f} option) and
 the verbose flag (\parameter{-v}). It can be helpful and reassuring to turn off the modify
 database flag, then select one or more of the consistency checks (items 3
-through 9) to see what will be done, then toggle the modify flag on and re-run
+through 13) to see what will be done, then toggle the modify flag on and re-run
 the check.
 
 Since Bareos \sinceVersion{}{bareos-dbcheck -b -v}{16.2.5}, when running \command{bareos-dbcheck}
@@ -1408,7 +1395,7 @@ printed or not. Instead, it does not print any detail results.
 The inconsistencies examined are the following:
 
 \begin{itemize}
-\item Duplicate filename records. This can happen if you accidentally run  two
+\item Duplicate Filename records. This can happen if you accidentally run  two
    copies of Bareos at the same time, and they are both adding  filenames
    simultaneously. It is a rare occurrence, but will create  an inconsistent
    database. If this is the case, you will receive  error messages during Jobs
@@ -1418,7 +1405,7 @@ The inconsistencies examined are the following:
    have a trailing slash. They should not.
 \item Repair bad Path records. This checks and corrects path names  that do
    not have a trailing slash. They should.
-\item Duplicate path records. This can happen if you accidentally run  two
+\item Duplicate Path records. This can happen if you accidentally run  two
    copies of Bareos at the same time, and they are both adding  filenames
    simultaneously. It is a rare occurrence, but will create  an inconsistent
    database. See the item above for why this occurs and  how you know it is
