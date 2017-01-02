@@ -185,7 +185,7 @@ FunctionEnd
 
 !define MUI_FINISHPAGE_RUN
 #!define MUI_FINISHPAGE_RUN_NOTCHECKED
-!define MUI_FINISHPAGE_RUN_TEXT "open Bareos websites"
+!define MUI_FINISHPAGE_RUN_TEXT "Open Bareos websites"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchLink"
 !insertmacro MUI_PAGE_FINISH
 
