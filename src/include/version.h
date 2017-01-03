@@ -1,11 +1,11 @@
 #undef  VERSION
-#define VERSION "16.4.3"
-#define BDATE   "01 December 2016"
-#define LSMDATE "01Dec16"
+#define VERSION "17.1.1"
+#define BDATE   "01 January 2017"
+#define LSMDATE "01Jan17"
 
 #define PROG_COPYRIGHT "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
-                       "Copyright (C) 2013-2016 Bareos GmbH & Co. KG\n"
-#define BYEAR "2016"       /* year for copyright messages in progs */
+                       "Copyright (C) 2013-2017 Bareos GmbH & Co. KG\n"
+#define BYEAR "2017"       /* year for copyright messages in progs */
 
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
@@ -31,13 +31,13 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSCFG_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSSQL_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSCATS_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSLMDB_LT_RELEASE "16.4.3" */
-/* #define LIBBAREOSSD_LT_RELEASE "16.4.3" */
+/* #define LIBBAREOS_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSCFG_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSSQL_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSCATS_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSLMDB_LT_RELEASE "17.1.1" */
+/* #define LIBBAREOSSD_LT_RELEASE "17.1.1" */
 
 /* Debug flags */
 #undef  DEBUG
