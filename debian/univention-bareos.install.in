@@ -10,6 +10,7 @@
 /etc/univention/templates/scripts/etc/bareos/bareos-dir.d/pool/Differential.conf
 /etc/univention/templates/scripts/etc/bareos/bareos-dir.d/pool/Full.conf
 /etc/univention/templates/scripts/etc/bareos/bareos-dir.d/pool/Incremental.conf
+/etc/univention/templates/scripts/etc/bareos/bareos-dir.d/webui-profiles.conf
 /usr/lib/univention-directory-listener/system/univention-bareos.py
 /usr/lib/univention-install/62univention-bareos.inst
 /usr/lib/univention-uninstall/63univention-bareos.uinst
