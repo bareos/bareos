@@ -1325,7 +1325,7 @@ bool JOBRES::validate()
          return false;
       }
 
-      if (!storage && !pool->storage) {
+      if (!storage && (!pool || !pool->storage)) {
          Jmsg(NULL, M_ERROR, 0, _("No storage specified in Job \"%s\" nor in Pool.\n"), name());
          return false;
       }
