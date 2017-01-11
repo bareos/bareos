@@ -116,25 +116,22 @@ rather than simultaneously.
       read and write the same Volume from two jobs at the same time.
 
 \item Migration works only if the Job resource of the original Job is
-      still defined in the current director configuration. Otherwise
+      still defined in the current Director configuration. Otherwise
       you'll get a fatal error.
 
-\item Setting the Migration High Bytes watermark is not sufficient
+\item Setting the \linkResourceDirective{Dir}{Pool}{Migration High Bytes} watermark is not sufficient
       for migration to take place. In addition, you must define
       and schedule a migration job which looks for jobs that can
       be migrated.
 
-\item To figure out which jobs are going to be migrated by a given
-      configuration, choose a debug level of 100 or more. This
-      activates information about the migration selection process.
-
 \item Bareos currently does only minimal Storage conflict resolution, so you
       must take care to ensure that you don't try to read and write to the
       same device or Bareos may block waiting to reserve a drive that it
-      will never find. In general, ensure that all your migration
+      will never find.
+      A way to prevent problems is that all your migration
       pools contain only one \linkResourceDirective{Dir}{Storage}{Media Type},
       and that you always
-      migrate to pools with different Media Types.
+      migrate to a pool with a different Media Type.
 
 \item The \linkResourceDirective{Dir}{Pool}{Next Pool} = ... directive must be defined in the Pool
      referenced in the Migration Job to define the Pool into which the
@@ -143,6 +140,10 @@ rather than simultaneously.
 \item Migration has only be tested carefully for the "Job" and "Volume"
       selection types. All other selection types (time, occupancy,
       smallest, oldest, ...) are experimental features.
+
+\item To figure out which jobs are going to be migrated by a given
+      configuration, choose a debug level of 100 or more. This
+      activates information about the migration selection process.
 
 \end{itemize}
 
