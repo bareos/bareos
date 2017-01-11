@@ -87,22 +87,31 @@ These combinations of Bareos and Bacula are know to work together:
   \hline
   \baculacolor & \baculacolor & \baculacolor & \\
   \hline
-  \baculacolor & \baculacolor & \bareoscolor (compatibe mode) & \\
+  \baculacolor & \baculacolor & \bareoscolor (compatibility mode) & \\
   \hline
 \end{tabular}
 
-Other combinations like Bacula director (dir) with Bareos storage daemon (sd) will not work. However this wasn't even possible with different versions of bacula-dir and bacula-sd.
+Other combinations like Bacula Director with \bareosSd will not work.
+However this wasn't even possible with different versions of bacula-dir and bacula-sd.
 
 \subsection{Upgrade from Bacula 5.2 to Bareos}
 \index[general]{Upgrade from Bacula to Bareos}
 \index[general]{Bareos!Upgrading}
 \label{upgrade-from-bacula-to-bareos}
 
-Upgrade is supported from Bacula version 5.2.x. If you are running any older version of Bacula, please update to 5.2 first (see Bacula documentation). \textbf{Note:} Updating from the latest Bacula 7.0 to Bareos has not been tested.
+Upgrade is supported from Bacula version 5.2.x. If you are running any older version of Bacula, please update to 5.2 first (see Bacula documentation).
+
+\warning{Updating from Bacula $\geq$ 7.0 to Bareos has not been tested.}
+
+\warning{As Bareos and Bacula packages bring binaries with identical paths and names,
+it is on most platforms not possible to install components from both in parallel.
+Your package management tool will warn you about this.}
+
+
 
 \subsubsection{Rename user and group before upgrading}
 
-To have bareos running without any permission hazzle, it is recommended to rename the user and group \user{bacula} to the user and group \user{bareos} before upgrading. That way, we minimize the effort for the user to recheck all config files and the rights on every script/directory etc. involved in the existing setup.
+To have bareos running without any permission hassle, it is recommended to rename the user and group \user{bacula} to the user and group \user{bareos} before upgrading. That way, we minimize the effort for the user to recheck all config files and the rights on every script/directory etc. involved in the existing setup.
 
 The required commands should look something like this:
 
