@@ -5,7 +5,7 @@
     <td>Copyright (C) 2000-2012 Free Software Foundation Europe e.V.</td>
   </tr>
   <tr>
-    <td>Copyright (C) 2013-2015 Bareos GmbH &amp; Co. KG</td>
+    <td>Copyright (C) 2013-2017 Bareos GmbH &amp; Co. KG</td>
   </tr>
 </table>
 
@@ -26,6 +26,7 @@
     along with this program.  If not, see http://www.gnu.org/licenses/
 </p>
 <p>
-     See full license text at https://github.com/bareos/bareos/blob/master/LICENSE
+    Some parts of the code are licensed under other permissive licenses.
+    See the <a href="https://github.com/bareos/bareos/blob/master/LICENSE">full license text</a>.
 </p>
 
