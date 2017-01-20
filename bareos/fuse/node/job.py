@@ -24,10 +24,18 @@ class Job(Directory):
             self.stat.st_ctime = self._convert_date_bareos_unix(self.job['starttime'])
         except KeyError:
             pass
+
         try:
-            self.stat.st_mtime = self._convert_date_bareos_unix(self.job['realendtime'])
+            endtime = self.job['realendtime']
         except KeyError:
             pass
+        if not endtime:
+            try:
+                endtime = self.job['endtime']
+            except KeyError:
+                pass
+        self.stat.st_mtime = self._convert_date_bareos_unix(endtime)
+
         if job['jobstatus'] == 'T' or job['jobstatus'] == 'E' or job['jobstatus'] == 'W' or job['jobstatus'] == 'f':           
             self.set_static()
 
