@@ -91,14 +91,14 @@ class RestoreModel
    public function getJobIds(&$bsock=null, $jobid=null, $mergefilesets=0, $mergejobs=0)
    {
       if(isset($bsock)) {
-         if($mergefilesets == 0 && $mergejobs == 0) {
+         if($mergefilesets == 1 && $mergejobs == 1) {
+            return $jobid;
+         }
+         if($mergefilesets == 0) {
             $cmd = '.bvfs_get_jobids jobid='.$jobid.' all';
          }
-         elseif($mergefilesets == 1 && $mergejobs == 0) {
+         else {
             $cmd = '.bvfs_get_jobids jobid='.$jobid.'';
-         }
-         elseif($mergefilesets == 1 && $mergejobs == 1) {
-            return $jobid;
          }
          $result = $bsock->send_command($cmd, 2, null);
          $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
