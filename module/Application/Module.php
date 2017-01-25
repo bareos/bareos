@@ -73,7 +73,15 @@ class Module
    public function initSession($e)
    {
       $session = $e->getApplication()->getServiceManager()->get('Zend\Session\SessionManager');
-      $session->start();
+
+      if($session->isValid()) {
+         // do nothing
+      }
+      else {
+         $session->expireSessionCookie();
+         $session->destroy();
+         $session->start();
+      }
 
       $container = new Container('bareos');
 
