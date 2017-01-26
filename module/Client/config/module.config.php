@@ -43,7 +43,7 @@ return array(
                'route' => '/client[/][:action][/][:id]',
                'constraints' => array(
                   'action' => '[a-zA-Z][a-zA-Z0-9_-]*',
-                  'id' => '[a-zA-Z][a-zA-Z0-9\._-]*',
+                  'id' => '[a-zA-Z0-9][a-zA-Z0-9\._-]*',
                ),
                'defaults' => array(
                   'controller' => 'Client\Controller\Client',
