@@ -16,7 +16,10 @@ all:
 	# remove autoconf template files
 	find ../../conffiles/ -name "*.in" -exec rm {} \;
 	@$(MKDIR)           ../../AppCenter/
-	$(INSTALL_DATA)    AppCenter/univention-bareos.ini ../../AppCenter/
+	# Univention advices not to include the ini file any longer,
+	# to prevent to new settings added by Univention gets overwritten.
+	# Instead the settings should be done manually on the AppCenter Management interface.
+	#$(INSTALL_DATA)    AppCenter/univention-bareos.ini ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/LICENSE_AGREEMENT     ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/README                ../../AppCenter/
 	$(INSTALL_DATA)    AppCenter/README_DE             ../../AppCenter/

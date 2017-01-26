@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1278,16 +1278,18 @@ static void list_connected_clients(UAContext *ua)
    connections = get_client_connections()->get_as_alist();
    ua->send->decoration("%-20s%-20s%-20s%-40s\n", "Connect time", "Protocol", "Authenticated", "Name");
    ua->send->decoration("%-20s%-20s%-20s%-20s%-20s\n", separator, separator, separator, separator, separator);
+   ua->send->array_start("client-connection");
    foreach_alist(connection, connections) {
-      ua->send->object_start("client-connection");
+      ua->send->object_start();
       bstrftime_nc(dt, sizeof(dt), connection->connect_time());
       ua->send->object_key_value("connect_time", dt, "%-20s");
       ua->send->object_key_value("protocol_version", connection->protocol_version(), "%-20d");
       ua->send->object_key_value("authenticated", connection->authenticated(), "%-20d");
       ua->send->object_key_value("name", connection->name(), "%-40s");
-      ua->send->object_end("client-connection");
+      ua->send->object_end();
       ua->send->decoration("\n");
    }
+   ua->send->array_end("client-connection");
 }
 
 static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_name)

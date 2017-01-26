@@ -32,6 +32,9 @@ Variables: bareos/max_incr_volume_bytes
 Variables: bareos/max_incr_volumes
 
 Type: file
+File: etc/bareos/bareos-dir.d/webui-profiles.conf
+
+Type: file
 File: etc/bareos/bareos-sd.d/device/FileStorage.conf
 Variables: bareos/filestorage
 

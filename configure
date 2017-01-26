@@ -965,7 +965,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -1154,7 +1153,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1407,15 +1405,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1553,7 +1542,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1706,7 +1695,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -18047,7 +18035,7 @@ if test "x$OBS_DISTRIBUTION" != "x"
 then
    echo "obsdistname set to $OBS_DISTRIBUTION"
 else
-   if test -e /.build.log; then
+   if test -f /.build.log; then
       OBS_PROJECT=`grep 'Building bareos for project' /.build.log | cut -d' ' -f10 | sed "s#'##g"`
       OBS_DISTRIBUTION=`grep 'Building bareos for project' /.build.log | cut -d' ' -f12 | sed "s#'##g"`
       OBS_ARCH=`grep 'Building bareos for project' /.build.log | cut -d' ' -f14 | sed "s#'##g"`
@@ -23752,7 +23740,7 @@ if test "${with_python+set}" = set; then :
        PYTHON_LIBS=
        if test "$withval" != "no"; then
 	  if test "$withval" = "yes"; then
-	     if test -e /usr/bin/python-config ; then
+	     if test -f /usr/bin/python-config ; then
 		PYTHON_INC=`/usr/bin/python-config --includes`
 		PYTHON_LIBS=`/usr/bin/python-config --libs`
 	     else
@@ -23786,7 +23774,7 @@ $as_echo "no" >&6; }
 		fi
 	     fi
 	  else
-	     if test -e $withval/bin/python-config ; then
+	     if test -f $withval/bin/python-config ; then
 		PYTHON_INC=`$withval/bin/python-config --includes`
 		PYTHON_LIBS=`$withval/bin/python-config --libs`
 	     elif test -f $withval/Python.h; then

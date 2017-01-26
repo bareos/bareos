@@ -1,7 +1,7 @@
 #
 # spec file for package mingw-debugsrc-devel
 #
-# Copyright (c) 2014-2016 Bareos GmbH & Co. KG
+# Copyright (c) 2014-2017 Bareos GmbH & Co. KG
 #
 # All modifications and additions to the file contributed by third parties
 # remain the property of their copyright owners, unless otherwise agreed

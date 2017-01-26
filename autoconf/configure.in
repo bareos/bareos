@@ -947,7 +947,7 @@ AC_ARG_WITH(python,
        PYTHON_LIBS=
        if test "$withval" != "no"; then
 	  if test "$withval" = "yes"; then
-	     if test -e /usr/bin/python-config ; then
+	     if test -f /usr/bin/python-config ; then
 		PYTHON_INC=`/usr/bin/python-config --includes`
 		PYTHON_LIBS=`/usr/bin/python-config --libs`
 	     else
@@ -980,7 +980,7 @@ AC_ARG_WITH(python,
 		fi
 	     fi
 	  else
-	     if test -e $withval/bin/python-config ; then
+	     if test -f $withval/bin/python-config ; then
 		PYTHON_INC=`$withval/bin/python-config --includes`
 		PYTHON_LIBS=`$withval/bin/python-config --libs`
 	     elif test -f $withval/Python.h; then

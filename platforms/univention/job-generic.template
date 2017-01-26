@@ -8,7 +8,7 @@ Job {
   Name = "Backup-${client_name}"
   Client = "${client_name}-fd"
   JobDefs = "DefaultJob"
-  FileSet = "LinuxAll"
-  Schedule = "WeeklyCycle"
+  #FileSet = "LinuxAll"
+  #Schedule = "WeeklyCycle"
   Enabled = "${enable}"
 }

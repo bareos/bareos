@@ -25,7 +25,7 @@ git_branch_info()
     TRACKING_BRANCH=`git config branch.$LOCAL_BRANCH.merge`
     TRACKING_REMOTE=`git config branch.$LOCAL_BRANCH.remote`
     # remove credentials from url
-    REMOTE_URL=`git config remote.$TRACKING_REMOTE.url | sed -r "s|(http[s]://).*@|\1|"`
+    REMOTE_URL=`git config remote.$TRACKING_REMOTE.url | sed "s|\(http[s]://\).*@|\1|"`
 
     printf "remote_url=$REMOTE_URL\n"
     # OBS return always "master" therefore disabled
