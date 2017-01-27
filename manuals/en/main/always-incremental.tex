@@ -292,7 +292,7 @@ the full backup will also be part of the consolidation.
 Depending on the setting of the \linkResourceDirective{Dir}{Job}{Always Incremental Max Full Age},
 the amount of daily data being moved can be reduced without losing the advantages of the always incremental Backup Scheme.
 
-\linkResourceDirective{Dir}{Job}{Always Incremental Max Full Age} should never be less or equal of \linkResourceDirective{Dir}{Job}{Always Incremental Job Retention}.
+\linkResourceDirective{Dir}{Job}{Always Incremental Max Full Age} must be larger than \linkResourceDirective{Dir}{Job}{Always Incremental Job Retention}.
 
 The resulting interval between full consolidations when running daily backups
 and daily consolidations is \linkResourceDirective{Dir}{Job}{Always Incremental Max Full Age} - \linkResourceDirective{Dir}{Job}{Always Incremental Job Retention}.
