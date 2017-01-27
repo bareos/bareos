@@ -54,4 +54,19 @@ When both connection directions are allowed, the \bareosDir
 If none of this worked, the job fails.
 
 When a waiting connection is used for a job, the \bareosFd will detect this and creates an additional connection.
-This is required, to keep the client responsive for additional commands, like \bcommand{cancel}.
+This is required, to keep the client responsive for additional commands, like \bcommand{cancel}{}.
+
+To get feedback in case the \bareosFd fails to connect to the \bareosDir, consider configuring \bareosFd to log in a local file.
+This can be archived by adding the line
+
+\configline{Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored}
+
+to the default message resource \resourcename{Fd}{Messages}{Standard}:
+
+\begin{bareosConfigResource}{bareos-fd}{messages}{Standard}
+Messages {
+  Name = Standard
+  Director = bareos-dir = all, !skipped, !restored
+  Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored
+}
+\end{bareosConfigResource}
