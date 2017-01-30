@@ -163,7 +163,8 @@ $(document).ready(function() {
          { "data": null },
          { "type": "file-size", "data": "maxvolbytes" },
          { "type": "file-size", "data": "volbytes" },
-         { "data": "lastwritten" }
+         { "data": "lastwritten" },
+         { "data": null }
       ],
       "columnDefs": [
          {
@@ -181,6 +182,7 @@ $(document).ready(function() {
          },
          {
             "targets": 6,
+            "orderData": 10,
             "render": function(data, type, full, meta) {
                return formatExpiration(data.volstatus, data.lastwritten, data.volretention);
             }
@@ -201,6 +203,14 @@ $(document).ready(function() {
             "targets": 9,
             "visible": false,
             "searchable": false
+         },
+         {
+            "targets": 10,
+            "visible": false,
+            "searchable": false,
+            "render": function(data, type, full, meta) {
+               return formatHiddenRetExp(data.volstatus, data.lastwritten, data.volretention);
+            }
          }
       ],
       "buttons": [
