@@ -1,0 +1,240 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: bareos-webui\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-01-22 16:43+0100\n"
+"PO-Revision-Date: 2017-01-22 20:28+0100\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Last-Translator: Sam Verstraete <samverstraete@gmail.com>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: nl_BE\n"
+
+#: ../../js/datatables.functions.js:77
+msgid "Backup"
+msgstr "Reservekopie"
+
+#: ../../js/datatables.functions.js:80
+msgid "Migrated"
+msgstr "Gemigreerd"
+
+#: ../../js/datatables.functions.js:83
+msgid "Verify"
+msgstr "Verifieer"
+
+#: ../../js/datatables.functions.js:86
+msgid "Restore"
+msgstr "Herstel"
+
+#: ../../js/datatables.functions.js:89
+msgid "Console program"
+msgstr "Console programma"
+
+#: ../../js/datatables.functions.js:92
+msgid "Internal system job"
+msgstr "Interne systeemtaak"
+
+#: ../../js/datatables.functions.js:95
+msgid "Admin"
+msgstr "Beheer"
+
+#: ../../js/datatables.functions.js:98
+msgid "Archive"
+msgstr "Archief"
+
+#: ../../js/datatables.functions.js:101
+msgid "Copy of a job"
+msgstr "Kopie van een taak"
+
+#: ../../js/datatables.functions.js:104
+msgid "Copy job"
+msgstr "Kopieertaak"
+
+#: ../../js/datatables.functions.js:107
+msgid "Migration job"
+msgstr "Migratietaak"
+
+#: ../../js/datatables.functions.js:110
+msgid "Scan"
+msgstr "Zoeken"
+
+#: ../../js/datatables.functions.js:113
+msgid "Consolidate"
+msgstr "Consolideren"
+
+#: ../../js/datatables.functions.js:125 ../../js/datatables.functions.js:164
+msgid "Full"
+msgstr "Volledig"
+
+#: ../../js/datatables.functions.js:127
+msgid "Differential"
+msgstr "Differentieel"
+
+#: ../../js/datatables.functions.js:129
+msgid "Incremental"
+msgstr "Incrementeel"
+
+#: ../../js/datatables.functions.js:131
+msgid "VirtualFull"
+msgstr "VirtueelVolledig"
+
+#: ../../js/datatables.functions.js:133
+msgid "Base"
+msgstr "Basis"
+
+#: ../../js/datatables.functions.js:135
+msgid "Catalog"
+msgstr "Cataloog"
+
+#: ../../js/datatables.functions.js:137
+msgid "InitCatalog"
+msgstr "IniteerCatalog"
+
+#: ../../js/datatables.functions.js:139
+msgid "VolumeToCatalog"
+msgstr "VolumeNaarCataloog"
+
+#: ../../js/datatables.functions.js:141
+msgid "DiskToCatalog"
+msgstr "SchijfNaarCataloog"
+
+#: ../../js/datatables.functions.js:143
+msgid "Data"
+msgstr "Data"
+
+#: ../../js/datatables.functions.js:145
+msgid "None"
+msgstr "Niets"
+
+#: ../../js/datatables.functions.js:159 ../../js/datatables.functions.js:189
+msgid "day(s)"
+msgstr "dag(en)"
+
+#: ../../js/datatables.functions.js:164
+msgid "Used"
+msgstr "Gebruikt"
+
+#: ../../js/datatables.functions.js:176
+msgid "expired"
+msgstr "verlopen"
+
+#: ../../js/datatables.functions.js:180
+msgid "expires in 1 day"
+msgstr "verloopt binnen 1 dag"
+
+#: ../../js/datatables.functions.js:184
+msgid "expires in"
+msgstr "verloopt binnen"
+
+#: ../../js/datatables.functions.js:184
+msgid "days"
+msgstr "dagen"
+
+#: ../../js/datatables.functions.js:195
+msgid "never"
+msgstr "nooit"
+
+#: ../../js/datatables.functions.js:204
+msgid "today"
+msgstr "vandaag"
+
+#: ../../js/datatables.functions.js:207
+msgid "day(s) ago"
+msgstr "dag(en) geleden"
+
+#: ../../js/datatables.functions.js:210
+msgid "month(s) ago"
+msgstr "maand(en) geleden"
+
+#: ../../js/datatables.functions.js:213
+msgid "year(s) ago"
+msgstr "jaar geleden"
+
+#: ../../js/datatables.functions.js:246
+msgid "enabled"
+msgstr "ingeschakeld"
+
+#: ../../js/datatables.functions.js:249
+msgid "disabled"
+msgstr "uitgeschakeld"
+
+#: ../../js/datatables.functions.js:257
+msgid "Yes"
+msgstr "Ja"
+
+#: ../../js/datatables.functions.js:260
+msgid "No"
+msgstr "Nee"
+
+#: ../../js/datatables.functions.js:270 ../../js/datatables.functions.js:274
+#: ../../js/datatables.functions.js:278
+msgid "Failure"
+msgstr "Mislukt"
+
+#: ../../js/datatables.functions.js:282
+msgid "Success"
+msgstr "Geslaagd"
+
+#: ../../js/datatables.functions.js:286
+msgid "Running"
+msgstr "Actief"
+
+#: ../../js/datatables.functions.js:290
+msgid "Queued"
+msgstr "In wachtrij"
+
+#: ../../js/datatables.functions.js:294
+msgid "Blocked"
+msgstr "Geblokkeerd"
+
+#: ../../js/datatables.functions.js:298
+msgid "Verify found differences"
+msgstr "Gevonden verschillen verifiëren"
+
+#: ../../js/datatables.functions.js:302
+msgid "Canceled"
+msgstr "Geannuleerd"
+
+#: ../../js/datatables.functions.js:306 ../../js/datatables.functions.js:310
+#: ../../js/datatables.functions.js:314 ../../js/datatables.functions.js:318
+#: ../../js/datatables.functions.js:322 ../../js/datatables.functions.js:326
+#: ../../js/datatables.functions.js:330 ../../js/datatables.functions.js:334
+#: ../../js/datatables.functions.js:338 ../../js/datatables.functions.js:342
+msgid "Waiting"
+msgstr "Wachtend"
+
+#: ../../js/datatables.functions.js:346
+msgid "SD despooling attributes"
+msgstr "SD despooling attributen"
+
+#: ../../js/datatables.functions.js:350
+msgid "Doing batch insert file records"
+msgstr "Reeks bestandsrecords invoegen"
+
+#: ../../js/datatables.functions.js:354
+msgid "Incomplete"
+msgstr "Onvolledig"
+
+#: ../../js/datatables.functions.js:358
+msgid "Committing data"
+msgstr "Data uitschrijven"
+
+#: ../../js/datatables.functions.js:362
+msgid "Warning"
+msgstr "Waarschuwing"
+
+#: ../../js/datatables.functions.js:366
+msgid "Doing data despooling"
+msgstr "Data despoolen"
+
+#: ../../js/datatables.functions.js:370
+msgid "Queued waiting for device"
+msgstr "In wachtrij wachtend op apparaat"

@@ -1,0 +1,1084 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: bareos-webui\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-01-22 15:23+0100\n"
+"PO-Revision-Date: 2017-01-22 21:12+0100\n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Last-Translator: Sam Verstraete <samverstraete@gmail.com>\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: nl_BE\n"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../../../module/Storage/view/storage/storage/details.phtml:156
+#: ../../../module/Pool/view/pool/pool/details.phtml:49
+#: ../../../module/Job/view/job/job/details.phtml:137
+#: ../../../module/Job/view/job/job/index.phtml:167
+#: ../../../module/Application/config/module.config.php:161
+#: ../../../module/Application/config/module.config.php:166
+msgid "Pool"
+msgstr "Pool"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
+#: ../../../module/Storage/view/storage/storage/details.phtml:126
+msgid "Drive"
+msgstr "Schijf"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr "Verzenden"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:26
+msgid "Storage details"
+msgstr "Opslag gegevens"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:32
+#: ../../../module/Storage/view/storage/storage/status.phtml:9
+#: ../../../module/Storage/view/storage/storage/index.phtml:33
+#: ../../../module/Pool/view/pool/pool/details.phtml:33
+#: ../../../module/Pool/view/pool/pool/index.phtml:33
+#: ../../../module/Media/view/media/media/details.phtml:33
+#: ../../../module/Media/view/media/media/index.phtml:33
+msgid "Devices"
+msgstr "Apparaten"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:33
+#: ../../../module/Storage/view/storage/storage/status.phtml:10
+#: ../../../module/Storage/view/storage/storage/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/details.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:27
+#: ../../../module/Pool/view/pool/pool/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:48
+#: ../../../module/Media/view/media/media/details.phtml:34
+#: ../../../module/Media/view/media/media/index.phtml:34
+msgid "Pools"
+msgstr "Pools"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:34
+#: ../../../module/Storage/view/storage/storage/status.phtml:11
+#: ../../../module/Storage/view/storage/storage/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/details.phtml:35
+#: ../../../module/Pool/view/pool/pool/details.phtml:59
+#: ../../../module/Pool/view/pool/pool/details.phtml:80
+#: ../../../module/Pool/view/pool/pool/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/index.phtml:58
+#: ../../../module/Media/view/media/media/details.phtml:35
+#: ../../../module/Media/view/media/media/index.phtml:27
+#: ../../../module/Media/view/media/media/index.phtml:35
+#: ../../../module/Media/view/media/media/index.phtml:48
+#: ../../../module/Application/config/module.config.php:171
+#: ../../../module/Application/config/module.config.php:176
+msgid "Volumes"
+msgstr "Volumes"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:51
+msgid "Director message"
+msgstr "Director bericht"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:57
+#: ../../../module/Client/view/client/client/index.phtml:89
+#: ../../../module/Job/view/job/job/index.phtml:114
+#: ../../../module/Job/view/job/job/index.phtml:135
+#: ../../../module/Job/view/job/job/actions.phtml:55
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:55
+msgid "Close"
+msgstr "Sluiten"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:72
+#: ../../../module/Storage/view/storage/storage/details.phtml:349
+msgid "Label barcodes"
+msgstr "Label barcodes"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:82
+msgid "Assign media to this pool."
+msgstr "Media toewijzen aan deze pool"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:84
+msgid "Use this drive for labeling."
+msgstr "Gebruik deze schijf voor labeling"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:88
+#: ../../../module/Job/view/job/job/details.phtml:252
+#: ../../../module/Job/view/job/job/index.phtml:333
+#: ../../../module/Job/view/job/job/index.phtml:339
+msgid "Cancel"
+msgstr "Annuleren"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:103
+msgid "Import/Export Slots"
+msgstr "Importeer/Exporteer slots"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:108
+#: ../../../module/Storage/view/storage/storage/details.phtml:149
+#: ../../../module/Media/view/media/media/details.phtml:169
+msgid "Slot"
+msgstr "Slot"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:109
+#: ../../../module/Storage/view/storage/storage/details.phtml:128
+#: ../../../module/Storage/view/storage/storage/details.phtml:150
+msgid "Volume"
+msgstr "Volume"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:111
+#: ../../../module/Storage/view/storage/storage/details.phtml:130
+#: ../../../module/Storage/view/storage/storage/details.phtml:159
+#: ../../../module/Storage/view/storage/storage/index.phtml:58
+#: ../../../module/Client/view/client/client/details.phtml:55
+#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/index.phtml:57
+#: ../../../module/Job/view/job/job/details.phtml:34
+#: ../../../module/Job/view/job/job/details.phtml:67
+#: ../../../module/Job/view/job/job/index.phtml:33
+#: ../../../module/Job/view/job/job/index.phtml:83
+#: ../../../module/Job/view/job/job/actions.phtml:34
+#: ../../../module/Job/view/job/job/actions.phtml:78
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:78
+msgid "Actions"
+msgstr "Acties"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:121
+msgid "Drives"
+msgstr "Schijven"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:127
+msgid "Loaded"
+msgstr "Geladen"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:144
+msgid "Slots"
+msgstr "Slots"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:151
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Client/view/client/client/details.phtml:82
+#: ../../../module/Job/view/job/job/details.phtml:64
+#: ../../../module/Job/view/job/job/index.phtml:80
+#: ../../../module/Media/view/media/media/details.phtml:94
+msgid "Bytes"
+msgstr "Bytes"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:152
+#: ../../../module/Pool/view/pool/pool/details.phtml:92
+#: ../../../module/Pool/view/pool/pool/details.phtml:142
+#: ../../../module/Media/view/media/media/details.phtml:60
+#: ../../../module/Media/view/media/media/details.phtml:153
+#: ../../../module/Media/view/media/media/index.phtml:60
+msgid "Last written"
+msgstr "Laatst geschreven"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:153
+msgid "Expiration"
+msgstr "Vervalt op"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:154
+#: ../../../module/Storage/view/storage/storage/index.phtml:123
+#: ../../../module/Storage/view/storage/storage/index.phtml:126
+#: ../../../module/Pool/view/pool/pool/details.phtml:93
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:39
+#: ../../../module/Client/view/client/client/details.phtml:152
+#: ../../../module/Client/view/client/client/index.phtml:56
+#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Job/src/Job/Form/JobForm.php:95
+#: ../../../module/Job/view/job/job/details.phtml:66
+#: ../../../module/Job/view/job/job/index.phtml:82
+#: ../../../module/Job/view/job/job/actions.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:61
+#: ../../../module/Media/view/media/media/index.phtml:61
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
+#: ../../../module/Director/view/director/director/console.phtml:32
+#: ../../../module/Director/view/director/director/index.phtml:33
+#: ../../../module/Director/view/director/director/messages.phtml:32
+msgid "Status"
+msgstr "Status"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:155
+msgid "Media Type"
+msgstr "Media type"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:300
+msgid "not in catalog"
+msgstr "niet in catalogus"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:336
+msgid "Export"
+msgstr "Exporteren"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:343
+msgid "Update slots"
+msgstr "Slots vernieuwen"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:395
+msgid "Release"
+msgstr "Losmaken"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:448
+msgid "Import"
+msgstr "Importeer"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:455
+msgid "Import all"
+msgstr "Importeer alles"
+
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "Opslagstatus"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:27
+#: ../../../module/Application/config/module.config.php:157
+msgid "Storages"
+msgstr "Opslag"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:48
+msgid "Storage Devices"
+msgstr "Opslagapparaten"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:56
+#: ../../../module/Pool/view/pool/pool/details.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Pool/view/pool/pool/index.phtml:56
+#: ../../../module/Client/view/client/client/details.phtml:50
+#: ../../../module/Client/view/client/client/index.phtml:53
+#: ../../../module/Media/view/media/media/details.phtml:57
+#: ../../../module/Media/view/media/media/index.phtml:57
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:76
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:46
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:46
+#: ../../../module/Restore/view/restore/restore/index.phtml:243
+msgid "Name"
+msgstr "Naam"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:57
+msgid "Autochanger"
+msgstr "Wisselaar"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:112
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:324
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
+msgid "No"
+msgstr "Nee"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:114
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:323
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
+msgid "Yes"
+msgstr "Ja"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:123
+msgid "Manage autochanger"
+msgstr "Wisselaar beheren"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:27
+msgid "Pool details"
+msgstr "Pool gegevens"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:58
+#: ../../../module/Pool/view/pool/pool/details.phtml:91
+#: ../../../module/Pool/view/pool/pool/index.phtml:57
+#: ../../../module/Job/view/job/job/details.phtml:61
+#: ../../../module/Job/view/job/job/index.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:59
+#: ../../../module/Media/view/media/media/details.phtml:91
+#: ../../../module/Media/view/media/media/index.phtml:59
+msgid "Type"
+msgstr "Type"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:60
+#: ../../../module/Pool/view/pool/pool/index.phtml:59
+msgid "Maximum volumes"
+msgstr "Maximum volumes"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:61
+#: ../../../module/Pool/view/pool/pool/index.phtml:60
+msgid "Volume retention"
+msgstr "Volume behoud"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:62
+#: ../../../module/Pool/view/pool/pool/index.phtml:61
+msgid "Maximum volume jobs"
+msgstr "Maximum volume taken"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:63
+#: ../../../module/Pool/view/pool/pool/index.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Maximum volume bytes"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:90
+#: ../../../module/Media/view/media/media/details.phtml:58
+#: ../../../module/Media/view/media/media/index.phtml:58
+msgid "Storage"
+msgstr "Opslag"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:94
+#: ../../../module/Media/view/media/media/details.phtml:62
+#: ../../../module/Media/view/media/media/index.phtml:62
+msgid "Retention/Expiration"
+msgstr "Behoud/verval"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:95
+#: ../../../module/Media/view/media/media/details.phtml:63
+#: ../../../module/Media/view/media/media/index.phtml:63
+msgid "Maximum bytes"
+msgstr "Maximum bytes"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:96
+#: ../../../module/Media/view/media/media/details.phtml:64
+#: ../../../module/Media/view/media/media/index.phtml:64
+msgid "Current bytes"
+msgstr "Huidige bytes"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:134
+#: ../../../module/Media/view/media/media/details.phtml:145
+msgid "Label date"
+msgstr "Label datum"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:138
+#: ../../../module/Media/view/media/media/details.phtml:149
+msgid "First written"
+msgstr "Eerst geschreven"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:146
+#: ../../../module/Media/view/media/media/details.phtml:157
+msgid "Volume jobs"
+msgstr "Volumetaken"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:150
+#: ../../../module/Media/view/media/media/details.phtml:161
+msgid "Recycle"
+msgstr "Recycleer"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+#: ../../../module/Application/config/module.config.php:125
+msgid "Dashboard"
+msgstr "Dashboard"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:65
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:41
+msgid "Running"
+msgstr "Actief"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:66
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:45
+msgid "Waiting"
+msgstr "Wachtend"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:67
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:49
+msgid "Terminated successfully"
+msgstr "Met succes beëindigd"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:68
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:53
+msgid "Terminated unsuccessfully"
+msgstr "Zonder succes beëindigd"
+
+#: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
+msgid "Current Director messages"
+msgstr "Huidige Director berichten"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:32
+msgid "Most recent job status per job name"
+msgstr "Meest recente taakstatus per taaknaam"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:38
+#: ../../../module/Client/view/client/client/details.phtml:77
+#: ../../../module/Job/src/Job/Form/JobForm.php:53
+#: ../../../module/Job/view/job/job/details.phtml:59
+#: ../../../module/Job/view/job/job/index.phtml:75
+#: ../../../module/Job/view/job/job/actions.phtml:76
+#: ../../../module/Media/view/media/media/details.phtml:89
+msgid "Job name"
+msgstr "Taaknaam"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../../../module/Client/view/client/client/details.phtml:76
+#: ../../../module/Job/view/job/job/details.phtml:58
+#: ../../../module/Job/view/job/job/index.phtml:74
+#: ../../../module/Media/view/media/media/details.phtml:88
+msgid "Job ID"
+msgstr "Taak ID"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:41
+#: ../../../module/Client/view/client/client/details.phtml:43
+#: ../../../module/Job/view/job/job/details.phtml:60
+#: ../../../module/Job/view/job/job/index.phtml:76
+#: ../../../module/Media/view/media/media/details.phtml:90
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:130
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:147
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:165
+msgid "Client"
+msgstr "Machine"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
+#: ../../../module/Client/view/client/client/details.phtml:80
+#: ../../../module/Job/view/job/job/details.phtml:62
+#: ../../../module/Job/view/job/job/index.phtml:78
+#: ../../../module/Media/view/media/media/details.phtml:92
+msgid "Level"
+msgstr "Niveau"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
+#: ../../../module/Job/view/job/job/details.phtml:145
+#: ../../../module/Job/view/job/job/index.phtml:175
+msgid "Start"
+msgstr "Begin"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:44
+#: ../../../module/Job/view/job/job/details.phtml:149
+#: ../../../module/Job/view/job/job/index.phtml:179
+msgid "End"
+msgstr "Einde"
+
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:32
+msgid "Jobs started during the past 24 hours"
+msgstr "Taken begonnen in de laatste 24 uur"
+
+#: ../../../module/Client/view/client/client/details.phtml:26
+msgid "Client details"
+msgstr "Machine gegevens"
+
+#: ../../../module/Client/view/client/client/details.phtml:32
+#: ../../../module/Client/view/client/client/status.phtml:9
+#: ../../../module/Client/view/client/client/index.phtml:32
+#: ../../../module/Job/view/job/job/details.phtml:33
+#: ../../../module/Job/view/job/job/index.phtml:32
+#: ../../../module/Job/view/job/job/actions.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:32
+msgid "Show"
+msgstr "Toon"
+
+#: ../../../module/Client/view/client/client/details.phtml:51
+#: ../../../module/Client/view/client/client/index.phtml:54
+msgid "Version"
+msgstr "Versie"
+
+#: ../../../module/Client/view/client/client/details.phtml:52
+msgid "Autoprune"
+msgstr "Autoreduceren"
+
+#: ../../../module/Client/view/client/client/details.phtml:53
+msgid "Fileretention"
+msgstr "Bestandsbehoud"
+
+#: ../../../module/Client/view/client/client/details.phtml:54
+msgid "Jobretention"
+msgstr "Taakbehoud"
+
+#: ../../../module/Client/view/client/client/details.phtml:69
+msgid "Last backups"
+msgstr "Laatste reservekopie"
+
+#: ../../../module/Client/view/client/client/details.phtml:78
+#: ../../../module/Job/view/job/job/details.phtml:93
+msgid "Timestamp"
+msgstr "Tijdstempel"
+
+#: ../../../module/Client/view/client/client/details.phtml:79
+#: ../../../module/Job/view/job/job/details.phtml:133
+#: ../../../module/Job/view/job/job/index.phtml:163
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:37
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:236
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:251
+msgid "Fileset"
+msgstr "Bestandsreeks"
+
+#: ../../../module/Client/view/client/client/details.phtml:81
+#: ../../../module/Job/view/job/job/details.phtml:63
+#: ../../../module/Job/view/job/job/index.phtml:79
+#: ../../../module/Media/view/media/media/details.phtml:93
+msgid "Files"
+msgstr "Bestanden"
+
+#: ../../../module/Client/view/client/client/details.phtml:152
+#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Application/config/module.config.php:145
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:486
+#: ../../../module/Restore/view/restore/restore/index.phtml:26
+msgid "Restore"
+msgstr "Herstel"
+
+#: ../../../module/Client/view/client/client/details.phtml:216
+#: ../../../module/Job/view/job/job/index.phtml:302
+#: ../../../module/Job/view/job/job/index.phtml:304
+msgid "Show Files"
+msgstr "Toon bestanden"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "Machine status"
+
+#: ../../../module/Client/view/client/client/index.phtml:26
+#: ../../../module/Client/view/client/client/index.phtml:45
+#: ../../../module/Application/config/module.config.php:149
+msgid "Clients"
+msgstr "Machines"
+
+#: ../../../module/Client/view/client/client/index.phtml:223
+#: ../../../module/Job/view/job/job/actions.phtml:135
+#: ../../../module/Media/view/media/media/details.phtml:213
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:136
+msgid "Enabled"
+msgstr "Ingeschakeld"
+
+#: ../../../module/Client/view/client/client/index.phtml:226
+#: ../../../module/Job/view/job/job/actions.phtml:138
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:139
+msgid "Disabled"
+msgstr "Uitgeschakeld"
+
+#: ../../../module/Client/view/client/client/index.phtml:238
+#: ../../../module/Job/view/job/job/actions.phtml:146
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:147
+msgid "Disable"
+msgstr "Uitschakelen"
+
+#: ../../../module/Client/view/client/client/index.phtml:241
+#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:150
+msgid "Enable"
+msgstr "Inschakelen"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:60
+msgid "jobname"
+msgstr "taaknaam"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:71
+msgid "Time period"
+msgstr "Tijdsperiode"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:73
+msgid "last 24 hours"
+msgstr "laatste 24 uur"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:74
+msgid "last 3 days"
+msgstr "laatste 3 dagen"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:75
+msgid "last week"
+msgstr "laatste week"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:76
+msgid "last month"
+msgstr "laatste maand"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:77
+msgid "last year"
+msgstr "laatste jaar"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:78
+msgid "unlimited"
+msgstr "ongelimiteerd"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:84
+msgid "period"
+msgstr "periode"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:97
+msgid "all"
+msgstr "alles"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:98
+msgid "running"
+msgstr "actief"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:99
+msgid "waiting"
+msgstr "wachtend"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:100
+msgid "terminated unsuccessfully"
+msgstr "zonder succes beëindigd"
+
+#: ../../../module/Job/src/Job/Form/JobForm.php:101
+msgid "terminated successfully"
+msgstr "met succes beëindigd"
+
+#: ../../../module/Job/view/job/job/details.phtml:49
+msgid "Job"
+msgstr "Taak"
+
+#: ../../../module/Job/view/job/job/details.phtml:65
+#: ../../../module/Job/view/job/job/index.phtml:81
+msgid "Errors"
+msgstr "Fouten"
+
+#: ../../../module/Job/view/job/job/details.phtml:85
+#: ../../../module/Director/view/director/director/console.phtml:33
+#: ../../../module/Director/view/director/director/index.phtml:34
+#: ../../../module/Director/view/director/director/messages.phtml:33
+msgid "Messages"
+msgstr "Berichten"
+
+#: ../../../module/Job/view/job/job/details.phtml:94
+#: ../../../module/Application/view/error/404.phtml:62
+#: ../../../module/Application/view/error/404.phtml:86
+#: ../../../module/Application/view/error/index.phtml:18
+#: ../../../module/Application/view/error/index.phtml:42
+msgid "Message"
+msgstr "Bericht"
+
+#: ../../../module/Job/view/job/job/details.phtml:141
+#: ../../../module/Job/view/job/job/index.phtml:171
+msgid "Scheduled"
+msgstr "Gepland"
+
+#: ../../../module/Job/view/job/job/details.phtml:237
+#: ../../../module/Job/view/job/job/index.phtml:302
+#: ../../../module/Job/view/job/job/index.phtml:312
+msgid "Rerun"
+msgstr "Opnieuw uitvoeren"
+
+#: ../../../module/Job/view/job/job/index.phtml:65
+msgid "Job list"
+msgstr "Taaklijst"
+
+#: ../../../module/Job/view/job/job/index.phtml:106
+msgid "Failed to retrieve data from Bareos director"
+msgstr "Data van de Bareos director kon niet ontvangen worden"
+
+#: ../../../module/Job/view/job/job/index.phtml:109
+msgid ""
+"Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr ""
+"Gelieve de weer te geven data te verminderen, bv. verminder de tijdsperiode."
+
+#: ../../../module/Job/view/job/job/index.phtml:110
+msgid "Error message received from director:"
+msgstr "Foutbericht ontvangen van de director:"
+
+#: ../../../module/Job/view/job/job/index.phtml:111
+msgid "Failed to send result as json. Maybe result message to long?"
+msgstr ""
+"Resultaat als json verzenden is mislukt. Misschien is het resultaat bericht "
+"te lang?"
+
+#: ../../../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Taakacties"
+
+#: ../../../module/Job/view/job/job/actions.phtml:146
+#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Application/config/module.config.php:138
+msgid "Run"
+msgstr "Uitvoeren"
+
+#: ../../../module/Media/view/media/media/details.phtml:27
+msgid "Volume details"
+msgstr "Volume gegevens"
+
+#: ../../../module/Media/view/media/media/details.phtml:80
+msgid "Jobs on volume"
+msgstr "Taken voor volume"
+
+#: ../../../module/Media/view/media/media/details.phtml:95
+msgid "Starttime"
+msgstr "Starttijd"
+
+#: ../../../module/Media/view/media/media/details.phtml:96
+msgid "Endtime"
+msgstr "Eindtijd"
+
+#: ../../../module/Media/view/media/media/details.phtml:165
+msgid "Volume writes"
+msgstr "Aantal keer geschreven"
+
+#: ../../../module/Media/view/media/media/details.phtml:173
+msgid "Media Id"
+msgstr "Media ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:177
+msgid "Volume Blocks"
+msgstr "Volume blokken"
+
+#: ../../../module/Media/view/media/media/details.phtml:181
+msgid "Volume use duration"
+msgstr "Volume tijdsgebruik"
+
+#: ../../../module/Media/view/media/media/details.phtml:185
+msgid "Volume Pool Id"
+msgstr "Volume Pool ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:189
+msgid "In changer"
+msgstr "In wisselaar"
+
+#: ../../../module/Media/view/media/media/details.phtml:193
+msgid "Volume Files"
+msgstr "Volume bestanden"
+
+#: ../../../module/Media/view/media/media/details.phtml:197
+msgid "Max. volume jobs"
+msgstr "Max. volume taken"
+
+#: ../../../module/Media/view/media/media/details.phtml:201
+msgid "Volume mounts"
+msgstr "Volume aankoppelingen"
+
+#: ../../../module/Media/view/media/media/details.phtml:205
+msgid "Volume capacity bytes"
+msgstr "Volume capaciteit bytes"
+
+#: ../../../module/Media/view/media/media/details.phtml:209
+msgid "Volume errors"
+msgstr "Volume fouten"
+
+#: ../../../module/Media/view/media/media/details.phtml:217
+msgid "Max. volume files"
+msgstr "Max. volume bestanden"
+
+#: ../../../module/Media/view/media/media/details.phtml:221
+msgid "Endfile"
+msgstr "Eindbestand"
+
+#: ../../../module/Media/view/media/media/details.phtml:225
+msgid "Endblock"
+msgstr "Eindblok"
+
+#: ../../../module/Media/view/media/media/details.phtml:229
+msgid "Labeltype"
+msgstr "Labeltype"
+
+#: ../../../module/Media/view/media/media/details.phtml:233
+msgid "Device Id"
+msgstr "Apparaat ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:237
+msgid "Location Id"
+msgstr "Locatie ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:241
+msgid "Recycle count"
+msgstr "Recycleer teller"
+
+#: ../../../module/Media/view/media/media/details.phtml:245
+msgid "Initial write"
+msgstr "Initiële schrijven"
+
+#: ../../../module/Media/view/media/media/details.phtml:249
+msgid "Scratch Pool Id"
+msgstr "Scratch pool ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:253
+msgid "Recycle pool Id"
+msgstr "Recycleer pool ID"
+
+#: ../../../module/Media/view/media/media/details.phtml:257
+msgid "Comment"
+msgstr "Commentaar"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Planning gegevens"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../../../module/Application/config/module.config.php:133
+msgid "Overview"
+msgstr "Overzicht"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+msgid "Scheduler status"
+msgstr "Planner status"
+
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Status planner"
+
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../../../module/Application/config/module.config.php:153
+msgid "Schedules"
+msgstr "Planning"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Bestandsreeks gegevens"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
+msgid "Id"
+msgstr "ID"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
+msgid "MD5 checksum"
+msgstr "MD5 controlesom"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:47
+msgid "Creation time"
+msgstr "Gemaakt"
+
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:37
+msgid "Filesets"
+msgstr "Bestandsreeks"
+
+#: ../../../module/Director/view/director/director/console.phtml:34
+#: ../../../module/Director/view/director/director/index.phtml:35
+#: ../../../module/Director/view/director/director/messages.phtml:34
+msgid "Console"
+msgstr "Console"
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (batch-mode), gelieve voorzichtig te zijn."
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Alle functies moeten op één lijn staan, dialogen werken niet."
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "Type help for a list of commands."
+msgstr "Typ help voor een lijst van functies."
+
+#: ../../../module/Director/view/director/director/index.phtml:27
+#: ../../../module/Director/view/director/director/messages.phtml:26
+#: ../../../module/Application/config/module.config.php:183
+msgid "Director"
+msgstr "Director"
+
+#: ../../../module/Director/view/director/director/index.phtml:48
+msgid "Director Status"
+msgstr "Director status"
+
+#: ../../../module/Director/view/director/director/messages.phtml:44
+msgid "Refresh"
+msgstr "Vernieuw"
+
+#: ../../../module/Director/view/director/director/messages.phtml:51
+msgid "Director messages"
+msgstr "Director berichten"
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid ""
+"Sorry, it seems you are not authorized to run this module. If you think this "
+"is an error, please contact your local administrator."
+msgstr ""
+"Helaas, het lijkt er op dat je niet geautoriseerd bent om deze module uit te "
+"voeren. Als je denkt dat dit een fout is, contacteer dan jouw beheerder. "
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid ""
+"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
+"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
+"documentation</a> for any additional information on how to configure the "
+"Command ACL directive of your Console/Profile resources. Following is a list "
+"of required commands which need to be in your Command ACL to run this module "
+"properly:"
+msgstr ""
+"Gelieve de <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
+"reference.html#sec:webui-console\" target=\"_blank\">Bareos documentatie</a> "
+"te lezen voor bijkomende informatie over hoe de Command ACL instructie van "
+"jouw Console/Profiel bronnen te configureren. Hierna volgt een lijst met "
+"verplichte commando's die in jouw Command ACL nodig zijn om correct te lopen."
+
+#: ../../../module/Application/config/module.config.php:129
+msgid "Jobs"
+msgstr "Taken"
+
+#: ../../../module/Application/view/layout/layout.phtml:94
+msgid "Documentation"
+msgstr "Documentatie"
+
+#: ../../../module/Application/view/layout/layout.phtml:95
+msgid "Mailinglists"
+msgstr "Mailinglists"
+
+#: ../../../module/Application/view/layout/layout.phtml:96
+msgid "Bugtracker"
+msgstr "Bugtracker"
+
+#: ../../../module/Application/view/layout/layout.phtml:97
+msgid "Support"
+msgstr "Ondersteuning"
+
+#: ../../../module/Application/view/layout/layout.phtml:98
+msgid "Subscription"
+msgstr "Abonnement"
+
+#: ../../../module/Application/view/layout/layout.phtml:100
+msgid "Logout"
+msgstr "Uitloggen"
+
+#: ../../../module/Application/view/error/404.phtml:3
+msgid "A 404 error occurred"
+msgstr "Er heeft zich een 404-fout voorgedaan"
+
+#: ../../../module/Application/view/error/404.phtml:12
+msgid "The requested controller was unable to dispatch the request."
+msgstr "De gevraagde controller was niet in staat om de aanvraag te verzenden."
+
+#: ../../../module/Application/view/error/404.phtml:15
+msgid ""
+"The requested controller could not be mapped to an existing controller class."
+msgstr ""
+"De gevraagde controller kon niet omgezet worden in een bestaande controller "
+"klasse."
+
+#: ../../../module/Application/view/error/404.phtml:18
+msgid "The requested controller was not dispatchable."
+msgstr "De gevraagde controller kan niet verzonden worden."
+
+#: ../../../module/Application/view/error/404.phtml:21
+msgid "The requested URL could not be matched by routing."
+msgstr "De gevraagde URL kon niet gepaard worden via routing."
+
+#: ../../../module/Application/view/error/404.phtml:24
+msgid "We cannot determine at this time why a 404 was generated."
+msgstr "We kunnen "
+
+#: ../../../module/Application/view/error/404.phtml:36
+msgid "Controller"
+msgstr "Controller"
+
+#: ../../../module/Application/view/error/404.phtml:43
+#, php-format
+msgid "resolves to %s"
+msgstr "leid naar %s"
+
+#: ../../../module/Application/view/error/404.phtml:55
+#: ../../../module/Application/view/error/index.phtml:11
+msgid "Additional information"
+msgstr "Bijkomende informatie"
+
+#: ../../../module/Application/view/error/404.phtml:58
+#: ../../../module/Application/view/error/404.phtml:82
+#: ../../../module/Application/view/error/index.phtml:14
+#: ../../../module/Application/view/error/index.phtml:38
+msgid "File"
+msgstr "Bestand"
+
+#: ../../../module/Application/view/error/404.phtml:66
+#: ../../../module/Application/view/error/404.phtml:90
+#: ../../../module/Application/view/error/index.phtml:22
+#: ../../../module/Application/view/error/index.phtml:46
+msgid "Stack trace"
+msgstr "Stack trace"
+
+#: ../../../module/Application/view/error/404.phtml:76
+#: ../../../module/Application/view/error/index.phtml:32
+msgid "Previous exceptions"
+msgstr "Vorige uitzonderingen"
+
+#: ../../../module/Application/view/error/404.phtml:105
+#: ../../../module/Application/view/error/index.phtml:61
+msgid "No Exception available"
+msgstr "Geen uitzonderingen beschikbaar"
+
+#: ../../../module/Application/view/error/index.phtml:4
+msgid "An error occurred"
+msgstr "Er heeft zich een fout voorgedaan"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:94
+msgid "Backup jobs"
+msgstr "Backup taken"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:111
+msgid "Backups"
+msgstr "Backups"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:184
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:201
+msgid "Restore to client"
+msgstr "Herstel naar machine"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:218
+msgid "Restore to (another) client"
+msgstr "Herstel naar een (andere) machine"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:237
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:252
+msgid "Please choose a fileset"
+msgstr "Gelieve een bestandsreeks te kiezen"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:267
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:285
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:302
+msgid "Restore job"
+msgstr "Herstel taak"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:321
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:340
+msgid "Merge all client filesets"
+msgstr "Alle machine-bestandsreeksen samenvoegen"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:361
+msgid "Merge all related jobs to last full backup of selected backup job"
+msgstr ""
+"Alle verwante taken sinds de laatste volledige backup van de geselecteerde "
+"taak samenvoegen"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:380
+msgid "Merge jobs"
+msgstr "Taken samenvoegen"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:400
+msgid "Replace files on client"
+msgstr "Vervang bestand op machine"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:402
+msgid "always"
+msgstr "altijd"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:403
+msgid "never"
+msgstr "nooit"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:404
+msgid "if file being restored is older than existing file"
+msgstr "als het bestand dat wordt hersteld ouder is dan het bestaande bestand"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:405
+msgid "if file being restored is newer than existing file"
+msgstr ""
+"als het bestand dat wordt hersteld nieuwer is dan het bestaande bestand"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:421
+msgid "Restore location on client"
+msgstr "Herstel locatie op machine"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:428
+msgid "e.g. / or /tmp/bareos-restores/"
+msgstr "bv. / of /tmp/bareos-restores/"
+
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:449
+msgid "Related jobs for a most recent full restore"
+msgstr "Verwante taken voor een meest recent volledig herstel"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:94
+msgid "File selection"
+msgstr "Bestandsselectie"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:244
+msgid "Size"
+msgstr "Grootte"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:245
+msgid "Date"
+msgstr "Datum"
