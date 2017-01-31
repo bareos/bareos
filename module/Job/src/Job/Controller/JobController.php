@@ -153,8 +153,8 @@ class JobController extends AbstractActionController
 
       try {
          $this->bsock = $this->getServiceLocator()->get('director');
-         $job = $this->getJobModel()->getJob($this->bsock, $jobid);
-         $joblog = $this->getJobModel()->getJobLog($this->bsock, $jobid);
+         //$job = $this->getJobModel()->getJob($this->bsock, $jobid);
+         //$joblog = $this->getJobModel()->getJobLog($this->bsock, $jobid);
          $this->bsock->disconnect();
       }
       catch(Exception $e) {
@@ -162,8 +162,8 @@ class JobController extends AbstractActionController
       }
 
       return new ViewModel(array(
-         'job' => $job,
-         'joblog' => $joblog,
+         //'job' => $job,
+         //'joblog' => $joblog,
          'jobid' => $jobid
       ));
    }

@@ -114,8 +114,16 @@ class JobModel
       if(isset($bsock, $id)) {
          $cmd = 'list joblog jobid='.$id.'';
          $result = $bsock->send_command($cmd, 2, null);
-         $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $log['result']['joblog'];
+         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+            //return false;
+            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $error['result']['error'];
+         }
+         else {
+            $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $log['result']['joblog'];
+         }
+
       }
       else {
          throw new \Exception('Missing argument.');
