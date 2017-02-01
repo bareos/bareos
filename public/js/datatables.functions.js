@@ -194,6 +194,31 @@ function formatExpiration(volstatus, lastwritten, volretention) {
    }
 }
 
+function formatHiddenRetExp(volstatus, lastwritten, volretention) {
+   if(volstatus == iJS._("Used") || volstatus == iJS._("Full")) {
+      if(lastwritten == null || lastwritten == "") {
+         return 100000000000;
+      }
+      else {
+         var d = Date.now() / 1000;
+         var a = lastwritten.split(" ");
+         var b = new Date(a[0]).getTime() / 1000;
+         var interval = (d - b) / (3600 * 24);
+         var retention = Math.round(volretention / 60 / 60 / 24);
+         var expiration = (retention - interval).toFixed(2);
+         return Math.ceil(expiration);
+      }
+   }
+   else {
+      // This is kind of ugly but expiration can also be a negativ value, but somehow we need to sort numerical.
+      // As a workaround we move the area of unused volumes with a retention way down into the negativ by
+      // prepending a large negativ number out of the scope of the usual rentention times commonly used
+      // to avoid further problems.
+      // TODO: Find a better sorting solution for the Retention/Expiration column.
+      return Math.ceil('-1000000000000'+(volretention / 60 / 60 / 24));
+   }
+}
+
 function formatLastWritten(data) {
    if(data == null || data == '' || data == 0) {
       return iJS._('never');
