@@ -1,0 +1,241 @@
+# Turkish Localization
+# Copyright (C) 2017
+# This file is distributed under the same license as the PACKAGE package.
+# Enes Yalcin, Serefhan Yeter
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-02-02 11:40+0100\n"
+"PO-Revision-Date: 2016-06-22 14:31+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.5\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../../js/datatables.functions.js:85
+msgid "Backup"
+msgstr ""
+
+#: ../../js/datatables.functions.js:88
+msgid "Migrated"
+msgstr ""
+
+#: ../../js/datatables.functions.js:91
+msgid "Verify"
+msgstr ""
+
+#: ../../js/datatables.functions.js:94
+msgid "Restore"
+msgstr ""
+
+#: ../../js/datatables.functions.js:97
+msgid "Console program"
+msgstr ""
+
+#: ../../js/datatables.functions.js:100
+msgid "Internal system job"
+msgstr ""
+
+#: ../../js/datatables.functions.js:103
+msgid "Admin"
+msgstr ""
+
+#: ../../js/datatables.functions.js:106
+msgid "Archive"
+msgstr ""
+
+#: ../../js/datatables.functions.js:109
+msgid "Copy of a job"
+msgstr ""
+
+#: ../../js/datatables.functions.js:112
+msgid "Copy job"
+msgstr ""
+
+#: ../../js/datatables.functions.js:115
+msgid "Migration job"
+msgstr ""
+
+#: ../../js/datatables.functions.js:118
+msgid "Scan"
+msgstr ""
+
+#: ../../js/datatables.functions.js:121
+msgid "Consolidate"
+msgstr ""
+
+#: ../../js/datatables.functions.js:133 ../../js/datatables.functions.js:172
+#: ../../js/datatables.functions.js:202
+msgid "Full"
+msgstr ""
+
+#: ../../js/datatables.functions.js:135
+msgid "Differential"
+msgstr ""
+
+#: ../../js/datatables.functions.js:137
+msgid "Incremental"
+msgstr ""
+
+#: ../../js/datatables.functions.js:139
+msgid "VirtualFull"
+msgstr ""
+
+#: ../../js/datatables.functions.js:141
+msgid "Base"
+msgstr ""
+
+#: ../../js/datatables.functions.js:143
+msgid "Catalog"
+msgstr ""
+
+#: ../../js/datatables.functions.js:145
+msgid "InitCatalog"
+msgstr ""
+
+#: ../../js/datatables.functions.js:147
+msgid "VolumeToCatalog"
+msgstr ""
+
+#: ../../js/datatables.functions.js:149
+msgid "DiskToCatalog"
+msgstr ""
+
+#: ../../js/datatables.functions.js:151
+msgid "Data"
+msgstr ""
+
+#: ../../js/datatables.functions.js:153
+msgid "None"
+msgstr "hiçbir şey"
+
+#: ../../js/datatables.functions.js:167 ../../js/datatables.functions.js:197
+msgid "day(s)"
+msgstr "gün(ler)"
+
+#: ../../js/datatables.functions.js:172 ../../js/datatables.functions.js:202
+msgid "Used"
+msgstr "Kullanılmış"
+
+#: ../../js/datatables.functions.js:184
+msgid "expired"
+msgstr "süresi bitmiş"
+
+#: ../../js/datatables.functions.js:188
+msgid "expires in 1 day"
+msgstr "Bir günde sona eriyor"
+
+#: ../../js/datatables.functions.js:192
+msgid "expires in"
+msgstr "tarihinde sona eriyor"
+
+#: ../../js/datatables.functions.js:192
+msgid "days"
+msgstr "günler"
+
+#: ../../js/datatables.functions.js:228
+msgid "never"
+msgstr "asla"
+
+#: ../../js/datatables.functions.js:237
+msgid "today"
+msgstr "bugün"
+
+#: ../../js/datatables.functions.js:240
+msgid "day(s) ago"
+msgstr "gün(ler) önce"
+
+#: ../../js/datatables.functions.js:243
+msgid "month(s) ago"
+msgstr ""
+
+#: ../../js/datatables.functions.js:246
+msgid "year(s) ago"
+msgstr ""
+
+#: ../../js/datatables.functions.js:279
+msgid "enabled"
+msgstr "açmak"
+
+#: ../../js/datatables.functions.js:282
+msgid "disabled"
+msgstr "kapalı"
+
+#: ../../js/datatables.functions.js:290
+msgid "Yes"
+msgstr "evet"
+
+#: ../../js/datatables.functions.js:293
+msgid "No"
+msgstr "hayır"
+
+#: ../../js/datatables.functions.js:303 ../../js/datatables.functions.js:307
+#: ../../js/datatables.functions.js:311
+msgid "Failure"
+msgstr "Başarısızlık"
+
+#: ../../js/datatables.functions.js:315
+msgid "Success"
+msgstr "Başarılı"
+
+#: ../../js/datatables.functions.js:319
+msgid "Running"
+msgstr "koşma"
+
+#: ../../js/datatables.functions.js:323
+msgid "Queued"
+msgstr "Sıraya dizilmiş"
+
+#: ../../js/datatables.functions.js:327
+msgid "Blocked"
+msgstr "Engellenmiş"
+
+#: ../../js/datatables.functions.js:331
+msgid "Verify found differences"
+msgstr ""
+
+#: ../../js/datatables.functions.js:335
+msgid "Canceled"
+msgstr "Iptal edildi"
+
+#: ../../js/datatables.functions.js:339 ../../js/datatables.functions.js:343
+#: ../../js/datatables.functions.js:347 ../../js/datatables.functions.js:351
+#: ../../js/datatables.functions.js:355 ../../js/datatables.functions.js:359
+#: ../../js/datatables.functions.js:363 ../../js/datatables.functions.js:367
+#: ../../js/datatables.functions.js:371 ../../js/datatables.functions.js:375
+msgid "Waiting"
+msgstr "bekleme"
+
+#: ../../js/datatables.functions.js:379
+msgid "SD despooling attributes"
+msgstr ""
+
+#: ../../js/datatables.functions.js:383
+msgid "Doing batch insert file records"
+msgstr ""
+
+#: ../../js/datatables.functions.js:387
+msgid "Incomplete"
+msgstr "eksik"
+
+#: ../../js/datatables.functions.js:391
+msgid "Committing data"
+msgstr ""
+
+#: ../../js/datatables.functions.js:395
+msgid "Warning"
+msgstr "uyarı"
+
+#: ../../js/datatables.functions.js:399
+msgid "Doing data despooling"
+msgstr ""
+
+#: ../../js/datatables.functions.js:403
+msgid "Queued waiting for device"
+msgstr ""

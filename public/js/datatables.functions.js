@@ -54,9 +54,13 @@ function setDtLocale(val) {
       case 'ru_RU':
          dt_locale = 'ru_RU';
          break;
-	  case 'nl':
+	   case 'nl':
       case 'nl_BE':
          dt_locale = 'nl_BE';
+         break;
+      case 'tr':
+      case 'tr_TR':
+         dt_locale = 'tr_TR';
          break;
       default:
          dt_locale = 'en_EN';
@@ -435,9 +439,13 @@ function getLocale(locale) {
       case 'es_ES':
          lang = 'Spanish.json';
          break;
-	  case 'nl':
+	   case 'nl':
       case 'nl_BE':
          lang = 'Dutch.json';
+         break;
+      case 'tr':
+      case 'tr_TR':
+         lang = 'Turkish.json';
          break;
       default:
          lang = 'English.json';

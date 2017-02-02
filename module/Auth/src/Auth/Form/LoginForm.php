@@ -260,8 +260,14 @@ class LoginForm extends Form
          case 'es_ES':
             $l['es_ES'] = 'Spanish';
             break;
-		 case 'nl_BE':
+		   case 'nl_BE':
             $l['nl_BE'] = 'Dutch';
+            break;
+         case 'tr':
+            $l['tr'] = 'Turkish';
+            break;
+         case 'tr_TR':
+            $l['tr_TR'] = 'Turkish';
             break;
          default:
             $l['en_EN'] = 'English';
@@ -275,13 +281,14 @@ class LoginForm extends Form
       $locales = array();
 
       $locales['cn_CN'] = "Chinese";
+      $locales['nl_BE'] = "Dutch/Belgium";
       $locales['en_EN'] = "English";
       $locales['fr_FR'] = "French";
       $locales['de_DE'] = "German";
       $locales['it_IT'] = "Italian";
       $locales['ru_RU'] = "Russian";
       $locales['es_ES'] = "Spanish";
-	  $locales['nl_BE'] = "Dutch/Belgium";
+      $locales['tr_TR'] = "Turkish";
 
       return $locales;
    }
