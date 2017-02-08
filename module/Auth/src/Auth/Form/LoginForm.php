@@ -269,6 +269,12 @@ class LoginForm extends Form
          case 'tr_TR':
             $l['tr_TR'] = 'Turkish';
             break;
+		case 'sk':
+            $l['sk'] = 'Slovak';
+            break;
+         case 'sk_SK':
+            $l['sk_SK'] = 'Slovak';
+            break;
          default:
             $l['en_EN'] = 'English';
       }
