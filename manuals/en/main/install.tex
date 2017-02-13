@@ -120,6 +120,12 @@ This package is available on \elink{EPEL}{https://fedoraproject.org/wiki/EPEL} 6
 
 \begin{commands}{Bareos installation on RHEL $\ge$ 6 / CentOS $\ge$ 6}
 #
+# add EPEL repository, if not already present.
+# Required for the jansson package.
+#
+rpm -Uhv https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
+
+#
 # define parameter
 #
 
