@@ -886,30 +886,6 @@ With the exception of Job specific variables, you can trigger the variable expan
 by using the \ilink{var command}{var}.
 
 
-\paragraph{Variable Expansion on RunScripts}
-
-At the configuration of RunScripts following variables can be used:
-
-\begin{tabular}{p{2cm}p{7cm}}
-\textbf{Variable} & \textbf{Description} \\
-\parameter{\%c} & Client's Name\\
-\parameter{\%d} & Director's Name\\
-\parameter{\%e} & Job Exit Code\\
-\parameter{\%i} & JobId\\
-\parameter{\%j} & Unique JobId\\
-\parameter{\%l} & Job Level\\
-\parameter{\%n} & Unadorned Job Name\\
-\parameter{\%r} & Recipients\\
-\parameter{\%s} & Since Time\\
-\parameter{\%b} & Job Bytes \\
-\parameter{\%B} & Job Bytes in human readable format \\
-\parameter{\%f} & Job Files \\
-\parameter{\%t} & Job Type (Backup, ...)\\
-\parameter{\%v} & Read Volume Name (only on Director)\\
-\parameter{\%V} & Write Volume Name (only on Director)
-\end{tabular}
-
-
 
 \paragraph{Variable Expansion in Autochanger Commands}
 
@@ -948,7 +924,9 @@ At the configuration of mount commands the following variables can be used:
 
 
 
+\paragraph{Variable Expansion on RunScripts}
 
+Variable Expansion on RunScripts is described at \linkResourceDirective{Dir}{Job}{Run Script}.
 
 
 

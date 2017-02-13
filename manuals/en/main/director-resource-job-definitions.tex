@@ -894,16 +894,11 @@ indefinite number of times.
 \defDirective{Dir}{Job}{Run}{}{}{%
 \index[dir]{Clone a Job}%
 The Run directive (not to be confused with the Run option in a
-Schedule) allows you to start other jobs or to clone jobs. By using the
-cloning keywords (see below), you can backup
-the same data (or almost the same data) to two or more drives
-at the same time. The {\bf job-name} is normally the same name
-as the current Job resource (thus creating a clone). However, it
-may be any Job name, so one job may start other related jobs.
+Schedule) allows you to start other jobs or to clone the current jobs.
 
 The part after the equal sign must be enclosed in double quotes,
 and can contain any string or set of options (overrides) that you
-can specify when entering the Run command from the console. For
+can specify when entering the \bcommand{run}{} command from the console. For
 example {\bf storage=DDS-4 ...}.  In addition, there are two special
 keywords that permit you to clone the current job. They are {\bf level=\%l}
 and {\bf since=\%s}. The \%l in the level keyword permits
@@ -918,17 +913,15 @@ since they are already inside quotes. For example:
 A cloned job will not start additional clones, so it is not
 possible to recurse.
 
-Please note that all cloned jobs, as specified in the Run directives are
-submitted for running before the original job is run (while it is being
+Jobs started by \linkResourceDirective{Dir}{Job}{Run}
+are submitted for running before the original job (while it is being
 initialized). This means that any clone job will actually start before
-the original job, and may even block the original job from starting
-until the original job finishes unless you allow multiple simultaneous
-jobs.  Even if you set a lower priority on the clone job, if no other
-jobs are running, it will start before the original job.
+the original job, and may even block the original job from starting.
+It evens ignores \linkResourceDirective{Dir}{Job}{Priority}.
 
-If you are trying to prioritize jobs by using the clone feature (Run
-directive), you will find it much easier to do using a \linkResourceDirective{Dir}{Job}{Run Script}
-resource, or a \linkResourceDirective{Dir}{Job}{Run Before Job} directive.
+If you are trying to prioritize jobs,
+you will find it much easier to do using a \linkResourceDirective{Dir}{Job}{Run Script}
+resource or a \linkResourceDirective{Dir}{Job}{Run Before Job} directive.
 }
 
 \defDirective{Dir}{Job}{Run After Failed Job}{}{}{%
