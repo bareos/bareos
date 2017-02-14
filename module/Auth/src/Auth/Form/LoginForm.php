@@ -293,6 +293,7 @@ class LoginForm extends Form
       $locales['de_DE'] = "German";
       $locales['it_IT'] = "Italian";
       $locales['ru_RU'] = "Russian";
+      $locales['sk_SK'] = "Slovak";
       $locales['es_ES'] = "Spanish";
       $locales['tr_TR'] = "Turkish";
 
