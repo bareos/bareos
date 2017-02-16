@@ -539,6 +539,7 @@ static bool cancel_cmd(JCR *cjcr)
    }
 
    pthread_cond_signal(&jcr->job_end_wait); /* wake waiting job */
+   jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
 
    dir->fsend(_("3000 JobId=%ld Job=\"%s\" marked to be %s.\n"), jcr->JobId, jcr->Job, reason);
    free_jcr(jcr);

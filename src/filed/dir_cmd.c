@@ -842,8 +842,8 @@ static bool cancel_cmd(JCR *jcr)
          if (cjcr->store_bsock) {
             cjcr->store_bsock->set_timed_out();
             cjcr->store_bsock->set_terminated();
-            cjcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          }
+         cjcr->my_thread_send_signal(TIMEOUT_SIGNAL);
          free_jcr(cjcr);
          dir->fsend(_("2001 Job %s marked to be canceled.\n"), Job);
       }
