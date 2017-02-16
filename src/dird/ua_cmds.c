@@ -357,7 +357,7 @@ static struct ua_cmdstruct commands[] = {
      NT_("job=<job-name> client=<client-name> fileset=<fileset-name> level=<level>\n"
          "\tstorage=<storage-name> where=<directory-prefix> when=<universal-time-specification>\n"
          "\tpool=<pool-name> pluginoptions=<plugin-options-string> accurate=<yes|no> comment=<text>\n"
-         "\tspooldata=<yes|no> priority=<number> jobid=<jobid> catalog=<catalog> migrationjob=<>\n"
+         "\tspooldata=<yes|no> priority=<number> jobid=<jobid> catalog=<catalog> migrationjob=<job-name>\n"
          "\tbackupclient=<client-name> backupformat=<format> nextpool=<pool-name>\n"
          "\tsince=<universal-time-specification> verifyjob=<job-name> verifylist=<verify-list>\n"
          "\tmigrationjob=<complete_name> yes"), false, true },

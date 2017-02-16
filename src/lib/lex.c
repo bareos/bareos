@@ -110,6 +110,8 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    } else {
       e_msg(file, line, lc->err_type, 0, _("Config error: %s\n"), buf.c_str());
    }
+
+   lc->error_counter++;
 }
 
 /*
@@ -199,6 +201,7 @@ LEX *lex_close_file(LEX *lf)
    lf->line = NULL;
    if (of) {
       of->options = lf->options;      /* preserve options */
+      of->error_counter += lf->error_counter; /* summarize the errors */
       memcpy(lf, of, sizeof(LEX));
       Dmsg1(dbglvl, "Restart scan of cfg file %s\n", of->fname);
    } else {
@@ -206,32 +209,6 @@ LEX *lex_close_file(LEX *lf)
       lf = NULL;
    }
    free(of);
-   return lf;
-}
-
-LEX *lex_close_buffer(LEX *lf)
-{
-   LEX *of;
-
-   if (lf == NULL) {
-      Emsg0(M_ABORT, 0, _("Close of NULL file\n"));
-   }
-
-   of = lf->next;
-
-   free_memory(lf->line);
-   free_memory(lf->str);
-   lf->line = NULL;
-   if (of) {
-      of->options = lf->options;      /* preserve options */
-      memcpy(lf, of, sizeof(LEX));
-      Dmsg1(dbglvl, "Restart scan of cfg file %s\n", of->fname);
-   } else {
-      of = lf;
-      lf = NULL;
-   }
-   free(of);
-
    return lf;
 }
 

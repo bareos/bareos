@@ -1062,7 +1062,6 @@ static bool check_resources()
       }
    }
 
-   UnlockRes();
    if (OK) {
       close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, me->messages);       /* open daemon message handler */
@@ -1075,6 +1074,7 @@ static bool check_resources()
    }
 
 bail_out:
+   UnlockRes();
    return OK;
 }
 
