@@ -43,6 +43,6 @@ if __name__ == '__main__':
         sys.exit(1)
     logger.debug( "authentication successful" )
     if args.command:
-        bsock.call(args.command)
+        print(bsock.call(args.command))
     else:
         bsock.interactive()
