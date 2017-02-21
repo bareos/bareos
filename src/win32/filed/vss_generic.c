@@ -545,10 +545,12 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
             break;
          }
 
-         /*
-          * FIXME: need to support partial files - make last parameter true when done
-          */
-         hr = pVssObj->SetBackupState(false, false, backup_type, false);
+         hr = pVssObj->SetBackupState(
+                     true,        /* bSelectComponents */
+                     true,        /* bBackupBootableSystemState */
+                     backup_type, /* backupType */
+                     false        /* bPartialFileSupport */
+                     );
          if (FAILED(hr)) {
             Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->SetBackupState returned 0x%08X\n", hr);
             JmsgVssApiStatus(m_jcr, M_FATAL, hr, "SetBackupState");
