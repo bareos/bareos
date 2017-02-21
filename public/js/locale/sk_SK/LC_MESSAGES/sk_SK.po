@@ -15,194 +15,194 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.5\n"
+"X-Generator: Poedit 1.8.11\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../../js/datatables.functions.js:89
 msgid "Backup"
-msgstr ""
+msgstr "Záloha"
 
 #: ../../js/datatables.functions.js:92
 msgid "Migrated"
-msgstr ""
+msgstr "Zmigrované"
 
 #: ../../js/datatables.functions.js:95
 msgid "Verify"
-msgstr ""
+msgstr "Overiť"
 
 #: ../../js/datatables.functions.js:98
 msgid "Restore"
-msgstr ""
+msgstr "Obnoviť"
 
 #: ../../js/datatables.functions.js:101
 msgid "Console program"
-msgstr ""
+msgstr "Konzola"
 
 #: ../../js/datatables.functions.js:104
 msgid "Internal system job"
-msgstr ""
+msgstr "Vnútorná systémová úloha"
 
 #: ../../js/datatables.functions.js:107
 msgid "Admin"
-msgstr ""
+msgstr "Administrátor"
 
 #: ../../js/datatables.functions.js:110
 msgid "Archive"
-msgstr ""
+msgstr "Archív"
 
 #: ../../js/datatables.functions.js:113
 msgid "Copy of a job"
-msgstr ""
+msgstr "Kópia úlohy"
 
 #: ../../js/datatables.functions.js:116
 msgid "Copy job"
-msgstr ""
+msgstr "Kopírovať úlohu"
 
 #: ../../js/datatables.functions.js:119
 msgid "Migration job"
-msgstr ""
+msgstr "Migrovať úlohu"
 
 #: ../../js/datatables.functions.js:122
 msgid "Scan"
-msgstr ""
+msgstr "Skenovať"
 
 #: ../../js/datatables.functions.js:125
 msgid "Consolidate"
-msgstr ""
+msgstr "Konsolidovať"
 
 #: ../../js/datatables.functions.js:137 ../../js/datatables.functions.js:176
 #: ../../js/datatables.functions.js:206
 msgid "Full"
-msgstr ""
+msgstr "Plný"
 
 #: ../../js/datatables.functions.js:139
 msgid "Differential"
-msgstr ""
+msgstr "Rozdielový"
 
 #: ../../js/datatables.functions.js:141
 msgid "Incremental"
-msgstr ""
+msgstr "Inkrementálny"
 
 #: ../../js/datatables.functions.js:143
 msgid "VirtualFull"
-msgstr ""
+msgstr "Virtuál_Plný"
 
 #: ../../js/datatables.functions.js:145
 msgid "Base"
-msgstr ""
+msgstr "Základňa"
 
 #: ../../js/datatables.functions.js:147
 msgid "Catalog"
-msgstr ""
+msgstr "Katalóg"
 
 #: ../../js/datatables.functions.js:149
 msgid "InitCatalog"
-msgstr ""
+msgstr "ÚvodnýKatalóg"
 
 #: ../../js/datatables.functions.js:151
 msgid "VolumeToCatalog"
-msgstr ""
+msgstr "ObsahNaKatalóg"
 
 #: ../../js/datatables.functions.js:153
 msgid "DiskToCatalog"
-msgstr ""
+msgstr "DiskNaKatalóg"
 
 #: ../../js/datatables.functions.js:155
 msgid "Data"
-msgstr ""
+msgstr "Dáta"
 
 #: ../../js/datatables.functions.js:157
 msgid "None"
-msgstr ""
+msgstr "Žiadne"
 
 #: ../../js/datatables.functions.js:171 ../../js/datatables.functions.js:201
 msgid "day(s)"
-msgstr ""
+msgstr "deň(i)"
 
 #: ../../js/datatables.functions.js:176 ../../js/datatables.functions.js:206
 msgid "Used"
-msgstr ""
+msgstr "Použité"
 
 #: ../../js/datatables.functions.js:188
 msgid "expired"
-msgstr ""
+msgstr "expirované"
 
 #: ../../js/datatables.functions.js:192
 msgid "expires in 1 day"
-msgstr ""
+msgstr "vyprší za 1 deň"
 
 #: ../../js/datatables.functions.js:196
 msgid "expires in"
-msgstr ""
+msgstr "vyprší za"
 
 #: ../../js/datatables.functions.js:196
 msgid "days"
-msgstr ""
+msgstr "dní"
 
 #: ../../js/datatables.functions.js:232
 msgid "never"
-msgstr ""
+msgstr "nikdy"
 
 #: ../../js/datatables.functions.js:241
 msgid "today"
-msgstr ""
+msgstr "dnes"
 
 #: ../../js/datatables.functions.js:244
 msgid "day(s) ago"
-msgstr ""
+msgstr "dní pred"
 
 #: ../../js/datatables.functions.js:247
 msgid "month(s) ago"
-msgstr ""
+msgstr "pred mesiacom"
 
 #: ../../js/datatables.functions.js:250
 msgid "year(s) ago"
-msgstr ""
+msgstr "pred rokom"
 
 #: ../../js/datatables.functions.js:283
 msgid "enabled"
-msgstr ""
+msgstr "povolený"
 
 #: ../../js/datatables.functions.js:286
 msgid "disabled"
-msgstr ""
+msgstr "zablokovaný"
 
 #: ../../js/datatables.functions.js:294
 msgid "Yes"
-msgstr ""
+msgstr "Áno"
 
 #: ../../js/datatables.functions.js:297
 msgid "No"
-msgstr ""
+msgstr "Nie"
 
 #: ../../js/datatables.functions.js:307 ../../js/datatables.functions.js:311
 #: ../../js/datatables.functions.js:315
 msgid "Failure"
-msgstr ""
+msgstr "Chyba"
 
 #: ../../js/datatables.functions.js:319
 msgid "Success"
-msgstr ""
+msgstr "Hotovo"
 
 #: ../../js/datatables.functions.js:323
 msgid "Running"
-msgstr ""
+msgstr "Beží"
 
 #: ../../js/datatables.functions.js:327
 msgid "Queued"
-msgstr ""
+msgstr "Vo fronte"
 
 #: ../../js/datatables.functions.js:331
 msgid "Blocked"
-msgstr ""
+msgstr "Zablokovaný"
 
 #: ../../js/datatables.functions.js:335
 msgid "Verify found differences"
-msgstr ""
+msgstr "Overiť nájdené rozdiely"
 
 #: ../../js/datatables.functions.js:339
 msgid "Canceled"
-msgstr ""
+msgstr "Zrušené"
 
 #: ../../js/datatables.functions.js:343 ../../js/datatables.functions.js:347
 #: ../../js/datatables.functions.js:351 ../../js/datatables.functions.js:355
@@ -210,32 +210,32 @@ msgstr ""
 #: ../../js/datatables.functions.js:367 ../../js/datatables.functions.js:371
 #: ../../js/datatables.functions.js:375 ../../js/datatables.functions.js:379
 msgid "Waiting"
-msgstr ""
+msgstr "Čaká sa"
 
 #: ../../js/datatables.functions.js:383
 msgid "SD despooling attributes"
-msgstr ""
+msgstr "SD skupinové atribúty"
 
 #: ../../js/datatables.functions.js:387
 msgid "Doing batch insert file records"
-msgstr ""
+msgstr "Robím dávkové vkladanie nahratých súborov"
 
 #: ../../js/datatables.functions.js:391
 msgid "Incomplete"
-msgstr ""
+msgstr "Nekompletné"
 
 #: ../../js/datatables.functions.js:395
 msgid "Committing data"
-msgstr ""
+msgstr "Odovzdávam dáta"
 
 #: ../../js/datatables.functions.js:399
 msgid "Warning"
-msgstr ""
+msgstr "Varovanie"
 
 #: ../../js/datatables.functions.js:403
 msgid "Doing data despooling"
-msgstr ""
+msgstr "Vykonávam dátový rozklad"
 
 #: ../../js/datatables.functions.js:407
 msgid "Queued waiting for device"
-msgstr ""
+msgstr "Čaká na zariadenie vo fronte"
