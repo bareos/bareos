@@ -7,21 +7,21 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-02-03 11:12+0100\n"
+"POT-Creation-Date: 2017-02-21 12:35+0100\n"
 "PO-Revision-Date: 2017-02-03 13:05+0100\n"
+"Last-Translator: \n"
 "Language-Team: \n"
+"Language: sk_SK\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "X-Generator: Poedit 1.8.11\n"
-"Last-Translator: \n"
 "Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
-"Language: sk_SK\n"
 
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
 #: ../../../module/Storage/view/storage/storage/details.phtml:156
 #: ../../../module/Pool/view/pool/pool/details.phtml:49
-#: ../../../module/Job/view/job/job/details.phtml:137
+#: ../../../module/Job/view/job/job/details.phtml:157
 #: ../../../module/Job/view/job/job/index.phtml:167
 #: ../../../module/Application/config/module.config.php:161
 #: ../../../module/Application/config/module.config.php:166
@@ -86,6 +86,7 @@ msgstr "Správa od Riaditeľa"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:57
 #: ../../../module/Client/view/client/client/index.phtml:89
+#: ../../../module/Job/view/job/job/details.phtml:125
 #: ../../../module/Job/view/job/job/index.phtml:114
 #: ../../../module/Job/view/job/job/index.phtml:135
 #: ../../../module/Job/view/job/job/actions.phtml:55
@@ -107,7 +108,7 @@ msgid "Use this drive for labeling."
 msgstr "Túto jednotku použite na označenie."
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:88
-#: ../../../module/Job/view/job/job/details.phtml:252
+#: ../../../module/Job/view/job/job/details.phtml:272
 #: ../../../module/Job/view/job/job/index.phtml:333
 #: ../../../module/Job/view/job/job/index.phtml:339
 msgid "Cancel"
@@ -431,13 +432,13 @@ msgid "Level"
 msgstr "Úroveň"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
-#: ../../../module/Job/view/job/job/details.phtml:145
+#: ../../../module/Job/view/job/job/details.phtml:165
 #: ../../../module/Job/view/job/job/index.phtml:175
 msgid "Start"
 msgstr "Štart"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:44
-#: ../../../module/Job/view/job/job/details.phtml:149
+#: ../../../module/Job/view/job/job/details.phtml:169
 #: ../../../module/Job/view/job/job/index.phtml:179
 msgid "End"
 msgstr "Ukončenie"
@@ -490,7 +491,7 @@ msgid "Timestamp"
 msgstr "Časová značka"
 
 #: ../../../module/Client/view/client/client/details.phtml:79
-#: ../../../module/Job/view/job/job/details.phtml:133
+#: ../../../module/Job/view/job/job/details.phtml:153
 #: ../../../module/Job/view/job/job/index.phtml:163
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:37
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:236
@@ -634,12 +635,30 @@ msgstr "Správy"
 msgid "Message"
 msgstr "Správa"
 
-#: ../../../module/Job/view/job/job/details.phtml:141
+#: ../../../module/Job/view/job/job/details.phtml:118
+#: ../../../module/Job/view/job/job/index.phtml:106
+msgid "Failed to retrieve data from Bareos director"
+msgstr "Zlyhanie získania dát z Bareos directora"
+
+#: ../../../module/Job/view/job/job/details.phtml:121
+#: ../../../module/Job/view/job/job/index.phtml:110
+msgid "Error message received from director:"
+msgstr "Prijatá chyba od riaditeľa zálohovania:"
+
+#: ../../../module/Job/view/job/job/details.phtml:122
+#: ../../../module/Job/view/job/job/index.phtml:111
+#, fuzzy
+msgid "Failed to send result as json. Maybe the result message is too long?"
+msgstr ""
+"Nepodarilo sa odoslať výsledok ako JSON. Možno je vysledná správa príliš "
+"dlhá?"
+
+#: ../../../module/Job/view/job/job/details.phtml:161
 #: ../../../module/Job/view/job/job/index.phtml:171
 msgid "Scheduled"
 msgstr "Naplánované"
 
-#: ../../../module/Job/view/job/job/details.phtml:237
+#: ../../../module/Job/view/job/job/details.phtml:257
 #: ../../../module/Job/view/job/job/index.phtml:302
 #: ../../../module/Job/view/job/job/index.phtml:312
 msgid "Rerun"
@@ -649,26 +668,12 @@ msgstr "Odznova"
 msgid "Job list"
 msgstr "Zoznam úloh"
 
-#: ../../../module/Job/view/job/job/index.phtml:106
-msgid "Failed to retrieve data from Bareos director"
-msgstr "Zlyhanie získania dát z Bareos directora"
-
 #: ../../../module/Job/view/job/job/index.phtml:109
 msgid ""
 "Please try to reduce the amount of data to display, e.g. reduce time period."
 msgstr ""
 "Prosím, pokúste sa znížiť množstvo dát, ktorá sa zobrazí, napr. skrátiť "
 "časový interval."
-
-#: ../../../module/Job/view/job/job/index.phtml:110
-msgid "Error message received from director:"
-msgstr "Prijatá chyba od riaditeľa zálohovania:"
-
-#: ../../../module/Job/view/job/job/index.phtml:111
-msgid "Failed to send result as json. Maybe result message to long?"
-msgstr ""
-"Nepodarilo sa odoslať výsledok ako JSON. Možno je vysledná správa príliš "
-"dlhá?"
 
 #: ../../../module/Job/view/job/job/actions.phtml:69
 msgid "Job Actions"
