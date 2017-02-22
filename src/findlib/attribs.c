@@ -416,7 +416,7 @@ bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
           fsize > 0 &&
           attr->statp.st_size > 0 &&
           fsize != (boffset_t)attr->statp.st_size) {
-         Jmsg3(jcr, M_ERROR, 0, _("File size of restored file %s not correct. Original %s, restored %s.\n"),
+         Jmsg3(jcr, M_WARNING, 0, _("File size of restored file %s not correct. Original %s, restored %s.\n"),
                attr->ofname, edit_uint64(attr->statp.st_size, ec1), edit_uint64(fsize, ec2));
       }
    } else {
