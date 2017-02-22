@@ -195,13 +195,18 @@ class LowLevel(object):
                     else:
                         # header is the length of the next message
                         length = header
-                        self.receive_buffer += self.recv_submsg(length)
+                        submsg = self.recv_submsg(length)
+                        # check for regex in new submsg
+                        # and last line in old message,
+                        # which might have been incomplete without new submsg.
+                        lastlineindex = self.receive_buffer.rfind('\n') + 1
+                        self.receive_buffer += submsg
+                        match = re.search(regex, self.receive_buffer[lastlineindex:], re.MULTILINE)
                         # Bareos indicates end of command result by line starting with 4 digits
-                        match = re.search(regex, self.receive_buffer, re.MULTILINE)
                         if match:
                             self.logger.debug("msg \"{0}\" matches regex \"{1}\"".format(self.receive_buffer.strip(), regex))
-                            result = self.receive_buffer[0:match.end()]
-                            self.receive_buffer = self.receive_buffer[match.end()+1:]
+                            result = self.receive_buffer[0:lastlineindex] + self.receive_buffer[lastlineindex:match.end()]
+                            self.receive_buffer = self.receive_buffer[lastlineindex+match.end()+1:]
                             return result
                         #elif re.search("^\d\d\d\d .*$", msg, re.MULTILINE):
                             #return msg
