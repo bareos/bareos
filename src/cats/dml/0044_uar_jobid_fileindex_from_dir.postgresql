@@ -1,3 +1,9 @@
+# Query to get all files in a directory -- no recursing
+# Note, for PostgreSQL since it respects the "Single Value
+# rule", the results of the SELECT will be unoptimized.
+# I.e. the same file will be restored multiple times, once
+# for each time it was backed up.
+
 SELECT Job.JobId, File.FileIndex
   FROM Job, File, Path, Filename, Client
  WHERE Job.JobId IN (%s)

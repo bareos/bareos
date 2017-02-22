@@ -1,3 +1,10 @@
+# JS_Error 'e'  Non-fatal error
+# JS_FatalError 'f' Fatal error
+# JS_Canceled 'A'
+# JS_ErrorTerminated 'E'
+# JS_Terminated 'T'
+# JS_Warnings 'W'
+
 SELECT DISTINCT JobStatus, JobStatusLong, Severity,
        CASE
        WHEN JobStatus in ('T') THEN '0'

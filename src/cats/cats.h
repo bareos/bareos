@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,20 +35,8 @@
 #ifndef __CATS_H_
 #define __CATS_H_ 1
 
-
-#define _GLIBCXX_GTHREAD_USE_WEAK 0
-
-
-#ifdef HAVE_WIN32
-#undef setlocale
-#endif
-
-#include <string>
-#include <map>
-
-#if !defined(ENABLE_NLS)
-#define setlocale(p, d)
-#endif
+/* import automatically generated SQL_QUERY_ENUM */
+#include "bdb_query_enum_class.h"
 
 /* ==============================================================
  *
@@ -57,8 +45,7 @@
  *   cats directory.
  */
 
-
-
+#define SQL_QUERY(...) #__VA_ARGS__
 #define faddr_t long
 
 /**
@@ -574,12 +561,7 @@ struct BDB_QUERY {
    hlink link;                            /* List management */
 };
 
-/*
- * Dynamic loaded query table.
- */
-typedef std::map <std::string, std::string> BDB_QUERY_TABLE;
-
-class CATS_IMP_EXP B_DB: public SMARTALLOC {
+class CATS_IMP_EXP B_DB: public SMARTALLOC, public B_DB_QUERY_ENUM_CLASS {
 protected:
    /*
     * Members
@@ -618,7 +600,8 @@ protected:
    POOLMEM *esc_obj;                      /**< Escaped restore object */
    POOLMEM *cmd;                          /**< SQL command string */
    POOLMEM *errmsg;                       /**< Nicely edited error message */
-   BDB_QUERY_TABLE m_query_table;        /**< Dynamic loaded query table */
+   const char **queries;                  /**< table of query texts */
+   static const char *query_names[];      /**< table of query names */
 
 private:
    /*
@@ -632,7 +615,8 @@ private:
    void cleanup_base_file(JCR *jcr);
    void build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache, char *org_pathid, char *path);
    bool update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, JobId_t JobId);
-   char *lookup_query(const char *query_name);
+   void fill_query_va_list(POOLMEM *&query, B_DB::SQL_QUERY_ENUM predefined_query, va_list arg_ptr);
+   void fill_query_va_list(POOL_MEM &query, B_DB::SQL_QUERY_ENUM predefined_query, va_list arg_ptr);
 
 public:
    /*
@@ -757,21 +741,24 @@ public:
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
-   bool list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JCR *jcr, SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,
                        const char *description, bool verbose = false);
-   bool list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit, e_list_type type,
-                       const char *description, bool verbose = false);
+   bool list_sql_query(JCR *jcr, SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
+                       e_list_type type, const char *description, bool verbose);
    void list_client_records(JCR *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_copies_records(JCR *jcr, const char *range, const char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit);
 
    /* sql_query.c */
-   void table_fill_query(const char* query_name, ...);
-   void fill_query(POOLMEM *&query, const char *query_name, ...);
-   void fill_query(POOL_MEM &query, const char *query_name, ...);
+   const char *get_predefined_query_name(SQL_QUERY_ENUM query);
+   const char *get_predefined_query(SQL_QUERY_ENUM query);
 
-   bool sql_table_query(const char *query_name, ...);
+   void fill_query(SQL_QUERY_ENUM predefined_query, ...);
+   void fill_query(POOLMEM *&query, SQL_QUERY_ENUM predefined_query, ...);
+   void fill_query(POOL_MEM &query, SQL_QUERY_ENUM predefined_query, ...);
+
+   bool sql_query(SQL_QUERY_ENUM query, ...);
    bool sql_query(const char *query, int flags = 0);
    bool sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
 

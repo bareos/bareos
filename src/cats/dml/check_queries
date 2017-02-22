@@ -1,0 +1,17 @@
+#!/bin/sh
+
+#
+# See if the specific query is the same as the generic one.
+#
+for i in 0*
+do
+   for j in ingres postgresql mysql sqlite3
+   do
+      if [ -f $i.$j ]; then
+         cmp -s $i $i.$j
+         if [ $? = 0 ]; then
+            echo "==> $i == $i.$j"
+         fi
+      fi
+   done
+done

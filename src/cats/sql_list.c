@@ -50,10 +50,9 @@ bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool B_DB::list_sql_table_query(JCR *jcr, const char *query_name, OUTPUT_FORMATTER *sendit,
-                          e_list_type type, bool verbose)
+bool B_DB::list_sql_query(JCR *jcr, B_DB::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose)
 {
-   return list_sql_query(jcr, query_name, sendit, type, "query", verbose);
+   return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
 bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
@@ -82,33 +81,10 @@ bail_out:
    return retval;
 }
 
-bool B_DB::list_sql_table_query(JCR *jcr, const char *queryname, OUTPUT_FORMATTER *sendit,
+bool B_DB::list_sql_query(JCR *jcr, B_DB::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
-   bool retval = false;
-   POOL_MEM query(PM_MESSAGE);
-
-
-   db_lock(this);
-
-   fill_query(query, queryname);
-   if (!sql_query(query.c_str(), QF_STORE_RESULT)) {
-      Mmsg(errmsg, _("Query failed: %s\n"), sql_strerror());
-      if (verbose) {
-         sendit->decoration(errmsg);
-      }
-      goto bail_out;
-   }
-
-   sendit->array_start(description);
-   list_result(jcr, sendit, type);
-   sendit->array_end(description);
-   sql_free_result();
-   retval = true;
-
-bail_out:
-   db_unlock(this);
-   return retval;
+   return list_sql_query(jcr, get_predefined_query(query), sendit, type, description, verbose);
 }
 
 void B_DB::list_pool_records(JCR *jcr, POOL_DBR *pdbr, OUTPUT_FORMATTER *sendit, e_list_type type)
@@ -517,18 +493,18 @@ void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char
    db_lock(this);
 
    if (count) {
-      table_fill_query("list_jobs_count", selection.c_str(), range);
+      fill_query(SQL_QUERY_list_jobs_count, selection.c_str(), range);
    } else if (last) {
       if (type == VERT_LIST) {
-         table_fill_query("list_jobs_long_last", selection.c_str(), range);
+         fill_query(SQL_QUERY_list_jobs_long_last, selection.c_str(), range);
       } else {
-         table_fill_query("list_jobs_last", selection.c_str(), range);
+         fill_query(SQL_QUERY_list_jobs_last, selection.c_str(), range);
       }
    } else {
       if (type == VERT_LIST) {
-         table_fill_query("list_jobs_long", selection.c_str(), range);
+         fill_query(SQL_QUERY_list_jobs_long, selection.c_str(), range);
       } else {
-         table_fill_query("list_jobs", selection.c_str(), range);
+         fill_query(SQL_QUERY_list_jobs, selection.c_str(), range);
       }
    }
 

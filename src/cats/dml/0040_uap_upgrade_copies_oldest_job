@@ -1,3 +1,5 @@
+# Select the first available Copy Job that must be upgraded to a Backup job when the original backup job is expired.
+
 CREATE TEMPORARY TABLE cpy_tmp AS
 SELECT MIN(JobId) AS JobId
   FROM Job

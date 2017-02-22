@@ -1,3 +1,8 @@
+# "WHERE JobId > 0" is a dummy where clause,
+#                   to make it easier to extend the filter
+#                   (all filters starts with "AND ...")
+# JOIN with Media is required for filter to Media.Volumename.
+
 SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
 FROM Job
 LEFT JOIN Client ON Client.ClientId=Job.ClientId

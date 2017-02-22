@@ -1,3 +1,10 @@
+#
+# "WHERE JobId > 0" is a dummy where clause,
+#                   to make it easier to extend the filter
+#                   (all filters starts with "AND ...")
+# JOIN with Media is required for filter to Media.Volumename.
+#
+
 SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level,
 Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
 Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,

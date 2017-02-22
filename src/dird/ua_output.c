@@ -1265,9 +1265,9 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type
    pm_strcat(criteria, range);
 
    if (llist == VERT_LIST) {
-      ua->db->fill_query(ua->cmd, "list_jobs_long", selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, B_DB::SQL_QUERY_list_jobs_long, selection.c_str(), criteria.c_str());
    } else {
-      ua->db->fill_query(ua->cmd, "list_jobs", selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, B_DB::SQL_QUERY_list_jobs, selection.c_str(), criteria.c_str());
    }
 
    return true;

@@ -1,3 +1,8 @@
+# Select all different FileSet for this client
+# This query doesn't guarantee that the Id is the latest
+# version of the FileSet. Can be used with other queries that
+# use Ids to select the FileSet name. (like in accurate)
+
 SELECT MAX(FileSet.FileSetId)
   FROM FileSet
   JOIN Job

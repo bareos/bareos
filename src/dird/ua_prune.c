@@ -575,19 +575,19 @@ bail_out:
 
 static void drop_temp_tables(UAContext *ua)
 {
-   ua->db->sql_table_query("drop_deltabs");
+   ua->db->sql_query(B_DB::SQL_QUERY_drop_deltabs);
 }
 
 static bool create_temp_tables(UAContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!ua->db->sql_table_query("create_deltabs")) {
+   if (!ua->db->sql_query(B_DB::SQL_QUERY_create_deltabs)) {
       ua->error_msg("%s", ua->db->strerror());
       Dmsg0(050, "create DelTables table failed\n");
       return false;
    }
 
-   if (!ua->db->sql_table_query("create_delindex")) {
+   if (!ua->db->sql_query(B_DB::SQL_QUERY_create_delindex)) {
        ua->error_msg("%s", ua->db->strerror());
        Dmsg0(050, "create DelInx1 index failed\n");
        return false;
@@ -920,7 +920,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
     */
    period = mr->VolRetention;
    now = (utime_t)time(NULL);
-   ua->db->fill_query(query, "sel_JobMedia", edit_int64(mr->MediaId, ed1), edit_int64(now-period, ed2));
+   ua->db->fill_query(query, B_DB::SQL_QUERY_sel_JobMedia, edit_int64(mr->MediaId, ed1), edit_int64(now-period, ed2));
 
    Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period, ed2);
    Dmsg1(050, "Query=%s\n", query.c_str());

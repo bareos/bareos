@@ -1,3 +1,7 @@
+# "WHERE JobId > 0" is a dummy where clause,
+#                   to make it easier to extend the filter
+#                   (all filters starts with "AND ...")
+
 SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
 Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
 FROM Job

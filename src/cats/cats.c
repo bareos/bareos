@@ -34,6 +34,11 @@
 
 #include "cats.h"
 
+/* pull in the generated query_names definitions */
+#include "bdb_query_names.inc"
+
+
+
 bool B_DB::match_database(const char *db_driver, const char *db_name,
                           const char *db_address, int db_port)
 {

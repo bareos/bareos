@@ -182,7 +182,7 @@ bool B_DB::check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs)
    /*
     * Check max_connections setting
     */
-   fill_query(query, "sql_get_max_connections");
+   fill_query(query, SQL_QUERY_sql_get_max_connections);
    if (!sql_query_with_handler(query.c_str(), db_max_connections_handler, &context)) {
       Jmsg(jcr, M_ERROR, 0, "Can't verify max_connections settings %s", errmsg);
       return false;

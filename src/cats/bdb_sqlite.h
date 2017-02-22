@@ -29,12 +29,11 @@ private:
     * Members.
     */
    struct sqlite3 *m_db_handle;
-   char **m_result;             /**< sql_store_results() and sql_query_without_handler() */
-   char **m_col_names;          /**< used to access fields when using sql_query_with_handler() */
+   char **m_result;                         /**< sql_store_results() and sql_query_without_handler() */
+   char **m_col_names;                      /**< used to access fields when using sql_query_with_handler() */
    char *m_lowlevel_errmsg;
-   SQL_FIELD m_sql_field;       /**< used when using sql_query_with_handler() and sql_fetch_field() */
-   static const char *query_names []; /**<< table of query names */
-   static const char *queries [];     /**<< table of query texts */
+   SQL_FIELD m_sql_field;                   /**< used when using sql_query_with_handler() and sql_fetch_field() */
+   static const char *query_definitions[];  /**< table of predefined sql queries */
 
 private:
    /*
@@ -89,9 +88,5 @@ public:
       m_field_number = 0;
    }
 };
-
-/* pull in the generated query_names and queries definitions */
-#include "sqlite_queries.c"
-
 
 #endif /* __BDB_SQLITE_H_ */

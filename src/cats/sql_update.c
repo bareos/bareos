@@ -129,7 +129,7 @@ int B_DB::update_stats(JCR *jcr, utime_t age)
    db_lock(this);
 
    edit_uint64(now - age, ed1);
-   table_fill_query("fill_jobhisto", ed1);
+   fill_query(SQL_QUERY_fill_jobhisto, ed1);
    if (QUERY_DB(jcr, cmd)) {
       rows = sql_affected_rows();
    } else {
@@ -241,7 +241,7 @@ bool B_DB::update_counter_record(JCR *jcr, COUNTER_DBR *cr)
    db_lock(this);
 
    escape_string(jcr, esc, cr->Counter, strlen(cr->Counter));
-   table_fill_query("update_counter_values",  cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
+   fill_query(SQL_QUERY_update_counter_values,  cr->MinValue, cr->MaxValue, cr->CurrentValue, cr->WrapCounter, esc);
    retval = UPDATE_DB(jcr, cmd);
 
    db_unlock(this);

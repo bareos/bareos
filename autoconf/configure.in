@@ -4156,9 +4156,9 @@ AC_SUBST(CAP_LIBS)
 CFLAGS=${CFLAGS--O}
 
 if test x$have_gcc = xyes ; then
-   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing"
-   CFLAGS="$CFLAGS -fno-strict-aliasing"
-   CXXFLAGS="$CFLAGS -fno-strict-aliasing"
+   CPPFLAGS="$CPPFLAGS -fno-strict-aliasing -fno-exceptions"
+   CFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions"
+   CXXFLAGS="$CFLAGS -fno-strict-aliasing -fno-exceptions -fno-rtti"
 fi
 LDFLAGS=${LDFLAGS--O}
 CPPFLAGS="$CPPFLAGS"

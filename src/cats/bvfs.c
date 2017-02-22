@@ -676,7 +676,7 @@ bool Bvfs::ls_dirs()
    }
 
    if (*pattern) {
-      db->fill_query(filter, "match_query", pattern);
+      db->fill_query(filter, B_DB::SQL_QUERY_match_query, pattern);
    }
 
    if (!dir_filenameid) {
@@ -739,9 +739,9 @@ static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,
                                  const char *filter, int64_t limit, int64_t offset)
 {
    if (db->get_type_index() == SQL_TYPE_POSTGRESQL) {
-      db->fill_query(query, "sql_bvfs_list_files", JobId, PathId, JobId, PathId, filter, limit, offset);
+      db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_list_files, JobId, PathId, JobId, PathId, filter, limit, offset);
    } else {
-      db->fill_query(query, "sql_bvfs_list_files", JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
+      db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_list_files, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
    }
 }
 
@@ -765,7 +765,7 @@ bool Bvfs::ls_files()
 
    edit_uint64(pwd_id, pathid);
    if (*pattern) {
-      db->fill_query(filter, "match_query2", pattern);
+      db->fill_query(filter, B_DB::SQL_QUERY_match_query2, pattern);
    }
 
    build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit, offset);
@@ -980,7 +980,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
       goto bail_out;
    }
 
-   db->fill_query(query, "sql_bvfs_select", output_table, output_table, output_table);
+   db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_select, output_table, output_table, output_table);
 
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());

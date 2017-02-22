@@ -1,3 +1,6 @@
+#
+# For sql_update.c db_update_stats
+#
 INSERT INTO JobHisto (
 	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
 	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,

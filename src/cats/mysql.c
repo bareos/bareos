@@ -38,9 +38,11 @@
 #include "cats.h"
 #include <mysql.h>
 #include <errmsg.h>
-#include <bdb_mysql.h>
+#include "bdb_mysql.h"
 
-#include <iostream>
+/* pull in the generated queries definitions */
+#include "mysql_queries.inc"
+
 /* -----------------------------------------------------------------------
  *
  *   MySQL dependent defines and subroutines
@@ -136,14 +138,8 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    }
    db_list->append(this);
 
-   /* initialize query table */
-   std::map <std::string, std::string>::iterator it;
-
-   const char** qu = queries;
-
-   for (const char **query = query_names; *query; ) {
-      m_query_table.insert(std::make_pair(*query++, *qu++));
-   }
+   /* make the queries available using the queries variable from the parent class */
+   queries = query_definitions;
 }
 
 B_DB_MYSQL::~B_DB_MYSQL()

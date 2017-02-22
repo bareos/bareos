@@ -37,7 +37,9 @@
 #include <sqlite3.h>
 #include "bdb_sqlite.h"
 
-#include <iostream>
+/* pull in the generated queries definitions */
+#include "sqlite_queries.inc"
+
 /* -----------------------------------------------------------------------
  *
  *    SQLite dependent defines and subroutines
@@ -130,15 +132,8 @@ B_DB_SQLITE::B_DB_SQLITE(JCR *jcr,
    }
    db_list->append(this);
 
-
-   /* initialize query table */
-   std::map <std::string, std::string>::iterator it;
-
-   const char** qu = queries;
-
-   for (const char **query = query_names; *query; ) {
-      m_query_table.insert(std::make_pair(*query++, *qu++));
-   }
+   /* make the queries available using the queries variable from the parent class */
+   queries = query_definitions;
 }
 
 B_DB_SQLITE::~B_DB_SQLITE()

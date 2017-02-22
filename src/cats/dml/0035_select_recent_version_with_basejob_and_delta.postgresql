@@ -1,3 +1,5 @@
+# The DISTINCT ON () permits to avoid extra join
+
 SELECT DISTINCT
     ON (FilenameId, PathId, DeltaSeq) JobTDate, JobId, FileId, FileIndex, PathId, FilenameId, LStat, MD5, DeltaSeq
   FROM (

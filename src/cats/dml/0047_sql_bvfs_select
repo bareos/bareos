@@ -1,3 +1,6 @@
+# The Group By can return strange numbers when having multiple
+# version of a file in the same dataset.
+
 CREATE TABLE %s AS
 SELECT File.JobId, File.FileIndex, File.FileId
   FROM Job, File, (

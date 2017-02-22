@@ -1,9 +1,9 @@
 This directory contains individual sql queries,
 
-These queries are translated into .c files into
+These queries are translated into .inc files into
 ../ by the following scripts:
 
 create_queryfiles.sh
 
-The .c files only need to be updated when the queries
+The .inc files only need to be updated when the queries
 are altered or new ones are added.

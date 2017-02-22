@@ -32,17 +32,17 @@ protected:
    /*
     * Members
     */
-   int m_status;                      /* Status */
-   int m_num_rows;                    /* Number of rows returned by last query */
-   int m_num_fields;                  /* Number of fields returned by last query */
-   int m_rows_size;                   /* Size of malloced rows */
-   int m_fields_size;                 /* Size of malloced fields */
-   int m_row_number;                  /* Row number from xx_data_seek */
-   int m_field_number;                /* Field number from sql_field_seek */
-   SQL_ROW m_rows;                    /* Defined rows */
-   SQL_FIELD *m_fields;               /* Defined fields */
-   bool m_allow_transactions;         /* Transactions allowed ? */
-   bool m_transaction;                /* Transaction started ? */
+   int m_status;                      /**< Status */
+   int m_num_rows;                    /**< Number of rows returned by last query */
+   int m_num_fields;                  /**< Number of fields returned by last query */
+   int m_rows_size;                   /**< Size of malloced rows */
+   int m_fields_size;                 /**< Size of malloced fields */
+   int m_row_number;                  /**< Row number from xx_data_seek */
+   int m_field_number;                /**< Field number from sql_field_seek */
+   SQL_ROW m_rows;                    /**< Defined rows */
+   SQL_FIELD *m_fields;               /**< Defined fields */
+   bool m_allow_transactions;         /**< Transactions allowed ? */
+   bool m_transaction;                /**< Transaction started ? */
 
 private:
    /*
@@ -70,7 +70,9 @@ public:
    /*
     * Methods
     */
-   B_DB_PRIV() {};
+   B_DB_PRIV() {
+      queries = NULL;
+   };
    virtual ~B_DB_PRIV() {};
 };
 #endif /* __BDB_PRIV_H_ */

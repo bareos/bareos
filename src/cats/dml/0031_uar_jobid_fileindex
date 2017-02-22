@@ -1,3 +1,6 @@
+# Find JobId, FileIndex for a given path/file and date
+# for use when inserting individual files into the tree.
+
 SELECT Job.JobId, File.FileIndex
   FROM Job, File, Path, Filename, Client
  WHERE Job.JobId           =  File.JobId

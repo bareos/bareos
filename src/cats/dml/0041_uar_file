@@ -1,3 +1,5 @@
+# List Jobs where a particular file is saved
+
 SELECT Job.JobId as JobId, Path.Path||Filename.Name as Name, StartTime, Type as JobType, JobStatus, JobFiles, JobBytes
   FROM Client, Job, File, Filename, Path
  WHERE Client.Name         = '%s'

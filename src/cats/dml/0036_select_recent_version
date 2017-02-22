@@ -1,3 +1,6 @@
+# Get the list of the last recent version with a given BaseJob jobid list
+# We don't handle Delta with BaseJobs, they have only Full files
+
 SELECT j1.JobId AS JobId, f1.FileId AS FileId, f1.FileIndex AS FileIndex, f1.PathId AS PathId, f1.FilenameId AS FilenameId,
        f1.LStat AS LStat, f1.MD5 AS MD5, j1.JobTDate
   FROM (

@@ -1,3 +1,13 @@
+# Get the list of the last recent version per Delta with a given jobid list
+# This is a tricky part because with SQL the result of
+#
+# SELECT MAX(A), B, C, D FROM... GROUP BY (B,C)
+#
+# doesn't give the good result (for D).
+#
+# With PostgreSQL, we can use DISTINCT ON(), but with Mysql or Sqlite,
+# we need an extra join using JobTDate.
+
 SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, File.FilenameId AS FilenameId, LStat, MD5, DeltaSeq,
        Job.JobTDate AS JobTDate
   FROM Job, File, (

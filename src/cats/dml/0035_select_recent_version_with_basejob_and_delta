@@ -1,3 +1,18 @@
+# We do the same thing than the query "select_recent_version_with_basejob",
+# but we include all delta parts.
+# If the file has been deleted, we can have irrelevant parts.
+#
+# The code that uses results should control the delta sequence with
+# the following rules:
+# First Delta = 0
+# Delta = Previous Delta + 1
+#
+# If we detect a gap, we can discard further pieces
+# If a file starts at 1 instead of 0, the file has been deleted, and further
+# pieces are useless.
+#
+# This control should be reset for each new file
+
 SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, File.FilenameId AS FilenameId, LStat, MD5, File.DeltaSeq AS
        DeltaSeq, Job.JobTDate AS JobTDate
   FROM Job, File, (

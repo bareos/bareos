@@ -354,7 +354,7 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
       POOL_MEM query(PM_MESSAGE);
 
       ua->send_msg(_("The restore will use the following job(s) as Base\n"));
-      ua->db->fill_query(query, "uar_print_jobs", jobids.list);
+      ua->db->fill_query(query, B_DB::SQL_QUERY_uar_print_jobs, jobids.list);
       ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    }
    pm_strcpy(rx->BaseJobIds, jobids.list);
@@ -668,7 +668,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          len = strlen(ua->cmd);
          fname = (char *)malloc(len * 2 + 1);
          ua->db->escape_string(ua->jcr, fname, ua->cmd, len);
-         ua->db->fill_query(rx->query, "uar_file", rx->ClientName, fname);
+         ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_file, rx->ClientName, fname);
          free(fname);
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
@@ -982,9 +982,9 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
    split_path_and_filename(ua, rx, file);
 
    if (*rx->JobIds == 0) {
-      ua->db->fill_query(rx->query, "uar_jobid_fileindex", date, rx->path, rx->fname, rx->ClientName);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex, date, rx->path, rx->fname, rx->ClientName);
    } else {
-      ua->db->fill_query(rx->query, "uar_jobids_fileindex", rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobids_fileindex, rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
    }
 
    /*
@@ -1014,7 +1014,7 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
       ua->error_msg(_("No JobId specified cannot continue.\n"));
       return false;
    } else {
-      ua->db->fill_query(rx->query, "uar_jobid_fileindex_from_dir", rx->JobIds, dir, rx->ClientName);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex_from_dir, rx->JobIds, dir, rx->ClientName);
    }
 
    /*
@@ -1039,7 +1039,7 @@ static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *
 {
    strip_trailing_junk(table);
 
-   ua->db->fill_query(rx->query, "uar_jobid_fileindex_from_table", table);
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex_from_table, table);
 
    /*
     * Find and insert jobid and File Index
@@ -1190,7 +1190,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
       /*
        * Use first JobId as estimate of the number of files to restore
        */
-      ua->db->fill_query(rx->query, "uar_count_files", edit_int64(JobId, ed1));
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_count_files, edit_int64(JobId, ed1));
       if (!ua->db->sql_query(rx->query, restore_count_handler, (void *)rx)) {
          ua->error_msg("%s\n", ua->db->strerror());
       }
@@ -1317,13 +1317,13 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Create temp tables
     */
-   ua->db->sql_table_query("drop_deltabs");
-   ua->db->sql_table_query("uar_del_temp1");
+   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp);
+   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp1);
 
-   if (!ua->db->sql_table_query("uar_create_temp")) {
+   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_create_temp)) {
       ua->error_msg("%s\n", ua->db->strerror());
    }
-   if (!ua->db->sql_table_query("uar_create_temp1")) {
+   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_create_temp1)) {
       ua->error_msg("%s\n", ua->db->strerror());
    }
    /*
@@ -1352,7 +1352,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
    if (i < 0) {                       /* fileset not found */
-      ua->db->fill_query(rx->query, "uar_sel_fileset", edit_int64(cr.ClientId, ed1), ed1);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_fileset, edit_int64(cr.ClientId, ed1), ed1);
 
       start_prompt(ua, _("The defined FileSet resources are:\n"));
       if (!ua->db->sql_query(rx->query, fileset_handler, (void *)ua)) {
@@ -1392,14 +1392,14 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Find JobId of last Full backup for this client, fileset
     */
    if (pool_select[0]) {
-      ua->db->fill_query(rx->query, "uar_last_full", edit_int64(cr.ClientId, ed1), date, fsr.FileSet, pool_select);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_last_full, edit_int64(cr.ClientId, ed1), date, fsr.FileSet, pool_select);
 
       if (!ua->db->sql_query(rx->query)) {
          ua->error_msg("%s\n", ua->db->strerror());
          goto bail_out;
       }
    } else {
-      ua->db->fill_query(rx->query, "uar_last_full_no_pool", edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_last_full_no_pool, edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
 
       if (!ua->db->sql_query(rx->query)) {
          ua->error_msg("%s\n", ua->db->strerror());
@@ -1410,7 +1410,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Find all Volumes used by that JobId
     */
-   if (!ua->db->sql_table_query("uar_full")) {
+   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_full)) {
       ua->error_msg("%s\n", ua->db->strerror());
       goto bail_out;
    }
@@ -1419,7 +1419,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Note, this is needed because I don't seem to get the callback from the call just above.
     */
    rx->JobTDate = 0;
-   ua->db->fill_query(rx->query, "uar_sel_all_temp1");
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_all_temp1);
    if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1431,7 +1431,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find most recent Differential Job after Full save, if any
     */
-   ua->db->fill_query(rx->query, "uar_dif",  edit_uint64(rx->JobTDate, ed1), date,
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_dif,  edit_uint64(rx->JobTDate, ed1), date,
                       edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!ua->db->sql_query(rx->query)) {
       ua->warning_msg("%s\n", ua->db->strerror());
@@ -1441,7 +1441,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Now update JobTDate to look into Differential, if any
     */
    rx->JobTDate = 0;
-   ua->db->fill_query(rx->query, "uar_sel_all_temp");
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_all_temp);
    if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1453,7 +1453,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find all Incremental Jobs after Full/dif save
     */
-   ua->db->fill_query(rx->query, "uar_inc", edit_uint64(rx->JobTDate, ed1), date,
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_inc, edit_uint64(rx->JobTDate, ed1), date,
                       edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!ua->db->sql_query(rx->query)) {
       ua->warning_msg("%s\n", ua->db->strerror());
@@ -1464,7 +1464,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     */
    rx->last_jobid[0] = rx->JobIds[0] = 0;
 
-   ua->db->fill_query(rx->query, "uar_sel_jobid_temp");
+   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_jobid_temp);
    if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1490,7 +1490,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
              */
             pm_strcpy(JobIds, rx->JobIds);
             rx->last_jobid[0] = rx->JobIds[0] = 0;
-            ua->db->fill_query(rx->query, "uar_sel_jobid_copies", JobIds.c_str());
+            ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_jobid_copies, JobIds.c_str());
             if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
                ua->warning_msg("%s\n", ua->db->strerror());
             }
@@ -1500,7 +1500,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       /*
        * Display a list of Jobs selected for this restore
        */
-      ua->db->fill_query(rx->query, "uar_list_jobs_by_idlist", rx->JobIds);
+      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_list_jobs_by_idlist, rx->JobIds);
       ua->db->list_sql_query(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
       ok = true;
@@ -1509,8 +1509,8 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
 bail_out:
-   ua->db->sql_table_query("drop_deltabs");
-   ua->db->sql_table_query("uar_del_temp1");
+   ua->db->sql_query(B_DB::SQL_QUERY_drop_deltabs);
+   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp1);
 
    return ok;
 }

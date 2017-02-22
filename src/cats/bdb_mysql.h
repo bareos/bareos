@@ -38,8 +38,7 @@ private:
    MYSQL *m_db_handle;
    MYSQL m_instance;
    MYSQL_RES *m_result;
-   static const char *query_names []; /**<< table of query names */
-   static const char *queries [];     /**<< table of query texts */
+   static const char *query_definitions[];  /**< table of predefined sql queries */
 
 private:
    /*
@@ -90,9 +89,5 @@ public:
               );
    ~B_DB_MYSQL();
 };
-
-/* pull in the generated query_names and queries definitions */
-#include "mysql_queries.c"
-
 
 #endif /* __BDB_MYSQL_H_ */
