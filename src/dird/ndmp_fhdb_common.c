@@ -67,6 +67,13 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
             pm_strcpy(pathname, nis->filesystem);
 
             /*
+             * make sure we have a trailing slash
+             */
+            if ( pathname.c_str()[strlen(pathname.c_str()) - 1] != '/' ) {
+                pm_strcat(pathname, "/");
+            }
+
+            /*
              * skip leading slash to avoid double slashes
              */
             if (raw_name == (char*)'/') {
