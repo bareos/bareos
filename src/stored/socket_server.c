@@ -45,7 +45,7 @@ static pthread_t tcp_server_tid;
  * Connection request. We accept connections either from the
  * Director, Storage Daemon or a Client (File daemon).
  *
- * Note, we are running as a seperate thread of the Storage daemon.
+ * Note, we are running as a separate thread of the Storage daemon.
  *
  * Basic tasks done here:
  *  - If it was a connection from the FD, call handle_filed_connection()

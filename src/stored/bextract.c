@@ -690,7 +690,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       }
       break;
 
-   case STREAM_NDMP_SEPERATOR:
+   case STREAM_NDMP_SEPARATOR:
       break;
 
    default:

@@ -307,7 +307,7 @@ int main (int argc, char *argv[])
 
 #if HAVE_NDMP
    /*
-    * Seperate thread that handles NDMP connections
+    * Separate thread that handles NDMP connections
     */
    if (me->ndmp_enable) {
       start_ndmp_thread_server(me->NDMPaddrs, me->MaxConnections);

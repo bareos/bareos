@@ -81,7 +81,7 @@ static inline bool check_include_pattern_shadowing(JCR *jcr,
              bstrncmp(pattern1, pattern2, MIN(len1, len2))) {
             /*
              * If both directories have the same st_dev they shadow
-             * each other e.g. are not on seperate filesystems.
+             * each other e.g. are not on separate filesystems.
              */
             if (st1.st_dev == st2.st_dev) {
                retval = true;

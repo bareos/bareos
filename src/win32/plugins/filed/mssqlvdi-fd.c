@@ -949,7 +949,7 @@ static bool adoReportError(bpContext *ctx)
 }
 
 /*
- * Retrieve errors from ADO Connection when running the query in a seperate thread.
+ * Retrieve errors from ADO Connection when running the query in a separate thread.
  */
 static void adoThreadSetError(bpContext *ctx, _ADOConnection *adoConnection)
 {
@@ -1029,7 +1029,7 @@ static void adoCleanupThread(void *data)
 }
 
 /*
- * Run a seperate thread that connects to the database server and
+ * Run a separate thread that connects to the database server and
  * controls the backup or restore. When we close the VDI device we
  * also tear down this database control thread.
  */
@@ -1149,7 +1149,7 @@ static void set_ado_connect_string(bpContext *ctx)
 
 /*
  * Generate a valid connect string and the backup command we should execute
- * in the seperate database controling thread.
+ * in the separate database controling thread.
  */
 static inline void perform_ado_backup(bpContext *ctx)
 {
@@ -1208,7 +1208,7 @@ static inline void perform_ado_backup(bpContext *ctx)
 
 /*
  * Generate a valid connect string and the restore command we should execute
- * in the seperate database controling thread.
+ * in the separate database controling thread.
  */
 static inline void perform_ado_restore(bpContext *ctx)
 {
@@ -1290,7 +1290,7 @@ static inline void perform_ado_restore(bpContext *ctx)
 }
 
 /*
- * Run a query not in a seperate thread.
+ * Run a query not in a separate thread.
  */
 static inline bool run_ado_query(bpContext *ctx, const char *query)
 {

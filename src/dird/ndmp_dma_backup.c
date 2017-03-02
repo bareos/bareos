@@ -507,7 +507,7 @@ bool do_ndmp_backup(JCR *jcr)
 
    /*
     * Initialize the ndmp backup job. We build the generic job only once
-    * and reuse the job definition for each seperate sub-backup we perform as
+    * and reuse the job definition for each separate sub-backup we perform as
     * part of the whole job. We only free the env_table between every sub-backup.
     */
    if (!ndmp_build_client_job(jcr, jcr->res.client, jcr->res.pstore, NDM_JOB_OP_BACKUP, &ndmp_job)) {

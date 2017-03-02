@@ -506,7 +506,7 @@ set_config_param_in_file()
   BEGIN {
     IGNORECASE = 1;
     FS = "=";
-    # could add ; as Record Seperator, but this may causes problems if line contains this character.
+    # could add ; as Record Separator, but this may causes problems if line contains this character.
     #RS="\n|;"
     done = 0
     printed = 0

@@ -986,8 +986,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       /* Ignore Unix Extended attributes */
       break;
 
-   case STREAM_NDMP_SEPERATOR:
-      /* Ignore NDMP seperators */
+   case STREAM_NDMP_SEPARATOR:
+      /* Ignore NDMP separators */
       break;
 
    default:

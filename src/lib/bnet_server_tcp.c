@@ -60,7 +60,7 @@ struct s_sockfd {
 };
 
 /*
- * Stop the Threaded Network Server if its realy running in a seperate thread.
+ * Stop the Threaded Network Server if its realy running in a separate thread.
  * e.g. set the quit flag and wait for the other thread to exit cleanly.
  */
 void bnet_stop_thread_server_tcp(pthread_t tid)
@@ -113,7 +113,7 @@ void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq)
  *
  * This function is able to handle multiple server ips in
  * ipv4 and ipv6 style. The Addresse are give in a comma
- * seperated string in bind_addr
+ * separated string in bind_addr
  *
  * At the moment it is impossible to bind to different ports.
  */
