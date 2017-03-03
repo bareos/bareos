@@ -25,7 +25,7 @@
 /**
  * @file
  * ndmp_tape.c implements the NDMP TAPE service which interfaces to
- * the internal Bareos infrstructure. This is implemented as a seperate
+ * the internal Bareos infrastructure. This is implemented as a separate
  * daemon protocol on a different port (10000 NDMP by default) which
  * interfaces to the standard Bareos storage daemon at the record level.
  *
@@ -430,7 +430,7 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
        *      Which is the start of the dump when we encounter that we just read the next record.
        * - STREAM_FILE_DATA
        *      Normal NDMP data.
-       * - STREAM_NDMP_SEPERATOR
+       * - STREAM_NDMP_SEPARATOR
        *      End of NDMP data stream.
        *
        * anything other means a corrupted stream of records and means we give an EOF.
@@ -447,7 +447,7 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
          memcpy(data, rctx->rec->data, rctx->rec->data_len);
          *data_length = rctx->rec->data_len;
          return true;
-      case STREAM_NDMP_SEPERATOR:
+      case STREAM_NDMP_SEPARATOR:
          *data_length = 0;
          return true;
       default:
@@ -823,7 +823,7 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
    ndmp9_error err;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta = sess->tape_acb;
-   char ndmp_seperator[] = { "NdMpSePeRaToR" };
+   char ndmp_separator[] = { "NdMpSePaRaToR" };
 
    if (ta->tape_fd < 0) {
       return NDMP9_DEV_NOT_OPEN_ERR;
@@ -845,10 +845,10 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
    err = NDMP9_NO_ERR;
    if (NDMTA_TAPE_IS_WRITABLE(ta)) {
       /*
-       * Write a seperator record so on restore we can recognize the different
+       * Write a separator record so on restore we can recognize the different
        * NDMP datastreams from each other.
        */
-      if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPERATOR, ndmp_seperator, 13)) {
+      if (!bndmp_write_data_to_block(jcr, STREAM_NDMP_SEPARATOR, ndmp_separator, 13)) {
          err = NDMP9_IO_ERR;
       }
    }

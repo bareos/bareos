@@ -45,23 +45,12 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, con
    /*
     * This function is an error handler, used by lex.
     */
-   va_list ap;
-   int len, maxlen;
    POOL_MEM buf(PM_NAME);
+   va_list ap;
 
-   while (1) {
-      maxlen = buf.size() - 1;
-      va_start(ap, msg);
-      len = bvsnprintf(buf.c_str(), maxlen, msg, ap);
-      va_end(ap);
-
-      if (len < 0 || len >= (maxlen - 5)) {
-         buf.realloc_pm(maxlen + maxlen / 2);
-         continue;
-      }
-
-      break;
-   }
+   va_start(ap, msg);
+   buf.bvsprintf(msg, ap);
+   va_end(ap);
 
    configure_lex_error_handler(file, line, lc, buf);
 }

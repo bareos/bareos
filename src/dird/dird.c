@@ -515,8 +515,11 @@ void sighandler_reload_config(int sig, siginfo_t *siginfo, void *ptr)
    static bool already_here = false;
 
    if (already_here) {
-      /* this should not happen, as this signal should be blocked */
-      Jmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+      /*
+       * Note: don't use Jmsg here, as it could produce a race condition
+       * on multiple parallel reloads
+       */
+      Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return;
    }
    already_here = true;
@@ -576,7 +579,11 @@ bool do_reload_config()
    resource_table_reference prev_config;
 
    if (already_here) {
-      Jmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
+      /*
+       * Note: don't use Jmsg here, as it could produce a race condition
+       * on multiple parallel reloads
+       */
+      Qmsg(NULL, M_ERROR, 0, _("Already reloading. Request ignored.\n"));
       return false;
    }
    already_here = true;
@@ -1068,7 +1075,6 @@ static bool check_resources()
       }
    }
 
-   UnlockRes();
    if (OK) {
       close_msg(NULL);                    /* close temp message handler */
       init_msg(NULL, me->messages);       /* open daemon message handler */
@@ -1081,6 +1087,7 @@ static bool check_resources()
    }
 
 bail_out:
+   UnlockRes();
    return OK;
 }
 

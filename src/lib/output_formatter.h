@@ -188,7 +188,7 @@ public:
 
    /*
     * some programs (BAT in api mode 1) parses data message by message,
-    * instead of using a seperator.
+    * instead of using a separator.
     * An example for this is BAT with the ".defaults job" command in API mode 1.
     * In this cases, the send_buffer function must be called at between two messages.
     * In API mode 2 this function has no effect.

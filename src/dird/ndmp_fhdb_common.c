@@ -65,12 +65,22 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
          } else {
             ndmp_convert_fstat(fstat, nis->FileIndex, &FileType, attribs);
 
+            bool filesystem_ends_with_slash = (nis->filesystem[strlen(nis->filesystem) - 1] == '/');
+            bool raw_name_starts_with_slash = (*raw_name == '/');
+            bool raw_name_ends_with_slash = (raw_name[strlen(raw_name) - 1] == '/') ;
+
             pm_strcpy(pathname, nis->filesystem);
+            /*
+             * make sure we have a trailing slash
+             */
+            if (!filesystem_ends_with_slash) {
+                pm_strcat(pathname, "/");
+            }
 
             /*
              * skip leading slash to avoid double slashes
              */
-            if (raw_name == (char*)'/') {
+            if (raw_name_starts_with_slash) {
                pm_strcat(pathname, raw_name + 1);
             } else {
                pm_strcat(pathname, raw_name);
@@ -81,7 +91,7 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
                 * A directory needs to end with a '/'
                 * so append it if it is missing
                 */
-               if ( pathname.c_str()[strlen(pathname.c_str()) - 1] != '/' ) {
+               if (!raw_name_ends_with_slash) {
                   pm_strcat(pathname, "/");
                }
             }

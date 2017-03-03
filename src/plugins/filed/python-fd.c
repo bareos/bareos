@@ -906,6 +906,16 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
       return bRC_Error;
    }
 
+   /*
+    * Skip this plugin when getting plugin definition "*all*"
+    * This allows to restore a Windows Backup on a Linux FD with
+    * Python Plugins enabled.
+    */
+   if (bstrcmp((char *)value, "*all*")) {
+      Dmsg(ctx, dbglvl, "python-fd: Got plugin definition %s, skipping to ignore\n", (char *)value);
+      return bRC_Skip;
+   }
+
    keep_existing = (p_ctx->plugin_options) ? true : false;
 
    /*

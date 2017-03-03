@@ -1488,7 +1488,7 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
 
          /*
           * BAT parses the result of this command message by message,
-          * instead of looking for a seperator.
+          * instead of looking for a separator.
           * Therefore the send_buffer() function is called after each line.
           */
          ua->send->object_key_value("job", "%s=", job->name(), "%s\n");

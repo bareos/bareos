@@ -266,7 +266,6 @@ void initialize_json();
 
 /* lex.c */
 LEX *lex_close_file(LEX *lf);
-LEX *lex_close_buffer(LEX *lf);
 LEX *lex_open_file(LEX *lf,
                    const char *fname,
                    LEX_ERROR_HANDLER *scan_error,

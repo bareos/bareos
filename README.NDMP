@@ -328,7 +328,7 @@ Pool {
 }
 
 #
-# Seperate Pool for NDMP data so upgrading of Jobs works and selects the right storage.
+# Separate Pool for NDMP data so upgrading of Jobs works and selects the right storage.
 #
 Pool {
   Name = NDMPFile

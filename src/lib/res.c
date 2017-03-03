@@ -49,7 +49,7 @@ union URES {
 
 static int res_locked = 0;            /* resource chain lock count -- for debug */
 
-/* #define TRACE_RES */
+// #define TRACE_RES
 
 void b_LockRes(const char *file, int line)
 {
@@ -60,7 +60,7 @@ void b_LockRes(const char *file, int line)
          res_locked, my_config->m_res_lock.w_active, file, line);
 
     if (res_locked) {
-       Pmsg2(000, "LockRes writerid=%d myid=%d\n",
+       Pmsg2(000, "LockRes writerid=%lu myid=%lu\n",
              my_config->m_res_lock.writer_id, pthread_self());
      }
 #endif

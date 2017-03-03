@@ -342,7 +342,7 @@ static inline void cleanup_cached_statistics()
 }
 
 /**
- * Entry point for a seperate statistics thread.
+ * Entry point for a separate statistics thread.
  */
 extern "C"
 void *statistics_thread_runner(void *arg)
