@@ -109,7 +109,7 @@
 #define STREAM_ENCRYPTED_FILE_COMPRESSED_DATA  32       /**< Encrypted, compressed data */
 #define STREAM_ENCRYPTED_WIN32_COMPRESSED_DATA 33       /**< Encrypted, compressed Win32 BackupRead data */
 
-#define STREAM_NDMP_SEPARATOR                 999       /* NDMP separator between multiple data streams of one job */
+#define STREAM_NDMP_SEPARATOR                 999       /**< NDMP separator between multiple data streams of one job */
 
 /**
  * The Stream numbers from 1000-1999 are reserved for ACL and extended attribute streams.
