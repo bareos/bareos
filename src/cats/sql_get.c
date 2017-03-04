@@ -1254,8 +1254,8 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
    Mmsg(query,
 "SELECT Path.Path, Filename.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
  "FROM ( %s ) AS T1 "
- "JOIN Filename USING(FilenameId) "
- "JOIN Path USING(PathId) "
+ "JOIN Filename ON (Filename.FilenameId = T1.FilenameId) "
+ "JOIN Path ON (Path.PathId = T1.PathId) "
 "WHERE FileIndex > 0 "
 "ORDER BY T1.JobTDate, FileIndex ASC",/* Return sorted by JobTDate */
                                       /* FileIndex for restore code */
