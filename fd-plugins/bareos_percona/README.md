@@ -88,7 +88,7 @@ Command (with or without full path) to create the dumps. Default: *xtrabackup*
 
 Options to be used with the dumpbinary.
 Default: 
-   --backup --stream=xbstream --extra-lsndir=/tmp/individual__tempdir
+   --backup --stream=xbstream
 
 ##### extradumpoptions #####
 

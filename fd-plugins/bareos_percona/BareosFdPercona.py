@@ -87,7 +87,12 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         if 'dumpoptions' in self.options:
             self.dumpoptions = self.options['dumpoptions']
         else:
-            self.dumpoptions = "%s --backup --stream=xbstream --extra-lsndir=%s" % (self.mycnf, self.tempdir)
+            self.dumpoptions = ""
+            if self.mycnf != "":
+                self.dumpoptions += "--defaults-extra-file=%s " % self.mycnf
+            self.dumpoptions += "--backup --stream=xbstream"
+
+        self.dumpoptions += " --extra-lsndir=%s" % self.tempdir
 
         if 'extradumpoptions' in self.options:
             self.dumpoptions += " " + self.options['extradumpoptions']
@@ -171,7 +176,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
             returnCode = last_lsn_proc.poll()
             (mysqlStdOut, mysqlStdErr) = last_lsn_proc.communicate()
             if returnCode != 0 or mysqlStdErr:
-                JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN with command \"%s\", Error: %s" 
+                JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN with command \"%s\", Error: %s"
                     % (get_lsn_command, mysqlStdErr))
                 return bRCs['bRC_Error']
             else:
