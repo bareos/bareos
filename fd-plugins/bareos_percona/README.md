@@ -71,9 +71,9 @@ You can append options to the plugin call as key=value pairs, separated by ':'.
 Please read more about the Bareos Python Plugin Interface here: http://doc.bareos.org/master/html/bareos-manual-main-reference.html#Python-fdPlugin
 
 
-##### defaultsfile option ####
+##### defaultsfile ####
 
-This parameter allows to specify a defaultsfile that shall be used for mysql(client) and *xtrabackup+ command line utilities.
+This parameter allows to specify a defaultsfile that shall be used for mysql(client) and *xtrabackup* command line utilities.
 Example:
 
 ```
@@ -88,11 +88,18 @@ Command (with or without full path) to create the dumps. Default: *xtrabackup*
 
 Options to be used with the dumpbinary.
 Default: 
-   --backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=/tmp/individual__tempdir
+   --backup --stream=xbstream --extra-lsndir=/tmp/individual__tempdir
 
-##### Databases #####
-By default all found databases are back-uped. You can restrict this using the dumpoptions parameter. If you modify that, be careful, that you get all
-necessary options. See *xtrabackup* documentation for details.
+##### extradumpoptions #####
+
+Additional options appended to dumpoptions.
+
+###### Choosing databases ######
+
+By default all found databases are backed up. You can restrict this
+using the dumpoptions or extradumpoptions parameter. If you modify
+dumpoptions, be careful that you include all necessary options.  See
+*xtrabackup* documentation for details.
 
 
 ##### restorecommand
