@@ -184,18 +184,6 @@ extern "C" {
 #include "compat.h"
 #endif
 
-/* c++ includes */
-
-#ifdef HAVE_WIN32
-#undef setlocale
-#endif
-
-#include <map>
-
-#if !defined(ENABLE_NLS)
-#define setlocale(p, d)
-#endif
-
 #include "streams.h"
 #include "filetypes.h"
 #include "baconfig.h"
