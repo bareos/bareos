@@ -17,16 +17,6 @@ class Pool(Directory):
         return name
 
     def do_update_stat(self):
-        data = self.bsock.call("llist pools count" % (self.selector))
-        self.subnode_count = int(data['pools'][0]['count'])
-
-    def do_update(self):
-        data = self.bsock.call("llist pools")
-        pools = data['pools']
-        for i in pools:
-            self.add_subnode(Pool, i['name'])
-
-    def do_update_stat(self):
         self.subnode_count = 2
 
     def do_update(self):
