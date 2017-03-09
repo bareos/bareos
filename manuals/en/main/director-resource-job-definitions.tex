@@ -454,7 +454,7 @@ This means, a new Full backup get created without transfering all the data from 
 The new Full backup will be stored in the pool defined in \linkResourceDirective{Dir}{Pool}{Next Pool}.
 %The process of generating a VirtualFull backup is similar to the process described in \nameref{MigrationChapter}.
 
-\warning{Opposite to the offer backup levels, VirtualFull may require read and write access to multiple volumes. In most cases you have to make sure, that Bareos does not try to read and write to the same Volume.}
+\warning{Opposite to the other backup levels, VirtualFull may require read and write access to multiple volumes. In most cases you have to make sure, that Bareos does not try to read and write to the same Volume.}
 
 % move volumes from VFull to Full pool
 %echo "list volumes pool=VFull" | bconsole | awk -F '|' '{if ($4 ~ /Full|Used|Append/) { gsub(/^[ \t]+/,"",$3); gsub(/[ \t]+$/,"",$3); print "update volume="$3" pool=Full" }}' | bconsole
