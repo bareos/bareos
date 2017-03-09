@@ -16,6 +16,26 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \section*{Bareos-16.2}
 
+\releasenote{16.2.5}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2017-03-03\\
+Database Version  & 2004 (unchanged)\\
+Release Ticket    & \ticket{734}\\
+Url               & \releaseUrlDownloadBareosCom{16.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+  \item NDMP: critical bugfix when restoring large files.
+  \item truncate command allows to free space on disk storages (replaces an purged volume by an empty volume).
+  \item Some fixes were added regarding director crashes, Windows backups (VSS), soft-quota reset and API (bvfs) problems.
+  \item WebUI: handle file names containing special characters, hostnames starting with numbers and long logfiles.
+  \item WebUI: adds translations for Chinese, Italian and Spanish.
+\end{itemize}
+
+}
+
 \releasenote{16.2.4}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -71,7 +91,7 @@ Release Ticket    & \ticket{641} \\
 Url               & \releaseUrlDownloadBareosCom{15.2} \\
 \end{tabular}
 
-For upgrading from 14.2, please see releasenotes for 15.2.1.
+For upgrading from 14.2, please see release notes for 15.2.1.
 
 This release contains several bugfixes and enhancements. Excerpt:
 \begin{itemize}
