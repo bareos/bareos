@@ -345,7 +345,8 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
    return result;
 
 bail_out:
-   if (lc) {
+   /* close all open configuration files */
+   while(lc) {
       lc = lex_close_file(lc);
    }
 
