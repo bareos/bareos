@@ -17,6 +17,6 @@ setup(
     install_requires=[
         #'hmac',
         #'socket',
-        'dateutil',
+        'python-dateutil',
     ]
 )
