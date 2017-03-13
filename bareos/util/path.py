@@ -1,5 +1,5 @@
 """
-Class to handle Bareos passwords.
+Class to handle file paths.
 """
 
 from copy import copy
