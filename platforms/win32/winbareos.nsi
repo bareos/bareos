@@ -2080,12 +2080,19 @@ Section Uninstall
 
 ConfDeleteSkip:
   # delete config files *.conf.old and *.conf.new, ...
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
+
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.new"
 
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
