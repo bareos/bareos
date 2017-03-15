@@ -369,8 +369,9 @@ class JobController extends AbstractActionController
             $jobs_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
             $jobs_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
             $jobs_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
+            $jobs_V = $this->getJobModel()->getJobsByType($this->bsock, 'V'); // Verify Job
             $result = array_merge(
-               $jobs_B,$jobs_D,$jobs_A,$jobs_c,$jobs_g,$jobs_O
+               $jobs_B,$jobs_D,$jobs_A,$jobs_c,$jobs_g,$jobs_O,$jobs_V
             );
          }
          catch(Exception $e) {
