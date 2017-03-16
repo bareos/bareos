@@ -375,7 +375,7 @@ static inline bool bvfs_parse_arg_version(UAContext *ua,
    for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("fnid")) ||
           bstrcasecmp(ua->argk[i], NT_("filenameid"))) {
-         if (is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && is_a_number(ua->argv[i])) {
             *fnid = str_to_int64(ua->argv[i]);
          }
       }
@@ -413,7 +413,7 @@ static bool bvfs_parse_arg(UAContext *ua,
 
    for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(ua->argk[i], NT_("pathid"))) {
-         if (is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && is_a_number(ua->argv[i])) {
             *pathid = str_to_int64(ua->argv[i]);
          }
       }
@@ -427,19 +427,19 @@ static bool bvfs_parse_arg(UAContext *ua,
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("jobid"))) {
-         if (is_a_number_list(ua->argv[i])) {
+         if (ua->argv[i] && is_a_number_list(ua->argv[i])) {
             *jobid = ua->argv[i];
          }
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("limit"))) {
-         if (is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && is_a_number(ua->argv[i])) {
             *limit = str_to_int64(ua->argv[i]);
          }
       }
 
       if (bstrcasecmp(ua->argk[i], NT_("offset"))) {
-         if (is_a_number(ua->argv[i])) {
+         if (ua->argv[i] && is_a_number(ua->argv[i])) {
             *offset = str_to_int64(ua->argv[i]);
          }
       }
