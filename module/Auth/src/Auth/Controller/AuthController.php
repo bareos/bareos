@@ -169,7 +169,13 @@ class AuthController extends AbstractActionController
                }
 
                if($this->params()->fromQuery('req')) {
-                  return $this->redirect()->toUrl($this->params()->fromQuery('req'));
+                  $redirect = $this->params()->fromQuery('req');
+                  $request = $this->getRequest();
+                  $request->setUri($redirect);
+                  if($routeToBeMatched = $this->getServiceLocator()->get('Router')->match($request)) {
+                     return $this->redirect()->toUrl($this->params()->fromQuery('req'));
+                  }
+                  return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
                }
                else {
                   return $this->redirect()->toRoute('dashboard', array('action' => 'index'));
