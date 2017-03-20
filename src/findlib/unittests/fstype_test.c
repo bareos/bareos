@@ -42,7 +42,7 @@ void test_fstype(void **state) {
 #ifdef HAVE_WIN32
    char *fs_to_check[] = {"/", "c:/", NULL};
 #else
-   char *fs_to_check[] = {"/", "/proc", NULL};
+   char *fs_to_check[] = {"/proc", NULL};
 #endif
    char fs[1000];
 
