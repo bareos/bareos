@@ -230,6 +230,7 @@ void *handle_director_connection(BSOCK *dir)
 
    if (!count_running_jobs()) {
       Emsg0(M_ERROR, 0, _("Number of Jobs exhausted, please increase MaximumConcurrentJobs\n"));
+      dir->signal(BNET_TERMINATE);
       return NULL;
    }
 
