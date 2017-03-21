@@ -139,7 +139,7 @@ fi; \
 %post_backup_file /etc/bareos/bareos-dir.d/webui-consoles.conf
 %post_backup_file /etc/bareos/bareos-dir.d/webui-profiles.conf
 
-%if 0%{?suse_version} >= 1230
+%if 0%{?suse_version} >= 1110
 a2enmod setenv &> /dev/null || true
 a2enmod rewrite &> /dev/null || true
 %endif
