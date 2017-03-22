@@ -5,8 +5,8 @@
  *
  * Licensed under the MIT license:
  *   http://www.opensource.org/licenses/mit-license.php
- * 
- * Works only with jstree version >= 3.0.0
+ *
+ * Works only with jstree version >= 3.3.0
  *
  * $Date: 2015-11-29 $
  * $Revision:  3.4.2 $
@@ -28,24 +28,49 @@
 		factory(jQuery);
 	}
 }(function ($) {
-	var renderAWidth, renderATitle, getIndent, copyData, htmlstripre, findLastClosedNode, BLANKRE = /^\s*$/g,
+	var BLANKRE = /^\s*$/g,
 		IDREGEX = /[\\:&!^|()\[\]<>@*'+~#";,= \/${}%]/g, escapeId = function (id) {
 			return (id||"").replace(IDREGEX,'\\$&');
 		}, NODE_DATA_ATTR = "data-jstreegrid", COL_DATA_ATTR = "data-jstreegrid-column",
-	SPECIAL_TITLE = "_DATA_", LEVELINDENT = 24, styled = false, GRIDCELLID_PREFIX = "jsgrid_",GRIDCELLID_POSTFIX = "_col",
+		SEARCHCLASS = "jstree-search",
+	SPECIAL_TITLE = "_DATA_", LEVELINDENT = 24, styled = false,
 		MINCOLWIDTH = 10,
-		findDataCell = function (from,id) {
-			return from.find("div["+NODE_DATA_ATTR+"='"+id+"']");
+		generateCellId = function (tree,id) {
+			return("jstree_"+tree+"_grid_"+escapeId(id)+"_col");
 		},
-		isClickedSep = false, toResize = null, oldMouseX = 0, newMouseX = 0;
-	
+    getIds = function (nodes) {
+      return $.makeArray(nodes.map(function(){return this.id;}));
+    },
+		findDataCell = function (uniq, ids, col) {
+			var ret = $(), columns = [].concat(col), cellId;
+			if (ids === null || ids === undefined || ids.length === 0) {
+				ret = "";
+			} else if (typeof(ids) === "string") {
+        cellId = generateCellId(uniq,ids);
+				ret = columns.map(function (col) {
+					return "#"+cellId+col;
+				}).join(", ");
+			} else {
+				ret = []
+				ids.forEach(function (elm,i) {
+          var cellId = generateCellId(uniq,elm);
+					ret = ret.concat(columns.map(function (col) {
+						return "#"+cellId+col;
+					}));
+				});
+        ret = ret.join(", ");
+			}
+			return $(ret);
+		},
+		isClickedSep = false, toResize = null, oldMouseX = 0, newMouseX = 0,
+
 	/*jslint regexp:true */
-	htmlstripre = /<\/?[^>]+>/gi;
+	htmlstripre = /<\/?[^>]+>/gi,
 	/*jslint regexp:false */
-	
+
 	getIndent = function(node,tree) {
 		var div, i, li, width;
-		
+
 		// did we already save it for this tree?
 		tree._gridSettings = tree._gridSettings || {};
 		if (tree._gridSettings.indent > 0) {
@@ -57,29 +82,29 @@
 			li = i.parent();
 			// add to that div all of the classes on the tree root
 			div.addClass(tree.get_node("#",true).attr("class"));
-		
+
 			// move the li to the temporary div root
 			li.appendTo(div);
-			
+
 			// attach to the body quickly
 			div.appendTo($("body"));
-		
+
 			// get the width
 			width = i.width() || LEVELINDENT;
-		
+
 			// detach the li from the new div and destroy the new div
 			li.detach();
 			div.remove();
-			
+
 			// save it for the future
 			tree._gridSettings.indent = width;
 		}
-		
-		
+
+
 		return(width);
-		
-	};
-	
+
+	},
+
 	copyData = function (fromtree,from,totree,to,recurse) {
 		var i, j;
 	  to.data = $.extend(true, {}, from.data);
@@ -88,8 +113,8 @@
 			   copyData(fromtree,fromtree.get_node(from.children_d[i]),totree,totree.get_node(to.children_d[i]),recurse);
 			}
 		}
-	};
-	
+	},
+
 	findLastClosedNode = function (tree,id) {
 		// first get our node
 		var ret, node = tree.get_node(id), children = node.children;
@@ -100,7 +125,7 @@
 			ret = findLastClosedNode(tree,children[children.length-1]);
 		}
 		return(ret);
-	};
+	},
 
 	renderAWidth = function(node,tree) {
 		var depth, width,
@@ -111,9 +136,9 @@
 		// the following line is no longer needed, since we are doing this inside a <td>
 		//a.css({"vertical-align": "top", "overflow":"hidden"});
 		return(fullWidth);
-	};
+	},
 	renderATitle = function(node,t,tree) {
-		var a = node.get(0).tagName.toLowerCase() === "a" ? node : node.children("a"), title, col = tree.settings.grid.columns[0];
+		var a = node.hasClass("jstree-anchor") ? node : node.children("[class~='jstree-anchor']"), title, col = tree.settings.grid.columns[0];
 		// get the title
 		title = "";
 		if (col.title) {
@@ -128,6 +153,22 @@
 		if (title) {
 			a.attr("title",title);
 		}
+	},
+	getCellData = function (value,data) {
+		var val;
+		// get the contents of the cell - value could be a string or a function
+		if (value !== undefined && value !== null) {
+			if (typeof(value) === "function") {
+				val = value(data);
+			} else if (data.data !== null && data.data !== undefined && data.data[value] !== undefined) {
+				val = data.data[value];
+			} else {
+				val = "";
+			}
+		} else {
+			val = "";
+		}
+		return val;
 	};
 
 	$.jstree.defaults.grid = {
@@ -152,23 +193,42 @@
 					indent: 0,
 					sortOrder: 'text',
 					sortAsc: true,
-					fixedHeader: s.fixedHeader || true,
+					fixedHeader: s.fixedHeader !== false,
 					width: s.width,
-					height: s.height
-				}, cols = gs.columns, treecol = 0;
+					height: s.height,
+					gridcontextmenu : s.gridcontextmenu,
+					treecol: 0,
+          gridcols: []
+				}, cols = gs.columns, treecol = 0, columnSearch = false;
+				if(gs.gridcontextmenu === true) {
+					gs.gridcontextmenu = function (grid,tree,node,val,col,t,target) {
+						return {
+							"edit": {
+								label: "Edit",
+								"action": function (data) {
+									var obj = t.get_node(node);
+									grid._edit(obj,col,target);
+								}
+							}
+						}
+					}
+				} else if (gs.gridcontextmenu === false) {
+					gs.gridcontextmenu = false;
+				}
 				// find which column our tree shuld go in
 				for (i=0;i<s.columns.length;i++) {
 					if (s.columns[i].tree) {
 						// save which column it was
 						treecol = i;
-						// do not check any others
-						break;
-					}
+						gs.treecol = treecol;
+					} else {
+            gs.gridcols.push(i);
+          }
 				}
 				// set a unique ID for this table
 				this.uniq = Math.ceil(Math.random()*1000);
 				this.rootid = container.attr("id");
-			
+
 				var msie = /msie/.test(navigator.userAgent.toLowerCase());
 				if (msie) {
 					var version = parseFloat(navigator.appVersion.split("MSIE")[1]);
@@ -177,7 +237,7 @@
 						gs.defaultConf.zoom = "1";
 					}
 				}
-			
+
 				// set up the classes we need
 				if (!styled) {
 					styled = true;
@@ -195,9 +255,9 @@
 						'.jstree-grid-midwrapper {display: table-row;}',
 						'.jstree-grid-width-auto {width:auto;display:block;}',
 						'.jstree-grid-column {display: table-cell; overflow: hidden;}',
+						'.jstree-grid-ellipsis {text-overflow: ellipsis;}',
 						'.jstree-grid-col-0 {width: 100%;}'
 					];
-
 					$('<style type="text/css">'+styles.join("\n")+'</style>').appendTo("head");
 				}
 				this.gridWrapper = $("<div></div>").addClass("jstree-grid-wrapper").insertAfter(container);
@@ -216,7 +276,7 @@
 				}
 				this.midWrapper.children("div:eq("+treecol+")").append(container);
 				container.addClass("jstree-grid-cell");
-				
+
 				//move header with scroll
 				if (gs.fixedHeader) {
 					this.gridWrapper.scroll(function() {
@@ -248,14 +308,14 @@
 
 					return bigger ? 1 : -1;
 				};
-				
+
 				// sortable columns when jQuery UI is available
 				if (gs.draggable) {
 					if (!$.ui || !$.ui.sortable) {
 						console.warn('[jstree-grid] draggable option requires jQuery UI');
 					} else {
 						var from, to;
-						
+
 						$(this.midWrapper).sortable({
 							axis: "x",
 							handle: ".jstree-grid-header",
@@ -270,11 +330,111 @@
 						});
 					}
 				}
-				
+
+//public function. validate searchObject keys, set columnSearch flag, calls jstree search and reset columnSearch flag
+				this.searchColumn = function (searchObj) {
+					var validatedSearchObj = {};
+
+					if(typeof searchObj == 'object') {
+						for(var columnIndex in searchObj) {
+							if(searchObj.hasOwnProperty(columnIndex)) {
+								// keys should be the index of a column. This means the following:
+								// only integers and smaller than the number of columns and bigger or equal to 0
+								// (possilbe idea for in the future: ability to set key as a more human readable term like the column header and then map it here to an index)
+								if (columnIndex % 1 === 0 && columnIndex < cols.length && columnIndex >= 0) {
+									validatedSearchObj[columnIndex] = searchObj[columnIndex];
+								}
+							}
+						}
+					}
+					columnSearch = validatedSearchObj;
+
+					if(Object.keys(validatedSearchObj).length !== 0){
+						//the search string doesn't matter. we'll use the search string in the columnSearch object!
+						this.search('someValue');
+					} else { // nothing to search so reset jstree's search by passing an empty string
+						this.search('');
+					}
+					columnSearch = false;
+				}
+
+
+				// set default search for each column with no user defined search function (used when doing a columnSearch)
+				for(i=0; i<cols.length; i++) {
+					var column = cols[i];
+					if (typeof(column.search_callback) !== "function") {
+						// no search callback so set default function
+						column.search_callback = function (str, columnValue, node, column) {
+							var f = new $.vakata.search(str, true, { caseSensitive : searchSettings.case_sensitive, fuzzy : searchSettings.fuzzy });
+
+							return f.search(columnValue).isMatch;
+
+						};
+					}
+				}
+
+				// if there was no overridden search_callback, we will provide it
+				// it will use the default per-node search algorithm, augmented by searching our data nodes
+				var searchSettings = this.settings.search;
+				var omniSearchCallback = searchSettings.search_callback;
+
+				if(!omniSearchCallback){
+					omniSearchCallback = function (str,node) {
+							var i, f = new $.vakata.search(str, true, { caseSensitive : searchSettings.case_sensitive, fuzzy : searchSettings.fuzzy }),
+							matched = f.search(node.text).isMatch,
+							col;
+
+							// only bother looking in each cell if it was not yet matched
+							if (!matched) {
+								for (i=0;i<cols.length;i++) {
+									if (treecol === i) {
+										continue;
+									}
+									col = cols[i];
+									matched = f.search(getCellData(col.value,node)).isMatch;
+									if (matched) {
+										break;
+									}
+								}
+							}
+							return matched;
+					}
+				}
+
+				searchSettings.search_callback = function (str,node) {
+					var matched = false;
+					if(columnSearch){
+						//using logical AND for column searches (more options in the future)
+						for(var columnIndex in columnSearch) {
+							if(columnSearch.hasOwnProperty(columnIndex)) {
+								var searchValue = columnSearch[columnIndex];
+								if(searchValue == ''){
+									continue;
+								}
+								var col = cols[columnIndex];
+								if(treecol == columnIndex){
+									matched = col.search_callback(searchValue, node.text, node, col)
+								} else {
+									matched = col.search_callback(searchValue, getCellData(col.value,node), node, col)
+								}
+
+								if(!matched){
+									break; //found one that didn't match
+								}
+							}
+						}
+
+						container.trigger("columnSearch_grid.jstree");
+					} else {
+						matched =  omniSearchCallback(str, node);
+						container.trigger("omniSearch_grid.jstree");
+					}
+					return matched;
+				};
 				this._initialized = true;
 			}
 		};
-		this.init = function (el,options) { 
+		this.init = function (el,options) {
 			parent.init.call(this,el,options);
 			this._initialize();
 		};
@@ -282,7 +442,7 @@
 			parent.bind.call(this);
 			this._initialize();
 			this.element
-			.on("move_node.jstree create_node.jstree clean_node.jstree change_node.jstree", $.proxy(function (e, data) { 
+			.on("move_node.jstree create_node.jstree clean_node.jstree change_node.jstree", $.proxy(function (e, data) {
 				var target = this.get_node(data || "#",true);
 				this._prepare_grid(target);
 			}, this))
@@ -293,9 +453,7 @@
 					if (data.node && data.node.children_d) {
 						removeNodes = removeNodes.concat(data.node.children_d);
 					}
-					for (i=0;i<removeNodes.length;i++) {
-						findDataCell(grid,removeNodes[i]).remove();
-					}
+					findDataCell(this.uniq,removeNodes,this._gridSettings.gridcols).remove();
 				}
 			}, this))
 			.on("close_node.jstree",$.proxy(function (e,data) {
@@ -311,7 +469,7 @@
 				}, this))
 			.on("ready.jstree",$.proxy(function (e,data) {
 				// find the line-height of the first known node
-				var anchorHeight = this.element.find("li a:first").outerHeight(), q,
+				var anchorHeight = this.element.find("[class~='jstree-anchor']:first").outerHeight(), q,
 				cls = this.element.attr("class") || "";
 				$('<style type="text/css">div.jstree-grid-cell-root-'+this.rootid+' {line-height: '+anchorHeight+'px; height: '+anchorHeight+'px;}</style>').appendTo("head");
 
@@ -321,7 +479,7 @@
 				  return (match ? "" : i);
 				});
 				this.gridWrapper.addClass(q.join(" "));
-								
+
 			},this))
 			.on("move_node.jstree",$.proxy(function(e,data){
 				var node = data.new_instance.element;
@@ -330,58 +488,71 @@
 				node.find("li > a").each($.proxy(function(i,elm){
 					//renderAWidth($(elm),this);
 				},this));
-				
+
 			},this))
 			.on("hover_node.jstree",$.proxy(function(node,selected,event){
 				var id = selected.node.id;
 				if (this._hover_node !== null && this._hover_node !== undefined) {
-					findDataCell(this.gridWrapper,this._hover_node).removeClass("jstree-hovered");
+					findDataCell(this.uniq,this._hover_node,this._gridSettings.gridcols).removeClass("jstree-hovered");
 				}
 				this._hover_node = id;
-				findDataCell(this.gridWrapper,id).addClass("jstree-hovered");
+				findDataCell(this.uniq,id,this._gridSettings.gridcols).addClass("jstree-hovered");
 			},this))
 			.on("dehover_node.jstree",$.proxy(function(node,selected,event){
 				var id = selected.node.id;
 				this._hover_node = null;
-				findDataCell(this.gridWrapper,id).removeClass("jstree-hovered");
+				findDataCell(this.uniq,id,this._gridSettings.gridcols).removeClass("jstree-hovered");
 			},this))
 			.on("select_node.jstree",$.proxy(function(node,selected,event){
 				var id = selected.node.id;
-				findDataCell(this.gridWrapper,id).addClass("jstree-clicked");
+				findDataCell(this.uniq,id,this._gridSettings.gridcols).addClass("jstree-clicked");
 				this.get_node(selected.node.id,true).children("div.jstree-grid-cell").addClass("jstree-clicked");
 			},this))
 			.on("deselect_node.jstree",$.proxy(function(node,selected,event){
 				var id = selected.node.id;
-				findDataCell(this.gridWrapper,id).removeClass("jstree-clicked");
+				findDataCell(this.uniq,id,this._gridSettings.gridcols).removeClass("jstree-clicked");
 			},this))
 			.on("deselect_all.jstree",$.proxy(function(node,selected,event){
 				// get all of the ids that were unselected
 				var ids = selected.node || [], i;
-				for (i=0;i<ids.length;i++) {
-					findDataCell(this.gridWrapper,ids[i]).removeClass("jstree-clicked");
-				}
+				findDataCell(this.uniq,ids,this._gridSettings.gridcols).removeClass("jstree-clicked");
 			},this))
 			.on("search.jstree", $.proxy(function (e, data) {
 				// search sometimes filters, so we need to hide all of the appropriate grid cells as well, and show only the matches
-				var grid = this.gridWrapper;
-				if(this._data.search.som) {
-					if(data.nodes.length) {
+				var grid = this.gridWrapper, that = this, nodesToShow, startTime = new Date().getTime(),
+        ids = getIds(data.nodes.filter(".jstree-node")), endTime;
+				this.holdingCells = {};
+				if(data.nodes.length) {
+					if(this._data.search.som) {
+						// create the list of nodes we want to look at
+						if(this._data.search.smc) {
+							nodesToShow = data.nodes.add(data.nodes.find('.jstree-node'));
+						}
+						nodesToShow = (nodesToShow || data.nodes).add(data.nodes.parentsUntil(".jstree"));
+
 						// hide all of the grid cells
 						grid.find('div.jstree-grid-cell-regular').hide();
 						// show only those that match
-						data.nodes.add(data.nodes.parentsUntil(".jstree")).filter(".jstree-node").each(function (i,node) {
+						nodesToShow.filter(".jstree-node").each(function (i,node) {
 							var id = node.id;
 							if (id) {
-								findDataCell(grid,id).show();
+								that._prepare_grid(node);
+								findDataCell(that.uniq,id,that._gridSettings.gridcols).show();
 							}
 						});
 					}
+
+					findDataCell(that.uniq,ids,this._gridSettings.gridcols).addClass(SEARCHCLASS);
+          endTime = new Date().getTime();
+          this.element.trigger("search-complete.jstree-grid", [{time:endTime-startTime}]);
 				}
 				return true;
 			}, this))
 			.on("clear_search.jstree", $.proxy(function (e, data) {
 				// search has been cleared, so we need to show all rows
-				this.gridWrapper.find('div.jstree-grid-cell').show();
+				var grid = this.gridWrapper, ids = getIds(data.nodes.filter(".jstree-node"));
+				grid.find('div.jstree-grid-cell').show();
+				findDataCell(this.uniq,ids,this._gridSettings.gridcols).removeClass(SEARCHCLASS);
 				return true;
 			}, this))
 			.on("copy_node.jstree", function (e, data) {
@@ -390,23 +561,31 @@
 				newtree._prepare_grid(obj);
 				return true;
 			})
+			.on("show_ellipsis.jstree", $.proxy(function (e, data) {
+				this.gridWrapper.find(".jstree-grid-cell").add(".jstree-grid-header", this.gridWrapper).addClass("jstree-grid-ellipsis");
+				return true;
+			}, this))
+			.on("hide_ellipsis.jstree", $.proxy(function (e, data) {
+				this.gridWrapper.find(".jstree-grid-cell").add(".jstree-grid-header", this.gridWrapper).removeClass("jstree-grid-ellipsis");
+				return true;
+			}, this))
 			;
 			if (this._gridSettings.isThemeroller) {
 				this.element
 					.on("select_node.jstree",$.proxy(function(e,data){
-						data.rslt.obj.children("a").nextAll("div").addClass("ui-state-active");
+						data.rslt.obj.children("[class~='jstree-anchor']").nextAll("div").addClass("ui-state-active");
 					},this))
 					.on("deselect_node.jstree deselect_all.jstree",$.proxy(function(e,data){
-						data.rslt.obj.children("a").nextAll("div").removeClass("ui-state-active");
+						data.rslt.obj.children("[class~='jstree-anchor']").nextAll("div").removeClass("ui-state-active");
 					},this))
 					.on("hover_node.jstree",$.proxy(function(e,data){
-						data.rslt.obj.children("a").nextAll("div").addClass("ui-state-hover");
+						data.rslt.obj.children("[class~='jstree-anchor']").nextAll("div").addClass("ui-state-hover");
 					},this))
 					.on("dehover_node.jstree",$.proxy(function(e,data){
-						data.rslt.obj.children("a").nextAll("div").removeClass("ui-state-hover");
+						data.rslt.obj.children("[class~='jstree-anchor']").nextAll("div").removeClass("ui-state-hover");
 					},this));
 			}
-			
+
 			if (this._gridSettings.stateful) {
 				this.element
 					.on("resize_column.jstree-grid",$.proxy(function(e,col,width){
@@ -414,6 +593,7 @@
 					},this));
 			}
 		};
+
 		// tear down the tree entirely
 		this.teardown = function() {
 			var gw = this.gridWrapper, container = this.element, gridparent = gw.parent();
@@ -426,7 +606,7 @@
 		this._clean_grid = function (target,id) {
 			var grid = this.gridWrapper;
 			if (target) {
-				findDataCell(grid,id).remove();
+				findDataCell(this.uniq,id,this._gridSettings.gridcols).remove();
 			} else {
 				// get all of the `div` children in all of the `td` in dataRow except for :first (that is the tree itself) and remove
 				grid.find("div.jstree-grid-cell-regular").remove();
@@ -435,7 +615,7 @@
 		// prepare the headers
 		this._prepare_headers = function() {
 			var header, i, col, _this = this, gs = this._gridSettings,cols = gs.columns || [], width, defaultWidth = gs.columnWidth, resizable = gs.resizable || false,
-			cl, ccl, val, name, margin, last, tr = gs.isThemeroller, classAdd = (tr?"themeroller":"regular"), puller,
+			cl, ccl, val, name, last, tr = gs.isThemeroller, classAdd = (tr?"themeroller":"regular"), puller,
 			hasHeaders = false, gridparent = this.gridparent, rootid = this.rootid,
 			conf = gs.defaultConf, coluuid,
 			borPadWidth = 0, totalWidth = 0;
@@ -445,8 +625,8 @@
 
 			// save the references to columns by unique ID
 			this.colrefs = {};
-			
-			
+
+
 			// create the headers
 			for (i=0;i<cols.length;i++) {
 				//col = $("<col/>");
@@ -466,7 +646,10 @@
 					width = localStorage['jstree-root-'+rootid+'-column-'+i];
 				else
 					width = cols[i].width || defaultWidth;
-
+				
+				var minWidth = cols[i].minWidth || width;
+				var maxWidth = cols[i].maxWidth || width;
+				
 				// we only deal with borders if width is not auto and not percentages
 				borPadWidth = tr ? 1+6 : 2+8; // account for the borders and padding
 				if (width !== 'auto' && typeof(width) !== "string") {
@@ -475,13 +658,16 @@
 				col = this.midWrapper.children("div.jstree-grid-column-"+i);
 				last = $("<div></div>").css(conf).addClass("jstree-grid-div-"+this.uniq+"-"+i+" "+(tr?"ui-widget-header ":"")+" jstree-grid-header jstree-grid-header-cell jstree-grid-header-"+classAdd+" "+cl+" "+ccl).html(val);
 				last.addClass((tr?"ui-widget-header ":"")+"jstree-grid-header jstree-grid-header-"+classAdd);
+				if (this.settings.core.themes.ellipsis === true){
+				  last.addClass('jstree-grid-ellipsis');
+				}
 				last.prependTo(col);
 				last.attr(COL_DATA_ATTR, name);
 				totalWidth += last.outerWidth();
 				puller = $("<div class='jstree-grid-separator jstree-grid-separator-"+classAdd+(tr ? " ui-widget-header" : "")+(resizable? " jstree-grid-resizable-separator":"")+"'>&nbsp;</div>").appendTo(last);
 				col.width(width);
-				col.css("min-width",width);
-				col.css("max-width",width);
+				col.css("min-width", minWidth);
+				col.css("max-width", maxWidth);
 			}
 
 			last.addClass((tr?"ui-widget-header ":"")+"jstree-grid-header jstree-grid-header-last jstree-grid-header-"+classAdd);
@@ -509,32 +695,32 @@
 						ref = $.jstree.reference(currentTree);
 						cols = ref.settings.grid.columns;
 						headers = toResize.parent().children("div.jstree-grid-column");
-						if (isNaN(colNum) || colNum < 0) { ref._gridSettings.treeWidthDiff = currentTree.find("ins:eq(0)").width() + currentTree.find("a:eq(0)").width() - ref._gridSettings.columns[0].width; }
+						if (isNaN(colNum) || colNum < 0) { ref._gridSettings.treeWidthDiff = currentTree.find("ins:eq(0)").width() + currentTree.find("[class~='jstree-anchor']:eq(0)").width() - ref._gridSettings.columns[0].width; }
 						width = ref._gridSettings.columns[colNum].width = parseFloat(toResize.css("width"));
 						isClickedSep = false;
 						toResize = null;
-						
+
 						currentTree.trigger("resize_column.jstree-grid", [colNum,width]);
 					}
 				}).mousemove(function (e) {
 						if (isClickedSep) {
 							newMouseX = e.pageX;
 							var diff = newMouseX - oldMouseX,
-							oldPrevHeaderInner, 
+							oldPrevHeaderInner,
 							oldPrevColWidth, newPrevColWidth;
 
 							if (diff !== 0){
 								oldPrevHeaderInner = toResize.width();
 								oldPrevColWidth = parseFloat(toResize.css("width"));
-								
+
 								// handle a Chrome issue with columns set to auto
 								// thanks to Brabus https://github.com/side-by-side
 								if (!oldPrevColWidth) {oldPrevColWidth = toResize.innerWidth();}
-								
+
 								// make sure that diff cannot be beyond the left/right limits
 								diff = diff < 0 ? Math.max(diff,-oldPrevHeaderInner) : diff;
 								newPrevColWidth = oldPrevColWidth+diff;
-								
+
 								// only do this if we are not shrinking past 0 on left - and limit it to that amount
 								if ((diff > 0 || oldPrevHeaderInner > 0) && newPrevColWidth > MINCOLWIDTH) {
 									toResize.width(newPrevColWidth+"px");
@@ -545,8 +731,8 @@
 							}
 						}
 					});
-				this.gridWrapper.on("selectstart", ".jstree-grid-resizable-separator", function () { 
-					return false; 
+				this.gridWrapper.on("selectstart", ".jstree-grid-resizable-separator", function () {
+					return false;
 				}).on("mousedown", ".jstree-grid-resizable-separator", function (e) {
 					isClickedSep = true;
 					oldMouseX = e.pageX;
@@ -559,8 +745,8 @@
 					oldPrevColWidth = parseFloat(col.css("width")), newWidth = 0, diff,
 					colNum = col.prevAll(".jstree-grid-column").length,
 					oldPrevHeaderInner = col.width(), newPrevColWidth;
-					
-			
+
+
 					//find largest width
 					col.find(".jstree-grid-cell").each(function() {
 						var item = $(this), width;
@@ -568,18 +754,18 @@
 						item.css("width", "auto");
 						width = item.outerWidth();
 						item.css("position", "relative");
-					
+
 						if (width>newWidth) {
 							newWidth = width;
 						}
 					});
-				
+
 					diff = newWidth-oldPrevColWidth;
-				
+
 					// make sure that diff cannot be beyond the left limits
 					diff = diff < 0 ? Math.max(diff,-oldPrevHeaderInner) : diff;
 					newPrevColWidth = (oldPrevColWidth+diff)+"px";
-				
+
 					col.width(newPrevColWidth);
 					col.css("min-width",newPrevColWidth);
 					col.css("max-width",newPrevColWidth);
@@ -589,36 +775,37 @@
 				.on("click", ".jstree-grid-separator", function (e) {
 					// don't sort after resize
 					e.stopPropagation();
-				})
-				.on("click", ".jstree-grid-header-cell", function (e) {
-					if (!_this.sort) {
-						return;
-					}
-
-					// get column
-					var name = $(this).attr(COL_DATA_ATTR);
-
-					// sort order
-					var symbol;
-					if (gs.sortOrder === name && gs.sortAsc === true) {
-						gs.sortAsc = false;
-						symbol = "&darr;";
-					} else {
-						gs.sortOrder = name;
-						gs.sortAsc = true;
-						symbol = "&uarr;";
-					}
-
-					// add sort arrow
-					$(this.closest('.jstree-grid-wrapper')).find(".jstree-grid-sort-icon").remove();
-					$("<span></span>").addClass("jstree-grid-sort-icon").appendTo($(this)).html(symbol);
-
-					// sort by column
-					var rootNode = _this.get_node('#');
-					_this.sort(rootNode, true);
-					_this.redraw_node(rootNode, true);
 				});
 			}
+			this.gridWrapper.on("click", ".jstree-grid-header-cell", function (e) {
+				if (!_this.sort) {
+					return;
+				}
+
+				// get column
+				var name = $(this).attr(COL_DATA_ATTR);
+
+				// sort order
+				var symbol;
+				if (gs.sortOrder === name && gs.sortAsc === true) {
+					gs.sortAsc = false;
+					symbol = "&darr;";
+				} else {
+					gs.sortOrder = name;
+					gs.sortAsc = true;
+					symbol = "&uarr;";
+				}
+
+				// add sort arrow
+				$(this.closest('.jstree-grid-wrapper')).find(".jstree-grid-sort-icon").remove();
+				$("<span></span>").addClass("jstree-grid-sort-icon").appendTo($(this)).html(symbol);
+
+				// sort by column
+				var rootNode = _this.get_node('#');
+				_this.sort(rootNode, true);
+				_this.redraw_node(rootNode, true);
+			});
+
 		};
 		/*
 		 * Override redraw_node to correctly insert the grid
@@ -626,8 +813,8 @@
 		this.redraw_node = function(obj, deep, is_callback, force_render) {
 			// first allow the parent to redraw the node
 			obj = parent.redraw_node.call(this, obj, deep, is_callback, force_render);
-			// next prepare the grid
-			if(obj) {
+			// next prepare the grid for a redrawn node - but only if ths node is not hidden (search does that)
+			if (obj && !this.is_hidden(obj)) {
 				this._prepare_grid(obj);
 			}
 			return obj;
@@ -640,7 +827,7 @@
 		 * Override set_id to update cell attributes
 		 */
 		this.set_id = function (obj, id) {
-			var old;
+			var old, uniq = this.uniq;
 			if(obj) {
 				old = obj.id;
 			}
@@ -653,13 +840,13 @@
 						oldNodes = oldNodes.concat(obj.children_d);
 					}
 					// update id in children
-					for (i=0;i<oldNodes.length;i++) {
-						findDataCell(grid,oldNodes[i])
+					findDataCell(uniq,oldNodes,this._gridSettings.gridcols)
 						.attr(NODE_DATA_ATTR, obj.id)
-						.attr('id', GRIDCELLID_PREFIX+obj.id+GRIDCELLID_POSTFIX+(i+1))
-						.removeClass(GRIDCELLID_PREFIX+old+GRIDCELLID_POSTFIX)
-						.addClass(GRIDCELLID_PREFIX+obj.id+GRIDCELLID_POSTFIX);
-					}
+						.removeClass(generateCellId(uniq,old))
+						.addClass(generateCellId(uniq,obj.id))
+						.each(function(i,node) {
+							$(node).attr('id', generateCellId(uniq,obj.id)+(i+1));
+						});
 				}
 			}
 			return result;
@@ -667,16 +854,14 @@
 		this._hide_grid = function (node) {
 			var children = node && node.children_d ? node.children_d : [], i;
 			// go through each column, remove all children with the correct ID name
-			for (i=0;i<children.length;i++) {
-				findDataCell(this.gridWrapper,children[i]).remove();
-			}
+			findDataCell(this.uniq,children,this._gridSettings.gridcols).remove();
 		};
 		this.holdingCells = {};
 		this.getHoldingCells = function (obj,col,hc) {
-			var ret = $(), children = obj.children||[], child, i;
+			var ret = $(), children = obj.children||[], child, i, uniq = this.uniq;
 			// run through each child, render it, and then render its children recursively
 			for (i=0;i<children.length;i++) {
-				child = GRIDCELLID_PREFIX+escapeId(children[i])+GRIDCELLID_POSTFIX+col;
+				child = generateCellId(uniq,children[i])+col;
 				if (hc[child] && obj.state.opened) {
 					ret = ret.add(hc[child]).add(this.getHoldingCells(this.get_node(children[i]),col,hc));
 					//delete hc[child];
@@ -693,6 +878,7 @@
 		 */
 		this._edit = function (obj, col, element) {
 			if(!obj) { return false; }
+			if (!obj.data) {obj.data = {};}
 			if (element) {
 				element = $(element);
 				if (element.prop("tagName").toLowerCase() === "div") {
@@ -721,8 +907,8 @@
 						"blur" : $.proxy(function () {
 							var v = h2.val();
 							// save the value if changed
-							if(v === "" || v === t) { 
-								v = t; 
+							if(v === "" || v === t) {
+								v = t;
 							} else {
 								obj.data[col.value] = v;
 								this.element.trigger('update_cell.jstree-grid',{node:obj, col:col.value, value:v, old:t});
@@ -767,34 +953,34 @@
 			element.parent().append(h2);
 			h2.css(fn).width(Math.min(h1.text("pW" + h2[0].value).width(),w))[0].select();
 		};
-		
+
 		this.grid_hide_column = function (col) {
 			this.midWrapper.find(".jstree-grid-column-"+col).hide();
 		};
 		this.grid_show_column = function (col) {
 			this.midWrapper.find(".jstree-grid-column-"+col).show();
 		};
-		
+
 		this._prepare_grid = function (obj) {
-			var gs = this._gridSettings, c = gs.treeClass, _this = this, t, cols = gs.columns || [], width, tr = gs.isThemeroller, 
+			var gs = this._gridSettings, c = gs.treeClass, _this = this, t,
+			cols = gs.columns || [], width, tr = gs.isThemeroller, uniq = this.uniq,
+			treecol = gs.treecol,
 			tree = this.element, rootid = this.rootid,
 			classAdd = (tr?"themeroller":"regular"), img, objData = this.get_node(obj),
 			defaultWidth = gs.columnWidth, conf = gs.defaultConf, cellClickHandler = function (tree,node,val,col,t) {
 				return function(e) {
 					//node = tree.find("#"+node.attr("id"));
-					node.children(".jstree-anchor").trigger("click.jstree",e);
-					tree.trigger("select_cell.jstree-grid", [{value: val,column: col.header,node: node,grid:$(this),sourceName: col.value}]);
+					var event = jQuery.Event("select_cell.jstree-grid");
+ 					tree.trigger(event, [{value: val,column: col.header,node: node,grid:$(this),sourceName: col.value}]);
+ 					if (!event.isDefaultPrevented()) {
+ 						node.children(".jstree-anchor").trigger("click.jstree",e);
+ 					}
 				};
 			}, cellRightClickHandler = function (tree,node,val,col,t) {
 				return function (e) {
-					if (gs.context) {
+					if (gs.gridcontextmenu) {
 						e.preventDefault();
-						$.vakata.context.show(this,{ 'x' : e.pageX, 'y' : e.pageY },{
-							"edit":{label:"Edit","action": function (data) {
-								var obj = t.get_node(node);
-								_this._edit(obj,col,e.target);
-							}}
-						});
+						$.vakata.context.show(this,{ 'x' : e.pageX, 'y' : e.pageY }, gs.gridcontextmenu(_this,tree,node,val,col,t,e.target));
 					}
 				};
 			},
@@ -805,21 +991,24 @@
 				return function() { jsTreeInstance.dehover_node(node); };
 			},
 			i, val, cl, wcl, ccl, a, last, valClass, wideValClass, span, paddingleft, title, gridCellName, gridCellParentId, gridCellParent,
-			gridCellPrev, gridCellPrevId, gridCellNext, gridCellNextId, gridCellChild, gridCellChildId, 
+			gridCellPrev, gridCellPrevId, gridCellNext, gridCellNextId, gridCellChild, gridCellChildId,
 			col, content, tmpWidth, mw = this.midWrapper, dataCell, lid = objData.id,
+			highlightSearch, isClicked,
 			peers = this.get_node(objData.parent).children,
 			// find my position in the list of peers. "peers" is the list of everyone at my level under my parent, in order
-			pos = jQuery.inArray(lid,peers),
+			pos = $.inArray(lid,peers),
 			hc = this.holdingCells, rendered = false, closed;
 			// get our column definition
 			t = $(obj);
-			
+
 			// find the a children
-			a = t.children("a");
-			
+			a = t.children("[class~='jstree-anchor']");
+			highlightSearch = a.hasClass(SEARCHCLASS);
+			isClicked = a.hasClass("jstree-clicked");
+
 			if (a.length === 1) {
 				closed = !objData.state.opened;
-				gridCellName = GRIDCELLID_PREFIX+escapeId(lid)+GRIDCELLID_POSTFIX;
+				gridCellName = generateCellId(uniq,lid);
 				gridCellParentId = objData.parent === "#" ? null : objData.parent;
 				a.addClass(c);
 				//renderAWidth(a,_this);
@@ -827,15 +1016,6 @@
 				last = a;
 				// find which column our tree shuld go in
 				var s = this.settings.grid;
-				var treecol = 0;
-				for (i=0;i<s.columns.length;i++) {
-					if (s.columns[i].tree) {
-						// save which column it was
-						treecol = i;
-						// do not check any others
-						break;
-					}
-				}
 				for (i=0;i<cols.length;i++) {
 					if (treecol === i) {
 						continue;
@@ -852,18 +1032,8 @@
 
 
 					// get the contents of the cell - value could be a string or a function
-					if (col.value !== undefined && col.value !== null) {
-						if (typeof(col.value) === "function") {
-							val = col.value(objData);
-						} else if (objData.data !== null && objData.data !== undefined && objData.data[col.value] !== undefined) {
-							val = objData.data[col.value];
-						} else {
-							val = "";
-						}
-					} else {
-						val = "";
-					}
-					
+					val = getCellData(col.value,objData);
+
 					if (typeof(col.format) === "function") {
 						val = col.format(val);
 					}
@@ -873,7 +1043,7 @@
 					img = col.images[val] || col.images["default"];
 					if (img) {content = img[0] === "*" ? '<span class="'+img.substr(1)+'"></span>' : '<img src="'+img+'">';}
 					} else { content = val; }
-					
+
 					// content cannot be blank, or it messes up heights
 					if (content === undefined || content === null || BLANKRE.test(content)) {
 						content = "&nbsp;";
@@ -893,21 +1063,34 @@
 					title = col.title && objData.data !== null && objData.data !== undefined ? objData.data[col.title] || "" : "";
 					// strip out HTML
 					title = title.replace(htmlstripre, '');
-					
+
 					// get the width
 					paddingleft = 7;
 					width = col.width || defaultWidth;
 					if (width !== 'auto') {
 						width = tmpWidth || (width - paddingleft);
 					}
-					
-					last = findDataCell(dataCell, lid);
+
+					last = findDataCell(uniq, lid, i);
 					if (!last || last.length < 1) {
 						last = $("<div></div>");
 						$("<span></span>").appendTo(last);
 						last.attr("id",gridCellName+i);
 						last.addClass(gridCellName);
 						last.attr(NODE_DATA_ATTR,lid);
+						if (highlightSearch) {
+							last.addClass(SEARCHCLASS);
+						} else {
+							last.removeClass(SEARCHCLASS);
+						}
+						if (isClicked) {
+							last.addClass("jstree-clicked");
+						} else {
+							last.removeClass("jstree-clicked");
+						}
+						if (this.settings.core.themes.ellipsis === true && i !== treecol) {
+							last.addClass('jstree-grid-ellipsis');
+						}
 
 					}
 					// we need to put it in the dataCell - after the parent, but the position matters
@@ -923,9 +1106,9 @@
 					// here is the logic for jstree drawing:
 					//   it draws peers from first to last or from last to first
 					//   it draws children before a parent
-					// 
+					//
 					// so I can rely on my *parent* not being drawn, but I cannot rely on my previous peer or my next peer being drawn
-					
+
 					// so we do the following:
 					//   1- We are the first child: install after the parent
 					//   2- Our previous peer is already drawn: install after the previous peer
@@ -933,12 +1116,12 @@
 					//   4- Our previous peer is not drawn, we have no child that is drawn, our next peer is drawn: install right before our next peer
 					//   5- Our previous peer is not drawn, we have no child that is drawn, our next peer is not drawn: install right after parent
 					gridCellPrevId = pos <=0 ? objData.parent : findLastClosedNode(this,peers[pos-1]);
-					gridCellPrev = findDataCell(dataCell,gridCellPrevId);
+					gridCellPrev = findDataCell(uniq,gridCellPrevId, i);
 					gridCellNextId = pos >= peers.length-1 ? "NULL" : peers[pos+1];
-					gridCellNext = findDataCell(dataCell,gridCellNextId);
+					gridCellNext = findDataCell(uniq,gridCellNextId, i);
 					gridCellChildId = objData.children && objData.children.length > 0 ? objData.children[0] : "NULL";
-					gridCellChild = findDataCell(dataCell,gridCellChildId);
-					gridCellParent = findDataCell(dataCell,gridCellParentId);
+					gridCellChild = findDataCell(uniq,gridCellChildId, i);
+					gridCellParent = findDataCell(uniq,gridCellParentId, i);
 
 
 					// if our parent is already drawn, then we put this in the right order under our parent
@@ -980,24 +1163,25 @@
 
 					// create a span inside the div, so we can control what happens in the whole div versus inside just the text/background
 					span.addClass(cl+" "+valClass).html(content);
-					last = last.css(conf).addClass("jstree-grid-cell jstree-grid-cell-regular jstree-grid-cell-root-"+rootid+" jstree-grid-cell-"+classAdd+" "+wcl+ " " + wideValClass + (tr?" ui-state-default":"")).addClass("jstree-grid-col-"+i);
+					last = last.css(conf).addClass("jstree-grid-cell jstree-grid-cell-regular jstree-grid-cell-root-"+rootid+" jstree-grid-cell-"+classAdd+" "+wcl+ " " + wideValClass + (tr?" ui-state-default":"")).addClass("jstree-grid-col-"+i).addClass("jstree-animated");
 					// add click handler for clicking inside a grid cell
 					last.click(cellClickHandler(tree,t,val,col,this));
 					last.on("contextmenu",cellRightClickHandler(tree,t,val,col,this));
 					last.hover(hoverInHandler(t, this), hoverOutHandler(t, this));
-					
+
 					if (title) {
 						span.attr("title",title);
 					}
 
-				}		
+					tree.trigger("render_cell.jstree-grid", [{value: val, column: col.header, node: t, sourceName: col.value}]);
+				}
 				last.addClass("jstree-grid-cell-last"+(tr?" ui-state-default":""));
 				// if there is no width given for the last column, do it via automatic
 				if (cols[cols.length-1].width === undefined) {
 					last.addClass("jstree-grid-width-auto").next(".jstree-grid-separator").remove();
 				}
 			}
-			this.element.css({'overflow-y':'auto !important'});			
+			this.element.css({'overflow-y':'auto !important'});
 		};
 		// clean up holding cells
 		this.holdingCells = {};
