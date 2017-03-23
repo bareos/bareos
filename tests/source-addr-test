@@ -37,8 +37,14 @@ elif [ $os = 'Linux' ]; then
 fi
 
 if [ "$IP" = '' ]; then
-    echo "Can't detect ip address"
-    exit 0
+    # ifconfig output may be like this (RHEL/CentOS 7, Fedora, ...?)
+    # eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500
+    #    inet 192.168.121.195  netmask 255.255.255.0  broadcast 192.168.121.255
+    IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
+    if [ "$IP" = '' ]; then
+        echo "Can't detect ip address"
+        exit 0
+    fi
 fi
 
 outf="tmp/sed_tmp"
