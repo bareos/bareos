@@ -1,3 +1,5 @@
+ADD_TEST(disk:lan-addr-test "@regressdir@/tests/lan-addr-test")
+ADD_TEST(disk:lan-addr-test-passive "@regressdir@/tests/lan-addr-test-passive")
 ADD_TEST(disk:reload-test "@regressdir@/tests/reload-test")
 ADD_TEST(disk:always-incremental-test "@regressdir@/tests/always-incremental-test")
 ADD_TEST(disk:secure-erase-test "@regressdir@/tests/secure-erase-test")
