@@ -1,0 +1,92 @@
+   \section{Using different IP Adresses for SD -- FD Communication}
+   \label{LanAddress}
+   \index[general]{Lan Address}
+
+The \configdirective{Lan Address} configuration directive is needed to support a network
+topology where client and storage are situated inside of a LAN,  but the Director is
+outside of that LAN in the internet and accesses SD and FD via SNAT / port forwarding.
+
+Consider the following scheme:
+
+\begin{commands}{}
+   /-------------------\
+   |                   |    LAN 10.0.0.1/24
+   |                   |
+   |  FD_LAN   SD_LAN  |
+   |  .10         .20  |
+   |                   |
+   \___________________/
+             |
+         NAT Firewall
+         FD: 8.8.8.10 -> 10.0.0.10
+         SD: 8.8.8.20 -> 10.0.0.20
+             |
+   /-------------------\
+   |                   |
+   |                   |     WAN / Internet
+   |        DIR        |
+   |     8.8.8.100     |
+   |                   |
+   | FD_WAN   SD_WAN   |
+   | .30         .40   |
+   \___________________/
+   \end{commands}
+
+The director can access the FD\_LAN via the IP 8.8.8.10, which is
+forwarded to the IP 10.0.0.10 inside of the LAN.
+
+The director can access the SD\_LAN via the IP 8.8.8.20 which is
+forwarded to the IP 10.0.0.20 inside of the LAN.
+
+There is also a FD and a SD outside of the LAN, which have the IPs
+8.8.8.30 and 8.8.8.40
+
+All resources are configured so that the \configdirective{Address} directive gets the
+Address where the Director can reach the daemons.
+
+Additionally, devices being in the LAN get the LAN address configured in
+the \configdirective{LanAddress} directive:
+
+The configuration looks as follows:
+
+\begin{bconfig}{bareos-dir.conf}
+Client {
+   Name = FD_LAN
+   Address = 8.8.8.10
+   LanAddress = 10.0.0.10
+   ...
+}
+
+Storage {
+   Name = SD_LAN
+   Address = 8.8.8.20
+   LanAddress = 10.0.0.20
+   ...
+}
+
+Client {
+   Name = FD_WAN
+   Address = 8.8.8.30
+   ...
+}
+
+Storage {
+   Name = SD_WAN
+   Address = 8.8.8.40
+   ...
+}
+\end{bconfig}
+
+This way, backups and restores from each FD using each SD are possible
+as long as the firewall allows the needed network connections.
+
+The director simply checks if both the involved client and storage
+both have a \configdirective{LanAddress} configured.
+
+In that case, the initiating daemon is ordered to connect to the \configdirective{LanAddress}
+instead of the \configdirective{Address}. (In active client mode, the FD connects to the SD, in
+passive client mode the SD connects to the FD).
+
+If only one or none of the involved client and storage have a \configdirective{LanAddress}
+configured, the \configdirective{Address} is used as connection target for the
+initiating daemon.

@@ -243,3 +243,18 @@ Specifies the username that must be supplied when authenticating.
 Only used for the non Native protocols at the moment.
 
 }
+
+\defDirective{Dir}{Client}{Lan Address}{}{}{%
+This parameter is needed to support a network topology where client and storage are
+situated inside of a LAN,  but the Director is outside of that LAN in the internet
+and accesses SD and FD via SNAT or port forwarding.
+
+Only if this parameter is present in both the involved Client and Storage resources,
+the Director will send the specified IP address or hostname to the FD or SD (when
+using passive client).
+
+See chapter \nameref{LanAddress} for more details.
+
+}
+
+
