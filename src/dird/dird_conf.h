@@ -258,6 +258,7 @@ public:
    utime_t JobRetention;              /* Job retention period in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    char *address;                     /* Hostname for remote access to Client */
+   char *lanaddress;                  /* Hostname for remote access to Client if behind NAT in LAN */
    char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    CATRES *catalog;                   /* Catalog resource */
@@ -285,6 +286,7 @@ public:
    uint32_t SDport;                   /* Port where Directors connect */
    uint32_t SDDport;                  /* Data port for File daemon */
    char *address;                     /* Hostname for remote access to Storage */
+   char *lanaddress;                  /* Hostname for remote access to Storage if behind NAT in LAN */
    char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    char *media_type;                  /* Media Type provided by this Storage */
