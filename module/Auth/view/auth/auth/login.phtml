@@ -192,7 +192,7 @@ get latest versions information via ajax call
 
 function getVersions() {
 
-   var update_url = "https://download.bareos.com/release-info/bareos-release-info.js?callback=jsonCallback";
+   var update_url = window.location.protocol + "//download.bareos.com/release-info/bareos-release-info.js?callback=jsonCallback";
 
    var v = $.ajax({
       method: "GET",
@@ -201,7 +201,7 @@ function getVersions() {
       contentType: 'application/javascript',
       dataType: 'jsonp',
       timeout: 15000,
-      error: function() {
+      error: function(jqXHR, textStatus, errorThrown) {
          return false;
       },
       success: function(result) {

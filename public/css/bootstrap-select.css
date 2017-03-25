@@ -1,10 +1,14 @@
 /*!
- * Bootstrap-select v1.7.2 (http://silviomoreto.github.io/bootstrap-select)
+ * Bootstrap-select v1.12.2 (http://silviomoreto.github.io/bootstrap-select)
  *
- * Copyright 2013-2015 bootstrap-select
+ * Copyright 2013-2017 bootstrap-select
  * Licensed under MIT (https://github.com/silviomoreto/bootstrap-select/blob/master/LICENSE)
  */
 
+select.bs-select-hidden,
+select.selectpicker {
+  display: none !important;
+}
 .bootstrap-select {
   width: 220px \0;
   /*IE9 and below*/
@@ -12,6 +16,31 @@
 .bootstrap-select > .dropdown-toggle {
   width: 100%;
   padding-right: 25px;
+  z-index: 1;
+}
+.bootstrap-select > .dropdown-toggle.bs-placeholder,
+.bootstrap-select > .dropdown-toggle.bs-placeholder:hover,
+.bootstrap-select > .dropdown-toggle.bs-placeholder:focus,
+.bootstrap-select > .dropdown-toggle.bs-placeholder:active {
+  color: #999;
+}
+.bootstrap-select > select {
+  position: absolute !important;
+  bottom: 0;
+  left: 50%;
+  display: block !important;
+  width: 0.5px !important;
+  height: 100% !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  border: none;
+}
+.bootstrap-select > select.mobile-device {
+  top: 0;
+  left: 0;
+  display: block !important;
+  width: 100% !important;
+  z-index: 2;
 }
 .has-error .bootstrap-select .dropdown-toggle,
 .error .bootstrap-select .dropdown-toggle {
@@ -39,6 +68,9 @@
 .bootstrap-select.form-control.input-group-btn {
   z-index: auto;
 }
+.bootstrap-select.form-control.input-group-btn:not(:first-child):not(:last-child) > .btn {
+  border-radius: 0;
+}
 .bootstrap-select.btn-group:not(.input-group-btn),
 .bootstrap-select.btn-group[class*="col-"] {
   float: none;
@@ -59,6 +91,13 @@
 .form-group-sm .bootstrap-select.btn-group.form-control {
   padding: 0;
 }
+.form-group-lg .bootstrap-select.btn-group.form-control .dropdown-toggle,
+.form-group-sm .bootstrap-select.btn-group.form-control .dropdown-toggle {
+  height: 100%;
+  font-size: inherit;
+  line-height: inherit;
+  border-radius: inherit;
+}
 .form-inline .bootstrap-select.btn-group .form-control {
   width: 100%;
 }
@@ -69,6 +108,14 @@
 .bootstrap-select.btn-group.disabled:focus,
 .bootstrap-select.btn-group > .disabled:focus {
   outline: none !important;
+}
+.bootstrap-select.btn-group.bs-container {
+  position: absolute;
+  height: 0 !important;
+  padding: 0 !important;
+}
+.bootstrap-select.btn-group.bs-container .dropdown-menu {
+  z-index: 1060;
 }
 .bootstrap-select.btn-group .dropdown-toggle .filter-option {
   display: inline-block;
@@ -88,7 +135,6 @@
 }
 .bootstrap-select.btn-group .dropdown-menu {
   min-width: 100%;
-  z-index: 1035;
   -webkit-box-sizing: border-box;
      -moz-box-sizing: border-box;
           box-sizing: border-box;
@@ -114,6 +160,10 @@
 }
 .bootstrap-select.btn-group .dropdown-menu li a {
   cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+      -ms-user-select: none;
+          user-select: none;
 }
 .bootstrap-select.btn-group .dropdown-menu li a.opt {
   position: relative;
@@ -169,7 +219,7 @@
   margin-right: 34px;
 }
 .bootstrap-select.show-menu-arrow.open > .dropdown-toggle {
-  z-index: 1036;
+  z-index: 1061;
 }
 .bootstrap-select.show-menu-arrow .dropdown-toggle:before {
   content: '';
@@ -221,7 +271,6 @@
   padding: 4px 8px;
 }
 .bs-actionsbox {
-  float: left;
   width: 100%;
   -webkit-box-sizing: border-box;
      -moz-box-sizing: border-box;
@@ -246,18 +295,6 @@
 .bs-searchbox .form-control {
   margin-bottom: 0;
   width: 100%;
-}
-select.bs-select-hidden,
-select.selectpicker {
-  display: none !important;
-}
-select.mobile-device {
-  position: absolute !important;
-  top: 0;
-  left: 0;
-  display: block !important;
-  width: 100%;
-  height: 100% !important;
-  opacity: 0;
+  float: none;
 }
 /*# sourceMappingURL=bootstrap-select.css.map */

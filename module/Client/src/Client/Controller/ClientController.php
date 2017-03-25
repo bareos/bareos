@@ -210,7 +210,21 @@ class ClientController extends AbstractActionController
          }
 
          if(array_key_exists('obsarch', $dird_version)) {
-            $dird_arch = $dird_version['obsarch'];
+            if(preg_match("/debian/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
+               $dird_arch = "amd64";
+            }
+            elseif(preg_match("/ubuntu/i", $dird_dist) && $dird_version['obsarch'] == "x86_64") {
+               $dird_arch = "amd64";
+            }
+            elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win32") {
+               $dird_arch = "32";
+            }
+            elseif(preg_match("/windows/i", $dird_dist) && $dird_version['obsarch'] == "Win64") {
+               $dird_arch = "64";
+            }
+            else {
+               $dird_arch = $dird_version['obsarch'];
+            }
          }
          else {
             $dird_arch = null;
@@ -283,10 +297,24 @@ class ClientController extends AbstractActionController
             }
 
             if(array_key_exists(4, $uname)) {
-               $fd_arch = $uname[4];
+               if(preg_match("/debian/i", $fd_dist) && $uname[4] == "x86_64") {
+                  $fd_arch = "amd64";
+               }
+               elseif(preg_match("/ubuntu/i", $fd_dist) && $uname[4] == "x86_64") {
+                  $fd_arch = "amd64";
+               }
+               elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win32") {
+                  $fd_arch = "32";
+               }
+               elseif(preg_match("/windows/i", $fd_dist) && $uname[4] == "Win64") {
+                  $fd_arch = "64";
+               }
+               else {
+                  $fd_arch = $uname[4];
+               }
             }
             else {
-               $fd_arch = "";
+               $fd_arch = NULL;
             }
 
             $result[$i]['installed_fd'] = $fd_vers;
