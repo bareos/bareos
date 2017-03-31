@@ -119,12 +119,15 @@ static void build_restore_command(JCR *jcr, POOL_MEM &ret)
 static inline bool do_native_restore_bootstrap(JCR *jcr)
 {
    STORERES *store;
+   CLIENTRES *client;
    bootstrap_info info;
    BSOCK *fd = NULL;
    BSOCK *sd = NULL;
    bool first_time = true;
    POOL_MEM restore_cmd(PM_MESSAGE);
+   char *connection_target_address;
 
+   client = jcr->res.client;
    /*
     * This command is used for each part
     */
@@ -140,7 +143,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
    /*
     * Read the bootstrap file
     */
-   jcr->passive_client = jcr->res.client->passive;
+   jcr->passive_client = client->passive;
    while (!feof(info.bs)) {
       if (!select_next_rstore(jcr, info)) {
          goto bail_out;
@@ -210,7 +213,12 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          goto bail_out;
       }
 
+
+
+
       if (!jcr->passive_client) {
+
+
          int tls_need = BNET_TLS_NONE;
 
          /*
@@ -250,7 +258,9 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
             }
          }
 
-         fd->fsend(storaddrcmd, store->address,
+         connection_target_address = storage_address_to_contact(client, store);
+
+         fd->fsend(storaddrcmd, connection_target_address,
                    store->SDDport, tls_need, jcr->sd_auth_key);
          memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
 
@@ -259,8 +269,9 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
             goto bail_out;
          }
       } else {
+
+
          int tls_need = BNET_TLS_NONE;
-         CLIENTRES *client = jcr->res.client;
          /*
           * In passive mode we tell the FD what authorization key to use
           * and the ask the SD to initiate the connection.
@@ -285,10 +296,11 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
             }
          }
 
+         connection_target_address = client_address_to_contact(client, store);
          /*
           * Tell the SD to connect to the FD.
           */
-         sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+         sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
          if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
             goto bail_out;
          }

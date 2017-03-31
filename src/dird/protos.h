@@ -62,6 +62,10 @@ bool send_accurate_current_files(JCR *jcr);
 void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type,
                              const char *term_msg);
 
+char* storage_address_to_contact(CLIENTRES *client, STORERES *store);
+char* client_address_to_contact(CLIENTRES *client, STORERES *store);
+char* storage_address_to_contact(STORERES *rstore, STORERES *wstore);
+
 /* bsr.c */
 RBSR *new_bsr();
 void free_bsr(RBSR *bsr);
