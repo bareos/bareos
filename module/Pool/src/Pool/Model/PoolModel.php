@@ -77,8 +77,14 @@ class PoolModel
       if(isset($bsock, $pool)) {
          $cmd = 'llist media pool="'.$pool.'"';
          $result = $bsock->send_command($cmd, 2, null);
-         $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $media['result']['volumes'];
+         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $error['result']['error'];
+         }
+         else {
+            $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+            return $media['result']['volumes'];
+         }
       }
       else {
          throw new \Exception('Missing argument.');
