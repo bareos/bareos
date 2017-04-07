@@ -582,10 +582,11 @@ void B_DB::list_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
     * Stupid MySQL is NON-STANDARD !
     */
    if (get_type_index() == SQL_TYPE_MYSQL) {
-      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename, "
+                     "CASE WHEN F.FileIndex = '0' THEN '(deleted)' ELSE '' END status "
+           "FROM (SELECT PathId, FilenameId, FileIndex FROM File WHERE JobId=%s "
                   "UNION ALL "
-                 "SELECT PathId, FilenameId "
+                 "SELECT PathId, FilenameId, '0' "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
@@ -594,14 +595,15 @@ void B_DB::list_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
            "AND Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
    } else {
-      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM (SELECT PathId, FilenameId FROM File WHERE JobId=%s "
+      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename , "
+                     "CASE WHEN F.FileIndex = '0' THEN '(deleted)' ELSE '' END status "
+           "FROM (SELECT PathId, FilenameId, FileIndex FROM File WHERE JobId=%s "
                   "UNION ALL "
-                 "SELECT PathId, FilenameId "
+                 "SELECT PathId, FilenameId , '0' "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
-           ") AS F, Filename,Path "
+           ") AS F, Filename, Path "
            "WHERE Filename.FilenameId=F.FilenameId "
            "AND Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
