@@ -1374,7 +1374,7 @@ static inline bool do_actual_migration(JCR *jcr)
       }
 
       /*
-       * Open a message channel connection with the Reading Storage daemon.
+       * Open a message channel connection to the Reading Storage daemon.
        */
       Dmsg0(110, "Open connection with reading storage daemon\n");
 
@@ -1484,7 +1484,8 @@ static inline bool do_actual_migration(JCR *jcr)
     * to replicate to the other.
     */
    if (jcr->remote_replicate) {
-      STORERES *store;
+      STORERES *wstore = mig_jcr->res.wstore;
+      STORERES *rstore = jcr->res.rstore;
       POOL_MEM command(PM_MESSAGE);
       int tls_need = BNET_TLS_NONE;
 
@@ -1508,24 +1509,25 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Send Storage daemon address to the other Storage daemon
        */
-      store = mig_jcr->res.wstore;
-      if (store->SDDport == 0) {
-         store->SDDport = store->SDport;
+      if (wstore->SDDport == 0) {
+         wstore->SDDport = wstore->SDport;
       }
 
       /*
        * TLS Requirement
        */
-      if (store->tls.enable) {
-         if (store->tls.require) {
+      if (wstore->tls.enable) {
+         if (wstore->tls.require) {
             tls_need = BNET_TLS_REQUIRED;
          } else {
             tls_need = BNET_TLS_OK;
          }
       }
 
-      Mmsg(command, replicatecmd, mig_jcr->Job, store->address,
-           store->SDDport, tls_need, mig_jcr->sd_auth_key);
+      char *connection_target_address = storage_address_to_contact(rstore, wstore);
+
+      Mmsg(command, replicatecmd, mig_jcr->Job, connection_target_address,
+           wstore->SDDport, tls_need, mig_jcr->sd_auth_key);
 
       if (!jcr->store_bsock->fsend(command.c_str())) {
          free_paired_storage(jcr);

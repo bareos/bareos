@@ -555,7 +555,7 @@ static bool init_sighandler_sighup()
  * The algorithm used is as follows: we count how many jobs are
  * running and mark the running jobs to make a callback on
  * exiting. The old config is saved with the reload table
- * id in a reload table. The new config file is read. Now, as
+ * id in a reload table. The new configuration is read. Now, as
  * each job exits, it calls back to the reload_job_end_cb(), which
  * decrements the count of open jobs for the given reload table.
  * When the count goes to zero, we release those resources.
@@ -569,11 +569,11 @@ static bool init_sighandler_sighup()
  */
 bool do_reload_config()
 {
-   bool ok;
+   static bool already_here = false;
+   bool ok = false;
+   bool reloaded = false;
    JCR *jcr;
    int njobs = 0;                     /* Number of running jobs */
-   bool reloaded = false;
-   static bool already_here = false;
    resource_table_reference prev_config;
 
    if (already_here) {

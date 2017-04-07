@@ -246,21 +246,22 @@ struct runtime_job_status_t;
  */
 class CLIENTRES: public BRSRES {
 public:
-   uint32_t Protocol;                 /**< Protocol to use to connect */
-   uint32_t AuthType;                 /**< Authentication Type to use for protocol */
-   uint32_t ndmp_loglevel;            /**< NDMP Protocol specific loglevel to use */
-   uint32_t ndmp_blocksize;           /**< NDMP Protocol specific blocksize to use */
-   uint32_t FDport;                   /**< Where File daemon listens */
-   uint64_t SoftQuota;                /**< Soft Quota permitted in bytes */
-   uint64_t HardQuota;                /**< Maximum permitted quota in bytes */
-   uint64_t GraceTime;                /**< Time remaining on gracetime */
-   uint64_t QuotaLimit;               /**< The total softquota supplied if over grace */
-   utime_t SoftQuotaGracePeriod;      /**< Grace time for softquota */
-   utime_t FileRetention;             /**< File retention period in seconds */
-   utime_t JobRetention;              /**< Job retention period in seconds */
-   utime_t heartbeat_interval;        /**< Interval to send heartbeats */
-   char *address;                     /**< Hostname for remote access to Client */
-   char *username;                    /**< Username to use for authentication if protocol supports it */
+   uint32_t Protocol;                 /* Protocol to use to connect */
+   uint32_t AuthType;                 /* Authentication Type to use for protocol */
+   uint32_t ndmp_loglevel;            /* NDMP Protocol specific loglevel to use */
+   uint32_t ndmp_blocksize;           /* NDMP Protocol specific blocksize to use */
+   uint32_t FDport;                   /* Where File daemon listens */
+   uint64_t SoftQuota;                /* Soft Quota permitted in bytes */
+   uint64_t HardQuota;                /* Maximum permitted quota in bytes */
+   uint64_t GraceTime;                /* Time remaining on gracetime */
+   uint64_t QuotaLimit;               /* The total softquota supplied if over grace */
+   utime_t SoftQuotaGracePeriod;      /* Grace time for softquota */
+   utime_t FileRetention;             /* File retention period in seconds */
+   utime_t JobRetention;              /* Job retention period in seconds */
+   utime_t heartbeat_interval;        /* Interval to send heartbeats */
+   char *address;                     /* Hostname for remote access to Client */
+   char *lanaddress;                  /* Hostname for remote access to Client if behind NAT in LAN */
+   char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    CATRES *catalog;                   /**< Catalog resource */
    int32_t MaxConcurrentJobs;         /**< Maximum concurrent jobs */
@@ -282,12 +283,13 @@ public:
  */
 class STORERES : public BRSRES {
 public:
-   uint32_t Protocol;                 /**< Protocol to use to connect */
-   uint32_t AuthType;                 /**< Authentication Type to use for protocol */
-   uint32_t SDport;                   /**< Port where Directors connect */
-   uint32_t SDDport;                  /**< Data port for File daemon */
-   char *address;                     /**< Hostname for remote access to Storage */
-   char *username;                    /**< Username to use for authentication if protocol supports it */
+   uint32_t Protocol;                 /* Protocol to use to connect */
+   uint32_t AuthType;                 /* Authentication Type to use for protocol */
+   uint32_t SDport;                   /* Port where Directors connect */
+   uint32_t SDDport;                  /* Data port for File daemon */
+   char *address;                     /* Hostname for remote access to Storage */
+   char *lanaddress;                  /* Hostname for remote access to Storage if behind NAT in LAN */
+   char *username;                    /* Username to use for authentication if protocol supports it */
    s_password password;
    char *media_type;                  /**< Media Type provided by this Storage */
    char *changer_device;              /**< If DIR controls storage directly changer device used */

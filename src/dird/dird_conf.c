@@ -216,6 +216,7 @@ static RES_ITEM cli_items[] = {
    { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_client.Protocol), 0, CFG_ITEM_DEFAULT, "Native", "13.2.0-", NULL },
    { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_client.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "LanAddress", CFG_TYPE_STR, ITEM(res_client.lanaddress), 0, CFG_ITEM_DEFAULT, NULL, NULL, NULL },
    { "FdAddress", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Address." },
    { "Port", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
    { "FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, FD_DEFAULT_PORT, NULL, NULL },
@@ -262,6 +263,7 @@ static RES_ITEM store_items[] = {
    { "Protocol", CFG_TYPE_AUTHPROTOCOLTYPE, ITEM(res_store.Protocol), 0, CFG_ITEM_DEFAULT, "Native", NULL, NULL },
    { "AuthType", CFG_TYPE_AUTHTYPE, ITEM(res_store.AuthType), 0, CFG_ITEM_DEFAULT, "None", NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
+   { "LanAddress", CFG_TYPE_STR, ITEM(res_store.lanaddress), 0, CFG_ITEM_DEFAULT, NULL, NULL, NULL },
    { "SdAddress", CFG_TYPE_STR, ITEM(res_store.address), 0, CFG_ITEM_ALIAS, NULL, NULL, "Alias for Address." },
    { "Port", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
    { "SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT | CFG_ITEM_ALIAS, SD_DEFAULT_PORT, NULL, "Alias for Port." },
@@ -2556,6 +2558,9 @@ void free_resource(RES *sres, int type)
       if (res->res_client.address) {
          free(res->res_client.address);
       }
+      if (res->res_client.lanaddress) {
+         free(res->res_client.lanaddress);
+      }
       if (res->res_client.username) {
          free(res->res_client.username);
       }
@@ -2570,6 +2575,9 @@ void free_resource(RES *sres, int type)
    case R_STORAGE:
       if (res->res_store.address) {
          free(res->res_store.address);
+      }
+      if (res->res_store.lanaddress) {
+         free(res->res_store.lanaddress);
       }
       if (res->res_store.username) {
          free(res->res_store.username);

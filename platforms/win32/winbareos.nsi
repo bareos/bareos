@@ -1423,14 +1423,27 @@ Function .onInit
   /SD IDCANCEL IDOK uninst
   Abort
 
-  ;Run the uninstaller
 uninst:
+
+  #
+  # workaround for bug in 16.2.4 and 16.2.5-r21.1: make copy of configuration files,
+  # before they are deleted by uninstaller of 16.2.4.
+  #
+  StrCpy $6 "$0" 6
+  StrCmp $6 "16.2.4" config_backup_workaround
+  StrCmp $6 "16.2.5" config_backup_workaround no_config_backup_workaround
+
+config_backup_workaround:
+  CreateDirectory "$PLUGINSDIR\config-backup"
+  CopyFiles "$APPDATA\${PRODUCT_NAME}\*.conf" "$PLUGINSDIR\config-backup"
+
+no_config_backup_workaround:
   ClearErrors
+  # run the uninstaller
   ExecWait '$R0 /S /SILENTKEEPCONFIG _?=$INSTDIR'
             ;Silent Uninstall, Keep Configuration files, Do not copy the uninstaller to a temp file
 
   IfErrors no_remove_uninstaller done
-  # Exec $INSTDIR\uninst.exe
 
 no_remove_uninstaller:
 
@@ -1441,6 +1454,10 @@ no_remove_uninstaller:
   abort
 
 done:
+
+  # config backup workaround: restore config files
+  IfFileExists "$PLUGINSDIR\config-backup\*.conf" 0 +2
+    CopyFiles "$PLUGINSDIR\config-backup\*.conf" "$APPDATA\${PRODUCT_NAME}"
 
   ${GetOptions} $cmdLineParams "/CLIENTNAME="  $ClientName
   ClearErrors
@@ -2080,12 +2097,19 @@ Section Uninstall
 
 ConfDeleteSkip:
   # delete config files *.conf.old and *.conf.new, ...
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.*"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.*"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
+  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
+
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.new"
+  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.new"
 
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"

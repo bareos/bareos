@@ -69,6 +69,45 @@ static inline bool validate_client(JCR *jcr)
    }
 }
 
+/**
+ * if both FD and SD have LanAddress set, use the storages' LanAddress to connect to.
+ */
+char* storage_address_to_contact(CLIENTRES *client, STORERES *store)
+{
+   if (store->lanaddress && client->lanaddress) {
+      return store->lanaddress;
+   } else {
+      return store->address;
+   }
+}
+
+/**
+ * if both FD and SD have LanAddress set, use the clients' LanAddress to connect to.
+ *
+ */
+char* client_address_to_contact(CLIENTRES *client, STORERES *store)
+{
+   if (store->lanaddress && client->lanaddress) {
+      return client->lanaddress;
+   } else {
+      return client->address;
+   }
+}
+
+/**
+ * if both readstorage and writestorage have LanAddress set,
+ * use wstores' LanAddress to connect to.
+ *
+ */
+char* storage_address_to_contact(STORERES *rstore, STORERES *wstore)
+{
+   if (rstore->lanaddress && wstore->lanaddress) {
+      return wstore->lanaddress;
+   } else {
+      return wstore->address;
+   }
+}
+
 static inline bool validate_storage(JCR *jcr)
 {
    STORERES *store;
@@ -475,6 +514,10 @@ bool do_native_backup(JCR *jcr)
       send_bwlimit_to_fd(jcr, jcr->Job); /* Old clients don't have this command */
    }
 
+   client = jcr->res.client;
+   store = jcr->res.wstore;
+   char *connection_target_address;
+
    /*
     * See if the client is a passive client or not.
     */
@@ -482,7 +525,6 @@ bool do_native_backup(JCR *jcr)
       /*
        * Send Storage daemon address to the File daemon
        */
-      store = jcr->res.wstore;
       if (store->SDDport == 0) {
          store->SDDport = store->SDport;
       }
@@ -498,12 +540,13 @@ bool do_native_backup(JCR *jcr)
          }
       }
 
-      fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need);
+      connection_target_address = storage_address_to_contact(client, store);
+
+      fd->fsend(storaddrcmd, connection_target_address, store->SDDport, tls_need);
       if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
          goto bail_out;
       }
    } else {
-      client = jcr->res.client;
 
       /*
        * TLS Requirement
@@ -516,10 +559,12 @@ bool do_native_backup(JCR *jcr)
          }
       }
 
+      connection_target_address = client_address_to_contact(client, store);
+
       /*
        * Tell the SD to connect to the FD.
        */
-      sd->fsend(passiveclientcmd, client->address, client->FDport, tls_need);
+      sd->fsend(passiveclientcmd, connection_target_address, client->FDport, tls_need);
       if (!response(jcr, sd, OKpassiveclient, "Passive client", DISPLAY_ERROR)) {
          goto bail_out;
       }
