@@ -56,14 +56,18 @@
  */
 bool B_DB::get_file_attributes_record(JCR *jcr, char *filename, JOB_DBR *jr, FILE_DBR *fdbr)
 {
-   bool retval;
-   Dmsg1(100, "get_file_attributes_record fname=%s \n", fname);
-   fdbr->FilenameId = get_filename_record(jcr);
+      bool retval;
+   Dmsg1(100, "db_get_file_attributes_record fname=%s \n", fname);
+
+   db_lock(this);
+
+   split_path_and_file(jcr, fname);
    fdbr->PathId = get_path_record(jcr);
    retval = get_file_record(jcr, jr, fdbr);
 
-
+   db_unlock(this);
    return retval;
+
 }
 
 /**
@@ -96,8 +100,8 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
    char ed1[50], ed2[50], ed3[50];
    int num_rows;
 
-   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
-   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
+   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
+   escape_string(jcr, esc_name, fname, fnl);
 
    if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
       Mmsg(cmd,
@@ -106,7 +110,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
 "File.Name='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
       edit_int64(fdbr->PathId, ed1),
-      mdb->esc_name,
+      esc_name,
       edit_int64(jr->ClientId,ed3));
    } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
       Mmsg(cmd,
@@ -114,7 +118,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
            "File.Name='%s' AND File.FileIndex=%u",
            edit_int64(fdbr->JobId, ed1),
            edit_int64(fdbr->PathId, ed2),
-           mdb->esc_name,
+           esc_name,
            jr->FileIndex);
    } else {
       Mmsg(cmd,
@@ -122,10 +126,10 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
 "File.Name='%s'",
       edit_int64(fdbr->JobId, ed1),
       edit_int64(fdbr->PathId, ed2),
-      mdb->esc_name);
+      esc_name);
    }
    Dmsg3(450, "Get_file_record JobId=%u Filename=%s PathId=%u\n",
-      fdbr->JobId, mdb->esc_name, fdbr->PathId);
+      fdbr->JobId, esc_name, fdbr->PathId);
 
    Dmsg1(100, "Query=%s\n", cmd);
 
@@ -144,14 +148,14 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
                Mmsg3(errmsg, _("get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"),
                   num_rows,
                   edit_int64(fdbr->PathId, ed1),
-                  mdb->esc_name);
-               Dmsg1(000, "=== Problem!  %s", mdb->errmsg);
+                  esc_name);
+               Dmsg1(000, "=== Problem!  %s", errmsg);
             }
          }
       } else {
-         Mmsg2(mdb->errmsg, _("File record for PathId=%s Filename=%s not found.\n"),
+         Mmsg2(errmsg, _("File record for PathId=%s Filename=%s not found.\n"),
             edit_int64(fdbr->PathId, ed1),
-            mdb->esc_name);
+            esc_name);
       }
       sql_free_result();
    } else {
@@ -168,7 +172,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
  *
  *   DO NOT use Jmsg in this routine (see notes for get_file_record)
  */
-int db_get_path_record(JCR *jcr, B_DB *mdb)
+int B_DB::get_path_record(JCR *jcr)
 {
    SQL_ROW row;
    DBId_t PathId = 0;
@@ -909,7 +913,7 @@ int B_DB::get_num_media_records(JCR *jcr)
 }
 
 /**
- * This function creates a sql query string at mdb->cmd to return a list of all the Media records for
+ * This function creates a sql query string at cmd to return a list of all the Media records for
  * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
  * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
  * over VolumeName. The caller must free ids if non-NULL.
@@ -1669,7 +1673,7 @@ bail_out:
 }
 
 /**
- * This function creates a sql query string at mdb->cmd to return a list of all the Media records for
+ * This function creates a sql query string at cmd to return a list of all the Media records for
  * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
  * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
  * over VolumeName. The caller must free ids if non-NULL.

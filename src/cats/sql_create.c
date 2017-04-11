@@ -864,6 +864,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
 >>>>>>> bareos-16.2-db2170
       goto bail_out;
+   */
    }
 #endif
 
@@ -967,7 +968,7 @@ bool B_DB::create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 
    split_path_and_file(jcr, ar->fname);
 
-   if (!db_create_path_record(jcr, mdb, ar)) {
+   if (!create_path_record(jcr, ar)) {
       goto bail_out;
    }
    Dmsg1(dbglevel, "create_path_record: %s\n", esc_name);
@@ -978,7 +979,7 @@ bool B_DB::create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
    }
    Dmsg0(dbglevel, "create_file_record OK\n");
 
-   Dmsg2(dbglevel, "CreateAttributes Path=%s File=%s\n", mdb->path, mdb->fname);
+   Dmsg2(dbglevel, "CreateAttributes Path=%s File=%s\n", path, fname);
    retval = true;
 
 bail_out:
@@ -1001,8 +1002,8 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
    ASSERT(ar->JobId);
    ASSERT(ar->PathId);
 
-   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
-   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
+   esc_name = check_pool_memory_size(esc_name, 2*fnl+2);
+   escape_string(jcr, esc_name, fname, fnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = no_digest;
@@ -1014,7 +1015,7 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
    Mmsg(cmd,
         "INSERT INTO File (FileIndex,JobId,PathId,Name,"
         "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,'%s','%s','%s',%u)",
-        ar->FileIndex, ar->JobId, ar->PathId, mdb->esc_name,
+        ar->FileIndex, ar->JobId, ar->PathId, esc_name,
         ar->attr, digest, ar->DeltaSeq);
 
    ar->FileId = sql_insert_autokey_record(cmd, NT_("File"));

@@ -661,8 +661,8 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
       bool next_fi = true;
       int first_fi = jcr->bsr->FileIndex->findex;
       int last_fi  = jcr->bsr->FileIndex->findex2;
-      int current_sessionid = jcr->bsr->sessid->sessid;
-      int current_sessiontime =  jcr->bsr->sesstime->sesstime;
+      uint32_t current_sessionid = jcr->bsr->sessid->sessid;
+      uint32_t current_sessiontime =  jcr->bsr->sesstime->sesstime;
       cnt = 0;
 
       for (bsr = jcr->bsr; bsr; bsr = bsr->next) {

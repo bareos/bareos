@@ -423,7 +423,7 @@ Bvfs::Bvfs(JCR *j, B_DB *mdb) {
    prev_dir = get_pool_memory(PM_NAME);
    pattern = get_pool_memory(PM_NAME);
    *jobids = *prev_dir = *pattern = 0;
-   dir_filenameid = pwd_id = offset = 0;
+   pwd_id = offset = 0;
    see_copies = see_all_versions = false;
    limit = 1000;
    attr = new_attr(jcr);
@@ -513,24 +513,6 @@ char *bvfs_basename_dir(char *path)
    return p;
 }
 
-/**
- * Find an store the filename descriptor for empty directories Filename.Name=''
- */
-DBId_t Bvfs::get_dir_filenameid()
-{
-   uint32_t id;
-   POOL_MEM query(PM_MESSAGE);
-
-   if (dir_filenameid) {
-      return dir_filenameid;
-   }
-
-   Mmsg(query, "SELECT FilenameId FROM Filename WHERE Name = ''");
-   db->sql_query(query.c_str(), db_int_handler, &id);
-   dir_filenameid = id;
-
-   return dir_filenameid;
-}
 
 /**
  * Update the bvfs cache for current jobids
@@ -556,13 +538,12 @@ bool Bvfs::ch_dir(const char *path)
  */
 void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *client)
 {
-   Dmsg3(dbglevel, "get_all_file_versions(%lld, %s, %s)\n", (uint64_t)pathid,
-         fname, client);
-   char ed1[50], ed2[50];
+   char ed1[50];
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM filter(PM_MESSAGE);
 
-   Dmsg3(dbglevel, "get_all_file_versions(%lld, %lld, %s)\n", (uint64_t)pathid, (uint64_t)fnid, client);
+   Dmsg3(dbglevel, "get_all_file_versions(%lld, %s, %s)\n",
+                                         (uint64_t)pathid, fname, client);
 
    if (see_copies) {
       Mmsg(filter, " AND Job.Type IN ('C', 'B') ");
@@ -587,7 +568,7 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
   "AND Job.ClientId = Client.ClientId "
   "AND Client.Name = '%s' "
   "%s ORDER BY FileId LIMIT %d OFFSET %d"
-        ,fname, edit_uint64(pathid, ed2), client, q.c_str(),
+        ,fname, edit_uint64(pathid, ed1), client, query.c_str(),
         limit, offset);
 
    Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
@@ -625,7 +606,7 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
  */
 void Bvfs::ls_special_dirs()
 {
-   char ed1[50], ed2[50];
+   char ed1[50];
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM query2(PM_MESSAGE);
 
@@ -664,7 +645,7 @@ void Bvfs::ls_special_dirs()
 /* Returns true if we have dirs to read */
 bool Bvfs::ls_dirs()
 {
-   char ed1[50], ed2[50];
+   char ed1[50];
    POOL_MEM filter(PM_MESSAGE);
    POOL_MEM query(PM_MESSAGE);
 

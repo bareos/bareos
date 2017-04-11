@@ -881,7 +881,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
       "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
          JobId, jcr->JobId);
    /* missing_handler is called for each file found */
-   db_sql_query(jcr->db, buf.c_str(), missing_handler, (void *)jcr);
+   jcr->db->sql_query(buf.c_str(), missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }
