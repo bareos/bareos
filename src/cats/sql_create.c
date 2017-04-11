@@ -866,7 +866,6 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       goto bail_out;
    */
    }
-#endif
 
    if (!sql_query(SQL_QUERY_batch_fill_filename_query)) {
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n", errmsg);
@@ -878,6 +877,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", errmsg);
       goto bail_out;
    }
+#endif
 
    if (!sql_query( "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq) "
                      "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
@@ -890,6 +890,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
 
    jcr->JobStatus = JobStatus;         /* reset entry status */
    retval = true;
+
 
 bail_out:
    sql_query("DROP TABLE batch");
