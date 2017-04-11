@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -582,30 +582,26 @@ void B_DB::list_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
     * Stupid MySQL is NON-STANDARD !
     */
    if (get_type_index() == SQL_TYPE_MYSQL) {
-      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename, "
-                     "CASE WHEN F.FileIndex = '0' THEN '(deleted)' ELSE '' END status "
-           "FROM (SELECT PathId, FilenameId, FileIndex FROM File WHERE JobId=%s "
-                  "UNION ALL "
-                 "SELECT PathId, FilenameId, '0' "
+      Mmsg(cmd, "SELECT CONCAT(Path.Path,Name) AS Filename "
+                 "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
+                 "UNION ALL "
+                 "SELECT PathId, Name "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
-           ") AS F, Filename,Path "
-           "WHERE Filename.FilenameId=F.FilenameId "
-           "AND Path.PathId=F.PathId",
+           ") AS F, Path "
+           "WHERE Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
    } else {
-      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename , "
-                     "CASE WHEN F.FileIndex = '0' THEN '(deleted)' ELSE '' END status "
-           "FROM (SELECT PathId, FilenameId, FileIndex FROM File WHERE JobId=%s "
+      Mmsg(cmd, "SELECT Path.Path||Name AS Filename "
+           "FROM (SELECT PathId, Name FROM File WHERE JobId=%s "
                   "UNION ALL "
-                 "SELECT PathId, FilenameId , '0' "
+                 "SELECT PathId, Name "
                    "FROM BaseFiles JOIN File "
                          "ON (BaseFiles.FileId = File.FileId) "
                   "WHERE BaseFiles.JobId = %s"
-           ") AS F, Filename, Path "
-           "WHERE Filename.FilenameId=F.FilenameId "
-           "AND Path.PathId=F.PathId",
+           ") AS F, Path "
+           "WHERE Path.PathId=F.PathId",
            edit_int64(jobid, ed1), ed1);
    }
 
@@ -632,19 +628,19 @@ void B_DB::list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *se
     * Stupid MySQL is NON-STANDARD !
     */
    if (get_type_index() == SQL_TYPE_MYSQL) {
-      Mmsg(cmd, "SELECT CONCAT(Path.Path,Filename.Name) AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(cmd, 
+           "SELECT CONCAT(Path.Path,File.Name) AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
          edit_int64(jobid, ed1));
    } else {
-      Mmsg(cmd, "SELECT Path.Path||Filename.Name AS Filename "
-           "FROM BaseFiles, File, Filename, Path "
+      Mmsg(cmd, 
+           "SELECT Path.Path||File.Name AS Filename "
+           "FROM BaseFiles, File, Path "
            "WHERE BaseFiles.JobId=%s AND BaseFiles.BaseJobId = File.JobId "
            "AND BaseFiles.FileId = File.FileId "
-           "AND Filename.FilenameId=File.FilenameId "
            "AND Path.PathId=File.PathId",
            edit_int64(jobid, ed1));
    }

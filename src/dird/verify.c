@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -876,16 +876,12 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
     */
    jcr->fn_printed = false;
    Mmsg(buf,
-        "SELECT Path.Path,Filename.Name FROM File,Path,Filename "
-        "WHERE File.JobId=%d AND File.FileIndex > 0 "
-        "AND File.MarkId!=%d AND File.PathId=Path.PathId "
-        "AND File.FilenameId=Filename.FilenameId",
-        JobId, jcr->JobId);
-
-   /*
-    * missing_handler is called for each file found
-    */
-   jcr->db->sql_query(buf.c_str(), missing_handler, (void *)jcr);
+      "SELECT Path.Path,File.Name FROM File,Path "
+      "WHERE File.JobId=%d AND File.FileIndex > 0 "
+      "AND File.MarkId!=%d AND File.PathId=Path.PathId ",
+         JobId, jcr->JobId);
+   /* missing_handler is called for each file found */
+   db_sql_query(jcr->db, buf.c_str(), missing_handler, (void *)jcr);
    if (jcr->fn_printed) {
       jcr->setJobStatus(JS_Differences);
    }

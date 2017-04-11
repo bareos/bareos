@@ -14118,13 +14118,13 @@ msgstr "Error obteniendo fila: %s\n"
 
 #: src/cats/sql_get.c:150
 #, fuzzy, c-format
-msgid "get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"
+msgid "get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"
 msgstr "get_file_record falta 1 obtuvo filas=%d\n"
 
 #: src/cats/sql_get.c:158
 #, c-format
-msgid "File record for PathId=%s FilenameId=%s not found.\n"
-msgstr "Registro File para PathID=%s FilenameID=%s no encontrado.\n"
+msgid "File record for PathId=%s Filename=%s not found.\n"
+msgstr "Registro File para PathID=%s Filename=%s no encontrado.\n"
 
 #: src/cats/sql_get.c:164
 msgid "File record not found in Catalog.\n"

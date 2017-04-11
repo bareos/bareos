@@ -33,7 +33,7 @@
 /* Local variables */
 static B_DB *db;
 static const char *file = "COPYRIGHT";
-static DBId_t fnid=0;
+//static DBId_t fnid=0;
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
@@ -84,9 +84,9 @@ static int result_handler(void *ctx, int fields, char **row)
          pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));
       } else {
          /* if we see the requested file, note his filenameid */
-         if (bstrcmp(row[BVFS_Name], file)) {
-            fnid = str_to_int64(row[BVFS_FilenameId]);
-         }
+         //if (bstrcmp(row[BVFS_Name], file)) {
+         //   fnid = str_to_int64(row[BVFS_FilenameId]);
+         //}
          pm_strcpy(attr->ofname, row[BVFS_Name]);
       }
       print_ls_output(vfs->get_jcr(), attr);
@@ -271,10 +271,12 @@ int main (int argc, char *argv[])
          fs.next_offset();
       }
 
-      if (fnid && client) {
+      //if (fnid && client) {
+      if (client) {
          Pmsg0(0, "---------------------------------------------\n");
          Pmsg1(0, "Getting file version for %s\n", file);
-         fs.get_all_file_versions(fs.get_pwd(), fnid, client);
+         //fs.get_all_file_versions(fs.get_pwd(), fnid, client);
+         fs.get_all_file_versions(fs.get_pwd(), file, client);
       }
 
       exit (0);
@@ -305,7 +307,8 @@ int main (int argc, char *argv[])
    fs.ls_dirs();
    fs.ls_files();
 
-   fs.get_all_file_versions(1, 347, "zog4-fd");
+   //fs.get_all_file_versions(1, 347, "zog4-fd");
+   fs.get_all_file_versions(1, "testfile.txt", "zog4-fd");
 
    char p[200];
    strcpy(p, "/tmp/toto/rep/");

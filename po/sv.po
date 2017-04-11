@@ -13006,12 +13006,12 @@ msgstr ""
 
 #: src/cats/sql_get.c:150
 #, c-format
-msgid "get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"
+msgid "get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"
 msgstr ""
 
 #: src/cats/sql_get.c:158
 #, c-format
-msgid "File record for PathId=%s FilenameId=%s not found.\n"
+msgid "File record for PathId=%s Filename=%s not found.\n"
 msgstr ""
 
 #: src/cats/sql_get.c:164

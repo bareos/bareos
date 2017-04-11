@@ -4,13 +4,6 @@
 --  sensitive in sorts, which is what we want, and TEXT
 --  is case insensitive.
 --
-CREATE TABLE Filename (
-  FilenameId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
-  Name BLOB NOT NULL,
-  PRIMARY KEY(FilenameId),
-  INDEX (Name(255))
-);
-
 CREATE TABLE Path (
    PathId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
    Path BLOB NOT NULL,
@@ -37,14 +30,14 @@ CREATE TABLE File (
    FileIndex INTEGER UNSIGNED DEFAULT 0,
    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
    PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+   Name BLOB NOT NULL,
    DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
    MarkId INTEGER UNSIGNED DEFAULT 0,
    LStat TINYBLOB NOT NULL,
    MD5 TINYBLOB,
    PRIMARY KEY(FileId),
    INDEX (JobId),
-   INDEX (JobId, PathId, FilenameId)
+   INDEX (JobId, PathId, Name(255))
 );
 
 --

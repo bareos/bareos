@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -851,13 +851,21 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       goto bail_out;
    }
 
+#if 0
    /*
     * We have to lock tables
     */
+<<<<<<< HEAD
    if (!sql_query(SQL_QUERY_batch_lock_filename_query)) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", errmsg);
+=======
+   /*
+   if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)])) {
+      Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
+>>>>>>> bareos-16.2-db2170
       goto bail_out;
    }
+#endif
 
    if (!sql_query(SQL_QUERY_batch_fill_filename_query)) {
       Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n", errmsg);
@@ -870,12 +878,11 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       goto bail_out;
    }
 
-   if (!sql_query("INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) "
-                                 "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-                                 "Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq "
-                                 "FROM batch "
-                                 "JOIN Path ON (batch.Path = Path.Path) "
-                                 "JOIN Filename ON (batch.Name = Filename.Name)")) {
+   if (!sql_query( "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq) "
+                     "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
+                     "batch.Name,batch.LStat, batch.MD5, batch.DeltaSeq "
+                     "FROM batch "
+                     "JOIN Path ON (batch.Path = Path.Path) ")) {
       Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
       goto bail_out;
    }
@@ -901,8 +908,8 @@ bail_out:
  * the file and the path and fill temporary tables with this three records.
  *
  * Note: all routines that call this expect to be able to call
- * db_strerror() to get the error message, so the error message
- * MUST be edited into errmsg before returning an error status.
+ *   db_strerror(mdb) to get the error message, so the error message
+ *   MUST be edited into mdb->errmsg before returning an error status.
  *
  * Returns: false on failure
  *          true on success
@@ -960,13 +967,7 @@ bool B_DB::create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 
    split_path_and_file(jcr, ar->fname);
 
-   if (!create_filename_record(jcr, ar)) {
-      goto bail_out;
-   }
-   Dmsg1(dbglevel, "create_filename_record: %s\n", esc_name);
-
-
-   if (!create_path_record(jcr, ar)) {
+   if (!db_create_path_record(jcr, mdb, ar)) {
       goto bail_out;
    }
    Dmsg1(dbglevel, "create_path_record: %s\n", esc_name);
@@ -977,7 +978,7 @@ bool B_DB::create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
    }
    Dmsg0(dbglevel, "create_file_record OK\n");
 
-   Dmsg3(dbglevel, "CreateAttributes Path=%s File=%s FilenameId=%d\n", path, fname, ar->FilenameId);
+   Dmsg2(dbglevel, "CreateAttributes Path=%s File=%s\n", mdb->path, mdb->fname);
    retval = true;
 
 bail_out:
@@ -999,7 +1000,9 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
 
    ASSERT(ar->JobId);
    ASSERT(ar->PathId);
-   ASSERT(ar->FilenameId);
+
+   mdb->esc_name = check_pool_memory_size(mdb->esc_name, 2*mdb->fnl+2);
+   db_escape_string(jcr, mdb, mdb->esc_name, mdb->fname, mdb->fnl);
 
    if (ar->Digest == NULL || ar->Digest[0] == 0) {
       digest = no_digest;
@@ -1009,9 +1012,9 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
 
    /* Must create it */
    Mmsg(cmd,
-        "INSERT INTO File (FileIndex,JobId,PathId,FilenameId,"
-        "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,%u,'%s','%s',%u)",
-        ar->FileIndex, ar->JobId, ar->PathId, ar->FilenameId,
+        "INSERT INTO File (FileIndex,JobId,PathId,Name,"
+        "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,'%s','%s','%s',%u)",
+        ar->FileIndex, ar->JobId, ar->PathId, mdb->esc_name,
         ar->attr, digest, ar->DeltaSeq);
 
    ar->FileId = sql_insert_autokey_record(cmd, NT_("File"));
@@ -1024,52 +1027,6 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
    return retval;
 }
 
-/**
- * Create a Unique record for the filename -- no duplicates
- * Returns: false on failure
- *          true on success with filenameid filled in
- */
-bool B_DB::create_filename_record(JCR *jcr, ATTR_DBR *ar)
-{
-   SQL_ROW row;
-   int num_rows;
-
-   errmsg[0] = 0;
-   esc_name = check_pool_memory_size(esc_name, 2 * fnl + 2);
-   escape_string(jcr, esc_name, fname, fnl);
-
-   Mmsg(cmd, "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
-
-   if (QUERY_DB(jcr, cmd)) {
-      num_rows = sql_num_rows();
-      if (num_rows > 1) {
-         char ed1[30];
-         Mmsg2(errmsg, _("More than one Filename! %s for file: %s\n"), edit_uint64(num_rows, ed1), fname);
-         Jmsg(jcr, M_WARNING, 0, "%s", errmsg);
-      }
-      if (num_rows >= 1) {
-         if ((row = sql_fetch_row()) == NULL) {
-            Mmsg2(errmsg, _("Error fetching row for file=%s: ERR=%s\n"), fname, sql_strerror());
-            Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-            ar->FilenameId = 0;
-         } else {
-            ar->FilenameId = str_to_int64(row[0]);
-         }
-         sql_free_result();
-         return ar->FilenameId > 0;
-      }
-      sql_free_result();
-   }
-
-   Mmsg(cmd, "INSERT INTO Filename (Name) VALUES ('%s')", esc_name);
-
-   ar->FilenameId = sql_insert_autokey_record(cmd, NT_("Filename"));
-   if (ar->FilenameId == 0) {
-      Mmsg2(errmsg, _("Create db Filename record %s failed. ERR=%s\n"), cmd, sql_strerror());
-      Jmsg(jcr, M_FATAL, 0, "%s", errmsg);
-   }
-   return ar->FilenameId > 0;
-}
 
 /**
  * Create file attributes record, or base file attributes record

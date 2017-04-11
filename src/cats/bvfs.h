@@ -101,7 +101,7 @@ public:
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
    void ls_special_dirs();      /* get . and .. */
-   void get_all_file_versions(DBId_t pathid, DBId_t fnid, const char *client);
+   void get_all_file_versions(DBId_t pathid, const char *fname, const char *client);
 
    void update_cache();
 
@@ -163,14 +163,11 @@ private:
    uint32_t nb_record;          /* number of records of the last query */
    POOLMEM *pattern;
    DBId_t pwd_id;               /* Current pathid */
-   DBId_t dir_filenameid;       /* special FilenameId where Name='' */
    POOLMEM *prev_dir; /* ls_dirs query returns all versions, take the 1st one */
    ATTR *attr;        /* Can be use by handler to call decode_stat() */
 
    bool see_all_versions;
    bool see_copies;
-
-   DBId_t get_dir_filenameid();
 
    DB_RESULT_HANDLER *list_entries;
    void *user_data;

@@ -33,16 +33,6 @@
 
 SET AUTOCOMMIT ON\g
 
-CREATE SEQUENCE Filename_Seq;
-CREATE TABLE Filename
-(
-   FilenameId		INTEGER 	NOT NULL DEFAULT Filename_Seq.nextval,
-   Name 		VARBYTE(32000)	NOT NULL,
-   PRIMARY KEY (FilenameId)
-);
-
-CREATE UNIQUE INDEX (filename_name_idx ON filename (Name) WITH STRUCTURE=HASH,PAGE_SIZE=32768);
-
 CREATE SEQUENCE Path_Seq;
 CREATE TABLE path
 (
@@ -60,7 +50,7 @@ CREATE TABLE file
    FileIndex		INTEGER 	NOT NULL DEFAULT 0,
    JobId		INTEGER 	NOT NULL,
    PathId		INTEGER 	NOT NULL,
-   FilenameId		INTEGER 	NOT NULL,
+   Name 		VARBYTE(32000)	NOT NULL,
    DeltaSeq		INTEGER 	NOT NULL DEFAULT 0,
    MarkId		INTEGER 	NOT NULL DEFAULT 0,
    LStat		VARBYTE(255)	NOT NULL,
@@ -68,7 +58,7 @@ CREATE TABLE file
    PRIMARY KEY (fileid)
 );
 
-CREATE INDEX file_jpfid_idx ON File (jobid, pathid, filenameid);
+CREATE INDEX file_jpfid_idx ON File (jobid, pathid, name);
 
 -- If you need performances, you can remove this index
 -- the database engine is able to use the composite index

@@ -1,7 +1,7 @@
 CREATE USER @DB_USER@ @DB_PASS@;
 
 -- For tables
-GRANT ALL ON UnSavedFiles TO @DB_USER@;
+-- GRANT ALL ON UnSavedFiles TO @DB_USER@;
 GRANT ALL ON BaseFiles TO @DB_USER@;
 GRANT ALL ON JobMedia TO @DB_USER@;
 GRANT ALL ON File TO @DB_USER@;
@@ -11,7 +11,7 @@ GRANT ALL ON Client TO @DB_USER@;
 GRANT ALL ON Pool TO @DB_USER@;
 GRANT ALL ON Fileset TO @DB_USER@;
 GRANT ALL ON Path TO @DB_USER@;
-GRANT ALL ON Filename TO @DB_USER@;
+-- GRANT ALL ON Filename TO @DB_USER@;
 GRANT ALL ON Counters TO @DB_USER@;
 GRANT ALL ON Version TO @DB_USER@;
 GRANT ALL ON MediaType TO @DB_USER@;
@@ -33,7 +33,6 @@ GRANT ALL ON JobStats TO @DB_USER@;
 GRANT ALL ON TapeAlerts TO @DB_USER@;
 
 -- For sequences ON those tables
-GRANT SELECT, UPDATE ON filename_filenameid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON path_pathid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON fileset_filesetid_seq TO @DB_USER@;
 GRANT SELECT, UPDATE ON pool_poolid_seq TO @DB_USER@;

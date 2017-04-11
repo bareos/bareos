@@ -7,11 +7,11 @@
 :List up to 20 places where a File is saved regardless of the directory and Client
 *Enter Filename (no path):
 SELECT DISTINCT Job.JobId AS JobId, Client.Name AS Client,
-  Path.Path,Filename.Name,StartTime,Level,JobFiles,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS SIZE_GB
- FROM Client,Job,File,Filename,Path WHERE Client.ClientId=Job.ClientId
+  Path.Path,File.Name,StartTime,Level,JobFiles,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS SIZE_GB
+ FROM Client,Job,File,Path WHERE Client.ClientId=Job.ClientId
  AND JobStatus IN ('T','W') AND Job.JobId=File.JobId
- AND Path.PathId=File.PathId AND Filename.FilenameId=File.FilenameId
- AND Filename.Name='%1'
+ AND Path.PathId=File.PathId
+ AND File.Name='%1'
  ORDER BY Job.StartTime LIMIT 20;
 
 # 2
@@ -20,13 +20,12 @@ SELECT DISTINCT Job.JobId AS JobId, Client.Name AS Client,
 *Enter filename:
 *Enter Client name:
 SELECT DISTINCT Job.JobId,StartTime AS JobStartTime,VolumeName,Client.Name AS ClientName
- FROM Job,File,Path,Filename,Media,JobMedia,Client
+ FROM Job,File,Path,Media,JobMedia,Client
  WHERE File.JobId=Job.JobId
  AND Path.Path='%1'
- AND Filename.Name='%2'
+ AND File.Name='%2'
  AND Client.Name='%3'
  AND Path.PathId=File.PathId
- AND Filename.FilenameId=File.FilenameId
  AND JobMedia.JobId=Job.JobId
  AND JobMedia.MediaId=Media.MediaId
  AND Client.ClientId=Job.ClientId
@@ -163,10 +162,9 @@ SELECT COUNT(*) AS Jobs,SUM(JobFiles) AS Files,ROUND(SUM(JobBytes/1024.0/1024.0/
 # 12
 :List Files for a selected JobId
 *Enter JobId:
-SELECT Path.Path,Filename.Name FROM File,Filename,Path WHERE File.JobId=%1
- AND Filename.FilenameId=File.FilenameId
+SELECT Path.Path,File.Name FROM File,Path WHERE File.JobId=%1
  AND Path.PathId=File.PathId ORDER BY
- Path.Path,Filename.Name;
+ Path.Path,File.Name;
 
 # 13
 :List Jobs stored on a selected MediaId

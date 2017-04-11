@@ -6,6 +6,8 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
+This is a special branch with denormalized filename table
+
 Release 16.2.x
 ==============
 

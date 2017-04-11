@@ -1,11 +1,3 @@
-CREATE TABLE Filename (
-  FilenameId INTEGER,
-  Name TEXT DEFAULT '',
-  PRIMARY KEY(FilenameId)
-);
-
-CREATE INDEX inx1 ON Filename (Name);
-
 CREATE TABLE Path (
    PathId INTEGER,
    Path TEXT DEFAULT '',
@@ -22,7 +14,7 @@ CREATE TABLE File (
    FileIndex INTEGER UNSIGNED NOT NULL,
    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
    PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
-   FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
+   Name TEXT DEFAULT '',
    DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
    MarkId INTEGER UNSIGNED DEFAULT 0,
    LStat VARCHAR(255) NOT NULL,
@@ -30,7 +22,7 @@ CREATE TABLE File (
    PRIMARY KEY(FileId)
 );
 CREATE INDEX inx3 ON File (JobId);
-CREATE INDEX file_jpf_idx ON File (JobId, PathId, FilenameId);
+CREATE INDEX file_jpf_idx ON File (JobId, PathId, Name);
 --
 -- Possibly add one or more of the following indexes
 --  if your Verifies are too slow.
