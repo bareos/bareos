@@ -12,37 +12,47 @@
 # pieces are useless.
 #
 # This control should be reset for each new file
+SELECT FileId,
+       Job.JobId AS JobId,
+       FileIndex,
+       File.PathId AS PathId,
+       File.Name AS Name,
+       LStat,
+       MD5,
+       File.DeltaSeq AS DeltaSeq,
+       Job.JobTDate AS JobTDate
+FROM Job,
+     FILE,
 
-SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, File.FilenameId AS FilenameId, LStat, MD5, File.DeltaSeq AS
-       DeltaSeq, Job.JobTDate AS JobTDate
-  FROM Job, File, (
-      SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId, DeltaSeq
-        FROM (
-            SELECT JobTDate, PathId, FilenameId, DeltaSeq
-              FROM File
-              JOIN Job
-             USING (JobId)
-             WHERE File.JobId IN (%s)
-             UNION ALL
-            SELECT JobTDate, PathId, FilenameId, DeltaSeq
-              FROM BaseFiles
-              JOIN File
-             USING (FileId)
-              JOIN Job
-                ON (BaseJobId    = Job.JobId)
-             WHERE BaseFiles.JobId IN (%s)
-             ) AS tmp
-       GROUP BY PathId, FilenameId, DeltaSeq
-       ) AS T1
- WHERE (
-          Job.JobId IN (
-         SELECT DISTINCT BaseJobId
-           FROM BaseFiles
-          WHERE JobId IN (%s)
-          )
-       OR Job.JobId IN (%s)
-       )
-   AND T1.JobTDate   = Job.JobTDate
-   AND Job.JobId     = File.JobId
-   AND T1.PathId     = File.PathId
-   AND T1.FilenameId = File.FilenameId
+  ( SELECT MAX(JobTDate) AS JobTDate,
+           PathId,
+           FileName,
+           DeltaSeq
+   FROM
+     ( SELECT JobTDate,
+              PathId,
+              File.Name AS FileName,
+              DeltaSeq
+      FROM FILE
+      JOIN Job USING (JobId)
+      WHERE File.JobId IN (%s)
+        UNION ALL
+        SELECT JobTDate,
+               PathId,
+               File.Name AS FileName,
+               DeltaSeq
+        FROM BaseFiles
+        JOIN FILE USING (FileId)
+        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
+   GROUP BY PathId,
+            FileName,
+            DeltaSeq) AS T1
+WHERE (Job.JobId IN
+         (SELECT DISTINCT BaseJobId
+          FROM BaseFiles
+          WHERE JobId IN (%s))
+       OR Job.JobId IN (%s))
+  AND T1.JobTDate = Job.JobTDate
+  AND Job.JobId = File.JobId
+  AND T1.PathId = File.PathId
+  AND T1.FileName = File.Name

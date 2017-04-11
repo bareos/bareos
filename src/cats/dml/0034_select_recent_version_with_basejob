@@ -7,37 +7,43 @@
 #
 # With PostgreSQL, we can use DISTINCT ON(), but with Mysql or Sqlite,
 # we need an extra join using JobTDate.
-
-SELECT FileId, Job.JobId AS JobId, FileIndex, File.PathId AS PathId, File.FilenameId AS FilenameId, LStat, MD5, DeltaSeq,
+SELECT FileId,
+       Job.JobId AS JobId,
+       FileIndex,
+       File.PathId AS PathId,
+       File.Name AS Name,
+       LStat,
+       MD5,
+       DeltaSeq,
        Job.JobTDate AS JobTDate
-  FROM Job, File, (
-      SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId
-        FROM (
-            SELECT JobTDate, PathId, FilenameId
-              FROM File
-              JOIN Job
-             USING (JobId)
-             WHERE File.JobId IN (%s)
-             UNION ALL
-            SELECT JobTDate, PathId, FilenameId
-              FROM BaseFiles
-              JOIN File
-             USING (FileId)
-              JOIN Job
-                ON (BaseJobId    = Job.JobId)
-             WHERE BaseFiles.JobId IN (%s)
-             ) AS tmp
-       GROUP BY PathId, FilenameId
-       ) AS T1
- WHERE (
-          Job.JobId IN (
-         SELECT DISTINCT BaseJobId
-           FROM BaseFiles
-          WHERE JobId IN (%s)
-          )
-       OR Job.JobId IN (%s)
-       )
-   AND T1.JobTDate   = Job.JobTDate
-   AND Job.JobId     = File.JobId
-   AND T1.PathId     = File.PathId
-   AND T1.FilenameId = File.FilenameId
+FROM Job,
+     FILE,
+  ( SELECT MAX(JobTDate) AS JobTDate,
+           PathId,
+           FileName
+   FROM
+     ( SELECT JobTDate,
+              PathId,
+              File.Name AS FileName
+      FROM FILE
+      JOIN Job USING (JobId)
+      WHERE File.JobId IN (%s)
+        UNION ALL
+        SELECT JobTDate,
+               PathId,
+               File.Name AS FileName
+        FROM BaseFiles
+        JOIN FILE USING (FileId)
+        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
+   GROUP BY PathId,
+            FileName ) AS T1
+WHERE (Job.JobId IN
+         ( SELECT DISTINCT BaseJobId
+          FROM BaseFiles
+          WHERE JobId IN (%s))
+       OR Job.JobId IN (%s))
+  AND T1.JobTDate = Job.JobTDate
+  AND Job.JobId = File.JobId
+  AND T1.PathId = File.PathId
+  AND T1.FileName = File.Name
+
