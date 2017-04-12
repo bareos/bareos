@@ -642,7 +642,6 @@ CREATE TABLE %s AS
 SQL_QUERY(
 SELECT TYPE,
        PathId,
-       -1 AS FilenameId,
        Name,
        JobId,
        LStat,

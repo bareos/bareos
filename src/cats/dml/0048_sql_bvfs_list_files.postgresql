@@ -1,6 +1,5 @@
 SELECT TYPE,
        PathId,
-       -1 AS FilenameId,
        Name,
        JobId,
        LStat,

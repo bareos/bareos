@@ -670,7 +670,6 @@ WHERE T1.JobTDate = Job.JobTDate
 SQL_QUERY(
 SELECT 'F',
        T1.PathId,
-       -1 AS FilenameId,
        File.Name,
        File.JobId,
        File.LStat,
