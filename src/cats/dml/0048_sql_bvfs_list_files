@@ -1,38 +1,43 @@
-SELECT 'F', T1.PathId, T1.FilenameId, Filename.Name, File.JobId, File.LStat, File.FileId
-  FROM Job, File, (
-      SELECT MAX(JobTDate) AS JobTDate, PathId, FilenameId
-	FROM (
-	    SELECT JobTDate, PathId, FilenameId
-	      FROM File
-	      JOIN Job
-	     USING (JobId)
-	     WHERE File.JobId IN (%s)
-	       AND PathId         =  %s
-	     UNION ALL
-	    SELECT JobTDate, PathId, FilenameId
-	      FROM BaseFiles
-	      JOIN File
-	     USING (FileId)
-	      JOIN Job
-		ON (BaseJobId     =  Job.JobId)
-	     WHERE BaseFiles.JobId IN (%s)
-	       AND PathId         =  %s
-	     ) AS tmp
-       GROUP BY PathId, FilenameId LIMIT %lld OFFSET %lld
-       ) AS T1
-  JOIN Filename
- USING (FilenameId)
- WHERE T1.JobTDate    =  Job.JobTDate
-   AND Job.JobId      =  File.JobId
-   AND T1.PathId      =  File.PathId
-   AND T1.FilenameId  =  File.FilenameId
-   AND Filename.Name  != ''
-   AND File.FileIndex >  0 %s
-   AND (
-	  Job.JobId IN (
-	 SELECT DISTINCT BaseJobId
-	   FROM BaseFiles
-	  WHERE JobId IN (%s)
-	  )
-       OR Job.JobId IN (%s)
-       )
+SELECT 'F',
+       T1.PathId,
+       -1 AS FilenameId,
+       File.Name,
+       File.JobId,
+       File.LStat,
+       File.FileId
+FROM Job,
+     FILE,
+
+  (SELECT MAX(JobTDate) AS JobTDate,
+          PathId,
+          Name
+   FROM
+     (SELECT JobTDate,
+             PathId,
+             Name
+      FROM FILE
+      JOIN Job USING (JobId)
+      WHERE File.JobId IN (%s)
+        AND PathId = %s
+        UNION ALL
+        SELECT JobTDate,
+               PathId,
+               File.Name
+        FROM BaseFiles
+        JOIN FILE USING (FileId)
+        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s)
+        AND PathId = %s ) AS tmp
+   GROUP BY PathId,
+            File.Name
+   LIMIT %lld
+   OFFSET %lld ) AS T1
+WHERE T1.JobTDate = Job.JobTDate
+  AND Job.JobId = File.JobId
+  AND T1.PathId = File.PathId
+  AND File.Name != ''
+  AND File.FileIndex > 0 %s
+  AND (Job.JobId IN
+         (SELECT DISTINCT BaseJobId
+          FROM BaseFiles
+          WHERE JobId IN (%s))
+       OR Job.JobId IN (%s))

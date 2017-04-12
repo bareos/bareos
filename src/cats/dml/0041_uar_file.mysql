@@ -1,10 +1,19 @@
-SELECT Job.JobId as JobId, CONCAT(Path.Path, Filename.Name) as Name, StartTime, Type as JobType, JobStatus, JobFiles, JobBytes
-  FROM Client, Job, File, Filename, Path
- WHERE Client.Name         = '%s'
-   AND Client.ClientId     = Job.ClientId
-   AND Job.JobId           = File.JobId
-   AND File.FileIndex      > 0
-   AND Path.PathId         = File.PathId
-   AND Filename.FilenameId = File.FilenameId
-   AND Filename.Name       = '%s'
- ORDER BY StartTime DESC LIMIT 20
+SELECT Job.JobId AS JobId,
+       CONCAT(Path.Path,File.Name) AS Name,
+       StartTime,
+       TYPE AS JobType,
+               JobStatus,
+               JobFiles,
+               JobBytes
+FROM Client,
+     Job,
+     FILE,
+     Path
+WHERE Client.Name='%s'
+  AND Client.ClientId=Job.ClientId
+  AND Job.JobId=File.JobId
+  AND File.FileIndex > 0
+  AND Path.PathId=File.PathId
+  AND File.Name='%s'
+ORDER BY StartTime DESC
+LIMIT 20

@@ -1,7 +1,14 @@
-SELECT DISTINCT
-    ON (FilenameId, PathId) JobTDate, JobId, FileId, FileIndex, PathId, FilenameId, LStat, MD5
-  FROM File
-  JOIN Job
- USING (JobId)
- WHERE JobId IN (%s)
- ORDER BY FilenameId, PathId, JobTDate DESC
+SELECT DISTINCT ON (File.Name,
+                    PathId) JobTDate,
+                   JobId,
+                   FileId,
+                   FileIndex,
+                   PathId,
+                   File.Name,
+                   LStat,
+                   MD5
+FROM FILE
+JOIN Job USING (JobId)
+WHERE JobId IN (%s) BY File.Name,
+                       PathId,
+                       JobTDate DESC

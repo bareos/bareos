@@ -1,25 +1,44 @@
-SELECT Type, PathId, FilenameId, Name, JobId, LStat, FileId
-  FROM (
-      SELECT DISTINCT
-          ON (FilenameId) 'F' as Type, PathId, T.FilenameId, Filename.Name, JobId, LStat, FileId, FileIndex
-        FROM (
-            SELECT FileId, JobId, PathId, FilenameId, FileIndex, LStat, MD5
-              FROM File
-             WHERE JobId IN (%s)
-               AND PathId        =  %s
-             UNION ALL
-            SELECT File.FileId, File.JobId, PathId, FilenameId, File.FileIndex, LStat, MD5
-              FROM BaseFiles
-              JOIN File
-             USING (FileId)
-             WHERE BaseFiles.JobId IN (%s)
-               AND File.PathId   =  %s
-             ) AS T
-        JOIN Job
-       USING (JobId)
-        JOIN Filename
-       USING (FilenameId)
-       WHERE Filename.Name != '' %s
-       ORDER BY FilenameId, StartTime DESC
-       ) AS A
- WHERE A.FileIndex   >  0 LIMIT %lld OFFSET %lld
+SELECT TYPE,
+       PathId,
+       -1 AS FilenameId,
+       Name,
+       JobId,
+       LStat,
+       FileId
+FROM
+  ( SELECT DISTINCT ON (Name) 'F' AS TYPE,
+                       PathId,
+                       FileName AS Name,
+                       JobId,
+                       LStat,
+                       FileId,
+                       FileIndex
+   FROM
+     (SELECT FileId,
+             JobId,
+             PathId,
+             Name AS FileName,
+             FileIndex,
+             LStat,
+             MD5
+      FROM FILE
+      WHERE JobId IN (%s)
+        AND PathId = %s
+        UNION ALL
+        SELECT File.FileId,
+               File.JobId,
+               PathId,
+               File.Name AS FileName,
+               File.FileIndex,
+               LStat,
+               MD5
+        FROM BaseFiles
+        JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s)
+        AND File.PathId = %s ) AS T
+   JOIN Job USING (JobId)
+   WHERE FileName != '' %s
+   ORDER BY FileName,
+            StartTime DESC) AS A
+WHERE A.FileIndex > 0
+LIMIT %lld
+OFFSET %lld

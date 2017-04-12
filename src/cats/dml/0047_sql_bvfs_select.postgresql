@@ -1,10 +1,14 @@
-CREATE TABLE %s AS (
-      SELECT JobId, FileIndex, FileId
-	FROM (
-	    SELECT DISTINCT
-		ON (PathId, FilenameId) JobId, FileIndex, FileId
-	      FROM btemp%s
-	     ORDER BY PathId, FilenameId, JobTDate DESC
-	     ) AS T
-       WHERE FileIndex > 0
-       )
+CREATE TABLE %s AS
+  (SELECT JobId,
+          FileIndex,
+          FileId
+   FROM
+     (SELECT DISTINCT ON (PathId,
+                          Name) JobId,
+                         FileIndex,
+                         FileId
+      FROM btemp%s
+      ORDER BY PathId,
+               Name,
+               JobTDate DESC) AS T
+   WHERE FileIndex > 0)

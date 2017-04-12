@@ -1,15 +1,17 @@
 # Query to get all files in a directory -- no recursing
-# Note, for PostgreSQL since it respects the "Single Value
-# rule", the results of the SELECT will be unoptimized.
+# Note, for PostgreSQL since it respects the Single Value
+# rule, the results of the SELECT will be unoptimized.
 # I.e. the same file will be restored multiple times, once
 # for each time it was backed up.
-
-SELECT Job.JobId, File.FileIndex
-  FROM Job, File, Path, Filename, Client
- WHERE Job.JobId IN (%s)
-   AND Job.JobId           = File.JobId
-   AND Path.Path           = '%s'
-   AND Client.Name         = '%s'
-   AND Job.ClientId        = Client.ClientId
-   AND Path.PathId         = File.Pathid
-   AND Filename.FilenameId = File.FilenameId
+SELECT Job.JobId,
+       File.FileIndex
+FROM Job,
+     FILE,
+     Path,
+     Client
+WHERE Job.JobId IN (%s)
+  AND Job.JobId=File.JobId
+  AND Path.Path='%s'
+  AND Client.Name='%s'
+  AND Job.ClientId=Client.ClientId
+  AND Path.PathId=File.Pathid
