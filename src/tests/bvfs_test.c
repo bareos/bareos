@@ -83,10 +83,6 @@ static int result_handler(void *ctx, int fields, char **row)
       if (bvfs_is_dir(row)) {
          pm_strcpy(attr->ofname, bvfs_basename_dir(row[BVFS_Name]));
       } else {
-         /* if we see the requested file, note his filenameid */
-         //if (bstrcmp(row[BVFS_Name], file)) {
-         //   fnid = str_to_int64(row[BVFS_FilenameId]);
-         //}
          pm_strcpy(attr->ofname, row[BVFS_Name]);
       }
       print_ls_output(vfs->get_jcr(), attr);

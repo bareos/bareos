@@ -145,7 +145,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
             bstrncpy(fdbr->Digest, row[2], sizeof(fdbr->Digest));
             retval = true;
             if (num_rows > 1) {
-               Mmsg3(errmsg, _("get_file_record want 1 got rows=%d PathId=%s FilenameId=%s\n"),
+               Mmsg3(errmsg, _("get_file_record want 1 got rows=%d PathId=%s Filename=%s\n"),
                   num_rows,
                   edit_int64(fdbr->PathId, ed1),
                   esc_name);
