@@ -56,13 +56,13 @@ messages
 @# They should all have a MD5
 sql
 SELECT Name, Md5
-  FROM File JOIN Filename USING (FilenameId)
+  FROM File
  WHERE Name LIKE 'hard%' OR Name = 'normalfile';
 
 @$out ${cwd}/tmp/log4.out
 sql
 SELECT count(1), Md5
-  FROM File JOIN Filename USING (FilenameId)
+  FROM File
  WHERE Name = 'hardlink-to-normalfile'
     OR Name = 'normalfile'
     OR Name = 'another-hardlink-to-normalfile'
