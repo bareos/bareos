@@ -355,9 +355,15 @@ bool send_accurate_current_files(JCR *jcr)
 
    if (jcr->HasBase) {
       jcr->nb_base_files = str_to_int64(nb.list);
-      jcr->db->create_base_file_list(jcr, jobids.list);
-      jcr->db->get_base_file_list(jcr, jcr->use_accurate_chksum,
-                                  accurate_list_handler, (void *)jcr);
+      if (!jcr->db->create_base_file_list(jcr, jobids.list)){
+         Jmsg0(jcr, M_FATAL, 0, "error in jcr->db->create_base_file_list\n");
+         return false;
+      }
+      if (!jcr->db->get_base_file_list(jcr, jcr->use_accurate_chksum,
+                                  accurate_list_handler, (void *)jcr)) {
+         Jmsg0(jcr, M_FATAL, 0, "error in jcr->db->get_base_file_list\n");
+         return false;
+      }
    } else {
       if (!jcr->db->open_batch_connection(jcr)) {
          Jmsg0(jcr, M_FATAL, 0, "Can't get batch sql connection");
