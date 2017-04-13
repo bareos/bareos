@@ -1,11 +1,14 @@
 #!/usr/bin/env perl
 use strict;
+# script advanced by Lars Holger Engelhard - DL5RCW
 
 =head1 SCRIPT
 
   This script dumps your Bareos catalog in ASCII format
   It works for MySQL, SQLite, and PostgreSQL
-
+  The script will check for /etc/bareos/bareos-dir.conf
+  If you use the new config structure /etc/bareos/bareos-dir.d/catalog/*
+  the script will recognice and search the appropriate file before extracting data
 =head1 USAGE
 
     make_catalog_backup.pl MyCatalog
@@ -36,6 +39,7 @@ use strict;
 my $cat = shift or die "Usage: $0 catalogname";
 my $dir_conf='@sbindir@/bareos-dbcheck -B -c @confdir@';
 my $wd = "@working_dir@";
+my $directory = '/etc/bareos/bareos-dir.d/catalog';
 
 sub dump_sqlite3
 {
@@ -120,6 +124,10 @@ sub dump_catalog
     }
 }
 
+sub ltrim { my $s = shift; $s =~ s/^\s+//;       return $s };
+sub rtrim { my $s = shift; $s =~ s/\s+$//;       return $s };
+sub  trim { my $s = shift; $s =~ s/^\s+|\s+$//g; return $s };
+
 open(FP, "$dir_conf -C '$cat'|") or die "Can't get catalog information $@";
 # catalog=MyCatalog
 # db_type=SQLite
@@ -145,6 +153,98 @@ while(my $l = <FP>)
         $cfg{$1}=$2;
     }
 }
+
+if (exists $cfg{catalog} and $cfg{catalog} eq $cat) {
+    exit dump_catalog(%cfg);
+}
+
+my @ar_file_list = ();
+opendir (DIR, $directory) or die $!;
+while (my $file = readdir(DIR)) {
+    if ( $file =~ /(.+)[.]conf$/) {
+        push @ar_file_list, $file;
+    }
+}
+closedir(DIR);
+#print "@ar_file_list \n";
+my $foundFlag = 0;
+my $foundFile;
+foreach my $curFile (@ar_file_list){
+    open(FP2, $directory.'/'.$curFile) or next; # silent fail - maybe no read permission for the single element
+    while (my $curLine = <FP2>) {
+        $curLine =~ s/\n//g;
+        $curLine =~ s/\r//g;
+        if (substr($curLine, 0, 1) eq '#') { next; }
+        if ($curLine =~ /\s*Name\s*=\s*$cat/) {
+	    print "found $cat in $curLine of file $curFile \n";
+            $foundFlag = 1;
+            $foundFile=$curFile;
+        }
+    }
+    close(FP2);
+}
+if (($foundFlag > 0) && ($foundFile ne "")) {
+    #print "$cat is found in $search!\n";
+    $cfg{'catalog'} = trim($cat);
+
+    #open(FP3, $directory.'/'.$cat.'.conf') or die "Can't get catalog information $@";
+    open(FP3, $directory.'/'.$foundFile) or die "Can't get catalog information from $foundFile: $@";
+    while(my $curLine = <FP3>) {
+        $curLine =~ s/\n//g;
+        $curLine =~ s/\r//g;
+        if ($curLine =~ /(\w+)=(.+)/) {
+            $cfg{trim($1)}=trim($2);
+        }
+        if ($curLine =~ /DB\sDriver/) {
+            if ($curLine =~ /(\w+)\s*=\s*(.+)/) {
+                if ($curLine =~ /mysql/i) {
+                    $cfg{'db_type'}='MySQL';
+                }elsif ($curLine =~ /sqlite/i){
+                    $cfg{'db_type'}='SQLite3';
+                }elsif ($curLine =~ /postgresql/i) {
+                    $cfg{'db_type'}='PostgreSQL';
+                }else{
+                    $cfg{'db_type'}='unknown';
+                }
+            }
+        }
+        if ($curLine =~ /DB\sName/) {
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_name'} = trim($2);
+            }
+        }
+        if ($curLine =~ /DB\sUser/){
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_user'} = trim($2);
+            }
+        }
+        if ($curLine =~ /DB\sPassword/) {
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_password'} = trim($2);
+            }
+        }
+        if ($curLine =~ /DB\sAddress/) {
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_address'} = trim($2);
+            }
+        }
+        if ($curLine =~ /DB\sPort/) {
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_port'} = trim($2);
+            }
+        }
+        if ($curLine =~ /DB\sSocket/) {
+            if ($curLine =~/(\w+)\s*=\s*(.+)/) {
+                $cfg{'db_socket'} = trim($2);
+            }
+        }
+    }
+    close(FP3);
+}
+
+#while (my ($k,$v)=each %cfg){
+#    print "\$cfg: $k=>$v\n";
+#}
 
 if (exists $cfg{catalog} and $cfg{catalog} eq $cat) {
     exit dump_catalog(%cfg);
