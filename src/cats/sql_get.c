@@ -56,12 +56,12 @@
  */
 bool B_DB::get_file_attributes_record(JCR *jcr, char *filename, JOB_DBR *jr, FILE_DBR *fdbr)
 {
-      bool retval;
-   Dmsg1(100, "db_get_file_attributes_record fname=%s \n", fname);
+   bool retval;
+   Dmsg1(100, "db_get_file_attributes_record filename=%s \n", filename);
 
    db_lock(this);
 
-   split_path_and_file(jcr, fname);
+   split_path_and_file(jcr, filename);
    fdbr->PathId = get_path_record(jcr);
    retval = get_file_record(jcr, jr, fdbr);
 
