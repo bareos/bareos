@@ -7,7 +7,7 @@ SELECT Job.JobId AS JobId,
                JobBytes
 FROM Client,
      Job,
-     FILE,
+     File,
      Path
 WHERE Client.Name='%s'
   AND Client.ClientId=Job.ClientId

@@ -5,7 +5,7 @@ SELECT 'F',
        File.LStat,
        File.FileId
 FROM Job,
-     FILE,
+     File,
 
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,
@@ -14,7 +14,7 @@ FROM Job,
      (SELECT JobTDate,
              PathId,
              Name
-      FROM FILE
+      FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
         AND PathId = %s
@@ -23,7 +23,7 @@ FROM Job,
                PathId,
                File.Name
         FROM BaseFiles
-        JOIN FILE USING (FileId)
+        JOIN File USING (FileId)
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s)
         AND PathId = %s ) AS tmp
    GROUP BY PathId,

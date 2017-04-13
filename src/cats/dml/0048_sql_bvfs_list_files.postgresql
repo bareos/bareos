@@ -20,7 +20,7 @@ FROM
              FileIndex,
              LStat,
              MD5
-      FROM FILE
+      FROM File
       WHERE JobId IN (%s)
         AND PathId = %s
         UNION ALL
@@ -32,7 +32,7 @@ FROM
                LStat,
                MD5
         FROM BaseFiles
-        JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s)
+        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
         AND File.PathId = %s ) AS T
    JOIN Job USING (JobId)
    WHERE FileName != '' %s

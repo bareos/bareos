@@ -5,7 +5,7 @@ SELECT File.JobId,
        File.FileIndex,
        File.FileId
 FROM Job,
-     FILE,
+     File,
 
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,

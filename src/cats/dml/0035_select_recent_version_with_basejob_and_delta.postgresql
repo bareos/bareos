@@ -20,7 +20,7 @@ FROM
           LStat,
           MD5,
           DeltaSeq
-   FROM FILE
+   FROM File
    WHERE JobId IN (%s)
      UNION ALL
      SELECT File.FileId,
@@ -32,7 +32,7 @@ FROM
             MD5,
             DeltaSeq
      FROM BaseFiles
-     JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)
 ORDER BY Name,
          PathId,

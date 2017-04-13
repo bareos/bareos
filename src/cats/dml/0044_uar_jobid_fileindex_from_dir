@@ -2,7 +2,7 @@
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId IN (%s)
