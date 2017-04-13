@@ -495,11 +495,12 @@ SELECT DISTINCT ON (File.Name,
                    File.Name,
                    LStat,
                    MD5
-FROM File
+FROM FILE
 JOIN Job USING (JobId)
-WHERE JobId IN (%s) BY File.Name,
-                       PathId,
-                       JobTDate DESC
+WHERE JobId IN (%s)
+ORDER BY File.Name,
+         PathId,
+         JobTDate DESC
 ),
 
 /* 0037_create_temp_accurate_jobids */
