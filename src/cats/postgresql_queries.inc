@@ -358,7 +358,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId=File.JobId
@@ -380,7 +380,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId IN (%s)
@@ -423,7 +423,7 @@ FROM
           LStat,
           MD5,
           DeltaSeq
-   FROM FILE
+   FROM File
    WHERE JobId IN (%s)
      UNION ALL
      SELECT File.FileId,
@@ -435,7 +435,7 @@ FROM
             MD5,
             DeltaSeq
      FROM BaseFiles
-     JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)
 ORDER BY Name,
          PathId,
@@ -464,7 +464,7 @@ FROM
           LStat,
           MD5,
           DeltaSeq
-   FROM FILE
+   FROM File
    WHERE JobId IN (%s)
      UNION ALL
      SELECT File.FileId,
@@ -476,7 +476,7 @@ FROM
             MD5,
             DeltaSeq
      FROM BaseFiles
-     JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
+     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)
 ORDER BY Name,
          PathId,
@@ -495,7 +495,7 @@ SELECT DISTINCT ON (File.Name,
                    File.Name,
                    LStat,
                    MD5
-FROM FILE
+FROM File
 JOIN Job USING (JobId)
 WHERE JobId IN (%s) BY File.Name,
                        PathId,
@@ -568,7 +568,7 @@ SELECT Job.JobId AS JobId,
                JobBytes
 FROM Client,
      Job,
-     FILE,
+     File,
      Path
 WHERE Client.Name='%s'
   AND Client.ClientId=Job.ClientId
@@ -599,7 +599,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId IN (%s)
@@ -662,7 +662,7 @@ FROM
              FileIndex,
              LStat,
              MD5
-      FROM FILE
+      FROM File
       WHERE JobId IN (%s)
         AND PathId = %s
         UNION ALL
@@ -674,7 +674,7 @@ FROM
                LStat,
                MD5
         FROM BaseFiles
-        JOIN FILE USING (FileId) WHERE BaseFiles.JobId IN (%s)
+        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
         AND File.PathId = %s ) AS T
    JOIN Job USING (JobId)
    WHERE FileName != '' %s

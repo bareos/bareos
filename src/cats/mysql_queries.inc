@@ -361,7 +361,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId=File.JobId
@@ -383,7 +383,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId IN (%s)
@@ -417,15 +417,15 @@ SELECT FileId,
        DeltaSeq,
        Job.JobTDate AS JobTDate
 FROM Job,
-     FILE,
-  ( SELECT MAX(JobTDate) AS JobTDate,
-           PathId,
-           FileName
+     File,
+  (SELECT MAX(JobTDate) AS JobTDate,
+          PathId,
+          FileName
    FROM
-     ( SELECT JobTDate,
-              PathId,
-              File.Name AS FileName
-      FROM FILE
+     (SELECT JobTDate,
+             PathId,
+             File.Name AS FileName
+      FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
         UNION ALL
@@ -433,12 +433,12 @@ FROM Job,
                PathId,
                File.Name AS FileName
         FROM BaseFiles
-        JOIN FILE USING (FileId)
+        JOIN File USING (FileId)
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
    GROUP BY PathId,
-            FileName ) AS T1
+            FileName) AS T1
 WHERE (Job.JobId IN
-         ( SELECT DISTINCT BaseJobId
+         (SELECT DISTINCT BaseJobId
           FROM BaseFiles
           WHERE JobId IN (%s))
        OR Job.JobId IN (%s))
@@ -460,7 +460,7 @@ SELECT FileId,
        File.DeltaSeq AS DeltaSeq,
        Job.JobTDate AS JobTDate
 FROM Job,
-     FILE,
+     File,
   ( SELECT MAX(JobTDate) AS JobTDate,
            PathId,
            FileName,
@@ -470,7 +470,7 @@ FROM Job,
               PathId,
               File.Name AS FileName,
               DeltaSeq
-      FROM FILE
+      FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
         UNION ALL
@@ -479,7 +479,7 @@ FROM Job,
                File.Name AS FileName,
                DeltaSeq
         FROM BaseFiles
-        JOIN FILE USING (FileId)
+        JOIN File USING (FileId)
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
    GROUP BY PathId,
             FileName,
@@ -509,13 +509,13 @@ FROM
   (SELECT max(JobTDate) AS JobTDate,
           PathId,
           File.Name
-   FROM FILE
+   FROM File
    JOIN Job USING (JobId)
    WHERE File.JobId IN (%s)
    GROUP BY PathId,
             File.Name) AS t1,
      Job AS j1,
-     FILE AS f1
+     File AS f1
 WHERE t1.JobTDate = j1.JobTDate
   AND j1.JobId IN (%s)
   AND t1.PathId = f1.PathId
@@ -589,7 +589,7 @@ SELECT Job.JobId AS JobId,
                JobBytes
 FROM Client,
      Job,
-     FILE,
+     File,
      Path
 WHERE Client.Name='%s'
   AND Client.ClientId=Job.ClientId
@@ -621,7 +621,7 @@ SQL_QUERY(
 SELECT Job.JobId,
        File.FileIndex
 FROM Job,
-     FILE,
+     File,
      Path,
      Client
 WHERE Job.JobId IN (%s)
@@ -650,7 +650,7 @@ SELECT File.JobId,
        File.FileIndex,
        File.FileId
 FROM Job,
-     FILE,
+     File,
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,
           Name
@@ -675,7 +675,7 @@ SELECT 'F',
        File.LStat,
        File.FileId
 FROM Job,
-     FILE,
+     File,
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,
           Name
@@ -683,7 +683,7 @@ FROM Job,
      (SELECT JobTDate,
              PathId,
              Name
-      FROM FILE
+      FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
         AND PathId = %s
@@ -692,7 +692,7 @@ FROM Job,
                PathId,
                File.Name
         FROM BaseFiles
-        JOIN FILE USING (FileId)
+        JOIN File USING (FileId)
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s)
         AND PathId = %s ) AS tmp
    GROUP BY PathId,
