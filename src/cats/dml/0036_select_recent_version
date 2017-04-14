@@ -1,6 +1,5 @@
 # Get the list of the last recent version with a given BaseJob jobid list
 # We don't handle Delta with BaseJobs, they have only Full files
-
 SELECT j1.JobId AS JobId,
        f1.FileId AS FileId,
        f1.FileIndex AS FileIndex,
@@ -25,4 +24,3 @@ WHERE t1.JobTDate = j1.JobTDate
   AND t1.PathId = f1.PathId
   AND j1.JobId = f1.JobId
   AND t1.Name = f1.Name
-

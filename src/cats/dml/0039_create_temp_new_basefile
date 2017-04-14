@@ -7,6 +7,6 @@ SELECT Path.Path AS Path,
        Temp.LStat AS LStat,
        Temp.FileId AS FileId,
        Temp.MD5 AS MD5
-FROM (%s) AS TEMP
+FROM (%s) AS Temp
 JOIN Path ON (Path.PathId = Temp.PathId)
 WHERE Temp.FileIndex > 0

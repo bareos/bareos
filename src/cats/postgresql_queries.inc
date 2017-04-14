@@ -495,7 +495,7 @@ SELECT DISTINCT ON (File.Name,
                    File.Name,
                    LStat,
                    MD5
-FROM FILE
+FROM File
 JOIN Job USING (JobId)
 WHERE JobId IN (%s)
 ORDER BY File.Name,
