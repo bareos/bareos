@@ -50,6 +50,10 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
+  
+  # Not all installations need heartbeat, but most do, and it won't hurt
+  Heartbeat Interval = 1m
+
 
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).
