@@ -5,15 +5,17 @@
 #   do a bscan and restore.
 #   It should require at least 4 different bsrs.
 #
+. scripts/functions
+
 TestName="bscan-tape"
 JobName=bscantape
-. scripts/functions
+BackupDirectory="${cwd}/build/src/"
 
 require_tape_drive
 
 copy_tape_confs
 
-echo "${cwd}/build" >tmp/file-list
+echo "${BackupDirectory}" >${tmp}/file-list
 
 cp ${cwd}/bin/bareos-sd.conf tmp/1
 sed "s%# Maximum File Size%  Maximum File Size%" tmp/1 >${cwd}/bin/bareos-sd.conf
@@ -129,5 +131,5 @@ stop_bareos
 rm -f  ${cwd}/build/src/lib/dummy
 
 check_two_logs
-check_restore_diff
+check_restore_diff ${BackupDirectory}
 end_test
