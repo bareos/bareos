@@ -452,9 +452,7 @@ bool do_verify(JCR *jcr)
       jcr->SDJobStatus = JS_Terminated;
       get_attributes_and_put_in_catalog(jcr);
       jcr->db->end_transaction(jcr);   /* terminate any open transaction */
-      if (jcr->batch_started) {
-         jcr->db_batch->write_batch_file_records(jcr);
-      }
+      jcr->db_batch->write_batch_file_records(jcr);
       break;
    default:
       Jmsg1(jcr, M_FATAL, 0, _("Unimplemented verify level %d\n"), JobLevel);

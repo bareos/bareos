@@ -1564,15 +1564,11 @@ static inline bool do_actual_migration(JCR *jcr)
       wait_for_storage_daemon_termination(jcr);
       wait_for_storage_daemon_termination(mig_jcr);
       jcr->setJobStatus(jcr->SDJobStatus);
-      if (mig_jcr->batch_started) {
-         mig_jcr->db_batch->write_batch_file_records(jcr);
-      }
+      mig_jcr->db_batch->write_batch_file_records(jcr);
    } else {
       wait_for_storage_daemon_termination(jcr);
       jcr->setJobStatus(jcr->SDJobStatus);
-      if (jcr->batch_started) {
-         jcr->db_batch->write_batch_file_records(jcr);
-      }
+      jcr->db_batch->write_batch_file_records(jcr);
    }
 
 bail_out:

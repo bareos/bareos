@@ -648,9 +648,7 @@ bool do_native_backup(JCR *jcr)
     * Pickup Job termination data
     */
    status = wait_for_job_termination(jcr);
-   if (jcr->batch_started) {
-      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
-   }
+   jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
 
    if (jcr->HasBase && !jcr->db->commit_base_file_attributes_record(jcr))  {
       Jmsg(jcr, M_FATAL, 0, "%s", jcr->db->strerror());

@@ -333,9 +333,7 @@ bool do_native_vbackup(JCR *jcr)
     */
    wait_for_storage_daemon_termination(jcr);
    jcr->setJobStatus(jcr->SDJobStatus);
-   if (jcr->batch_started) {
-      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
-   }
+   jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
    if (!jcr->is_JobStatus(JS_Terminated)) {
       goto bail_out;
    }

@@ -702,9 +702,7 @@ bool do_ndmp_backup(JCR *jcr)
    if (jcr->store_bsock) {
       jcr->store_bsock->fsend("finish");
       wait_for_storage_daemon_termination(jcr);
-      if (jcr->batch_started) {
-         jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
-      }
+      jcr->db_batch->write_batch_file_records(jcr); /* used by bulk batch file insert */
    }
 
    /*

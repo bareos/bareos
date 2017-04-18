@@ -817,6 +817,11 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    bool retval = false;
    int JobStatus = jcr->JobStatus;
 
+   if (!jcr->batch_started) {         /* no files to backup ? */
+      Dmsg0(50,"db_create_file_record : no files\n");
+      return true;
+   }
+
    if (job_canceled(jcr)) {
       goto bail_out;
    }
