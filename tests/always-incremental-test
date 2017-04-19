@@ -42,7 +42,7 @@ echo "${BackupDirectory}" >${tmp}/file-list
 # start the test
 start_test
 
-
+run_bareos
 # create a new file and run multiple backups
 for file in 1 2 3 4 5 6 7 ; do
 
@@ -55,11 +55,12 @@ run job=$JobName yes
 wait
 messages
 END_OF_DATA
-run_bareos
-check_for_zombie_jobs storage=File1 client=${Client}
-stop_bareos
+run_bconsole
+
 done
 
+#stop_bareos
+#check_for_zombie_jobs storage=File1 client=${Client}
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @#
@@ -73,15 +74,8 @@ list jobs
 messages
 END_OF_DATA
 
-# Start the bareos daemon
-# and run the bconsole commands from ${tmp}/bconcmds
-run_bareos
+run_bconsole
 
-# verify that all are terminated
-check_for_zombie_jobs storage=File1 client=${Client}
-
-# stop bareos
-stop_bareos
 cat <<END_OF_DATA >${tmp}/bconcmds
 @#
 @# now do a restore
@@ -97,12 +91,7 @@ messages
 quit
 END_OF_DATA
 
-# Start the bareos daemon
-# and run the bconsole commands from ${tmp}/bconcmds
-run_bareos
-
-# verify that all are terminated
-check_for_zombie_jobs storage=File1 client=${Client}
+run_bconsole
 
 # stop bareos
 stop_bareos
