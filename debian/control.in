@@ -93,7 +93,7 @@ Description: Backup Archiving Recovery Open Sourced - text console
 Package:        bareos-client
 Architecture:   any
 Depends:        bareos-bconsole (>= ${binary:Version}), bareos-filedaemon (>= ${binary:Version}), ${misc:Depends}
-Recommends:     bareos-traymonitor
+Suggests:       bareos-traymonitor
 Description: Backup Archiving Recovery Open Sourced - client metapackage
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
