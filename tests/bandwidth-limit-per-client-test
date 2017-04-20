@@ -15,7 +15,7 @@ rm -f bin/bareos-dir.conf
 #
 # create test data
 #
-dd if=/dev/zero of=${cwd}/tmp/testdata bs=10000k count=8
+dd if=/dev/zero of=${cwd}/tmp/testdata bs=500k count=8
 
 echo "${cwd}/tmp/testdata" >${cwd}/tmp/file-list
 start_test
