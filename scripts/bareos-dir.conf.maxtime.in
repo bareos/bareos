@@ -60,14 +60,14 @@ Job {
   Name = "RUN_MAXWAITTIME"
   JobDefs = DefaultJob
   FileSet = FS_TESTJOB
-  MaxWaitTime = 2min
+  MaxWaitTime = 1min
 }
 
 Job {
   Name = "RUN_MAXSTARTDELAY"
   JobDefs = DefaultJob
   FileSet = FS_TESTJOB
-  MaxStartDelay = 30sec
+  MaxStartDelay = 15sec
   Pool = PoolA
   Runbeforejob = "/bin/echo NEVER start this"
 }
@@ -76,7 +76,7 @@ Job {
   Name = "RUN_MAXRUNTIME"
   JobDefs = DefaultJob
   FileSet = FS_FIFO
-  MaxRunTime = 1min
+  MaxRunTime = 30 sec
 }
 
 # Client (File Services) to backup

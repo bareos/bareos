@@ -32,7 +32,7 @@ run job=RUN_MAXSTARTDELAY comment="Should fail" pool=PoolA when="$WHEN" yes
 @sleep 2
 @# storage is used by the first MAXWAITTIME, but should work
 run job=RUN_MAXWAITTIME comment="Should work" pool=PoolA yes
-@sleep 60
+@sleep 30
 label volume=TestVolume002 pool=Default
 mount
 @sleep 2

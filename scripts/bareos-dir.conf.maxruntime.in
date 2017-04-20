@@ -60,14 +60,14 @@ Job {
   Name = "RUN_MAXWAITTIME"
   JobDefs = DefaultJob
   FileSet = FS_TESTJOB
-  MaxWaitTime = 2min
+  MaxWaitTime = 1min
 }
 
 Job {
   Name = "RUN_MAXSTARTDELAY"
   JobDefs = DefaultJob
   FileSet = FS_TESTJOB
-  MaxStartDelay = 30sec
+  MaxStartDelay = 15sec
   Pool = PoolA
   Runbeforejob = "/bin/echo NEVER start this"
 }
@@ -76,15 +76,15 @@ Job {
   Name = "RUN_MAXRUNTIME"
   JobDefs = DefaultJob
   FileSet = FS_FIFO
-  MaxRunTime = 1min
-  Max Start Delay = 4 hours
+  MaxRunTime = 30 sec
+  Max Start Delay = 2 hours
   Maximum Concurrent Jobs = 10
   Spool Data = no
   Reschedule On Error = yes
-  Reschedule Interval = 30sec
+  Reschedule Interval = 15sec
   Reschedule Times = 2
   Max Full Interval = 28 days
-  Full Max Run Time = 1min
+  Full Max Run Time =  30 sec
   Cancel Queued Duplicates = no
 
 }
