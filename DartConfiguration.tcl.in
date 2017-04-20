@@ -11,4 +11,4 @@ NightlyStartTime: 23:00:00 CET
 MakeCommand: @regressdir@/scripts/update-ctest
 ConfigureCommand: true
 UpdateCommand: true
-TimeOut: 1800
+TimeOut: 600
