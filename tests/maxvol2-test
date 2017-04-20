@@ -23,11 +23,11 @@ messages
 label storage=File1 volume=TestVolume001
 label storage=File1 volume=TestVolume002
 label storage=File1 volume=TestVolume003
-update Volume=TestVolume001 volretention=10s
+update Volume=TestVolume001 volretention=2s
 update Volume=TestVolume001 maxvoljobs=1
-update Volume=TestVolume002 volretention=10s
+update Volume=TestVolume002 volretention=2s
 update Volume=TestVolume002 maxvoljobs=1
-update Volume=TestVolume003 volretention=10s
+update Volume=TestVolume003 volretention=2s
 update Volume=TestVolume003 maxvoljobs=1
 list volumes
 setdebug level=200 storage=File1
@@ -37,31 +37,31 @@ run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 11
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 11
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 11
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 11
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 11
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
