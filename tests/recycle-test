@@ -33,13 +33,13 @@ label storage=File1 volume=TestVolume004
 @#  to tight because the saved volume is too large.
 @#  In that case, either add another volume, or
 @#  increase the volume capacity a bit.
-update Volume=TestVolume001 volretention=5s
+update Volume=TestVolume000 volretention=2s
 update Volume=TestVolume001 maxvolbytes=200000000
-update Volume=TestVolume002 volretention=5s
+update Volume=TestVolume002 volretention=2s
 update Volume=TestVolume002 maxvolbytes=200000000
-update Volume=TestVolume003 volretention=5s
+update Volume=TestVolume003 volretention=2s
 update Volume=TestVolume003 maxvolbytes=200000000
-update Volume=TestVolume004 volretention=5s
+update Volume=TestVolume004 volretention=2s
 update Volume=TestVolume004 maxvolbytes=200000000
 list volumes
 setdebug level=150 storage=File1
@@ -50,28 +50,28 @@ run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 12
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 12
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 12
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 wait
 messages
 list volumes
-@sleep 12
+@sleep 3
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
 run job=$JobName storage=File1 level=full yes
