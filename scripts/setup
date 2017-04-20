@@ -112,6 +112,12 @@ cd ../..
 cd src/tools
 make installall
 check_exit_code
+cd ../..
+# make -C not available on Solaris, therefore cd in subshell.
+(
+  cd src/plugins/filed
+  make install-test-plugin
+)
 
 cd ${cwd}
 bin/bareos stop
@@ -134,6 +140,7 @@ rm -rf build/.git
 
 rm build/cscope.out
 rm build/tags
+rm build/git-log
 rm -Rf build/src/ndmp
 
 # remove object files
@@ -141,5 +148,6 @@ find build/ -name '*.o' | xargs rm
 find build/ -name '*.so' | xargs rm
 find build/ -name '*.lo' | xargs rm
 find build/ -name '*.la' | xargs rm
+find build/ -name '*.patch' | xargs rm
 find build/ -name '.libs' | xargs rm -R
 

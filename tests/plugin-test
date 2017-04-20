@@ -9,11 +9,6 @@ JobName=pluginTest
 scripts/cleanup
 scripts/copy-plugin-confs
 
-# make -C not available on Solaris, therefore cd in subshell.
-(
-  cd $src/src/plugins/filed
-  make install-test-plugin
-)
 
 file=encrypt-bug.jpg
 echo "${cwd}/README" >${cwd}/tmp/file-list
