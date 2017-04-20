@@ -25,7 +25,6 @@ rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
 rm -rf ${working}/*.state
 rm -rf ${working}/CLEANUPMARKER
 rm -rf ${tmp}disk-changer
-rm -f ${cwd}/bin/plugins/test-plugin-fd.so
 find . -name "gigaslam.gif" -exec rm -f {} \;
 # cleanup old config files
 rm -f  ${conf}/bareos-*.conf

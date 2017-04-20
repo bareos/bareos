@@ -9,6 +9,10 @@ JobName=pluginTest
 scripts/cleanup
 scripts/copy-plugin-confs
 
+# enable test-plugin
+mv -f ${cwd}/bin/plugins/test-plugin-fd.sox ${cwd}/bin/plugins/test-plugin-fd.so
+
+mv -f ${cwd}/bin/plugins/bpipe-fd.sox ${cwd}/bin/plugins/bpipe-fd.so
 
 file=encrypt-bug.jpg
 echo "${cwd}/README" >${cwd}/tmp/file-list
@@ -154,5 +158,8 @@ perl -ne '
 ' working/*.trace
 
 estat=$?
+
+# disable test-plugin
+mv -f ${cwd}/bin/plugins/test-plugin-fd.so ${cwd}/bin/plugins/test-plugin-fd.sox
 
 end_test

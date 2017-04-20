@@ -118,6 +118,9 @@ cd ../..
   cd src/plugins/filed
   make install-test-plugin
 )
+#disable test-plugin
+mv ${cwd}/bin/plugins/test-plugin-fd.so ${cwd}/bin/plugins/test-plugin-fd.sox
+
 
 cd ${cwd}
 bin/bareos stop
