@@ -678,11 +678,11 @@ FROM Job,
      File,
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,
-          Name
+          File.Name
    FROM
      (SELECT JobTDate,
              PathId,
-             Name
+             File.Name
       FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
