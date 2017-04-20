@@ -16,7 +16,7 @@ perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-fd.conf"
 # extract a Job and add a runscript on it
 perl -Mscripts::functions \
     -e "extract_resource('$conf/bareos-dir.conf', 'Job', 'CompressedTest')" \
-    | sed 's%Standard%Standard; ClientRunBeforeJob="sleep 6"%' > $tmp/1
+    | sed 's%Standard%Standard; ClientRunBeforeJob="sleep 1"%' > $tmp/1
 
 
 outf="$tmp/sed_tmp"
