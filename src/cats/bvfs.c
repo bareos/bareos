@@ -202,9 +202,27 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
       goto bail_out;
    }
 
-   /*
-    * Inserting path records for JobId
+   /* prevent from DB lock waits when already in progress */
+   Mmsg(cmd, "SELECT 1 FROM Job WHERE JobId = %s AND HasCache=-1", jobid);
+
+   if (!QUERY_DB(jcr, cmd) || sql_num_rows() > 0) {
+      Dmsg1(dbglevel, "already in progress %d\n", (uint32_t)JobId );
+      retval = false;
+      goto bail_out;
+   }
+
+   /* set HasCache to -1 in Job (in progress) */
+   Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
+   UPDATE_DB(jcr, cmd);
+
+   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
+    * see the current HasCache value. A new transaction must only be started
+    * after having finished PathHierarchy processing, otherwise prevention
+    * from duplicate key violations in build_path_hierarchy() will not work.
     */
+   db_end_transaction(jcr);
+
+   /* Inserting path records for JobId */
    Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId) "
              "SELECT DISTINCT PathId, JobId "
              "FROM (SELECT PathId, JobId FROM File WHERE JobId = %s "
@@ -263,6 +281,8 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
       }
       free(result);
    }
+
+   db_start_transaction(jcr);
 
    if (get_type_index() == SQL_TYPE_SQLITE3) {
       Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId) "
@@ -353,7 +373,7 @@ bool B_DB::bvfs_update_path_hierarchy_cache(JCR *jcr, char *jobids)
 
       Dmsg1(dbglevel, "Updating cache for %lld\n", (uint64_t)JobId);
       if (!update_path_hierarchy_cache(jcr, ppathid_cache, JobId)) {
-         goto bail_out;
+         retval = false;
       }
    }
 
