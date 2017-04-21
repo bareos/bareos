@@ -220,7 +220,7 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
     * after having finished PathHierarchy processing, otherwise prevention
     * from duplicate key violations in build_path_hierarchy() will not work.
     */
-   db_end_transaction(jcr);
+   end_transaction(jcr);
 
    /* Inserting path records for JobId */
    Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId) "
@@ -282,7 +282,7 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
       free(result);
    }
 
-   db_start_transaction(jcr);
+   start_transaction(jcr);
 
    if (get_type_index() == SQL_TYPE_SQLITE3) {
       Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId) "
