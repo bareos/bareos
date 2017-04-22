@@ -48,8 +48,8 @@ if [ "$IP" = '' ]; then
 fi
 
 outf="tmp/sed_tmp"
-echo "s/Address =/Address = 127.0.0.1\n  LAN Address = $IP\n  #/g" > $outf
-echo 's/\(Password = "@fd_password@"\)/\1\n  Passive=yes/g' >> $outf
+echo "s/Address =/Address = 127.0.0.1; LAN Address = $IP #/g" > $outf
+echo 's/Client {/Client {; Passive=yes/g' >> $outf
 cp $scripts/bareos-dir.conf $tmp/1
 sed -f ${outf} ${cwd}/tmp/1 > $scripts/bareos-dir.conf
 
