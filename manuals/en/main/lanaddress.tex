@@ -2,9 +2,9 @@
    \label{LanAddress}
    \index[general]{Lan Address}
 
-The \configdirective{Lan Address} configuration directive is needed to support a network
-topology where client and storage are situated inside of a LAN,  but the Director is
-outside of that LAN in the internet and accesses SD and FD via SNAT / port forwarding.
+Bareos supports network
+topologies where the \bareosFd and \bareosSd are situated inside of a LAN,  but the \bareosDir is
+outside of that LAN in the Internet and accesses the \bareosFd and \bareosSd via SNAT / port forwarding.
 
 Consider the following scheme:
 
@@ -30,63 +30,69 @@ Consider the following scheme:
    | FD_WAN   SD_WAN   |
    | .30         .40   |
    \___________________/
-   \end{commands}
+\end{commands}
 
-The director can access the FD\_LAN via the IP 8.8.8.10, which is
+The \bareosDir can access the \host{FD_LAN} via the IP 8.8.8.10, which is
 forwarded to the IP 10.0.0.10 inside of the LAN.
 
-The director can access the SD\_LAN via the IP 8.8.8.20 which is
+The \bareosDir can access the \host{SD_LAN} via the IP 8.8.8.20 which is
 forwarded to the IP 10.0.0.20 inside of the LAN.
 
-There is also a FD and a SD outside of the LAN, which have the IPs
+There is also a \bareosFd and a \bareosSd outside of the LAN, which have the IPs
 8.8.8.30 and 8.8.8.40
 
 All resources are configured so that the \configdirective{Address} directive gets the
-Address where the Director can reach the daemons.
+address where the \bareosDir can reach the daemons.
 
 Additionally, devices being in the LAN get the LAN address configured in
-the \configdirective{LanAddress} directive:
+the \configdirective{Lan Address} directive. The configuration looks as follows:
 
-The configuration looks as follows:
-
-\begin{bconfig}{bareos-dir.conf}
+\begin{bareosConfigResource}{bareos-dir}{client}{FD\_LAN}
 Client {
    Name = FD_LAN
    Address = 8.8.8.10
    LanAddress = 10.0.0.10
    ...
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{client}{SD\_LAN}
 Storage {
    Name = SD_LAN
    Address = 8.8.8.20
    LanAddress = 10.0.0.20
    ...
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{client}{FD\_WAN}
 Client {
    Name = FD_WAN
    Address = 8.8.8.30
    ...
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{client}{SD\_WAN}
 Storage {
    Name = SD_WAN
    Address = 8.8.8.40
    ...
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-This way, backups and restores from each FD using each SD are possible
+
+This way, backups and restores from each \bareosFd using each \bareosSd are possible
 as long as the firewall allows the needed network connections.
 
-The director simply checks if both the involved client and storage
-both have a \configdirective{LanAddress} configured.
+The \bareosDir simply checks if both the involved \bareosFd and \bareosSd
+both have a \configdirective{Lan Address}
+(\linkResourceDirective{Dir}{Client}{Lan Address} and \linkResourceDirective{Dir}{Storage}{Lan Address}) configured.
 
-In that case, the initiating daemon is ordered to connect to the \configdirective{LanAddress}
-instead of the \configdirective{Address}. (In active client mode, the FD connects to the SD, in
-passive client mode the SD connects to the FD).
+In that case, the initiating daemon is ordered to connect to the \configdirective{Lan Address}
+instead of the \configdirective{Address}. In active client mode, the \bareosFd connects to the \bareosSd, in
+passive client mode (see \nameref{PassiveClient}) the \bareosSd connects to the \bareosFd.
 
-If only one or none of the involved client and storage have a \configdirective{LanAddress}
+If only one or none of the involved \bareosFd and \bareosSd have a \configdirective{Lan Address}
 configured, the \configdirective{Address} is used as connection target for the
 initiating daemon.

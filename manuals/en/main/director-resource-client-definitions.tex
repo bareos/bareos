@@ -104,10 +104,19 @@ independently applied, so the smaller of the two takes precedence.
 The default is 180 days.
 }
 
+
+\defDirective{Dir}{Client}{Lan Address}{}{}{%
+This directive might be useful in network setups where the \bareosDir and \bareosSd need different addresses to communicate with the \bareosFd.
+
+For details, see \nameref{LanAddress}.
+
+This directive corresponds to \linkResourceDirective{Dir}{Storage}{Lan Address}.
+}
+
+
 \defDirective{Dir}{Client}{Maximum Bandwidth Per Job}{}{}{%
 The speed parameter specifies the maximum allowed bandwidth that a job may use
-when started for this Client. The speed parameter should be specified in
-k/s, Kb/s, m/s or Mb/s.
+when started for this Client.
 }
 
 \defDirective{Dir}{Client}{Maximum Concurrent Jobs}{}{}{%
@@ -243,18 +252,3 @@ Specifies the username that must be supplied when authenticating.
 Only used for the non Native protocols at the moment.
 
 }
-
-\defDirective{Dir}{Client}{Lan Address}{}{}{%
-This parameter is needed to support a network topology where client and storage are
-situated inside of a LAN,  but the Director is outside of that LAN in the internet
-and accesses SD and FD via SNAT or port forwarding.
-
-Only if this parameter is present in both the involved Client and Storage resources,
-the Director will send the specified IP address or hostname to the FD or SD (when
-using passive client).
-
-See chapter \nameref{LanAddress} for more details.
-
-}
-
-

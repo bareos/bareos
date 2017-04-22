@@ -83,6 +83,15 @@ specified at the Director level.  It is implemented only on systems
 The default value is zero, which means no change is made to the socket.
 }
 
+
+\defDirective{Dir}{Storage}{Lan Address}{}{}{%
+This directive might be useful in network setups where the \bareosDir and \bareosFd need different addresses to communicate with the \bareosSd.
+
+For details, see \nameref{LanAddress}.
+
+This directive corresponds to \linkResourceDirective{Dir}{Client}{Lan Address}.
+}
+
 \defDirective{Dir}{Storage}{Maximum Bandwidth Per Job}{}{}{%
 }
 
@@ -228,17 +237,3 @@ For details, refer to chapter \nameref{TlsDirectives}.
 
 \defDirective{Dir}{Storage}{Username}{}{}{%
 }
-
-\defDirective{Dir}{Storage}{Lan Address}{}{}{%
-This parameter is needed to support a network topology where client and storage are
-situated inside of a LAN,  but the Director is outside of that LAN in the internet
-and accesses SD and FD via SNAT or port forwarding.
-
-Only if this parameter is present in both the involved Client and Storage resources,
-the Director will send the specified IP address or hostname to the FD or SD (when
-using passive client).
-
-See chapter \nameref{LanAddress} for more details.
-
-}
-
