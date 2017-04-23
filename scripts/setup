@@ -134,6 +134,11 @@ echo "Running database creation scripts"
 ./grant_bareos_privileges ${DBTYPE}
 cd ${cwd}
 
+rm_if_exists() {
+   if [ -e $1 ]; then
+      rm -f $1
+   fi
+}
 
 #
 # Remove unneeded directories
@@ -141,9 +146,9 @@ cd ${cwd}
 rm -rf build/txt build/src/testprogs
 rm -rf build/.git
 
-rm build/cscope.out
-rm build/tags
-rm build/git-log
+rm_if_exists build/cscope.out
+rm_if_exists build/tags
+rm_if_exists build/git-log
 rm -Rf build/src/ndmp
 
 # remove object files
