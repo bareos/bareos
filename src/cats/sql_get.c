@@ -1345,7 +1345,6 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
 bail_out:
    Mmsg(query, "DROP TABLE btemp3%s", jobid);
    sql_query(query.c_str());
-
    return retval;
 }
 

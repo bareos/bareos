@@ -526,17 +526,23 @@ WHERE t1.JobTDate = j1.JobTDate
 /* 0037_create_temp_accurate_jobids */
 SQL_QUERY(
 CREATE TABLE btemp3%s AS
-SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles
-  FROM Job
-  JOIN FileSet
- USING (FileSetId)
- WHERE ClientId          = %s
-   AND Level             = 'F'
-   AND JobStatus IN ('T','W')
-   AND Type              = 'B'
-   AND StartTime         < '%s'
-   AND FileSet.FileSetId = %s
- ORDER BY Job.JobTDate DESC LIMIT 1
+SELECT JobId,
+       StartTime,
+       EndTime,
+       JobTDate,
+       PurgedFiles
+FROM Job
+JOIN FileSet USING (FileSetId)
+WHERE ClientId = %s
+  AND Level = 'F'
+  AND JobStatus IN ('T',
+                    'W')
+  AND Type = 'B'
+  AND StartTime < '%s'
+  AND FileSet.FileSetId = %s
+ORDER BY Job.JobId DESC,
+         Job.JobTDate DESC
+LIMIT 1
 ),
 
 /* 0038_create_temp_basefile.mysql */
