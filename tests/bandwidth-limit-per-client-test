@@ -49,8 +49,8 @@ fi
 # Check if job1 is throuput is between 850 and 1150 KB/S
 #
 rate=`grep "Rate:.*KB/s"  ${tmp}/log1.out | cut -d: -f2 | sed -e 's/  *//' -e 's/\..*//'`
-if test $rate -gt 850 -a $rate -lt 1150 ; then
-   print_debug "Backup Rate more then 850 and less then 1150 KB/s, ${rate} OK."
+if test $rate -gt 810 -a $rate -lt 1150 ; then
+   print_debug "Backup Rate more than 850 and less than 1150 KB/s, ${rate} OK."
 else
    estat=1
 fi
