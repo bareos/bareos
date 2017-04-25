@@ -435,9 +435,18 @@ retry_fetch:
       }
 
       /*
-       * See if this is not on the unwanted volumes list.
+       * Skip if volume is on unwanted volumes list.
+       * We need to reduce the number of rows by one
+       * and jump out if no more rows are available
        */
       if (unwanted_volumes && is_on_unwanted_volumes_list(row[1], unwanted_volumes)) {
+         Dmsg1(50, "Volume %s is on unwanted_volume_list, skipping\n", row[1]);
+         num_rows-- ;
+         if ( num_rows <= 0) {
+            Dmsg1(50, "No more volumes in result, bailing out\n", row[1]);
+            sql_free_result(mdb);
+            goto bail_out;
+         }
          continue;
       }
 
