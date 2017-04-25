@@ -125,7 +125,7 @@ messages
 @# The second job won't run
 @##########################
 run comment="Should work" level=Full job=CancelRunningDuplicatesNo yes
-@sleep 2
+@sleep 1
 run comment="Should fail" level=Full job=CancelRunningDuplicatesNo yes
 wait
 messages
