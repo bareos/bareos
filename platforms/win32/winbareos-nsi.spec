@@ -145,6 +145,79 @@ for flavor in %{flavors}; do
    for BITS in 32 64; do
       mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
       pushd    $RPM_BUILD_ROOT/$flavor/release${BITS}
+   done
+
+   DESCRIPTION="Bareos - Backup Archiving Recovery Open Sourced"
+
+   for file in %{_mingw32_bindir}/$flavor/*.exe %{_mingw32_bindir}/$flavor/*.dll; do
+      basename=`basename $file`
+      dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
+      cp $file $dest
+      #osslsigncode  sign \
+      #              -pkcs12 %SIGNCERT \
+      #              -readpass %SIGNPWFILE \
+      #              -n "${DESCRIPTION}" \
+      #              -i http://www.bareos.com/ \
+      #              -t http://timestamp.comodoca.com/authenticode \
+      #              -in  $file \
+      #              -out $dest
+      #osslsigncode verify -in $dest
+   done
+
+   for file in %{_mingw64_bindir}/$flavor/*.exe %{_mingw64_bindir}/$flavor/*.dll; do
+      basename=`basename $file`
+      dest=$RPM_BUILD_ROOT/$flavor/release64/$basename
+      cp $file $dest
+      #osslsigncode  sign \
+      #              -pkcs12 %SIGNCERT \
+      #              -readpass %SIGNPWFILE \
+      #              -n "${DESCRIPTION}" \
+      #              -i http://www.bareos.com/ \
+      #              -t http://timestamp.comodoca.com/authenticode \
+      #              -in  $file \
+      #              -out $dest
+      #osslsigncode verify -in $dest
+   done
+
+   cp -av %{_mingw32_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release32/
+   cp -av %{_mingw64_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release64/
+
+# copy python plugins into Plugin directory
+   cp -av %{_mingw32_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release32/
+   cp -av %{_mingw64_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release64/
+
+   for file in \
+      libcrypto-*.dll \
+      libcmocka.dll \
+      libfastlz.dll \
+      libgcc_s_*-1.dll \
+      libhistory6.dll \
+      libjansson-4.dll \
+      liblzo2-2.dll \
+      libpng*.dll \
+      libreadline6.dll \
+      libssl-*.dll \
+      libstdc++-6.dll \
+      libsqlite3-0.dll \
+      libtermcap-0.dll \
+      openssl.exe \
+      libwinpthread-1.dll \
+      QtCore4.dll \
+      QtGui4.dll \
+      sed.exe \
+      sqlite3.exe \
+      zlib1.dll \
+   ; do
+      cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
+      cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
+   done
+
+
+   for BITS in 32 64; do
+      # run this in subshell in background
+      (
+      mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
+      pushd    $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       echo "The installer may contain the following software:" >> %_sourcedir/LICENSE
       echo "" >> %_sourcedir/LICENSE
@@ -192,72 +265,6 @@ for flavor in %{flavors}; do
 
       # copy the sources over if we create debug package
       cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
-   done
-
-   DESCRIPTION="Bareos - Backup Archiving Recovery Open Sourced"
-
-   for file in %{_mingw32_bindir}/$flavor/*.exe %{_mingw32_bindir}/$flavor/*.dll; do
-      basename=`basename $file`
-      dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
-      osslsigncode  sign \
-                    -pkcs12 %SIGNCERT \
-                    -readpass %SIGNPWFILE \
-                    -n "${DESCRIPTION}" \
-                    -i http://www.bareos.com/ \
-                    -t http://timestamp.comodoca.com/authenticode \
-                    -in  $file \
-                    -out $dest
-      osslsigncode verify -in $dest
-   done
-
-   for file in %{_mingw64_bindir}/$flavor/*.exe %{_mingw64_bindir}/$flavor/*.dll; do
-      basename=`basename $file`
-      dest=$RPM_BUILD_ROOT/$flavor/release64/$basename
-      osslsigncode  sign \
-                    -pkcs12 %SIGNCERT \
-                    -readpass %SIGNPWFILE \
-                    -n "${DESCRIPTION}" \
-                    -i http://www.bareos.com/ \
-                    -t http://timestamp.comodoca.com/authenticode \
-                    -in  $file \
-                    -out $dest
-      osslsigncode verify -in $dest
-   done
-
-   cp -av %{_mingw32_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release32/
-   cp -av %{_mingw64_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release64/
-
-# copy python plugins into Plugin directory
-   cp -av %{_mingw32_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release32/
-   cp -av %{_mingw64_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release64/
-
-   for file in \
-      libcrypto-*.dll \
-      libcmocka.dll \
-      libfastlz.dll \
-      libgcc_s_*-1.dll \
-      libhistory6.dll \
-      libjansson-4.dll \
-      liblzo2-2.dll \
-      libpng*.dll \
-      libreadline6.dll \
-      libssl-*.dll \
-      libstdc++-6.dll \
-      libsqlite3-0.dll \
-      libtermcap-0.dll \
-      openssl.exe \
-      libwinpthread-1.dll \
-      QtCore4.dll \
-      QtGui4.dll \
-      sed.exe \
-      sqlite3.exe \
-      zlib1.dll \
-   ; do
-      cp %{_mingw32_bindir}/$file $RPM_BUILD_ROOT/$flavor/release32
-      cp %{_mingw64_bindir}/$file $RPM_BUILD_ROOT/$flavor/release64
-   done
-
-   for BITS in 32 64; do
 
       cp -r /etc/$flavor/mingw${BITS}-winbareos/config/ $RPM_BUILD_ROOT/$flavor/release${BITS}
 
@@ -267,9 +274,15 @@ for flavor in %{flavors}; do
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=${BITS} \
-               -DWIN_DEBUG=${WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi
+               -DWIN_DEBUG=${WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi | sed "s/^/${BITS}BIT-DEBUG-${WIN_DEBUG}: /g"
+      ) &
+      #subshell end
    done
 done
+
+# wait for subshells to complete
+wait
+
 
 %install
 
