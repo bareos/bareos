@@ -87,7 +87,7 @@ int main(int argc, char *const *argv)
    bindtextdomain("bareos", LOCALEDIR);
    textdomain("bareos");
 
-   while ((ch = getopt(argc, argv, "d:f:n?")) != -1) {
+   while ((ch = getopt(argc, argv, "d:f:n:l?")) != -1) {
       switch (ch) {
       case 'd':                       /* set debug level */
          if (*optarg == 't') {
