@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -32,25 +32,18 @@ $this->headTitle($title);
 
 <div class="row">
 
-   <div class="col-md-4">
+   <div class="col-md-8">
       <?php echo $this->partial('JobsPast24h'); ?>
-      <?php echo $this->partial('LastDirectorMessages'); ?>
+      <?php echo $this->partial('JobsLastStatus'); ?>
    </div>
 
-   <div class="col-md-8">
-      <?php echo $this->partial('JobsLastStatus'); ?>
+   <div class="col-md-4">
+      <?php echo $this->partial('LastDirectorMessages'); ?>
    </div>
 
 </div>
 
 <?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pointLabels.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.categoryAxisRenderer.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.barRenderer.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jqplot.pieRenderer.min.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/jquery.jqplot.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jquery.jqplot.min.css');
-
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.plugins.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
@@ -59,45 +52,8 @@ $this->headTitle($title);
 
 <script type="text/javascript">
 
-   function chart1() {
-
-      var data = [
-         ['<?php echo $this->translate('Running'); ?>', <?php echo $this->runningJobs; ?>],
-         ['<?php echo $this->translate('Waiting'); ?>', <?php echo $this->waitingJobs; ?>],
-         ['<?php echo $this->translate('Terminated successfully'); ?>', <?php echo $this->successfulJobs; ?>],
-         ['<?php echo $this->translate('Terminated unsuccessfully'); ?>', <?php echo $this->unsuccessfulJobs; ?>]
-      ];
-
-      var plot1 = jQuery.jqplot(
-         'chart1',
-         [data],
-         {
-            seriesColors: [ "#5bc0de", "#cccccc", "#5cb85c", "#d9534f" ],
-            seriesDefaults: {
-               renderer: jQuery.jqplot.PieRenderer,
-               rendererOptions: {
-                  fill: true,
-                  showDataLabels: true,
-               },
-               shadow: false,
-            },
-            legend:{
-               show: true,
-               location: 'se',
-            },
-            grid: {
-               background: '#ffffff',
-               drawGridLines: false,
-               drawBorder: false,
-               borderColor: 'transparent',
-               shadowColor: 'transparent',
-            }
-         }
-      );
-
-   }
-
    var lastlogid = 0;
+   var table_jobs_last_status = null;
 
    function getDirectorMessages() {
       $.ajax({
@@ -116,82 +72,130 @@ $this->headTitle($title);
       });
    }
 
+   $(document).ajaxStart(function() {
+         $('.waiting-jobs-field').empty();
+         $('.waiting-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.running-jobs-field').empty();
+         $('.running-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.successful-jobs-field').empty();
+         $('.successful-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.failed-jobs-field').empty();
+         $('.failed-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+   });
+
+   function getJobsPast24h() {
+      $.ajax({
+         url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobspast24h'; ?>',
+         dataType: 'json',
+         timeout: 10000,
+         success: function(data) {
+            $('.waiting-jobs-field').empty();
+            $('.waiting-jobs-field').append(
+               data.waiting
+            );
+            $('.running-jobs-field').empty();
+            $('.running-jobs-field').append(
+               data.running
+            );
+            $('.successful-jobs-field').empty();
+            $('.successful-jobs-field').append(
+               data.successful
+            );
+            $('.failed-jobs-field').empty();
+            $('.failed-jobs-field').append(
+               data.failed
+            );
+         }
+      });
+   }
+
+   function getJobsLastStatus() {
+      table_jobs_last_status = $('#jobs-last-status').DataTable({
+         "ajax": {
+            "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>",
+            "dataSrc": ""
+         },
+         "language": {
+            "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+         },
+         "columns" : [
+            { "data": "name" },
+            { "data": "jobstatus" },
+            { "data": "jobid" },
+            { "data": "client" },
+            { "data": "level" },
+            { "data": "starttime" },
+            { "data": "endtime" },
+            { "data": "jobbytes", "type": "file-size" }
+         ],
+         "paging": true,
+         "pagingType": "full_numbers",
+         "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         "ordering": true,
+         "info": true,
+         "order": [[2, 'desc']],
+         "columnDefs": [
+            {
+               "targets": 0,
+               "render": function(data, type, full, meta) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
+               }
+            },
+            {
+               "targets": 1,
+               "render": function(data, type, full, meta) {
+                  return formatJobStatus(data);
+               }
+            },
+            {
+               "targets": 2,
+               "render": function(data, type, full, meta) {
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            },
+            {
+               "targets": 3,
+               "render": function(data, type, full, meta) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
+               }
+            },
+            {
+               "targets": 4,
+               "render": function(data, type, full, meta) {
+                  return formatJobLevel(data);
+               }
+            },
+            {
+               "targets": 7,
+               "render": function(data, type, full, meta) {
+                  return formatBytes(data);
+               }
+            }
+         ]
+      });
+   }
+
+   function refreshPartials() {
+      getDirectorMessages();
+      getJobsPast24h();
+      table_jobs_last_status.ajax.reload( null, false );
+   }
+
    $(document).ready(
       function() {
          setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
          setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-         chart1();
-
          getDirectorMessages();
+         setInterval('getDirectorMessages()', 60000);
 
-         setInterval('getDirectorMessages()', 30000);
+         getJobsPast24h();
+         setInterval('getJobsPast24h()', 60000);
 
-         var table_jobs_last_status = $('#jobs-last-status').DataTable({
-            "ajax": {
-               "url": "<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>",
-               "dataSrc": ""
-            },
-            "language": {
-               "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-            },
-            "columns" : [
-               { "data": "name" },
-               { "data": "jobstatus" },
-               { "data": "jobid" },
-               { "data": "client" },
-               { "data": "level" },
-               { "data": "starttime" },
-               { "data": "endtime" },
-               { "data": "jobbytes", "type": "file-size" }
-            ],
-            "paging": true,
-            "pagingType": "full_numbers",
-            "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-            "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-            "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-            "ordering": true,
-            "info": true,
-            "order": [[2, 'desc']],
-            "columnDefs": [
-               {
-                  "targets": 0,
-                  "render": function(data, type, full, meta) {
-                     return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
-                  }
-               },
-               {
-                  "targets": 1,
-                  "render": function(data, type, full, meta) {
-                     return formatJobStatus(data);
-                  }
-               },
-               {
-                  "targets": 2,
-                  "render": function(data, type, full, meta) {
-                     return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+data+'">'+data+'</a>';
-                  }
-               },
-               {
-                  "targets": 3,
-                  "render": function(data, type, full, meta) {
-                     return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
-                  }
-               },
-               {
-                  "targets": 4,
-                  "render": function(data, type, full, meta) {
-                     return formatJobLevel(data);
-                  }
-               },
-               {
-                  "targets": 7,
-                  "render": function(data, type, full, meta) {
-                     return formatBytes(data);
-                  }
-               }
-            ]
-         });
+         getJobsLastStatus();
+         setInterval( function () { table_jobs_last_status.ajax.reload( null, false ); }, 60000 );
       }
    );
 

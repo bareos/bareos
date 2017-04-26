@@ -29,12 +29,14 @@
 <div class="panel panel-default">
 
       <div class="panel-heading">
-         <h3 class="panel-title"><?php echo $this->translate('Current Director messages'); ?></h3>
+         <h3 class="panel-title"><?php echo $this->translate('Current Director messages'); ?>
+            <a href="#" onClick="refreshPartials();return false;" title="Refresh"><span class="glyphicon glyphicon-refresh pull-right" aria-hidden="true"></span></a>
+         </h3>
       </div>
 
       <div class="panel-body">
 
-         <pre class="dird-msg-ticker" style="height: 225px; font-size: 8pt;">
+         <pre class="dird-msg-ticker" style="height: 600px; font-size: 8pt;">
             <div class="msg" id="0"></div>
          </pre>
 
