@@ -1041,6 +1041,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
          ua->db->list_sql_query(ua->jcr, ua->cmd, ua->send, llist, "backups");
       }
+   } else if ( bstrcasecmp(ua->argk[1], NT_("jobstatistics") )
+            || bstrcasecmp(ua->argk[1], NT_("jobstats") ) ) {
+      jobid = get_jobid_from_cmdline(ua);
+      if (jobid > 0) {
+         ua->db->list_jobstatistics_records(ua->jcr, jobid, ua->send, llist);
+      } else {
+         ua->error_msg(_("no jobid given\n"));
+      }
    } else {
       ua->error_msg(_("Unknown list keyword: %s\n"), NPRT(ua->argk[1]));
    }

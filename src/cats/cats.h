@@ -738,6 +738,7 @@ public:
    void list_joblog_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_jobstatistics_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
    bool list_sql_query(JCR *jcr, SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
    bool list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,

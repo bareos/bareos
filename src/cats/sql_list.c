@@ -451,6 +451,37 @@ bail_out:
 }
 
 /**
+ * list job statistics records for certain jobid
+ *
+ */
+void B_DB::list_jobstatistics_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+{
+   char ed1[50];
+
+   if (JobId <= 0) {
+      return;
+   }
+   db_lock(this);
+      Mmsg(cmd, "SELECT DeviceId, SampleTime, JobId, JobFiles, JobBytes "
+                "FROM JobStats "
+                "WHERE JobStats.JobId=%s "
+                "ORDER BY JobStats.SampleTime "
+                ,edit_int64(JobId, ed1));
+   if (!QUERY_DB(jcr, cmd)) {
+      goto bail_out;
+   }
+
+   sendit->array_start("jobstats");
+   list_result(jcr, sendit, type);
+   sendit->array_end("jobstats");
+
+   sql_free_result();
+
+bail_out:
+   db_unlock(this);
+}
+
+/**
  * List Job record(s) that match JOB_DBR
  */
 void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname, int jobstatus,
