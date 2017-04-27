@@ -304,33 +304,33 @@ bool JCR::JobReads()
 }
 
 /*
- * Push a job_push_item onto the job end callback stack.
+ * Push a job_callback_item onto the job end callback stack.
  */
-void job_end_push(JCR *jcr, void job_end_cb(JCR *jcr, void *), void *ctx)
+void register_job_end_callback(JCR *jcr, void job_end_cb(JCR *jcr, void *), void *ctx)
 {
-   job_push_item *item;
+   job_callback_item *item;
 
-   item = (job_push_item *)malloc(sizeof(job_push_item));
+   item = (job_callback_item *)malloc(sizeof(job_callback_item));
 
    item->job_end_cb = job_end_cb;
    item->ctx = ctx;
 
-   jcr->job_end_push.push((void *)item);
+   jcr->job_end_callbacks.push((void *)item);
 }
 
 /*
- * Pop each job_push_item and process it.
+ * Pop each job_callback_item and process it.
  */
-static void job_end_pop(JCR *jcr)
+static void call_job_end_callbacks(JCR *jcr)
 {
-   job_push_item *item;
+   job_callback_item *item;
 
-   if (jcr->job_end_push.size() > 0) {
-      item = (job_push_item *)jcr->job_end_push.pop();
+   if (jcr->job_end_callbacks.size() > 0) {
+      item = (job_callback_item *)jcr->job_end_callbacks.pop();
       while (item) {
          item->job_end_cb(jcr, item->ctx);
          free(item);
-         item = (job_push_item *)jcr->job_end_push.pop();
+         item = (job_callback_item *)jcr->job_end_callbacks.pop();
       }
    }
 }
@@ -408,7 +408,7 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    }
 
    jcr->my_thread_id = pthread_self();
-   jcr->job_end_push.init(1, false);
+   jcr->job_end_callbacks.init(1, false);
    jcr->sched_time = time(NULL);
    jcr->initial_sched_time = jcr->sched_time;
    jcr->daemon_free_jcr = daemon_free_jcr;    /* plug daemon free routine */
@@ -438,7 +438,7 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
     * Locking jobs is a global lock that is needed
     * so that the Director can stop new jobs from being
     * added to the jcr chain while it processes a new
-    * conf file and does the job_end_push().
+    * conf file and does the register_job_end_callback().
     */
    lock_jobs();
    lock_jcr_chain();
@@ -597,7 +597,7 @@ void free_jcr(JCR *jcr)
    unlock_jcr_chain();
 
    dequeue_messages(jcr);
-   job_end_pop(jcr);                  /* pop and call hooked routines */
+   call_job_end_callbacks(jcr);                  /* call registered callbacks */
 
    Dmsg1(dbglvl, "End job=%d\n", jcr->JobId);
 

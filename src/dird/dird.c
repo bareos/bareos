@@ -565,7 +565,7 @@ static bool init_sighandler_sighup()
  * last reload, then the old resources will be immediately release.
  * A console is considered a job because it may have pointers to
  * resources, but a SYSTEM job is not since it *should* not have any
- * permanent pointers to jobs.
+ * permanent pointers to resources.
  */
 bool do_reload_config()
 {
@@ -646,7 +646,7 @@ bool do_reload_config()
                memcpy(new_table, &prev_config, sizeof(resource_table_reference));
             }
             new_table->job_count++;
-            job_end_push(jcr, reload_job_end_cb, (void *)new_table);
+            register_job_end_callback(jcr, reload_job_end_cb, (void *)new_table);
             njobs++;
          }
       }

@@ -248,7 +248,7 @@ void unlock_last_jobs_list();
 bool read_last_jobs_list(int fd, uint64_t addr);
 uint64_t write_last_jobs_list(int fd, uint64_t addr);
 void write_state_file(char *dir, const char *progname, int port);
-void job_end_push(JCR *jcr, void job_end_cb(JCR *jcr,void *), void *ctx);
+void register_job_end_callback(JCR *jcr, void job_end_cb(JCR *jcr,void *), void *ctx);
 void lock_jobs();
 void unlock_jobs();
 JCR *jcr_walk_start();

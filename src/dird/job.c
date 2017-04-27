@@ -1549,7 +1549,7 @@ void dird_free_jcr(JCR *jcr)
     */
    free_rwstorage(jcr);
 
-   jcr->job_end_push.destroy();
+   jcr->job_end_callbacks.destroy();
 
    if (jcr->JobId != 0) {
       write_state_file(me->working_directory, "bareos-dir", get_first_port_host_order(me->DIRaddrs));

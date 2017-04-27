@@ -265,7 +265,7 @@ struct CMPRS_CTX {
    } workset;
 };
 
-struct job_push_item {
+struct job_callback_item {
    void (*job_end_cb)(JCR *jcr, void *);
    void *ctx;
 };
@@ -338,7 +338,7 @@ public:
    dlist *msg_queue;                      /**< Queued messages */
    pthread_mutex_t msg_queue_mutex;       /**< message queue mutex */
    bool dequeuing_msgs;                   /**< Set when dequeuing messages */
-   alist job_end_push;                    /**< Job end pushed calls */
+   alist job_end_callbacks;               /**< callbacks called at Job end */
    POOLMEM *VolumeName;                   /**< Volume name desired -- pool_memory */
    POOLMEM *errmsg;                       /**< Edited error message */
    char Job[MAX_NAME_LENGTH];             /**< Unique name of this Job */
