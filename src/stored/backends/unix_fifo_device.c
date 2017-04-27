@@ -218,7 +218,12 @@ static bool do_mount(DCR *dcr, bool mount, int dotimeout)
       entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       count = 0;
       while (1) {
+#ifdef USE_READDIR_R
          if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+         result = readdir(dp);
+         if (result == NULL) {
+#endif
             dcr->dev->dev_errno = EIO;
             Dmsg2(129, "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
                   device->mount_point, dcr->dev->print_name());

@@ -2389,6 +2389,7 @@ static int copyin(struct dirent &dp, const char *fname)
    return dp.d_reclen;
 }
 
+#ifdef USE_READDIR_R
 int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 {
    _dir *dp = (_dir *)dirp;
@@ -2429,7 +2430,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
 
    return 0;
 }
-
+#endif
 /**
  * Dotted IP address to network address
  *

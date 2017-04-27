@@ -40,8 +40,10 @@
 #include <dirent.h>
 #include <errno.h>
 
+#ifdef USE_READDIR_R
 #ifndef HAVE_READDIR_R
 int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+#endif
 #endif
 
 #ifndef HAVE_STRICOLL
@@ -840,12 +842,17 @@ glob_match( const char *pattern, int flags, int (*errfn)(const char*, int), glob
       {
 	/* ...and when successful, instantiate a dirent structure...
 	 */
+#ifdef USE_READDIR_R
 	struct dirent data;
 	struct dirent *entry = &data;
+#endif
 	struct dirent *result = NULL;
+#ifdef USE_READDIR_R
 	size_t dirlen = (dir == NULL) ? 0 : strlen( *dirp );
-	//while( (entry = readdir( dp )) != NULL )
 	while( (readdir_r( dp, entry, &result )) == 0 )
+#else
+	while( (entry = readdir( dp )) != NULL )
+#endif
 	{
 	  /* ...into which we read each entry from the candidate
 	   * directory, in turn, then...

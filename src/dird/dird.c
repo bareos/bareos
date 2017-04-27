@@ -1303,7 +1303,10 @@ bail_out:
 static void cleanup_old_files()
 {
    DIR* dp;
-   struct dirent *entry, *result;
+   struct dirent *result;
+#ifdef USE_READDIR_R
+   struct dirent *entry;
+#endif
    int rc, name_max;
    int my_name_len = strlen(my_name);
    int len = strlen(me->working_directory);
@@ -1344,9 +1347,16 @@ static void cleanup_old_files()
       return;
    }
 
+#ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
       if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+   while (1) {
+      result = readdir(dp);
+      if (result == NULL) {
+#endif
+
          break;
       }
       /* Exclude any name with ., .., not my_name or containing a space */
@@ -1365,7 +1375,9 @@ static void cleanup_old_files()
       }
    }
 
+#ifdef USE_READDIR_R
    free(entry);
+#endif
    closedir(dp);
 /* Be careful to free up the correct resources */
 get_out1:

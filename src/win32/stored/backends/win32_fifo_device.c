@@ -152,7 +152,10 @@ static bool do_mount(DCR *dcr, bool mount, int dotimeout)
    POOLMEM *results;
    DIR* dp;
    char *icmd;
-   struct dirent *entry, *result;
+   struct dirent *result;
+#ifdef USE_READDIR_R
+   struct dirent *entry;
+#endif
    int status, tries, name_max, count;
    berrno be;
 
@@ -215,11 +218,17 @@ static bool do_mount(DCR *dcr, bool mount, int dotimeout)
                device->mount_point, dcr->dev->print_name(), be.bstrerror());
          goto get_out;
       }
-
+#ifdef USE_READDIR_R
       entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
+#endif
       count = 0;
       while (1) {
+#ifdef USE_READDIR_R
          if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+         result = readdir(dp);
+         if (result == NULL) {
+#endif
             dcr->dev->dev_errno = EIO;
             Dmsg2(129, "do_mount: failed to find suitable file in dir %s (dev=%s)\n",
                   device->mount_point, dcr->dev->print_name());
@@ -232,7 +241,9 @@ static bool do_mount(DCR *dcr, bool mount, int dotimeout)
             Dmsg2(129, "do_mount: ignoring %s in %s\n", result->d_name, device->mount_point);
          }
       }
+#ifdef USE_READDIR_R
       free(entry);
+#endif
       closedir(dp);
 
       Dmsg1(100, "do_mount: got %d files in the mount point (not counting ., .. and .keep)\n", count);

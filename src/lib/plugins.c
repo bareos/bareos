@@ -262,8 +262,10 @@ bool load_plugins(void *binfo,
    } else {
       int name_max, type_len;
       DIR *dp = NULL;
-      struct dirent *entry = NULL, *result;
-
+      struct dirent *result;
+#ifdef USE_READDIR_R
+      struct dirent *entry = NULL;
+#endif
       name_max = pathconf(".", _PC_NAME_MAX);
       if (name_max < 1024) {
          name_max = 1024;
@@ -278,9 +280,15 @@ bool load_plugins(void *binfo,
          goto bail_out;
       }
 
+#ifdef USE_READDIR_R
       entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
       while (1) {
          if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+      while (1) {
+         result = readdir(dp);
+         if (result == NULL) {
+#endif
             if (!found) {
                Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"), plugin_dir);
                Dmsg1(dbglvl, "Failed to find any plugins in %s\n", plugin_dir);
@@ -323,10 +331,11 @@ bool load_plugins(void *binfo,
          }
       }
 
+#ifdef USE_READDIR_R
       if (entry) {
          free(entry);
       }
-
+#endif
       if (dp) {
          closedir(dp);
       }

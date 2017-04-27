@@ -566,7 +566,10 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
 {
    int rtn_stat;
    DIR *directory;
-   struct dirent *entry, *result;
+   struct dirent *result;
+#ifdef USE_READDIR_R
+   struct dirent *entry;
+#endif
    char *link;
    int link_len;
    int len;
@@ -729,14 +732,14 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * name_max bytes doesn't kill us right away. We check in the loop if
     * an overflow has not happened.
     */
+#ifdef USE_READDIR_R
+
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 100);
    while (!job_canceled(jcr)) {
       int name_length;
 
       status = readdir_r(directory, entry, &result);
       if (status != 0 || result == NULL) {
-//          Dmsg2(99, "readdir returned stat=%d result=0x%x\n",
-//             status, (long)result);
          break;
       }
 
@@ -744,7 +747,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
 
       /*
        * Some filesystems violate against the rules and return filenames
-       * longer then _PC_NAME_MAX. Log the error and continue.
+       * longer than _PC_NAME_MAX. Log the error and continue.
        */
       if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
          Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), entry->d_name, name_length);
@@ -783,6 +786,57 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    free(link);
    free(entry);
 
+#else
+
+   while (!job_canceled(jcr)) {
+      int name_length;
+      result = readdir(directory);
+      if (result == NULL) {
+         break;
+      }
+
+      name_length = (int)NAMELEN(result);
+
+      /*
+       * Some filesystems violate against the rules and return filenames
+       * longer than _PC_NAME_MAX. Log the error and continue.
+       */
+      if ((name_max + 1) <= ((int)sizeof(struct dirent) + name_length)) {
+         Jmsg2(jcr, M_ERROR, 0, _("%s: File name too long [%d]\n"), result->d_name, name_length);
+         continue;
+      }
+
+      /*
+       * Skip `.', `..', and excluded file names.
+       */
+      if (result->d_name[0] == '\0' ||
+         (result->d_name[0] == '.' && (result->d_name[1] == '\0' ||
+         (result->d_name[1] == '.' && result->d_name[2] == '\0')))) {
+         continue;
+      }
+
+      /*
+       * Make sure there is enough room to store the whole name.
+       */
+      if (name_length + len >= link_len) {
+         link_len = len + name_length + 1;
+         link = (char *)brealloc(link, link_len + 1);
+      }
+
+      memcpy(link + len, result->d_name, name_length);
+      link[len + name_length] = '\0';
+
+      if (!file_is_excluded(ff_pkt, link)) {
+         rtn_stat = find_one_file(jcr, ff_pkt, handle_file, link, our_device, false);
+         if (ff_pkt->linked) {
+            ff_pkt->linked->FileIndex = ff_pkt->FileIndex;
+         }
+      }
+   }
+
+   closedir(directory);
+   free(link);
+#endif
    /*
     * Now that we have recursed through all the files in the
     * directory, we "save" the directory so that after all
