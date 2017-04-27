@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -118,6 +118,7 @@ private:
    alist *filters;
    char *hidden_columns;
    POOL_MEM *result_message_plain;
+   static const int max_message_length_shown_in_error = 1024;
 #if HAVE_JANSSON
    json_t *result_json;
    alist *result_stack_json;

@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2016-2016 Planets Communications B.V.
-   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -603,8 +603,18 @@ bool OUTPUT_FORMATTER::process_text_buffer()
    if (string_length > 0) {
       retval = send_func(send_ctx, result_message_plain->c_str());
       if (!retval) {
-         error_msg.bsprintf("Failed to send message. Maybe result message to long?\n"
-                            "Message length = %lld\n", string_length);
+         /*
+          * If send failed, include short messages in error messages.
+          * As messages can get quite long, don't show long messages.
+          */
+         error_msg.bsprintf("Failed to send message (length=%lld). ", string_length);
+         if (string_length < max_message_length_shown_in_error) {
+            error_msg.strcat("Message: ");
+            error_msg.strcat(result_message_plain->c_str());
+            error_msg.strcat("\n");
+         } else {
+            error_msg.strcat("Maybe result message to long?\n");
+         }
          Emsg0(M_ERROR, 0, error_msg.c_str());
       }
       result_message_plain->strcpy("");
@@ -817,8 +827,18 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
        * send json string, on failure, send json error message
        */
       if (!send_func(send_ctx, string)) {
-         error_msg.bsprintf("Failed to send result as json. Maybe result message to long?\n"
-                            "Message length = %lld\n", string_length);
+         /*
+          * If send failed, include short messages in error messages.
+          * As messages can get quite long, don't show long messages.
+          */
+         error_msg.bsprintf("Failed to send json message (length=%lld). ", string_length);
+         if (string_length < max_message_length_shown_in_error) {
+            error_msg.strcat("Message: ");
+            error_msg.strcat(string);
+            error_msg.strcat("\n");
+         } else {
+            error_msg.strcat("Maybe result message to long?\n");
+         }
          Emsg0(M_ERROR, 0, error_msg.c_str());
          json_send_error_message(error_msg.c_str());
       }
