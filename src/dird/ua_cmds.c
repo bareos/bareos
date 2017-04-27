@@ -278,7 +278,7 @@ static struct ua_cmdstruct commands[] = {
          "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
-         "jobstatistics=<jobid> |\n"
+         "jobstatistics jobid=<jobid> |\n"
          "log [ limit=<number> [ offset=<number> ] ] [reverse]|\n"
          "media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
          "media=<media-name> |\n"
