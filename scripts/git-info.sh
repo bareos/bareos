@@ -32,6 +32,8 @@ git_branch_info()
     # (because OBS uses clone $GITURL + reset --hard $BRANCH)
     #printf "remote_branch=$TRACKING_BRANCH\n"
 
+    LAST_RELEASE=`git describe --tags --match "Release/*" --always --abbrev=0`
+
     RELEASE=`git describe --tags --match "Release/*" --always --abbrev=40`
     printf "release=$RELEASE\n"
 }
@@ -41,4 +43,5 @@ git_branch_info  > $DESTDIR/git-info
 DIFF=`$GIT diff --stat`
 [ "$DIFF" ] && printf "$DIFF" > $DESTDIR/git-diff
 
-$GIT log --stat  > $DESTDIR/git-log
+$GIT log --stat --decorate HEAD...${LAST_RELEASE}^ > $DESTDIR/git-log
+
