@@ -426,4 +426,10 @@ bool win32_restore_file_attributes(POOLMEM *ofname,
 
 #define HAVE_VA_COPY 1
 
+/*
+ * use readdir_r on windows as the compat layer has
+ * an emulation for this call
+ */
+#define USE_READDIR_R
+
 #endif /* __COMPAT_H_ */
