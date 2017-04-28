@@ -20,3 +20,7 @@ autoconf/config.log
 
 # debian
 debian/*.log
+
+# etags and cscope db
+tags
+cscope.out
