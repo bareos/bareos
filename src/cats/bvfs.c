@@ -684,6 +684,14 @@ bool Bvfs::ls_dirs()
         "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
       "WHERE PathHierarchy1.PPathId = %s "
       "AND PathVisibility1.JobId IN (%s) "
+      "AND PathVisibility1.PathId NOT IN ( "
+          "SELECT PathId FROM File "
+          "WHERE FilenameId = %s "
+                "AND JobId = ( "
+                    "SELECT MAX(JobId) FROM PathVisibility "
+                    "WHERE PathId = PathVisibility1.PathId "
+                          "AND JobId IN (%s)) "
+                "AND FileIndex = 0) "
            "%s "
      ") AS listpath1 "
    "JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId) "
@@ -696,6 +704,8 @@ bool Bvfs::ls_dirs()
        "ON (listpath1.PathId = listfile1.PathId) "
     ") AS A ORDER BY 2,3 DESC LIMIT %d OFFSET %d",
         edit_uint64(pwd_id, ed1),
+        jobids,
+        edit_uint64(dir_filenameid, ed2),
         jobids,
         filter.c_str(),
         edit_uint64(dir_filenameid, ed2),
