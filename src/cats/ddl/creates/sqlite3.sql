@@ -1,34 +1,35 @@
+--
+-- Sqlite:
+--
+-- make this as close to MySQL as possible.
+-- sqlite:
+--   INTEGER PRIMARY KEY is autoincremental by default.
+--   index name must be unique per database, so name it to table_column_column_...
+
 CREATE TABLE Path (
    PathId INTEGER,
    Path TEXT DEFAULT '',
    PRIMARY KEY(PathId)
 );
-
 CREATE INDEX inx2 ON Path (Path);
 
 -- In File table
--- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
+-- FileIndex is 0 for FT_DELETED files
+-- Name is '' for directories
 CREATE TABLE File (
-   FileId INTEGER,
-   FileIndex INTEGER UNSIGNED NOT NULL,
-   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
-   PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
-   Name TEXT DEFAULT '',
-   DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
-   MarkId INTEGER UNSIGNED DEFAULT 0,
-   LStat VARCHAR(255) NOT NULL,
-   MD5 VARCHAR(255) NOT NULL,
-   PRIMARY KEY(FileId)
+   FileId           INTEGER             NOT NULL,
+   FileIndex        INTEGER   UNSIGNED            DEFAULT 0,
+   JobId            INTEGER   UNSIGNED  NOT NULL  REFERENCES Job,
+   PathId           INTEGER   UNSIGNED  NOT NULL  REFERENCES Path,
+   Name             BLOB                NOT NULL,
+   DeltaSeq         SMALLINT  UNSIGNED            DEFAULT 0,
+   MarkId           INTEGER   UNSIGNED            DEFAULT 0,
+   LStat            TINYBLOB            NOT NULL,
+   MD5              TINYBLOB            NOT NULL,
+   PRIMARY KEY (FileId)
 );
-CREATE INDEX inx3 ON File (JobId);
-CREATE INDEX file_jpf_idx ON File (JobId, PathId, Name);
---
--- Possibly add one or more of the following indexes
---  if your Verifies are too slow.
---
--- CREATE INDEX inx4 ON File (PathId);
--- CREATE INDEX inx5 ON File (FileNameId);
+CREATE INDEX File_JobId ON File (JobId);
+CREATE INDEX File_JobId_PathId_Name ON File (JobId, PathId, Name);
 
 
 CREATE TABLE RestoreObject (
@@ -300,13 +301,14 @@ CREATE TABLE BaseFiles (
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
-CREATE TABLE UnsavedFiles (
-   UnsavedId INTEGER,
-   JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
-   PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
-   FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
-   PRIMARY KEY (UnsavedId)
-);
+-- This table seems to be obsolete
+-- CREATE TABLE UnsavedFiles (
+--    UnsavedId INTEGER,
+--    JobId INTEGER UNSIGNED REFERENCES Job NOT NULL,
+--    PathId INTEGER UNSIGNED REFERENCES Path NOT NULL,
+--    FilenameId INTEGER UNSIGNED REFERENCES Filename NOT NULL,
+--    PRIMARY KEY (UnsavedId)
+-- );
 
 CREATE TABLE NextId (
    id INTEGER UNSIGNED DEFAULT 0,
@@ -468,8 +470,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2004;
-INSERT INTO Version (VersionId) VALUES (2004);
+DELETE FROM Version WHERE VersionId<=2170;
+INSERT INTO Version (VersionId) VALUES (2170);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;

@@ -532,7 +532,7 @@ class pathid_cache;
 /**
  * Current database version number for all drivers
  */
-#define BDB_VERSION 2004
+#define BDB_VERSION 2170
 
 #ifdef _BDB_PRIV_INTERFACE_
 /*

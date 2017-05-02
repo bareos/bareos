@@ -12,32 +12,30 @@ CREATE UNIQUE INDEX path_name_idx ON Path (Path);
 -- In general, these will cause very significant performance
 -- problems in other areas.  A better approch is to carefully check
 -- that all your memory configuation parameters are
--- suitable for the size of your installation.  If you backup
+-- suitable for the size of your installation. If you backup
 -- millions of files, you need to adapt the database memory
 -- configuration parameters concerning sorting, joining and global
--- memory.  By DEFAULT, sort and join parameters are very small
+-- memory.  By default, sort and join parameters are very small
 -- (sometimes 8Kb), and having sufficient memory specified by those
 -- parameters is extremely important to run fast.
 
 -- In File table
--- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
-CREATE TABLE File
-(
-    FileId            BIGSERIAL   NOT NULL,
-    FileIndex         INTEGER     NOT NULL  DEFAULT 0,
-    JobId             INTEGER     NOT NULL,
-    PathId            INTEGER     NOT NULL,
-    Name              TEXT        DEFAULT '',
-    DeltaSeq          SMALLINT    NOT NULL  DEFAULT 0,
-    MarkId            INTEGER     NOT NULL  DEFAULT 0,
-    LStat             TEXT        NOT NULL,
-    Md5               TEXT        NOT NULL,
-    PRIMARY KEY (FileId)
+-- FileIndex is 0 for FT_DELETED files
+-- Name is '' for directories
+CREATE TABLE File (
+   FileId           BIGSERIAL   NOT NULL,
+   FileIndex        INTEGER     NOT NULL  DEFAULT 0,
+   JobId            INTEGER     NOT NULL,
+   PathId           INTEGER     NOT NULL,
+   Name             TEXT        NOT NULL,
+   DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
+   MarkId           INTEGER     NOT NULL  DEFAULT 0,
+   LStat            TEXT        NOT NULL,
+   Md5              TEXT        NOT NULL,
+   PRIMARY KEY (FileId)
 );
-
-CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 CREATE INDEX file_jobid_idx ON File (JobId);
+CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 
 --
 -- Add this if you have a good number of job
@@ -46,11 +44,10 @@ CREATE INDEX file_jobid_idx ON File (JobId);
 
 --
 -- Possibly add one or more of the following indexes
---  if your Verifies are too slow, but they can slow down
---  backups.
+--  to the above File table if your Verifies are
+--  too slow, but they can slow down backups.
 --
 -- CREATE INDEX file_pathid_idx ON file(pathid);
--- CREATE INDEX file_filenameid_idx ON file(filenameid);
 
 CREATE TABLE RestoreObject (
     RestoreObjectId   SERIAL      NOT NULL,
@@ -478,7 +475,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2004;
-INSERT INTO Version (VersionId) VALUES (2004);
+DELETE FROM Version WHERE VersionId<=2170;
+INSERT INTO Version (VersionId) VALUES (2170);
 
 -- Make sure we have appropriate permissions

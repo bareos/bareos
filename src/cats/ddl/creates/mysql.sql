@@ -15,7 +15,7 @@ CREATE TABLE Path (
 -- In general, these will cause very significant performance
 -- problems in other areas.  A better approch is to carefully check
 -- that all your memory configuation parameters are
--- suitable for the size of your installation.	If you backup
+-- suitable for the size of your installation. If you backup
 -- millions of files, you need to adapt the database memory
 -- configuration parameters concerning sorting, joining and global
 -- memory.  By default, sort and join parameters are very small
@@ -23,19 +23,19 @@ CREATE TABLE Path (
 -- parameters is extremely important to run fast.
 
 -- In File table
--- FileIndex can be 0 for FT_DELETED files
--- FileNameId can link to Filename.Name='' for directories
+-- FileIndex is 0 for FT_DELETED files
+-- Name is '' for directories
 CREATE TABLE File (
-   FileId BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-   FileIndex INTEGER UNSIGNED DEFAULT 0,
-   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-   PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-   Name BLOB NOT NULL,
-   DeltaSeq SMALLINT UNSIGNED DEFAULT 0,
-   MarkId INTEGER UNSIGNED DEFAULT 0,
-   LStat TINYBLOB NOT NULL,
-   MD5 TINYBLOB,
-   PRIMARY KEY(FileId),
+   FileId           BIGINT    UNSIGNED  NOT NULL  AUTO_INCREMENT,
+   FileIndex        INTEGER   UNSIGNED            DEFAULT 0,
+   JobId            INTEGER   UNSIGNED  NOT NULL  REFERENCES Job,
+   PathId           INTEGER   UNSIGNED  NOT NULL  REFERENCES Path,
+   Name             BLOB                NOT NULL,
+   DeltaSeq         SMALLINT  UNSIGNED            DEFAULT 0,
+   MarkId           INTEGER   UNSIGNED            DEFAULT 0,
+   LStat            TINYBLOB            NOT NULL,
+   MD5              TINYBLOB            NOT NULL,
+   PRIMARY KEY (FileId),
    INDEX (JobId),
    INDEX (JobId, PathId, Name(255))
 );
@@ -46,8 +46,6 @@ CREATE TABLE File (
 --  too slow, but they can slow down backups.
 --
 --  INDEX (PathId),
---  INDEX (FilenameId),
---
 
 CREATE TABLE RestoreObject (
    RestoreObjectId INTEGER UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -322,13 +320,14 @@ CREATE TABLE BaseFiles (
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
-CREATE TABLE UnsavedFiles (
-   UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
-   JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
-   PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
-   FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
-   PRIMARY KEY (UnsavedId)
-);
+-- This table seems to be obsolete
+-- CREATE TABLE UnsavedFiles (
+--    UnsavedId INTEGER UNSIGNED AUTO_INCREMENT,
+--    JobId INTEGER UNSIGNED NOT NULL REFERENCES Job,
+--    PathId INTEGER UNSIGNED NOT NULL REFERENCES Path,
+--    FilenameId INTEGER UNSIGNED NOT NULL REFERENCES Filename,
+--    PRIMARY KEY (UnsavedId)
+-- );
 
 CREATE TABLE Counters (
    Counter TINYBLOB NOT NULL,
@@ -455,5 +454,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2004;
-INSERT INTO Version (VersionId) VALUES (2004);
+DELETE FROM Version WHERE VersionId<=2170;
+INSERT INTO Version (VersionId) VALUES (2170);

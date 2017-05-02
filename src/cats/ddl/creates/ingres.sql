@@ -385,14 +385,15 @@ CREATE TABLE BaseFiles
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles (JobId);
 
-CREATE TABLE UnsavedFiles
-(
-   UnsavedId		INTEGER 	NOT NULL,
-   JobId		INTEGER 	NOT NULL,
-   PathId		INTEGER 	NOT NULL,
-   FilenameId		INTEGER 	NOT NULL,
-   PRIMARY KEY (UnsavedId)
-);
+-- This table seems to be obsolete
+-- CREATE TABLE UnsavedFiles
+-- (
+--    UnsavedId		INTEGER 	NOT NULL,
+--    JobId		INTEGER 	NOT NULL,
+--    PathId		INTEGER 	NOT NULL,
+--    FilenameId		INTEGER 	NOT NULL,
+--    PRIMARY KEY (UnsavedId)
+-- );
 
 CREATE TABLE PathHierarchy
 (
@@ -535,7 +536,7 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
    ('i', 'Doing batch insert file records',15);
 
-INSERT INTO Version (VersionId) VALUES (2004);
+INSERT INTO Version (VersionId) VALUES (2170);
 
 -- Make sure we have appropriate permissions
 \g
