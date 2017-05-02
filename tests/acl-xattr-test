@@ -10,7 +10,11 @@
 #    not default on Debian derivatives:
 #       apt-get install acl libacl1 libacl1-dev attr
 #
-# For OSX and Solaris:
+# For Solaris:
+#
+#    Defaults should be ok, but restoring xattrs requires that bareos-fd is started as root.
+#
+# For OSX:
 #
 #    Defaults should be ok
 #
