@@ -694,6 +694,9 @@ checkName:
       ua->info_msg(_("Do not forget to mount the drive!!!\n"));
    }
 
+   /*
+    * close socket opened by native_send_label_request()
+    */
    close_sd_bsock(ua);
 
    return 1;

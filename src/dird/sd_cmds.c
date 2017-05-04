@@ -176,6 +176,7 @@ char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t 
    char *VolName = NULL;
    int rtn_slot;
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       ua->error_msg(_("Could not open SD socket.\n"));
       return NULL;
@@ -251,6 +252,7 @@ dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool sc
    dlist *vol_list;
    BSOCK *sd = NULL;
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return NULL;
    }
@@ -527,6 +529,7 @@ slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
    BSOCK *sd;
    slot_number_t slots = 0;
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
    }
@@ -560,6 +563,7 @@ drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
    BSOCK *sd;
    drive_number_t drives = 0;
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return 0;
    }
@@ -788,6 +792,7 @@ bool native_transfer_volume(UAContext *ua, STORERES *store,
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return false;
    }
@@ -835,6 +840,7 @@ bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return false;
    }
@@ -919,6 +925,7 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
    pm_strcpy(lstore.store_source, _("unknown source"));
    set_wstorage(ua->jcr, &lstore);
 
+   ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
       return false;
    }
@@ -934,10 +941,7 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
        }
    }
 
-   sd->signal(BNET_TERMINATE);
-   sd->close();
-   delete ua->jcr->store_bsock;
-   ua->jcr->store_bsock = NULL;
+   close_sd_bsock(ua);
 
    return true;
 }
