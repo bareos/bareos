@@ -648,7 +648,7 @@ void Bvfs::ls_special_dirs()
         edit_uint64(pwd_id, ed1), ed1);
 
    Mmsg(query2,// 1      2     3        4     5       6
-"SELECT 'D', tmp.PathId, 0, tmp.Path, JobId, LStat, FileId "
+"SELECT 'D', tmp.PathId, tmp.Path, JobId, LStat, FileId "
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
               "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
@@ -693,7 +693,7 @@ bool Bvfs::ls_dirs()
    /* Then we get all the dir entries from File ... */
    Mmsg(query,
 //       0     1     2   3      4     5
-"SELECT 'D', PathId, 0, Path, JobId, LStat, FileId FROM ( "
+"SELECT 'D', PathId, Path, JobId, LStat, FileId FROM ( "
     "SELECT Path1.PathId AS PathId, Path1.Path AS Path, "
            "lower(Path1.Path) AS lpath, "
            "listfile1.JobId AS JobId, listfile1.LStat AS LStat, "
