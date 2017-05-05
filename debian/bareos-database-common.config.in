@@ -50,11 +50,6 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
                     param2=`get_database_version_by_release "$param2"`
 
                     # dbconfig is available since Bareos version >= 14.1.0.
-                    # TODO: currently the database version for the first version using dbconfig
-                    #       is identical with the last version without dbconfig.
-                    #       Therefore we fake dbc_first_version and set it to 2003.
-                    #       As soon as there is a database version 2003,
-                    #       this will be true anyway.
                     if dpkg --compare-versions "$param2_orig" lt "14.1.0"; then
                         bareos_migrate_to_dbconfig="yes"
                         dbc_first_version="2003"

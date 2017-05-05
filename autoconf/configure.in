@@ -4261,6 +4261,7 @@ debian|ubuntu|univention)
       debian/bareos-database-common.install \
       debian/bareos-database-common.postinst \
       debian/bareos-database-mysql.install \
+      debian/bareos-database-postgresql.dirs \
       debian/bareos-database-postgresql.install \
       debian/bareos-database-sqlite3.install \
       debian/bareos-database-tools.install \

@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# parameter:
+# 1: dbc_package
+# 2: action
+# 3: if action = configure: most-recently-configured-version
+
+dbc_confdir="/etc/dbconfig-common"
+dbc_share="/usr/share/dbconfig-common"
+dbc_package="bareos-database-common"
+
+dbc_packageconfig="$dbc_confdir/$dbc_package.conf"
+
+dbversion=`basename $0`
+
+template="/usr/lib/bareos/scripts/ddl/grants/postgresql-change_owner.dbconfig-template.sql"
+target="/var/lib/bareos/dbconfig-common/upgrade-dbadmin/pgsql/$dbversion"
+
+/usr/sbin/dbconfig-generate-include -f template -o template_infile=$template $dbc_packageconfig > $target
+

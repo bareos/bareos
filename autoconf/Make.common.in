@@ -36,6 +36,7 @@ backenddir = @backenddir@
 plugindir = @plugindir@
 scriptdir = @scriptdir@
 archivedir = @archivedir@
+workingdir = @working_dir@
 mandir = @mandir@
 manext = 8
 

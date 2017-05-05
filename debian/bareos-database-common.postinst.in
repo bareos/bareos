@@ -24,6 +24,8 @@ if [ -r @scriptdir@/bareos-config-lib.sh ]; then
     if [ -f /usr/share/dbconfig-common/dpkg/postinst ]; then
         . /usr/share/dbconfig-common/dpkg/postinst
 
+        dbc_debug=1
+
         # action
         if [ $# -gt 0 ]; then
             param1="$1"
