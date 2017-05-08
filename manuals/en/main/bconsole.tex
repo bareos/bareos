@@ -1281,10 +1281,15 @@ restore storage=<storage-name> client=<backup-client-name>
    The full form of the command is:
 
 \begin{bconsole}{run}
-run job=<job-name> client=<client-name>
-  fileset=<FileSet-name>  level=<level-keyword>
-  storage=<storage-name>  where=<directory-prefix>
-  when=<universal-time-specification> spooldata=yes|no yes
+run job=<job-name> client=<client-name> fileset=<fileset-name>
+   level=<level> storage=<storage-name> where=<directory-prefix>
+   when=<universal-time-specification> pool=<pool-name>
+   pluginoptions=<plugin-options-string> accurate=<yes|no>
+   comment=<text> spooldata=<yes|no> priority=<number>
+   jobid=<jobid> catalog=<catalog> migrationjob=<job-name> backupclient=<client-name>
+   backupformat=<format> nextpool=<pool-name> since=<universal-time-specification>
+   verifyjob=<job-name> verifylist=<verify-list> migrationjob=<complete_name>
+   yes
 \end{bconsole}
 
    Any information that is needed but not specified will be listed for
