@@ -485,7 +485,7 @@ bail_out:
  * List Job record(s) that match JOB_DBR
  */
 void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname, int jobstatus,
-                            const char *volumename, utime_t since_time, bool last, bool count,
+                            int joblevel, const char *volumename, utime_t since_time, bool last, bool count,
                             OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
@@ -513,6 +513,11 @@ void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char
 
    if (jobstatus) {
       temp.bsprintf("AND Job.JobStatus = '%c' ", jobstatus);
+      pm_strcat(selection, temp.c_str());
+   }
+
+   if (joblevel) {
+      temp.bsprintf("AND Job.Level = '%c' ", joblevel);
       pm_strcat(selection, temp.c_str());
    }
 

@@ -409,6 +409,7 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr);
 bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, int num_slots);
 bool get_user_job_type_selection(UAContext *ua, int *jobtype);
 bool get_user_job_status_selection(UAContext *ua, int *jobstatus);
+bool get_user_job_level_selection(UAContext *ua, int *joblevel);
 
 int find_arg_keyword(UAContext *ua, const char **list);
 int find_arg(UAContext *ua, const char *keyword);

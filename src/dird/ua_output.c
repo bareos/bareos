@@ -539,7 +539,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    MEDIA_DBR mr;
    int days = 0,
        hours = 0,
-       jobstatus = 0;
+       jobstatus = 0,
+       joblevel = 0;
    bool count,
         last,
         current,
@@ -608,6 +609,14 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    }
 
    /*
+    * joblevel=X
+    */
+   if (!get_user_job_level_selection(ua, &joblevel)) {
+      ua->error_msg(_("invalid joblevel parameter\n"));
+      return false;
+   }
+
+   /*
     * Select what to do based on the first argument.
     */
    if ((bstrcasecmp(ua->argk[1], NT_("jobs")) && (ua->argv[1] == NULL)) ||
@@ -671,7 +680,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       set_query_range(query_range, ua, &jr);
 
       ua->db->list_job_records(ua->jcr, &jr, query_range.c_str(), clientname,
-                               jobstatus, volumename, schedtime, last, count, ua->send, llist);
+                               jobstatus, joblevel, volumename, schedtime, last, count, ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("jobtotals"))) {
       /*
        * List JOBTOTALS
@@ -704,7 +713,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
             set_query_range(query_range, ua, &jr);
 
             ua->db->list_job_records(ua->jcr, &jr, query_range.c_str(), clientname,
-                                     jobstatus, volumename, schedtime, last, count, ua->send, llist);
+                                     jobstatus, joblevel, volumename, schedtime, last, count, ua->send, llist);
          }
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("basefiles"))) {
