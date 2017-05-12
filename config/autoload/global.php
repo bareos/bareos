@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -103,6 +103,13 @@ function read_configuration_ini($configuration, $configuration_ini)
 
    if( array_key_exists('autochanger', $configuration) && array_key_exists('labelpooltype', $configuration['autochanger']) && isset($configuration['autochanger']['labelpooltype']) ) {
       $arr['autochanger']['labelpooltype'] = $configuration['autochanger']['labelpooltype'];
+   }
+
+   if( array_key_exists('dashboard', $configuration) && array_key_exists('autorefresh_interval', $configuration['dashboard']) && isset($configuration['dashboard']['autorefresh_interval']) ) {
+      $arr['dashboard']['autorefresh_interval'] = $configuration['dashboard']['autorefresh_interval'];
+   }
+   else {
+      $arr['dashboard']['autorefresh_interval'] = 60000;
    }
 
    return $arr;

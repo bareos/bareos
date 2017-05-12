@@ -239,13 +239,13 @@ $this->headTitle($title);
          setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
          getRunningJobs();
-         setInterval('getRunningJobs()', 60000);
+         setInterval('getRunningJobs()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
 
          getJobsPast24h();
-         setInterval('getJobsPast24h()', 60000);
+         setInterval('getJobsPast24h()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
 
          getJobsLastStatus();
-         setInterval( function () { table_jobs_last_status.ajax.reload( null, false ); }, 60000 );
+         setInterval( function () { table_jobs_last_status.ajax.reload( null, false ); }, <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
       }
    );
 
