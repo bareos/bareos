@@ -145,6 +145,16 @@ class DashboardController extends AbstractActionController
             echo $e->getMessage();
          }
       }
+      elseif($data == "runningjobs") {
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getJobModel()->getRunningJobsStatistics($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+      }
       elseif($data == "dirdmsg") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');

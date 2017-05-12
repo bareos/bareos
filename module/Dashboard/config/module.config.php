@@ -61,6 +61,7 @@ return array(
          'JobsPast24h' => __DIR__ . '/../view/partial/JobsPast24h.phtml',
          'JobsLastStatus' => __DIR__ . '/../view/partial/JobsLastStatus.phtml',
          'LastDirectorMessages' => __DIR__ . '/../view/partial/LastDirectorMessages.phtml',
+         'RunningJobs' => __DIR__ . '/../view/partial/RunningJobs.phtml',
       ),
    ),
    'translator' => array(
