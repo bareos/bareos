@@ -573,7 +573,6 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
    char *link;
    int link_len;
    int len;
-   int status;
    dev_t our_device = ff_pkt->statp.st_dev;
    bool recurse = true;
    bool volhas_attrlist = ff_pkt->volhas_attrlist;    /* Remember this if we recurse */
@@ -733,6 +732,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * an overflow has not happened.
     */
 #ifdef USE_READDIR_R
+   int status;
 
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 100);
    while (!job_canceled(jcr)) {
