@@ -79,15 +79,9 @@ class ClientModel
          if ($limit != null) {
             $cmd .= ' limit='.$limit;
          }
-
          $result = $bsock->send_command($cmd, 2, null);
-         if(preg_match("/Select/", $result)) {
-            return null;
-         }
-         else {
-            $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $backups['result']['backups'];
-         }
+         $backups = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $backups['result']['backups'];
       }
       else {
          throw new \Exception('Missing argument.');
