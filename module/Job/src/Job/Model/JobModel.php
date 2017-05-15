@@ -218,7 +218,7 @@ class JobModel
 
                // LAST BACKUP SIZE
                $level = $jobstats[$i]['level'];
-               $cmd = 'list jobs client=' . $job['client'] . ' jobstatus=T joblevel=' . $level . ' limit=1';
+               $cmd = 'list jobs jobname=' . $job['name'] . ' client=' . $job['client'] . ' jobstatus=T joblevel=' . $level . ' last';
 
                $result = $bsock->send_command($cmd, 2, null);
                $tmp = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
