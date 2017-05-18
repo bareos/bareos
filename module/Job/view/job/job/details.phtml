@@ -5,9 +5,8 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link   https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright   Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright   Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
- * @author   Frank Bergkemper
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as published by
@@ -32,6 +31,7 @@ $this->headTitle($title);
 <ul class="nav nav-tabs">
    <li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
    <li><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
 </ul>
 
 <br />

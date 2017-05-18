@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,11 +29,17 @@ use Zend\Mvc\Controller\AbstractActionController;
 use Zend\View\Model\ViewModel;
 use Zend\Json\Json;
 use Job\Form\JobForm;
+use Job\Form\RunJobForm;
+use Job\Model\Job;
 
 class JobController extends AbstractActionController
 {
 
    protected $jobModel = null;
+   protected $clientModel = null;
+   protected $filesetModel = null;
+   protected $storageModel = null;
+   protected $poolModel = null;
    protected $bsock = null;
    protected $acl_alert = false;
 
@@ -272,6 +278,93 @@ class JobController extends AbstractActionController
       }
    }
 
+   public function runAction()
+   {
+      $this->RequestURIPlugin()->setRequestURI();
+
+      if(!$this->SessionTimeoutPlugin()->isValid()) {
+         return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
+      }
+
+      if(!$this->CommandACLPlugin()->validate($_SESSION['bareos']['commands'], $this->required_commands)) {
+         $this->acl_alert = true;
+         return new ViewModel(
+            array(
+               'acl_alert' => $this->acl_alert,
+               'required_commands' => $this->required_commands,
+            )
+         );
+      }
+
+      $this->bsock = $this->getServiceLocator()->get('director');
+
+      // Get required form construction data, jobs, clients, etc.
+      $clients = $this->getClientModel()->getClients($this->bsock);
+      $jobs = $this->getJobModel()->getJobsByType($this->bsock, null);
+      $filesets = $this->getFilesetModel()->getFilesets($this->bsock);
+      $storages = $this->getStorageModel()->getStorages($this->bsock);
+      $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
+
+      // build form
+      $form = new RunJobForm($clients, $jobs, $filesets, $storages, $pools);
+
+      // Set the method attribute for the form
+      $form->setAttribute('method', 'post');
+
+      // result
+      $result = null;
+      $errors = null;
+
+      $request = $this->getRequest();
+
+      if($request->isPost()) {
+
+         $job = new Job();
+         $form->setInputFilter($job->getInputFilter());
+         $form->setData($request->getPost());
+
+         if($form->isValid()) {
+
+            $jobname = $form->getInputFilter()->getValue('job');
+            $client = $form->getInputFilter()->getValue('client');
+            $fileset = $form->getInputFilter()->getValue('fileset');
+            $storage = $form->getInputFilter()->getValue('storage');
+            $pool = $form->getInputFilter()->getValue('pool');
+            $level = $form->getInputFilter()->getValue('level');
+            $priority = $form->getInputFilter()->getValue('priority');
+            $backupformat = null; // $form->getInputFilter()->getValue('backupformat');
+            $when = $form->getInputFilter()->getValue('when');
+
+            try {
+               $result = $this->getJobModel()->runCustomJob($this->bsock, $jobname, $client, $fileset, $storage, $pool, $level, $priority, $backupformat, $when);
+               $this->bsock->disconnect();
+               $s = strrpos($result, "=") + 1;
+               $jobid = rtrim( substr( $result, $s ) );
+               return $this->redirect()->toRoute('job', array('action' => 'details', 'id' => $jobid));
+            }
+            catch(Exception $e) {
+               echo $e->getMessage();
+            }
+         }
+         else {
+            $this->bsock->disconnect();
+            return new ViewModel(array(
+               'form' => $form,
+               'result' => $result,
+               'errors' => $errors
+            ));
+         }
+      }
+      else {
+         $this->bsock->disconnect();
+         return new ViewModel(array(
+            'form' => $form,
+            'result' => $result,
+            'errors' => $errors
+         ));
+      }
+   }
+
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -420,4 +513,41 @@ class JobController extends AbstractActionController
       }
       return $this->jobModel;
    }
+
+   public function getClientModel()
+   {
+      if(!$this->clientModel) {
+         $sm = $this->getServiceLocator();
+         $this->clientModel = $sm->get('Client\Model\ClientModel');
+      }
+      return $this->clientModel;
+   }
+
+   public function getStorageModel()
+   {
+      if(!$this->storageModel) {
+         $sm = $this->getServiceLocator();
+         $this->storageModel = $sm->get('Storage\Model\StorageModel');
+      }
+      return $this->storageModel;
+   }
+
+   public function getPoolModel()
+   {
+      if(!$this->poolModel) {
+         $sm = $this->getServiceLocator();
+         $this->poolModel = $sm->get('Pool\Model\PoolModel');
+      }
+      return $this->poolModel;
+   }
+
+   public function getFilesetModel()
+   {
+      if(!$this->filesetModel) {
+         $sm = $this->getServiceLocator();
+         $this->filesetModel = $sm->get('Fileset\Model\FilesetModel');
+      }
+      return $this->filesetModel;
+   }
+
 }

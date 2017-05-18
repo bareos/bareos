@@ -281,6 +281,43 @@ class JobModel
       }
    }
 
+   public function runCustomJob(&$bsock=null, $jobname=null, $client=null, $fileset=null, $storage=null, $pool=null, $level=null, $priority=null, $backupformat=null, $when=null)
+   {
+      if(isset($bsock, $jobname)) {
+         $cmd = 'run job="' . $jobname . '"';
+         if(!empty($client)) {
+            $cmd .= ' client="' . $client . '"';
+         }
+         if(!empty($fileset)) {
+            $cmd .= ' fileset="' . $fileset . '"';
+         }
+         if(!empty($storage)) {
+            $cmd .= ' storage="' . $storage . '"';
+         }
+         if(!empty($pool)) {
+            $cmd .= ' pool="' . $pool . '"';
+         }
+         if(!empty($level)) {
+            $cmd .= ' level="' . $level . '"';
+         }
+         if(!empty($priority)) {
+            $cmd .= ' priority="' . $priority . '"';
+         }
+         if(!empty($backupformat)) {
+            $cmd .= ' backupformat="' . $backupformat . '"';
+         }
+         if(!empty($when)) {
+            $cmd .= ' when="' . $when . '"';
+         }
+         $cmd .= ' yes';
+         $result = $bsock->send_command($cmd, 0 , null);
+         return 'Command send: '. $cmd . ' | Director message: ' . $result;
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
    public function rerunJob(&$bsock=null, $id=null)
    {
       if(isset($bsock, $id)) {
