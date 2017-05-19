@@ -487,6 +487,14 @@ class JobController extends AbstractActionController
             echo $e->getMessage();
          }
       }
+      elseif($data == "jobmedia" && isset($jobid)) {
+         try {
+            $result = $this->getJobModel()->getJobMedia($this->bsock, $jobid);
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+      }
 
       try {
             $this->bsock->disconnect();

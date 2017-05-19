@@ -74,31 +74,40 @@ $this->headTitle($title);
 </div>
 </div>
 
-<!-- Log -->
 <div class="row">
 
-<div class="col-md-12">
+   <div class="col-md-8">
+      <div class="panel panel-default">
+         <div class="panel-heading">
+            <h3 class="panel-title"><?php echo $this->translate("Messages"); ?></h3>
+         </div>
+         <div class="panel-body">
+            <table class="table table-hover" id="joblog">
+               <thead class="bg-primary">
+                  <th><?php echo $this->translate("Timestamp"); ?></th>
+                  <th><?php echo $this->translate("Message"); ?></th>
+               </thead>
+            </table>
+         </div>
+      </div>
+   </div>
 
-<div class="panel panel-default">
+   <div class="col-md-4">
+      <div class="panel panel-default">
+         <div class="panel-heading">
+            <h3 class="panel-title"><?php echo $this->translate("Used Volumes"); ?></h3>
+         </div>
+         <div class="panel-body">
+            <table class="table table-hover" id="jobmedia">
+               <thead class="bg-primary">
+                  <th></th>
+                  <th><?php echo $this->translate("Volume"); ?></th>
+               </thead>
+            </table>
+         </div>
+      </div>
+   </div>
 
-<div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->translate("Messages"); ?></h3>
-</div>
-
-<div class="panel-body">
-
-<table class="table table-hover" id="joblog">
-
-   <thead class="bg-primary">
-      <th><?php echo $this->translate("Timestamp"); ?></th>
-      <th><?php echo $this->translate("Message"); ?></th>
-   </thead>
-
-</table>
-
-</div>
-</div>
-</div>
 </div>
 
 
@@ -147,7 +156,7 @@ tr.shown td.details-control:after {
 
 <script>
 
-function format( d ) {
+function expandJobDetails( d ) {
    return '<table class="table table-bordered">'+
       '<tr>'+
       '<th><?php echo $this->translate("Fileset"); ?></th>'+
@@ -168,6 +177,27 @@ function format( d ) {
       '<tr>'+
       '<th><?php echo $this->translate("End"); ?></th>'+
       '<td>'+ d.endtime +'</td>'+
+      '</tr>'+
+      '</table>';
+}
+
+function expandJobMedia( d ) {
+   return '<table class="table table-bordered">'+
+      '<tr>'+
+      '<th><?php echo $this->translate("First Index"); ?></th>'+
+      '<td>'+ d.firstindex +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th><?php echo $this->translate("Last Index"); ?></th>'+
+      '<td>'+ d.lastindex +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th><?php echo $this->translate("Start Block"); ?></th>'+
+      '<td>'+ d.startblock +'</td>'+
+      '</tr>'+
+      '<tr>'+
+      '<th><?php echo $this->translate("End Block"); ?></th>'+
+      '<td>'+ d.endblock +'</td>'+
       '</tr>'+
       '</table>';
 }
@@ -321,6 +351,37 @@ $(document).ready(function() {
       ]
    } );
 
+   var jobmedia = $('#jobmedia').DataTable({
+      "ajax": {
+         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobmedia&jobid='.$this->jobid; ?>",
+         "dataSrc": ""
+      },
+      "language": {
+         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
+      },
+      "columns": [
+         { "data": null, "orderable": false, "defaultContent": "", "className": "details-control" },
+         { "data": "volumename" },
+      ],
+      "paging": true,
+      "ordering": true,
+      "info": true,
+      "pagingType": "full_numbers",
+      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+      "order": [[0, 'desc']],
+      "columnDefs": [
+         {
+            "targets": 1,
+            "data": null,
+            "render": function(data, type, full, meta) {
+               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>' + data + '">' + data + '</a>';
+            }
+         }
+      ]
+   });
+
    $('#jobdetails tbody').on('click', 'td.details-control', function () {
       var tr = $(this).closest('tr');
       var row = jobdetails.row( tr );
@@ -331,10 +392,25 @@ $(document).ready(function() {
       }
       else {
          // Open this row
-         row.child( format(row.data()) ).show();
+         row.child( expandJobDetails(row.data()) ).show();
          tr.addClass('shown');
       }
    } );
+
+   $('#jobmedia tbody').on('click', 'td.details-control', function () {
+      var tr = $(this).closest('tr');
+      var row = jobmedia.row( tr );
+      if ( row.child.isShown() ) {
+         // This row is already open - close it
+         row.child.hide();
+         tr.removeClass('shown');
+      }
+      else {
+         // Open this row
+         row.child( expandJobMedia(row.data()) ).show();
+         tr.addClass('shown');
+      }
+   } ); 
 
    $('#jobdetails tbody').on('mouseover', '#btn-1', function () {
       $('[data-toggle="tooltip"]').tooltip();

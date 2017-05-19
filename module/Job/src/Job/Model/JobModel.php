@@ -130,6 +130,21 @@ class JobModel
       }
    }
 
+   public function getJobMedia(&$bsock=null, $jobid=null)
+   {
+      $cmd = 'llist jobmedia jobid='.$jobid;
+      $result = $bsock->send_command($cmd, 2, null);
+      if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+         //return false;
+         $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $error['result']['error'];
+      }
+      else {
+         $jobmedia = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobmedia['result']['jobmedia'];
+      }
+   }
+
    public function getJobsByType(&$bsock=null, $type=null)
    {
       if(isset($bsock)) {
