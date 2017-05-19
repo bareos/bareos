@@ -217,7 +217,7 @@ $(document).ready(function() {
       "language": {
          "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
-      "responsive": true,
+      "responsive": false,
       "paging": true,
       "pagingType": "full_numbers",
       "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
@@ -363,7 +363,7 @@ $(document).ready(function() {
       "language": {
          "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
-      "responsive": true,
+      "responsive": false,
       "paging": false,
       "ordering": false,
       "order": [[0, "asc"]],
@@ -410,7 +410,7 @@ $(document).ready(function() {
       "language": {
          "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
       },
-      "responsive": true,
+      "responsive": false,
       "paging": false,
       "ordering": false,
       "order": [[0, "asc"]],
