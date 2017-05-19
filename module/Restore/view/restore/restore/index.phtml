@@ -51,6 +51,13 @@ $this->headTitle($title);
 
 <?php elseif(!isset($this->result)) : ?>
 
+<div class="panel panel-default">
+   <div class="panel-heading">
+      <h3 class="panel-title">Restore</h3>
+   </div>
+	<div class="panel-body">
+	<div class="container-fluid">
+
 <?php
    $form->prepare();
    $form->setAttribute('class','form-horizontal');
@@ -116,6 +123,10 @@ $this->headTitle($title);
 <?php
    echo $this->form()->closeTag($form);
 ?>
+
+</div>
+</div>
+</div>
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/jstreegrid.js');
