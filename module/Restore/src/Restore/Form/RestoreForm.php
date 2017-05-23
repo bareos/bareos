@@ -430,6 +430,114 @@ class RestoreForm extends Form
          )
       );
 
+      // Path
+      if(isset($restore_params['path'])) {
+         $this->add(array(
+            'name' => 'path',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Path')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'path',
+               'size' => '15',
+               'placeholder' => '/',
+               'value' => $restore_params['path']
+               )
+            )
+         );
+      }
+      else {
+          $this->add(array(
+            'name' => 'path',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Path')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'path',
+               'size' => '15',
+               'placeholder' => '/',
+               'value' => ''
+               )
+            )
+         );
+      }
+
+      // Limit
+      if(isset($restore_params['limit'])) {
+         $this->add(array(
+            'name' => 'limit',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Limit')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'limit',
+               'size' => '15',
+               'placeholder' => 2000,
+               'value' => $restore_params['limit']
+               )
+            )
+         );
+      }
+      else {
+          $this->add(array(
+            'name' => 'limit',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Limit')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'limit',
+               'size' => '15',
+               'placeholder' => 2000,
+               'value' => 2000
+               )
+            )
+         );
+      }
+
+      // Offset
+      if(isset($restore_params['offset'])) {
+         $this->add(array(
+            'name' => 'offset',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Offset')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'offset',
+               'size' => '15',
+               'placeholder' => 0,
+               'value' => $restore_params['offset']
+               )
+            )
+         );
+      }
+      else {
+         $this->add(array(
+            'name' => 'offset',
+            'type' => 'text',
+            'options' => array(
+               'label' => _('Offset')
+               ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'offset',
+               'size' => '15',
+               'placeholder' => 0,
+               'value' => 0
+               )
+            )
+         );
+      }
+
       // JobIds hidden
       $this->add(array(
          'name' => 'jobids_hidden',

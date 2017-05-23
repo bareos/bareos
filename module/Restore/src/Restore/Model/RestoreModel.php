@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,18 +28,28 @@ namespace Restore\Model;
 class RestoreModel
 {
 
-   public function getDirectories(&$bsock=null, $jobid=null, $pathid=null) {
+   /**
+    * Get Directories via .bvfs_lsdirs
+    *
+    * @param $bsock
+    * @param $jobid
+    * @param $pathid
+    * @param $limit
+    *
+    * @return array
+    */
+   public function getDirectories(&$bsock=null, $jobid=null, $pathid=null, $limit=null) {
       if(isset($bsock)) {
          if($pathid == null || $pathid== "#") {
             $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=';
          }
          else {
-            $cmd = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).'';
+            $cmd = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit;
          }
          $result = $bsock->send_command($cmd, 2, $jobid);
          $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          if(empty($directories['result']['directories'])) {
-            $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=@';
+            $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
             $result = $bsock->send_command($cmd, 2, $jobid);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             if(empty($directories['result']['directories'])) {
@@ -58,18 +68,28 @@ class RestoreModel
       }
    }
 
-   public function getFiles(&$bsock=null, $jobid=null, $pathid=null) {
-      if(isset($bsock)) {
+   /**
+    * Get Files via .bvfs_lsfiles
+    *
+    * @param $bsock
+    * @param $jobid
+    * @param $pathid
+    * @param $limit
+    *
+    * @return array
+    */
+   public function getFiles(&$bsock=null, $jobid=null, $pathid=null, $limit=null) {
+      if(isset($bsock, $limit)) {
          if($pathid == null || $pathid == "#") {
             $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=';
          }
          else {
-            $cmd = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).'';
+            $cmd = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit;
          }
          $result = $bsock->send_command($cmd, 2, $jobid);
          $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
          if(empty($files['result']['files'])) {
-            $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=@';
+            $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit;
             $result = $bsock->send_command($cmd, 2, $jobid);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
             if(empty($files['result']['files'])) {
@@ -88,6 +108,16 @@ class RestoreModel
       }
    }
 
+   /**
+    * Get JobIds via .bvfs_get_jodids
+    *
+    * @param $bsock
+    * @param $jobid
+    * @param $mergefilesets
+    * @param $mergejobs
+    *
+    * @return array
+    */
    public function getJobIds(&$bsock=null, $jobid=null, $mergefilesets=0, $mergejobs=0)
    {
       if(isset($bsock)) {
@@ -120,6 +150,23 @@ class RestoreModel
       }
    }
 
+   /**
+    * Restore
+    *
+    * @param $bsock
+    * @param $type
+    * @param $jobid
+    * @param $client
+    * @param $restoreclient
+    * @param $restorejob
+    * @param $where
+    * @param $fileid
+    * @param $dirid
+    * @param $jobids
+    * @param $replace
+    *
+    * @return string
+    */
    public function restore(&$bsock=null, $type=null, $jobid=null, $client=null, $restoreclient=null, $restorejob=null, $where=null, $fileid=null, $dirid=null, $jobids=null, $replace=null)
    {
       if(isset($bsock, $type)) {

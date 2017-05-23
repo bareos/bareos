@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -89,7 +89,7 @@ $this->headTitle($title);
          echo $this->formRow($form->get('restorejob')->setAttribute('class','form-control'));
          echo $this->formRow($form->get('where')->setAttribute('class','form-control'));
       }
-       ?>
+   ?>
 
    </div>
 
@@ -100,7 +100,18 @@ $this->headTitle($title);
                echo '<strong>';
                echo $this->translate("File selection");
                echo '</strong>';
-               echo '<div class="panel panel-default" style="height: 650px; overflow: scroll;"><div id="filebrowser"></div></div>';
+
+               echo '<div class="form-group">';
+               echo '<label class="control-label col-md-1">';
+               echo $this->formLabel($form->get('limit'));
+               echo '</label>';
+               echo '<div class="control-input col-md-3">';
+               echo $this->formText($form->get('limit'));
+               echo '</div>';
+               echo '</div>';
+
+               echo '<div class="panel panel-default" style="height: 600px; overflow: scroll;"><div id="filebrowser"></div></div>';
+
                /*
                echo '<div class="input-group">';
                echo '<div class="input-group-addon"><span class="glyphicon glyphicon-search" aria-hidden="true"></span></div>';
@@ -219,6 +230,8 @@ $this->headTitle($title);
          p['mergejobs'] = '<?php echo $this->restore_params['mergejobs']; ?>';
       }
 
+      p['limit'] = '<?php echo $this->restore_params['limit']; ?>';
+
       p[k] = v;
 
       var key;
@@ -240,20 +253,45 @@ $this->headTitle($title);
    $('#filebrowser').jstree({
       'core' : {
          'data' :{
-            'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs']; ?>',
+            'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
             'dataType' : 'json',
             'data' : function (node) {
                return { 'id' : node.id };
             },
-            //'error' : alert('Error') // debug
+            //'error' : alert('Error loading filetree') // debug
          }
       },
-      'plugins' : [ "grid", "checkbox", "state", "sort", "search" ],
+      'plugins' : [ "grid", "checkbox", "state", "sort", "search", "types" ],
       'grid' : {
          columns: [
-            { width: 500, header: '<?php echo $this->translate("Name"); ?>', title: "_DATA_" },
-            { width: 125, header: '<?php echo $this->translate("Size"); ?>', value: function(node) { return(format_bytes(node.data.stat.size)); } },
-            { header: '<?php echo $this->translate("Date"); ?>', value: function(node) { return(moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss")); } }
+            {
+               width: 500,
+               header: '<?php echo $this->translate("Name"); ?>',
+               title: "_DATA_"
+            },
+            {
+               width: 125,
+               header: '<?php echo $this->translate("Size"); ?>',
+               value: function(node) {
+                  if(node.data.stat.size == 0) {
+                     return null;
+                  }
+                  else {
+                     return(format_bytes(node.data.stat.size));
+                  }
+               }
+            },
+            {
+               header: '<?php echo $this->translate("Date"); ?>',
+               value: function(node) {
+                  if(node.data.stat.mtime == 0) {
+                     return null;
+                  }
+                  else {
+                     return(moment.unix(node.data.stat.mtime).format("YYYY-MM-DD HH:mm:ss"));
+                  }
+               }
+            }
          ],
          resizable: true,
       },
@@ -277,6 +315,10 @@ $this->headTitle($title);
 
    $('#mergejobs').change(function(event) {
       window.location.href = window.location.pathname + '?' + updateRestoreParams('mergejobs', this.value);
+   });
+
+   $('#limit').change(function(event) {
+      window.location.href = window.location.pathname + '?' + updateRestoreParams('limit', this.value);
    });
 
 </script>

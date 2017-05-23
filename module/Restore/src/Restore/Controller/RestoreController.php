@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,13 +34,21 @@ use Restore\Form\RestoreForm;
 class RestoreController extends AbstractActionController
 {
 
+   /**
+    * Variables
+    */
    protected $restoreModel = null;
    protected $jobModel = null;
    protected $clientModel = null;
    protected $filesetModel = null;
-   protected $restore_params = null;
+
    protected $bsock = null;
+   protected $restore_params = null;
+
    protected $acl_alert = false;
+
+   private $directories = null;
+   private $files = null;
 
    private $required_commands = array(
       "llist",
@@ -56,7 +64,7 @@ class RestoreController extends AbstractActionController
    );
 
    /**
-    *
+    * Index Action
     */
    public function indexAction()
    {
@@ -78,7 +86,7 @@ class RestoreController extends AbstractActionController
 
       $this->bsock = $this->getServiceLocator()->get('director');
 
-      $this->getRestoreParams();
+      $this->setRestoreParams();
       $errors = null;
 
       if($this->restore_params['client'] == null) {
@@ -235,12 +243,68 @@ class RestoreController extends AbstractActionController
          return $this->redirect()->toRoute('auth', array('action' => 'login'), array('query' => array('req' => $this->RequestURIPlugin()->getRequestURI(), 'dird' => $_SESSION['bareos']['director'])));
       }
 
-      $this->getRestoreParams();
+      $this->setRestoreParams();
       $this->layout('layout/json');
 
       return new ViewModel(array(
          'items' => $this->buildSubtree()
       ));
+   }
+
+   /**
+    * Get the directories
+    */
+   private function getDirectories()
+   {
+      $this->directories = null;
+
+      try {
+         if($this->restore_params['type'] == "client") {
+            if(empty($this->restore_params['jobid'])) {
+               $this->restore_params['jobids'] = null;
+            }
+            else {
+               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+               $this->restore_params['jobids'] = $jobids;
+               $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'], $this->restore_params['id'], $this->restore_params['limit']);
+            }
+         }
+         else {
+            $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'], $this->restore_params['id'], $this->restore_params['limit']);
+         }
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
+   }
+
+   /**
+    * Get the files
+    */
+   private function getFiles()
+   {
+      $this->files = null;
+
+      try {
+         if($this->restore_params['type'] == "client") {
+            if(empty($this->restore_params['jobid'])) {
+               $this->restore_params['jobids'] = null;
+            }
+            else {
+               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
+               $this->restore_params['jobids'] = $jobids;
+               $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'], $this->restore_params['id'], $this->restore_params['limit']);
+            }
+         }
+         else {
+            $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'], $this->restore_params['id'], $this->restore_params['limit']);
+         }
+      }
+      catch(Exception $e) {
+         echo $e->getMessage();
+      }
+
    }
 
    /**
@@ -250,53 +314,12 @@ class RestoreController extends AbstractActionController
    {
 
       $this->bsock = $this->getServiceLocator()->get('director');
+      $this->setRestoreParams();
+      $this->getDirectories();
+      $this->getFiles();
 
-      $this->getRestoreParams();
-
-      // Get directories
-      try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-               $directories = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
-            }
-         }
-         else {
-            $directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'],$this->restore_params['id']);
-         }
-      }
-      catch(Exception $e) {
-         echo $e->getMessage();
-      }
-
-      // Get files
-      try {
-         if($this->restore_params['type'] == "client") {
-            if(empty($this->restore_params['jobid'])) {
-               $this->restore_params['jobids'] = null;
-               $files = null;
-            }
-            else {
-               $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
-               $this->restore_params['jobids'] = $jobids;
-               $files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'],$this->restore_params['id']);
-            }
-         }
-         else {
-            $files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'],$this->restore_params['id']);
-         }
-      }
-      catch(Exception $e) {
-         echo $e->getMessage();
-      }
-
-      $dnum = count($directories);
-      $fnum = count($files);
+      $dnum = count($this->directories);
+      $fnum = count($this->files);
       $tmp = $dnum;
 
       // Build Json for JStree
@@ -304,14 +327,14 @@ class RestoreController extends AbstractActionController
 
       if($dnum > 0) {
 
-         foreach($directories as $dir) {
+         foreach($this->directories as $dir) {
             if($dir['name'] == ".") {
                --$dnum;
-               next($directories);
+               next($this->directories);
             }
             elseif($dir['name'] == "..") {
                --$dnum;
-               next($directories);
+               next($this->directories);
             }
             else {
                --$dnum;
@@ -337,7 +360,7 @@ class RestoreController extends AbstractActionController
 
       if($fnum > 0) {
 
-         foreach($files as $file) {
+         foreach($this->files as $file) {
             $items .= '{';
             $items .= '"id":"' . $file["fileid"] . '"';
             $items .= ',"text":"' . preg_replace('/[\x00-\x1F\x7F]/', '', addslashes($file["name"])) . '"';
@@ -361,9 +384,9 @@ class RestoreController extends AbstractActionController
    }
 
    /**
-    * Retrieve restore parameters
+    * Set the restore parameters
     */
-   private function getRestoreParams()
+   private function setRestoreParams()
    {
       if($this->params()->fromQuery('type')) {
          $this->restore_params['type'] = $this->params()->fromQuery('type');
@@ -442,6 +465,13 @@ class RestoreController extends AbstractActionController
          $this->restore_params['id'] = null;
       }
 
+      if($this->params()->fromQuery('limit')) {
+         $this->restore_params['limit'] = $this->params()->fromQuery('limit');
+      }
+      else {
+         $this->restore_params['limit'] = 2000;
+      }
+
       if($this->params()->fromQuery('jobids')) {
          $this->restore_params['jobids'] = $this->params()->fromQuery('jobids');
       }
@@ -483,9 +513,12 @@ class RestoreController extends AbstractActionController
       else {
          $this->restore_params['versions'] = null;
       }
-
    }
 
+   /**
+    * Get the restore model
+    * @return object
+    */
    public function getRestoreModel()
    {
       if(!$this->restoreModel) {
@@ -495,6 +528,10 @@ class RestoreController extends AbstractActionController
       return $this->restoreModel;
    }
 
+   /**
+    * Get the job model
+    * @return object
+    */
    public function getJobModel()
    {
       if(!$this->jobModel) {
@@ -504,6 +541,10 @@ class RestoreController extends AbstractActionController
       return $this->jobModel;
    }
 
+   /**
+    * Get the client model
+    * @return object
+    */
    public function getClientModel()
    {
       if(!$this->clientModel) {
@@ -513,6 +554,10 @@ class RestoreController extends AbstractActionController
       return $this->clientModel;
    }
 
+   /**
+    * Get the fileset model
+    * @return object
+    */
    public function getFilesetModel()
    {
       if(!$this->filesetModel) {
