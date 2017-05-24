@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,6 +27,13 @@ namespace Client\Model;
 
 class ClientModel
 {
+   /**
+    * Get all Clients by llist clients command
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getClients(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -40,6 +47,13 @@ class ClientModel
       }
    }
 
+   /**
+    * Get all Clients by .clients command
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getDotClients(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -53,6 +67,14 @@ class ClientModel
       }
    }
 
+   /**
+    * Get a single Client by llist client command
+    *
+    * @param $bsock
+    * @param $client
+    *
+    * @return array
+    */
    public function getClient(&$bsock=null, $client=null)
    {
       if(isset($bsock, $client)) {
@@ -66,6 +88,17 @@ class ClientModel
       }
    }
 
+   /**
+    * Get Client Backups by llist backups command
+    *
+    * @param $bsock
+    * @param $client
+    * @param $fileset
+    * @param $order
+    * @param $limit
+    *
+    * @return array
+    */
    public function getClientBackups(&$bsock=null, $client=null, $fileset=null, $order=null, $limit=null)
    {
       if(isset($bsock, $client)) {
@@ -88,6 +121,14 @@ class ClientModel
       }
    }
 
+   /**
+    * Get the status of a single Client by status client command
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function statusClient(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -100,6 +141,14 @@ class ClientModel
       }
    }
 
+   /**
+    * Enable a single Client by enable command
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function enableClient(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -112,6 +161,14 @@ class ClientModel
       }
    }
 
+   /**
+    * Disable a single Client by disable command
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function disableClient(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {

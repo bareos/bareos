@@ -32,6 +32,9 @@ use Zend\Json\Json;
 class ClientController extends AbstractActionController
 {
 
+   /**
+    * Variables
+    */
    protected $clientModel = null;
    protected $directorModel = null;
    protected $bsock = null;
@@ -45,6 +48,12 @@ class ClientController extends AbstractActionController
       "version"
    );
 
+
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -112,6 +121,11 @@ class ClientController extends AbstractActionController
       }
    }
 
+   /**
+    * Details Action
+    *
+    * @return object
+    */
    public function detailsAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -137,6 +151,11 @@ class ClientController extends AbstractActionController
       );
    }
 
+   /**
+    * Status Action
+    *
+    * @return object
+    */
    public function statusAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -381,6 +400,11 @@ class ClientController extends AbstractActionController
       return $response;
    }
 
+   /**
+    * Get Client Model
+    *
+    * @return object
+    */
    public function getClientModel()
    {
       if(!$this->clientModel) {
@@ -390,6 +414,11 @@ class ClientController extends AbstractActionController
       return $this->clientModel;
    }
 
+   /**
+    * Get Director Model
+    *
+    * @return object
+    */
    public function getDirectorModel()
    {
       if(!$this->directorModel) {
