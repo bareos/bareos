@@ -202,6 +202,10 @@ int main (int argc, char *argv[])
    argc -= optind;
    argv += optind;
 
+   if (!no_signals) {
+      init_signals(terminate_stored);
+   }
+
    if (argc) {
       if (configfile != NULL) {
          free(configfile);
@@ -221,11 +225,7 @@ int main (int argc, char *argv[])
       drop(uid, gid, false);
    }
 
-   if (!no_signals) {
-      init_signals(terminate_stored);
-   }
-
-   if (export_config_schema) {
+  if (export_config_schema) {
       POOL_MEM buffer;
 
       my_config = new_config_parser();
@@ -253,7 +253,7 @@ int main (int argc, char *argv[])
    }
 
    if (!check_resources()) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct configuration file: %s\n"), my_config->get_base_config_path());
+      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
    }
 
    init_reservations_lock();
