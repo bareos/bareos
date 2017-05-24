@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -31,6 +31,13 @@ use Zend\ServiceManager\ServiceLocatorInterface;
 class ScheduleModel
 {
 
+   /**
+    * Get Schedules
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getSchedules(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -44,6 +51,13 @@ class ScheduleModel
       }
    }
 
+   /**
+    * Show Schedules
+    *
+    * @param $bsock
+    *
+    * @return string
+    */
    public function showSchedules(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -56,6 +70,13 @@ class ScheduleModel
       }
    }
 
+   /**
+    * Get Full Schedule Status
+    *
+    * @param $bsock
+    *
+    * @return string
+    */
    public function getFullScheduleStatus(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -68,6 +89,14 @@ class ScheduleModel
       }
    }
 
+   /**
+    * Get Schedule Status
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function getScheduleStatus(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -80,6 +109,14 @@ class ScheduleModel
       }
    }
 
+   /**
+    * Enable Schedule
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function enableSchedule(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -92,6 +129,14 @@ class ScheduleModel
       }
    }
 
+   /**
+    * Disable Schedule
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function disableSchedule(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {

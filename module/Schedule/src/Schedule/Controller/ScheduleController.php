@@ -32,6 +32,9 @@ use Zend\Json\Json;
 class ScheduleController extends AbstractActionController
 {
 
+   /**
+    * Variables
+    */
    protected $scheduleModel = null;
    protected $bsock = null;
    protected $acl_alert = false;
@@ -44,6 +47,11 @@ class ScheduleController extends AbstractActionController
       "disable"
    );
 
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -124,6 +132,11 @@ class ScheduleController extends AbstractActionController
       }
    }
 
+   /**
+    * Overview Action
+    *
+    * @return object
+    */
    public function overviewAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -160,6 +173,11 @@ class ScheduleController extends AbstractActionController
       );
    }
 
+   /**
+    * Status Action
+    *
+    * @return object
+    */
    public function statusAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -196,6 +214,11 @@ class ScheduleController extends AbstractActionController
       );
    }
 
+   /**
+    * Details Action
+    *
+    * @return object
+    */
    public function detailsAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -234,6 +257,11 @@ class ScheduleController extends AbstractActionController
       );
    }
 
+   /**
+    * Get Data Action
+    *
+    * @return object
+    */
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -278,6 +306,11 @@ class ScheduleController extends AbstractActionController
       return $response;
    }
 
+   /**
+    * Get Schedule Model
+    *
+    * @return object
+    */
    public function getScheduleModel()
    {
       if(!$this->scheduleModel) {
