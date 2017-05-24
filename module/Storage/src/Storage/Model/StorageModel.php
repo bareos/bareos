@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,13 @@ namespace Storage\Model;
 class StorageModel
 {
 
+   /**
+    * Get all Storages
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getStorages(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -41,6 +48,14 @@ class StorageModel
       }
    }
 
+   /**
+    * Get Status Storage Slots
+    *
+    * @param $bsock
+    * @param $storage
+    *
+    * @return array
+    */
    public function getStatusStorageSlots(&$bsock=null, $storage=null)
    {
       if(isset($bsock, $storage)) {
@@ -54,6 +69,16 @@ class StorageModel
       }
    }
 
+   /**
+    * Import Slots
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $srcslots
+    * @param $dstslots
+    *
+    * @return string
+    */
    public function importSlots(&$bsock=null, $storage=null, $srcslots=null, $dstslots=null)
    {
       if(isset($bsock, $storage)) {
@@ -81,6 +106,15 @@ class StorageModel
       }
    }
 
+   /**
+    * Export Slots
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $slots
+    *
+    * @return string
+    */
    public function exportSlots(&$bsock=null, $storage=null, $slots=null)
    {
       if(isset($bsock, $storage, $slots)) {
@@ -93,6 +127,16 @@ class StorageModel
       }
    }
 
+   /**
+    * Mound Slots
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $slot
+    * @param $drive
+    *
+    * @return string
+    */
    public function mountSlot(&$bsock=null, $storage=null, $slot=null, $drive=null)
    {
       if(isset($bsock, $storage, $slot, $drive)) {
@@ -105,6 +149,15 @@ class StorageModel
       }
    }
 
+   /**
+    * Unmount Slots
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $drive
+    *
+    * @return string
+    */
    public function unmountSlot(&$bsock=null, $storage=null, $drive=null)
    {
       if(isset($bsock, $storage, $drive)) {
@@ -117,6 +170,15 @@ class StorageModel
       }
    }
 
+   /**
+    * Release Slot
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $drive
+    *
+    * @return string
+    */
    public function releaseSlot(&$bsock=null, $storage=null, $drive=null)
    {
       if(isset($bsock, $storage, $drive)) {
@@ -129,6 +191,14 @@ class StorageModel
       }
    }
 
+   /**
+    * Update Slots
+    *
+    * @param $bsock
+    * @param $storage
+    *
+    * @return string
+    */
    public function updateSlots(&$bsock=null, $storage=null)
    {
       if(isset($bsock, $storage)) {
@@ -141,6 +211,16 @@ class StorageModel
       }
    }
 
+   /**
+    * Move Slots
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $srcslots
+    * @param $dstslots
+    *
+    * @return json
+    */
    public function moveSlots(&$bsock=null, $storage=null, $srcslots=null, $dstslots=null)
    {
       if(isset($bsock, $storage, $srcslots, $dstslots)) {
@@ -153,6 +233,17 @@ class StorageModel
       }
    }
 
+   /**
+    * Label
+    *
+    * @param $bsock
+    * @param $storage
+    * @param $pool
+    * @param $drive
+    * @param $slots
+    *
+    * @return string
+    */
    public function label(&$bsock=null, $storage=null, $pool=null, $drive=null, $slots=null)
    {
       if(isset($bsock, $storage, $pool, $drive)) {
@@ -165,6 +256,14 @@ class StorageModel
       }
    }
 
+   /**
+    * Get Slots
+    *
+    * @param $bsock
+    * @param $storage
+    *
+    * @return array
+    */
    public function getSlots(&$bsock=null, $storage=null)
    {
       if(isset($bsock, $storage)) {
@@ -178,6 +277,14 @@ class StorageModel
       }
    }
 
+   /**
+    * Status Storage
+    *
+    * @param $bsock
+    * @param $storage
+    *
+    * @return string
+    */
    public function statusStorage(&$bsock=null, $storage=null)
    {
       if(isset($bsock, $storage)) {

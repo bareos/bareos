@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -34,6 +34,9 @@ use Storage\Model\Storage;
 class StorageController extends AbstractActionController
 {
 
+   /**
+    * Variables
+    */
    protected $storageModel = null;
    protected $poolModel = null;
    protected $bsock = null;
@@ -51,6 +54,11 @@ class StorageController extends AbstractActionController
       ".pools"
    );
 
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -72,6 +80,11 @@ class StorageController extends AbstractActionController
       return new ViewModel(array());
    }
 
+   /**
+    * Details Action
+    *
+    * @return object
+    */
    public function detailsAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -243,6 +256,11 @@ class StorageController extends AbstractActionController
       }
    }
 
+   /**
+    * Status Action
+    *
+    * @return object
+    */
    public function statusAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -281,6 +299,11 @@ class StorageController extends AbstractActionController
       );
    }
 
+   /**
+    * Get Data Action
+    *
+    * @return object
+    */
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -325,6 +348,11 @@ class StorageController extends AbstractActionController
       return $response;
    }
 
+   /**
+    * Get Storage Model
+    *
+    * @return object
+    */
    public function getStorageModel()
    {
       if(!$this->storageModel) {
@@ -334,6 +362,11 @@ class StorageController extends AbstractActionController
       return $this->storageModel;
    }
 
+   /**
+    * Get Pool Model
+    *
+    * @return object
+    */
    public function getPoolModel()
    {
       if(!$this->poolModel) {
