@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,13 @@ namespace Pool\Model;
 class PoolModel
 {
 
+   /**
+    * Get all Pools by llist command
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getPools(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -41,6 +48,14 @@ class PoolModel
       }
    }
 
+   /**
+    * Get all Pools by .pools command
+    *
+    * @param $bsock
+    * @param $type
+    *
+    * @return array
+    */
    public function getDotPools(&$bsock=null, $type=null)
    {
       if(isset($bsock)) {
@@ -59,6 +74,14 @@ class PoolModel
       }
    }
 
+   /**
+    * Get a single Pool
+    *
+    * @param $bsock
+    * @param $pool
+    *
+    * @return array
+    */
    public function getPool(&$bsock=null, $pool=null)
    {
       if(isset($bsock, $pool)) {
@@ -72,6 +95,14 @@ class PoolModel
       }
    }
 
+   /**
+    * Get Pool Media by llist media command
+    *
+    * @param $bsock
+    * @param $pool
+    *
+    * @return array
+    */
    public function getPoolMedia(&$bsock=null, $pool=null)
    {
       if(isset($bsock, $pool)) {
