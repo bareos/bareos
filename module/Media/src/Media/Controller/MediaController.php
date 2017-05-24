@@ -31,6 +31,9 @@ use Zend\Json\Json;
 
 class MediaController extends AbstractActionController
 {
+   /**
+    * Variables
+    */
    protected $mediaModel = null;
    protected $bsock = null;
    protected $acl_alert = false;
@@ -40,6 +43,11 @@ class MediaController extends AbstractActionController
       "llist"
    );
 
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -74,6 +82,11 @@ class MediaController extends AbstractActionController
       );
    }
 
+   /**
+    * Details Action
+    *
+    * @return object
+    */
    public function detailsAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -99,6 +112,11 @@ class MediaController extends AbstractActionController
       ));
    }
 
+   /**
+    * Get Data Action
+    *
+    * @return object
+    */
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -154,6 +172,11 @@ class MediaController extends AbstractActionController
       return $response;
    }
 
+   /**
+    * Get Media Model
+    *
+    * @return object
+    */
    public function getMediaModel()
    {
       if(!$this->mediaModel) {

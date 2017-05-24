@@ -28,6 +28,13 @@ namespace Media\Model;
 class MediaModel
 {
 
+   /**
+    * Get all Volumes/Media
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getVolumes(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -47,6 +54,14 @@ class MediaModel
       }
    }
 
+   /**
+    * Get a single Volume
+    *
+    * @param $bsock
+    * @param $volume
+    *
+    * @return array
+    */
    public function getVolume(&$bsock=null, $volume=null)
    {
       if(isset($bsock, $volume)) {
@@ -60,6 +75,14 @@ class MediaModel
       }
    }
 
+   /**
+    * Get Volume Jobs
+    *
+    * @param $bsock
+    * @param $volume
+    *
+    * @return array
+    */
    public function getVolumeJobs(&$bsock=null, $volume=null)
    {
       if(isset($bsock, $volume)) {
