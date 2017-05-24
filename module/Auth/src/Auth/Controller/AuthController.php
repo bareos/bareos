@@ -34,14 +34,27 @@ use Zend\Session\Container;
 class AuthController extends AbstractActionController
 {
 
+   /**
+    * Variables
+    */
    protected $directorModel = null;
    protected $bsock = null;
 
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       return new ViewModel();
    }
 
+   /**
+    * Login Action
+    *
+    * @return object
+    */
    public function loginAction()
    {
 
@@ -238,6 +251,11 @@ class AuthController extends AbstractActionController
 
    }
 
+   /**
+    * Logout Action
+    *
+    * @return object
+    */
    public function logoutAction()
    {
       // todo - ask user if he's really wants to log out!
@@ -246,6 +264,11 @@ class AuthController extends AbstractActionController
       return $this->redirect()->toRoute('auth', array('action' => 'login'));
    }
 
+   /**
+    * Get Director Model
+    *
+    * @return object
+    */
    public function getDirectorModel()
    {
       if(!$this->directorModel) {
