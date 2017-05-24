@@ -27,6 +27,15 @@ namespace Job\Model;
 
 class JobModel
 {
+   /**
+    * Get mulitple Jobs
+    *
+    * @param $bsock
+    * @param $jobname
+    * @param $days
+    *
+    * @return array
+    */
    public function getJobs(&$bsock=null, $jobname=null, $days=null)
    {
       if(isset($bsock)) {
@@ -62,6 +71,17 @@ class JobModel
       }
    }
 
+   /**
+    * Get Job by Status
+    *
+    * @param $bsock
+    * @param $jobname
+    * @param $status
+    * @param $days
+    * @param $hours
+    *
+    * @return array
+    */
    public function getJobsByStatus(&$bsock=null, $jobname=null, $status=null, $days=null, $hours=null)
    {
       if(isset($bsock, $status)) {
@@ -96,6 +116,14 @@ class JobModel
       }
    }
 
+   /**
+    * Get a single Job
+    *
+    * @param $bsock
+    * @param $id
+    *
+    * @return array
+    */
    public function getJob(&$bsock=null, $id=null)
    {
       if(isset($bsock, $id)) {
@@ -109,6 +137,14 @@ class JobModel
       }
    }
 
+   /**
+    * Get Job Log
+    *
+    * @param $bsock
+    * @param $id
+    *
+    * @return array
+    */
    public function getJobLog(&$bsock=null, $id=null)
    {
       if(isset($bsock, $id)) {
@@ -130,6 +166,14 @@ class JobModel
       }
    }
 
+   /**
+    * Get Job Media
+    *
+    * @param $bsock
+    * @param $jobid
+    *
+    * @return array
+    */
    public function getJobMedia(&$bsock=null, $jobid=null)
    {
       $cmd = 'llist jobmedia jobid='.$jobid;
@@ -145,6 +189,14 @@ class JobModel
       }
    }
 
+   /**
+    * Get Jobs by type
+    *
+    * @param $bsock
+    * @param $type
+    *
+    * @return array
+    */
    public function getJobsByType(&$bsock=null, $type=null)
    {
       if(isset($bsock)) {
@@ -163,6 +215,13 @@ class JobModel
       }
    }
 
+   /**
+    * Get JobsLastStatus
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getJobsLastStatus(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -176,6 +235,33 @@ class JobModel
       }
    }
 
+   /**
+    * Get JobTotals
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
+   public function getJobTotals(&$bsock=null)
+   {
+      if(isset($bsock)) {
+         $cmd = 'list jobtotals';
+         $result = $bsock->send_command($cmd, 2, null);
+         $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobtotals['result']['jobtotals'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
+    * Get Running Jobs Statistics
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getRunningJobsStatistics(&$bsock = null) {
       if(isset($bsock)) {
 
@@ -271,6 +357,13 @@ class JobModel
       }
    }
 
+   /**
+    * Get the available Restore Jobs
+    *
+    * @param $bsock
+    *
+    * @return array
+    */
    public function getRestoreJobs(&$bsock=null)
    {
       if(isset($bsock)) {
@@ -284,6 +377,14 @@ class JobModel
       }
    }
 
+   /**
+    * Run a job as scheduled
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function runJob(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -296,6 +397,22 @@ class JobModel
       }
    }
 
+   /**
+    * Run a custom job
+    *
+    * @param $bsock
+    * @param $jobname
+    * @param $client
+    * @param $fileset
+    * @param $storage
+    * @param $pool
+    * @param $level
+    * @param $priority
+    * @param $backupformat
+    * @param $when
+    *
+    * @return string
+    */
    public function runCustomJob(&$bsock=null, $jobname=null, $client=null, $fileset=null, $storage=null, $pool=null, $level=null, $priority=null, $backupformat=null, $when=null)
    {
       if(isset($bsock, $jobname)) {
@@ -333,6 +450,14 @@ class JobModel
       }
    }
 
+   /**
+    * Re-Run a job
+    *
+    * @param $bsock
+    * @param $id
+    *
+    * @return string
+    */
    public function rerunJob(&$bsock=null, $id=null)
    {
       if(isset($bsock, $id)) {
@@ -345,6 +470,14 @@ class JobModel
       }
    }
 
+   /**
+    * Cancel a job
+    *
+    * @param $bsock
+    * @param $id
+    *
+    * @return string
+    */
    public function cancelJob(&$bsock=null, $id=null)
    {
       if(isset($bsock, $id)) {
@@ -357,6 +490,14 @@ class JobModel
       }
    }
 
+   /**
+    * Enable a job
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function enableJob(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {
@@ -369,6 +510,14 @@ class JobModel
       }
    }
 
+   /**
+    * Disable a job
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return string
+    */
    public function disableJob(&$bsock=null, $name=null)
    {
       if(isset($bsock, $name)) {

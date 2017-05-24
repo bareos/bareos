@@ -31,6 +31,9 @@ use Zend\Json\Json;
 
 class DashboardController extends AbstractActionController
 {
+   /**
+    * Variables
+    */
    protected $directorModel = null;
    protected $jobModel = null;
    protected $dashboardModel = null;
@@ -42,6 +45,11 @@ class DashboardController extends AbstractActionController
       "llist"
    );
 
+   /**
+    * Index Action
+    *
+    * @return object
+    */
    public function indexAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -63,6 +71,11 @@ class DashboardController extends AbstractActionController
       return new ViewModel();
    }
 
+   /**
+    * Get Data Action
+    *
+    * @return object
+    */
    public function getDataAction()
    {
       $this->RequestURIPlugin()->setRequestURI();
@@ -155,6 +168,16 @@ class DashboardController extends AbstractActionController
             echo $e->getMessage();
          }
       }
+      elseif($data == "jobtotals") {
+         try {
+            $this->bsock = $this->getServiceLocator()->get('director');
+            $result = $this->getJobModel()->getJobTotals($this->bsock);
+            $this->bsock->disconnect();
+         }
+         catch(Exception $e) {
+            echo $e->getMessage();
+         }
+      }
       elseif($data == "dirdmsg") {
          try {
             $this->bsock = $this->getServiceLocator()->get('director');
@@ -177,6 +200,11 @@ class DashboardController extends AbstractActionController
 
    }
 
+   /**
+    * Get Director Model
+    *
+    * @return object
+    */
    public function getDirectorModel()
    {
       if(!$this->directorModel) {
@@ -186,6 +214,11 @@ class DashboardController extends AbstractActionController
       return $this->directorModel;
    }
 
+   /**
+    * Get Job Model
+    *
+    * @return object
+    */
    public function getJobModel()
    {
       if(!$this->jobModel) {
@@ -195,6 +228,11 @@ class DashboardController extends AbstractActionController
       return $this->jobModel;
    }
 
+   /**
+    * Get Dashboard Model
+    *
+    * @return object
+    */
    public function getDashboardModel()
    {
       if(!$this->dashboardModel) {
