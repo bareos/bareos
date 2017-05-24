@@ -32,7 +32,7 @@
             "zendframework/zend-serializer": "Zend\\Serializer component",
             "zendframework/zend-servicemanager": "To support hydrator plugin manager usage"
         },
-        "time": "2015-07-21 13:55:46",
+        "time": "2015-07-21T13:55:46+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -95,7 +95,7 @@
             "zendframework/zend-json": "Zend\\Json to use the Json reader or writer classes",
             "zendframework/zend-servicemanager": "Zend\\ServiceManager for use with the Config Factory to retrieve reader and writer instances"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -157,7 +157,7 @@
             "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
             "zendframework/zend-uri": "Zend\\Uri component for UriNormalize filter"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -228,7 +228,7 @@
             "zendframework/zend-validator": "You should install this package to use the provided validators",
             "zendframework/zend-view": "You should install this package to use the provided view helpers"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -285,7 +285,7 @@
             "ocramius/proxy-manager": "ProxyManager 0.5.* to handle lazy initialization of services",
             "zendframework/zend-di": "Zend\\Di component"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -356,7 +356,7 @@
             "zendframework/zend-session": "Zend\\Session component",
             "zendframework/zend-uri": "Zend\\Uri component, required by the Uri and Sitemap\\Loc validators"
         },
-        "time": "2015-09-08 21:04:17",
+        "time": "2015-09-08T21:04:17+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -414,7 +414,7 @@
         "suggest": {
             "zendframework/zend-servicemanager": "To support plugin manager support"
         },
-        "time": "2015-08-11 16:02:45",
+        "time": "2015-08-11T16:02:45+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -492,7 +492,7 @@
             "zendframework/zend-view": "Zend\\View component",
             "zendframework/zendservice-recaptcha": "ZendService\\ReCaptcha component"
         },
-        "time": "2015-08-01 20:39:42",
+        "time": "2015-08-01T20:39:42+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -545,7 +545,7 @@
             "phpunit/phpunit": "~4.0",
             "satooshi/php-coveralls": "dev-master"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -640,7 +640,7 @@
             "zendframework/zend-version": "Zend\\Version component",
             "zendframework/zend-view": "Zend\\View component"
         },
-        "time": "2015-09-08 11:00:34",
+        "time": "2015-09-08T11:00:34+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -692,7 +692,7 @@
             "phpunit/phpunit": "~4.0",
             "satooshi/php-coveralls": "dev-master"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -775,7 +775,7 @@
             "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
             "zendframework/zend-uri": "Zend\\Uri component"
         },
-        "time": "2015-06-16 15:22:37",
+        "time": "2015-06-16T15:22:37+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -835,7 +835,7 @@
             "zendframework/zend-server": "Zend\\Server component",
             "zendframework/zendxml": "To support Zend\\Json\\Json::fromXml() usage"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -892,7 +892,7 @@
             "zendframework/zend-http": "Allows use of Zend\\Http\\Client to check version information",
             "zendframework/zend-json": "To check latest version hosted in GitHub"
         },
-        "time": "2016-12-19 22:32:50",
+        "time": "2016-12-19T22:32:50+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -959,7 +959,7 @@
             "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
             "zendframework/zend-validator": "Zend\\Validator component"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1024,7 +1024,7 @@
             "zendframework/zend-mvc": "Zend\\Mvc component",
             "zendframework/zend-servicemanager": "Zend\\ServiceManager component"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1082,7 +1082,7 @@
             "ircmaxell/random-lib": "Fallback random byte generator for Zend\\Math\\Rand if OpenSSL/Mcrypt extensions are unavailable",
             "zendframework/zend-servicemanager": ">= current version, if using the BigInteger::factory functionality"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1141,7 +1141,7 @@
         "suggest": {
             "zendframework/zend-servicemanager": "To support plugin manager support"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1208,7 +1208,7 @@
             "zendframework/zend-serializer": "Zend\\Serializer component",
             "zendframework/zend-session": "Zend\\Session component"
         },
-        "time": "2015-09-15 16:23:56",
+        "time": "2015-09-15T16:23:56+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1275,7 +1275,7 @@
             "zendframework/zend-mail": "Zend\\Mail component",
             "zendframework/zend-validator": "Zend\\Validator component"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1333,7 +1333,7 @@
             "zendframework/zend-filter": "To support DefaultRouteMatcher usage",
             "zendframework/zend-validator": "To support DefaultRouteMatcher usage"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1385,7 +1385,7 @@
             "phpunit/phpunit": "~4.0",
             "satooshi/php-coveralls": "dev-master"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1439,7 +1439,7 @@
             "phpunit/phpunit": "~4.0",
             "satooshi/php-coveralls": "dev-master"
         },
-        "time": "2015-09-14 16:17:10",
+        "time": "2015-09-14T16:17:10+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1496,7 +1496,7 @@
             "satooshi/php-coveralls": "dev-master",
             "zendframework/zend-config": "~2.4.0"
         },
-        "time": "2015-09-12 13:08:39",
+        "time": "2015-09-12T13:08:39+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -1561,7 +1561,7 @@
             "zendframework/zend-servicemanager": "Zend\\ServiceManager component",
             "zendframework/zend-view": "Zend\\View component"
         },
-        "time": "2015-05-07 14:55:31",
+        "time": "2015-05-07T14:55:31+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
