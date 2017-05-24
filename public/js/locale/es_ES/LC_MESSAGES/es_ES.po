@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-02-01 13:00+0100\n"
+"POT-Creation-Date: 2017-05-24 17:59+0200\n"
 "PO-Revision-Date: 2016-12-02 08:31-0300\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -18,223 +18,224 @@ msgstr ""
 "X-Generator: Poedit 1.8.11\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../../js/datatables.functions.js:81
+#: ../../js/datatables.functions.js:89
 msgid "Backup"
 msgstr "Copia de seguridad"
 
-#: ../../js/datatables.functions.js:84
+#: ../../js/datatables.functions.js:92
 msgid "Migrated"
 msgstr "Migrado"
 
-#: ../../js/datatables.functions.js:87
+#: ../../js/datatables.functions.js:95
 msgid "Verify"
 msgstr "Verificar"
 
-#: ../../js/datatables.functions.js:90
+#: ../../js/datatables.functions.js:98
 msgid "Restore"
 msgstr "Restaurar"
 
-#: ../../js/datatables.functions.js:93
+#: ../../js/datatables.functions.js:101
 msgid "Console program"
 msgstr "Programa de consola"
 
-#: ../../js/datatables.functions.js:96
+#: ../../js/datatables.functions.js:104
 msgid "Internal system job"
 msgstr "Taréa interna del sistema"
 
-#: ../../js/datatables.functions.js:99
+#: ../../js/datatables.functions.js:107
 msgid "Admin"
 msgstr "Administrador"
 
-#: ../../js/datatables.functions.js:102
+#: ../../js/datatables.functions.js:110
 msgid "Archive"
 msgstr ""
 
-#: ../../js/datatables.functions.js:105
+#: ../../js/datatables.functions.js:113
 msgid "Copy of a job"
 msgstr "Copia de una tarea"
 
-#: ../../js/datatables.functions.js:108
+#: ../../js/datatables.functions.js:116
 msgid "Copy job"
 msgstr "Tarea de copia"
 
-#: ../../js/datatables.functions.js:111
+#: ../../js/datatables.functions.js:119
 msgid "Migration job"
 msgstr "Tarea de migración"
 
-#: ../../js/datatables.functions.js:114
+#: ../../js/datatables.functions.js:122
 msgid "Scan"
 msgstr "Escanear"
 
-#: ../../js/datatables.functions.js:117
+#: ../../js/datatables.functions.js:125
 msgid "Consolidate"
 msgstr ""
 
-#: ../../js/datatables.functions.js:129 ../../js/datatables.functions.js:168
+#: ../../js/datatables.functions.js:137 ../../js/datatables.functions.js:176
+#: ../../js/datatables.functions.js:206
 msgid "Full"
 msgstr "Completo"
 
-#: ../../js/datatables.functions.js:131
+#: ../../js/datatables.functions.js:139
 msgid "Differential"
 msgstr "Diferencial"
 
-#: ../../js/datatables.functions.js:133
+#: ../../js/datatables.functions.js:141
 msgid "Incremental"
 msgstr "Incremental"
 
-#: ../../js/datatables.functions.js:135
+#: ../../js/datatables.functions.js:143
 msgid "VirtualFull"
 msgstr ""
 
-#: ../../js/datatables.functions.js:137
+#: ../../js/datatables.functions.js:145
 msgid "Base"
 msgstr "Base"
 
-#: ../../js/datatables.functions.js:139
+#: ../../js/datatables.functions.js:147
 msgid "Catalog"
 msgstr "Catálogo"
 
-#: ../../js/datatables.functions.js:141
+#: ../../js/datatables.functions.js:149
 msgid "InitCatalog"
 msgstr ""
 
-#: ../../js/datatables.functions.js:143
+#: ../../js/datatables.functions.js:151
 msgid "VolumeToCatalog"
 msgstr "VolumenACatálogo"
 
-#: ../../js/datatables.functions.js:145
+#: ../../js/datatables.functions.js:153
 msgid "DiskToCatalog"
 msgstr "DiscoACatálogo"
 
-#: ../../js/datatables.functions.js:147
+#: ../../js/datatables.functions.js:155
 msgid "Data"
 msgstr "Datos"
 
-#: ../../js/datatables.functions.js:149
+#: ../../js/datatables.functions.js:157
 msgid "None"
 msgstr "Ninguno"
 
-#: ../../js/datatables.functions.js:163 ../../js/datatables.functions.js:193
+#: ../../js/datatables.functions.js:171 ../../js/datatables.functions.js:201
 msgid "day(s)"
 msgstr "día(s)"
 
-#: ../../js/datatables.functions.js:168
+#: ../../js/datatables.functions.js:176 ../../js/datatables.functions.js:206
 msgid "Used"
 msgstr "Usado"
 
-#: ../../js/datatables.functions.js:180
+#: ../../js/datatables.functions.js:188
 msgid "expired"
 msgstr "expirado"
 
-#: ../../js/datatables.functions.js:184
+#: ../../js/datatables.functions.js:192
 msgid "expires in 1 day"
 msgstr "expira en 1 día"
 
-#: ../../js/datatables.functions.js:188
+#: ../../js/datatables.functions.js:196
 msgid "expires in"
 msgstr "expira en"
 
-#: ../../js/datatables.functions.js:188
+#: ../../js/datatables.functions.js:196
 msgid "days"
 msgstr "días"
 
-#: ../../js/datatables.functions.js:199
+#: ../../js/datatables.functions.js:232
 msgid "never"
 msgstr "nunca"
 
-#: ../../js/datatables.functions.js:208
+#: ../../js/datatables.functions.js:241
 msgid "today"
 msgstr "hoy"
 
-#: ../../js/datatables.functions.js:211
+#: ../../js/datatables.functions.js:244
 msgid "day(s) ago"
 msgstr "día(s) atras"
 
-#: ../../js/datatables.functions.js:214
+#: ../../js/datatables.functions.js:247
 msgid "month(s) ago"
 msgstr "mese(s) atras"
 
-#: ../../js/datatables.functions.js:217
+#: ../../js/datatables.functions.js:250
 msgid "year(s) ago"
 msgstr "año(s) atras"
 
-#: ../../js/datatables.functions.js:250
+#: ../../js/datatables.functions.js:283
 msgid "enabled"
 msgstr "Habilitado"
 
-#: ../../js/datatables.functions.js:253
+#: ../../js/datatables.functions.js:286
 msgid "disabled"
 msgstr "Deshabilitado"
 
-#: ../../js/datatables.functions.js:261
+#: ../../js/datatables.functions.js:294
 msgid "Yes"
 msgstr "Si"
 
-#: ../../js/datatables.functions.js:264
+#: ../../js/datatables.functions.js:297
 msgid "No"
 msgstr "No"
 
-#: ../../js/datatables.functions.js:274 ../../js/datatables.functions.js:278
-#: ../../js/datatables.functions.js:282
+#: ../../js/datatables.functions.js:307 ../../js/datatables.functions.js:311
+#: ../../js/datatables.functions.js:315
 msgid "Failure"
 msgstr "Falló"
 
-#: ../../js/datatables.functions.js:286
+#: ../../js/datatables.functions.js:319
 msgid "Success"
 msgstr "Correcto"
 
-#: ../../js/datatables.functions.js:290
+#: ../../js/datatables.functions.js:323
 msgid "Running"
 msgstr "En Ejecución"
 
-#: ../../js/datatables.functions.js:294
+#: ../../js/datatables.functions.js:327
 msgid "Queued"
 msgstr "En Espera"
 
-#: ../../js/datatables.functions.js:298
+#: ../../js/datatables.functions.js:331
 msgid "Blocked"
 msgstr "Bloqueado"
 
-#: ../../js/datatables.functions.js:302
+#: ../../js/datatables.functions.js:335
 msgid "Verify found differences"
 msgstr "Verificar diferencias encontradas"
 
-#: ../../js/datatables.functions.js:306
+#: ../../js/datatables.functions.js:339
 msgid "Canceled"
 msgstr "Cancelado"
 
-#: ../../js/datatables.functions.js:310 ../../js/datatables.functions.js:314
-#: ../../js/datatables.functions.js:318 ../../js/datatables.functions.js:322
-#: ../../js/datatables.functions.js:326 ../../js/datatables.functions.js:330
-#: ../../js/datatables.functions.js:334 ../../js/datatables.functions.js:338
-#: ../../js/datatables.functions.js:342 ../../js/datatables.functions.js:346
+#: ../../js/datatables.functions.js:343 ../../js/datatables.functions.js:347
+#: ../../js/datatables.functions.js:351 ../../js/datatables.functions.js:355
+#: ../../js/datatables.functions.js:359 ../../js/datatables.functions.js:363
+#: ../../js/datatables.functions.js:367 ../../js/datatables.functions.js:371
+#: ../../js/datatables.functions.js:375 ../../js/datatables.functions.js:379
 msgid "Waiting"
 msgstr "Esperando"
 
-#: ../../js/datatables.functions.js:350
+#: ../../js/datatables.functions.js:383
 msgid "SD despooling attributes"
 msgstr "atributos de despooling SD"
 
-#: ../../js/datatables.functions.js:354
+#: ../../js/datatables.functions.js:387
 msgid "Doing batch insert file records"
 msgstr ""
 
-#: ../../js/datatables.functions.js:358
+#: ../../js/datatables.functions.js:391
 msgid "Incomplete"
 msgstr "Incompleto"
 
-#: ../../js/datatables.functions.js:362
+#: ../../js/datatables.functions.js:395
 msgid "Committing data"
 msgstr "Impactando cambios"
 
-#: ../../js/datatables.functions.js:366
+#: ../../js/datatables.functions.js:399
 msgid "Warning"
 msgstr "Advertencia"
 
-#: ../../js/datatables.functions.js:370
+#: ../../js/datatables.functions.js:403
 msgid "Doing data despooling"
 msgstr ""
 
-#: ../../js/datatables.functions.js:374
+#: ../../js/datatables.functions.js:407
 msgid "Queued waiting for device"
 msgstr "En espera de dispositivo"

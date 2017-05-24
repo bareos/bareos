@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-02-01 13:00+0100\n"
+"POT-Creation-Date: 2017-05-24 17:59+0200\n"
 "PO-Revision-Date: 2016-06-22 14:31+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -18,223 +18,224 @@ msgstr ""
 "X-Generator: Poedit 1.8.5\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: ../../js/datatables.functions.js:81
+#: ../../js/datatables.functions.js:89
 msgid "Backup"
 msgstr "Sauvegarde"
 
-#: ../../js/datatables.functions.js:84
+#: ../../js/datatables.functions.js:92
 msgid "Migrated"
 msgstr "Migré"
 
-#: ../../js/datatables.functions.js:87
+#: ../../js/datatables.functions.js:95
 msgid "Verify"
 msgstr "Vérification"
 
-#: ../../js/datatables.functions.js:90
+#: ../../js/datatables.functions.js:98
 msgid "Restore"
 msgstr "Restauration"
 
-#: ../../js/datatables.functions.js:93
+#: ../../js/datatables.functions.js:101
 msgid "Console program"
 msgstr "Program console"
 
-#: ../../js/datatables.functions.js:96
+#: ../../js/datatables.functions.js:104
 msgid "Internal system job"
 msgstr "job système interne"
 
-#: ../../js/datatables.functions.js:99
+#: ../../js/datatables.functions.js:107
 msgid "Admin"
 msgstr ""
 
-#: ../../js/datatables.functions.js:102
+#: ../../js/datatables.functions.js:110
 msgid "Archive"
 msgstr ""
 
-#: ../../js/datatables.functions.js:105
+#: ../../js/datatables.functions.js:113
 msgid "Copy of a job"
 msgstr "Copie d'un job"
 
-#: ../../js/datatables.functions.js:108
+#: ../../js/datatables.functions.js:116
 msgid "Copy job"
 msgstr "Job de copie"
 
-#: ../../js/datatables.functions.js:111
+#: ../../js/datatables.functions.js:119
 msgid "Migration job"
 msgstr "Job de migration"
 
-#: ../../js/datatables.functions.js:114
+#: ../../js/datatables.functions.js:122
 msgid "Scan"
 msgstr ""
 
-#: ../../js/datatables.functions.js:117
+#: ../../js/datatables.functions.js:125
 msgid "Consolidate"
 msgstr ""
 
-#: ../../js/datatables.functions.js:129 ../../js/datatables.functions.js:168
+#: ../../js/datatables.functions.js:137 ../../js/datatables.functions.js:176
+#: ../../js/datatables.functions.js:206
 msgid "Full"
 msgstr "Complet"
 
-#: ../../js/datatables.functions.js:131
+#: ../../js/datatables.functions.js:139
 msgid "Differential"
 msgstr "Différentiel"
 
-#: ../../js/datatables.functions.js:133
+#: ../../js/datatables.functions.js:141
 msgid "Incremental"
 msgstr "Incrémentiel"
 
-#: ../../js/datatables.functions.js:135
+#: ../../js/datatables.functions.js:143
 msgid "VirtualFull"
 msgstr "Virtuel complet"
 
-#: ../../js/datatables.functions.js:137
+#: ../../js/datatables.functions.js:145
 msgid "Base"
 msgstr "Base"
 
-#: ../../js/datatables.functions.js:139
+#: ../../js/datatables.functions.js:147
 msgid "Catalog"
 msgstr "Catalogue"
 
-#: ../../js/datatables.functions.js:141
+#: ../../js/datatables.functions.js:149
 msgid "InitCatalog"
 msgstr "Initialisation catalogue"
 
-#: ../../js/datatables.functions.js:143
+#: ../../js/datatables.functions.js:151
 msgid "VolumeToCatalog"
 msgstr "Volume et catalogue"
 
-#: ../../js/datatables.functions.js:145
+#: ../../js/datatables.functions.js:153
 msgid "DiskToCatalog"
 msgstr "Disque et catalogue"
 
-#: ../../js/datatables.functions.js:147
+#: ../../js/datatables.functions.js:155
 msgid "Data"
 msgstr "Données"
 
-#: ../../js/datatables.functions.js:149
+#: ../../js/datatables.functions.js:157
 msgid "None"
 msgstr "Aucun"
 
-#: ../../js/datatables.functions.js:163 ../../js/datatables.functions.js:193
+#: ../../js/datatables.functions.js:171 ../../js/datatables.functions.js:201
 msgid "day(s)"
 msgstr "jour(s)"
 
-#: ../../js/datatables.functions.js:168
+#: ../../js/datatables.functions.js:176 ../../js/datatables.functions.js:206
 msgid "Used"
 msgstr "Utilisé"
 
-#: ../../js/datatables.functions.js:180
+#: ../../js/datatables.functions.js:188
 msgid "expired"
 msgstr "expiré"
 
-#: ../../js/datatables.functions.js:184
+#: ../../js/datatables.functions.js:192
 msgid "expires in 1 day"
 msgstr "expire dans 1 jour"
 
-#: ../../js/datatables.functions.js:188
+#: ../../js/datatables.functions.js:196
 msgid "expires in"
 msgstr "expire dans"
 
-#: ../../js/datatables.functions.js:188
+#: ../../js/datatables.functions.js:196
 msgid "days"
 msgstr "jours"
 
-#: ../../js/datatables.functions.js:199
+#: ../../js/datatables.functions.js:232
 msgid "never"
 msgstr "jamais"
 
-#: ../../js/datatables.functions.js:208
+#: ../../js/datatables.functions.js:241
 msgid "today"
 msgstr "aujourd'hui"
 
-#: ../../js/datatables.functions.js:211
+#: ../../js/datatables.functions.js:244
 msgid "day(s) ago"
 msgstr "jour(s) en arrière"
 
-#: ../../js/datatables.functions.js:214
+#: ../../js/datatables.functions.js:247
 msgid "month(s) ago"
 msgstr "mois en arrière"
 
-#: ../../js/datatables.functions.js:217
+#: ../../js/datatables.functions.js:250
 msgid "year(s) ago"
 msgstr "années en arrières"
 
-#: ../../js/datatables.functions.js:250
+#: ../../js/datatables.functions.js:283
 msgid "enabled"
 msgstr "actif"
 
-#: ../../js/datatables.functions.js:253
+#: ../../js/datatables.functions.js:286
 msgid "disabled"
 msgstr "inactif"
 
-#: ../../js/datatables.functions.js:261
+#: ../../js/datatables.functions.js:294
 msgid "Yes"
 msgstr "Oui"
 
-#: ../../js/datatables.functions.js:264
+#: ../../js/datatables.functions.js:297
 msgid "No"
 msgstr "Non"
 
-#: ../../js/datatables.functions.js:274 ../../js/datatables.functions.js:278
-#: ../../js/datatables.functions.js:282
+#: ../../js/datatables.functions.js:307 ../../js/datatables.functions.js:311
+#: ../../js/datatables.functions.js:315
 msgid "Failure"
 msgstr "Erreur"
 
-#: ../../js/datatables.functions.js:286
+#: ../../js/datatables.functions.js:319
 msgid "Success"
 msgstr "Succès"
 
-#: ../../js/datatables.functions.js:290
+#: ../../js/datatables.functions.js:323
 msgid "Running"
 msgstr "En cours"
 
-#: ../../js/datatables.functions.js:294
+#: ../../js/datatables.functions.js:327
 msgid "Queued"
 msgstr "En file d'attente"
 
-#: ../../js/datatables.functions.js:298
+#: ../../js/datatables.functions.js:331
 msgid "Blocked"
 msgstr "Bloqué"
 
-#: ../../js/datatables.functions.js:302
+#: ../../js/datatables.functions.js:335
 msgid "Verify found differences"
 msgstr "La vérification a trouvé des différences"
 
-#: ../../js/datatables.functions.js:306
+#: ../../js/datatables.functions.js:339
 msgid "Canceled"
 msgstr "Annulé"
 
-#: ../../js/datatables.functions.js:310 ../../js/datatables.functions.js:314
-#: ../../js/datatables.functions.js:318 ../../js/datatables.functions.js:322
-#: ../../js/datatables.functions.js:326 ../../js/datatables.functions.js:330
-#: ../../js/datatables.functions.js:334 ../../js/datatables.functions.js:338
-#: ../../js/datatables.functions.js:342 ../../js/datatables.functions.js:346
+#: ../../js/datatables.functions.js:343 ../../js/datatables.functions.js:347
+#: ../../js/datatables.functions.js:351 ../../js/datatables.functions.js:355
+#: ../../js/datatables.functions.js:359 ../../js/datatables.functions.js:363
+#: ../../js/datatables.functions.js:367 ../../js/datatables.functions.js:371
+#: ../../js/datatables.functions.js:375 ../../js/datatables.functions.js:379
 msgid "Waiting"
 msgstr "En attente"
 
-#: ../../js/datatables.functions.js:350
+#: ../../js/datatables.functions.js:383
 msgid "SD despooling attributes"
 msgstr "SD envoi des attributs"
 
-#: ../../js/datatables.functions.js:354
+#: ../../js/datatables.functions.js:387
 msgid "Doing batch insert file records"
 msgstr "Insertion batch des enregistrements de fichiers"
 
-#: ../../js/datatables.functions.js:358
+#: ../../js/datatables.functions.js:391
 msgid "Incomplete"
 msgstr "Incomplet"
 
-#: ../../js/datatables.functions.js:362
+#: ../../js/datatables.functions.js:395
 msgid "Committing data"
 msgstr "Insertion des données"
 
-#: ../../js/datatables.functions.js:366
+#: ../../js/datatables.functions.js:399
 msgid "Warning"
 msgstr "Attention"
 
-#: ../../js/datatables.functions.js:370
+#: ../../js/datatables.functions.js:403
 msgid "Doing data despooling"
 msgstr "Déspoulage des données en cours"
 
-#: ../../js/datatables.functions.js:374
+#: ../../js/datatables.functions.js:407
 msgid "Queued waiting for device"
 msgstr "En attente de périphérique"
