@@ -46,7 +46,7 @@ void dlist::append(void *item)
 }
 
 /*
- * Append an item to the list
+ * Prepend an item to the list
  */
 void dlist::prepend(void *item)
 {
