@@ -34,7 +34,15 @@
       </div>
 
       <div class="panel-body">
-         <div class="job-totals-container"></div>
+
+         <table class="table table-no-bordered" id="job-totals">
+            <thead class="bg-primary">
+               <th><?php echo $this->translate("Jobs"); ?></th>
+               <th><?php echo $this->translate("Files"); ?></th>
+               <th><?php echo $this->translate("Bytes"); ?></th>
+            </thead>
+         </table>
+
       </div>
 
 </div>

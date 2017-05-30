@@ -56,23 +56,7 @@ $this->headTitle($title);
 
    var lastlogid = 0;
    var table_jobs_last_status = null;
-
-   function getDirectorMessages() {
-      $.ajax({
-         url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=dirdmsg'; ?>',
-         dataType: 'json',
-         timeout: 10000,
-         success: function(data) {
-            for(var i in data) {
-               if(data[i].logid > lastlogid) {
-                  var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext+'</div>');
-                  msg.insertBefore('#'+lastlogid).fadeIn('slow');
-                  lastlogid = data[i].logid;
-               }
-            }
-         }
-      });
-   }
+   var table_job_totals = null;
 
    $(document).ajaxStart(function() {
          $('.waiting-jobs-field').empty();
@@ -112,30 +96,25 @@ $this->headTitle($title);
    }
 
    function getJobTotals() {
-      $.ajax({
-         url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobtotals'; ?>',
+      table_job_totals = $('#job-totals').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobtotals'; ?>',
+         method: 'get',
          dataType: 'json',
-         timeout: 10000,
-         success: function(data) {
-            $('.job-totals-container').empty();
-            $('.job-totals-container').append(
-               '<div class="row"><div class="col-xs-1"><strong><?php echo $this->translate("Jobs"); ?></strong></div><div class="col-xs-3"><span class="text-muted">'+data.jobs+'</span></div></div>' +
-               '<div class="row"><div class="col-xs-1"><strong><?php echo $this->translate("Files"); ?></strong></div><div class="col-xs-3"><span class="text-muted">'+data.files+'</span></div></div>' +
-               '<div class="row"><div class="col-xs-1"><strong><?php echo $this->translate("Bytes"); ?></strong></div><div class="col-xs-3"><span class="text-muted">'+formatBytes(data.bytes)+'</span></div></div>'
-            );
-         },
-         error: function() {
-            $('.job-totals-container').empty();
-            $('.job-totals-container').append('Error fetching data.');
-         },
-         timeout: function() {
-            $('.job-totals-container').empty();
-            $('.job-totals-container').append('Timeout fetching data.');
-         },
-         parsererror: function() {
-            $('.job-totals-container').empty();
-            $('.job-totals-container').append('Parsererror');
-         }
+         columns: [
+            {
+               field: 'jobs',
+            },
+            {
+               field: 'files',
+            },
+            {
+               field: 'bytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ]
       });
    }
 
@@ -266,7 +245,7 @@ $this->headTitle($title);
    function refreshPartials() {
       getRunningJobs();
       getJobsPast24h();
-      getJobTotals();
+      $('#job-totals').bootstrapTable('refresh');
       $('#jobs-last-status').bootstrapTable('refresh');
    }
 
@@ -282,7 +261,7 @@ $this->headTitle($title);
          setInterval('getJobsPast24h()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
 
          getJobTotals();
-         setInterval('getJobTotals()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
+         setInterval("$('#job-totals').bootstrapTable('refresh')", <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
 
          getJobsLastStatus();
          setInterval( "$('#jobs-last-status').bootstrapTable('refresh')", <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);

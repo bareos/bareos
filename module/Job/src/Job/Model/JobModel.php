@@ -248,7 +248,7 @@ class JobModel
          $cmd = 'list jobtotals';
          $result = $bsock->send_command($cmd, 2, null);
          $jobtotals = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $jobtotals['result']['jobtotals'];
+         return array(0 => $jobtotals['result']['jobtotals']);
       }
       else {
          throw new \Exception('Missing argument.');
