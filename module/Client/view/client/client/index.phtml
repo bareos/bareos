@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -47,7 +47,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="clients">
+<table class="table table-no-bordered table-hover" id="clients">
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
@@ -68,8 +68,10 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
 
 <!-- modal-001 start -->
@@ -95,186 +97,165 @@ $this->headTitle($title);
 
 <script>
 
-function dlc(url) {
-   window.open(url, '_blank');
-}
+   var clients = null;
 
-$(document).ready(function() {
-
-   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-
-   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
-
-   if(result.length > 0) {
-      $("#modal-001").modal();
+   function dlc(url) {
+      window.open(url, '_blank');
    }
 
-   var cdt = $('#clients').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": "name", "defaultContent": "", "orderable": true },
-         { "data": "uname", "defaultContent": "", "orderable": false },
-         { "data": null, "defaultContent": "", "orderable": true },
-         { "data": "enabled", "defaultContent": "", "orderable": true },
-         { "data": null, "defaultContent": "", "orderable": false },
-         { "data": "installed", "defaultContent": "", "searchable": true, "orderable": true, "visible": false },
-         { "data": "available", "defaultContent": "", "searchable": true, "orderable": true, "visible": false }
-      ],
-      "paging": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": true,
-      "info": true,
-      "order": [[0, 'asc']],
-      "aoColumnDefs": [
-         {
-            "targets": 0,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 1,
-            "orderData": 4,
-            "width": "15%",
-            "render": function(data, type, full, meta) {
-               if(data.toLowerCase().search("suse") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
+   function getClients() {
+      clients = $('#clients').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'client_clients',
+         url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=all'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showPaginationSwitch: true,
+         showRefresh: true,
+         sortName: 'name',
+         sortOrder: 'asc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
                }
-               else if(data.toLowerCase().search("sle") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("debian") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/debian.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("fedora") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/fedora.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("centos") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/centos.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("redhat") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/redhat.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("ubuntu") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/ubuntu.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("univention") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/univention.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("windows") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("win32") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("win64") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("macos") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/macos.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("solaris") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/sunsolaris.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else if(data.toLowerCase().search("freebsd") > -1) {
-                  return '<img src="<?php echo $this->basePath('img/icons/os/freebsd.png'); ?>" id="icon-os" title="'+data+'" data-toggle="tooltip" data-placement="top">';
-               }
-               else {
-                  return '';
-               }
-            }
-         },
-         {
-            "targets": 2,
-            "orderData": 4,
-            "with": "10%",
-            "render": function(data, type, full, meta) {
-               if(data.available_fd === "" || data.available_fd === null || data.available_fd === undefined) {
-                  return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+data.installed_fd+'</span>';
-               }
-               if(data.update_fd === true) {
-                  if(data.update_dird === true) {
-                     return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+data.available_fd+' is available">'+data.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+data.available_dird+' required first)</span>';
+            },
+            {
+               field: 'uname',
+               sortable: true,
+               formatter: function(value) {
+                  if(value.toLowerCase().search("suse") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("sle") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/suse.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("debian") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/debian.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("fedora") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/fedora.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("centos") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/centos.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("redhat") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/redhat.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("ubuntu") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/ubuntu.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("univention") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/univention.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("windows") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("win32") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("win64") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/windows.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("macos") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/macos.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("solaris") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/sunsolaris.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
+                  }
+                  else if(value.toLowerCase().search("freebsd") > -1) {
+                     return '<img src="<?php echo $this->basePath('img/icons/os/freebsd.png'); ?>" id="icon-os" title="'+value+'" data-toggle="tooltip" data-placement="top">';
                   }
                   else {
-                     return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+data.available_fd+' is available">'+data.installed_fd+'</span>';
+                     return '';
                   }
                }
-               else {
-                  return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+data.installed_fd+'</span>';
+            },
+            {
+               field: 'hf-1',
+               formatter: function(value, row, index) {
+                  if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
+                     return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
+                  }
+                  if(data.update_fd === true) {
+                     if(data.update_dird === true) {
+                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+data.available_dird+' required first)</span>';
+                     }
+                     else {
+                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
+                     }
+                  }
+                  else {
+                     return '<span class="label label-success" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Up to date">'+row.installed_fd+'</span>';
+                  }
                }
+            },
+            {
+               field: 'enabled',
+               sortable: true,
+               formatter: function(value) {
+                  if(value) {
+                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
+                  }
+                  else {
+                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
+                  }
+               }
+            },
+            {
+               field: 'actions',
+               formatter: function(value, row, index) {
+                  var actions = null;
+                  var rlink = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+row.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
+                  var ulink = '<a href="'+row.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
+                  if(row.enabled) {
+                     actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+                  }
+                  else {
+                     actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+                  }
+                  if(row.update_fd === true) {
+                     return actions + '&nbsp;' + ulink;
+                  }
+                  else {
+                     return actions;
+                  }
+               }
+            },
+            {
+               field: 'hf-2',
+               visible: false,
+            },
+            {
+               field: 'hf-3',
+               visible: false,
             }
-         },
-         {
-            "targets": 3,
-            "width": "10%",
-            "render": function(data, type, full, meta) {
-               if(data) {
-                  return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-               }
-               else {
-                  return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-               }
-            }
-         },
-         {
-            "targets": 4,
-            "width": "10%",
-            "render": function(data, type, full, meta) {
-               var actions = null;
-               var rlink = '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+data.name+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-import"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+data.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
-               var ulink = '<a href="'+data.url_package+'" target="_blank"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="Download update"><span class="glyphicon glyphicon-download-alt"></span></button></a>';
-               if(data.enabled) {
-                  actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=disable&client='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-               }
-               else {
-                  actions = rlink + '&nbsp;' + '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/index?action=enable&client='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-               }
-               if(data.update_fd === true) {
-                  return actions + '&nbsp;' + ulink;
-               }
-               else {
-                  return actions;
-               }
-            }
-         },
-         {
-            "targets": 5,
-            "render": function(data, type, full, meta) {
-               return data;
-            }
-         },
-         {
-            "targets": 6,
-            "render": function(data, type, full, meta) {
-               return data;
-            }
-         }
-      ]
-   } );
+         ]
+      });
+   }
 
-   $('#clients tbody').on('mouseover', '#btn-1', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   });
+   $(document).ready(function() {
 
-   $('#clients tbody').on('mouseover', '#icon-os', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   });
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-   $('#clients tbody').on('mouseover', '#label-fd-version', function () {
-      $('[data-toggle="tooltip"]').tooltip();
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+      if(result.length > 0) {
+         $("#modal-001").modal();
+      }
+
+      getClients();
+
    });
-} );
 
 </script>
 
