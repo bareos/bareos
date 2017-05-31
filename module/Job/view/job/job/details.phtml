@@ -51,10 +51,9 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="jobdetails">
+<table class="table table-no-bordered table-hover" id="jobdetails">
 
 <thead class="bg-primary">
-   <th></th>
    <th><?php echo $this->translate("Job ID"); ?></th>
    <th><?php echo $this->translate("Job name"); ?></th>
    <th><?php echo $this->translate("Client"); ?></th>
@@ -82,7 +81,7 @@ $this->headTitle($title);
             <h3 class="panel-title"><?php echo $this->translate("Messages"); ?></h3>
          </div>
          <div class="panel-body">
-            <table class="table table-hover" id="joblog">
+            <table class="table table-no-bordered table-hover" id="joblog">
                <thead class="bg-primary">
                   <th><?php echo $this->translate("Timestamp"); ?></th>
                   <th><?php echo $this->translate("Message"); ?></th>
@@ -98,9 +97,8 @@ $this->headTitle($title);
             <h3 class="panel-title"><?php echo $this->translate("Used Volumes"); ?></h3>
          </div>
          <div class="panel-body">
-            <table class="table table-hover" id="jobmedia">
+            <table class="table table-no-bordered table-hover" id="jobmedia">
                <thead class="bg-primary">
-                  <th></th>
                   <th><?php echo $this->translate("Volume"); ?></th>
                </thead>
             </table>
@@ -112,10 +110,11 @@ $this->headTitle($title);
 
 
 <?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.plugins.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
 
 <!-- modal-001 start -->
@@ -138,289 +137,241 @@ $this->headTitle($title);
 </div>
 <!-- modal-001 end -->
 
-<style>
-
-td.details-control:after {
-   font-family: "Glyphicons Halflings";
-   content: "\e081";
-   cursor: pointer;
-}
-
-tr.shown td.details-control:after {
-   font-family: "Glyphicons Halflings";
-   content: "\e082";
-   cursor: pointer;
-}
-
-</style>
-
 <script>
 
-function expandJobDetails( d ) {
-   return '<table class="table table-bordered">'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Fileset"); ?></th>'+
-      '<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+d.filesetid+'">'+ d.fileset +'</a></td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Pool"); ?></th>'+
-      '<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+d.poolname+'">'+ d.poolname +'</a></td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Scheduled"); ?></th>'+
-      '<td>'+ d.schedtime +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Start"); ?></th>'+
-      '<td>'+ d.starttime +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("End"); ?></th>'+
-      '<td>'+ d.endtime +'</td>'+
-      '</tr>'+
-      '</table>';
-}
+   var jobdetails = null;
+   var joblog = null;
+   var jobmedia = null;
 
-function expandJobMedia( d ) {
-   return '<table class="table table-bordered">'+
-      '<tr>'+
-      '<th><?php echo $this->translate("First Index"); ?></th>'+
-      '<td>'+ d.firstindex +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Last Index"); ?></th>'+
-      '<td>'+ d.lastindex +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Start Block"); ?></th>'+
-      '<td>'+ d.startblock +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("End Block"); ?></th>'+
-      '<td>'+ d.endblock +'</td>'+
-      '</tr>'+
-      '</table>';
-}
+   function detailFormatterJobDetails(index, row) {
+      var html = [];
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Fileset"); ?></th>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>' + row.filesetid + '">' + row.fileset +'</a></td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Pool"); ?></th>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Scheduled"); ?></th>');
+      html.push('<td>' + row.schedtime + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Start"); ?></th>');
+      html.push('<td>' + row.starttime + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("End"); ?></th>');
+      html.push('<td>' + row.endtime + '</td>');
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
 
-$(document).ready(function() {
-   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+   function detailFormatterJobMedia(index, row) {
+      var html = [];
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("First Index"); ?></th>');
+      html.push('<td>' + row.firstindex + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Last Index"); ?></th>');
+      html.push('<td>' + row.lastindex + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Start Block"); ?></th>');
+      html.push('<td>' + row.startblock + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("End Block"); ?></th>');
+      html.push('<td>' + row.endblock + '</td>');
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
 
-   var jobdetails = $('#jobdetails').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=details&jobid='.$this->jobid; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": null, "orderable": false, "defaultContent": "", "className": "details-control" },
-         { "data": "jobid" },
-         { "data": "name" },
-         { "data": "client" },
-         { "data": "type" },
-         { "data": "level" },
-         { "data": "jobfiles" },
-         { "data": "jobbytes", "type": "file-size" },
-         { "data": "joberrors" },
-         { "data": "jobstatus" },
-         { "data": null, "orderable": false }
-      ],
-      "paging": false,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": false,
-      "info": false,
-      "bFilter": false,
-      "columnDefs": [
-         {
-            "targets": 2,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
+   function getJobDetails() {
+      jobdetails = $('#jobdetails').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=details&jobid='.$this->jobid; ?>',
+         method: 'get',
+         dataType: 'json',
+         detailView: true,
+         detailFormatter: 'detailFormatterJobDetails',
+         columns: [
+            {
+               field: 'jobid',
+            },
+            {
+               field: 'name',
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'client',
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'type',
+               formatter: function(value) {
+                  return formatJobType(value);
+               }
+            },
+            {
+               field: 'level',
+               formatter: function(value) {
+                  return formatJobLevel(value);
+               }
+            },
+            {
+               field: 'jobfiles',
+            },
+            {
+               field: 'jobbytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'joberrors',
+            },
+            {
+               field: 'jobstatus',
+               formatter: function(value) {
+                  return formatJobStatus(value);
+               }
+            },
+            {
+               field: 'action',
+               formatter: function(value, row, index) {
+                  if(row.type == 'B') {
+                     switch(row.jobstatus) {
+                        case 'T':
+                        case 'W':
+                        case 'E':
+                        case 'e':
+                        case 'f':
+                        case 'A':
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                        case 'F':
+                        case 'S':
+                        case 'm':
+                        case 'M':
+                        case 's':
+                        case 'j':
+                        case 'c':
+                        case 'd':
+                        case 't':
+                        case 'p':
+                        case 'q':
+                        case 'C':
+                        case 'R':
+                        case 'l':
+                           return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+row.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                     }
+                  }
+                  return '';
+               }
             }
-         },
-         {
-            "targets": 3,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 4,
-            "render": function(data, type, full, meta) {
-               return formatJobType(data);
-            }
-         },
-         {
-            "targets": 5,
-            "render": function(data, type, full, meta) {
-               return formatJobLevel(data);
-            }
-         },
-         {
-            "targets": 7,
-            "render": function(data, type, full, meta) {
-               return formatBytes(data);
-            }
-         },
-         {
-            "targets": 9,
-            "render": function(data, type, full, meta) {
-               return formatJobStatus(data);
-            }
+         ]
+      });
+   }
 
-         },
-         {
-            "targets": 10,
-            "render": function(data, type, full, meta) {
-               if(data.type == 'B') {
-                  switch(data.jobstatus) {
-                     case 'T':
-                     case 'W':
-                     case 'E':
-                     case 'e':
-                     case 'f':
-                     case 'A':
-                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+data.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
-                     case 'F':
-                     case 'S':
-                     case 'm':
-                     case 'M':
-                     case 's':
-                     case 'j':
-                     case 'c':
-                     case 'd':
-                     case 't':
-                     case 'p':
-                     case 'q':
-                     case 'C':
-                     case 'R':
-                     case 'l':
-                        return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+data.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+   function getJobLog() {
+      joblog = $('#joblog').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'job_table_job_log',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=logs&jobid='.$this->jobid; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         sortName: 'time',
+         sortOrder: 'desc',
+         columns: [
+            {
+               field: 'time',
+               sortable: true,
+            },
+            {
+               field: 'logtext',
+               formatter: function(value) {
+                  var msg = (value).replace(/\n/g, "<br />");
+                  if(msg.search("Error") > 0) {
+                     return msg.replace(/Error/g, '<span class="bg-danger text-danger">Error</span>');
+                  }
+                  else if(msg.search("error") > 0) {
+                     return msg.replace(/error/g, '<span class="bg-danger text-danger">error</span>');
+                  }
+                  else if(msg.search("Warning") > 0) {
+                     return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
+                  }
+                  else {
+                     return msg;
                   }
                }
-               return '';
             }
-         }
-      ]
-   } );
+         ]
+      });
+   }
 
-   var joblog = $('#joblog').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=logs&jobid='.$this->jobid; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": "time" },
-         { "data": null }
-      ],
-      "paging": true,
-      "ordering": true,
-      "info": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "order": [[0, 'desc']],
-      "columnDefs": [
-         {
-            "targets": 1,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               var msg = (data.logtext).replace(/\n/g, "<br />");
-               if(msg.search("Error") > 0) {
-                  return msg.replace(/Error/g, '<span class="bg-danger text-danger">Error</span>');
-               }
-               else if(msg.search("error") > 0) {
-                  return msg.replace(/error/g, '<span class="bg-danger text-danger">error</span>');
-               }
-               else if(msg.search("Warning") > 0) {
-                  return msg.replace(/Warning/g, '<span class="bg-warning text-warning">Warning</span>');
-               }
-               else {
-                  return msg;
+   function getJobMedia() {
+      jobmedia = $('#jobmedia').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'job_table_job_media',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobmedia&jobid='.$this->jobid; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         sortName: 'volumename',
+         sortOrder: 'asc',
+         detailView: true,
+         detailFormatter: 'detailFormatterJobMedia',
+         columns: [
+            {
+               field: 'volumename',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>' + value + '">' + value + '</a>';
                }
             }
-         }
-      ]
-   } );
+         ]
+      });
+   }
 
-   var jobmedia = $('#jobmedia').DataTable({
-      "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobmedia&jobid='.$this->jobid; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": null, "orderable": false, "defaultContent": "", "className": "details-control" },
-         { "data": "volumename" },
-      ],
-      "paging": true,
-      "ordering": true,
-      "info": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "order": [[0, 'desc']],
-      "columnDefs": [
-         {
-            "targets": 1,
-            "data": null,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>' + data + '">' + data + '</a>';
-            }
-         }
-      ]
+   $(document).ready(function() {
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getJobDetails();
+      getJobLog();
+      getJobMedia();
+
    });
 
-   $('#jobdetails tbody').on('click', 'td.details-control', function () {
-      var tr = $(this).closest('tr');
-      var row = jobdetails.row( tr );
-      if ( row.child.isShown() ) {
-         // This row is already open - close it
-         row.child.hide();
-         tr.removeClass('shown');
-      }
-      else {
-         // Open this row
-         row.child( expandJobDetails(row.data()) ).show();
-         tr.addClass('shown');
-      }
-   } );
-
-   $('#jobmedia tbody').on('click', 'td.details-control', function () {
-      var tr = $(this).closest('tr');
-      var row = jobmedia.row( tr );
-      if ( row.child.isShown() ) {
-         // This row is already open - close it
-         row.child.hide();
-         tr.removeClass('shown');
-      }
-      else {
-         // Open this row
-         row.child( expandJobMedia(row.data()) ).show();
-         tr.addClass('shown');
-      }
-   } ); 
-
-   $('#jobdetails tbody').on('mouseover', '#btn-1', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   });
-
-   $('#joblog').on('error.dt', function(e, settings, techNote, message) {
+   $('#joblog').on('load-error.bs.table', function(status, res) {
       $("#modal-001").modal();
    });
-
-} );
 
 </script>
 

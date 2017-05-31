@@ -71,7 +71,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="backupjobs">
+<table class="table table-no-bordered table-hover" id="jobactions">
    <thead class="bg-primary">
       <th><?php echo $this->translate("Job name"); ?></th>
       <th><?php echo $this->translate("Status"); ?></th>
@@ -86,76 +86,80 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
 
 <script>
-   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
-   if(result.length > 0) {
-      $("#modal-001").modal();
+   var jobactions = null;
+
+   function getJobActions() {
+      jobactions = $('#jobactions').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'job_jobactions',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=runjobs'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         sortName: 'name',
+         sortOrder: 'asc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'enabled',
+               sortable: true,
+               formatter: function(value) {
+                  if(value) {
+                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
+                  }
+                  else {
+                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
+                  }
+               }
+            },
+            {
+               field: 'actions',
+               formatter: function(value, row, index) {
+                  if(row.enabled) {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+row.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=disable&job='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+                  }
+                  else {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+row.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=enable&job='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+                  }
+               }
+            }
+         ]
+      });
    }
 
-   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+   $(document).ready(function() {
 
-   var table= $('#backupjobs').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=runjobs'; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns" : [
-         { "data": "name" },
-         { "data": "enabled", "orderable": true },
-         { "data": null, "orderable": false }
-      ],
-      "paging": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": true,
-      "info": true,
-      "order": [[0, 'asc']],
-      "columnDefs": [
-         {
-            "targets": 0,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 1,
-            "render": function(data, type, full, meta) {
-               if(data) {
-                  return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-               }
-               else {
-                  return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-               }
-            }
-         },
-         {
-            "targets": 2,
-            "render": function(data, type, full, meta) {
-               if(data.enabled) {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+data.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=disable&job='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-               }
-               else {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+data.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=enable&job='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-               }
-            }
-         }
-      ]
-   } );
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
-   $('#backupjobs tbody').on('mouseover', '#btn-1', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   } );
+      if(result.length > 0) {
+         $("#modal-001").modal();
+      }
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getJobActions();
+
+   });
 
 </script>
 
