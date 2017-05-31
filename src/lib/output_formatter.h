@@ -118,7 +118,7 @@ private:
    alist *filters;
    char *hidden_columns;
    POOL_MEM *result_message_plain;
-   static const int max_message_length_shown_in_error = 1024;
+   static const unsigned int max_message_length_shown_in_error = 1024;
 #if HAVE_JANSSON
    json_t *result_json;
    alist *result_stack_json;
