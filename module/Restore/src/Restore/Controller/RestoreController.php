@@ -88,6 +88,7 @@ class RestoreController extends AbstractActionController
 
       $this->setRestoreParams();
       $errors = null;
+      $result = null;
 
       if($this->restore_params['client'] == null) {
          try {
@@ -201,7 +202,10 @@ class RestoreController extends AbstractActionController
             $this->bsock->disconnect();
 
             return new ViewModel(array(
-               'result' => $result
+               'restore_params' => $this->restore_params,
+               'form' => $form,
+               'result' => $result,
+               'errors' => $errors
             ));
 
          }
@@ -212,6 +216,7 @@ class RestoreController extends AbstractActionController
             return new ViewModel(array(
                'restore_params' => $this->restore_params,
                'form' => $form,
+               'result' => $result,
                'errors' => $errors
             ));
 
@@ -225,6 +230,7 @@ class RestoreController extends AbstractActionController
          return new ViewModel(array(
             'restore_params' => $this->restore_params,
             'form' => $form,
+            'result' => $result,
             'errors' => $errors
          ));
 

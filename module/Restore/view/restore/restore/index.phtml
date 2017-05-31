@@ -31,7 +31,7 @@ $this->headTitle($title);
 <?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
 
 <!-- modal-001 start -->
-<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel1">
   <div class="modal-dialog modal-md">
     <div class="modal-content">
    <div class="modal-header">
@@ -39,8 +39,8 @@ $this->headTitle($title);
    <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
       </div>
       <div class="modal-body">
-   <p><?php echo $this->translate("Error message received:"); ?></p>
-   <p class="text-danger"><?php echo $this->errors; ?></p>
+         <p><?php echo $this->translate("Error message received:"); ?></p>
+         <p class="text-danger"><?php echo $this->errors; ?></p>
       </div>
       <div class="modal-footer">
          <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
@@ -50,19 +50,26 @@ $this->headTitle($title);
 </div>
 <!-- modal-001 end -->
 
-<?php if(isset($this->result)) : ?>
-
-   <div class="row">
-   <div class="col-md-12">
-   <pre>
-   <code>
-   <?php echo $this->result; ?>
-   </code>
-   </pre>
-   </div>
-   </div>
-
-<?php elseif(!isset($this->result)) : ?>
+<!-- modal-002 start -->
+<div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel2">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Director message"); ?></h4>
+      </div>
+      <div class="modal-body">
+         <pre><code>
+<?php echo $this->result; ?>
+         </code></pre>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-002 end -->
 
 <div class="panel panel-default">
    <div class="panel-heading">
@@ -338,13 +345,18 @@ $this->headTitle($title);
 
       var errors = '<?php echo str_replace(array("\n","\r"), "", $this->errors); ?>';
 
-      if(errors != null) {
+      if(errors.length > 0) {
          $("#modal-001").modal();
+      }
+
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+      if(result.length > 0) {
+         $("#modal-002").modal();
       }
 
    });
 
 </script>
 
-<?php endif; ?>
 <?php endif; ?>
