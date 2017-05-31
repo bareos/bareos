@@ -778,8 +778,8 @@ bool B_DB::create_fileset_record(JCR *jcr, FILESET_DBR *fsr)
            esc_fs, esc_md5, fsr->cCreateTime, esc_filesettext.c_str());
    } else {
       Mmsg(cmd,
-           "INSERT INTO FileSet (FileSet,MD5,CreateTime) "
-           "VALUES ('%s','%s','%s')",
+           "INSERT INTO FileSet (FileSet,MD5,CreateTime,FileSetText) "
+           "VALUES ('%s','%s','%s','')",
            esc_fs, esc_md5, fsr->cCreateTime);
    }
 
