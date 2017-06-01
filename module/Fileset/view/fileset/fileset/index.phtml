@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -27,79 +27,3 @@ $title = _('Filesets');
 $this->headTitle($title);
 
 ?>
-
-<div class="row">
-
-<div class="col-md-12">
-<div class="panel panel-default">
-
-<div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->translate("Filesets"); ?></h3>
-</div>
-
-<div class="panel-body">
-
-<table class="table table-hover" id="filesets">
-
-<thead class="bg-primary">
-   <th><?php echo $this->translate("Id"); ?></th>
-   <th><?php echo $this->translate("Name"); ?></th>
-   <th><?php echo $this->translate("Creation time"); ?></th>
-</thead>
-
-</table>
-
-</div>
-</div>
-</div>
-</div>
-
-<?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
-?>
-
-<script>
-
-   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-
-   var tab_filesets = $('#filesets').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=all'; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": "filesetid" },
-         { "data": null },
-         { "data": "createtime" },
-      ],
-      "paging": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": true,
-      "info": true,
-      "order": [[0, 'desc']],
-      "columnDefs": [
-         {
-            "targets": 0,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 1,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/fileset/details/'; ?>'+data.filesetid+'">'+data.fileset+'</a>';
-            }
-         }
-      ]
-   } );
-
-</script>
