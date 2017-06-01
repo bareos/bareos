@@ -39,7 +39,7 @@ msgstr ""
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
-msgstr "Детали к накопителю"
+msgstr "Информация о накопителе"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:32
 #: ../../../module/Storage/view/storage/storage/status.phtml:9
@@ -49,7 +49,7 @@ msgstr "Детали к накопителю"
 #: ../../../module/Media/view/media/media/details.phtml:33
 #: ../../../module/Media/view/media/media/index.phtml:33
 msgid "Devices"
-msgstr "Устроайства"
+msgstr "Устройства"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:33
 #: ../../../module/Storage/view/storage/storage/status.phtml:10
@@ -78,7 +78,7 @@ msgstr "Пулы"
 #: ../../../module/Application/config/module.config.php:171
 #: ../../../module/Application/config/module.config.php:176
 msgid "Volumes"
-msgstr "Объемы"
+msgstr "Тома"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:51
 msgid "Director message"
@@ -100,11 +100,11 @@ msgstr "Метка штрих-кода"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:82
 msgid "Assign media to this pool."
-msgstr ""
+msgstr "Задать носитель для пула."
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:84
 msgid "Use this drive for labeling."
-msgstr ""
+msgstr "Использовать устройство для маркирования."
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:88
 #: ../../../module/Job/view/job/job/details.phtml:252
@@ -115,7 +115,7 @@ msgstr "Отмена"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:103
 msgid "Import/Export Slots"
-msgstr "Импорт/Экспорт слоты"
+msgstr "Импорт/Экспорт слотов"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:108
 #: ../../../module/Storage/view/storage/storage/details.phtml:149
@@ -156,7 +156,7 @@ msgstr "Загружено"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:144
 msgid "Slots"
-msgstr "Стоты"
+msgstr "Слоты"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:151
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
@@ -174,7 +174,7 @@ msgstr "Байты"
 #: ../../../module/Media/view/media/media/details.phtml:153
 #: ../../../module/Media/view/media/media/index.phtml:60
 msgid "Last written"
-msgstr "Прследние записи"
+msgstr "Последние записи"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:153
 msgid "Expiration"
@@ -219,7 +219,7 @@ msgstr "Слоты обновления"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:395
 msgid "Release"
-msgstr "Версия"
+msgstr "Освободить"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:448
 msgid "Import"
@@ -236,11 +236,11 @@ msgstr "Статус накопителя"
 #: ../../../module/Storage/view/storage/storage/index.phtml:27
 #: ../../../module/Application/config/module.config.php:157
 msgid "Storages"
-msgstr "Запоминающие устройство"
+msgstr "Хранение"
 
 #: ../../../module/Storage/view/storage/storage/index.phtml:48
 msgid "Storage Devices"
-msgstr "Запоминающие устройства (Накопители)"
+msgstr "Устройства"
 
 #: ../../../module/Storage/view/storage/storage/index.phtml:56
 #: ../../../module/Pool/view/pool/pool/details.phtml:57
@@ -283,7 +283,7 @@ msgstr "Управление чейнджером"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:27
 msgid "Pool details"
-msgstr "Детали пула"
+msgstr "Информация о пуле"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:58
 #: ../../../module/Pool/view/pool/pool/details.phtml:91
@@ -314,13 +314,13 @@ msgstr "Максимум заданий в томе"
 #: ../../../module/Pool/view/pool/pool/details.phtml:63
 #: ../../../module/Pool/view/pool/pool/index.phtml:62
 msgid "Maximum volume bytes"
-msgstr "Максимум байтов в томе"
+msgstr "Максимум байт в томе"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:90
 #: ../../../module/Media/view/media/media/details.phtml:58
 #: ../../../module/Media/view/media/media/index.phtml:58
 msgid "Storage"
-msgstr "Запоминающие устройства"
+msgstr "Накопитель"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:94
 #: ../../../module/Media/view/media/media/details.phtml:62
@@ -332,7 +332,7 @@ msgstr "Задержка/Окончание"
 #: ../../../module/Media/view/media/media/details.phtml:63
 #: ../../../module/Media/view/media/media/index.phtml:63
 msgid "Maximum bytes"
-msgstr "Максимум байтов"
+msgstr "Максимум байт"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:96
 #: ../../../module/Media/view/media/media/details.phtml:64
@@ -353,17 +353,17 @@ msgstr "Первые записи"
 #: ../../../module/Pool/view/pool/pool/details.phtml:146
 #: ../../../module/Media/view/media/media/details.phtml:157
 msgid "Volume jobs"
-msgstr "Объем заданий"
+msgstr "Задания тома"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:150
 #: ../../../module/Media/view/media/media/details.phtml:161
 msgid "Recycle"
-msgstr "Переработка"
+msgstr "Переиспользовать"
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
 #: ../../../module/Application/config/module.config.php:125
 msgid "Dashboard"
-msgstr "Панель управления"
+msgstr "Панель"
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:65
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:41
@@ -378,12 +378,12 @@ msgstr "Ожидание"
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:67
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:49
 msgid "Terminated successfully"
-msgstr "Завершено успешно"
+msgstr "Успех"
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:68
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:53
 msgid "Terminated unsuccessfully"
-msgstr "Завершено неудачно"
+msgstr "Сбой"
 
 #: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
@@ -401,7 +401,7 @@ msgstr "Последний статус задания (по имени)"
 #: ../../../module/Job/view/job/job/actions.phtml:76
 #: ../../../module/Media/view/media/media/details.phtml:89
 msgid "Job name"
-msgstr "Наименование фонового задания"
+msgstr "Имя задания"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../../../module/Client/view/client/client/details.phtml:76
@@ -409,7 +409,7 @@ msgstr "Наименование фонового задания"
 #: ../../../module/Job/view/job/job/index.phtml:74
 #: ../../../module/Media/view/media/media/details.phtml:88
 msgid "Job ID"
-msgstr "Идентификатор фонового задания"
+msgstr "ID задания"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:41
 #: ../../../module/Client/view/client/client/details.phtml:43
@@ -511,7 +511,7 @@ msgstr "Файлы"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:486
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
 msgid "Restore"
-msgstr "Восстановить"
+msgstr "Восстановление"
 
 #: ../../../module/Client/view/client/client/details.phtml:216
 #: ../../../module/Job/view/job/job/index.phtml:302
@@ -558,7 +558,7 @@ msgstr "Включен"
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
 msgid "jobname"
-msgstr "Наименование фонового задания"
+msgstr "Имя задания"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:71
 msgid "Time period"
@@ -606,15 +606,15 @@ msgstr "ожидание"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:100
 msgid "terminated unsuccessfully"
-msgstr "завершено неудачно"
+msgstr "сбой"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:101
 msgid "terminated successfully"
-msgstr "завершено успешно"
+msgstr "успех"
 
 #: ../../../module/Job/view/job/job/details.phtml:49
 msgid "Job"
-msgstr "Фоновое задание"
+msgstr "Задание"
 
 #: ../../../module/Job/view/job/job/details.phtml:65
 #: ../../../module/Job/view/job/job/index.phtml:81
@@ -645,15 +645,15 @@ msgstr "Запланировано"
 #: ../../../module/Job/view/job/job/index.phtml:302
 #: ../../../module/Job/view/job/job/index.phtml:312
 msgid "Rerun"
-msgstr "Возврат"
+msgstr "Перезапустить"
 
 #: ../../../module/Job/view/job/job/index.phtml:65
 msgid "Job list"
-msgstr "Список фоновых заданий"
+msgstr "Список заданий"
 
 #: ../../../module/Job/view/job/job/index.phtml:106
 msgid "Failed to retrieve data from Bareos director"
-msgstr "Не удалось извлечь данные из Bareos директора"
+msgstr "Не удалось получить данные от Bareos директора"
 
 #: ../../../module/Job/view/job/job/index.phtml:109
 msgid ""
@@ -674,7 +674,7 @@ msgstr ""
 
 #: ../../../module/Job/view/job/job/actions.phtml:69
 msgid "Job Actions"
-msgstr "Процедуры для фоновых заданий"
+msgstr "Действия для заданий"
 
 #: ../../../module/Job/view/job/job/actions.phtml:146
 #: ../../../module/Job/view/job/job/actions.phtml:149
@@ -684,11 +684,11 @@ msgstr "Запуск"
 
 #: ../../../module/Media/view/media/media/details.phtml:27
 msgid "Volume details"
-msgstr "Детали по объему"
+msgstr "Информация о томе"
 
 #: ../../../module/Media/view/media/media/details.phtml:80
 msgid "Jobs on volume"
-msgstr "Фоновые задания по объему"
+msgstr "Задания тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:95
 msgid "Starttime"
@@ -700,23 +700,23 @@ msgstr "Времы окончания"
 
 #: ../../../module/Media/view/media/media/details.phtml:165
 msgid "Volume writes"
-msgstr "Объем записей"
+msgstr "Записи тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:173
 msgid "Media Id"
-msgstr "Идентификатор носителя"
+msgstr "ID носителя"
 
 #: ../../../module/Media/view/media/media/details.phtml:177
 msgid "Volume Blocks"
-msgstr "Объем блоков"
+msgstr "Блоки тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:181
 msgid "Volume use duration"
-msgstr "Разрешенная продолжительность использования объема"
+msgstr "Разрешенная продолжительность использования тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:185
 msgid "Volume Pool Id"
-msgstr "Идентификатор пула объема"
+msgstr "ID пула тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:189
 msgid "In changer"
@@ -728,11 +728,11 @@ msgstr "Файлы тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:197
 msgid "Max. volume jobs"
-msgstr "Максимум заданий в объеме"
+msgstr "Макс. заданий в томе"
 
 #: ../../../module/Media/view/media/media/details.phtml:201
 msgid "Volume mounts"
-msgstr "Сонтаж томов"
+msgstr "Монтаж томов"
 
 #: ../../../module/Media/view/media/media/details.phtml:205
 msgid "Volume capacity bytes"
@@ -760,15 +760,15 @@ msgstr "Тип идентификатора"
 
 #: ../../../module/Media/view/media/media/details.phtml:233
 msgid "Device Id"
-msgstr "Идентификатор носителя"
+msgstr "ID устройства"
 
 #: ../../../module/Media/view/media/media/details.phtml:237
 msgid "Location Id"
-msgstr "Идентификатор ячейки памяти"
+msgstr "ID ячейки памяти"
 
 #: ../../../module/Media/view/media/media/details.phtml:241
 msgid "Recycle count"
-msgstr "Количество циклов"
+msgstr "Количество циклов переиспользования"
 
 #: ../../../module/Media/view/media/media/details.phtml:245
 msgid "Initial write"
@@ -776,11 +776,11 @@ msgstr "Начальная запись"
 
 #: ../../../module/Media/view/media/media/details.phtml:249
 msgid "Scratch Pool Id"
-msgstr "Временный идентификатор пула"
+msgstr "ID временного пула"
 
 #: ../../../module/Media/view/media/media/details.phtml:253
 msgid "Recycle pool Id"
-msgstr "Идентификатор циклов пула"
+msgstr "ID переиспользуемого пула"
 
 #: ../../../module/Media/view/media/media/details.phtml:257
 msgid "Comment"
@@ -789,7 +789,7 @@ msgstr "Комментарий"
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
 msgid "Schedule Details"
-msgstr "Расписание подробнее"
+msgstr "Информация о расписании"
 
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
@@ -817,16 +817,16 @@ msgstr "Статус планировщика"
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
 #: ../../../module/Application/config/module.config.php:153
 msgid "Schedules"
-msgstr "Расписание выполнения резервного копирования"
+msgstr "Расписание"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
-msgstr "Детали по набору файлов"
+msgstr "Информация о наборе файлов"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
 #: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
 msgid "Id"
-msgstr "Идентификатор"
+msgstr "Id"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
 msgid "MD5 checksum"
@@ -850,11 +850,11 @@ msgstr "Консоль"
 
 #: ../../../module/Director/view/director/director/console.phtml:42
 msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (пакетный режим), просьба обращаться с осторожностью."
+msgstr "bconsole (пакетный режим), будьте осторожны."
 
 #: ../../../module/Director/view/director/director/console.phtml:42
 msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "Все команды должны быть один лайнер, диалоги не работают."
+msgstr "Используйте однострочные команды, диалоги не работают."
 
 #: ../../../module/Director/view/director/director/console.phtml:42
 msgid "Type help for a list of commands."
@@ -868,7 +868,7 @@ msgstr "Директор"
 
 #: ../../../module/Director/view/director/director/index.phtml:48
 msgid "Director Status"
-msgstr "Директор-статус"
+msgstr "Статус Директора"
 
 #: ../../../module/Director/view/director/director/messages.phtml:44
 msgid "Refresh"
@@ -876,7 +876,7 @@ msgstr "Обновить"
 
 #: ../../../module/Director/view/director/director/messages.phtml:51
 msgid "Director messages"
-msgstr "Директор-сообщения"
+msgstr "Сообщения Директора"
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
 msgid ""
@@ -896,7 +896,7 @@ msgstr ""
 
 #: ../../../module/Application/config/module.config.php:129
 msgid "Jobs"
-msgstr "Фоновое задание"
+msgstr "Задания"
 
 #: ../../../module/Application/view/layout/layout.phtml:94
 #, fuzzy
@@ -1004,11 +1004,11 @@ msgstr "Резервное копирование"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:184
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:201
 msgid "Restore to client"
-msgstr "Восстановить клиента"
+msgstr "Восстановить на клиент"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:218
 msgid "Restore to (another) client"
-msgstr "Восстановить (другого) клиента"
+msgstr "Восстановить на (другой) клиент"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:237
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:252
