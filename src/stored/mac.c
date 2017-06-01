@@ -3,7 +3,7 @@
 
    Copyright (C) 2006-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,6 +105,8 @@ static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
  */
 static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
 {
+   bool retval = false;
+   bool translated_record = false;
    JCR *jcr = dcr->jcr;
    DEVICE *dev = jcr->dcr->dev;
    char buf1[100], buf2[100];
@@ -119,7 +121,8 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
     * If label and not for us, discard it
     */
    if (rec->FileIndex < 0 && rec->match_stat <= 0) {
-      return true;
+      retval = true;
+      goto bail_out;
    }
 
    /*
@@ -130,7 +133,8 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
    case VOL_LABEL:
    case EOT_LABEL:
    case EOM_LABEL:
-      return true;                    /* don't write vol labels */
+      retval = true;                    /* don't write vol labels */
+      goto bail_out;
    }
 
 //   if (jcr->is_JobType(JT_BACKUP)) {
@@ -168,15 +172,35 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
          jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
          stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
-   while (!write_record_to_block(jcr->dcr, rec)) {
+   /*
+    * Perform record translations.
+    */
+   jcr->dcr->before_rec = rec;
+   jcr->dcr->after_rec = NULL;
+   if (generate_plugin_event(jcr, bsdEventWriteRecordTranslation, jcr->dcr) != bRC_OK) {
+      goto bail_out;
+   }
+
+   /*
+    * The record got translated when we got an after_rec pointer after calling the
+    * bsdEventWriteRecordTranslation plugin event. If no translation has taken place
+    * we just point the after_rec pointer to same DEV_RECORD as in the before_rec pointer.
+    */
+   if (!jcr->dcr->after_rec) {
+      jcr->dcr->after_rec = jcr->dcr->before_rec;
+   } else {
+      translated_record = true;
+   }
+
+   while (!write_record_to_block(jcr->dcr, jcr->dcr->after_rec)) {
       Dmsg4(200, "!write_record_to_block blkpos=%u:%u len=%d rem=%d\n",
-            dev->file, dev->block_num, rec->data_len, rec->remainder);
+            dev->file, dev->block_num, jcr->dcr->after_rec->data_len, jcr->dcr->after_rec->remainder);
       if (!jcr->dcr->write_block_to_device()) {
          Dmsg2(90, "Got write_block_to_dev error on device %s. %s\n",
             dev->print_name(), dev->bstrerror());
          Jmsg2(jcr, M_FATAL, 0, _("Fatal append error on device %s: ERR=%s\n"),
                dev->print_name(), dev->bstrerror());
-         return false;
+         goto bail_out;
       }
       Dmsg2(200, "===== Wrote block new pos %u:%u\n", dev->file, dev->block_num);
    }
@@ -184,21 +208,30 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
    /*
     * Restore packet
     */
-   rec->VolSessionId = rec->last_VolSessionId;
-   rec->VolSessionTime = rec->last_VolSessionTime;
-   if (rec->FileIndex < 0) {
-      return true;                    /* don't send LABELs to Dir */
+   jcr->dcr->after_rec->VolSessionId = jcr->dcr->after_rec->last_VolSessionId;
+   jcr->dcr->after_rec->VolSessionTime = jcr->dcr->after_rec->last_VolSessionTime;
+   if (jcr->dcr->after_rec->FileIndex < 0) {
+      retval = true;                    /* don't send LABELs to Dir */
+      goto bail_out;
    }
 
-   jcr->JobBytes += rec->data_len;   /* increment bytes of this job */
+   jcr->JobBytes += jcr->dcr->after_rec->data_len;   /* increment bytes of this job */
 
    Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
-         jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
-         stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
+         jcr->JobId, FI_to_ascii(buf1, jcr->dcr->after_rec->FileIndex), jcr->dcr->after_rec->VolSessionId,
+         stream_to_ascii(buf2, jcr->dcr->after_rec->Stream, jcr->dcr->after_rec->FileIndex), jcr->dcr->after_rec->data_len);
 
-   send_attrs_to_dir(jcr, rec);
+   send_attrs_to_dir(jcr, jcr->dcr->after_rec);
 
-   return true;
+   retval = true;
+
+bail_out:
+   if (translated_record) {
+      free_record(jcr->dcr->after_rec);
+      jcr->dcr->after_rec = NULL;
+   }
+
+   return retval;
 }
 
 /**
