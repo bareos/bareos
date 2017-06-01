@@ -5,7 +5,7 @@
  * bareos-webui - Bareos Web-Frontend
  *
  * @link      https://github.com/bareos/bareos-webui for the canonical source repository
- * @copyright Copyright (c) 2013-2015 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
  * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
  *
  * This program is free software: you can redistribute it and/or modify
@@ -70,7 +70,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="schedules">
+<table class="table table-no-bordered table-hover" id="schedules">
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
@@ -87,79 +87,83 @@ $this->headTitle($title);
 
 <?php
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
 
 <script>
 
-$(document).ready(function() {
-   var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+   var schedules = null;
 
-   if(result.length > 0) {
-      $("#modal-001").modal();
+   function getSchedules() {
+
+      schedules = $('#schedules').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'schedules_index',
+         url: '<?php echo $this->url('schedule', array('action' => 'getData'), null) . '?data=all'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showPaginationSwitch: true,
+         showRefresh: true,
+         sortName: 'name',
+         sortOrder: 'asc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/schedule/details?schedule='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'enabled',
+               sortable: true,
+               formatter: function(value) {
+                  if(value) {
+                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
+                  }
+                  else {
+                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
+                  }
+               }
+            },
+            {
+               field: 'action',
+               formatter: function(value, row, index) {
+                  if(row.enabled) {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=disable&schedule='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+                  }
+                  else {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=enable&schedule='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+                  }
+               }
+            }
+         ]
+      });
    }
 
-   var table= $('#schedules').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('schedule', array('action' => 'getData'), null) . '?data=all'; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": "name", "defaultContent": "", "orderable": true },
-         { "data": "enabled", "defaultContent": "", "orderable": true },
-         { "data": null, "defaultContent": "", "orderable": false },
-      ],
-      "paging": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": true,
-      "info": true,
-      "order": [[0, 'asc']],
-      "columnDefs": [
-         {
-            "targets": 0,
-            "data": "name",
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/schedule/details?schedule='; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 1,
-            "render": function(data, type, full, meta) {
-               if(data) {
-                  return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
-               }
-               else {
-                  return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
-               }
-            }
-         },
-         {
-            "targets": 2,
-            "render": function(data, type, full, meta) {
-               if(data.enabled) {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=disable&schedule='+data.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
-               }
-               else {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/schedule/index?action=enable&schedule='+data.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
-               }
-            }
-         }
-      ]
-   } );
+   $(document).ready(function() {
 
-   $('#schedules tbody').on('mouseover', '#btn-1', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   })
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
 
-} );
+      if(result.length > 0) {
+         $("#modal-001").modal();
+      }
+
+      getSchedules();
+
+   });
 
 </script>
 
