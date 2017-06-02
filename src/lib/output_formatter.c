@@ -615,7 +615,7 @@ bool OUTPUT_FORMATTER::process_text_buffer()
          } else {
             error_msg.strcat("Maybe result message to long?\n");
          }
-         Emsg0(M_ERROR, 0, error_msg.c_str());
+         Dmsg0(100, error_msg.c_str());
       }
       result_message_plain->strcpy("");
    }
@@ -839,7 +839,7 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
          } else {
             error_msg.strcat("Maybe result message to long?\n");
          }
-         Emsg0(M_ERROR, 0, error_msg.c_str());
+         Dmsg0(100, error_msg.c_str());
          json_send_error_message(error_msg.c_str());
       }
       free(string);
