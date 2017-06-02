@@ -724,7 +724,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (jobid > 0) {
          ua->db->list_base_files_for_job(ua->jcr, jobid, ua->send);
       } else {
-         ua->error_msg(_("missing parameter: jobid\n"));
+         ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("files"))) {
       /*
@@ -734,7 +734,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (jobid > 0) {
          ua->db->list_files_for_job(ua->jcr, jobid, ua->send);
       } else {
-         ua->error_msg(_("missing parameter: jobid\n"));
+         ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("fileset"))) {
       int filesetid = 0;
@@ -761,7 +761,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
 
          ua->db->list_filesets(ua->jcr, &jr, query_range.c_str(), ua->send, llist);
       } else {
-         ua->error_msg(_("missing parameter: jobid or filesetid\n"));
+         ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db or missing filesetid\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("filesets"))) {
       /*
@@ -783,7 +783,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (jobid >= 0) {
          ua->db->list_jobmedia_records(ua->jcr, jobid, ua->send, llist);
       } else {
-         ua->error_msg(_("missing parameter: jobid\n"));
+         ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("joblog"))) {
       /*
@@ -793,7 +793,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       if (jobid >= 0) {
          ua->db->list_joblog_records(ua->jcr, jobid, ua->send, llist);
       } else {
-         ua->error_msg(_("missing parameter: jobid\n"));
+         ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db\n"));
       }
    } else if (bstrcasecmp(ua->argk[1], NT_("log"))) {
       bool reverse;
