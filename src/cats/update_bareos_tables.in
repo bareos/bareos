@@ -150,7 +150,7 @@ do
    case ${db_type} in
       sqlite3)
          sqlite3 $* ${working_dir}/${db_name}.db < ${temp_sql_schema}
-         retval=0
+         retval=$?
          ;;
       mysql)
          mysql -D ${db_name} $* < ${temp_sql_schema}
