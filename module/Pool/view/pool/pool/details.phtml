@@ -50,7 +50,7 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="pool">
+<table class="table table-no-bordered table-hover" id="pool">
 
 <thead class="bg-primary">
    <th><?php echo $this->translate("Name"); ?></th>
@@ -81,10 +81,9 @@ $this->headTitle($title);
 
 <div class="panel-body">
 
-<table class="table table-hover" id="volumes">
+<table class="table table-no-bordered table-hover" id="vols">
 
 <thead class="bg-primary">
-   <th></th>
    <th><?php echo $this->translate("Name"); ?></th>
    <th><?php echo $this->translate("Storage"); ?></th>
    <th><?php echo $this->translate("Type"); ?></th>
@@ -103,10 +102,11 @@ $this->headTitle($title);
 </div>
 
 <?php
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.plugins.js');
    echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.functions.js');
-   echo $this->headScript()->prependFile($this->basePath() . '/js/datatables.min.js');
-   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/datatables.min.css');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
 ?>
 
 <!-- modal-001 start -->
@@ -129,188 +129,164 @@ $this->headTitle($title);
 </div>
 <!-- modal-001 end -->
 
-<style>
-
-td.details-control:after {
-   font-family: "Glyphicons Halflings";
-   content: "\e081";
-   cursor: pointer;
-}
-
-tr.shown td.details-control:after {
-   font-family: "Glyphicons Halflings";
-   content: "\e082";
-   cursor: pointer;
-}
-
-</style>
-
 <script>
 
-function format( d ) {
-   return '<table class="table table-bordered">'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Label date"); ?></th>'+
-      '<td>'+ d.labeldate +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("First written"); ?></th>'+
-      '<td>'+ d.firstwritten +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Last written"); ?></th>'+
-      '<td>'+ d.lastwritten +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Volume jobs"); ?></th>'+
-      '<td>'+ d.voljobs +'</td>'+
-      '</tr>'+
-      '<tr>'+
-      '<th><?php echo $this->translate("Recycle"); ?></th>'+
-      '<td>'+ formatRecycle(d.recycle) +'</td>'+
-      '</tr>'+
-      '</table>';
-}
+   var pool = null;
+   var vols = null;
 
-$(document).ready(function() {
-
-   setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
-   setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
-
-   var tab_pool = $('#pool').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=details&pool='.$this->pool; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns" : [
-         { "data": "name" },
-         { "data": "pooltype" },
-         { "data": "numvols" },
-         { "data": "maxvols" },
-         { "data": "volretention" },
-         { "data": "maxvoljobs" },
-         { "data": "maxvolbytes" }
-      ],
-      "paging": false,
-      "ordering": false,
-      "info": false,
-      "pagingType": "full_numbers",
-      "stateSave": true,
-      "bFilter": false,
-      "columnDefs": [
-         {
-            "targets": 4,
-            "render": function(data, type, full, meta) {
-               return formatRetention(data);
+   function getPool() {
+      pool = $('#pool').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=details&pool='.$this->pool; ?>',
+         method: 'get',
+         dataType: 'json',
+         columns: [
+            {
+               field: 'name',
+            },
+            {
+               field: 'pooltype',
+            },
+            {
+               field: 'numvols',
+            },
+            {
+               field: 'maxvols',
+            },
+            {
+               field: 'volretention',
+               formatter: function(value) {
+                  return formatRetention(value);
+               }
+            },
+            {
+               field: 'maxvoljobs',
+            },
+            {
+               field: 'maxvolbytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
             }
-         },
-         {
-            "targets": 6,
-            "render": function(data, type, full, meta) {
-               return formatBytes(data);
+         ]
+      });
+   }
+
+   function getVols() {
+      vols = $('#vols').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'pool_volumes',
+         url: '<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=volumes&pool='.$this->pool; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showToggle: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'volumename',
+         sortOrder: 'asc',
+         detailView: true,
+         detailFormatter: 'detailFormatterVolume',
+         columns: [
+            {
+               field: 'volumename',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'storage',
+               sortable: true,
+            },
+            {
+               field: 'mediatype',
+               sortable: true,
+            },
+            {
+               field: 'lastwritten',
+               sortable: true,
+               formatter: function(value) {
+                  return formatLastWritten(value);
+               }
+            },
+            {
+               field: 'volstatus',
+               sortable: true,
+            },
+            {
+               field: 'retention',
+               sortable: true,
+               formatter: function(value, row, index) {
+                  return formatExpiration(row.volstatus, row.lastwritten, row.volretention);
+               }
+            },
+            {
+               field: 'maxvolbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'volbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
             }
-         }
-      ]
+         ]
+      });
+   }
 
-   } );
+   function detailFormatterVolume(index, row) {
+      var html = [];
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Label date"); ?></th>');
+      html.push('<td>' + row.labeldate + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("First written"); ?></th>');
+      html.push('<td>' + row.firstwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Last written"); ?></th>');
+      html.push('<td>' + row.lastwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume jobs"); ?></th>');
+      html.push('<td>' + row.voljobs + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Recycle"); ?></th>');
+      html.push('<td>' + formatRecycle(row.recycle) + '</td>');
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
 
-   var tab_volumes = $('#volumes').DataTable( {
-      "ajax": {
-         "url": "<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=volumes&pool='.$this->pool; ?>",
-         "dataSrc": ""
-      },
-      "language": {
-         "url": "<?php echo $this->basePath() . '/js/dataTables/language/'; ?>" + getLocale('<?php echo $_SESSION['bareos']['locale']; ?>')
-      },
-      "columns": [
-         { "data": null, "orderable": false, "defaultContent": '', "className": 'details-control' },
-         { "data": "volumename" },
-         { "data": "storage" },
-         { "data": "mediatype" },
-         { "data": "lastwritten" },
-         { "data": "volstatus" },
-         { "data": null },
-         { "data": "maxvolbytes", "type": "file-size" },
-         { "data": "volbytes", "type": "file-size" },
-         { "data": "lastwritten" }
-      ],
-      "paging": true,
-      "pagingType": "full_numbers",
-      "lengthMenu": [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
-      "pageLength": <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
-      "stateSave": <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
-      "ordering": true,
-      "info": true,
-      "order": [[4, 'desc']],
-      "columnDefs": [
-         {
-            "targets": 1,
-            "render": function(data, type, full, meta) {
-               return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+data+'">'+data+'</a>';
-            }
-         },
-         {
-            "targets": 4,
-            "orderData": 9,
-            "render": function(data, type, full, meta) {
-               return formatLastWritten(data);
-            }
-         },
-         {
-            "targets": 6,
-            "render": function(data, type, full, meta) {
-               return formatExpiration(data.volstatus, data.lastwritten, data.volretention);
-            }
-         },
-         {
-            "targets": 7,
-            "render": function(data, type, full, meta) {
-               return formatBytes(data);
-            }
-         },
-         {
-            "targets": 8,
-            "render": function(data, type, full, meta) {
-               return formatBytes(data);
-            }
-         },
-         {
-            "targets": 9,
-            "visible": false,
-            "searchable": false
-         }
-      ]
-   } );
+   $(document).ready(function() {
 
-   $('#volumes tbody').on('mouseover', '#lastwritten', function () {
-      $('[data-toggle="tooltip"]').tooltip();
-   } );
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
 
-   $('#volumes tbody').on('click', 'td.details-control', function () {
-      var tr = $(this).closest('tr');
-      var row = tab_volumes.row( tr );
-      if ( row.child.isShown() ) {
-         // This row is already open - close it
-         row.child.hide();
-         tr.removeClass('shown');
-      }
-      else {
-         // Open this row
-         row.child( format(row.data()) ).show();
-         tr.addClass('shown');
-      }
-   } );
+      getPool();
+      getVols();
 
-   $.fn.dataTable.ext.errMode = 'throw';
+      $('#vols').on('load-error.bs.table', function(status, res) {
+         $("#modal-001").modal();
+      });
 
-   $('#volumes').on('error.dt', function(e, settings, techNote, message) {
-      $("#modal-001").modal();
-   } );
-
-} );
+   });
 
 </script>
 
