@@ -77,13 +77,18 @@ int bnet\_fsend(BSOCK \*sock, char \*format, ...) and it allows you to
 send a formatted messages somewhat like fprintf(). The return status is
 the same as bnet\_send.
 
-Additional Error information
-----------------------------
+is\_bnet\_error
+---------------
 
 Fro additional error information, you can call
 <span>**is\_bnet\_error(BSOCK \*bsock)**</span> which will return 0 if
 there is no error or non-zero if there is an error on the last
-transmission. The <span>**is\_bnet\_stop(BSOCK \*bsock)**</span>
+transmission.
+
+is\_bnet\_stop
+--------------
+
+The <span>**is\_bnet\_stop(BSOCK \*bsock)**</span>
 function will return 0 if there no errors and you can continue sending.
 It will return non-zero if there are errors or the line is closed (no
 more transmissions should be sent).
@@ -99,12 +104,14 @@ length that follows as four bytes in network byte order. The data is
 read into sock-<span>\></span>msg and is sock-<span>\></span>msglen
 bytes. If the sock-<span>\></span>msg is not large enough, bnet\_recv()
 realloc() the buffer. It will return an error (-2) if maxbytes is less
-than the record size sent. It returns:
+than the record size sent.
 
-     * Returns number of bytes read
-     * Returns 0 on end of file
-     * Returns -1 on hard end of file (i.e. network connection close)
-     * Returns -2 on error
+It returns:
+
+   * \>0: number of bytes read
+   * 0: on end of file
+   * -1: on hard end of file (i.e. network connection close)
+   * -2: on error
 
 It should be noted that bnet\_recv() is a blocking read.
 
@@ -116,23 +123,15 @@ To send a “signal” from one daemon to another, one uses the subroutine:
 int bnet\_sig(BSOCK \*sock, SIGNAL) where SIGNAL is one of the
 following:
 
-1.  BNET\_EOF - deprecated use BNET\_EOD
-
-2.  BNET\_EOD - End of data stream, new data may follow
-
-3.  BNET\_EOD\_POLL - End of data and poll all in one
-
-4.  BNET\_STATUS - Request full status
-
-5.  BNET\_TERMINATE - Conversation terminated, doing close()
-
-6.  BNET\_POLL - Poll request, I’m hanging on a read
-
-7.  BNET\_HEARTBEAT - Heartbeat Response requested
-
-8.  BNET\_HB\_RESPONSE - Only response permitted to HB
-
-9.  BNET\_PROMPT - Prompt for UA
+   * BNET\_EOF - deprecated use BNET\_EOD
+   * BNET\_EOD - End of data stream, new data may follow
+   * BNET\_EOD\_POLL - End of data and poll all in one
+   * BNET\_STATUS - Request full status
+   * BNET\_TERMINATE - Conversation terminated, doing close()
+   * BNET\_POLL - Poll request, I’m hanging on a read
+   * BNET\_HEARTBEAT - Heartbeat Response requested
+   * BNET\_HB\_RESPONSE - Only response permitted to HB
+   * BNET\_PROMPT - Prompt for UA
 
 bnet\_strerror
 --------------

@@ -2,6 +2,7 @@
 PANDOC=pandoc
 
 FILES = generaldevel.md \
+      messages.md \
       pluginAPI.md \
       platformsupport.md \
       daemonprotocol.md \

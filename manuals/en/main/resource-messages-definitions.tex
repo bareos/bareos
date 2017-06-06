@@ -50,7 +50,9 @@ file this email based on the Job termination code (see \linkResourceDirective{Di
 In the absence of this resource,  Bareos will send all mail using the
 following command:
 
-{\bf mail -s "Bareos Message" {\textless}recipients{\textgreater}}
+{\bf /usr/lib/sendmail -F BAREOS {\textless}recipients{\textgreater}}
+
+%{\bf mail -s "Bareos Message" {\textless}recipients{\textgreater}}
 
 In many cases, depending on your machine, this command may not work.
 However, by using the \configdirective{Mail Command}, you can specify exactly how to

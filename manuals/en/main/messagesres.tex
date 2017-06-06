@@ -1,7 +1,7 @@
 
 \chapter{Messages Resource}
+% used as link from developer guide
 \label{MessagesChapter}
-\label{MessagesResource}
 \label{ResourceMessages}
 \index[general]{Resource!Messages}
 \index[general]{Messages Resource}
@@ -9,9 +9,9 @@
 The Messages resource defines how messages are to be handled and destinations
 to which they should be sent.
 
-Even though each daemon has a full message handler, within the File daemon and
-the Storage daemon, you will normally choose to send all the appropriate
-messages back to the Director.  This permits all the messages associated with
+Even though each daemon has a full message handler, within the \bareosFd and
+the \bareosSd, you will normally choose to send all the appropriate
+messages back to the \bareosDir.  This permits all the messages associated with
 a single Job to be combined in the Director and sent as a single email message
 to the user, or logged together in a single file.
 
@@ -28,10 +28,7 @@ In general, messages are attached to a Job and are included in the Job report.
 There are some rare cases, where this is not possible, e.g. when no job is
 running, or if a communications error occurs between a daemon and the
 director. In those cases, the message may remain in the system, and should be
-flushed at the end of the next Job. However, since such messages are not
-attached to a Job, any that are mailed will be sent to {\bf
-/usr/lib/sendmail}. On some systems, such as FreeBSD, if your sendmail is in a
-different place, you may want to link it to the the above location.
+flushed at the end of the next Job.
 
 The records contained in a Messages resource consist of a {\bf destination}
 specification followed by a list of {\bf message-types} in the format:

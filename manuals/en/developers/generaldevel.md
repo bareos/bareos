@@ -43,6 +43,53 @@ your changes directly to the Git repository. To do so, you will need a
 userid on Source Forge.
 
 
+Bugs Database
+-------------
+
+We have a bugs database which is at <https://bugs.bareos.org>.
+
+The first thing is if you want to take over a bug, rather than just make
+a note, you should assign the bug to yourself. This helps other
+developers know that you are the principal person to deal with the bug.
+You can do so by going into the bug and clicking on the <span>**Update
+Issue**</span> button. Then you simply go to the <span>**Assigned
+To**</span> box and select your name from the drop down box. To actually
+update it you must click on the <span>**Update Information**</span>
+button a bit further down on the screen, but if you have other things to
+do such as add a Note, you might wait before clicking on the
+<span>**Update Information**</span> button.
+
+Generally, we set the <span>**Status**</span> field to either
+acknowledged, confirmed, or feedback when we first start working on the
+bug. Feedback is set when we expect that the user should give us more
+information.
+
+Normally, once you are reasonably sure that the bug is fixed, and a
+patch is made and attached to the bug report, and/or in the SVN, you can
+close the bug. If you want the user to test the patch, then leave the
+bug open, otherwise close it and set <span>**Resolution**</span> to
+<span>**Fixed**</span>. We generally close bug reports rather quickly,
+even without confirmation, especially if we have run tests and can see
+that for us the problem is fixed. However, in doing so, it avoids
+misunderstandings if you leave a note while you are closing the bug that
+says something to the following effect: We are closing this bug because
+... If for some reason, it does not fix your problem, please feel free
+to reopen it, or to open a new bug report describing the problem".
+
+We do not recommend that you attempt to edit any of the bug notes that
+have been submitted, nor to delete them or make them private. In fact,
+if someone accidentally makes a bug note private, you should ask the
+reason and if at all possible (with his agreement) make the bug note
+public.
+
+If the user has not properly filled in most of the important fields
+(platorm, OS, Product Version, ...) please do not hesitate to politely
+ask him. Also, if the bug report is a request for a new feature, please
+politely send the user to the Feature Request menu item on
+www.bareos.org. The same applies to a support request (we answer only
+bugs), you might give the user a tip, but please politely refer him to
+the manual and the Getting Support page of www.bareos.org.
+
 Developing Bareos
 -----------------
 
@@ -396,149 +443,3 @@ concatenation causes the appropriate string to be concatenated to the
 “%”.
 
 Also please don’t use the STL or Templates or any complicated C++ code.
-
-### Message Classes
-
-Currently, there are five classes of messages: Debug, Error, Job,
-Memory, and Queued.
-
-### Debug Messages
-
-Debug messages are designed to be turned on at a specified debug level
-and are always sent to STDOUT. There are designed to only be used in the
-development debug process. They are coded as:
-
-DmsgN(level, message, arg1, ...) where the N is a number indicating how
-many arguments are to be substituted into the message (i.e. it is a
-count of the number arguments you have in your message – generally the
-number of percent signs (%)). <span>**level**</span> is the debug level
-at which you wish the message to be printed. message is the debug
-message to be printed, and arg1, ... are the arguments to be
-substituted. Since not all compilers support \#defines with varargs, you
-must explicitly specify how many arguments you have.
-
-When the debug message is printed, it will automatically be prefixed by
-the name of the daemon which is running, the filename where the Dmsg is,
-and the line number within the file.
-
-Some actual examples are:
-
-Dmsg2(20, “MD5len=%d MD5=%s\\n”, strlen(buf), buf);
-
-Dmsg1(9, “Created client %s record\\n”, client-\>hdr.name);
-
-### Error Messages
-
-Error messages are messages that are related to the daemon as a whole
-rather than a particular job. For example, an out of memory condition my
-generate an error message. They should be very rarely needed. In
-general, you should be using Job and Job Queued messages (Jmsg and
-Qmsg). They are coded as:
-
-EmsgN(error-code, level, message, arg1, ...) As with debug messages, you
-must explicitly code the of arguments to be substituted in the message.
-error-code indicates the severity or class of error, and it may be one
-of the following:
-
-ERROR_CODE   | Description
--------------|-------------------------------------------------------------------------------------------------------------------------------
-M_ABORT      | Causes the daemon to immediately abort. This should be used only in extrem e cases. It attempts to produce a traceback.
-M_ERROR_TERM | Causes the daemon to immediately terminate. This should be used only in extreme cases. It does not produce a traceback.
-M_FATAL      | Causes the daemon to terminate the current job, but the daemon keeps running
-M_ERROR      | Reports the error. The daemon and the job continue running
-M_WARNING    | Reports an warning message. The daemon and the job continue running
-M_INFO       | Reports an informational message
-
-There are other error message classes, but they are in a state of being
-redesigned or deprecated, so please do not use them. Some actual
-examples are:
-
-Emsg1(M\_ABORT, 0, “Cannot create message thread: %s\\n”,
-strerror(status));
-
-Emsg3(M\_WARNING, 0, “Connect to File daemon %s at %s:%d failed.
-Retrying ...\\n”, client-<span>\></span>hdr.name,
-client-<span>\></span>address, client-<span>\></span>port);
-
-Emsg3(M\_FATAL, 0, “bdird<span>\<</span>filed: bad response from Filed
-to %s command: %d %s\\n”, cmd, n, strerror(errno));
-
-### Job Messages
-
-Job messages are messages that pertain to a particular job such as a
-file that could not be saved, or the number of files and bytes that were
-saved. They Are coded as:
-
-    Jmsg(jcr, M\_FATAL, 0, "Text of message");
-
-A Jmsg with M\_FATAL will fail the job. The Jmsg() takes varargs so can
-have any number of arguments for substituted in a printf like format.
-Output from the Jmsg() will go to the Job report. \<br\> If the Jmsg is
-followed with a number such as Jmsg1(...), the number indicates the
-number of arguments to be substituted (varargs is not standard for
-\#defines), and what is more important is that the file and line number
-will be prefixed to the message. This permits a sort of debug from
-user’s output.
-
-### Queued Job Messages
-
-Queued Job messages are similar to Jmsg()s except that the message is
-Queued rather than immediately dispatched. This is necessary within the
-network subroutines and in the message editing routines. This is to
-prevent recursive loops, and to ensure that messages can be delivered
-even in the event of a network error.
-
-### Memory Messages
-
-Memory messages are messages that are edited into a memory buffer.
-Generally they are used in low level routines such as the low level
-device file dev.c in the Storage daemon or in the low level Catalog
-routines. These routines do not generally have access to the Job Control
-Record and so they return error essages reformatted in a memory buffer.
-Mmsg() is the way to do this.
-
-### Bugs Database
-
-We have a bugs database which is at https://bugs.bareos.org.
-
-The first thing is if you want to take over a bug, rather than just make
-a note, you should assign the bug to yourself. This helps other
-developers know that you are the principal person to deal with the bug.
-You can do so by going into the bug and clicking on the <span>**Update
-Issue**</span> button. Then you simply go to the <span>**Assigned
-To**</span> box and select your name from the drop down box. To actually
-update it you must click on the <span>**Update Information**</span>
-button a bit further down on the screen, but if you have other things to
-do such as add a Note, you might wait before clicking on the
-<span>**Update Information**</span> button.
-
-Generally, we set the <span>**Status**</span> field to either
-acknowledged, confirmed, or feedback when we first start working on the
-bug. Feedback is set when we expect that the user should give us more
-information.
-
-Normally, once you are reasonably sure that the bug is fixed, and a
-patch is made and attached to the bug report, and/or in the SVN, you can
-close the bug. If you want the user to test the patch, then leave the
-bug open, otherwise close it and set <span>**Resolution**</span> to
-<span>**Fixed**</span>. We generally close bug reports rather quickly,
-even without confirmation, especially if we have run tests and can see
-that for us the problem is fixed. However, in doing so, it avoids
-misunderstandings if you leave a note while you are closing the bug that
-says something to the following effect: We are closing this bug because
-... If for some reason, it does not fix your problem, please feel free
-to reopen it, or to open a new bug report describing the problem".
-
-We do not recommend that you attempt to edit any of the bug notes that
-have been submitted, nor to delete them or make them private. In fact,
-if someone accidentally makes a bug note private, you should ask the
-reason and if at all possible (with his agreement) make the bug note
-public.
-
-If the user has not properly filled in most of the important fields
-(platorm, OS, Product Version, ...) please do not hesitate to politely
-ask him. Also, if the bug report is a request for a new feature, please
-politely send the user to the Feature Request menu item on
-www.bareos.org. The same applies to a support request (we answer only
-bugs), you might give the user a tip, but please politely refer him to
-the manual and the Getting Support page of www.bareos.org.
