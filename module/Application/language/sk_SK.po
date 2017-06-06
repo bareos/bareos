@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-05-24 17:59+0200\n"
+"POT-Creation-Date: 2017-06-06 12:14+0200\n"
 "PO-Revision-Date: 2017-02-03 13:05+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -24,31 +24,31 @@ msgid "Dashboard"
 msgstr "Hlavný Panel"
 
 #: ../../../module/Application/config/module.config.php:129
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:121
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:40
 msgid "Jobs"
 msgstr "Úlohy"
 
 #: ../../../module/Application/config/module.config.php:133
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
 #: ../../../module/Schedule/view/schedule/schedule/overview.phtml:33
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
 msgid "Overview"
 msgstr "Prehľad"
 
 #: ../../../module/Application/config/module.config.php:138
+#: ../../../module/Job/view/job/job/run.phtml:34
 #: ../../../module/Job/view/job/job/actions.phtml:34
-#: ../../../module/Job/view/job/job/actions.phtml:146
-#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Job/view/job/job/actions.phtml:138
+#: ../../../module/Job/view/job/job/actions.phtml:141
 #: ../../../module/Job/view/job/job/details.phtml:34
 #: ../../../module/Job/view/job/job/index.phtml:34
-#: ../../../module/Job/view/job/job/run.phtml:34
 msgid "Run"
 msgstr "Spustiť"
 
 #: ../../../module/Application/config/module.config.php:145
-#: ../../../module/Client/view/client/client/details.phtml:152
-#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/index.phtml:217
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
 msgid "Restore"
@@ -61,43 +61,43 @@ msgid "Clients"
 msgstr "Klienti"
 
 #: ../../../module/Application/config/module.config.php:153
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
 #: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
 #: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
 msgid "Schedules"
 msgstr "Plánovanie"
 
 #: ../../../module/Application/config/module.config.php:157
-#: ../../../module/Storage/view/storage/storage/index.phtml:27
+#: ../../../module/Storage/view/storage/storage/index.phtml:26
 msgid "Storages"
 msgstr "Úložiská"
 
 #: ../../../module/Application/config/module.config.php:161
 #: ../../../module/Application/config/module.config.php:166
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:121
-#: ../../../module/Job/view/job/job/details.phtml:166
-#: ../../../module/Job/view/job/job/index.phtml:168
+#: ../../../module/Job/view/job/job/details.phtml:155
+#: ../../../module/Job/view/job/job/index.phtml:156
 #: ../../../module/Pool/view/pool/pool/details.phtml:48
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
-#: ../../../module/Storage/view/storage/storage/details.phtml:156
+#: ../../../module/Storage/view/storage/storage/details.phtml:159
 msgid "Pool"
 msgstr "Skupina"
 
 #: ../../../module/Application/config/module.config.php:171
 #: ../../../module/Application/config/module.config.php:176
-#: ../../../module/Media/view/media/media/details.phtml:35
+#: ../../../module/Media/view/media/media/details.phtml:34
 #: ../../../module/Media/view/media/media/index.phtml:26
 #: ../../../module/Media/view/media/media/index.phtml:34
 #: ../../../module/Media/view/media/media/index.phtml:47
 #: ../../../module/Pool/view/pool/pool/details.phtml:34
 #: ../../../module/Pool/view/pool/pool/details.phtml:58
 #: ../../../module/Pool/view/pool/pool/details.phtml:79
-#: ../../../module/Pool/view/pool/pool/index.phtml:35
-#: ../../../module/Pool/view/pool/pool/index.phtml:58
-#: ../../../module/Storage/view/storage/storage/details.phtml:34
-#: ../../../module/Storage/view/storage/storage/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:57
 #: ../../../module/Storage/view/storage/storage/status.phtml:11
+#: ../../../module/Storage/view/storage/storage/details.phtml:34
+#: ../../../module/Storage/view/storage/storage/index.phtml:34
 msgid "Volumes"
 msgstr "Množstvo"
 
@@ -181,7 +181,7 @@ msgstr "Súbor"
 #: ../../../module/Application/view/error/404.phtml:86
 #: ../../../module/Application/view/error/index.phtml:18
 #: ../../../module/Application/view/error/index.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:88
+#: ../../../module/Job/view/job/job/details.phtml:87
 msgid "Message"
 msgstr "Správa"
 
@@ -230,30 +230,34 @@ msgstr "Predplatné"
 msgid "Logout"
 msgstr "Odhlásiť"
 
+#: ../../../module/Client/view/client/client/status.phtml:9
+#: ../../../module/Client/view/client/client/details.phtml:32
+#: ../../../module/Client/view/client/client/index.phtml:32
+#: ../../../module/Job/view/job/job/run.phtml:32
+#: ../../../module/Job/view/job/job/actions.phtml:32
+#: ../../../module/Job/view/job/job/details.phtml:32
+#: ../../../module/Job/view/job/job/index.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:32
+msgid "Show"
+msgstr "Zobraziť"
+
+#: ../../../module/Client/view/client/client/status.phtml:20
+msgid "Client Status"
+msgstr "Stav Klienta"
+
 #: ../../../module/Client/view/client/client/details.phtml:26
 msgid "Client details"
 msgstr "Detaily klienta"
 
-#: ../../../module/Client/view/client/client/details.phtml:32
-#: ../../../module/Client/view/client/client/index.phtml:32
-#: ../../../module/Client/view/client/client/status.phtml:9
-#: ../../../module/Job/view/job/job/actions.phtml:32
-#: ../../../module/Job/view/job/job/details.phtml:32
-#: ../../../module/Job/view/job/job/index.phtml:32
-#: ../../../module/Job/view/job/job/run.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:32
-#: ../../../module/Schedule/view/schedule/schedule/status.phtml:31
-msgid "Show"
-msgstr "Zobraziť"
-
 #: ../../../module/Client/view/client/client/details.phtml:43
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:43
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:53
-#: ../../../module/Job/view/job/job/details.phtml:60
-#: ../../../module/Job/view/job/job/index.phtml:77
-#: ../../../module/Media/view/media/media/details.phtml:90
+#: ../../../module/Job/view/job/job/details.phtml:59
+#: ../../../module/Job/view/job/job/index.phtml:76
+#: ../../../module/Media/view/media/media/details.phtml:88
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:130
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:147
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:165
@@ -263,14 +267,13 @@ msgstr "Klient"
 #: ../../../module/Client/view/client/client/details.phtml:50
 #: ../../../module/Client/view/client/client/index.phtml:53
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:46
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:46
-#: ../../../module/Media/view/media/media/details.phtml:57
-#: ../../../module/Media/view/media/media/index.phtml:56
+#: ../../../module/Media/view/media/media/details.phtml:55
+#: ../../../module/Media/view/media/media/index.phtml:55
 #: ../../../module/Pool/view/pool/pool/details.phtml:56
-#: ../../../module/Pool/view/pool/pool/details.phtml:88
-#: ../../../module/Pool/view/pool/pool/index.phtml:56
-#: ../../../module/Restore/view/restore/restore/index.phtml:282
-#: ../../../module/Storage/view/storage/storage/index.phtml:56
+#: ../../../module/Pool/view/pool/pool/details.phtml:87
+#: ../../../module/Pool/view/pool/pool/index.phtml:55
+#: ../../../module/Restore/view/restore/restore/index.phtml:289
+#: ../../../module/Storage/view/storage/storage/index.phtml:55
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:76
 msgid "Name"
 msgstr "Názov"
@@ -295,17 +298,17 @@ msgstr "Úloha retencie"
 #: ../../../module/Client/view/client/client/details.phtml:55
 #: ../../../module/Client/view/client/client/details.phtml:83
 #: ../../../module/Client/view/client/client/index.phtml:57
+#: ../../../module/Job/view/job/job/run.phtml:33
 #: ../../../module/Job/view/job/job/actions.phtml:33
 #: ../../../module/Job/view/job/job/actions.phtml:78
 #: ../../../module/Job/view/job/job/details.phtml:33
-#: ../../../module/Job/view/job/job/details.phtml:67
+#: ../../../module/Job/view/job/job/details.phtml:66
 #: ../../../module/Job/view/job/job/index.phtml:33
-#: ../../../module/Job/view/job/job/index.phtml:84
-#: ../../../module/Job/view/job/job/run.phtml:33
-#: ../../../module/Storage/view/storage/storage/details.phtml:111
-#: ../../../module/Storage/view/storage/storage/details.phtml:130
-#: ../../../module/Storage/view/storage/storage/details.phtml:159
-#: ../../../module/Storage/view/storage/storage/index.phtml:58
+#: ../../../module/Job/view/job/job/index.phtml:83
+#: ../../../module/Storage/view/storage/storage/details.phtml:113
+#: ../../../module/Storage/view/storage/storage/details.phtml:129
+#: ../../../module/Storage/view/storage/storage/details.phtml:162
+#: ../../../module/Storage/view/storage/storage/index.phtml:57
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:78
 msgid "Actions"
 msgstr "Akcie"
@@ -316,32 +319,32 @@ msgstr "Posledné zálohy"
 
 #: ../../../module/Client/view/client/client/details.phtml:76
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:58
-#: ../../../module/Job/view/job/job/index.phtml:75
-#: ../../../module/Media/view/media/media/details.phtml:88
+#: ../../../module/Job/view/job/job/details.phtml:57
+#: ../../../module/Job/view/job/job/index.phtml:74
+#: ../../../module/Media/view/media/media/details.phtml:86
 msgid "Job ID"
 msgstr "ID Úlohy"
 
 #: ../../../module/Client/view/client/client/details.phtml:77
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:39
 #: ../../../module/Job/src/Job/Form/JobForm.php:53
 #: ../../../module/Job/view/job/job/actions.phtml:76
-#: ../../../module/Job/view/job/job/details.phtml:59
-#: ../../../module/Job/view/job/job/index.phtml:76
-#: ../../../module/Media/view/media/media/details.phtml:89
+#: ../../../module/Job/view/job/job/details.phtml:58
+#: ../../../module/Job/view/job/job/index.phtml:75
+#: ../../../module/Media/view/media/media/details.phtml:87
 msgid "Job name"
 msgstr "Názov Úlohy"
 
 #: ../../../module/Client/view/client/client/details.phtml:78
-#: ../../../module/Job/view/job/job/details.phtml:87
+#: ../../../module/Job/view/job/job/details.phtml:86
 msgid "Timestamp"
 msgstr "Časová značka"
 
 #: ../../../module/Client/view/client/client/details.phtml:79
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:37
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:87
-#: ../../../module/Job/view/job/job/details.phtml:162
-#: ../../../module/Job/view/job/job/index.phtml:164
+#: ../../../module/Job/view/job/job/details.phtml:151
+#: ../../../module/Job/view/job/job/index.phtml:152
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:236
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:251
 msgid "Fileset"
@@ -350,129 +353,106 @@ msgstr "Súborvý set"
 #: ../../../module/Client/view/client/client/details.phtml:80
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:44
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:138
-#: ../../../module/Job/view/job/job/details.phtml:62
-#: ../../../module/Job/view/job/job/index.phtml:79
-#: ../../../module/Media/view/media/media/details.phtml:92
+#: ../../../module/Job/view/job/job/details.phtml:61
+#: ../../../module/Job/view/job/job/index.phtml:78
+#: ../../../module/Media/view/media/media/details.phtml:90
 msgid "Level"
 msgstr "Úroveň"
 
 #: ../../../module/Client/view/client/client/details.phtml:81
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:122
-#: ../../../module/Job/view/job/job/details.phtml:63
-#: ../../../module/Job/view/job/job/index.phtml:80
-#: ../../../module/Media/view/media/media/details.phtml:93
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:41
+#: ../../../module/Job/view/job/job/details.phtml:62
+#: ../../../module/Job/view/job/job/index.phtml:79
+#: ../../../module/Media/view/media/media/details.phtml:91
 msgid "Files"
 msgstr "Súborov"
 
 #: ../../../module/Client/view/client/client/details.phtml:82
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:123
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:42
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:47
-#: ../../../module/Job/view/job/job/details.phtml:64
-#: ../../../module/Job/view/job/job/index.phtml:81
-#: ../../../module/Media/view/media/media/details.phtml:94
-#: ../../../module/Storage/view/storage/storage/details.phtml:151
+#: ../../../module/Job/view/job/job/details.phtml:63
+#: ../../../module/Job/view/job/job/index.phtml:80
+#: ../../../module/Media/view/media/media/details.phtml:92
+#: ../../../module/Storage/view/storage/storage/details.phtml:154
 msgid "Bytes"
 msgstr "Bytov"
 
-#: ../../../module/Client/view/client/client/details.phtml:152
+#: ../../../module/Client/view/client/client/details.phtml:141
 #: ../../../module/Client/view/client/client/index.phtml:56
-#: ../../../module/Client/view/client/client/index.phtml:235
+#: ../../../module/Client/view/client/client/index.phtml:217
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:41
 #: ../../../module/Director/view/director/director/console.phtml:32
 #: ../../../module/Director/view/director/director/index.phtml:33
 #: ../../../module/Director/view/director/director/messages.phtml:32
 #: ../../../module/Job/src/Job/Form/JobForm.php:95
 #: ../../../module/Job/view/job/job/actions.phtml:77
-#: ../../../module/Job/view/job/job/details.phtml:66
-#: ../../../module/Job/view/job/job/index.phtml:83
-#: ../../../module/Media/view/media/media/details.phtml:61
-#: ../../../module/Media/view/media/media/index.phtml:60
-#: ../../../module/Pool/view/pool/pool/details.phtml:92
-#: ../../../module/Storage/view/storage/storage/details.phtml:154
-#: ../../../module/Storage/view/storage/storage/index.phtml:123
-#: ../../../module/Storage/view/storage/storage/index.phtml:126
+#: ../../../module/Job/view/job/job/details.phtml:65
+#: ../../../module/Job/view/job/job/index.phtml:82
+#: ../../../module/Media/view/media/media/details.phtml:59
+#: ../../../module/Media/view/media/media/index.phtml:59
+#: ../../../module/Pool/view/pool/pool/details.phtml:91
+#: ../../../module/Storage/view/storage/storage/details.phtml:157
+#: ../../../module/Storage/view/storage/storage/index.phtml:116
+#: ../../../module/Storage/view/storage/storage/index.phtml:119
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
 msgid "Status"
 msgstr "Stav"
 
-#: ../../../module/Client/view/client/client/details.phtml:216
-#: ../../../module/Job/view/job/job/index.phtml:303
-#: ../../../module/Job/view/job/job/index.phtml:305
+#: ../../../module/Client/view/client/client/details.phtml:213
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
 msgid "Show Files"
 msgstr "Ukázať Súbory"
 
-#: ../../../module/Client/view/client/client/index.phtml:89
+#: ../../../module/Client/view/client/client/index.phtml:91
 #: ../../../module/Job/view/job/job/actions.phtml:55
-#: ../../../module/Job/view/job/job/details.phtml:134
+#: ../../../module/Job/view/job/job/details.phtml:133
 #: ../../../module/Job/view/job/job/index.phtml:115
 #: ../../../module/Job/view/job/job/index.phtml:136
-#: ../../../module/Media/view/media/media/details.phtml:127
+#: ../../../module/Media/view/media/media/details.phtml:126
 #: ../../../module/Media/view/media/media/index.phtml:93
 #: ../../../module/Pool/view/pool/pool/details.phtml:125
 #: ../../../module/Restore/view/restore/restore/index.phtml:46
+#: ../../../module/Restore/view/restore/restore/index.phtml:67
 #: ../../../module/Storage/view/storage/storage/details.phtml:57
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:55
 msgid "Close"
 msgstr "Zatvoriť"
 
-#: ../../../module/Client/view/client/client/index.phtml:223
-#: ../../../module/Job/view/job/job/actions.phtml:135
-#: ../../../module/Media/view/media/media/details.phtml:233
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:136
+#: ../../../module/Client/view/client/client/index.phtml:206
+#: ../../../module/Job/view/job/job/actions.phtml:127
+#: ../../../module/Media/view/media/media/details.phtml:342
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:131
 msgid "Enabled"
 msgstr "Povolené"
 
-#: ../../../module/Client/view/client/client/index.phtml:226
-#: ../../../module/Job/view/job/job/actions.phtml:138
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:139
+#: ../../../module/Client/view/client/client/index.phtml:209
+#: ../../../module/Job/view/job/job/actions.phtml:130
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:134
 msgid "Disabled"
 msgstr "Zakázané"
 
-#: ../../../module/Client/view/client/client/index.phtml:238
-#: ../../../module/Job/view/job/job/actions.phtml:146
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:147
+#: ../../../module/Client/view/client/client/index.phtml:220
+#: ../../../module/Job/view/job/job/actions.phtml:138
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:142
 msgid "Disable"
 msgstr "Zakázať"
 
-#: ../../../module/Client/view/client/client/index.phtml:241
-#: ../../../module/Job/view/job/job/actions.phtml:149
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:150
+#: ../../../module/Client/view/client/client/index.phtml:223
+#: ../../../module/Job/view/job/job/actions.phtml:141
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:145
 msgid "Enable"
 msgstr "Povoliť"
 
-#: ../../../module/Client/view/client/client/status.phtml:20
-msgid "Client Status"
-msgstr "Stav Klienta"
-
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:233
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:219
 msgid ""
 "Not enough data to estimate progress or statistics collection is disabled."
 msgstr ""
 
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:241
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:227
 msgid "There are no jobs running."
 msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "Zoznam úloh"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:32
-msgid "Most recent job status per job name"
-msgstr "Najčastejšie stavy úloh podľa názvu úlohy"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../../../module/Job/view/job/job/details.phtml:174
-#: ../../../module/Job/view/job/job/index.phtml:176
-msgid "Start"
-msgstr "Štart"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../../../module/Job/view/job/job/details.phtml:178
-#: ../../../module/Job/view/job/job/index.phtml:180
-msgid "End"
-msgstr "Ukončenie"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
@@ -503,10 +483,31 @@ msgstr "Aktualne správy Riaditeľa"
 msgid "Running Jobs"
 msgstr "Beží"
 
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
+#, fuzzy
+msgid "Job Totals"
+msgstr "Zoznam úloh"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Najčastejšie stavy úloh podľa názvu úlohy"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Job/view/job/job/details.phtml:163
+#: ../../../module/Job/view/job/job/index.phtml:164
+msgid "Start"
+msgstr "Štart"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../../../module/Job/view/job/job/details.phtml:167
+#: ../../../module/Job/view/job/job/index.phtml:168
+msgid "End"
+msgstr "Ukončenie"
+
 #: ../../../module/Director/view/director/director/console.phtml:33
 #: ../../../module/Director/view/director/director/index.phtml:34
 #: ../../../module/Director/view/director/director/messages.phtml:33
-#: ../../../module/Job/view/job/job/details.phtml:82
+#: ../../../module/Job/view/job/job/details.phtml:81
 msgid "Messages"
 msgstr "Správy"
 
@@ -545,7 +546,6 @@ msgid "Fileset details"
 msgstr "Detaily Filesetu"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
 msgid "Id"
 msgstr "Id"
 
@@ -554,12 +554,10 @@ msgid "MD5 checksum"
 msgstr "MD5 kontrola"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:47
 msgid "Creation time"
 msgstr "Dátum vytvorenia"
 
 #: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:37
 msgid "Filesets"
 msgstr "Sety Súborov"
 
@@ -625,9 +623,9 @@ msgid "Job"
 msgstr "Úloha"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:104
-#: ../../../module/Media/view/media/media/details.phtml:58
-#: ../../../module/Media/view/media/media/index.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Media/view/media/media/details.phtml:56
+#: ../../../module/Media/view/media/media/index.phtml:56
+#: ../../../module/Pool/view/pool/pool/details.phtml:88
 msgid "Storage"
 msgstr "Úložisko"
 
@@ -648,54 +646,54 @@ msgstr "Odoslať"
 msgid "Job Actions"
 msgstr "Akcie Úloh"
 
-#: ../../../module/Job/view/job/job/details.phtml:61
-#: ../../../module/Job/view/job/job/index.phtml:78
-#: ../../../module/Media/view/media/media/details.phtml:59
-#: ../../../module/Media/view/media/media/details.phtml:91
-#: ../../../module/Media/view/media/media/index.phtml:58
+#: ../../../module/Job/view/job/job/details.phtml:60
+#: ../../../module/Job/view/job/job/index.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:57
+#: ../../../module/Media/view/media/media/details.phtml:89
+#: ../../../module/Media/view/media/media/index.phtml:57
 #: ../../../module/Pool/view/pool/pool/details.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:90
-#: ../../../module/Pool/view/pool/pool/index.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Pool/view/pool/pool/index.phtml:56
 msgid "Type"
 msgstr "Typ"
 
-#: ../../../module/Job/view/job/job/details.phtml:65
-#: ../../../module/Job/view/job/job/index.phtml:82
+#: ../../../module/Job/view/job/job/details.phtml:64
+#: ../../../module/Job/view/job/job/index.phtml:81
 msgid "Errors"
 msgstr "Chyby"
 
-#: ../../../module/Job/view/job/job/details.phtml:98
+#: ../../../module/Job/view/job/job/details.phtml:97
 #, fuzzy
 msgid "Used Volumes"
 msgstr "Množstvo"
 
-#: ../../../module/Job/view/job/job/details.phtml:104
-#: ../../../module/Storage/view/storage/storage/details.phtml:109
+#: ../../../module/Job/view/job/job/details.phtml:102
+#: ../../../module/Storage/view/storage/storage/details.phtml:112
 #: ../../../module/Storage/view/storage/storage/details.phtml:128
-#: ../../../module/Storage/view/storage/storage/details.phtml:150
+#: ../../../module/Storage/view/storage/storage/details.phtml:153
 msgid "Volume"
 msgstr "Veľkosť"
 
-#: ../../../module/Job/view/job/job/details.phtml:127
+#: ../../../module/Job/view/job/job/details.phtml:126
 #: ../../../module/Job/view/job/job/index.phtml:107
-#: ../../../module/Media/view/media/media/details.phtml:120
+#: ../../../module/Media/view/media/media/details.phtml:119
 #: ../../../module/Media/view/media/media/index.phtml:86
 #: ../../../module/Pool/view/pool/pool/details.phtml:118
 #: ../../../module/Restore/view/restore/restore/index.phtml:39
 msgid "Failed to retrieve data from Bareos director"
 msgstr "Zlyhanie získania dát z Bareos directora"
 
-#: ../../../module/Job/view/job/job/details.phtml:130
+#: ../../../module/Job/view/job/job/details.phtml:129
 #: ../../../module/Job/view/job/job/index.phtml:111
-#: ../../../module/Media/view/media/media/details.phtml:123
+#: ../../../module/Media/view/media/media/details.phtml:122
 #: ../../../module/Media/view/media/media/index.phtml:89
 #: ../../../module/Pool/view/pool/pool/details.phtml:121
 msgid "Error message received from director:"
 msgstr "Prijatá chyba od riaditeľa zálohovania:"
 
-#: ../../../module/Job/view/job/job/details.phtml:131
+#: ../../../module/Job/view/job/job/details.phtml:130
 #: ../../../module/Job/view/job/job/index.phtml:112
-#: ../../../module/Media/view/media/media/details.phtml:124
+#: ../../../module/Media/view/media/media/details.phtml:123
 #: ../../../module/Media/view/media/media/index.phtml:90
 #: ../../../module/Pool/view/pool/pool/details.phtml:122
 #, fuzzy
@@ -704,38 +702,38 @@ msgstr ""
 "Nepodarilo sa odoslať výsledok ako JSON. Možno je vysledná správa príliš "
 "dlhá?"
 
-#: ../../../module/Job/view/job/job/details.phtml:170
-#: ../../../module/Job/view/job/job/index.phtml:172
+#: ../../../module/Job/view/job/job/details.phtml:159
+#: ../../../module/Job/view/job/job/index.phtml:160
 msgid "Scheduled"
 msgstr "Naplánované"
 
-#: ../../../module/Job/view/job/job/details.phtml:187
+#: ../../../module/Job/view/job/job/details.phtml:180
 msgid "First Index"
 msgstr ""
 
-#: ../../../module/Job/view/job/job/details.phtml:191
+#: ../../../module/Job/view/job/job/details.phtml:184
 msgid "Last Index"
 msgstr ""
 
-#: ../../../module/Job/view/job/job/details.phtml:195
+#: ../../../module/Job/view/job/job/details.phtml:188
 #, fuzzy
 msgid "Start Block"
 msgstr "Štart"
 
-#: ../../../module/Job/view/job/job/details.phtml:199
+#: ../../../module/Job/view/job/job/details.phtml:192
 #, fuzzy
 msgid "End Block"
 msgstr "Koniec bloku"
 
-#: ../../../module/Job/view/job/job/details.phtml:287
-#: ../../../module/Job/view/job/job/index.phtml:303
-#: ../../../module/Job/view/job/job/index.phtml:313
+#: ../../../module/Job/view/job/job/details.phtml:265
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:272
 msgid "Rerun"
 msgstr "Odznova"
 
-#: ../../../module/Job/view/job/job/details.phtml:302
-#: ../../../module/Job/view/job/job/index.phtml:334
-#: ../../../module/Job/view/job/job/index.phtml:340
+#: ../../../module/Job/view/job/job/details.phtml:280
+#: ../../../module/Job/view/job/job/index.phtml:293
+#: ../../../module/Job/view/job/job/index.phtml:299
 #: ../../../module/Storage/view/storage/storage/details.phtml:88
 msgid "Cancel"
 msgstr "Zrušiť"
@@ -751,182 +749,188 @@ msgstr ""
 "Prosím, pokúste sa znížiť množstvo dát, ktorá sa zobrazí, napr. skrátiť "
 "časový interval."
 
-#: ../../../module/Media/view/media/media/details.phtml:27
+#: ../../../module/Media/view/media/media/details.phtml:26
 msgid "Volume details"
 msgstr "Detaily množstva"
 
-#: ../../../module/Media/view/media/media/details.phtml:33
+#: ../../../module/Media/view/media/media/details.phtml:32
 #: ../../../module/Media/view/media/media/index.phtml:32
 #: ../../../module/Pool/view/pool/pool/details.phtml:32
-#: ../../../module/Pool/view/pool/pool/index.phtml:33
-#: ../../../module/Storage/view/storage/storage/details.phtml:32
-#: ../../../module/Storage/view/storage/storage/index.phtml:33
+#: ../../../module/Pool/view/pool/pool/index.phtml:32
 #: ../../../module/Storage/view/storage/storage/status.phtml:9
+#: ../../../module/Storage/view/storage/storage/details.phtml:32
+#: ../../../module/Storage/view/storage/storage/index.phtml:32
 msgid "Devices"
 msgstr "Zariadenia"
 
-#: ../../../module/Media/view/media/media/details.phtml:34
+#: ../../../module/Media/view/media/media/details.phtml:33
 #: ../../../module/Media/view/media/media/index.phtml:33
 #: ../../../module/Pool/view/pool/pool/details.phtml:33
-#: ../../../module/Pool/view/pool/pool/index.phtml:27
-#: ../../../module/Pool/view/pool/pool/index.phtml:34
-#: ../../../module/Pool/view/pool/pool/index.phtml:48
-#: ../../../module/Storage/view/storage/storage/details.phtml:33
-#: ../../../module/Storage/view/storage/storage/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:26
+#: ../../../module/Pool/view/pool/pool/index.phtml:33
+#: ../../../module/Pool/view/pool/pool/index.phtml:47
 #: ../../../module/Storage/view/storage/storage/status.phtml:10
+#: ../../../module/Storage/view/storage/storage/details.phtml:33
+#: ../../../module/Storage/view/storage/storage/index.phtml:33
 msgid "Pools"
 msgstr "Skupiny"
 
-#: ../../../module/Media/view/media/media/details.phtml:60
-#: ../../../module/Media/view/media/media/details.phtml:173
-#: ../../../module/Media/view/media/media/index.phtml:59
-#: ../../../module/Pool/view/pool/pool/details.phtml:91
-#: ../../../module/Pool/view/pool/pool/details.phtml:161
-#: ../../../module/Storage/view/storage/storage/details.phtml:152
+#: ../../../module/Media/view/media/media/details.phtml:58
+#: ../../../module/Media/view/media/media/details.phtml:282
+#: ../../../module/Media/view/media/media/index.phtml:58
+#: ../../../module/Media/view/media/media/index.phtml:196
+#: ../../../module/Pool/view/pool/pool/details.phtml:90
+#: ../../../module/Pool/view/pool/pool/details.phtml:261
+#: ../../../module/Storage/view/storage/storage/details.phtml:155
 msgid "Last written"
 msgstr "Poslený zapis"
 
-#: ../../../module/Media/view/media/media/details.phtml:62
-#: ../../../module/Media/view/media/media/index.phtml:61
-#: ../../../module/Pool/view/pool/pool/details.phtml:93
+#: ../../../module/Media/view/media/media/details.phtml:60
+#: ../../../module/Media/view/media/media/index.phtml:60
+#: ../../../module/Pool/view/pool/pool/details.phtml:92
 msgid "Retention/Expiration"
 msgstr "Retencia/Expirácia"
 
-#: ../../../module/Media/view/media/media/details.phtml:63
-#: ../../../module/Media/view/media/media/index.phtml:62
-#: ../../../module/Pool/view/pool/pool/details.phtml:94
+#: ../../../module/Media/view/media/media/details.phtml:61
+#: ../../../module/Media/view/media/media/index.phtml:61
+#: ../../../module/Pool/view/pool/pool/details.phtml:93
 msgid "Maximum bytes"
 msgstr "Maximum bytov"
 
-#: ../../../module/Media/view/media/media/details.phtml:64
-#: ../../../module/Media/view/media/media/index.phtml:63
-#: ../../../module/Pool/view/pool/pool/details.phtml:95
+#: ../../../module/Media/view/media/media/details.phtml:62
+#: ../../../module/Media/view/media/media/index.phtml:62
+#: ../../../module/Pool/view/pool/pool/details.phtml:94
 msgid "Current bytes"
 msgstr "Aktuálne byty"
 
-#: ../../../module/Media/view/media/media/details.phtml:80
+#: ../../../module/Media/view/media/media/details.phtml:78
 msgid "Jobs on volume"
 msgstr "Úlohy v objeme"
 
-#: ../../../module/Media/view/media/media/details.phtml:95
+#: ../../../module/Media/view/media/media/details.phtml:93
 msgid "Starttime"
 msgstr "Čas začatia"
 
-#: ../../../module/Media/view/media/media/details.phtml:96
+#: ../../../module/Media/view/media/media/details.phtml:94
 msgid "Endtime"
 msgstr "Čas ukončnia"
 
-#: ../../../module/Media/view/media/media/details.phtml:165
-#: ../../../module/Pool/view/pool/pool/details.phtml:153
+#: ../../../module/Media/view/media/media/details.phtml:274
+#: ../../../module/Media/view/media/media/index.phtml:188
+#: ../../../module/Pool/view/pool/pool/details.phtml:253
 msgid "Label date"
 msgstr "Štítok s dátumom"
 
-#: ../../../module/Media/view/media/media/details.phtml:169
-#: ../../../module/Pool/view/pool/pool/details.phtml:157
+#: ../../../module/Media/view/media/media/details.phtml:278
+#: ../../../module/Media/view/media/media/index.phtml:192
+#: ../../../module/Pool/view/pool/pool/details.phtml:257
 msgid "First written"
 msgstr "Prvé zapísané"
 
-#: ../../../module/Media/view/media/media/details.phtml:177
-#: ../../../module/Pool/view/pool/pool/details.phtml:165
+#: ../../../module/Media/view/media/media/details.phtml:286
+#: ../../../module/Media/view/media/media/index.phtml:200
+#: ../../../module/Pool/view/pool/pool/details.phtml:265
 msgid "Volume jobs"
 msgstr "Počet úloh"
 
-#: ../../../module/Media/view/media/media/details.phtml:181
-#: ../../../module/Pool/view/pool/pool/details.phtml:169
+#: ../../../module/Media/view/media/media/details.phtml:290
+#: ../../../module/Media/view/media/media/index.phtml:204
+#: ../../../module/Pool/view/pool/pool/details.phtml:269
 msgid "Recycle"
 msgstr "Odstrániť"
 
-#: ../../../module/Media/view/media/media/details.phtml:185
+#: ../../../module/Media/view/media/media/details.phtml:294
 msgid "Volume writes"
 msgstr "Zapísané množstvo"
 
-#: ../../../module/Media/view/media/media/details.phtml:189
-#: ../../../module/Storage/view/storage/storage/details.phtml:108
-#: ../../../module/Storage/view/storage/storage/details.phtml:149
+#: ../../../module/Media/view/media/media/details.phtml:298
+#: ../../../module/Storage/view/storage/storage/details.phtml:111
+#: ../../../module/Storage/view/storage/storage/details.phtml:152
 msgid "Slot"
 msgstr "Slot"
 
-#: ../../../module/Media/view/media/media/details.phtml:193
+#: ../../../module/Media/view/media/media/details.phtml:302
 msgid "Media Id"
 msgstr "Id Média"
 
-#: ../../../module/Media/view/media/media/details.phtml:197
+#: ../../../module/Media/view/media/media/details.phtml:306
 msgid "Volume Blocks"
 msgstr "Množstvo Blokov"
 
-#: ../../../module/Media/view/media/media/details.phtml:201
+#: ../../../module/Media/view/media/media/details.phtml:310
 msgid "Volume use duration"
 msgstr "Veľkosť počas trvania"
 
-#: ../../../module/Media/view/media/media/details.phtml:205
+#: ../../../module/Media/view/media/media/details.phtml:314
 msgid "Volume Pool Id"
 msgstr "Veľkost Id Skupiny"
 
-#: ../../../module/Media/view/media/media/details.phtml:209
+#: ../../../module/Media/view/media/media/details.phtml:318
 msgid "In changer"
 msgstr "V zmene"
 
-#: ../../../module/Media/view/media/media/details.phtml:213
+#: ../../../module/Media/view/media/media/details.phtml:322
 msgid "Volume Files"
 msgstr "Pošet Súborov"
 
-#: ../../../module/Media/view/media/media/details.phtml:217
+#: ../../../module/Media/view/media/media/details.phtml:326
 msgid "Max. volume jobs"
 msgstr "Max. počet Úloh"
 
-#: ../../../module/Media/view/media/media/details.phtml:221
+#: ../../../module/Media/view/media/media/details.phtml:330
 msgid "Volume mounts"
 msgstr "Počet pripojení"
 
-#: ../../../module/Media/view/media/media/details.phtml:225
+#: ../../../module/Media/view/media/media/details.phtml:334
 msgid "Volume capacity bytes"
 msgstr "Objem bytov"
 
-#: ../../../module/Media/view/media/media/details.phtml:229
+#: ../../../module/Media/view/media/media/details.phtml:338
 msgid "Volume errors"
 msgstr "Počet chýb"
 
-#: ../../../module/Media/view/media/media/details.phtml:237
+#: ../../../module/Media/view/media/media/details.phtml:346
 msgid "Max. volume files"
 msgstr "Max. počet súborov"
 
-#: ../../../module/Media/view/media/media/details.phtml:241
+#: ../../../module/Media/view/media/media/details.phtml:350
 msgid "Endfile"
 msgstr "Koniec súboru"
 
-#: ../../../module/Media/view/media/media/details.phtml:245
+#: ../../../module/Media/view/media/media/details.phtml:354
 msgid "Endblock"
 msgstr "Koniec bloku"
 
-#: ../../../module/Media/view/media/media/details.phtml:249
+#: ../../../module/Media/view/media/media/details.phtml:358
 msgid "Labeltype"
 msgstr "Typ označenia"
 
-#: ../../../module/Media/view/media/media/details.phtml:253
+#: ../../../module/Media/view/media/media/details.phtml:362
 msgid "Device Id"
 msgstr "Id Zariadenia"
 
-#: ../../../module/Media/view/media/media/details.phtml:257
+#: ../../../module/Media/view/media/media/details.phtml:366
 msgid "Location Id"
 msgstr "Id Lokality"
 
-#: ../../../module/Media/view/media/media/details.phtml:261
+#: ../../../module/Media/view/media/media/details.phtml:370
 msgid "Recycle count"
 msgstr "Počet odstránených"
 
-#: ../../../module/Media/view/media/media/details.phtml:265
+#: ../../../module/Media/view/media/media/details.phtml:374
 msgid "Initial write"
 msgstr "Prvotný zápis"
 
-#: ../../../module/Media/view/media/media/details.phtml:269
+#: ../../../module/Media/view/media/media/details.phtml:378
 msgid "Scratch Pool Id"
 msgstr "Id Scratch Skupiny"
 
-#: ../../../module/Media/view/media/media/details.phtml:273
-msgid "Recycle pool Id"
+#: ../../../module/Media/view/media/media/details.phtml:382
+#, fuzzy
+msgid "Recycle Pool Id"
 msgstr "Id recyklovanej skupiny"
 
-#: ../../../module/Media/view/media/media/details.phtml:277
+#: ../../../module/Media/view/media/media/details.phtml:386
 msgid "Comment"
 msgstr "Popis"
 
@@ -935,22 +939,22 @@ msgid "Pool details"
 msgstr "Detaily Skupiny"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:59
-#: ../../../module/Pool/view/pool/pool/index.phtml:59
+#: ../../../module/Pool/view/pool/pool/index.phtml:58
 msgid "Maximum volumes"
 msgstr "Maximálna veľkosť"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:60
-#: ../../../module/Pool/view/pool/pool/index.phtml:60
+#: ../../../module/Pool/view/pool/pool/index.phtml:59
 msgid "Volume retention"
 msgstr "Počet retencií"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:61
-#: ../../../module/Pool/view/pool/pool/index.phtml:61
+#: ../../../module/Pool/view/pool/pool/index.phtml:60
 msgid "Maximum volume jobs"
 msgstr "Maximálny počet úloh"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:62
-#: ../../../module/Pool/view/pool/pool/index.phtml:62
+#: ../../../module/Pool/view/pool/pool/index.phtml:61
 msgid "Maximum volume bytes"
 msgstr "Maximálne množstvo bytov"
 
@@ -991,7 +995,7 @@ msgstr "Zlúčiť všetky filesety klientov"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
-#: ../../../module/Storage/view/storage/storage/index.phtml:114
+#: ../../../module/Storage/view/storage/storage/index.phtml:107
 msgid "Yes"
 msgstr "Áno"
 
@@ -999,7 +1003,7 @@ msgstr "Áno"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
-#: ../../../module/Storage/view/storage/storage/index.phtml:112
+#: ../../../module/Storage/view/storage/storage/index.phtml:105
 msgid "No"
 msgstr "Nie"
 
@@ -1063,15 +1067,20 @@ msgstr "Súvisiace úlohy pre najčastejšie úplné obnovenia"
 msgid "Error message received:"
 msgstr "Prijatá chyba od riaditeľa zálohovania:"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:114
+#: ../../../module/Restore/view/restore/restore/index.phtml:59
+#: ../../../module/Storage/view/storage/storage/details.phtml:51
+msgid "Director message"
+msgstr "Správa od Riaditeľa"
+
+#: ../../../module/Restore/view/restore/restore/index.phtml:121
 msgid "File selection"
 msgstr "Výber súboru"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:287
+#: ../../../module/Restore/view/restore/restore/index.phtml:294
 msgid "Size"
 msgstr "Veľkosť"
 
-#: ../../../module/Restore/view/restore/restore/index.phtml:298
+#: ../../../module/Restore/view/restore/restore/index.phtml:305
 msgid "Date"
 msgstr "Dátum"
 
@@ -1080,16 +1089,16 @@ msgstr "Dátum"
 msgid "Drive"
 msgstr "Jednotka"
 
+#: ../../../module/Storage/view/storage/storage/status.phtml:24
+msgid "Storage Status"
+msgstr "Stav Úložiska"
+
 #: ../../../module/Storage/view/storage/storage/details.phtml:26
 msgid "Storage details"
 msgstr "Detaily úložiska"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:51
-msgid "Director message"
-msgstr "Správa od Riaditeľa"
-
 #: ../../../module/Storage/view/storage/storage/details.phtml:72
-#: ../../../module/Storage/view/storage/storage/details.phtml:349
+#: ../../../module/Storage/view/storage/storage/details.phtml:147
 msgid "Label barcodes"
 msgstr "Značenie štítkov"
 
@@ -1105,6 +1114,10 @@ msgstr "Túto jednotku použite na označenie."
 msgid "Import/Export Slots"
 msgstr "Importovať/Exportovať Sloty"
 
+#: ../../../module/Storage/view/storage/storage/details.phtml:107
+msgid "Import all"
+msgstr "Importovať všetko"
+
 #: ../../../module/Storage/view/storage/storage/details.phtml:121
 msgid "Drives"
 msgstr "Jednotky"
@@ -1113,57 +1126,49 @@ msgstr "Jednotky"
 msgid "Loaded"
 msgstr "Nahraté"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:144
+#: ../../../module/Storage/view/storage/storage/details.phtml:141
 msgid "Slots"
 msgstr "Sloty"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:153
-msgid "Expiration"
-msgstr "Expirácia"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:155
-msgid "Media Type"
-msgstr "Typ Média"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:300
-msgid "not in catalog"
-msgstr "nie je v katalógu"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:336
-msgid "Export"
-msgstr "Exportovať"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:343
+#: ../../../module/Storage/view/storage/storage/details.phtml:145
 msgid "Update slots"
 msgstr "Obnoviť sloty"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:395
-msgid "Release"
-msgstr "Vydanie"
+#: ../../../module/Storage/view/storage/storage/details.phtml:156
+msgid "Expiration"
+msgstr "Expirácia"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:448
+#: ../../../module/Storage/view/storage/storage/details.phtml:158
+msgid "Media Type"
+msgstr "Typ Média"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:226
 msgid "Import"
 msgstr "Importovať"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:455
-msgid "Import all"
-msgstr "Importovať všetko"
+#: ../../../module/Storage/view/storage/storage/details.phtml:273
+msgid "Release"
+msgstr "Vydanie"
 
-#: ../../../module/Storage/view/storage/storage/index.phtml:48
+#: ../../../module/Storage/view/storage/storage/details.phtml:363
+msgid "not in catalog"
+msgstr "nie je v katalógu"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:401
+msgid "Export"
+msgstr "Exportovať"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:47
 msgid "Storage Devices"
 msgstr "Zariadenie Úložiska"
 
-#: ../../../module/Storage/view/storage/storage/index.phtml:57
+#: ../../../module/Storage/view/storage/storage/index.phtml:56
 msgid "Autochanger"
 msgstr "Autozmena"
 
-#: ../../../module/Storage/view/storage/storage/index.phtml:123
+#: ../../../module/Storage/view/storage/storage/index.phtml:116
 msgid "Manage autochanger"
 msgstr "Manažment autozmeny"
-
-#: ../../../module/Storage/view/storage/storage/status.phtml:24
-msgid "Storage Status"
-msgstr "Stav Úložiska"
 
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
@@ -1171,9 +1176,9 @@ msgid "Schedule Details"
 msgstr "Detaily Plánovania"
 
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
 #: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
 #: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
 msgid "Scheduler status"
 msgstr "Stav Plánovača"
 
