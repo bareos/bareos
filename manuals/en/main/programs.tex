@@ -1211,7 +1211,7 @@ by the Director (see the messages resource in this manual for details).
 The body of the email message is read from standard input.
 
 An example of the use of \command{bsmtp} would be to put the following statement
-in the \ilink{Messages resource}{MessagesResource} of your \file{bareos-dir.conf} file.
+in the \ilink{Messages resource}{MessagesChapter} of your \bareosDir configuration.
 
 \begin{bconfig}{bsmtp in Message resource}
 Mail Command     = "bsmtp -h mail.example.com -f \"\(Bareos\) %r\" -s \"Bareos: %t %e of %c %l\" %r"
