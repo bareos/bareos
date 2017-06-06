@@ -1,4 +1,0 @@
-USER=root
-PROGRAM=@sbindir@/bat
-SESSION=true
-FALLBACK=true

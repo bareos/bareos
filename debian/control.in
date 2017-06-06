@@ -300,8 +300,6 @@ Description: Backup Archiving Recovery Open Sourced - common tools
  This package provides some additional tools, mostly to work directly with
  Bareos storage volumes.
 
-@DEBIAN_CONTROL_BAT@
-
 @DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN@
 
 @DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN@

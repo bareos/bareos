@@ -20,7 +20,7 @@
 #   If name contains prevista, build for windows < vista.
 %define flavors postvista postvista-debug
 %define dirs_with_unittests lib findlib
-%define bareos_configs bareos-dir.d/ bareos-fd.d/ bareos-sd.d/ tray-monitor.d/ bconsole.conf bat.conf
+%define bareos_configs bareos-dir.d/ bareos-fd.d/ bareos-sd.d/ tray-monitor.d/ bconsole.conf
 
 Name:           %{mingw}-winbareos
 Version:        0.0.0
@@ -128,7 +128,7 @@ for flavor in %flavors; do
       cd -
    done
 
-   for cfg in $flavor/src/qt-console/bat.conf.in $flavor/src/console/bconsole.conf.in; do
+   for cfg in $flavor/src/console/bconsole.conf.in; do
      cp $cfg $flavor/src/defaultconfigs/
    done
 
@@ -148,7 +148,6 @@ for flavor in %flavors; do
 
    cd $flavor/src/win32
    cp qt-tray-monitor/bareos-tray-monitor.exe \
-      qt-console/bat.exe \
       console/bconsole.exe \
       filed/bareos-fd.exe \
       stored/bareos-sd.exe \

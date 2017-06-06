@@ -24,7 +24,7 @@ VERSION_STRING := $(shell grep 'VERSION "' ../include/version.h | cut -d ' ' -f3
 
 all_subdirs = lib findlib lmdb filed console tools cats dird stored plugins lib/unittests tests
 ifeq ($(BUILD_QTGUI),yes)
-all_subdirs += qt-console qt-tray-monitor
+all_subdirs += qt-tray-monitor
 endif
 
 all: rc-files qt-gui
@@ -83,19 +83,12 @@ rc-files: tools/bsmtpres.rc \
 	  stored/btaperes.rc \
 	  dird/dirdres.rc \
 	  dird/dbcheckres.rc \
-	  qt-console/batres.rc \
 	  qt-tray-monitor/traymon.rc
 
-qt-gui: qt-console/Makefile qt-tray-monitor/Makefile
-
-qt-console/Makefile: qt-console/bat.pro
-	cd qt-console; $(QMAKE) $(QMAKE_ARGS) bat.pro
+qt-gui: qt-tray-monitor/Makefile
 
 qt-tray-monitor/Makefile: qt-tray-monitor/tray-monitor.pro
 	cd qt-tray-monitor; $(QMAKE) $(QMAKE_ARGS) tray-monitor.pro
-
-qt-console/batres.rc: qt-console/batres.rc.in
-	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@
 
 qt-tray-monitor/traymon.rc: qt-tray-monitor/traymon.rc.in
 	@sed -e 's/@VERSION@/$(VERSION_STRING)/' $< > $@

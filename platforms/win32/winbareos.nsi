@@ -60,7 +60,7 @@ Var StorageMonitorPassword
 Var StorageAddress
 
 
-# Needed for bconsole and bat:
+# Needed for bconsole:
 Var DirectorAddress       #XXX_REPLACE_WITH_HOSTNAME_XXX
 Var DirectorPassword      #XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX
 Var DirectorName
@@ -444,7 +444,6 @@ Section -StopDaemon
   KillProcWMI::KillProc "bareos-dir.exe"
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
   KillProcWMI::KillProc "bconsole.exe"
-  KillProcWMI::KillProc "bat.exe"
 SectionEnd
 
 
@@ -459,7 +458,7 @@ Section -SetPasswords
   FileClose $R1
 
   #
-  # config files for bconsole and bat to access remote director
+  # config files for bconsole to access remote director
   #
   FileOpen $R1 $PLUGINSDIR\bconsole.sed w
   FileWrite $R1 "s#@basename@-dir#$DirectorName#g$\r$\n"
@@ -469,8 +468,6 @@ Section -SetPasswords
   FileClose $R1
 
   nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
-  nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$PLUGINSDIR\bconsole.sed" -i-template "$PLUGINSDIR\bat.conf"'
-
   # Configure webui
 
   FileOpen $R1 $PLUGINSDIR\webui.sed w
@@ -1011,22 +1008,6 @@ SectionIn 2 3
 SectionEnd
 
 
-Section /o "Qt Console (BAT, deprecated)" SEC_BAT
-#SectionIn 2 3
-  SetShellVarContext all
-  SetOutPath "$INSTDIR"
-  SetOverwrite ifnewer
-  CreateShortCut "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk" "$INSTDIR\bat.exe"
-  CreateShortCut "$DESKTOP\BAT.lnk" "$INSTDIR\bat.exe"
-
-  File "bat.exe"
-  File "libpng*.dll"
-  File "QtCore4.dll"
-  File "QtGui4.dll"
-
-  !insertmacro InstallConfFile "bat.conf"
-SectionEnd
-
 SubSectionEnd # Consoles Subsection
 
 
@@ -1069,7 +1050,6 @@ ${EndIf}
   !insertmacro MUI_DESCRIPTION_TEXT ${SUBSEC_CONSOLES} "Programs to access and monitor the Bareos system (Consoles and Tray Monitor)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BCONSOLE} "Installs the CLI client console (bconsole)"
   !insertmacro MUI_DESCRIPTION_TEXT ${SEC_TRAYMON} "Installs the Tray Icon to monitor the Bareos File Daemon"
-  !insertmacro MUI_DESCRIPTION_TEXT ${SEC_BAT} "Installs the Qt Console (BAT)"
 
   ; Sourcecode
 !If ${WIN_DEBUG} == yes
@@ -1199,14 +1179,6 @@ Section -ConfigureConfiguration
 
   nsExec::ExecToLog '"$INSTDIR\bareos-config-deploy.bat" "$INSTDIR\defaultconfigs" "$APPDATA\${PRODUCT_NAME}"'
 
-  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$APPDATA\${PRODUCT_NAME}\configure.sed" -i-template "$PLUGINSDIR\bconsole.conf"'
-  #nsExec::ExecToLog '$PLUGINSDIR\sed.exe -f "$APPDATA\${PRODUCT_NAME}\configure.sed" -i-template "$PLUGINSDIR\bat.conf"'
-
-  #FileOpen $R1 $PLUGINSDIR\postgres.sed w
-  #FileWrite $R1 "s#XXX_REPLACE_WITH_DB_USER_XXX#$DbUser#g$\r$\n"
-  #FileWrite $R1 "s#XXX_REPLACE_WITH_DB_PASSWORD_XXX#with password '$DbPassword'#g$\r$\n"
-  #FileClose $R1
-
 SectionEnd
 
 
@@ -1328,8 +1300,8 @@ Function .onInit
                     [/CLIENTMONITORPASSWORD=Password for monitor access]$\r$\n\
                     [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
                     $\r$\n\
-                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole or BAT)]$\r$\n\
-                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole/BAT]$\r$\n\
+                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole)]$\r$\n\
+                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole]$\r$\n\
                     [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
                     $\r$\n\
                     [/STORAGENAME=Name of the storage ressource]$\r$\n\
@@ -1579,7 +1551,6 @@ done:
   File "/oname=$PLUGINSDIR\zlib1.dll" "zlib1.dll"
 
   File "/oname=$PLUGINSDIR\bconsole.conf" "config/bconsole.conf"
-  File "/oname=$PLUGINSDIR\bat.conf" "config/bat.conf"
 
   File "/oname=$PLUGINSDIR\postgresql-create.sql" ".\ddl\creates\postgresql.sql"
   File "/oname=$PLUGINSDIR\postgresql-drop.sql" ".\ddl\drops\postgresql.sql"
@@ -1888,7 +1859,7 @@ skip:
 FunctionEnd
 
 #
-# Director Configuration Dialog (for bconsole and bat configuration)
+# Director Configuration Dialog (for bconsole configuration)
 #
 Function getDirectorParameters
   Push $R0
@@ -1897,7 +1868,6 @@ Function getDirectorParameters
   # prefill the dialog fields
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 2" "state" $DirectorAddress
   WriteINIStr "$PLUGINSDIR\directordialog.ini" "Field 3" "state" $DirectorPassword
-#TODO: also do this if BAT is selected alone
 ${If} ${SectionIsSelected} ${SEC_BCONSOLE}
   InstallOptions::dialog $PLUGINSDIR\directordialog.ini
   Pop $R0
@@ -2063,9 +2033,8 @@ Section Uninstall
 
   # kill tray monitor
   KillProcWMI::KillProc "bareos-tray-monitor.exe"
-  # kill bconsole and bat if running
+  # kill bconsole if running
   KillProcWMI::KillProc "bconsole.exe"
-  KillProcWMI::KillProc "bat.exe"
 
   # be sure and also kill the other daemons
   KillProcWMI::KillProc "bareos-fd.exe"
@@ -2087,7 +2056,6 @@ Section Uninstall
   RMDir /r "$APPDATA\${PRODUCT_NAME}\tray-monitor.d"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf"
   RMDir /r "$APPDATA\${PRODUCT_NAME}\bconsole.d"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf"
 
   Delete "$APPDATA\${PRODUCT_NAME}\php.ini"
   Delete "$APPDATA\${PRODUCT_NAME}\directors.ini"
@@ -2102,19 +2070,16 @@ ConfDeleteSkip:
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.old"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.old"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.old"
 
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-fd.conf.new"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-sd.conf.new"
   Delete "$APPDATA\${PRODUCT_NAME}\bareos-dir.conf.new"
   Delete "$APPDATA\${PRODUCT_NAME}\tray-monitor.conf.new"
   Delete "$APPDATA\${PRODUCT_NAME}\bconsole.conf.new"
-  Delete "$APPDATA\${PRODUCT_NAME}\bat.conf.new"
 
   Delete "$INSTDIR\${PRODUCT_NAME}.url"
   Delete "$INSTDIR\uninst.exe"
   Delete "$INSTDIR\bareos-tray-monitor.exe"
-  Delete "$INSTDIR\bat.exe"
   Delete "$INSTDIR\bareos-fd.exe"
   Delete "$INSTDIR\bareos-sd.exe"
   Delete "$INSTDIR\bareos-dir.exe"
@@ -2199,8 +2164,6 @@ ConfDeleteSkip:
   # shortcuts
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Edit*.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bconsole.lnk"
-  Delete "$SMPROGRAMS\${PRODUCT_NAME}\BAT.lnk"
-  Delete "$DESKTOP\BAT.lnk"
   # traymon
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\bareos-tray-monitor.lnk"
   # traymon autostart
@@ -2263,12 +2226,6 @@ Function .onSelChange
   ${If} $IsPostgresInstalled == no
     SectionSetFlags ${SEC_DIR_POSTGRES} ${SF_RO}
   ${EndIf}
-
-  # Check if BAT was just selected then select SEC_BCONSOLE
-  SectionGetFlags ${SEC_BAT} $R0
-  IntOp $R0 $R0 & ${SF_SELECTED}
-  StrCmp $R0 ${SF_SELECTED} 0 +2
-  SectionSetFlags ${SEC_BCONSOLE} $R0
 
   # Check if WEBUI was just selected then select SEC_DIR
   SectionGetFlags ${SEC_WEBUI} $R0

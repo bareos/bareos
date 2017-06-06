@@ -39,7 +39,6 @@ Vendor: 	The Bareos Team
 
 # default settings
 %define client_only 0
-%define build_bat 1
 %define build_qt_monitor 1
 %define build_sqlite3 1
 %define check_cmocka 1
@@ -54,7 +53,6 @@ Vendor: 	The Bareos Team
 # SUSE (openSUSE, SLES) specific settigs
 #
 %if 0%{?sles_version} == 10
-%define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
 %define check_cmocka 0
@@ -89,7 +87,6 @@ Vendor: 	The Bareos Team
 %if 0%{?rhel_version} > 0 && 0%{?rhel_version} < 500
 %define RHEL4 1
 %define client_only 1
-%define build_bat 0
 %define build_qt_monitor 0
 %define build_sqlite3 0
 %define check_cmocka 0
@@ -99,7 +96,6 @@ Vendor: 	The Bareos Team
 
 # centos/rhel 5: segfault when building qt monitor
 %if 0%{?centos_version} == 505 || 0%{?rhel_version} == 505
-%define build_bat 0
 %define build_qt_monitor 0
 %define have_git 0
 %define python_plugins 0
@@ -169,7 +165,7 @@ BuildRequires: openssl
 BuildRequires: libcap-devel
 BuildRequires: mtx
 
-%if 0%{?build_bat} || 0%{?build_qt_monitor}
+%if 0%{?build_qt_monitor}
 BuildRequires: libqt4-devel
 %endif
 
@@ -420,12 +416,6 @@ Conflicts:  %{name}-tray-monitor-gtk
 Provides:   %{name}-tray-monitor-qt
 %endif
 
-%if 0%{?build_bat}
-%package    bat
-Summary:    Bareos Admin Tool (GUI)
-Group:      Productivity/Archiving/Backup
-%endif
-
 %package    devel
 Summary:    Devel headers
 Group:      Development/Languages/C and C++
@@ -638,14 +628,6 @@ This package contains Bareos tools.
 This package contains the tray monitor (QT based).
 %endif
 
-%if 0%{?build_bat}
-%description bat
-%{dscr}
-
-This package contains the Bareos Admin Tool (BAT).
-BAT is a graphical interface for Bareos.
-%endif
-
 %description devel
 %{dscr}
 
@@ -699,9 +681,6 @@ export MTX=/usr/sbin/mtx
   --enable-ipv6 \
   --enable-acl \
   --enable-xattr \
-%if 0%{?build_bat}
-  --enable-bat \
-%endif
 %if 0%{?build_qt_monitor}
   --enable-traymonitor \
 %endif
@@ -821,12 +800,6 @@ rm -f %{buildroot}/%{_sysconfdir}/bareos/bareos-dir.d/plugin-python-ldap.conf
 rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 %endif
 
-%if 0%{?build_bat}
-%if 0%{?suse_version} > 1010
-%suse_update_desktop_file -i bat System Utility Archiving
-%endif
-%endif
-
 # install tray monitor
 # #if 0#{?build_qt_monitor}
 # #if 0#{?suse_version} > 1010
@@ -836,10 +809,6 @@ rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 # #endif
 # #endif
 
-# remove man page if bat is not built
-%if !0%{?build_bat}
-rm %{buildroot}%{_mandir}/man1/bat.1.gz
-%endif
 
 # remove man page if qt tray monitor is not built
 %if !0%{?build_qt_monitor}
@@ -1210,19 +1179,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 /usr/share/pixmaps/bareos-tray-monitor.xpm
 %endif
 
-%if 0%{?build_bat}
-%files bat
-%defattr(-, root, root)
-%attr(-, root, %{daemon_group}) %{_bindir}/bat
-%attr(640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bat.conf
-%{_prefix}/share/pixmaps/bat.png
-%{_prefix}/share/pixmaps/bat.svg
-%{_prefix}/share/applications/bat.desktop
-%{_mandir}/man1/bat.1.gz
-%dir %{_docdir}/%{name}
-%dir %{_docdir}/%{name}/html/
-%doc %{_docdir}/%{name}/html/bat/
-%endif
 
 %endif # client_only
 
@@ -1552,13 +1508,6 @@ fi; \
 %posttrans traymonitor
 %posttrans_restore_file /etc/bareos/tray-monitor.conf
 
-%endif
-
-
-%if 0%{?build_bat}
-%post bat
-%{script_dir}/bareos-config initialize_local_hostname
-%{script_dir}/bareos-config initialize_passwords
 %endif
 
 

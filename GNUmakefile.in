@@ -19,7 +19,7 @@ dummy:
 
 # --client-only directories
 fd_subdirs = src scripts src/lib src/findlib @LMDB_DIR@ src/filed \
-       @BAT_DIR@ @TRAY_MONITOR_DIR@ src/console @FD_PLUGIN_DIR@
+       @TRAY_MONITOR_DIR@ src/console @FD_PLUGIN_DIR@
 
 # Non-client-only directores
 subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
@@ -59,7 +59,6 @@ src/plugins/filed: src/lib
 src/plugins/dird: src/lib
 src/plugins/stored: src/lib
 src/tools: src/lib src/findlib src/cats
-@BAT_DIR@: src/lib src/findlib
 @TRAY_MONITOR_DIR@: src/lib src/findlib
 src/stored/backends: src/lib
 src/lib/unittests: src/lib
@@ -172,9 +171,6 @@ Makefiles:
 	   chmod 755 create_$${I}_database update_$${I}_tables make_$${I}_tables; \
 	   chmod 755 grant_$${I}_privileges drop_$${I}_tables drop_$${I}_database); \
 	  done
-
-	(cd src/qt-console; \
-	 chmod 755 install_conf_file)
 
 info:
 	@mkdir -p build/

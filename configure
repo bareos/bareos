@@ -779,7 +779,6 @@ STATIC_SD
 STATIC_FD
 TTOOL_LDFLAGS
 TRAY_MONITOR_DIR
-BAT_DIR
 INTL_LIBTOOL_SUFFIX_PREFIX
 INTLOBJS
 GENCAT
@@ -964,7 +963,6 @@ infodir
 docdir
 oldincludedir
 includedir
-runstatedir
 localstatedir
 sharedstatedir
 sysconfdir
@@ -984,8 +982,7 @@ PACKAGE_TARNAME
 PACKAGE_NAME
 PATH_SEPARATOR
 SHELL'
-ac_subst_files='DEBIAN_CONTROL_BAT
-DEBIAN_CONTROL_TRAYMONITOR
+ac_subst_files='DEBIAN_CONTROL_TRAYMONITOR
 DEBIAN_CONTROL_FILEDAEMON_GLUSTERFS_PLUGIN
 DEBIAN_CONTROL_STORAGE_GLUSTERFS
 DEBIAN_CONTROL_FILEDAEMON_CEPH_PLUGIN
@@ -1012,7 +1009,6 @@ enable_rpath
 with_libiconv_prefix
 with_libintl_prefix
 with_included_gettext
-enable_bat
 enable_traymonitor
 enable_smartalloc
 enable_lockmgr
@@ -1152,7 +1148,6 @@ datadir='${datarootdir}'
 sysconfdir='${prefix}/etc'
 sharedstatedir='${prefix}/com'
 localstatedir='${prefix}/var'
-runstatedir='${localstatedir}/run'
 includedir='${prefix}/include'
 oldincludedir='/usr/include'
 docdir='${datarootdir}/doc/${PACKAGE_TARNAME}'
@@ -1405,15 +1400,6 @@ do
   | -silent | --silent | --silen | --sile | --sil)
     silent=yes ;;
 
-  -runstatedir | --runstatedir | --runstatedi | --runstated \
-  | --runstate | --runstat | --runsta | --runst | --runs \
-  | --run | --ru | --r)
-    ac_prev=runstatedir ;;
-  -runstatedir=* | --runstatedir=* | --runstatedi=* | --runstated=* \
-  | --runstate=* | --runstat=* | --runsta=* | --runst=* | --runs=* \
-  | --run=* | --ru=* | --r=*)
-    runstatedir=$ac_optarg ;;
-
   -sbindir | --sbindir | --sbindi | --sbind | --sbin | --sbi | --sb)
     ac_prev=sbindir ;;
   -sbindir=* | --sbindir=* | --sbindi=* | --sbind=* | --sbin=* \
@@ -1551,7 +1537,7 @@ fi
 for ac_var in	exec_prefix prefix bindir sbindir libexecdir datarootdir \
 		datadir sysconfdir sharedstatedir localstatedir includedir \
 		oldincludedir docdir infodir htmldir dvidir pdfdir psdir \
-		libdir localedir mandir runstatedir
+		libdir localedir mandir
 do
   eval ac_val=\$$ac_var
   # Remove trailing slashes.
@@ -1704,7 +1690,6 @@ Fine tuning of the installation directories:
   --sysconfdir=DIR        read-only single-machine data [PREFIX/etc]
   --sharedstatedir=DIR    modifiable architecture-independent data [PREFIX/com]
   --localstatedir=DIR     modifiable single-machine data [PREFIX/var]
-  --runstatedir=DIR       modifiable per-process data [LOCALSTATEDIR/run]
   --libdir=DIR            object code libraries [EPREFIX/lib]
   --includedir=DIR        C header files [PREFIX/include]
   --oldincludedir=DIR     C header files for non-gcc [/usr/include]
@@ -1751,7 +1736,6 @@ Optional Features:
   --enable-includes       enable installing of include files [default=no]
   --disable-nls           do not use Native Language Support
   --disable-rpath         do not hardcode runtime library paths
-  --enable-bat            enable build of bat Qt4 GUI [default=no]
   --enable-traymonitor    enable build of traymonitor [default=no]
   --enable-smartalloc     enable smartalloc debugging support [default=no]
   --enable-lockmgr        enable lock manager support [default=no]
@@ -22654,7 +22638,6 @@ fi
 support_smartalloc=yes
 support_readline=yes
 support_conio=yes
-support_bat=no
 support_traymonitor=no
 support_static_tools=no
 support_static_fd=no
@@ -22670,36 +22653,6 @@ batch_insert_db_backends=""
 support_lockmgr=no
 support_lmdb=no
 support_ndmp=no
-
-
-# Check whether --enable-bat was given.
-if test "${enable_bat+set}" = set; then :
-  enableval=$enable_bat;
-       if test x$enableval = xyes; then
-
-$as_echo "#define HAVE_BAT 1" >>confdefs.h
-
-	  support_bat=yes
-       fi
-
-
-fi
-
-
-BAT_DIR=
-DEBIAN_CONTROL_BAT=/dev/null
-if test x$support_bat = xyes; then
-   abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
-   pkg=$?
-   if test $pkg = 0; then
-      BAT_DIR=src/qt-console
-      DEBIAN_CONTROL_BAT=./debian/control.bareos-bat
-   else
-      as_fn_error $? "Unable to find suitable Qt4 installation needed by bat" "$LINENO" 5
-   fi
-fi
-
-
 
 
 # Check whether --enable-traymonitor was given.
@@ -33449,8 +33402,6 @@ debian|ubuntu|univention)
    PSCMD="ps -e -o pid,command"
    DEBIAN_CONTROL_UNIVENTION_BAREOS=/dev/null
    PFILES="${PFILES} ${DEBIAN_CONTROL} \
-      debian/bareos-bat.install \
-      debian/bareos-bat.postinst \
       debian/bareos-bconsole.install \
       debian/bareos-bconsole.postinst \
       debian/bareos-common.install \
@@ -33882,7 +33833,7 @@ if test "x${subsysdir}" = "x${sbindir}" ; then
    exit 1
 fi
 
-ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf scripts/bat.console_apps src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/qt-console/bat.conf src/qt-console/bat.desktop src/qt-console/bat.pro src/qt-console/install_conf_file src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf src/defaultconfigs/bareos-dir.d/messages/Daemon.conf src/defaultconfigs/bareos-dir.d/messages/Standard.conf src/defaultconfigs/bareos-dir.d/storage/File.conf src/defaultconfigs/bareos-sd.d/device/FileStorage.conf src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf src/defaultconfigs/bareos-fd.d/client/myself.conf src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf src/defaultconfigs/tray-monitor.d/director/Director-local.conf src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
+ac_config_files="$ac_config_files autoconf/Make.common Makefile GNUmakefile manpages/Makefile scripts/bareos-config scripts/bareos-config-lib.sh scripts/bareos-explorer scripts/bareos-glusterfind-wrapper scripts/btraceback scripts/bconsole scripts/bareos scripts/bareos-ctl-dir scripts/bareos-ctl-fd scripts/bareos-ctl-sd scripts/devel_bareos scripts/Makefile scripts/logrotate scripts/mtx-changer scripts/disk-changer scripts/logwatch/Makefile scripts/logwatch/logfile.bareos.conf src/Makefile src/include/host.h src/console/Makefile src/console/bconsole.conf src/qt-tray-monitor/bareos-tray-monitor.desktop src/qt-tray-monitor/tray-monitor.conf src/qt-tray-monitor/tray-monitor.pro src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf src/defaultconfigs/bareos-dir.d/director/bareos-dir.conf src/defaultconfigs/bareos-dir.d/fileset/Catalog.conf src/defaultconfigs/bareos-dir.d/fileset/LinuxAll.conf src/defaultconfigs/bareos-dir.d/fileset/SelfTest.conf src/defaultconfigs/bareos-dir.d/job/BackupCatalog.conf src/defaultconfigs/bareos-dir.d/jobdefs/DefaultJob.conf src/defaultconfigs/bareos-dir.d/messages/Daemon.conf src/defaultconfigs/bareos-dir.d/messages/Standard.conf src/defaultconfigs/bareos-dir.d/storage/File.conf src/defaultconfigs/bareos-sd.d/device/FileStorage.conf src/defaultconfigs/bareos-sd.d/director/bareos-dir.conf src/defaultconfigs/bareos-sd.d/director/bareos-mon.conf src/defaultconfigs/bareos-sd.d/storage/bareos-sd.conf src/defaultconfigs/bareos-fd.d/client/myself.conf src/defaultconfigs/bareos-fd.d/director/bareos-dir.conf src/defaultconfigs/bareos-fd.d/director/bareos-mon.conf src/defaultconfigs/tray-monitor.d/client/FileDaemon-local.conf src/defaultconfigs/tray-monitor.d/director/Director-local.conf src/defaultconfigs/tray-monitor.d/monitor/bareos-mon.conf src/defaultconfigs/tray-monitor.d/storage/StorageDaemon-local.conf src/dird/Makefile src/dird/bareos-dir.conf src/lib/Makefile src/lib/unittests/Makefile src/stored/Makefile src/stored/bareos-sd.conf src/stored/backends/Makefile src/filed/Makefile src/filed/bareos-fd.conf src/cats/Makefile src/cats/make_catalog_backup.pl src/cats/make_catalog_backup src/cats/delete_catalog_backup src/cats/create_bareos_database src/cats/update_bareos_tables src/cats/grant_bareos_privileges src/cats/make_bareos_tables src/cats/drop_bareos_tables src/cats/drop_bareos_database src/cats/install-default-backend src/cats/ddl/versions.map src/findlib/Makefile src/findlib/unittests/Makefile src/lmdb/Makefile src/ndmp/Makefile src/tests/Makefile src/tools/Makefile src/plugins/filed/Makefile src/plugins/filed/python-ldap-conf.d/bareos-dir.d/fileset/plugin-ldap.conf.example src/plugins/stored/Makefile src/plugins/dird/Makefile po/Makefile.in src/defaultconfigs/diskonly/bareos-sd.conf src/defaultconfigs/diskonly/bareos-dir.conf $PFILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -34996,7 +34947,6 @@ do
     "scripts/disk-changer") CONFIG_FILES="$CONFIG_FILES scripts/disk-changer" ;;
     "scripts/logwatch/Makefile") CONFIG_FILES="$CONFIG_FILES scripts/logwatch/Makefile" ;;
     "scripts/logwatch/logfile.bareos.conf") CONFIG_FILES="$CONFIG_FILES scripts/logwatch/logfile.bareos.conf" ;;
-    "scripts/bat.console_apps") CONFIG_FILES="$CONFIG_FILES scripts/bat.console_apps" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
     "src/include/host.h") CONFIG_FILES="$CONFIG_FILES src/include/host.h" ;;
     "src/console/Makefile") CONFIG_FILES="$CONFIG_FILES src/console/Makefile" ;;
@@ -35004,10 +34954,6 @@ do
     "src/qt-tray-monitor/bareos-tray-monitor.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/bareos-tray-monitor.desktop" ;;
     "src/qt-tray-monitor/tray-monitor.conf") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/tray-monitor.conf" ;;
     "src/qt-tray-monitor/tray-monitor.pro") CONFIG_FILES="$CONFIG_FILES src/qt-tray-monitor/tray-monitor.pro" ;;
-    "src/qt-console/bat.conf") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.conf" ;;
-    "src/qt-console/bat.desktop") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.desktop" ;;
-    "src/qt-console/bat.pro") CONFIG_FILES="$CONFIG_FILES src/qt-console/bat.pro" ;;
-    "src/qt-console/install_conf_file") CONFIG_FILES="$CONFIG_FILES src/qt-console/install_conf_file" ;;
     "src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/catalog/MyCatalog.conf" ;;
     "src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/client/bareos-fd.conf" ;;
     "src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf") CONFIG_FILES="$CONFIG_FILES src/defaultconfigs/bareos-dir.d/console/bareos-mon.conf" ;;
@@ -36521,21 +36467,6 @@ $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
 
 
-if test "${support_bat}" = "yes" ; then
-   if test "x$QMAKE" = "xnone"; then
-      as_fn_error $? "Could not find qmake $PATH. Check your Qt installation" "$LINENO" 5
-   fi
-
-   cd src/qt-console
-   echo "Creating bat Makefile"
-   # hack: required to get "make install" to work
-   touch bat
-   chmod 755 bat
-   rm -f Makefile
-   $QMAKE QMAKE_CFLAGS_RELEASE="$CFLAGS $CPPFLAGS" QMAKE_CXXFLAGS_RELEASE="$CXXFLAGS $CPPFLAGS" QMAKE_LFLAGS_RELEASE="$LDFLAGS"
-   ${MAKE:-make} clean
-   cd ${BUILD_DIR}
-fi
 
 if test "${support_traymonitor}" = "yes" ; then
    if test "x$QMAKE" = "xnone"; then
@@ -36558,10 +36489,6 @@ if test X"$GCC" = "Xyes" ; then
   echo "Doing make of dependencies"
   ${MAKE:-make} depend
 fi
-
-cd src/qt-console
-chmod 755 install_conf_file
-cd ${BUILD_DIR}
 
 cd scripts
 chmod 755 bareos btraceback mtx-changer
@@ -36665,7 +36592,6 @@ Configuration on `date`:
    NDMP support:                 ${support_ndmp}
    enable-smartalloc:            ${support_smartalloc}
    enable-lockmgr:               ${support_lockmgr}
-   bat support:                  ${support_bat}
    tray-monitor support:         ${support_traymonitor}
    client-only:                  ${build_client_only}
    build-dird:                   ${build_dird}
