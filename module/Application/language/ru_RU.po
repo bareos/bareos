@@ -1,5 +1,3 @@
-msgid ""
-msgstr ""
 "Project-Id-Version: bareos-webui\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-05-24 17:59+0200\n"
@@ -18,15 +16,104 @@ msgstr ""
 "X-Poedit-KeywordsList: translate;_;setLabel;setValue;setLegend\n"
 "X-Poedit-SearchPath-0: .\n"
 
-#: ../../../module/Application/config/module.config.php:125
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
-msgid "Dashboard"
-msgstr "Панель управления"
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:61
+#: ../../../module/Storage/view/storage/storage/details.phtml:156
+#: ../../../module/Pool/view/pool/pool/details.phtml:49
+#: ../../../module/Job/view/job/job/details.phtml:137
+#: ../../../module/Job/view/job/job/index.phtml:167
+#: ../../../module/Application/config/module.config.php:161
+#: ../../../module/Application/config/module.config.php:166
+msgid "Pool"
+msgstr "Пул"
 
-#: ../../../module/Application/config/module.config.php:129
-#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:121
-msgid "Jobs"
-msgstr "Фоновое задание"
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:77
+#: ../../../module/Storage/view/storage/storage/details.phtml:126
+msgid "Drive"
+msgstr "Дисковод"
+
+#: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
+msgid "Submit"
+msgstr ""
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:26
+msgid "Storage details"
+msgstr "Информация о накопителе"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:32
+#: ../../../module/Storage/view/storage/storage/status.phtml:9
+#: ../../../module/Storage/view/storage/storage/index.phtml:33
+#: ../../../module/Pool/view/pool/pool/details.phtml:33
+#: ../../../module/Pool/view/pool/pool/index.phtml:33
+#: ../../../module/Media/view/media/media/details.phtml:33
+#: ../../../module/Media/view/media/media/index.phtml:33
+msgid "Devices"
+msgstr "Устройства"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:33
+#: ../../../module/Storage/view/storage/storage/status.phtml:10
+#: ../../../module/Storage/view/storage/storage/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/details.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:27
+#: ../../../module/Pool/view/pool/pool/index.phtml:34
+#: ../../../module/Pool/view/pool/pool/index.phtml:48
+#: ../../../module/Media/view/media/media/details.phtml:34
+#: ../../../module/Media/view/media/media/index.phtml:34
+msgid "Pools"
+msgstr "Пулы"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:34
+#: ../../../module/Storage/view/storage/storage/status.phtml:11
+#: ../../../module/Storage/view/storage/storage/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/details.phtml:35
+#: ../../../module/Pool/view/pool/pool/details.phtml:59
+#: ../../../module/Pool/view/pool/pool/details.phtml:80
+#: ../../../module/Pool/view/pool/pool/index.phtml:35
+#: ../../../module/Pool/view/pool/pool/index.phtml:58
+#: ../../../module/Media/view/media/media/details.phtml:35
+#: ../../../module/Media/view/media/media/index.phtml:27
+#: ../../../module/Media/view/media/media/index.phtml:35
+#: ../../../module/Media/view/media/media/index.phtml:48
+#: ../../../module/Application/config/module.config.php:171
+#: ../../../module/Application/config/module.config.php:176
+msgid "Volumes"
+msgstr "Тома"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:51
+msgid "Director message"
+msgstr "Сообщения Директора"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:57
+#: ../../../module/Client/view/client/client/index.phtml:89
+#: ../../../module/Job/view/job/job/index.phtml:114
+#: ../../../module/Job/view/job/job/index.phtml:135
+#: ../../../module/Job/view/job/job/actions.phtml:55
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:55
+msgid "Close"
+msgstr "Закрыть"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:72
+#: ../../../module/Storage/view/storage/storage/details.phtml:349
+msgid "Label barcodes"
+msgstr "Метка штрих-кода"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:82
+msgid "Assign media to this pool."
+msgstr "Задать носитель для пула."
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:84
+msgid "Use this drive for labeling."
+msgstr "Использовать устройство для маркирования."
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:88
+#: ../../../module/Job/view/job/job/details.phtml:252
+#: ../../../module/Job/view/job/job/index.phtml:333
+#: ../../../module/Job/view/job/job/index.phtml:339
+msgid "Cancel"
+msgstr "Отмена"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:103
+msgid "Import/Export Slots"
+msgstr "Импорт/Экспорт слотов"
 
 #: ../../../module/Application/config/module.config.php:133
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
@@ -46,13 +133,84 @@ msgstr "Краткий обзор"
 msgid "Run"
 msgstr "Запуск"
 
+#: ../../../module/Job/view/job/job/actions.phtml:78
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:78
+msgid "Actions"
+msgstr "Действия"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:121
+msgid "Drives"
+msgstr "Диски"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:127
+msgid "Loaded"
+msgstr "Загружено"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:144
+msgid "Slots"
+msgstr "Слоты"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:151
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Client/view/client/client/details.phtml:82
+#: ../../../module/Job/view/job/job/details.phtml:64
+#: ../../../module/Job/view/job/job/index.phtml:80
+#: ../../../module/Media/view/media/media/details.phtml:94
+msgid "Bytes"
+msgstr "Байты"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:152
+#: ../../../module/Pool/view/pool/pool/details.phtml:92
+#: ../../../module/Pool/view/pool/pool/details.phtml:142
+#: ../../../module/Media/view/media/media/details.phtml:60
+#: ../../../module/Media/view/media/media/details.phtml:153
+#: ../../../module/Media/view/media/media/index.phtml:60
+msgid "Last written"
+msgstr "Последние записи"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:153
+msgid "Expiration"
+msgstr "Окончание"
+
 #: ../../../module/Application/config/module.config.php:145
 #: ../../../module/Client/view/client/client/details.phtml:152
 #: ../../../module/Client/view/client/client/index.phtml:235
-#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
-#: ../../../module/Restore/view/restore/restore/index.phtml:26
-msgid "Restore"
-msgstr "Восстановить"
+#: ../../../module/Job/src/Job/Form/JobForm.php:95
+#: ../../../module/Job/view/job/job/details.phtml:66
+#: ../../../module/Job/view/job/job/index.phtml:82
+#: ../../../module/Job/view/job/job/actions.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:61
+#: ../../../module/Media/view/media/media/index.phtml:61
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
+#: ../../../module/Director/view/director/director/console.phtml:32
+#: ../../../module/Director/view/director/director/index.phtml:33
+#: ../../../module/Director/view/director/director/messages.phtml:32
+msgid "Status"
+msgstr "Статус"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:155
+msgid "Media Type"
+msgstr "Тип носителя"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:300
+msgid "not in catalog"
+msgstr "нет в каталоге"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:336
+msgid "Export"
+msgstr "Экспорт"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:343
+msgid "Update slots"
+msgstr "Слоты обновления"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:395
+msgid "Release"
+msgstr "Освободить"
+
+#: ../../../module/Storage/view/storage/storage/details.phtml:448
+msgid "Import"
+msgstr "Импорт"
 
 #: ../../../module/Application/config/module.config.php:149
 #: ../../../module/Client/view/client/client/index.phtml:26
@@ -60,18 +218,10 @@ msgstr "Восстановить"
 msgid "Clients"
 msgstr "Клиенты"
 
-#: ../../../module/Application/config/module.config.php:153
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
-msgid "Schedules"
-msgstr "Расписание выполнения резервного копирования"
-
 #: ../../../module/Application/config/module.config.php:157
 #: ../../../module/Storage/view/storage/storage/index.phtml:27
 msgid "Storages"
-msgstr "Запоминающие устройство"
+msgstr "Хранение"
 
 #: ../../../module/Application/config/module.config.php:161
 #: ../../../module/Application/config/module.config.php:166
@@ -84,22 +234,68 @@ msgstr "Запоминающие устройство"
 msgid "Pool"
 msgstr "Пул"
 
-#: ../../../module/Application/config/module.config.php:171
-#: ../../../module/Application/config/module.config.php:176
-#: ../../../module/Media/view/media/media/details.phtml:35
-#: ../../../module/Media/view/media/media/index.phtml:26
-#: ../../../module/Media/view/media/media/index.phtml:34
-#: ../../../module/Media/view/media/media/index.phtml:47
-#: ../../../module/Pool/view/pool/pool/details.phtml:34
+#: ../../../module/Storage/view/storage/storage/index.phtml:48
+msgid "Storage Devices"
+msgstr "Устройства"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:56
+#: ../../../module/Pool/view/pool/pool/details.phtml:57
+#: ../../../module/Pool/view/pool/pool/details.phtml:89
+#: ../../../module/Pool/view/pool/pool/index.phtml:56
+#: ../../../module/Client/view/client/client/details.phtml:50
+#: ../../../module/Client/view/client/client/index.phtml:53
+#: ../../../module/Media/view/media/media/details.phtml:57
+#: ../../../module/Media/view/media/media/index.phtml:57
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:76
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:46
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:46
+#: ../../../module/Restore/view/restore/restore/index.phtml:243
+msgid "Name"
+msgstr "Наименование"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:57
+msgid "Autochanger"
+msgstr "Авточейнджер"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:112
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:324
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:343
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:364
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:383
+msgid "No"
+msgstr "Нет"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:114
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:323
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:342
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:363
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:382
+msgid "Yes"
+msgstr "Да"
+
+#: ../../../module/Storage/view/storage/storage/index.phtml:123
+msgid "Manage autochanger"
+msgstr "Управление чейнджером"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:27
+msgid "Pool details"
+msgstr "Информация о пуле"
+
 #: ../../../module/Pool/view/pool/pool/details.phtml:58
-#: ../../../module/Pool/view/pool/pool/details.phtml:79
-#: ../../../module/Pool/view/pool/pool/index.phtml:35
-#: ../../../module/Pool/view/pool/pool/index.phtml:58
-#: ../../../module/Storage/view/storage/storage/details.phtml:34
-#: ../../../module/Storage/view/storage/storage/index.phtml:35
-#: ../../../module/Storage/view/storage/storage/status.phtml:11
-msgid "Volumes"
-msgstr "Объемы"
+#: ../../../module/Pool/view/pool/pool/details.phtml:91
+#: ../../../module/Pool/view/pool/pool/index.phtml:57
+#: ../../../module/Job/view/job/job/details.phtml:61
+#: ../../../module/Job/view/job/job/index.phtml:77
+#: ../../../module/Media/view/media/media/details.phtml:59
+#: ../../../module/Media/view/media/media/details.phtml:91
+#: ../../../module/Media/view/media/media/index.phtml:59
+msgid "Type"
+msgstr "Тип"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:60
+#: ../../../module/Pool/view/pool/pool/index.phtml:59
+msgid "Maximum volumes"
+msgstr "Максимальное количество томов"
 
 #: ../../../module/Application/config/module.config.php:183
 #: ../../../module/Director/view/director/director/index.phtml:27
@@ -123,6 +319,17 @@ msgid ""
 "properly:"
 msgstr ""
 
+#: ../../../module/Pool/view/pool/pool/details.phtml:63
+#: ../../../module/Pool/view/pool/pool/index.phtml:62
+msgid "Maximum volume bytes"
+msgstr "Максимум байт в томе"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:90
+#: ../../../module/Media/view/media/media/details.phtml:58
+#: ../../../module/Media/view/media/media/index.phtml:58
+msgid "Storage"
+msgstr "Накопитель"
+
 #: ../../../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
 msgstr "Произошла ошибка 404"
@@ -130,6 +337,12 @@ msgstr "Произошла ошибка 404"
 #: ../../../module/Application/view/error/404.phtml:12
 msgid "The requested controller was unable to dispatch the request."
 msgstr "Запрошенный контроллер не смог отправить запрос."
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:95
+#: ../../../module/Media/view/media/media/details.phtml:63
+#: ../../../module/Media/view/media/media/index.phtml:63
+msgid "Maximum bytes"
+msgstr "Максимум байт"
 
 #: ../../../module/Application/view/error/404.phtml:15
 msgid ""
@@ -159,6 +372,21 @@ msgstr "Контроллер"
 msgid "resolves to %s"
 msgstr "решает %s"
 
+#: ../../../module/Pool/view/pool/pool/details.phtml:146
+#: ../../../module/Media/view/media/media/details.phtml:157
+msgid "Volume jobs"
+msgstr "Задания тома"
+
+#: ../../../module/Pool/view/pool/pool/details.phtml:150
+#: ../../../module/Media/view/media/media/details.phtml:161
+msgid "Recycle"
+msgstr "Переиспользовать"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:26
+#: ../../../module/Application/config/module.config.php:125
+msgid "Dashboard"
+msgstr "Панель"
+
 #: ../../../module/Application/view/error/404.phtml:55
 #: ../../../module/Application/view/error/index.phtml:11
 msgid "Additional information"
@@ -186,6 +414,16 @@ msgstr "Сообщение"
 msgid "Stack trace"
 msgstr "Трассировки стека"
 
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:67
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:49
+msgid "Terminated successfully"
+msgstr "Успех"
+
+#: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:68
+#: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:53
+msgid "Terminated unsuccessfully"
+msgstr "Сбой"
+
 #: ../../../module/Application/view/error/404.phtml:76
 #: ../../../module/Application/view/error/index.phtml:32
 msgid "Previous exceptions"
@@ -204,6 +442,24 @@ msgstr "Произошла ошибка"
 #, fuzzy
 msgid "Documentation"
 msgstr "Время хранения тома"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:38
+#: ../../../module/Client/view/client/client/details.phtml:77
+#: ../../../module/Job/src/Job/Form/JobForm.php:53
+#: ../../../module/Job/view/job/job/details.phtml:59
+#: ../../../module/Job/view/job/job/index.phtml:75
+#: ../../../module/Job/view/job/job/actions.phtml:76
+#: ../../../module/Media/view/media/media/details.phtml:89
+msgid "Job name"
+msgstr "Имя задания"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
+#: ../../../module/Client/view/client/client/details.phtml:76
+#: ../../../module/Job/view/job/job/details.phtml:58
+#: ../../../module/Job/view/job/job/index.phtml:74
+#: ../../../module/Media/view/media/media/details.phtml:88
+msgid "Job ID"
+msgstr "ID задания"
 
 #: ../../../module/Application/view/layout/layout.phtml:98
 msgid "Mailinglists"
@@ -310,24 +566,6 @@ msgstr "Действия"
 msgid "Last backups"
 msgstr "Последние резервные копии"
 
-#: ../../../module/Client/view/client/client/details.phtml:76
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
-#: ../../../module/Job/view/job/job/details.phtml:58
-#: ../../../module/Job/view/job/job/index.phtml:75
-#: ../../../module/Media/view/media/media/details.phtml:88
-msgid "Job ID"
-msgstr "Идентификатор фонового задания"
-
-#: ../../../module/Client/view/client/client/details.phtml:77
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
-#: ../../../module/Job/src/Job/Form/JobForm.php:53
-#: ../../../module/Job/view/job/job/actions.phtml:76
-#: ../../../module/Job/view/job/job/details.phtml:59
-#: ../../../module/Job/view/job/job/index.phtml:76
-#: ../../../module/Media/view/media/media/details.phtml:89
-msgid "Job name"
-msgstr "Наименование фонового задания"
-
 #: ../../../module/Client/view/client/client/details.phtml:78
 #: ../../../module/Job/view/job/job/details.phtml:87
 msgid "Timestamp"
@@ -390,6 +628,12 @@ msgstr "Байты"
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:77
 msgid "Status"
 msgstr "Статус"
+
+#: ../../../module/Application/config/module.config.php:145
+#: ../../../module/Restore/src/Restore/Form/RestoreForm.php:486
+#: ../../../module/Restore/view/restore/restore/index.phtml:26
+msgid "Restore"
+msgstr "Восстановление"
 
 #: ../../../module/Client/view/client/client/details.phtml:216
 #: ../../../module/Job/view/job/job/index.phtml:303
@@ -514,37 +758,12 @@ msgid "Console"
 msgstr "Консоль"
 
 #: ../../../module/Director/view/director/director/console.phtml:42
-msgid "bconsole (batch-mode), please handle with care."
-msgstr "bconsole (пакетный режим), просьба обращаться с осторожностью."
-
-#: ../../../module/Director/view/director/director/console.phtml:42
-msgid "All commands have to be a one liner, dialogs are not working."
-msgstr "Все команды должны быть один лайнер, диалоги не работают."
-
-#: ../../../module/Director/view/director/director/console.phtml:42
 msgid "Type help for a list of commands."
 msgstr "Введите help для получения списка команд."
-
-#: ../../../module/Director/view/director/director/index.phtml:48
-msgid "Director Status"
-msgstr "Директор-статус"
 
 #: ../../../module/Director/view/director/director/messages.phtml:44
 msgid "Refresh"
 msgstr "Обновить"
-
-#: ../../../module/Director/view/director/director/messages.phtml:51
-msgid "Director messages"
-msgstr "Директор-сообщения"
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
-msgid "Fileset details"
-msgstr "Детали по набору файлов"
-
-#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
-msgid "Id"
-msgstr "Идентификатор"
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:47
 msgid "MD5 checksum"
@@ -563,7 +782,7 @@ msgstr "Набор файлов"
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
 msgid "jobname"
-msgstr "Наименование фонового задания"
+msgstr "Имя задания"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:71
 msgid "Time period"
@@ -611,23 +830,16 @@ msgstr "ожидание"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:100
 msgid "terminated unsuccessfully"
-msgstr "завершено неудачно"
+msgstr "сбой"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:101
 msgid "terminated successfully"
-msgstr "завершено успешно"
+msgstr "успех"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:70
 #: ../../../module/Job/view/job/job/details.phtml:49
 msgid "Job"
-msgstr "Фоновое задание"
-
-#: ../../../module/Job/src/Job/Form/RunJobForm.php:104
-#: ../../../module/Media/view/media/media/details.phtml:58
-#: ../../../module/Media/view/media/media/index.phtml:57
-#: ../../../module/Pool/view/pool/pool/details.phtml:89
-msgid "Storage"
-msgstr "Запоминающие устройства"
+msgstr "Задание"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:155
 msgid "Priority"
@@ -641,10 +853,6 @@ msgstr ""
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
 msgid "Submit"
 msgstr ""
-
-#: ../../../module/Job/view/job/job/actions.phtml:69
-msgid "Job Actions"
-msgstr "Процедуры для фоновых заданий"
 
 #: ../../../module/Job/view/job/job/details.phtml:61
 #: ../../../module/Job/view/job/job/index.phtml:78
@@ -673,15 +881,6 @@ msgstr "Объемы"
 #: ../../../module/Storage/view/storage/storage/details.phtml:150
 msgid "Volume"
 msgstr "Том"
-
-#: ../../../module/Job/view/job/job/details.phtml:127
-#: ../../../module/Job/view/job/job/index.phtml:107
-#: ../../../module/Media/view/media/media/details.phtml:120
-#: ../../../module/Media/view/media/media/index.phtml:86
-#: ../../../module/Pool/view/pool/pool/details.phtml:118
-#: ../../../module/Restore/view/restore/restore/index.phtml:39
-msgid "Failed to retrieve data from Bareos director"
-msgstr "Не удалось извлечь данные из Bareos директора"
 
 #: ../../../module/Job/view/job/job/details.phtml:130
 #: ../../../module/Job/view/job/job/index.phtml:111
@@ -729,7 +928,7 @@ msgstr "Конечный блок"
 #: ../../../module/Job/view/job/job/index.phtml:303
 #: ../../../module/Job/view/job/job/index.phtml:313
 msgid "Rerun"
-msgstr "Возврат"
+msgstr "Перезапустить"
 
 #: ../../../module/Job/view/job/job/details.phtml:302
 #: ../../../module/Job/view/job/job/index.phtml:334
@@ -740,28 +939,37 @@ msgstr "Отмена"
 
 #: ../../../module/Job/view/job/job/index.phtml:66
 msgid "Job list"
-msgstr "Список фоновых заданий"
+msgstr "Список заданий"
+
+#: ../../../module/Job/view/job/job/index.phtml:106
+msgid "Failed to retrieve data from Bareos director"
+msgstr "Не удалось получить данные от Bareos директора"
+
+#: ../../../module/Job/view/job/job/index.phtml:109
+msgid "Please try to reduce the amount of data to display, e.g. reduce time period."
+msgstr "Пожалуйста, попробуйте уменьшить объем данных для отображения, например "
 
 #: ../../../module/Job/view/job/job/index.phtml:110
-msgid ""
-"Please try to reduce the amount of data to display, e.g. reduce time period."
-msgstr ""
-"Пожалуйста, попробуйте уменьшить объем данных для отображения, например "
-"сократить период времени."
+msgid "Error message received from director:"
+msgstr "Сообщение об ошибке от директора:"
+
+#: ../../../module/Job/view/job/job/index.phtml:111
+msgid "Failed to send result as json. Maybe result message to long?"
+msgstr "Не удалось отправить результат в формате JSON. Может сообщение слишком длинное?"
+
+#: ../../../module/Job/view/job/job/actions.phtml:69
+msgid "Job Actions"
+msgstr "Действия для заданий"
+
+#: ../../../module/Job/view/job/job/actions.phtml:146
+#: ../../../module/Job/view/job/job/actions.phtml:149
+#: ../../../module/Application/config/module.config.php:138
+msgid "Run"
+msgstr "Запуск"
 
 #: ../../../module/Media/view/media/media/details.phtml:27
 msgid "Volume details"
-msgstr "Детали по объему"
-
-#: ../../../module/Media/view/media/media/details.phtml:33
-#: ../../../module/Media/view/media/media/index.phtml:32
-#: ../../../module/Pool/view/pool/pool/details.phtml:32
-#: ../../../module/Pool/view/pool/pool/index.phtml:33
-#: ../../../module/Storage/view/storage/storage/details.phtml:32
-#: ../../../module/Storage/view/storage/storage/index.phtml:33
-#: ../../../module/Storage/view/storage/storage/status.phtml:9
-msgid "Devices"
-msgstr "Устроайства"
+msgstr "Информация о томе"
 
 #: ../../../module/Media/view/media/media/details.phtml:34
 #: ../../../module/Media/view/media/media/index.phtml:33
@@ -775,26 +983,11 @@ msgstr "Устроайства"
 msgid "Pools"
 msgstr "Пулы"
 
-#: ../../../module/Media/view/media/media/details.phtml:60
-#: ../../../module/Media/view/media/media/details.phtml:173
-#: ../../../module/Media/view/media/media/index.phtml:59
-#: ../../../module/Pool/view/pool/pool/details.phtml:91
-#: ../../../module/Pool/view/pool/pool/details.phtml:161
-#: ../../../module/Storage/view/storage/storage/details.phtml:152
-msgid "Last written"
-msgstr "Прследние записи"
-
 #: ../../../module/Media/view/media/media/details.phtml:62
 #: ../../../module/Media/view/media/media/index.phtml:61
 #: ../../../module/Pool/view/pool/pool/details.phtml:93
 msgid "Retention/Expiration"
 msgstr "Задержка/Окончание"
-
-#: ../../../module/Media/view/media/media/details.phtml:63
-#: ../../../module/Media/view/media/media/index.phtml:62
-#: ../../../module/Pool/view/pool/pool/details.phtml:94
-msgid "Maximum bytes"
-msgstr "Максимум байтов"
 
 #: ../../../module/Media/view/media/media/details.phtml:64
 #: ../../../module/Media/view/media/media/index.phtml:63
@@ -804,7 +997,7 @@ msgstr "Текущие байты"
 
 #: ../../../module/Media/view/media/media/details.phtml:80
 msgid "Jobs on volume"
-msgstr "Фоновые задания по объему"
+msgstr "Задания тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:95
 msgid "Starttime"
@@ -824,19 +1017,9 @@ msgstr "Дата менки"
 msgid "First written"
 msgstr "Первые записи"
 
-#: ../../../module/Media/view/media/media/details.phtml:177
-#: ../../../module/Pool/view/pool/pool/details.phtml:165
-msgid "Volume jobs"
-msgstr "Объем заданий"
-
-#: ../../../module/Media/view/media/media/details.phtml:181
-#: ../../../module/Pool/view/pool/pool/details.phtml:169
-msgid "Recycle"
-msgstr "Переработка"
-
 #: ../../../module/Media/view/media/media/details.phtml:185
 msgid "Volume writes"
-msgstr "Объем записей"
+msgstr "Записи тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:189
 #: ../../../module/Storage/view/storage/storage/details.phtml:108
@@ -846,19 +1029,19 @@ msgstr "Слот"
 
 #: ../../../module/Media/view/media/media/details.phtml:193
 msgid "Media Id"
-msgstr "Идентификатор носителя"
+msgstr "ID носителя"
 
 #: ../../../module/Media/view/media/media/details.phtml:197
 msgid "Volume Blocks"
-msgstr "Объем блоков"
+msgstr "Блоки тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:201
 msgid "Volume use duration"
-msgstr "Разрешенная продолжительность использования объема"
+msgstr "Разрешенная продолжительность использования тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:205
 msgid "Volume Pool Id"
-msgstr "Идентификатор пула объема"
+msgstr "ID пула тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:209
 msgid "In changer"
@@ -870,15 +1053,168 @@ msgstr "Файлы тома"
 
 #: ../../../module/Media/view/media/media/details.phtml:217
 msgid "Max. volume jobs"
-msgstr "Максимум заданий в объеме"
+msgstr "Макс. заданий в томе"
 
-#: ../../../module/Media/view/media/media/details.phtml:221
+#: ../../../module/Media/view/media/media/details.phtml:201
 msgid "Volume mounts"
-msgstr "Сонтаж томов"
+msgstr "Монтаж томов"
 
-#: ../../../module/Media/view/media/media/details.phtml:225
+#: ../../../module/Media/view/media/media/details.phtml:205
 msgid "Volume capacity bytes"
 msgstr "Байты по емкости тома"
+
+#: ../../../module/Media/view/media/media/details.phtml:209
+msgid "Volume errors"
+msgstr "Ошибки в томах"
+
+#: ../../../module/Media/view/media/media/details.phtml:217
+msgid "Max. volume files"
+msgstr "Макс. объем файлов"
+
+#: ../../../module/Media/view/media/media/details.phtml:221
+msgid "Endfile"
+msgstr "Конечный файл"
+
+#: ../../../module/Media/view/media/media/details.phtml:225
+msgid "Endblock"
+msgstr "Конечный блок"
+
+#: ../../../module/Media/view/media/media/details.phtml:229
+msgid "Labeltype"
+msgstr "Тип идентификатора"
+
+#: ../../../module/Media/view/media/media/details.phtml:233
+msgid "Device Id"
+msgstr "ID устройства"
+
+#: ../../../module/Media/view/media/media/details.phtml:237
+msgid "Location Id"
+msgstr "ID ячейки памяти"
+
+#: ../../../module/Media/view/media/media/details.phtml:245
+msgid "Initial write"
+msgstr "Начальная запись"
+
+#: ../../../module/Media/view/media/media/details.phtml:249
+msgid "Scratch Pool Id"
+msgstr "ID временного пула"
+
+#: ../../../module/Media/view/media/media/details.phtml:253
+msgid "Recycle pool Id"
+msgstr "ID переиспользуемого пула"
+
+#: ../../../module/Media/view/media/media/details.phtml:257
+msgid "Comment"
+msgstr "Комментарий"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
+msgid "Schedule Details"
+msgstr "Информация о расписании"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:32
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:33
+#: ../../../module/Application/config/module.config.php:133
+msgid "Overview"
+msgstr "Краткий обзор"
+
+#: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:33
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
+msgid "Scheduler status"
+msgstr "Статус планировщика"
+
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/status.phtml:46
+msgid "Status Scheduler"
+msgstr "Статус планировщика"
+
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/overview.phtml:47
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:26
+#: ../../../module/Schedule/view/schedule/schedule/index.phtml:68
+#: ../../../module/Application/config/module.config.php:153
+msgid "Schedules"
+msgstr "Расписание"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
+msgid "Fileset details"
+msgstr "Информация о наборе файлов"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:45
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:45
+msgid "Id"
+msgstr "Id"
+
+#: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:47
+msgid "Creation time"
+msgstr "Время создания"
+
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:37
+msgid "Filesets"
+msgstr "Набор файлов"
+
+#: ../../../module/Director/view/director/director/console.phtml:34
+#: ../../../module/Director/view/director/director/index.phtml:35
+#: ../../../module/Director/view/director/director/messages.phtml:34
+msgid "Console"
+msgstr "Консоль"
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "bconsole (batch-mode), please handle with care."
+msgstr "bconsole (пакетный режим), будьте осторожны."
+
+#: ../../../module/Director/view/director/director/console.phtml:42
+msgid "All commands have to be a one liner, dialogs are not working."
+msgstr "Используйте однострочные команды, диалоги не работают."
+
+#: ../../../module/Director/view/director/director/index.phtml:27
+#: ../../../module/Director/view/director/director/messages.phtml:26
+#: ../../../module/Application/config/module.config.php:183
+msgid "Director"
+msgstr "Директор"
+
+#: ../../../module/Director/view/director/director/index.phtml:48
+msgid "Director Status"
+msgstr "Статус Директора"
+
+#: ../../../module/Director/view/director/director/messages.phtml:51
+msgid "Director messages"
+msgstr "Сообщения Директора"
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:37
+msgid ""
+"Sorry, it seems you are not authorized to run this module. If you think this "
+"is an error, please contact your local administrator."
+msgstr ""
+
+#: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
+msgid ""
+"Please read the <a href=\"http://doc.bareos.org/master/html/bareos-manual-"
+"main-reference.html#sec:webui-console\" target=\"_blank\">Bareos "
+"documentation</a> for any additional information on how to configure the "
+"Command ACL directive of your Console/Profile resources. Following is a list "
+"of required commands which need to be in your Command ACL to run this module "
+"properly:"
+msgstr ""
+
+#: ../../../module/Application/config/module.config.php:129
+msgid "Jobs"
+msgstr "Задания"
+
+#: ../../../module/Application/view/layout/layout.phtml:94
+#, fuzzy
+msgid "Documentation"
+msgstr "Время хранения тома"
+
+#: ../../../module/Application/view/layout/layout.phtml:95
+msgid "Mailinglists"
+msgstr ""
 
 #: ../../../module/Media/view/media/media/details.phtml:229
 msgid "Volume errors"
@@ -900,37 +1236,9 @@ msgstr "Конечный блок"
 msgid "Labeltype"
 msgstr "Тип идентификатора"
 
-#: ../../../module/Media/view/media/media/details.phtml:253
-msgid "Device Id"
-msgstr "Идентификатор носителя"
-
-#: ../../../module/Media/view/media/media/details.phtml:257
-msgid "Location Id"
-msgstr "Идентификатор ячейки памяти"
-
 #: ../../../module/Media/view/media/media/details.phtml:261
 msgid "Recycle count"
 msgstr "Количество циклов"
-
-#: ../../../module/Media/view/media/media/details.phtml:265
-msgid "Initial write"
-msgstr "Начальная запись"
-
-#: ../../../module/Media/view/media/media/details.phtml:269
-msgid "Scratch Pool Id"
-msgstr "Временный идентификатор пула"
-
-#: ../../../module/Media/view/media/media/details.phtml:273
-msgid "Recycle pool Id"
-msgstr "Идентификатор циклов пула"
-
-#: ../../../module/Media/view/media/media/details.phtml:277
-msgid "Comment"
-msgstr "Комментарий"
-
-#: ../../../module/Pool/view/pool/pool/details.phtml:26
-msgid "Pool details"
-msgstr "Детали пула"
 
 #: ../../../module/Pool/view/pool/pool/details.phtml:59
 #: ../../../module/Pool/view/pool/pool/index.phtml:59
@@ -947,11 +1255,6 @@ msgstr "Время хранения тома"
 msgid "Maximum volume jobs"
 msgstr "Максимум заданий в томе"
 
-#: ../../../module/Pool/view/pool/pool/details.phtml:62
-#: ../../../module/Pool/view/pool/pool/index.phtml:62
-msgid "Maximum volume bytes"
-msgstr "Максимум байтов в томе"
-
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:94
 msgid "Backup jobs"
 msgstr "Задания резервного копирования"
@@ -963,11 +1266,11 @@ msgstr "Резервное копирование"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:184
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:201
 msgid "Restore to client"
-msgstr "Восстановить клиента"
+msgstr "Восстановить на клиент"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:218
 msgid "Restore to (another) client"
-msgstr "Восстановить (другого) клиента"
+msgstr "Восстановить на (другой) клиент"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:237
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:252
@@ -1079,30 +1382,10 @@ msgstr "Дата"
 msgid "Drive"
 msgstr "Дисковод"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:26
-msgid "Storage details"
-msgstr "Детали к накопителю"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:51
-msgid "Director message"
-msgstr "Сообщения Директора"
-
 #: ../../../module/Storage/view/storage/storage/details.phtml:72
 #: ../../../module/Storage/view/storage/storage/details.phtml:349
 msgid "Label barcodes"
 msgstr "Метка штрих-кода"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:82
-msgid "Assign media to this pool."
-msgstr ""
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:84
-msgid "Use this drive for labeling."
-msgstr ""
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:103
-msgid "Import/Export Slots"
-msgstr "Импорт/Экспорт слоты"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:121
 msgid "Drives"
@@ -1111,14 +1394,6 @@ msgstr "Диски"
 #: ../../../module/Storage/view/storage/storage/details.phtml:127
 msgid "Loaded"
 msgstr "Загружено"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:144
-msgid "Slots"
-msgstr "Стоты"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:153
-msgid "Expiration"
-msgstr "Окончание"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:155
 msgid "Media Type"
@@ -1136,21 +1411,9 @@ msgstr "Экспорт"
 msgid "Update slots"
 msgstr "Слоты обновления"
 
-#: ../../../module/Storage/view/storage/storage/details.phtml:395
-msgid "Release"
-msgstr "Версия"
-
-#: ../../../module/Storage/view/storage/storage/details.phtml:448
-msgid "Import"
-msgstr "Импорт"
-
 #: ../../../module/Storage/view/storage/storage/details.phtml:455
 msgid "Import all"
 msgstr "Импортировать все"
-
-#: ../../../module/Storage/view/storage/storage/index.phtml:48
-msgid "Storage Devices"
-msgstr "Запоминающие устройства (Накопители)"
 
 #: ../../../module/Storage/view/storage/storage/index.phtml:57
 msgid "Autochanger"
@@ -1164,11 +1427,6 @@ msgstr "Управление чейнджером"
 msgid "Storage Status"
 msgstr "Статус накопителя"
 
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:26
-#: ../../../module/Schedule/view/schedule/schedule/details.phtml:47
-msgid "Schedule Details"
-msgstr "Расписание подробнее"
-
 #: ../../../module/Schedule/view/schedule/schedule/details.phtml:34
 #: ../../../module/Schedule/view/schedule/schedule/index.phtml:34
 #: ../../../module/Schedule/view/schedule/schedule/overview.phtml:34
@@ -1181,14 +1439,3 @@ msgstr "Статус планировщика"
 msgid "Status Scheduler"
 msgstr "Статус планировщика"
 
-#~ msgid "Terminated successfully"
-#~ msgstr "Завершено успешно"
-
-#~ msgid "Terminated unsuccessfully"
-#~ msgstr "Завершено неудачно"
-
-#~ msgid "Help"
-#~ msgstr "Помощь"
-
-#~ msgid "Storage ID"
-#~ msgstr "Идентификатор накопителя"
