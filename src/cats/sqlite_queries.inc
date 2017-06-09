@@ -684,7 +684,7 @@ FROM Job,
      File,
   (SELECT MAX(JobTDate) AS JobTDate,
           PathId,
-          File.Name
+          Name
    FROM
      (SELECT JobTDate,
              PathId,
@@ -702,7 +702,7 @@ FROM Job,
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s)
         AND PathId = %s ) AS tmp
    GROUP BY PathId,
-            File.Name
+            Name
    LIMIT %lld
    OFFSET %lld ) AS T1
 WHERE T1.JobTDate = Job.JobTDate
