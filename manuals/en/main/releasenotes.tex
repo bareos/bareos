@@ -16,6 +16,34 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \section*{Bareos-16.2}
 
+\releasenote{16.2.6}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2017-06-16\\
+Database Version  & 2004 (unchanged)\\
+Release Ticket    & \ticket{794}\\
+Url               & \releaseUrlDownloadBareosCom{16.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+  \item Prevent from director crash when using incorrect paramaters of \bcommand{.bvfs_*}{} commands.
+  \item Director now closes all configuration files when reloading failed.
+  \item Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
+  \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
+  \item Packages for Univention UCS 4.2 have been added.
+  \item \bcommand{.bvfs_lsdirs} no longer shows empty directories from accurate jobs.
+  \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
+  \item The device spool size calculation when using secure erase was fixed.
+  \item WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
+  \item WebUI: The login form no longer allows redirects to arbitrary URLs
+  \item WebUI: The used ZendFramework components were updated from version 2.4.10 to 2.4.11.
+  \item WebUI: jQuery was updated from version 1.12.4 to version 3.2.0., some outdated browsers like Internet Explorer 6-8, Opera 12.1x or Safari 5.1+ will no longer be supported, see \elink{jQuery Browser Support}{http://jquery.com/browser-support/} for details.
+\end{itemize}
+
+}
+
+
 \releasenote{16.2.5}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
