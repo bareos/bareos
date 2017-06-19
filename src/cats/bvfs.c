@@ -416,6 +416,7 @@ int B_DB::bvfs_build_ls_file_query(POOL_MEM &query, DB_RESULT_HANDLER *result_ha
  */
 static int result_handler(void *ctx, int fields, char **row)
 {
+   Dmsg1(100, "result_handler(*,%d,**)", fields);
    if (fields == 4) {
       Pmsg4(0, "%s\t%s\t%s\t%s\n",
             row[0], row[1], row[2], row[3]);
@@ -443,9 +444,11 @@ Bvfs::Bvfs(JCR *j, B_DB *mdb) {
    prev_dir = get_pool_memory(PM_NAME);
    pattern = get_pool_memory(PM_NAME);
    *jobids = *prev_dir = *pattern = 0;
-   pwd_id = offset = 0;
-   see_copies = see_all_versions = false;
+   pwd_id = 0;
+   see_copies = false;
+   see_all_versions = false;
    limit = 1000;
+   offset = 0;
    attr = new_attr(jcr);
    list_entries = result_handler;
    user_data = this;
@@ -542,7 +545,9 @@ void Bvfs::update_cache()
    db->bvfs_update_path_hierarchy_cache(jcr, jobids);
 }
 
-/* Change the current directory, returns true if the path exists */
+/**
+ * Change the current directory, returns true if the path exists
+ */
 bool Bvfs::ch_dir(const char *path)
 {
    db_lock(db);
@@ -552,6 +557,16 @@ bool Bvfs::ch_dir(const char *path)
    return pwd_id != 0;
 }
 
+void Bvfs::get_all_file_versions(const char *path, const char *fname, const char *client)
+{
+   DBId_t pathid = 0;
+   char path_esc[MAX_ESCAPE_NAME_LENGTH];
+
+   db->escape_string(jcr, path_esc, (char *)path, strlen(path));
+   pathid = db->get_path_record(jcr, path_esc);
+   get_all_file_versions(pathid, fname, client);
+}
+
 /**
  * Get all file versions for a specified client
  * TODO: Handle basejobs using different client
@@ -559,6 +574,8 @@ bool Bvfs::ch_dir(const char *path)
 void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *client)
 {
    char ed1[50];
+   char fname_esc[MAX_ESCAPE_NAME_LENGTH];
+   char client_esc[MAX_ESCAPE_NAME_LENGTH];
    POOL_MEM query(PM_MESSAGE);
    POOL_MEM filter(PM_MESSAGE);
 
@@ -571,15 +588,21 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
       Mmsg(filter, " AND Job.Type = 'B' ");
    }
 
-   Mmsg(query,//    1           2              3
-"SELECT 'V', File.PathId, File.Name,  File.Md5, "
-//         4          5           6
+   db->escape_string(jcr, fname_esc, (char *)fname, strlen(fname));
+   db->escape_string(jcr, client_esc, (char *)client, strlen(client));
+
+   Mmsg(query,
+//       0   1            2
+"SELECT 'V', File.PathId, File.Name, "
+//       3           4           5
         "File.JobId, File.LStat, File.FileId, "
+//         6
+        "File.Md5, "
 //         7                    8
        "Media.VolumeName, Media.InChanger "
 "FROM File, Job, Client, JobMedia, Media "
-"WHERE File.Name = %s "
-  "AND File.PathId=%s "
+"WHERE File.Name = '%s' "
+  "AND File.PathId = %s "
   "AND File.JobId = Job.JobId "
   "AND Job.JobId = JobMedia.JobId "
   "AND File.FileIndex >= JobMedia.FirstIndex "
@@ -587,8 +610,8 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
   "AND JobMedia.MediaId = Media.MediaId "
   "AND Job.ClientId = Client.ClientId "
   "AND Client.Name = '%s' "
-  "%s ORDER BY FileId LIMIT %d OFFSET %d"
-        ,fname, edit_uint64(pathid, ed1), client, query.c_str(),
+  "%s ORDER BY File.FileId LIMIT %d OFFSET %d"
+        ,fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(),
         limit, offset);
 
    Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
@@ -647,7 +670,8 @@ void Bvfs::ls_special_dirs()
  "SELECT %s AS PathId, '.' AS Path)",
         edit_uint64(pwd_id, ed1), ed1);
 
-   Mmsg(query2,// 1      2     3        4     5       6
+   Mmsg(query2,
+//       0   1           2         3      4      5
 "SELECT 'D', tmp.PathId, tmp.Path, JobId, LStat, FileId "
   "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "

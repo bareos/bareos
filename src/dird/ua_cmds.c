@@ -220,7 +220,7 @@ static struct ua_cmdstruct commands[] = {
    { NT_(".bvfs_get_jobids"), dot_bvfs_get_jobids_cmd, _("Get jobids required for a restore"),
      NT_("jobid=<jobid> | ujobid=<unique-jobid> [all]"), true, true },
    { NT_(".bvfs_versions"), dot_bvfs_versions_cmd, _("List versions of a file"),
-     NT_("jobid=0 client=<client-name> pathid=<path-id> fname=<file-name> [copies] [versions]"), true, true },
+     NT_("jobid=0 client=<client-name> pathid=<path-id> filename=<file-name> [copies] [versions]"), true, true },
    { NT_(".bvfs_restore"), dot_bvfs_restore_cmd, _("Mark BVFS files/directories for restore. Stored in handle."),
      NT_("path=<handle> jobid=<jobid> [fileid=<file-id>] [dirid=<dirid>] [hardlink=<hardlink>]"), true, true },
    { NT_(".bvfs_cleanup"), dot_bvfs_cleanup_cmd, _("Cleanup BVFS cache for a certain handle"),

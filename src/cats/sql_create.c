@@ -856,34 +856,6 @@ bool B_DB::write_batch_file_records(JCR *jcr)
       goto bail_out;
    }
 
-#if 0
-   /*
-    * We have to lock tables
-    */
-<<<<<<< HEAD
-   if (!sql_query(SQL_QUERY_batch_lock_filename_query)) {
-      Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", errmsg);
-=======
-   /*
-   if (!db_sql_query(jcr->db_batch, batch_lock_filename_query[db_get_type_index(jcr->db_batch)])) {
-      Jmsg1(jcr, M_FATAL, 0, "Lock Filename table %s\n", jcr->db_batch->errmsg);
->>>>>>> bareos-16.2-db2170
-      goto bail_out;
-   */
-   }
-
-   if (!sql_query(SQL_QUERY_batch_fill_filename_query)) {
-      Jmsg1(jcr,M_FATAL,0,"Fill Filename table %s\n", errmsg);
-      sql_query(SQL_QUERY_batch_unlock_tables_query);
-      goto bail_out;
-   }
-
-   if (!sql_query(SQL_QUERY_batch_unlock_tables_query)) {
-      Jmsg1(jcr, M_FATAL, 0, "Unlock Filename table %s\n", errmsg);
-      goto bail_out;
-   }
-#endif
-
    if (!sql_query( "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq) "
                      "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
                      "batch.Name,batch.LStat, batch.MD5, batch.DeltaSeq "

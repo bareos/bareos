@@ -53,7 +53,7 @@ typedef enum {
    BVFS_FileId  = 5,            /**< Can be empty for missing directories */
 
    /* Only if File Version record */
-   BVFS_Md5     = 3,
+   BVFS_Md5     = 6,
    BVFS_VolName = 7,
    BVFS_VolInchanger = 8
 } bvfs_row_index;
@@ -100,6 +100,7 @@ public:
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
    void ls_special_dirs();      /* get . and .. */
+   void get_all_file_versions(const char *path, const char *fname, const char *client);
    void get_all_file_versions(DBId_t pathid, const char *fname, const char *client);
 
    void update_cache();

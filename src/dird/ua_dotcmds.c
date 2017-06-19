@@ -231,7 +231,9 @@ static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, char **f
    *copies = false;
 
    for (int i = 1; i < ua->argc; i++) {
-      if (bstrcasecmp(ua->argk[i], NT_("fname"))) {
+      if (bstrcasecmp(ua->argk[i], NT_("name")) ||
+          bstrcasecmp(ua->argk[i], NT_("fname")) ||
+          bstrcasecmp(ua->argk[i], NT_("filename"))) {
          *fname = ua->argv[i];
       }
 
@@ -401,7 +403,8 @@ bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    char *empty = (char *)"";
-   int limit = 2000, offset = 0, i;
+   int limit = 2000, offset = 0;
+   int i = 0;
    char *path = NULL, *jobid = NULL;
    char *fileid, *dirid, *hardlink;
    POOL_MEM filtered_jobids(PM_FNAME);
@@ -440,8 +443,8 @@ bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
 }
 
 /**
- * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
+ * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  */
 bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd)
 {
@@ -493,9 +496,9 @@ bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd)
 }
 
 /**
- * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
- * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 path=
+ * .bvfs_lsdirs jobid=1,2,3,4 path=/
+ * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  */
 bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
 {
@@ -540,7 +543,10 @@ bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
 }
 
 /**
- * .bvfs_versions jobid=0 client=<client-name> fname=<file-name> pathid=10 copies versions (jobid isn't used)
+ * .bvfs_versions jobid=0 client=<client-name> filename=<file-name> pathid=<number> [copies] [versions]
+ *
+ * jobid isn't used.
+ * versions is set, but not used.
  */
 bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
 {
@@ -569,13 +575,17 @@ bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
    }
 
    Bvfs fs(ua->jcr, ua->db);
-   fs.set_limit(limit);
    fs.set_see_all_versions(versions);
    fs.set_see_copies(copies);
    fs.set_handler(bvfs_result_handler, ua);
+   fs.set_limit(limit);
    fs.set_offset(offset);
    ua->send->array_start("versions");
-   fs.get_all_file_versions(pathid, fname, client);
+   if (pathid) {
+      fs.get_all_file_versions(pathid, fname, client);
+   } else {
+      fs.get_all_file_versions(path, fname, client);
+   }
    ua->send->array_end("versions");
 
    return true;
