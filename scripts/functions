@@ -326,6 +326,43 @@ check_two_logs()
    fi
 }
 
+check_log()
+{
+   LOG=$1
+   if [ -z "$LOG" ]; then
+      LOG=${tmp}/log1.out
+   fi
+
+   if ! [ -e "$LOG" ]; then
+      set_error "log file $LOG does not exist."
+      return 1
+   fi
+
+   if grep \
+         -e "^  Termination: .*Backup Error" \
+         -e "^Can't find " \
+         -e "Encoding error for database" \
+         $LOG
+   then
+      bstat=1
+   fi
+
+   if grep \
+         -e "^  Termination: .*Restore Error" \
+         -e "^  Termination: *Restore OK -- warning " \
+         -e "^  Termination: .*Verify Differences" \
+         $LOG
+   then
+      rstat=1
+   fi
+
+   if [ $bstat != 0 -o $rstat != 0 ] ; then
+      return 1
+   fi
+
+   return 0
+}
+
 check_restore_diff()
 {
    dest=${1:-$src}

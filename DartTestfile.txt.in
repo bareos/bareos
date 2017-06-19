@@ -122,6 +122,7 @@ ADD_TEST(disk:lz4hc-test "@regressdir@/tests/lz4hc-test")
 ADD_TEST(disk:lzfast-encrypt-test "@regressdir@/tests/lzfast-encrypt-test")
 ADD_TEST(disk:lzfast-test "@regressdir@/tests/lzfast-test")
 ADD_TEST(disk:config-add-client-test "@regressdir@/tests/config-add-client-test")
+ADD_TEST(disk:bvfs-test "@regressdir@/tests/bvfs-test")
 
 ADD_TEST(tape:scsi-crypto-tape "@regressdir@/tests/scsi-crypto-test")
 ADD_TEST(tape:ansi-label-tape "@regressdir@/tests/ansi-label-tape")

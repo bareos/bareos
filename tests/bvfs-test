@@ -1,180 +1,119 @@
 #!/bin/sh
-#
-# Run a simple backup of the Bareos build directory then create some
-#   new files, do an Incremental and restore those two files.
-# test the bvfs interface
-#
-TestName="bvfs-test"
-JobName=Incremental
+
 . scripts/functions
 
-${rscripts}/cleanup
-${rscripts}/copy-test-confs
-echo "${tmpsrc}" >${tmp}/file-list
-echo "${cwd}/build" >> ${tmp}/file-list
+#
+# Example regression test.
+#
+# Use this as a template for your own tests.
+#
 
-mkdir -p ${tmpsrc}
-cp -p ${src}/src/dird/*.c ${tmpsrc}
-cd ${tmp}
-echo "${tmpsrc}/ficheriro1.txt" >restore-list
-echo "${tmpsrc}/ficheriro2.txt" >>restore-list
-cd ${cwd}
+# Define the Name of the test as "TestName".
+# Should be the same as the filename, therefore we use the filename as default.
+TestName="`basename $0`"
+#TestName="1-example-test"
 
-change_jobname CompressedTest $JobName
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+BackupJobIds="1,2"
+BvfsPathId="b201"
+
+# Directory to backup.
+# This example uses a subdirectory of the bareos source/build directory,
+# that contains some file but isn't to large.
+BackupDirectory="${cwd}/build/src/tests/"
+BackupFileExtra=${BackupDirectory}/extrafile.txt
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Config files will be copied to required location.
+# Base configuration files come from the
+# configs/BASE/ directory, see
+# configs/BASE/README.txt for an overview of the provides resources.
+# Store your additonal resources to
+# configs/$TestName.
+# It is also possible to overwrite resources from configs/BASE.
+# If you define a full config file (instead of config files for individual resources),
+# only these will be taken.
+copy_configs
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+# start the test
 start_test
 
+echo "Test Content 1" > ${BackupFileExtra}
+
+# ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
 messages
-@$out ${tmp}/log1.out
-label storage=File volume=TestVolume001
-label storage=File volume=TestVolume002
-run job=$JobName yes
+@$out ${tmp}/log-backup1.out w
+label storage=File1 pool=Default volume=TestVolume001
+run job=$JobName storage=File1 yes
 wait
 messages
 quit
 END_OF_DATA
 
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
 run_bareos
-check_for_zombie_jobs storage=File
-#
-# Now create two new files to be restored later
-#
-sleep 1
-echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
-cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
+check_log ${tmp}/log-backup1.out
+
+
+# modify file and rerun backup
+echo "Test Content 2" >> ${BackupFileExtra}
 
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-@# Force Incremental on the second Volume
-update volume=TestVolume001 VolStatus=Used
-run level=Differential job=$JobName yes
+@$out ${tmp}/log-backup2.out w
+run job=$JobName storage=File1 yes
 wait
 messages
 quit
 END_OF_DATA
 
 run_bconsole
+check_log ${tmp}/log-backup2.out
 
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
 
+# use bvfs to restore
 cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Incremental job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-sleep 1
-cd ${tmpsrc}
-cp -f ficheriro2.txt 1
-sed "s%a%b%g" 1 >ficheriro2.txt
-rm -f 1
-cd ${cwd}
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Differential job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Incremental job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Incremental job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Incremental job=$JobName yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-sleep 1
-cat /etc/hosts >> ${tmpsrc}/ficheriro1.txt
-rm -f ${tmpsrc}/dird_conf.c
-touch ${tmpsrc}/ficheriro2.txt
-ln ${tmpsrc}/ficheriro2.txt ${tmpsrc}/hardlink2
-
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out /dev/null
-messages
-@$out ${tmp}/log1.out
-run level=Incremental accurate=yes job=$JobName
-yes
-wait
-messages
-@$out ${tmp}/log3.out
+@#
+@# bvfs
+@#
 .bvfs_update
-.bvfs_lsdir path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8
-.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7,8
-@$out ${tmp}/log31.out
-.bvfs_lsfile path=$tmpsrc/ jobid=1,2,3,4,5,6,7
-quit
-END_OF_DATA
+@$out ${tmp}/log-bvfs-jobids.out w
+.bvfs_get_jobids jobid=2
 
-run_bconsole
+@$out ${tmp}/log-bvfs-get-root-path.out w
+.bvfs_lsdir jobid=${BackupJobIds} path=
 
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out $tmp/log4.out
-.bvfs_cleanup path=b21
-END_OF_DATA
+@$out ${tmp}/log-bvfs-lsdir-root.out w
+.bvfs_lsdir jobid=${BackupJobIds} path=/
 
+@$out ${tmp}/log-bvfs-lsdir-BackupDirectory.out w
+.bvfs_lsdir jobid=${BackupJobIds} path=${BackupDirectory}
 
-# we look in the lsdir/lsfiles output to get filenameid and pathid for version and restore
-awk '/ficheriro1.txt/ {
-  print ".bvfs_versions jobid=" $4 " fnid=" $2 " pathid=" $1 " client='$CLIENT'"
-  print ".bvfs_restore jobid=" $4 " fileid=" $3 " path=b21"
-} ' $tmp/log3.out >> $tmp/bconcmds
+@$out ${tmp}/log-bvfs-lsfiles-BackupDirectory.out w
+.bvfs_lsfiles jobid=${BackupJobIds} pathid=1
 
-cat <<END_OF_DATA >>${tmp}/bconcmds
-restore file="?b21" where=$tmp/bareos-restores yes
+@$out ${tmp}/log-bvfs-versions-extrafile.out w
+.bvfs_versions jobid=0 client=${Client} path=${BackupDirectory} fname=extrafile.txt
+
+@$out ${tmp}/log-bvfs-restore.out w
+@#
+@# now do a restore
+@#
+.bvfs_restore path=${BvfsPathId} jobid=${BackupJobIds} dirid=1
+@#.bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b201
+
+restore client=${Client} where=${tmp}/bareos-restores storage=File1 file=?${BvfsPathId} yes
+.bvfs_cleanup path=${BvfsPathId}
+
 wait
 messages
 quit
@@ -182,119 +121,38 @@ END_OF_DATA
 
 run_bconsole
 
-diff $tmpsrc/ficheriro1.txt $tmp/bareos-restores/$tmpsrc/ficheriro1.txt &>> $tmp/d1
-if [ $? != 0 ]; then
-    print_debug "ERROR: ficheriro1.txt is different"
-    rstat=1
-fi
+# verify that all are terminated
+check_for_zombie_jobs storage=File1 client=${Client}
 
-rm -rf $tmp/bareos-restores
-
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out $tmp/log4.out
-@# Try to restore a directory
-.bvfs_cleanup path=b21
-END_OF_DATA
-
-awk '/ficheriro2.txt/ {
-  print ".bvfs_restore jobid=1,2,3,4,5,6,7,8 dirid=" $1 " path=b21"
-} ' $tmp/log3.out >> $tmp/bconcmds
-
-cat <<END_OF_DATA >>${tmp}/bconcmds
-@$out $tmp/log2.out
-restore file="?b21" where=$tmp/bareos-restores yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-$rscripts/diff.pl -s $tmpsrc/ -d $tmp/bareos-restores/$tmpsrc/
-if [ $? != 0 ]; then
-    print_debug "ERROR: Found error while restoring a directory"
-    rstat=1
-fi
-
-diff $tmpsrc/ficheriro2.txt $tmp/bareos-restores/$tmpsrc/ficheriro2.txt
-if [ $? != 0 ]; then
-    print_debug "ERROR: ficheriro2.txt is different"
-    rstat=1
-fi
-
-rm -rf $tmp/bareos-restores
-
-cat <<END_OF_DATA >${tmp}/bconcmds
-@$out $tmp/log4.out
-@# Try to restore a hardlinks
-.bvfs_cleanup path=b21
-END_OF_DATA
-
-jidx=`awk -F '\t' '/ficheriro2.txt|hardlinks2/ { lstat=$5  }
-   END { print ".bvfs_decode_lstat lstat=\"" lstat "\""
-} ' $tmp/log3.out | $bin/bconsole -c $conf/bconsole.conf | awk -F= '/LinkFI/ { print $2 } '`
-
-awk '/ficheriro2.txt/ { if (!id) { id=$3 } } /hardlink2/ { if (!id) { id=$3 } }
-  END {
-    print ".bvfs_restore jobid=1,2,3,4,5,6,7,8 hardlink=8,'$jidx' fileid=" id " path=b21"
-  } ' $tmp/log3.out >> $tmp/bconcmds
-
-cat <<END_OF_DATA >>${tmp}/bconcmds
-@$out $tmp/log2.out
-restore file="?b21" where=$tmp/bareos-restores yes
-wait
-messages
-quit
-END_OF_DATA
-
-run_bconsole
-
-test -f $tmp/bareos-restores/$tmpsrc/hardlink2 -a -f $tmp/bareos-restores/$tmpsrc/ficheriro2.txt
-if [ $? != 0 ]; then
-    print_debug "ERROR: Need to get all files"
-    rstat=1
-fi
-
-# Compare Inode
-ls -i $tmp/bareos-restores/$tmpsrc/hardlink2 | awk ' { print $1 } ' > $tmp/1
-ls -i $tmp/bareos-restores/$tmpsrc/ficheriro2.txt | awk ' { print $1 } ' > $tmp/2
-diff $tmp/1 $tmp/2 > /dev/null
-if [ $? != 0 ]; then
-    print_debug "ERROR: Both files should have the same inode number"
-    rstat=1
-fi
-
-check_for_zombie_jobs storage=File
+# stop bareos
 stop_bareos
 
-check_two_logs
+# check tmp/log1.out and tmp/log2.out for errors
+#check_two_logs
+check_log ${tmp}/log-bvfs-jobids.out
+check_log ${tmp}/log-bvfs-get-root-path.out
+check_log ${tmp}/log-bvfs-lsdir-root.out
+check_log ${tmp}/log-bvfs-lsdir-BackupDirectory.out
 
-grep dird_conf.c $tmp/log3.out > /dev/null
-if [ $? = 0 ]; then
-    print_debug "ERROR: Should not find dird_conf.c in bvfs_lsfiles output $tmp/log3.out"
-    estat=1
+check_log ${tmp}/log-bvfs-lsfiles-BackupDirectory.out
+if ! grep -q "\Wextrafile.txt" ${tmp}/log-bvfs-lsfiles-BackupDirectory.out; then
+   set_error "File not found using .bvfs_lsfiles."
 fi
 
-grep dird_conf.c $tmp/log31.out > /dev/null
-if [ $? != 0 ]; then
-    print_debug "ERROR: Should find dird_conf.c in bvfs_lsfiles output $tmp/log31.out"
-    estat=1
+check_log ${tmp}/log-bvfs-versions-extrafile.out
+versions=`grep "^[0-9]\+\W" ${tmp}/log-bvfs-versions-extrafile.out | wc -l`
+if [ "$versions" !=  "2" ]; then
+   set_error "Expected 2 versions of file ${BackupFileExtra}, found ${versions}."
 fi
 
-#
-# Delete .c files because we will only restored the txt files
-#
-#rm -f ${tmpsrc}/*.c
-#check_restore_tmp_build_diff
-#
-#${cwd}/build/src/tools/bvfs_test -T  -p ${tmpsrc} -j 1,2,3,4,5,6,7,8 \
-#    -w "$working" -n "$db_name" -u "$db_user" -P "$db_password"
-#
-#${cwd}/build/src/tools/bvfs_test  -p ${cwd}/build/ -j 1,2,3,4,5,6,7,8    \
-#    -w "$working" -n "$db_name" -u "$db_user" -P "$db_password"
-#
-#${cwd}/build/src/tools/bvfs_test  -p ${tmpsrc} -j 1,2,3,4,5,6,7,8    \
-#    -w "$working" -n "$db_name" -u "$db_user" -P "$db_password" \
-#    -f ficheriro1.txt -c ${HOST}-fd
+check_log ${tmp}/log-bvfs-restore.out
+# check for differences between original files and restored files
+check_restore_diff ${BackupDirectory}
 
+# do some manual testing
+if [ ! -d ${BackupDirectory} ]; then
+    set_error "Directory ${BackupDirectory} does not exists any more."
+fi
+
+# end tests and check for error codes
 end_test
