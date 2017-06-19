@@ -52,6 +52,7 @@ ADD_TEST(disk:maxbytes-test "@regressdir@/tests/maxbytes-test")
 ADD_TEST(disk:maxtime-test "@regressdir@/tests/maxtime-test")
 SET_TESTS_PROPERTIES(disk:maxtime-test PROPERTIES
    PASS_REGULAR_EXPRESSION "Fatal error")
+ADD_TEST(disk:maxruntime-test "@regressdir@/tests/maxruntime-test")
 ADD_TEST(disk:maxuseduration-test "@regressdir@/tests/maxuseduration-test")
 ADD_TEST(disk:maxvol2-test "@regressdir@/tests/maxvol2-test")
 ADD_TEST(disk:maxvol-test "@regressdir@/tests/maxvol-test")
