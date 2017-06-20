@@ -1,0 +1,8 @@
+# used by .bvfs_clear_cache
+
+BEGIN;
+   UPDATE Job SET HasCache=0;
+   TRUNCATE PathHierarchy;
+   TRUNCATE PathVisibility;
+COMMIT;
+

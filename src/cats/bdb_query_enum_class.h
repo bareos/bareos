@@ -49,8 +49,8 @@ public:
       SQL_QUERY_uar_jobid_fileindex_from_dir = 43,
       SQL_QUERY_sql_media_order_most_recently_written = 44,
       SQL_QUERY_sql_get_max_connections = 45,
-      SQL_QUERY_sql_bvfs_select = 46,
-      SQL_QUERY_sql_bvfs_list_files = 47,
+      SQL_QUERY_bvfs_select = 46,
+      SQL_QUERY_bvfs_list_files = 47,
       SQL_QUERY_batch_lock_path_query = 48,
       SQL_QUERY_batch_lock_filename_query = 49,
       SQL_QUERY_batch_unlock_tables_query = 50,
@@ -65,6 +65,10 @@ public:
       SQL_QUERY_get_quota_jobbytes_nofailed = 59,
       SQL_QUERY_uar_sel_jobid_copies = 60,
       SQL_QUERY_get_jobstatus_details = 61,
-      SQL_QUERY_NUMBER = 62
+      SQL_QUERY_bvfs_versions_6 = 62,
+      SQL_QUERY_bvfs_lsdirs_6 = 63,
+      SQL_QUERY_bvfs_clear_cache_0 = 64,
+      SQL_QUERY_bvfs_update_path_visibility_3 = 65,
+      SQL_QUERY_NUMBER = 66
    } SQL_QUERY_ENUM;
 };

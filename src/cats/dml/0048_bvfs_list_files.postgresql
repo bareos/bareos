@@ -4,16 +4,16 @@ SELECT TYPE,
        JobId,
        LStat,
        FileId
-FROM
-  ( SELECT DISTINCT ON (Name) 'F' AS TYPE,
+FROM (
+   SELECT DISTINCT ON (Name) 'F' AS TYPE,
                        PathId,
                        FileName AS Name,
                        JobId,
                        LStat,
                        FileId,
                        FileIndex
-   FROM
-     (SELECT FileId,
+   FROM (
+      SELECT FileId,
              JobId,
              PathId,
              Name AS FileName,
@@ -33,11 +33,16 @@ FROM
                MD5
         FROM BaseFiles
         JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
-        AND File.PathId = %s ) AS T
+        AND File.PathId = %s
+   ) AS T
    JOIN Job USING (JobId)
-   WHERE FileName != '' %s
+   WHERE
+      FileName != ''
+      %s
    ORDER BY FileName,
-            StartTime DESC) AS A
+            StartTime DESC
+) AS A
 WHERE A.FileIndex > 0
 LIMIT %lld
 OFFSET %lld
+

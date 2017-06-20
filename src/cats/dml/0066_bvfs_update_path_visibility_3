@@ -1,0 +1,12 @@
+INSERT INTO PathVisibility (PathId, JobId)
+SELECT a.PathId,%s
+FROM (
+   SELECT DISTINCT h.PPathId AS PathId
+   FROM PathHierarchy AS h
+   JOIN PathVisibility AS p ON (h.PathId=p.PathId)
+   WHERE p.JobId=%s
+) AS a
+LEFT JOIN PathVisibility AS b
+ON (b.JobId=%s AND a.PathId = b.PathId)
+WHERE b.PathId IS NULL
+

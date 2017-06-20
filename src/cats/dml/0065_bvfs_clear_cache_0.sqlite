@@ -1,0 +1,11 @@
+# used by .bvfs_clear_cache
+#
+# sqlite3 does not have the TRUNCATE command.
+# Instead DELETE FROM (without WHERE) can be used.
+#
+BEGIN;
+   UPDATE Job SET HasCache=0;
+   DELETE FROM PathHierarchy;
+   DELETE FROM PathVisibility;
+COMMIT;
+

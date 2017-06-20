@@ -1,0 +1,7 @@
+INSERT INTO PathVisibility (PathId, JobId)
+SELECT DISTINCT h.PPathId AS PathId, %s
+FROM PathHierarchy AS h
+WHERE
+   h.PathId IN (SELECT PathId FROM PathVisibility WHERE JobId=%s) AND
+   h.PPathId NOT IN (SELECT PathId FROM PathVisibility WHERE JobId=%s)
+

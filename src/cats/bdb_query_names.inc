@@ -47,8 +47,8 @@ const char *B_DB::query_names[] = {
 "uar_jobid_fileindex_from_dir",
 "sql_media_order_most_recently_written",
 "sql_get_max_connections",
-"sql_bvfs_select",
-"sql_bvfs_list_files",
+"bvfs_select",
+"bvfs_list_files",
 "batch_lock_path_query",
 "batch_lock_filename_query",
 "batch_unlock_tables_query",
@@ -63,5 +63,9 @@ const char *B_DB::query_names[] = {
 "get_quota_jobbytes_nofailed",
 "uar_sel_jobid_copies",
 "get_jobstatus_details",
+"bvfs_versions_6",
+"bvfs_lsdirs_6",
+"bvfs_clear_cache_0",
+"bvfs_update_path_visibility_3",
 NULL
 };

@@ -627,7 +627,7 @@ SQL_QUERY(
 SHOW max_connections
 ),
 
-/* 0047_sql_bvfs_select.postgresql */
+/* 0047_bvfs_select.postgresql */
 SQL_QUERY(
 CREATE TABLE %s AS
   (SELECT JobId,
@@ -645,7 +645,7 @@ CREATE TABLE %s AS
    WHERE FileIndex > 0)
 ),
 
-/* 0048_sql_bvfs_list_files.postgresql */
+/* 0048_bvfs_list_files.postgresql */
 SQL_QUERY(
 SELECT TYPE,
        PathId,
@@ -810,6 +810,91 @@ SELECT DISTINCT JobStatus, JobStatusLong, Severity,
        END as ExitStatus
   FROM Status %s
  ORDER BY JobStatus
+),
+
+/* 0063_bvfs_versions_6 */
+SQL_QUERY(
+SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger
+FROM File, Job, Client, JobMedia, Media
+WHERE File.Name = '%s'
+  AND File.PathId = %s
+  AND File.JobId = Job.JobId
+  AND Job.JobId = JobMedia.JobId
+  AND File.FileIndex >= JobMedia.FirstIndex
+  AND File.FileIndex <= JobMedia.LastIndex
+  AND JobMedia.MediaId = Media.MediaId
+  AND Job.ClientId = Client.ClientId
+  AND Client.Name = '%s'
+  %s
+ORDER BY File.FileId
+LIMIT %d
+OFFSET %d
+),
+
+/* 0064_bvfs_lsdirs_6 */
+SQL_QUERY(
+SELECT 'D', PathId, Path, JobId, LStat, FileId
+FROM (
+   SELECT
+      Path1.PathId AS PathId,
+      Path1.Path AS Path,
+      lower(Path1.Path) AS lpath,
+      listfile1.JobId AS JobId,
+      listfile1.LStat AS LStat,
+      listfile1.FileId AS FileId
+   FROM (
+      SELECT DISTINCT PathHierarchy1.PathId AS PathId
+      FROM PathHierarchy AS PathHierarchy1
+      JOIN Path AS Path2
+        ON (PathHierarchy1.PathId = Path2.PathId)
+      JOIN PathVisibility AS PathVisibility1
+        ON (PathHierarchy1.PathId = PathVisibility1.PathId)
+      WHERE
+         PathHierarchy1.PPathId = %s AND
+         PathVisibility1.JobId IN (%s)
+         %s
+   ) AS listpath1
+   JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId)
+   LEFT JOIN (
+      SELECT
+         File1.PathId AS PathId,
+         File1.JobId AS JobId,
+         File1.LStat AS LStat,
+         File1.FileId AS FileId
+      FROM File AS File1
+      WHERE
+         File1.Name = '' AND
+         File1.JobId IN (%s)
+   ) AS listfile1
+   ON (listpath1.PathId = listfile1.PathId)
+) AS A
+ORDER BY 2,3 DESC
+LIMIT %d
+OFFSET %d
+),
+
+/* 0065_bvfs_clear_cache_0 */
+SQL_QUERY(
+BEGIN;
+   UPDATE Job SET HasCache=0;
+   TRUNCATE PathHierarchy;
+   TRUNCATE PathVisibility;
+COMMIT;
+),
+
+/* 0066_bvfs_update_path_visibility_3 */
+SQL_QUERY(
+INSERT INTO PathVisibility (PathId, JobId)
+SELECT a.PathId,%s
+FROM (
+   SELECT DISTINCT h.PPathId AS PathId
+   FROM PathHierarchy AS h
+   JOIN PathVisibility AS p ON (h.PathId=p.PathId)
+   WHERE p.JobId=%s
+) AS a
+LEFT JOIN PathVisibility AS b
+ON (b.JobId=%s AND a.PathId = b.PathId)
+WHERE b.PathId IS NULL
 ),
 
 NULL

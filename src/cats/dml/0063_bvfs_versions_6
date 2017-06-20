@@ -1,0 +1,27 @@
+# for .bvfs_versions
+#
+# parameter:
+#   %s File Name
+#   %s PathId
+#   %s Client Name
+#   %s extra filter
+#   %d limit
+#   %d offset
+#
+# row  0    1            2          3           4           5            6         7                 8
+SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger
+FROM File, Job, Client, JobMedia, Media
+WHERE File.Name = '%s'
+  AND File.PathId = %s
+  AND File.JobId = Job.JobId
+  AND Job.JobId = JobMedia.JobId
+  AND File.FileIndex >= JobMedia.FirstIndex
+  AND File.FileIndex <= JobMedia.LastIndex
+  AND JobMedia.MediaId = Media.MediaId
+  AND Job.ClientId = Client.ClientId
+  AND Client.Name = '%s'
+  %s
+ORDER BY File.FileId
+LIMIT %d
+OFFSET %d
+

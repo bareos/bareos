@@ -284,26 +284,7 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
 
    start_transaction(jcr);
 
-   if (get_type_index() == SQL_TYPE_SQLITE3) {
-      Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId) "
-                "SELECT DISTINCT h.PPathId AS PathId, %s "
-                  "FROM PathHierarchy AS h "
-                 "WHERE h.PathId IN (SELECT PathId FROM PathVisibility WHERE JobId=%s) "
-                   "AND h.PPathId NOT IN (SELECT PathId FROM PathVisibility WHERE JobId=%s)",
-           jobid, jobid, jobid );
-   } else {
-      Mmsg(cmd, "INSERT INTO PathVisibility (PathId, JobId)  "
-                "SELECT a.PathId,%s "
-                "FROM ( "
-                "SELECT DISTINCT h.PPathId AS PathId "
-                "FROM PathHierarchy AS h "
-                "JOIN  PathVisibility AS p ON (h.PathId=p.PathId) "
-                "WHERE p.JobId=%s) AS a "
-                "LEFT JOIN PathVisibility AS b "
-                "ON (b.JobId=%s AND a.PathId = b.PathId) "
-                "WHERE b.PathId IS NULL",
-           jobid, jobid, jobid);
-   }
+   fill_query(cmd, SQL_QUERY_bvfs_update_path_visibility_3, jobid, jobid, jobid);
 
    do {
       retval = QUERY_DB(jcr, cmd);
@@ -472,12 +453,7 @@ void Bvfs::set_jobids(char *ids)
    pm_strcpy(jobids, ids);
 }
 
-/*
- * TODO: Find a way to let the user choose how he wants to display files and directories
- */
-
 /* Return the parent_dir with the trailing /  (update the given string)
- * TODO: see in the rest of bareos if we don't have already this function
  * dir=/tmp/toto/
  * dir=/tmp/
  * dir=/
@@ -511,9 +487,9 @@ char *bvfs_parent_dir(char *path)
    return path;
 }
 
-/* Return the basename of the with the trailing /
+/* Return the basename of the path with the trailing /
  * TODO: see in the rest of bareos if we don't have
- * this function already
+ * this function already (e.g. last_path_separator)
  */
 char *bvfs_basename_dir(char *path)
 {
@@ -591,31 +567,7 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
    db->escape_string(jcr, fname_esc, (char *)fname, strlen(fname));
    db->escape_string(jcr, client_esc, (char *)client, strlen(client));
 
-   Mmsg(query,
-//       0   1            2
-"SELECT 'V', File.PathId, File.Name, "
-//       3           4           5
-        "File.JobId, File.LStat, File.FileId, "
-//         6
-        "File.Md5, "
-//         7                    8
-       "Media.VolumeName, Media.InChanger "
-"FROM File, Job, Client, JobMedia, Media "
-"WHERE File.Name = '%s' "
-  "AND File.PathId = %s "
-  "AND File.JobId = Job.JobId "
-  "AND Job.JobId = JobMedia.JobId "
-  "AND File.FileIndex >= JobMedia.FirstIndex "
-  "AND File.FileIndex <= JobMedia.LastIndex "
-  "AND JobMedia.MediaId = Media.MediaId "
-  "AND Job.ClientId = Client.ClientId "
-  "AND Client.Name = '%s' "
-  "%s ORDER BY File.FileId LIMIT %d OFFSET %d"
-        ,fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(),
-        limit, offset);
-
-   Dmsg1(dbglevel_sql, "query=%s\n", query.c_str());
-
+   db->fill_query(query, B_DB::SQL_QUERY_bvfs_versions_6, fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit, offset);
    db->sql_query(query.c_str(), list_entries, user_data);
 }
 
@@ -694,6 +646,7 @@ bool Bvfs::ls_dirs()
    POOL_MEM query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_dirs(%lld)\n", (uint64_t)pwd_id);
+
    if (*jobids == 0) {
       return false;
    }
@@ -702,52 +655,12 @@ bool Bvfs::ls_dirs()
       db->fill_query(filter, B_DB::SQL_QUERY_match_query, pattern);
    }
 
-
    /*
     * The sql query displays same directory multiple time, take the first one
     */
    *prev_dir = 0;
 
-   /*
-    * Let's retrieve the list of the visible dirs in this dir ...
-    * First, I need the empty filenameid to locate efficiently
-    * the dirs in the file table
-    * my $dir_filenameid = $self->get_dir_filenameid();
-    */
-   /* Then we get all the dir entries from File ... */
-   Mmsg(query,
-//       0     1     2   3      4     5
-"SELECT 'D', PathId, Path, JobId, LStat, FileId FROM ( "
-    "SELECT Path1.PathId AS PathId, Path1.Path AS Path, "
-           "lower(Path1.Path) AS lpath, "
-           "listfile1.JobId AS JobId, listfile1.LStat AS LStat, "
-           "listfile1.FileId AS FileId "
-    "FROM ( "
-      "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
-      "FROM PathHierarchy AS PathHierarchy1 "
-      "JOIN Path AS Path2 "
-        "ON (PathHierarchy1.PathId = Path2.PathId) "
-      "JOIN PathVisibility AS PathVisibility1 "
-        "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
-      "WHERE PathHierarchy1.PPathId = %s "
-      "AND PathVisibility1.JobId IN (%s) "
-           "%s "
-     ") AS listpath1 "
-   "JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId) "
-
-   "LEFT JOIN ( " /* get attributes if any */
-       "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
-              "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
-       "WHERE File1.Name = '' "
-       "AND File1.JobId IN (%s)) AS listfile1 "
-       "ON (listpath1.PathId = listfile1.PathId) "
-    ") AS A ORDER BY 2,3 DESC LIMIT %d OFFSET %d",
-        edit_uint64(pwd_id, ed1),
-        jobids,
-        filter.c_str(),
-        jobids,
-        limit, offset);
-
+   db->fill_query(query, B_DB::SQL_QUERY_bvfs_lsdirs_6, edit_uint64(pwd_id, ed1), jobids, filter.c_str(), jobids, limit, offset);
    nb_record = db->bvfs_ls_dirs(query, this);
 
    return nb_record == limit;
@@ -758,9 +671,9 @@ static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,
                                  const char *filter, int64_t limit, int64_t offset)
 {
    if (db->get_type_index() == SQL_TYPE_POSTGRESQL) {
-      db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_list_files, JobId, PathId, JobId, PathId, filter, limit, offset);
+      db->fill_query(query, B_DB::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, filter, limit, offset);
    } else {
-      db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_list_files, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
+      db->fill_query(query, B_DB::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
    }
 }
 
@@ -785,11 +698,6 @@ bool Bvfs::ls_files()
    edit_uint64(pwd_id, pathid);
    if (*pattern) {
       db->fill_query(filter, B_DB::SQL_QUERY_match_query2, pattern);
-#if 0
-      TODO: have to adapt this query!
-      Mmsg(filter, " AND File.Name %s '%s' ",
-           match_query[db_get_type_index(db)], pattern);
-#endif
    }
 
    build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit, offset);
@@ -847,11 +755,7 @@ static bool check_temp(char *output_table)
 
 void Bvfs::clear_cache()
 {
-   db->sql_query("BEGIN");
-   db->sql_query("UPDATE Job SET HasCache=0");
-   db->sql_query("TRUNCATE PathHierarchy");
-   db->sql_query("TRUNCATE PathVisibility");
-   db->sql_query("COMMIT");
+   db->sql_query(B_DB::SQL_QUERY_bvfs_clear_cache_0);
 }
 
 bool Bvfs::drop_restore_list(char *output_table)
@@ -1004,7 +908,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
       goto bail_out;
    }
 
-   db->fill_query(query, B_DB::SQL_QUERY_sql_bvfs_select, output_table, output_table, output_table);
+   db->fill_query(query, B_DB::SQL_QUERY_bvfs_select, output_table, output_table, output_table);
 
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
