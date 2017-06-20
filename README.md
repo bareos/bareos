@@ -8,10 +8,12 @@ Bacula 5.2.13 (original version forked.):
 
 This is a special branch with denormalized filename table
 
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
+
 Release 16.2.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-16.2)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-16.2)](https://travis-ci.org/bareos/bareos/branches)
 
 * Always Incremental Backup
 * Client initiated connection (active client behind firewall)
@@ -27,16 +29,12 @@ Release 16.2.x
 Release 16.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-16.2)](https://travis-ci.org/bareos/bareos)
-
 * Remove fixed size reload table
 * Get rid of one VSS client at a time
    * Allow multiple jobs to run on Windows
 
 Release 15.4.x
 ==============
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
 
 * Storage Daemon Refactor record write code path.
 * Enable concurrent jobs on Windows platforms
@@ -54,7 +52,7 @@ Release 15.4.x
 Release 15.2.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos/branches)
 
 * Lots of refactoring of old code.
 * Systemd support for Debian >= 8 and Ubuntu >= 15.04
@@ -96,8 +94,6 @@ Release 15.2.x
 Release 15.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
-
 * Refactoring of Migrate/Copy selection code. (Mantis #342)
 * Major TLS overhaul. (Mantis #371)
 * Rados (CEPH) File Daemon plugin
@@ -109,8 +105,6 @@ Release 15.1.x
 Release 14.4.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-15.2)](https://travis-ci.org/bareos/bareos)
-
 * Support to rados SD backend for libradosstriper
 * Refactor socket handling.
 
@@ -119,7 +113,7 @@ Release 14.4.x
 Release 14.2.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos/branches)
 
 * Configuration engine refactoring in preparation for configuration API.
 * Accurate mode refactoring
@@ -182,8 +176,6 @@ Release 14.2.x
 Release 14.1.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
-
 * Windows DIR.
 * Support for different blocksizes (e.g. per volume blocksize) for better performance.
 * Preliminary support for Cloud storage backends:
@@ -193,8 +185,6 @@ Release 14.1.x
 
 Release 13.4.x
 ==============
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * First attempt at supporting IBM lin\_tape driver.
 * Fix storage daemon plugin interface.
@@ -213,8 +203,6 @@ Release 13.4.x
 
 Release 13.3.x
 ==============
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-14.2)](https://travis-ci.org/bareos/bareos)
 
 * NDMP enhancements (first code for doing filelevel restores, preliminary).
 * Plugin framework enhancements.
@@ -244,14 +232,12 @@ Release 13.3.x
 Release 13.2.x
 ==============
 
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos/branches)
 
 * Allow to cancel multiple jobids with cancel cmd from bconsole.
 
 Release 13.1.x
 ==============
-
-[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-13.2)](https://travis-ci.org/bareos/bareos)
 
 * Allow cancel by JobId on storage daemon. (#13)
 * Security (filed)
@@ -407,38 +393,21 @@ Build System
 * Fully new building system used for compiling and packaging the software
   * Based on [Open Build System](https://build.opensuse.org/)
   * Packages are build for:
-      * CentOS 5
-      * CentOS 6
-      * CentOS 7
-      * Debian 6.0
-      * Debian 7.0
-      * Debian 8.0
-      * Fedora 20
-      * Fedora 21
-      * Fedora 22
-      * Fedora 23
-      * RedHat Enterprise Linux 5 (RHEL5)
-      * RedHat Enterprise Linux 6 (RHEL6)
-      * RedHat Enterprise Linux 7 (RHEL7)
-      * Suse Linux Enterprise 11 SP3 (SLE_11_SP3)
-      * Suse Linux Enterprise 11 SP4 (SLE_11_SP3)
-      * Suse Linux Enterprise 12 (SLE_12)
-      * Univention 4.0
-      * OpenSuse 13.1
-      * OpenSuse 13.2
-      * OpenSuse LEAP 42.1
-      * Ubuntu 10.04
-      * Ubuntu 12.04
-      * Ubuntu 14.04
+      * CentOS
+      * Debian
+      * Fedora
+      * RedHat Enterprise Linux (RHEL)
+      * Suse Linux Enterprise (SLE)
+      * Univention Corporate Server
+      * OpenSUSE
+      * Ubuntu
       * Windows VISTA and later (32 and 64 Bit)
   * Fully automatic generation of new packages within one hour after new
     release of software or bugfix.
-  * Fully automatic continuos integration tests of new packages with all supported Linux distributions
+  * Fully automatic continuos integration tests of new packages with all supported Linux distributions.
   * Windows
-      * New clean MINGW based windows Makefile set based on integration into OBS
-          * Use native libraries available in OBS for MINGW32 and MINGW64 (no more deppkgs)
+      * MINGW based windows Makefile set based on integration into OBS
+          * Use native libraries available in OBS for MINGW32 and MINGW64
           * No longer based on archaic build system but state of the art and maintained OBS crosscompiling
       * Automatic creation of NSI installer packages
           * Supports of silent installs
-  * OBS uses source services to checkout current software directly from git
-      * see http://en.opensuse.org/openSUSE:Build_Service_private_instance_software_live_cycle
