@@ -753,7 +753,7 @@ fi
 
 
 dnl ---------------------------------------------------
-dnl Check for readline support/directory (default off)
+dnl Check for readline support/directory (default off, if conio is not disabled, otherwise on)
 dnl ---------------------------------------------------
 dnl this allows you to turn it completely off
 AC_ARG_ENABLE(readline,
