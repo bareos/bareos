@@ -1,5 +1,5 @@
 Package:        bareos-storage-ceph
-Architecture:   any
+Architecture:   linux-any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        bareos-storage (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
 Description: Backup Archiving Recovery Open Sourced - storage daemon CEPH backend

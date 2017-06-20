@@ -20,7 +20,7 @@ Build-Depends: acl-dev,
  debhelper (>= 7.0.50~),
  dpkg-dev (>= 1.13.19),
  libacl1-dev,
- libcap-dev,
+ libcap-dev [linux-any],
  liblzo2-dev,
  libqt4-dev,
  libreadline-dev,
@@ -243,6 +243,7 @@ Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
 Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
 Conflicts:      bacula-sd
 Replaces:       bacula-sd
+Breaks:         bareos-storage-tape (<< 14.2.6~)
 Description: Backup Archiving Recovery Open Sourced - storage daemon
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
@@ -274,6 +275,8 @@ Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
 Depends:        bareos-common (= ${binary:Version}), bareos-storage (= ${binary:Version}), lsb-base (>= 3.2-13), mtx, ${shlibs:Depends}, ${misc:Depends}
 Recommends:     mt-st
 Suggests:       scsitools, sg3-utils
+Breaks:         bareos-storage (<< 14.2.6~)
+Replaces:       bareos-storage (<< 14.2.6~)
 Description: Backup Archiving Recovery Open Sourced - storage daemon tape support
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.

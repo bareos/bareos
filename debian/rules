@@ -121,7 +121,7 @@ override_dh_installinit:
 	dh_installinit --package=bareos-filedaemon --name=bareos-fd
 
 override_dh_makeshlibs:
-	dh_makeshlibs -n
+	dh_makeshlibs -n  -Xusr/lib/bareos/plugins/ -Xusr/lib/bareos/backends/
 
 %:
 	PARALLEL="--parallel"; \

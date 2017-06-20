@@ -15,8 +15,9 @@ Comment: BAREOS is a fork of the Bacula source code.
 Files: *
 Copyright: 2000-2012 Free Software Foundation Europe e.V.
            2011-2012 Planets Communications B.V.
-           2013-2016 Bareos GmbH & Co. KG
-License: AGPL-3.0 with Bacula and other exceptions
+           2013-2017 Bareos GmbH & Co. KG
+License: Bareos
+    This is basically AGPL-3.0 with Bacula and other exceptions.
     This section is the reformated version of
     `/usr/share/doc/bareos-common/LICENSE'.
     .
