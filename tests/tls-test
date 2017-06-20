@@ -1,34 +1,55 @@
 #!/bin/sh
-#
-# Run a simple backup of the Bareos build directory with TLS
-#   communications code enabled then restore it.
-#
-TestName="tls-test"
-JobName=tls
+
 . scripts/functions
 
-scripts/cleanup
-scripts/copy-tls-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# Define the Name of the test as "TestName".
+# Should be the same as the filename, therefore we use the filename as default.
+TestName="`basename $0`"
+#TestName="1-example-test"
 
-change_jobname CompressedTest $JobName
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
+
+# Directory to backup.
+# This example uses a subdirectory of the bareos source/build directory,
+# that contains some file but isn't to large.
+BackupDirectory="${cwd}/build/src/tests/"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Config files will be copied to required location.
+# Base configuration files come from the
+# configs/BASE/ directory, see
+# configs/BASE/README.txt for an overview of the provides resources.
+# Store your additonal resources to
+# configs/$TestName.
+# It is also possible to overwrite resources from configs/BASE.
+# If you define a full config file (instead of config files for individual resources),
+# only these will be taken.
+copy_configs
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+# start the test
 start_test
 
-cat <<END_OF_DATA >tmp/bconcmds
+# ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
+cat <<END_OF_DATA >${tmp}/bconcmds
 messages
-@$out tmp/log1.out
+@$out ${tmp}/log1.out w
 status all
-status all
-messages
-label storage=File volume=TestVolume001 pool=Default
-run job=$JobName storage=File yes
+label storage=File1 pool=Default volume=TestVolume001
+run job=$JobName fileset=compression-fileset storage=File1 yes
 wait
 messages
 @#
 @# now do a restore
 @#
-@$out tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores select storage=File
+@$out ${tmp}/log2.out w
+restore client=${Client} where=${tmp}/bareos-restores select storage=File1
 unmark *
 mark *
 done
@@ -38,10 +59,27 @@ messages
 quit
 END_OF_DATA
 
+# Start the bareos daemons
+# and run the bconsole commands from ${tmp}/bconcmds
+# Further bconsole commands can be executed by "run_bconsole".
 run_bareos
-check_for_zombie_jobs storage=File
+
+# verify that all are terminated
+check_for_zombie_jobs storage=File1 client=${Client}
+
+# stop bareos
 stop_bareos
 
+# check tmp/log1.out and tmp/log2.out for errors
 check_two_logs
-check_restore_diff
+
+# check for differences between original files and restored files
+check_restore_diff ${BackupDirectory}
+
+# do some manual testing
+if [ ! -d ${BackupDirectory} ]; then
+    set_error "Directory ${BackupDirectory} does not exists any more."
+fi
+
+# end tests and check for error codes
 end_test

@@ -1,0 +1,11 @@
+FileSet {
+  Name = "compression-fileset"
+  Include {
+    Options {
+      signature=MD5
+      compression=GZIP
+    }
+    File = <@tmpdir@/file-list
+  }
+}
+
