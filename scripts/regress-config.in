@@ -30,7 +30,7 @@ fi
     --with-plugindir=${1}/bin/plugins \
     --enable-smartalloc \
     --enable-lockmgr \
-    --disable-readline \
+    --disable-conio \
     --with-working-dir=${1}/working \
     --with-archivedir=${1}/tmp \
     --with-dump-email=${EMAIL} \
