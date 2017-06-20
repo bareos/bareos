@@ -1,6 +1,6 @@
 Base configuration for all new (2016) regression tests.
 The function copy_configs first copies the resources of this directory to the target directory,
-followed by test specific additional or overwriting examples.
+followed by test specific additional or overwriting configuration.
 
 Settings Summary
 ================

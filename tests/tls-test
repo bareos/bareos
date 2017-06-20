@@ -39,6 +39,8 @@ start_test
 # ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
 cat <<END_OF_DATA >${tmp}/bconcmds
 messages
+@$out ${tmp}/log-config.out
+show client=${Client}
 @$out ${tmp}/log1.out w
 status all
 label storage=File1 pool=Default volume=TestVolume001
@@ -69,6 +71,15 @@ check_for_zombie_jobs storage=File1 client=${Client}
 
 # stop bareos
 stop_bareos
+
+# check log files for common error messages
+check_log ${tmp}/log-config.out
+if ! grep -qi "TlsRequire = yes" ${tmp}/log-config.out; then
+   set_error "client is not configured to use TLS."
+fi
+
+check_log ${tmp}/log1.out
+check_log ${tmp}/log2.out
 
 # check tmp/log1.out and tmp/log2.out for errors
 check_two_logs

@@ -342,6 +342,8 @@ check_log()
          -e "^  Termination: .*Backup Error" \
          -e "^Can't find " \
          -e "Encoding error for database" \
+         -e "^Could not find Client" \
+         -e "ERR=" \
          $LOG
    then
       bstat=1
