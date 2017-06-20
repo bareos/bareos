@@ -27,7 +27,7 @@ Build-Depends: acl-dev,
  libssl-dev,
  libwrap0-dev,
  libx11-dev,
- libsqlite3-dev, libmysqlclient-dev, libpq-dev,
+ libsqlite3-dev, default-libmysqlclient-dev | libmysqlclient-dev, libpq-dev,
  logrotate,
  lsb-release,
  mtx,
@@ -143,13 +143,13 @@ Package:        bareos-database-mysql
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
 Depends:        lsb-base (>= 3.2-13), ${shlibs:Depends}, ${misc:Depends}
-Suggests:       mysql-server
+Suggests:       default-mysql-server | mysql-server
 Description: Backup Archiving Recovery Open Sourced - MySQL backend
  Bareos is a set of programs to manage backup, recovery and verification of
  data across a network of computers of different kinds.
  .
  This package provides the functionality to connect the Bareos Director
- daemon to a MySQL database.
+ daemon to a MySQL compatible database.
 
 
 Package:        bareos-database-sqlite3
