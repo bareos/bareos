@@ -215,7 +215,7 @@ sub update_client
     open(FP, "$conf/bareos-dir.conf") or die "can't open source $!";
     open(NEW, ">$tmp/bareos-dir.conf.$$") or die "can't open dest $!";
     while (my $l = <FP>) {
-        if (!$in_client && $l =~ /^Client {/) {
+        if (!$in_client && $l =~ /^Client \{/) {
             $in_client=1;
         }
 
@@ -396,7 +396,7 @@ sub add_attribute
             next;
         }
 
-        if ($l =~ /^(\w+) {/) {
+        if ($l =~ /^(\w+) \{/) {
             $cur_obj = $1;
             $done=0;
         }
