@@ -9,12 +9,6 @@ Bareos WebUI is a PHP-Frontend to manage [Bareos](http://www.bareos.org/) over t
 
 See: [https://github.com/bareos/bareos-webui/blob/master/doc/README-INSTALLATION.md](https://github.com/bareos/bareos-webui/blob/master/doc/README-INSTALLATION.md)
 
-### LICENSE
-
-The Bareos WebUI is licensed under AGPL Version 3.
-
-You can find a copy of this license in [AGPL-3.0.txt](AGPL-3.0.txt).
-
 ### MAILINGLISTS
 
 The Bareos project offers two mailing lists: bareos-users and bareos-devel.
