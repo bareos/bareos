@@ -1,47 +1,46 @@
 #!/bin/sh
-#
-#
-TestName="duplicate-job-test"
+
 . scripts/functions
 
-scripts/cleanup
-scripts/copy-tls-confs
-echo "${cwd}/build/README.NDMP" >${cwd}/tmp/file-list
+# Define the Name of the test as "TestName".
+# Should be the same as the filename, therefore we use the filename as default.
+TestName="`basename $0`"
 
-# increase the maximum concurrent jobs for FD, SD and DIR
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-dir.conf",100)'
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-sd.conf",100)'
-perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-fd.conf",100)'
-
-# extract a Job and add a runscript on it
-perl -Mscripts::functions \
-    -e "extract_resource('$conf/bareos-dir.conf', 'Job', 'CompressedTest')" \
-    | sed 's%Standard%Standard; ClientRunBeforeJob="sleep 2"%' > $tmp/1
-
-
-outf="$tmp/sed_tmp"
-echo 's%CompressedTest%AllowDuplicateYes%' > $outf
-echo 's%Backup%Backup; AllowDuplicateJobs = yes%' >> $outf
-sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
-
-echo 's%CompressedTest%CancelLowerLevelDuplicatesYes%' > $outf
-echo 's%Backup%Backup; AllowDuplicateJobs = no; CancelLowerLevelDuplicates=yes%' >> $outf
-sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
-
-echo 's%CompressedTest%CancelQueueDuplicatesYes%' > $outf
-echo 's%Backup%Backup; AllowDuplicateJobs = no;CancelLowerLevelDuplicates=no;CancelQueuedDuplicates=yes %' >> $outf
-sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
-
-echo 's%CompressedTest%CancelRunningDuplicatesYes%' > $outf
-echo 's%Backup%Backup; AllowDuplicateJobs = no;CancelLowerLevelDuplicates=no;CancelQueuedDuplicates=no; CancelRunningDuplicates=yes%' >> $outf
-sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
-
-echo 's%CompressedTest%CancelRunningDuplicatesNo%' > $outf
-echo 's%Backup%Backup; AllowDuplicateJobs = no;CancelLowerLevelDuplicates=no;CancelQueuedDuplicates=no; CancelRunningDuplicates=no%' >> $outf
-sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
-
+# set other test specific variables
+Client=bareos-fd
+JobName=backup-bareos-fd
 when=`perl -Mscripts::functions -e "get_time(300)"`
 
+# Directory to backup.
+# This example uses a subdirectory of the bareos source/build directory,
+# that contains some file but isn't to large.
+BackupDirectory="${cwd}/build/src/tests/"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Config files will be copied to required location.
+# Base configuration files come from the
+# configs/BASE/ directory, see
+# configs/BASE/README.txt for an overview of the provides resources.
+# Store your additonal resources to
+# configs/$TestName.
+# It is also possible to overwrite resources from configs/BASE.
+# If you define a full config file (instead of config files for individual resources),
+# only these will be taken.
+copy_configs
+
+# increase the maximum concurrent jobs for FD, SD and DIR
+#perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-dir.conf",100)'
+#perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-sd.conf",100)'
+#perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-fd.conf",100)'
+
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+#echo "${cwd}/build/README.NDMP" >${cwd}/tmp/file-list
+echo "${BackupDirectory}" >${tmp}/file-list
+
+# start the test
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -49,7 +48,7 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 messages
 @$out ${cwd}/tmp/log1.out
 messages
-label storage=File volume=TestVolume001
+label storage=File1 pool=Default volume=TestVolume001
 @#setdebug level=100 storage=File
 @##############################################
 @# AllowDuplicates = Yes, both jobs should work
@@ -147,7 +146,11 @@ quit
 END_OF_DATA
 
 run_bareos
-check_for_zombie_jobs storage=File
+
+# verify that all are terminated
+check_for_zombie_jobs storage=File1 client=${Client}
+
+# stop bareos
 stop_bareos
 
 touch $tmp/log2.out
@@ -156,22 +159,24 @@ check_two_logs
 grep '^| *[0-9]' $tmp/log7.out > /dev/null
 if [ $? = 0 ]; then
     print_debug "ERROR: Found errors in $tmp/log7.out"
-    print_debug `cat $tmp/log7.out`
+    print_debug "`cat $tmp/log7.out`"
     estat=1
 fi
 
 grep '^| *[0-9]' $tmp/log8.out > /dev/null
 if [ $? = 0 ]; then
     print_debug "ERROR: Found errors in $tmp/log8.out"
-    print_debug `cat $tmp/log8.out`
+    print_debug "`cat $tmp/log8.out`"
     estat=1
 fi
 
 nb=`grep '^| *[0-9]' $tmp/log9.out | wc -l`
 if [ $nb -lt 10 ]; then
     print_debug "ERROR: no enough results in $tmp/log9.out"
-    print_debug `cat $tmp/log9.out`
+    print_debug "`cat $tmp/log9.out`"
     estat=1
 fi
 
+# end tests and check for error codes
 end_test
+

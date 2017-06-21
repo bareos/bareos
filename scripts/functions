@@ -147,12 +147,12 @@ set_debug()
 
 print_debug()
 {
-   echo $* | grep ERROR > /dev/null
+   echo "$*" | grep -q ERROR > /dev/null
    if test $? -eq 0; then
-     echo $* >> $tmp/err.log
+     echo "$*" >> $tmp/err.log
    fi
-   if test "$debug" -eq 1 ; then
-     echo $*
+   if test "$debug" -eq 1; then
+     echo "$*"
    fi
 }
 
