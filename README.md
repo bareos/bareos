@@ -1,8 +1,9 @@
 
-Bareos WebUI
-============
+# <img src="https://github.com/bareos/bareos-webui/blob/master/public/img/bareos.png" alt="Bareos WebUI" />
 
-A PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
+[![version][version-badge]][CHANGELOG] [![license][license-badge]][LICENSE]
+
+Bareos WebUI is a PHP-Frontend to manage [Bareos](http://www.bareos.org/) over the web.
 
 ### INSTALLATION
 
@@ -24,3 +25,8 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 ### BUGTRACKER
 
 [http://bugs.bareos.org](http://bugs.bareos.org)
+
+[CHANGELOG]: ./CHANGELOG.md
+[LICENSE]: ./LICENSE
+[version-badge]: https://img.shields.io/badge/version-master-blue.svg
+[license-badge]: https://img.shields.io/badge/license-AGPL--3.0-blue.svg
