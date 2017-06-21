@@ -1,9 +1,0 @@
-#!/bin/sh
-
-/bin/cp -f scripts/tls-bareos-dir.conf bin/bareos-dir.conf
-/bin/cp -f scripts/tls-bareos-sd.conf bin/bareos-sd.conf
-/bin/cp -f scripts/tls-bareos-fd.conf bin/bareos-fd.conf
-/bin/cp -f scripts/test-console.conf bin/bconsole.conf
-/bin/cp -f scripts/test-console.conf bin/bat.conf
-/bin/cp -f scripts/tls-CA.pem bin/tls-CA.pem
-/bin/cp -f scripts/tls-cert.pem bin/tls-cert.pem
