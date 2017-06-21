@@ -970,24 +970,24 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{_mandir}/man8/btape.8.gz
 %{_sbindir}/bscrypto
 %{_sbindir}/btape
-%{_sysconfdir}/bareos/bareos-dir.d/storage/Tape.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/autochanger/autochanger-0.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/device/tapedrive-0.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/Tape.conf.example
+%attr(0640, %{storage_daemon_user},  %{daemon_group}) %{_sysconfdir}/bareos/bareos-sd.d/autochanger/autochanger-0.conf.example
+%attr(0640, %{storage_daemon_user},  %{daemon_group}) %{_sysconfdir}/bareos/bareos-sd.d/device/tapedrive-0.conf.example
 %{plugin_dir}/scsicrypto-sd.so
 %{plugin_dir}/scsitapealert-sd.so
 
 %files storage-fifo
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-fifo*.so
-%{_sysconfdir}/bareos/bareos-dir.d/storage/NULL.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/NULL.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-gfapi*.so
-%{_sysconfdir}/bareos/bareos-dir.d/storage/Gluster.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/device/GlusterStorage.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/Gluster.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/GlusterStorage.conf.example
 %endif
 
 %if 0%{?ceph}
@@ -995,8 +995,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-rados*.so
 %{backend_dir}/libbareossd-cephfs*.so
-%{_sysconfdir}/bareos/bareos-dir.d/storage/Rados.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/device/RadosStorage.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/Rados.conf.example
+%attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/RadosStorage.conf.example
 %endif
 
 %endif # not client_only
@@ -1203,9 +1203,9 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{plugin_dir}/bareos-fd-ldap.py*
 %{plugin_dir}/BareosFdPluginLDAP.py*
-%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-ldap.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/backup-ldap.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/restore-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/backup-ldap.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/restore-ldap.conf.example
 
 %files director-python-plugin
 %defattr(-, root, root)
@@ -1231,21 +1231,21 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files filedaemon-glusterfs-plugin
 %{script_dir}/bareos-glusterfind-wrapper
 %{plugin_dir}/gfapi-fd.so
-%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-gfapi.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/BackupGFAPI.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreGFAPI.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-gfapi.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupGFAPI.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreGFAPI.conf.example
 %endif
 
 %if 0%{?ceph}
 %files filedaemon-ceph-plugin
 %{plugin_dir}/cephfs-fd.so
-%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-cephfs.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/BackupCephfs.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreCephfs.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-cephfs.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupCephfs.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreCephfs.conf.example
 %{plugin_dir}/rados-fd.so
-%{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-rados.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/BackupRados.conf.example
-%{_sysconfdir}/bareos/bareos-dir.d/job/RestoreRados.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/fileset/plugin-rados.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupRados.conf.example
+%attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreRados.conf.example
 %endif
 
 #
