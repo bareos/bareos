@@ -22,27 +22,18 @@ a backup protocol that uses a specific authentication type.
 }
 
 \defDirective{Dir}{Storage}{Auto Changer}{}{}{%
-If you specify {\bf yes} for this command,
-when you use the {\bf label} command or the {\bf add} command to create
-a new Volume, {\bf Bareos} will also request the Autochanger Slot
-number.  This simplifies creating database entries for Volumes in an
-autochanger.  If you forget to specify the Slot, the autochanger will
-not be used.  However, you may modify the Slot associated with a Volume
-at any time by using the {\bf update volume} or {\bf update slots}
-command in the console program.  When {\bf autochanger} is enabled, the
-algorithm used by Bareos to search for available volumes will be
-modified to consider only Volumes that are known to be in the
-autochanger's magazine.  If no {\bf in changer} volume is found, Bareos
-will attempt recycling, pruning, ..., and if still no volume is found,
-Bareos will search for any volume whether or not in the magazine.  By
-privileging in changer volumes, this procedure minimizes operator
-intervention.
+When \linkResourceDirective{Dir}{Storage}{Device} refers to an Auto Changer (\linkResourceDirective{Sd}{Device}{Autochanger}),
+this directive must be set to \parameter{yes}.
 
-For the autochanger to be used, you must also specify {\bf Autochanger =
-yes} in the \linkResourceDirective{Sd}{Device}{Autochanger} in the Storage daemon's
-configuration file as well as other important Storage daemon
-configuration information.  Please consult the \nameref{AutochangersChapter} chapter for the
-details of using autochangers.
+If you specify \parameter{yes},
+\begin{itemize}
+  \item Volume management command like \bcommand{label}{} or \bcommand{add}{} will request a Autochanger Slot number.
+  \item Bareos will prefer Volumes, that are in a Auto Changer slot.
+    If none of theses volumes can be used, even after recycling, pruning, ...,
+    Bareos will search for any volume of the same \linkResourceDirective{Dir}{Storage}{Media Type} whether or not in the magazine.
+\end{itemize}
+
+Please consult the \nameref{AutochangersChapter} chapter for details.
 }
 
 \defDirective{Dir}{Storage}{Collect Statistics}{}{}{%
@@ -54,21 +45,17 @@ Information.
 }
 
 \defDirective{Dir}{Storage}{Device}{}{}{%
-This directive specifies the Storage daemon's name of the device
-resource to be used for the storage.  If you are using an Autochanger,
-the name specified here should be the name of the Storage daemon's
-Autochanger resource rather than the name of an individual device.  This
+This directive refers to a \linkResourceDirective{Sd}{Device}{Name}
+or \linkResourceDirective{Sd}{Autochanger}{Name}.
+
+If an Autochanger should be used, it had to refer to a configured \linkResourceDirective{Sd}{Autochanger}{Name}.
+In this case, also set \linkResourceDirectiveValue{Dir}{Storage}{Auto Changer}{yes}.
+
+In all other cases, refer to a configured \linkResourceDirective{Sd}{Device}{Name}.
+
+This
 name is not the physical device name, but the logical device name as
-defined on the {\bf Name} directive contained in the {\bf Device} or the
-{\bf Autochanger} resource definition of the {\bf Storage daemon}
-configuration file.  You can specify any name you would like (even the
-device name if you prefer) up to a maximum of 127 characters in length.
-The physical device name associated with this device is specified in the
-{\bf Storage daemon} configuration file (as {\bf Archive Device}).
-Please take care not to define two different Storage resource directives
-in the Director that point to the same Device in the Storage daemon.
-Doing so may cause the Storage daemon to block (or hang) attempting to
-open the same device that is already open.  This directive is required.
+defined in the \bareosSd resource.
 }
 
 \defDirective{Dir}{Storage}{Enabled}{}{}{%

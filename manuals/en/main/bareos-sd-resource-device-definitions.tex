@@ -1,16 +1,16 @@
 \defDirective{Sd}{Device}{Alert Command}{}{}{%
-The {\bf name-string} specifies an external program to be called at the
+This specifies an external program to be called at the
 completion of each Job after the device is released.  The purpose of this
 command is to check for Tape Alerts, which are present when something is
 wrong with your tape drive (at least for most modern tape drives).  The same
 substitution characters that may be specified in the Changer Command may
-also be used in this string.  For more information, please see the
-\ilink{Autochangers}{AutochangersChapter} chapter of this manual.
+also be used in this string.  For more information, see the
+\nameref{AutochangersChapter} chapter.
 
 Note, it is not necessary to have an autochanger to use this command. The
-example below uses the {\bf tapeinfo} program that comes with the {\bf mtx}
+example below uses the \command{tapeinfo} program that comes with the \command{mtx}
 package, but it can be used on any tape drive. However, you will need to
-specify a {\bf Changer Device} directive in your Device resource (see above)
+specify a \linkResourceDirective{Sd}{Device}{Changer Device} directive
 so that the generic SCSI device name can be edited into the command (with
 the \%c).
 
@@ -200,23 +200,23 @@ backup or restore operations.
 }
 
 \defDirective{Sd}{Device}{Autochanger}{}{}{%
-If {\bf Yes}, this device belongs to an automatic tape changer, and you
-must specify an {\bf Autochanger} resource that points to the {\bf
-Device} resources.  You must also specify a
-\linkResourceDirective{Sd}{Device}{Changer Device}.
-If the Autochanger directive is set to {\bf No}, 
-the volume must be manually changed.  You should also
-have an identical directive to the
-\linkResourceDirective{Dir}{Storage}{Auto Changer} in the Director's
-configuration file so that  when labeling tapes you are prompted for the slot.
+If set to \parameter{yes}, this device belongs to an automatic tape changer, and you
+must specify an {\bf Autochanger} resource that points to this {\bf
+Device} resource.
+
+If set to \parameter{no},
+the volume must be manually changed.
+
+In the \bareosDir, the directive \linkResourceDirective{Dir}{Storage}{Auto Changer} should be set in correspondence.
 }
 
 \defDirective{Sd}{Device}{Automatic Mount}{}{}{%
-If {\bf Yes}, permits the daemon to examine the device to
+If \parameter{yes}, permits the daemon to examine the device to
 determine if it contains a Bareos labeled volume.  This is done
 initially when the daemon is started, and then at the beginning of each
 job.  This directive is particularly important if you have set
-{\bf Always Open = no} because it permits Bareos to attempt to read the
+\linkResourceDirectiveValue{Sd}{Device}{Always Open}{no}
+because it permits Bareos to attempt to read the
 device before asking the system operator to mount a tape.  However,
 please note that the tape must be mounted before the job begins.
 }
@@ -259,50 +259,38 @@ was in fixed block mode.
 }
 
 \defDirective{Sd}{Device}{Bsf At Eom}{}{}{%
-If {\bf No}, no special action is taken by Bareos with the End
+If \parameter{no}, no special action is taken by Bareos with the End
 of Medium (end of tape) is reached because the tape will be positioned after
 the last EOF tape mark, and Bareos can append to the tape as desired.
 However, on some systems, such as FreeBSD, when Bareos reads the End of
 Medium (end of tape), the tape will be positioned after the second EOF tape
 mark (two successive EOF marks indicated End of Medium). If Bareos appends
 from that point, all the appended data will be lost. The solution for such
-systems is to specify {\bf BSF at EOM} which causes Bareos to backspace over
+systems is to specify \linkResourceDirectiveValue{Sd}{Device}{Bsf At Eom}{yes}
+which causes Bareos to backspace over
 the second EOF mark. Determination of whether or not you need this directive
-is done using the {\bf test} command in the {\bf btape} program.
+is done using the {\bf test} command in the \command{btape} program.
 }
 
 \defDirective{Sd}{Device}{Changer Command}{}{}{%
-The {\bf name-string} specifies an external program to be called  that will
-automatically change volumes as required by {\bf Bareos}.  Normally,
-this directive will be specified only in the {\bf AutoChanger} resource,
+This directive can be specified if this device is used with an autochanger
+and you want to overwrite the default \linkResourceDirective{Sd}{Autochanger}{Changer Command}.
+Normally, this directive will be specified only in the \nameref{StorageResourceAutochanger},
 which is then used for all devices.  However, you may also specify
-the different {\bf Changer Command} in each Device resource.
-Most frequently,
-you will specify the Bareos supplied {\bf mtx-changer}  script as follows:
-
-\bconfigInput{config/SdDeviceChangerCommand1.conf}
-
-and you will install the \command{mtx} on your system.
-An example of this command is in the default \file{bareos-sd.conf} file.
-For more details on the substitution characters that may be specified  to
-configure your autochanger please see  the
-\nameref{AutochangersChapter} chapter of this  manual.
+the different Changer Command in each Device resource.
 }
 
 \defDirective{Sd}{Device}{Changer Device}{}{}{%
-The specified {\bf name-string} must be the {\bf generic SCSI} device
-name of the autochanger that corresponds to the normal read/write
-{\bf Archive Device}  specified in the Device resource. This
-generic SCSI device name should be specified if you have an autochanger
-or if you have a standard tape drive and want to use the
-{\bf Alert Command} (see below). For example, on Linux systems, for
-an Archive Device name of {\bf /dev/nst0}, you would specify {\bf
-/dev/sg0} for the Changer Device name. Depending on your exact
-configuration, and the number of autochangers or the type of
-autochanger, what you specify here can vary.  This directive is
-optional.  See the \ilink{ Using Autochangers}{AutochangersChapter} chapter
-of this manual for more details of using this and the following
-autochanger directives.
+This directive should be specified if
+\begin{itemize}
+  \item this device is used with an autochanger
+        and you want to overwrite the default \linkResourceDirective{Sd}{Autochanger}{Changer Device} or
+  \item if you have a standard tape drive and want to use the \linkResourceDirective{Sd}{Device}{Alert Command}.
+\end{itemize}
+
+The specified device must be a generic SCSI device.
+
+For details, see the \nameref{AutochangersChapter} chapter.
 }
 
 \defDirective{Sd}{Device}{Check Labels}{}{}{%
@@ -408,15 +396,17 @@ SCSI SPIN/SPOUT protocol.
 }
 
 \defDirective{Sd}{Device}{Drive Index}{}{}{%
-The {\bf Drive Index} that you specify is passed to the {\bf
-mtx-changer} script and is thus passed to the {\bf mtx} program.  By
-default, the Drive Index is zero, so if you have only one drive in your
+The {\bf Drive Index} that you specify is passed
+to the \linkResourceDirective{Sd}{Device}{Changer Command}.
+By default, the Drive Index is zero, so if you have only one drive in your
 autochanger, everything will work normally.  However, if you have
 multiple drives, you must specify multiple Bareos Device resources (one
 for each drive).  The first Device should have the Drive Index set to 0,
 and the second Device Resource should contain a Drive Index set to 1,
 and so on.  This will then permit you to use two or more drives in your
 autochanger.
+
+For details, refer to \nameref{sec:MultipleDevices}.
 }
 
 \defDirective{Sd}{Device}{Drive Tape Alert Enabled}{}{}{%
@@ -514,13 +504,14 @@ to see how to tune this value in a safe manner.
 }
 
 \defDirective{Sd}{Device}{Maximum Changer Wait}{}{}{%
-This directive specifies the maximum time in seconds for Bareos to wait
-for an autochanger to change the volume.  If this time is exceeded,
-Bareos will invalidate the Volume slot number stored in the catalog and
+This directive specifies the maximum amount of time that Bareos
+will wait for the changer to respond to a command (e.g.  load).
+If you have a slow autoloader you may want to set it longer.
+
+If the autoloader program fails to respond in this time,
+Bareos will invalidate the volume slot number stored in the catalog and
 try again.  If no additional changer volumes exist, Bareos will ask the
 operator to intervene.
-% TODO: if this is the format, then maybe "5 minutes" should be in
-% TODO: quotes? define style. see others.
 }
 
 \defDirective{Sd}{Device}{Maximum Concurrent Jobs}{}{}{%

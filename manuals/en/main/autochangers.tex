@@ -19,39 +19,33 @@ which is explained in more detail after this list:
 
 \item That each Volume (tape) to be used must be defined in the Catalog and
    have a Slot number assigned to it so that Bareos knows where the Volume is
-   in the autochanger. This is generally done with the {\bf label} command, but
-   can also done after the tape is labeled using the {\bf update slots}
+   in the autochanger. This is generally done with the \bcommand{label}{} command, but
+   can also done after the tape is labeled using the \bcommand{update}{slots}
    command.  See below for more details. You must pre-label the tapes manually
    before using them.
 
 \item Modifications to your Storage daemon's Device configuration  resource to
    identify that the device is a changer, as well  as a few other parameters.
 
-\item You should also modify your Storage resource definition in the
-   Director's configuration file so that you are automatically prompted for the
-   Slot when labeling a Volume.
-
 \item You need to ensure that your Storage daemon
    has access permissions to both the tape drive and the control device.
    On Linux, the system user \user{bareos} is added to the groups \group{disk} and \group{tape},
    so that it should have the permission to access the library.
 
-\item You need to have {\bf Autochanger = yes} in your Storage resource
-   in your \path|bareos-dir.conf| file so that you will be prompted for the
-   slot number when you label Volumes.
+\item Set \linkResourceDirectiveValue{Dir}{Storage}{Auto Changer}{yes}.
 \end{itemize}
 
 Bareos uses its own \command{mtx-changer} script to interface with a program
-that actually does the tape changing.  Thus in principle, {\bf mtx-changer}
+that actually does the tape changing.  Thus in principle, \command{mtx-changer}
 can be adapted to function with any autochanger program, or you can
 call any other script or program. The current
-version of {\bf mtx-changer} works with the \command{mtx} program.
+version of \command{mtx-changer} works with the \command{mtx} program.
 FreeBSD users might need to adapt this script to use \command{chio}.
 For more details, refer to the \ilink{Testing Autochanger}{AutochangerTesting} chapter.
 
 Bareos also supports autochangers with barcode
 readers. This support includes two Console commands: \bcommand{label}{barcodes}
-and \bcommand{update}{slots}. For more details on these commands, see the chapter about \ilink{Barcode Support}{Barcodes}.
+and \bcommand{update}{slots}. For more details on these commands, see the chapter about \nameref{Barcodes}.
 
 Current Bareos autochanger support does not include cleaning, stackers, or
 silos. Stackers and silos are not supported because Bareos expects to
@@ -60,8 +54,8 @@ However, if you are very careful to setup Bareos to access the Volumes
 in the autochanger sequentially, you may be able to make Bareos
 work with stackers (gravity feed and such).
 
-In principle, if {\bf mtx} will operate your changer correctly, then it is
-just a question of adapting the {\bf mtx-changer} script (or selecting one
+In principle, if \command{mtx} will operate your changer correctly, then it is
+just a question of adapting the \command{mtx-changer} script (or selecting one
 already adapted) for proper interfacing.
 
 % link does not exists any more:
@@ -74,9 +68,10 @@ already adapted) for proper interfacing.
 %1.3.11 limit the number of slots to a maximum of 64. The solution was to
 %use version 1.3.10.
 
-If you are having troubles, please use the {\bf auto} command in the {\bf
-btape} program to test the functioning of your autochanger with Bareos.
-Please remember, that on most distributions, the Storage daemon
+If you are having troubles,
+please use the {\bf auto} command in the \command{btape} program
+to test the functioning of your autochanger with Bareos.
+Please remember, that on most distributions, the \bareosSd
 runs as user \user{bareos} and not as \user{root}.
 You will need to ensure that the Storage daemon has sufficient
 permissions to access the autochanger.
@@ -113,7 +108,7 @@ cat /proc/scsi/sg/device_hdr /proc/scsi/sg/devices
 \normalsize
 
 to find out how to specify their control address ({\bf /dev/sg0} for the
-first, {\bf /dev/sg1} for the second, ...) on the {\bf Changer Device = }
+first, {\bf /dev/sg1} for the second, ...) on the \linkResourceDirective{Sd}{Autochanger}{Changer Device}
 Bareos directive.
 
 You can also use the excellent  {\bf lsscsi} tool.
@@ -134,8 +129,8 @@ $ lsscsi -g
 %chapter of this manual.
 
 \subsection{FreeBSD}
-Under FreeBSD, use the following command to list the SCSI devices as well as the {\bf /dev/passn} that you will use on
-the Bareos {\bf Changer Device = } directive:
+Under FreeBSD, use the following command to list the SCSI devices as well as the \path|/dev/passN| that you will use on
+the Bareos \linkResourceDirective{Sd}{Autochanger}{Changer Device} directive:
 
 
 \footnotesize
@@ -149,8 +144,8 @@ device.
 
 The following tip for FreeBSD users comes from Danny Butroyd:
 on reboot Bareos will NOT have permission to
-control the device /dev/pass0 (assuming this is your changer device).
-To get around this just edit the /etc/devfs.conf file and add the
+control the device \file{/dev/pass0} (assuming this is your changer device).
+To get around this just edit the \file{/etc/devfs.conf} file and add the
 following to the bottom:
 \footnotesize
 \begin{verbatim}
@@ -165,25 +160,17 @@ This gives the bareos group permission to write to the nsa0.0 device
 too just to be on the safe side.   To bring these changes into effect
 just run:-
 
+\begin{commands}{}
 /etc/rc.d/devfs restart
+\end{commands}
 
 Basically this will stop you having to manually change permissions on these
 devices to make Bareos work when operating the AutoChanger after a reboot.
 
-% example directory does not exist:
-% \label{scripts}
-% \section{Example Scripts}
-% \index[general]{Scripts!Example}
-% \index[general]{Example Scripts}
-%
-% Please read the sections below so that you understand how autochangers work
-% with Bareos. Although we supply a default {\bf mtx-changer} script, your
-% autochanger may require some additional changes. If you want to see examples
-% of configuration files and scripts, please look in the {\bf
-% {\textless}bareos-src{\textgreater}/examples/devices} directory where you will find an
-% example {\bf HP-autoloader.conf} Bareos Device resource, and several {\bf
-% mtx-changer} scripts that have been modified to work with different
-% autochangers.
+\subsection{Solaris}
+
+On Solaris, the changer device will typically be some file under \file{/dev/rdsk}.
+
 
 
 \section{Slots}
@@ -201,25 +188,25 @@ as InChanger. This is because it must know where each volume is to
 be able to load the volume.
 For each Volume in your
 changer, you will, using the Console program, assign a slot. This information
-is kept in {\bf Bareos's} catalog database along with the other data for the
+is kept in Bareos's catalog database along with the other data for the
 volume. If no slot is given, or the slot is set to zero, Bareos will not
 attempt to use the autochanger even if all the necessary configuration records
-are present. When doing a {\bf mount} command on an autochanger, you must
+are present. When doing a \bcommand{mount}{} command on an autochanger, you must
 specify which slot you want mounted.  If the drive is loaded with a tape
 from another slot, it will unload it and load the correct tape, but
-normally, no tape will be loaded because an {\bf unmount} command causes
+normally, no tape will be loaded because an \bcommand{unmount}{} command causes
 Bareos to unload the tape in the drive.
 
 
-You can check if the Slot number and InChanger flag are set by doing a:
-\begin{verbatim}
-list Volumes
-\end{verbatim}
+You can check if the Slot number and InChanger flag by:
+\begin{bconsole}{list volumes}
+*list volumes
+\end{bconsole}
 
-in the Console program.
 
-\label{mult}
+
 \section{Multiple Devices}
+\label{sec:MultipleDevices}
 \index[general]{Devices!Multiple}
 \index[general]{Multiple Devices}
 
@@ -233,203 +220,43 @@ the Storage daemon to ensure that only one drive uses the mtx-changer
 script at a time, and also that two drives don't reference the
 same Volume.
 
-Multi-drive requires the use of the {\bf
-Drive Index} directive in the Device resource of the Storage daemon's
-configuration file. Drive numbers or the Device Index are numbered beginning
+Multi-drive requires the use of the \linkResourceDirective{Sd}{Device}{Drive Index} directive.
+Drive numbers or the Device Index are numbered beginning
 at zero, which is the default. To use the second Drive in an autochanger, you
-need to define a second Device resource and set the Drive Index to 1 for
-that device. In general, the second device will have the same {\bf Changer
-Device} (control channel) as the first drive, but a different {\bf Archive
-Device}.
+need to define a second Device resource, set the \linkResourceDirective{Sd}{Device}{Drive Index}
+and set the \linkResourceDirective{Sd}{Device}{Archive Device}.
 
 As a default, Bareos jobs will prefer to write to a Volume that is
 already mounted. If you have a multiple drive autochanger and you want
 Bareos to write to more than one Volume in the same Pool at the same
-time, you will need to set \linkResourceDirective{Dir}{Job}{Prefer Mounted Volumes}
-in the Directors Job resource to {\bf no}. This will cause
-the Storage daemon to maximize the use of drives.
+time, you will need to set \linkResourceDirectiveValue{Dir}{Job}{Prefer Mounted Volumes}{no}.
+This will cause the Storage daemon to maximize the use of drives.
 
 
-\label{ConfigRecords}
+
 \section{Device Configuration Records}
 \index[general]{Device Configuration Records}
 
 Configuration of autochangers within Bareos is done in the Device resource of
-the Storage daemon. Four records: {\bf Autochanger}, {\bf Changer Device},
-{\bf Changer Command}, and {\bf Maximum Changer Wait} control how Bareos uses
-the autochanger.
+the Storage daemon.
 
-These four records, permitted in {\bf Device} resources, are described in
-detail below. Note, however, that the {\bf Changer Device} and the
-{\bf Changer Command} directives are not needed in the Device resource
-if they are present in the {\bf Autochanger} resource.
+Following records control how Bareos uses the autochanger:
 
 \begin{description}
+    \item[\linkResourceDirective{Sd}{Device}{Autochanger}]
+        Specifies if the current device belongs to an
+        autochanger resource.
 
-\xdirective{dir}{}{Autochanger}{yes {\textbar} no}{}{no}{}{%
-The \configdirective{Autochanger} record specifies if the current device belongs to an
-autochanger resource.
-}
+    \item[\linkResourceDirective{Sd}{Autochanger}{Changer Command} (\linkResourceDirective{Sd}{Device}{Changer Command})]
 
-\item [Changer Device = {\textless}device-name{\textgreater}]
-   \index[sd]{Changer Device}
-   In addition to the Archive Device name, you must specify a  {\bf Changer
-Device} name. This is because most autochangers are  controlled through a
-different device than is used for reading and  writing the cartridges. For
-example, on Linux, one normally uses the generic SCSI interface for
-controlling the autochanger, but the standard SCSI interface for reading and
-writing the  tapes. On Linux, for the {\bf Archive Device = /dev/nst0},  you
-would typically have {\bf Changer Device = /dev/sg0}.  Note, some of the more
-advanced autochangers will locate the changer device on {\bf /dev/sg1}. Such
-devices typically have  several drives and a large number of tapes.
+    \item[\linkResourceDirective{Sd}{Autochanger}{Changer Device} (\linkResourceDirective{Sd}{Device}{Changer Device})]
 
-On FreeBSD systems, the changer device will typically be on {\bf /dev/pass0}
-through {\bf /dev/passN}.
+    \item[\linkResourceDirective{Sd}{Device}{Drive Index}]
+        Individual driver number, starting at 0.
 
-On Solaris, the changer device will typically be some file under {\bf
-/dev/rdsk}.
-
-Please ensure that your Storage daemon has permission to access this
-device.
-
-\item [Changer Command = {\textless}command{\textgreater}]
-   \index[sd]{Changer Command}
-   This record is used to specify the external program to call  and what
-arguments to pass to it. The command is assumed to be  a standard program or
-shell script that can be executed by  the operating system. This command is
-invoked each time that Bareos wishes to manipulate the autochanger.  The
-following substitutions are made in the {\bf command}  before it is sent to
-the operating system for execution:
-
-\footnotesize
-\begin{verbatim}
-      %% = %
-      %a = archive device name
-      %c = changer device name
-      %d = changer drive index base 0
-      %f = Client's name
-      %j = Job name
-      %o = command  (loaded, load, or unload)
-      %s = Slot base 0
-      %S = Slot base 1
-      %v = Volume name
-\end{verbatim}
-\normalsize
-
-An actual example for using {\bf mtx} with the  {\bf mtx-changer} script (part
-of the Bareos distribution) is:
-
-\footnotesize
-\begin{verbatim}
-Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
-\end{verbatim}
-\normalsize
-
-Details of the three
-commands currently used by Bareos  (loaded, load, unload) as well as the
-output expected by  Bareos are given in the \ilink{Bareos Autochanger Interface}{autochanger-interface} section.
-
-\item [Maximum Changer Wait = {\textless}time{\textgreater}]
-   \index[sd]{Maximum Changer Wait}
-   This record is used to define the maximum amount of time that Bareos
-   will wait for an autoloader to respond to a command (e.g.  load).  The
-   default is set to 120 seconds.  If you have a slow autoloader you may
-   want to set it longer.
-
-If the autoloader program fails to respond in this time, it  will be killed
-and Bareos will request operator intervention.
-
-\item [Drive Index = {\textless}number{\textgreater}]
-   \index[sd]{Drive Index}
-   This record allows you to tell Bareos to use the second or subsequent
-   drive in an autochanger with multiple drives.  Since the drives are
-   numbered from zero, the second drive is defined by
-
-\footnotesize
-\begin{verbatim}
-Device Index = 1
-
-\end{verbatim}
-\normalsize
-
-To use the second drive, you need a second Device resource definition  in the
-Bareos configuration file. See the Multiple Drive section above  in this
-chapter for more information.
+    \item[\linkResourceDirective{Sd}{Device}{Maximum Changer Wait}]
 \end{description}
 
-In addition, for proper functioning of the Autochanger, you must
-define an Autochanger resource.
-
-\section{An Example Configuration File}
-
-The following two resources implement an autochanger:
-
-\footnotesize
-\begin{verbatim}
-Autochanger {
-  Name = Autochanger
-  Device = DDS-4
-  Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
-  Changer Device = /dev/sg0
-}
-
-Device {
-  Name = DDS-4
-  Media Type = DDS-4
-  Archive Device = /dev/nst0    # Normal archive device
-  Autochanger = yes
-  LabelMedia = no;
-  AutomaticMount = yes;
-  AlwaysOpen = yes;
-}
-\end{verbatim}
-\normalsize
-
-where you will adapt the {\bf Archive Device}, the {\bf Changer Device}, and
-the path to the {\bf Changer Command} to correspond to the values used on your
-system.
-
-\section{A Multi-drive Example Configuration File}
-\index[general]{Multi-drive Example Configuration File}
-
-The following resources implement a multi-drive autochanger:
-
-\footnotesize
-\begin{verbatim}
-Autochanger {
-  Name = Autochanger
-  Device = Drive-0
-  Device = Drive-1
-  Changer Command = "/usr/lib/bareos/scripts/mtx-changer %c %o %S %a %d"
-  Changer Device = /dev/sg0
-}
-
-Device {
-  Name = Drive-0
-  Drive Index = 0
-  Media Type = DDS-4
-  Archive Device = /dev/nst0    # Normal archive device
-  Autochanger = yes
-  LabelMedia = no;
-  AutomaticMount = yes;
-  AlwaysOpen = yes;
-}
-
-Device {
-  Name = Drive-1
-  Drive Index = 1
-  Media Type = DDS-4
-  Archive Device = /dev/nst1    # Normal archive device
-  Autochanger = yes
-  LabelMedia = no;
-  AutomaticMount = yes;
-  AlwaysOpen = yes;
-}
-\end{verbatim}
-\normalsize
-
-where you will adapt the {\bf Archive Device} and the {\bf Changer Device} to correspond to the values used on your
-system.
 
 
 \section{Specifying Slots When Labeling}
@@ -448,12 +275,11 @@ You must also set
 {\bf Autochanger = yes} in the Storage daemon's Device resource
 as we have described above in order for the autochanger to be used.
 %\TODO{check: why not in the example?}
-Please see the
-\linkResourceDirective{Dir}{Storage}{Auto Changer} in the Director's chapter
-and the
-\linkResourceDirective{Sd}{Device}{Autochanger} in the Storage daemon
-chapter for more details on these records.
-
+Please see
+\linkResourceDirective{Dir}{Storage}{Auto Changer}
+and
+\linkResourceDirective{Sd}{Device}{Autochanger}
+for more details on these records.
 
 Thus all stages of dealing with tapes can be totally automated. It is also
 possible to set or change the Slot using the {\bf update} command in the
@@ -464,13 +290,14 @@ Bareos will attempt to access the autochanger only if a {\bf slot} is non-zero
 in the catalog Volume record (with the Volume name).
 
 If your autochanger has barcode labels, you can label all the Volumes in
-your autochanger one after another by using the {\bf label barcodes} command.
+your autochanger one after another by using the \bcommand{label}{barcodes} command.
 For each tape in the changer containing a barcode, Bareos will mount the tape
 and then label it with the same name as the barcode. An appropriate Media
 record will also be created in the catalog. Any barcode that begins with the
 same characters as specified on the "CleaningPrefix=xxx" command, will be
 treated as a cleaning tape, and will not be labeled.
 For example with:
+
 \footnotesize
 \begin{verbatim}
 Pool {
@@ -504,7 +331,6 @@ and may stop function because it expects to have exclusive use
 of the autochanger while it has the drive mounted.
 
 
-\label{Magazines}
 \section{Dealing with Multiple Magazines}
 \index[general]{Magazines!Dealing with Multiple}
 
