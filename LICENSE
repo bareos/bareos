@@ -9,19 +9,6 @@ are licensed under the following licenses:
 
 a) Twitter Bootstrap
 
-File: /bareos-webui/public/css/bootstrap.css
-File: /bareos-webui/public/css/bootstrap.min.css
-File: /bareos-webui/public/css/bootstrap-theme.css
-File: /bareos-webui/public/css/bootstrap-theme.min.css
-File: /bareos-webui/public/fonts/glyphicons-halflings-regular.eot
-File: /bareos-webui/public/fonts/glyphicons-halflings-regular.svg
-File: /bareos-webui/public/fonts/glyphicons-halflings-regular.ttf
-File: /bareos-webui/public/fonts/glyphicons-halflings-regular.woff
-File: /bareos-webui/public/fonts/glyphicons-halflings-regular.woff2
-File: /bareos-webui/public/js/bootstrap.js
-File: /bareos-webui/public/js/bootstrap.min.js
-File: /bareos-webui/public/js/npm.js
-
 The MIT License (MIT)
 
 Copyright (c) 2011-2015 Twitter, Inc
@@ -46,10 +33,6 @@ THE SOFTWARE.
 
 
 b) jQuery
-
-File: /bareos-webui/public/js/jquery.js
-File: /bareos-webui/public/js/jquery.min.js
-File: /bareos-webui/public/js/jquery.min.map
 
 Copyright jQuery Foundation and other contributors, https://jquery.org/
 This software consists of voluntary contributions made by many
@@ -81,71 +64,7 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
 WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 
-c) jqPlot - Pure JavaScript plotting plugin using jQuery
-
-File: /bareos-webui/public/js/jqplot.barRenderer.js
-File: /bareos-webui/public/js/jqplot.barRenderer.min.js
-File: /bareos-webui/public/js/jqplot.categoryAxisRenderer.js
-File: /bareos-webui/public/js/jqplot.categoryAxisRenderer.min.js
-File: /bareos-webui/public/js/jqplot.pieRenderer.js
-File: /bareos-webui/public/js/jqplot.pieRenderer.min.js
-File: /bareos-webui/public/js/jqplot.pointLabels.js
-File: /bareos-webui/public/js/jqplot.pointLabels.min.js
-File: /bareos-webui/public/js/jquery.jqplot.js
-File: /bareos-webui/public/js/jquery.jqplot.min.js
-
-The MIT License (MIT)
-
-Copyright (c) 2009-2016 Chris Leonello
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
-/**
- * jqPlot
- * Pure JavaScript plotting plugin using jQuery
- *
- * Version: 1.0.9
- * Revision: d96a669
- *
- * Copyright (c) 2009-2016 Chris Leonello
- * jqPlot is currently available for use in all personal or commercial projects
- * under both the MIT (http://www.opensource.org/licenses/mit-license.php) and GPL
- * version 2.0 (http://www.gnu.org/licenses/gpl-2.0.html) licenses. This means that you can
- * choose the license that best suits your project and use it accordingly.
- *
- * Although not required, the author would appreciate an email letting him
- * know of any substantial use of jqPlot.  You can reach the author at:
- * chris at jqplot dot com or see http://www.jqplot.com/info.php .
- *
- * If you are feeling kind and generous, consider supporting the project by
- * making a donation at: http://www.jqplot.com/donate.php .
- *
- * sprintf functions contained in jqplot.sprintf.js by Ash Searle:
- *
- *     version 2007.04.27
- *     author Ash Searle
- *     http://hexmen.com/blog/2007/03/printf-sprintf/
- *     http://hexmen.com/js/sprintf.js
- *     The author (Ash Searle) has placed this code in the public domain:
- *     "This code is unrestricted: you are free to use it however you like."
- *
- */
+c)
 
 
 d) Zend Skeleton Application
@@ -182,40 +101,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-e) Composer Dependency Manager for PHP
-
-File: /bareos-webui/composer.phar
-
-Copyright (c) 2011 Nils Adermann, Jordi Boggiano
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is furnished
-to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-
+e)
 
 f) jsTree - jQuery tree plugin
-
-File: /bareos-webui/public/js/jstree.js
-File: /bareos-webui/public/js/jstree.min.js
-File: /bareos-webui/public/css/32.png
-File: /bareos-webui/public/css/40.png
-File: /bareos-webui/public/css/throbber.gif
-File: /bareos-webui/public/css/jstree.css
-File: /bareos-webui/public/css/jstree.min.css
 
 Copyright (c) 2014 Ivan Bozhanov (http://vakata.com)
 
@@ -266,10 +154,6 @@ THE SOFTWARE.
 
 
 h) Bootstrap 3 Datepicker
-
-File: /bareos-webui/public/js/bootstrap-datetimepicker.min.js
-File: /bareos-webui/public/css/bootstrap-datetimepicker.css
-File: /bareos-webui/public/css/bootstrap-datetimepicker.min.css
 
 Copyright (c) 2015 Jonathan Peterson (@Eonasdan)
 
@@ -329,14 +213,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 
 
-j) Bootstrap-select
-
-File: /bareos-webui/public/js/bootstrap-select.js
-File: /bareos-webui/public/js/bootstrap-select.js.map
-File: /bareos-webui/public/js/bootstrap-select.min.js
-File: /bareos-webui/public/css/bootstrap-select.css
-File: /bareos-webui/public/css/bootstrap-select.css.map
-File: /bareos-webui/public/css/bootstrap-select.min.css
+j) bootstrap-select
 
 The MIT License (MIT)
 
