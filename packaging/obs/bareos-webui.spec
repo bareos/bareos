@@ -166,7 +166,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files
 %defattr(-,root,root,-)
-%doc README.md LICENSE AGPL-3.0.txt AUTHORS
+%doc README.md LICENSE CHANGELOG.md AUTHORS
 %doc doc/README-TRANSLATION.md
 %doc tests/selenium
 %{_datadir}/%{name}/
