@@ -53,7 +53,7 @@ Requires: php-xmlreader
 Requires: php-xmlwriter
 Requires: php-zip
 
-%if 0%{?suse_version}
+%if 0%{?suse_version} || 0%{?sle_version}
 BuildRequires: apache2
 # /usr/sbin/apxs2
 BuildRequires: apache2-devel
