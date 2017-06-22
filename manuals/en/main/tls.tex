@@ -141,103 +141,114 @@ to easily manage your own CA with a Graphical User Interface.
 
 
 
-% \section{Creating a Self-signed Certificate}
-% \index[general]{Certificate!Creating a Self-signed}
-% 
-% You may create a self-signed certificate for use with the Bareos TLS that
-% will permit you to make it function, but will not allow certificate
-% validation.  The .pem file containing both the certificate and the key
-% valid for ten years can be made with the following:
-% 
-% \begin{commands}{Create a Self-signed Certificate}
-% openssl req -new -x509 -nodes -out bareos.pem -keyout bareos.pem -days 3650
-% \end{commands}
-% 
-% The above script will ask you a number of questions. You may simply answer
-% each of them by entering a return, or if you wish you may enter your own data.
-% 
-% Note, however, that self-signed certificates will only work for the
-% outgoing end of connections.  For example, in the case of the \bareosDir
-% making a connection to a \bareosFd, the \bareosFd may be configured to
-% allow self-signed certificates, but the certificate used by the
-% Director must be signed by a certificate that is explicitly trusted on the
-% \bareosFd end.
-% 
-% This is necessary to prevent ``man in the middle'' attacks from tools such
-% as \elink{ettercap}{http://ettercap.sourceforge.net/}.  Essentially, if the
-% Director does not verify that it is talking to a trusted remote endpoint,
-% it can be tricked into talking to a malicious 3rd party who is relaying and
-% capturing all traffic by presenting its own certificates to the Director
-% and File Daemons.  The only way to prevent this is by using trusted
-% certificates, so that the man in the middle is incapable of spoofing the
-% connection using his own.
-
-
 \section{Example TLS Configuration Files}
 \index[general]{Example!TLS Configuration Files}
 \index[general]{TLS Configuration Files}
 
 An example of the TLS portions of the configuration
-files are listed below:
+files are listed below.
 
-\begin{bconfig}{bareos-dir.conf}
+Another example can be found at \bareosTlsConfigurationExample.
+
+\subsection{Bareos Director}
+
+\begin{bareosConfigResource}{bareos-dir}{director}{bareos-dir}
 Director {                            # define myself
-    Name = backup1-dir
+    Name = bareos-dir
     ...
     TLS Enable = yes
     TLS Require = yes
+    TLS CA Certificate File = /etc/bareos/tls/ca.pem
+    # This is a server certificate, used for incoming
+    # (console) connections.
+    TLS Certificate = /etc/bareos/tls/bareos-dir.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/bareos-dir.example.com-key.pem
     TLS Verify Peer = yes
     TLS Allowed CN = "bareos@backup1.example.com"
     TLS Allowed CN = "administrator@example.com"
-    TLS CA Certificate File = /etc/bareos/tls/ca.pem
-    # This is a server certificate, used for incoming
-    # console connections.
-    TLS Certificate = /etc/bareos/tls/backup1/cert.pem
-    TLS Key = /etc/bareos/tls/backup1/key.pem
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{storage}{File}
 Storage {
     Name = File
-    Address = backup1.example.com
+    Address = bareos-sd1.example.com
     ...
     TLS Require = yes
     TLS CA Certificate File = /etc/bareos/tls/ca.pem
     # This is a client certificate, used by the director to
     # connect to the storage daemon
-    TLS Certificate = /etc/bareos/tls/backup1/cert.pem
-    TLS Key = /etc/bareos/tls/backup1/key.pem
+    TLS Certificate = /etc/bareos/tls/bareos-dir.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/bareos-dir.example.com-key.pem
+    TLS Allowed CN = bareos-sd1.example.com
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{client}{client1-fd}
 Client {
-    Name = backup1-fd
+    Name = client1-fd
     Address = client1.example.com
     ...
     TLS Enable = yes
     TLS Require = yes
     TLS CA Certificate File = /etc/bareos/tls/ca.pem
-    TLS Certificate = /etc/bareos/tls/backup1/cert.pem
-    TLS Key = /etc/bareos/tls/backup1/key.pem
+    TLS Certificate = "/etc/bareos/tls/bareos-dir.example.com-cert.pem"
+    TLS Key = "/etc/bareos/tls/bareos-dir.example.com-key.pem"
+    TLS Allowed CN = client1.example.com
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
-\begin{bconfig}{bareos-fd.conf}
+
+
+\subsection{Bareos Storage Daemon}
+
+\begin{bareosConfigResource}{bareos-sd}{storage}{bareos-sd1}
+Storage {
+    Name = bareos-sd1
+    ...
+    # These TLS configuration options are used for incoming
+    # file daemon connections. Director TLS settings are handled
+    # in Director resources.
+    TLS Enable = yes
+    TLS Require = yes
+    TLS CA Certificate File = /etc/bareos/tls/ca.pem
+    # This is a server certificate. It is used by connecting
+    # file daemons to verify the authenticity of this storage daemon
+    TLS Certificate = /etc/bareos/tls/bareos-sd1.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/bareos-sd1.example.com-key.pem
+    # Peer verification must be disabled,
+    # or all file daemon CNs must be listed in "TLS Allowed CN".
+    # Peer validity is verified by the storage connection cookie
+    # provided to the File Daemon by the Director.
+    TLS Verify Peer = no
+}
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-sd}{director}{bareos-dir}
 Director {
-    Name = backup1-dir
+    Name = bareos-dir
     ...
     TLS Enable = yes
     TLS Require = yes
-    TLS Verify Peer = yes
-    # Allow only the Director to connect
-    TLS Allowed CN = "bareos@backup1.example.com"
     TLS CA Certificate File = /etc/bareos/tls/ca.pem
-    # This is a server certificate. It is used by connecting
-    # directors to verify the authenticity of this file daemon
-    TLS Certificate = /etc/bareos/tls/client11/cert.pem
-    TLS Key = /etc/bareos/tls/client1/key.pem
+    # This is a server certificate. It is used by the connecting
+    # director to verify the authenticity of this storage daemon
+    TLS Certificate = /etc/bareos/tls/bareos-sd1.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/bareos-sd1.example.com-key.pem
+    # Require the connecting director to provide a certificate
+    # with the matching CN.
+    TLS Verify Peer = yes
+    TLS Allowed CN = "bareos-dir.example.com"
 }
+\end{bareosConfigResource}
 
-FileDaemon {
-    Name = backup1-fd
+
+
+\subsection{Bareos File Daemon}
+
+\begin{bareosConfigResource}{bareos-fd}{client}{myself}
+Client {
+    Name = client1-fd
     ...
     # you need these TLS entries so the SD and FD can
     # communicate
@@ -245,47 +256,26 @@ FileDaemon {
     TLS Require = yes
 
     TLS CA Certificate File = /etc/bareos/tls/ca.pem
-    TLS Certificate = /etc/bareos/tls/client1/cert.pem
-    TLS Key = /etc/bareos/tls/client1/key.pem
-}
-\end{bconfig}
+    TLS Certificate = /etc/bareos/tls/client1.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/client1.example.com-key.pem
 
-\begin{bconfig}{bareos-sd.conf}
-Storage {                             # definition of myself
-    Name = backup1-sd
+    TLS Allowed CN = bareos-sd1.example.com
+}
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-fd}{director}{bareos-dir}
+Director {
+    Name = bareos-dir
     ...
-    # These TLS configuration options are used for incoming
-    # file daemon connections. Director TLS settings are handled
-    # below.
     TLS Enable = yes
     TLS Require = yes
-    # Peer certificate is not required/requested -- peer validity
-    # is verified by the storage connection cookie provided to the
-    # File Daemon by the director.
-    TLS Verify Peer = no
     TLS CA Certificate File = /etc/bareos/tls/ca.pem
     # This is a server certificate. It is used by connecting
-    # file daemons to verify the authenticity of this storage daemon
-    TLS Certificate = /etc/bareos/tls/backup1/cert.pem
-    TLS Key = /usr/local/etc/ssl/backup1/key.pem
-}
-
-#
-# List Directors who are permitted to contact Storage daemon
-#
-Director {
-    Name = backup1-dir
-    ...
-    TLS Enable = yes
-    TLS Require = yes
-    # Require the connecting director to provide a certificate
-    # with the matching CN.
+    # directors to verify the authenticity of this file daemon
+    TLS Certificate = /etc/bareos/tls/client11.example.com-cert.pem
+    TLS Key = /etc/bareos/tls/client1.example.com-key.pem
     TLS Verify Peer = yes
-    TLS Allowed CN = "bareos@backup1.example.com"
-    TLS CA Certificate File = /etc/bareos/tls/ca.pem
-    # This is a server certificate. It is used by the connecting
-    # director to verify the authenticity of this storage daemon
-    TLS Certificate = /etc/bareos/tls/backup1/cert.pem
-    TLS Key = /etc/bareos/tls/backup1/key.pem
+    # Allow only the Director to connect
+    TLS Allowed CN = "bareos-dir.example.com"
 }
-\end{bconfig}
+\end{bareosConfigResource}
