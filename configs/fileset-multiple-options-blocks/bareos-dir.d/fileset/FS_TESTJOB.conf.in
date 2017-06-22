@@ -1,0 +1,38 @@
+FileSet {
+  Name = FS_TESTJOB
+  Include {
+
+     Options {
+        exclude = yes
+        signature=MD5
+        wild=@tmpdir@/data/*1
+     }
+     Options {
+        signature=MD5
+        compression = GZIP
+        wild=@tmpdir@/data/*2
+     }
+     Options {
+        signature=MD5
+        compression = GZIP9
+        wild=@tmpdir@/data/*3
+     }
+     Options {
+        signature=MD5
+        compression = LZ4
+        wild=@tmpdir@/data/*4
+     }
+     Options {
+        exclude = yes
+        wild=@tmpdir@/data/*5
+     }
+     Options {
+        signature=MD5
+        compression = GZIP9
+        wild=@tmpdir@/data/*6
+     }
+
+     File=@tmpdir@/data/
+  }
+}
+

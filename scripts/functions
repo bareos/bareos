@@ -175,6 +175,31 @@ check_files_written()
     fi
 }
 
+
+
+check_compression()
+{
+   local STORAGE=${1}
+   local VOLUME=${2}
+   # JobId is not yet evaluated
+   local JOBID=${3}
+   local FILENAME=${4}
+   local COMPRESSION=${5:-'GZIP'}
+   local COMPRESSION_LEVEL="$6"
+
+   local COMPRESSION_DESCRIPTION="${COMPRESSION}"
+   if [ "${COMPRESSION_LEVEL}" ]; then
+      COMPRESSION_DESCRIPTION="${COMPRESSION}, level=${COMPRESSION_LEVEL}"
+   fi
+
+   print_debug "Is ${FILENAME} compressed with ${COMPRESSION_DESCRIPTION} ?"
+   if ! ${bin}/bls "${STORAGE}" -V "${VOLUME}" -v | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "; then
+      set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."
+   fi
+}
+
+
+
 ################################################################
 # Get information from logs
 get_mig_info()
@@ -374,7 +399,10 @@ check_restore_diff()
    else
       diff -ur ${dest} ${tmp}/bareos-restores/${dest} 2>&1 >/dev/null
    fi
-   dstat=$?
+   result=$?
+   if [ $result -ne 0 -a ${dstat:-0} -eq 0 ]; then
+      dstat=$result
+   fi
 }
 
 check_restore_bin_diff()

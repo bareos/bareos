@@ -50,6 +50,8 @@ ADD_TEST(disk:incremental-2media "@regressdir@/tests/incremental-2media")
 ADD_TEST(disk:incremental-test "@regressdir@/tests/incremental-test")
 ADD_TEST(disk:maxbytes-test "@regressdir@/tests/maxbytes-test")
 ADD_TEST(disk:maxtime-test "@regressdir@/tests/maxtime-test")
+ADD_TEST(disk:fileset-multiple-include-blocks "@regressdir@/tests/fileset-multiple-include-blocks")
+ADD_TEST(disk:fileset-multiple-options-blocks "@regressdir@/tests/fileset-multiple-options-blocks")
 SET_TESTS_PROPERTIES(disk:maxtime-test PROPERTIES
    PASS_REGULAR_EXPRESSION "Fatal error")
 ADD_TEST(disk:maxruntime-test "@regressdir@/tests/maxruntime-test")
