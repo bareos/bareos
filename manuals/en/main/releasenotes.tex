@@ -31,10 +31,11 @@ This release contains several bugfixes and enhancements. Excerpt:
   \item Director now closes all configuration files when reloading failed.
   \item Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
   \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
-  \item Packages for Univention UCS 4.2 have been added.
   \item \bcommand{.bvfs_lsdirs} no longer shows empty directories from accurate jobs.
   \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
   \item The device spool size calculation when using secure erase was fixed.
+  \item Packages for Univention UCS 4.2 have been added.
+  \item Packages for Debian 9 (Stretch) have been added.
   \item WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
   \item WebUI: The login form no longer allows redirects to arbitrary URLs
   \item WebUI: The used ZendFramework components were updated from version 2.4.10 to 2.4.11.
