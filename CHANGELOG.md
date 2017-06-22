@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Removed
 - DataTables (jQuery Plugin)
+- jqplot (jQuery Plugin)
 
 ## [16.2.6] - 2017-06-19
 
