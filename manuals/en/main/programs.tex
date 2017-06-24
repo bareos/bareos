@@ -112,25 +112,28 @@ developers in dealing with Volumes external to Bareos and to perform other usefu
 
 \subsection{Parameter}
 
-\subsubsection{Specifying the Configuration File}
+\subsubsection{Specifying the Configuration}
 
 Each of the utilities that deal with Volumes require a valid
-Storage daemon configuration
+\bareosSd configuration
 (actually, the only part of the configuration file that these programs need is the \resourcetype{Sd}{Device} resource
 definitions).
 This permits the programs to find the configuration parameters
-for your archive device (generally a tape drive).
+for your \linkResourceDirective{Sd}{Device}{Archive Device}.
 Using the \parameter{-c} option a custom \bareosSd configuration file or directory can be selected.
 
+\subsubsection{Specifying a Device}
 
-\subsubsection{Specifying a Device Name For a Tape}
-\index[general]{Tape!Device Name}
+Each of these programs require a \parameter{device-name} where the Volume can be
+found.
+The device-name is either
+the name of the \bareosSd device (\linkResourceDirective{Sd}{Device}{Name})
+or its \linkResourceDirective{Sd}{Device}{Archive Device}.
 
-Each of these programs require a {\bf device-name} where the Volume can be
-found. In the case of a tape, this is the physical device name such as {\bf
-/dev/nst0} or {\bf /dev/rmt/0ubn} depending on your system. For the program to
-work, it must find the identical name in the Device resource of the
-configuration file. See below for specifying Volume names.
+\paragraph{Specifying a Device Name For a Tape}
+
+In the case of a tape, this is the physical device name such as {\bf
+/dev/nst0} or {\bf /dev/rmt/0ubn} depending on your system.
 
 \warning{If you have Bareos running and you want to use
 one of these programs, you will either need to stop the \bareosSd
@@ -141,33 +144,33 @@ to load the required volume into the tape drive.
 }
 
 
-\subsubsection{Specifying a Device Name For a File}
-\index[general]{File!Device Name}
+\paragraph{Specifying a Device Name For a File}
 
 If you are attempting to read or write an archive file rather than a tape, the
-{\bf device-name} should be the full path to the archive location including
-the filename. The filename (last part of the specification) will be stripped
-and used as the Volume name, and the path (first part before the filename)
-must have the same entry in the configuration file. So, the path is equivalent
-to the archive device name, and the filename is equivalent to the volume name.
-The default file storage path is \fileStoragePath.
+\parameter{device-name} can be the full path to the archive location
+specified at \linkResourceDirective{Sd}{Device}{Archive Device}
+or this including the filename of the volume.
+The filename (last part of the specification) will be stripped
+and used as the Volume name
+So, the path is equivalent to the \linkResourceDirective{Sd}{Device}{Archive Device}
+and the filename is equivalent to the volume name.
 
 \subsubsection{Specifying Volumes}
 \index[general]{Volumes!Specifying}
-\index[general]{Specifying Volumes}
 \index[general]{Bootstrap}
 
 Often you must specify the Volume name to the programs below.
 The best method to do so is to specify a
-bootstrap file on the command line with the {\bf -b} option. As part of
+bootstrap file on the command line with the \parameter{-b} option. As part of
 the bootstrap file, you will then specify the Volume name or Volume names if
 more than one volume is needed. For example, suppose you want to read tapes
-{\bf tape1} and {\bf tape2}. First construct a {\bf bootstrap} file named say,
+\volume{tapevolume1} and \volume{tapevolume2}.
+First construct a {\bf bootstrap} file named say,
 \file{list.bsr} which contains:
 
 \footnotesize
 \begin{verbatim}
-Volume=test1|test2
+Volume=tapevolume1|tapevolume2
 \end{verbatim}
 \normalsize
 
@@ -181,26 +184,50 @@ In the case of Bareos Volumes that are on files, you may simply append volumes
 as follows:
 
 \begin{commands}{}
-bls /tmp/test1|test2
+bls /var/lib/bareos/storage/volume1\|volume2
 \end{commands}
 
 where the backslash (\textbackslash{}) was necessary as a shell escape to
 permit entering the vertical bar (\textbar).
 
 And finally, if you feel that specifying a Volume name is a bit complicated
-with a bootstrap file, you can use the {\bf -V} option (on all programs except
-\command{bcopy}{}) to specify one or more Volume names separated by the vertical bar
+with a bootstrap file, you can use the \parameter{-V} option (on all programs except
+\command{bcopy}) to specify one or more Volume names separated by the vertical bar
 (\textbar). For example:
 
 \begin{commands}{}
-bls -V Vol001 /dev/nst0
+bls /dev/nst0 -V tapevolume1
 \end{commands}
 
 You may also specify an asterisk (*) to indicate that the program should
 accept any volume. For example:
 
 \begin{commands}{}
-bls -V* /dev/nst0
+bls /dev/nst0 -V*
+\end{commands}
+
+
+
+If your \bareosSd has following resource,
+\begin{bareosConfigResource}{bareos-sd}{device}{FileStorage}
+Device {
+  Name = FileStorage
+  Archive Device = /var/lib/bareos/storage
+  ...
+}
+\end{bareosConfigResource}
+following calls of \command{bls} should behave identical:
+
+\begin{commands}{bls using Storage Device Name}
+bls FileStorage -V Full1
+\end{commands}
+or
+\begin{commands}{bls using the Archive Device of a Storage Device}
+bls /var/lib/bareos/storage -V Full1
+\end{commands}
+or
+\begin{commands}{bls using the Archive Device of a Storage Device and volume name}
+bls /var/lib/bareos/storage/Full1
 \end{commands}
 
 
@@ -243,34 +270,35 @@ Usage: bls [options] <device-name>
        -?              print this message
 \end{commands}
 
+Normally if no options are specified, \command{bls} will produce the equivalent
+output to the \command{ls -l} command for each volume.
+
 For example, to list the contents of a tape:
 
 \begin{commands}{}
 bls -V Volume-name /dev/nst0
 \end{commands}
 
-Or to list the contents of a file:
+Or to list the contents of a volume file:
 
 \begin{commands}{}
-bls /var/lib/bareos/storage/testvol
+bls FileStorage -V Full1
 \end{commands}
 or
 \begin{commands}{}
-bls -V testvol /var/lib/bareos/storage
+bls /var/lib/bareos/storage -V Full1
+\end{commands}
+or
+\begin{commands}{}
+bls /var/lib/bareos/storage/Full1
 \end{commands}
 
-Note that, in the case of a file, the Volume name becomes the filename, so in
-the above example, you will replace the {\bf Volume-name} with the name of the volume
-(file) you wrote.
-
-Normally if no options are specified, {\bf bls} will produce the equivalent
-output to the {\bf ls -l} command for each file on the tape. Using other
-options listed above, it is possible to display only the Job records, only the
-tape blocks, etc. For example:
+For example:
 
 \begin{commands}{}
+<command>bls</command> <parameter>FileStorage -V Full1</parameter>
 bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
-12-Sep 18:30 bls JobId 0: Ready to read from volume "testvol" on device "FileStorage" (/var/lib/bareos/storage).
+12-Sep 18:30 bls JobId 0: Ready to read from volume "Full1" on device "FileStorage" (/var/lib/bareos/storage).
 bls JobId 1: -rwxr-xr-x   1 root     root            4614 2013-01-22 22:24:11  /usr/sbin/service
 bls JobId 1: -rwxr-xr-x   1 root     root           13992 2013-01-22 22:24:12  /usr/sbin/rtcwake
 bls JobId 1: -rwxr-xr-x   1 root     root            6243 2013-02-06 11:01:29  /usr/sbin/update-fonts-scale
@@ -280,18 +308,45 @@ bls JobId 1: -rwxr-xr-x   1 root     root            9480 2013-01-22 22:47:43  /
 ...
 bls JobId 456: -rw-r-----   1 root     bareos          1008 2013-05-23 13:17:45  /etc/bareos/bareos-fd.conf
 bls JobId 456: drwxr-xr-x   2 root     root            4096 2013-07-04 17:40:21  /etc/bareos/
-12-Sep 18:30 bls JobId 0: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "testvol"
+12-Sep 18:30 bls JobId 0: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "Full1"
 12-Sep 18:30 bls JobId 0: End of all volumes.
 2972 files found.
 \end{commands}
 
+\subsubsection{Show Detailed File Information}
+
+To retrieve information, about how a file is stored on the volume, you can use \command{bls} in verbose mode:
+
+\begin{commands}{}
+<command>bls</command> <parameter>FileStorage -V TestVolume001 -v</parameter>
+bls: butil.c:273-0 Using device: "FileStorage" for reading.
+22-Jun 19:34 bls JobId 0: Ready to read from volume "TestVolume001" on device "Storage1" (/var/lib/bareos/storage).
+Volume Label Record: VolSessionId=1 VolSessionTime=1498152622 JobId=0 DataLen=168
+Begin Job Session Record: VolSessionId=1 VolSessionTime=1498152622 JobId=1 DataLen=169
+FileIndex=1 Stream=1  UATTR                     DataLen=129   | -rw-rw-r--   1 root     root               5 2017-06-22 19:30:21
+                                                              | /srv/data/test1.dat
+FileIndex=1 Stream=29 COMPRESSED                DataLen=25    | GZIP, level=9, version=1, length=13
+FileIndex=1 Stream=3  MD5                       DataLen=16    | 2Oj8otwPiW/Xy0ywAxuiSQ (base64)
+FileIndex=2 Stream=1  UATTR                     DataLen=123   | drwxrwxr-x   2 root     root            4096 2017-06-22 19:30:21
+                                                              | /srv/data/
+...
+End Job Session Record: VolSessionId=1 VolSessionTime=1498152622 JobId=1
+DataLen=205
+22-Jun 19:34 bls JobId 0: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "TestVolume001"
+22-Jun 19:34 bls JobId 0: End of all volumes.
+End of Physical Medium Record: VolSessionId=0 VolSessionTime=0 JobId=0 DataLen=0
+9 files and directories found.
+\end{commands}
+
+For details about the Volume format, see \bareosDeveloperGuideStorageMediaOutputFormat.
 
 \subsubsection{Show Label Information}
 \index[general]{bls!Label}
 
 Using the \parameter{-L} the label information of a Volume is shown:
 
-\begin{commandOut}{bls, Show Volume Label}{}{bls -L /var/lib/bareos/storage/testvol}
+\begin{commands}{bls: show volume label}
+<command>bls</command> <parameter>-L /var/lib/bareos/storage/testvol</parameter>
 bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
 12-Sep 18:41 bls JobId 0: Ready to read from volume "testvol" on device "FileStorage" (/var/lib/bareos/storage).
 
@@ -308,7 +363,7 @@ MediaType         : File
 PoolType          : Backup
 HostName          : debian6
 Date label written: 06-Mar-2013 17:21
-\end{commandOut}
+\end{commands}
 
 
 \subsubsection{Listing Jobs}
@@ -316,10 +371,11 @@ Date label written: 06-Mar-2013 17:21
 \index[general]{bls!Listing Jobs}
 
 If you are listing a Volume to determine what Jobs to restore, normally the
-{\bf -j} option provides you with most of what you will need as long as you
+\parameter{-j} option provides you with most of what you will need as long as you
 don't have multiple clients. For example:
 
-\begin{commandOut}{bls, Listing Jobs}{}{bls /var/lib/bareos/storage/testvol -j}
+\begin{commands}{bls: list jobs}
+<command>bls</command> <parameter>/var/lib/bareos/storage/testvol -j</parameter>
 bls: butil.c:282-0 Using device: "/var/lib/bareos/storage" for reading.
 12-Sep 18:33 bls JobId 0: Ready to read from volume "testvol" on device "FileStorage" (/var/lib/bareos/storage).
 Volume Record: File:blk=0:193 SessId=1 SessTime=1362582744 JobId=0 DataLen=158
@@ -342,9 +398,9 @@ End Job Session Record: File:blk=0:320694269 SessId=301 SessTime=1369307832 JobI
    Date=11-Sep-2013 23:10:03 Level=F Type=B Files=12 Bytes=1,472,681 Errors=0 Status=T
 12-Sep 18:32 bls JobId 0: End of Volume at file 0 on device "FileStorage" (/var/lib/bareos/storage), Volume "testvol"
 12-Sep 18:32 bls JobId 0: End of all volumes.
-\end{commandOut}
+\end{commands}
 
-Adding the {\bf -v} option will display virtually all information that is
+Adding the \parameter{-v} option will display virtually all information that is
 available for each record.
 
 \subsubsection{Listing Blocks}
@@ -356,7 +412,7 @@ blocks (the "primitive" unit of Bareos data on the Volume). However, you can
 do so with:
 
 \begin{commands}{}
-bls -k /tmp/File002
+<command>bls</command> <parameter>-k /tmp/File002</parameter>
 bls: butil.c:148 Using device: /tmp
 Block: 1 size=64512
 Block: 2 size=64512
@@ -367,11 +423,11 @@ bls: Got EOF on device /tmp
 End of File on device
 \end{commands}
 
-By adding the {\bf -v} option, you can get more information, which can be
+By adding the \parameter{-v} option, you can get more information, which can be
 useful in knowing what sessions were written to the volume:
 
 \begin{commands}{}
-bls -k -v /tmp/File002
+<command>bls</command> <parameter>-k -v /tmp/File002</parameter>
 Date label written: 2002-10-19 at 21:16
 Block: 1 blen=64512 First rec FI=VOL_LABEL SessId=1 SessTim=1035062102 Strm=0 rlen=147
 Block: 2 blen=64512 First rec FI=6 SessId=1 SessTim=1035062102 Strm=DATA rlen=4087
@@ -387,11 +443,11 @@ End of File on device
 Armed with the SessionId and the SessionTime, you can extract just about
 anything.
 
-If you want to know even more, add a second {\bf -v} to the command line to
+If you want to know even more, add a second \parameter{-v} to the command line to
 get a dump of every record in every block.
 
 \begin{commands}{}
-bls -k -v -v /tmp/File002
+<command>bls</command> <parameter>-k -vv /tmp/File002</parameter>
 bls: block.c:79 Dump block  80f8ad0: size=64512 BlkNum=1
                Hdrcksum=b1bdfd6d cksum=b1bdfd6d
 bls: block.c:92    Rec: VId=1 VT=1035062102 FI=VOL_LABEL Strm=0 len=147 p=80f8b40
