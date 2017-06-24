@@ -5,15 +5,6 @@
 #
 # Check to use multiple fileset option blocks.
 #
-# NOT WORKING:
-#   * using different compression methods per block (with wild).
-#     Only compression option from last option block is evaluated.
-#   * using different signatures per block (with wild).
-#     Only signature option from last option block is evaluated.
-#
-# WORKING:
-#   * using multiple exclude option blocks (with wild).
-#
 
 # Define the Name of the test as "TestName".
 # Should be the same as the filename, therefore we use the filename as default.
@@ -46,7 +37,7 @@ copy_configs
 
 for i in 1 2 3 4 5 6; do
     mkdir -p ${tmp}/data/data$i
-    echo "test" > ${tmp}/data/data$i/test.dat
+    echo "test" > ${tmp}/data/data${i}/test.dat
 done
 
 # start the test
@@ -92,10 +83,7 @@ check_two_logs
 # check for differences between original files and restored files
 # gives an error, because top-level data directory is not backuped
 # (and has therefore other permissions)
-#check_restore_diff ${BackupDirectory}/data1
-if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data1 ]; then
-    set_error "Directory data1 has been restored, however it should be excluded from the backup."
-fi
+check_restore_diff ${BackupDirectory}/data1
 check_restore_diff ${BackupDirectory}/data2
 check_restore_diff ${BackupDirectory}/data3
 check_restore_diff ${BackupDirectory}/data4
@@ -103,7 +91,10 @@ check_restore_diff ${BackupDirectory}/data4
 if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data5 ]; then
     set_error "Directory data5 has been restored, however it should be excluded from the backup."
 fi
-check_restore_diff ${BackupDirectory}/data6
+#check_restore_diff ${BackupDirectory}/data6
+if [ -e ${tmp}/bareos-restores/${BackupDirectory}/data6 ]; then
+    set_error "Directory data6 has been restored, however it should be excluded from the backup."
+fi
 
 # do some manual testing
 if ! [ -d ${BackupDirectory} ]; then
