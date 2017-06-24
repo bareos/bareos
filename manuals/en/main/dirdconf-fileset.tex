@@ -3,7 +3,7 @@
 \label{fileset-include}
 
 The Include resource must contain a list of directories and/or files to be
-processed in the backup job.  
+processed in the backup job.
 
 Normally, all files found in all
 subdirectories of any directory in the Include File list will be backed up.
@@ -92,7 +92,7 @@ There are a number of special cases when specifying directories and files in a
    named file is read once when the configuration file is parsed during the
    Director startup.  Note, that the file is read on the Director's machine
    and not on the Client's.  In fact, the @filename can appear anywhere
-   within the conf file where a token would be read, and the contents of
+   within a configuration file where a token would be read, and the contents of
    the named file will be logically inserted in the place of the @filename.
    What must be in the file depends on the location the @filename is
    specified in the conf file.  For example:
@@ -919,11 +919,9 @@ Include {
    directory, no files or directories below it will be matched.
 
    You may want to test your expressions prior to running your
-   backup by using the bwild program. Please see the
-   \ilink{Utilities}{bwild} chapter of this manual for
-   more. You can also test your full FileSet definition by using
-   the \ilink{estimate}{estimate} command in the Console
-   chapter of this manual.
+   backup by using the \nameref{bwild} program.
+   You can also test your full FileSet definition by using
+   the \ilink{estimate}{estimate} command.
    It is recommended to enclose the string in double quotes.
 
 \item [wilddir={\textless}string{\textgreater}] \hfill \\
@@ -941,13 +939,9 @@ Include {
    It is recommended to enclose the string in double quotes.
 
    You may want to test your expressions prior to running your
-   backup by using the bwild program. Please see the
-   \ilink{Utilities}{bwild} chapter of this manual for
-   more. You can also test your full FileSet definition by using
-   the \ilink{estimate}{estimate} command in the Console
-   chapter of this manual.
-   An example of excluding with the WildDir option on Win32 machines is
-   presented below.
+   backup by using the \nameref{bwild} program.
+   You can also test your full FileSet definition by using
+   the \ilink{estimate}{estimate} command.
 
 \item [wildfile={\textless}string{\textgreater}] \hfill \\
 \index[dir]{wildfile}
@@ -967,14 +961,11 @@ Include {
    It is recommended to enclose the string in double quotes.
 
    You may want to test your expressions prior to running your
-   backup by using the bwild program. Please see the
-   \ilink{Utilities}{bwild} chapter of this manual for
-   more. You can also test your full FileSet definition by using
-   the \ilink{estimate}{estimate} command in the Console
-   chapter of this manual.
+   backup by using the \nameref{bwild} program.
+   You can also test your full FileSet definition by using
+   the \ilink{estimate}{estimate} command.
    An example of excluding with the WildFile option on Win32 machines is
    presented below.
-
 
 \item [regex={\textless}string{\textgreater}] \hfill \\
 \index[dir]{regex}
@@ -996,11 +987,9 @@ Include {
    The regex libraries differ from one operating system to
    another, and in addition, regular expressions are complicated,
    so you may want to test your expressions prior to running your
-   backup by using the bregex program. Please see the
-   \ilink{Utilities}{bwild} chapter of this manual for
-   more. You can also test your full FileSet definition by using
-   the \ilink{estimate}{estimate} command in the Console
-   chapter of this manual.
+   backup by using the \nameref{bregex} program.
+   You can also test your full FileSet definition by using
+   the \ilink{estimate}{estimate} command.
 
    You find yourself using a lot of Regex statements, which will cost quite a lot
    of CPU time, we recommend you simplify them if you can, or better yet
@@ -1026,10 +1015,7 @@ Include {
    The regex libraries differ from one operating system to
    another, and in addition, regular expressions are complicated,
    so you may want to test your expressions prior to running your
-   backup by using the bregex program. Please see the
-   \ilink{Utilities}{bregex} chapter of this manual for
-   more.
-
+   backup by using the \nameref{bregex} program.
 
 \item [regexdir={\textless}string{\textgreater}] \hfill \\
 \index[dir]{regexdir}
@@ -1048,10 +1034,7 @@ Include {
    The regex libraries differ from one operating system to
    another, and in addition, regular expressions are complicated,
    so you may want to test your expressions prior to running your
-   backup by using the bregex program. Please see the
-   \ilink{Utilities}{bregex} chapter of this manual for
-   more.
-
+   backup by using the \nameref{bregex} program.
 
 \xdirective{dir}{}{Exclude}{\dtYesNo}{}{no}{}{%
    When enabled, any files matched within the
@@ -1501,7 +1484,7 @@ Backing up a directory entries is not very expensive.
 
 Bareos uses the system regex library and some of them are
 different on different OSes. The above has been reported not to work
-on FreeBSD. This can be tested by using the {\bf estimate job=job-name
+on FreeBSD. This can be tested by using the \bcommand{estimate}{job=job-name
 listing} command in the console and adapting the RegexFile expression
 appropriately.
 
@@ -1743,9 +1726,7 @@ Using \variable{WildDir = "[A-Z]:/RECYCLER"} excludes the backup of the director
 
 If you wish to get an idea of what your FileSet will really backup or if your
 exclusion rules will work correctly, you can test it by using the
-{\bf estimate} command in the Console program. See the
-\ilink{estimate}{estimate} in the Console chapter of this
-manual.
+\ilink{estimate}{estimate} command.
 
 As an example, suppose you add the following test FileSet:
 
