@@ -89,13 +89,12 @@ static const char *compression_to_str(POOL_MEM &resultbuffer,
 static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
 {
    int32_t maskedStream = rec->maskedStream;
-   int32_t stream = rec->maskedStream;
    POOLMEM *buf = rec->data;
    POOL_MEM tmp(PM_MESSAGE);
    unser_declare;
 
-   if (stream == STREAM_SPARSE_GZIP_DATA ||
-       stream == STREAM_SPARSE_COMPRESSED_DATA) {
+   if (maskedStream == STREAM_SPARSE_GZIP_DATA ||
+       maskedStream == STREAM_SPARSE_COMPRESSED_DATA) {
       uint64_t faddr = 0;
 
       ser_begin(buf, sizeof(uint64_t));
@@ -109,8 +108,8 @@ static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_R
       resultbuffer.strcat(tmp);
    }
 
-   Dmsg1(400, "Stream found in decompress_data(): %d\n", stream);
-   switch (stream) {
+   Dmsg1(400, "Stream found in decompress_data(): %d\n", maskedStream);
+   switch (maskedStream) {
    case STREAM_COMPRESSED_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
    case STREAM_WIN32_COMPRESSED_DATA:
