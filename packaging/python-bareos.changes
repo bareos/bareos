@@ -1,3 +1,9 @@
+python-bareos (0.4.0-1) unstable; urgency=low
+
+  * move python module bareos.fuse from python-bareos to bareos-fuse.
+
+ -- Joerg Steffens <joerg.steffens@bareos.com>  Tue, 26 Jun 2017 11:45:40 +0200
+
 python-bareos (0.3.0-1) unstable; urgency=low
 
   * initial

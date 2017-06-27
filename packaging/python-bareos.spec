@@ -18,7 +18,7 @@
 %global pyXcmd python%{PYVER}
 
 Name:           python-%{srcname}
-Version:        0.3
+Version:        0.4
 Release:        1%{?dist}
 Summary:        Backup Archiving REcovery Open Sourced - Python module
 Group:          Productivity/Archiving/Backup
