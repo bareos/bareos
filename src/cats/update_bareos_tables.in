@@ -3,7 +3,7 @@
 # BAREOS® - Backup Archiving REcovery Open Sourced
 #
 # Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-# Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+# Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 #
 # This program is Free Software; you can redistribute it and/or
 # modify it under the terms of version three of the GNU Affero General Public
@@ -35,6 +35,11 @@ bareos_sql_ddl=`get_database_ddl_dir`
 temp_sql_schema="/tmp/tables.sql.$$"
 default_db_type=`get_database_driver_default`
 working_dir=`get_working_dir`
+
+if [ "$1" = "-f" ]; then
+   FORCE="yes"
+   shift || true
+fi
 
 #
 # See if the first argument is a valid backend name.
@@ -119,8 +124,7 @@ do
    known_conversions=`ls ${bareos_sql_ddl}/updates/${db_type}* 2>/dev/null| \
                       sed -e 's#.*/##' | \
                       cut -d'.' -f2`
-   for conversion in ${known_conversions}
-   do
+   for conversion in ${known_conversions}; do
       start_version=`echo ${conversion} | cut -d_ -f1`
       end_version=`echo ${conversion} | cut -d_ -f2`
 
@@ -133,6 +137,16 @@ do
    if [ ${found} = 0 ]; then
       echo "Don't know how to upgrade from version ${DBVERSION} to ${db_version}"
       exit 1
+   fi
+
+   if [ ${DBVERSION} -le 2170 ]; then
+      echo "WARNING:"
+      echo "  Updating the database to schema version 2170 will increase the required disk space."
+      echo "  Especially it will require around twice the amount of disk space, during the migration."
+      if [ "$FORCE" != "yes" ]; then
+         echo "  Please verfiy you got enough disk space available and confirm by pressing ENTER"
+         read input
+      fi
    fi
 
    sql_definitions="${bareos_sql_ddl}/updates/${db_type}.${conversion}.sql"
