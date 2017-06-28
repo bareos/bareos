@@ -58,7 +58,7 @@ dpl_s3_head(dpl_ctx_t *ctx,
    * an empty object is used to create directories, instead of simply using the
    * delimiters in the paths)
    */
-  if (resource[strlen(resource)-1] != '/' || ctx->empty_folder_emulation)
+  if ((resource && resource[strlen(resource)-1] != '/') || ctx->empty_folder_emulation)
     {
       ret2 = dpl_s3_head_raw(ctx, bucket, resource, subresource, NULL,
                              object_type, condition, &headers_reply, locationp);
