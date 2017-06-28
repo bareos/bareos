@@ -378,8 +378,8 @@ backend as your installed binaries. Then define the variables `bin` and
 
 Example:
 
-    bin=/opt/bareos/bin
-    scripts=/opt/bareos/scripts
+    bin=/usr/sbin/
+    scripts=/usr/lib/bareos/scripts/
 
 The `./scripts/prepare-other-loc` will tweak the regress scripts to use
 your binary location. You will need to run it manually once before you
@@ -392,14 +392,16 @@ run any regression tests.
 All regression scripts must be run by hand or by calling the test
 scripts. These are principally scripts that begin with
 <span>**all\_...**</span> such as <span>**all\_disk\_tests**</span>,
-<span>**./all\_test**</span> ... None of the
+<span>**./all\_test**</span> ...
+
+None of the
 <span>**./do\_disk**</span>, <span>**./do\_all**</span>,
 <span>**./nightly...**</span> scripts will work.
 
 If you want to switch back to running the regression scripts from
 source, first remove the <span>**bin**</span> and
 <span>**scripts**</span> variables from your <span>**config**</span>
-file and rerun the <span>**make setup**</span> step.
+file and rerun the `make setup` step.
 
 Running a Single Test
 ---------------------
@@ -438,8 +440,9 @@ You can run any individual test by hand by cd’ing to the
 The directory structure of the regression tests is:
 
       regress                - Makefile, scripts to start tests
-        |------ scripts      - Scripts and conf files
-        |-------tests        - All test scripts are here
+        |------ scripts      - Scripts (and old configuration files)
+        |------ tests        - All test scripts are here
+        |------ configs      - configuration files (for newer tests)
         |
         |------------------ -- All directories below this point are used
         |                       for testing, but are created from the
