@@ -323,7 +323,11 @@ typedef enum
 
 /**/
 
+#ifndef __cplusplus
 typedef enum
+#else
+enum
+#endif
   {
     DPL_SYSMD_MASK_CANNED_ACL    = (1u<<0),
     DPL_SYSMD_MASK_STORAGE_CLASS = (1u<<1),
@@ -342,7 +346,12 @@ typedef enum
     DPL_SYSMD_MASK_ENTERPRISE_NUMBER  = (1u<<15),
     DPL_SYSMD_MASK_PATH          = (1u<<16),
     DPL_SYSMD_MASK_VERSION       = (1u<<17),
+#ifndef __cplusplus
   } dpl_sysmd_mask_t;
+#else
+  };
+typedef unsigned int dpl_sysmd_mask_t;
+#endif
 
 typedef struct
 {
