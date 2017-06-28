@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2016 Planets Communications B.V.
+   Copyright (C) 2014-2017 Planets Communications B.V.
    Copyright (C) 2014-2016 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -121,6 +121,7 @@ struct plugin_ctx {
    int32_t backup_level;              /* Backup level e.g. Full/Differential/Incremental */
    utime_t since;                     /* Since time for Differential/Incremental */
    char *plugin_options;              /* Options passed to plugin */
+   char *plugin_definition;           /* Previous plugin definition passed to plugin */
    char *gfapi_volume_spec;           /* Unparsed Gluster volume specification */
    char *transport;                   /* Gluster transport protocol to management server */
    char *servername;                  /* Gluster management server */
@@ -437,6 +438,10 @@ static bRC freePlugin(bpContext *ctx)
 
    if (p_ctx->gfapi_volume_spec) {
       free(p_ctx->gfapi_volume_spec);
+   }
+
+   if (p_ctx->plugin_definition) {
+      free(p_ctx->plugin_definition);
    }
 
    if (p_ctx->plugin_options) {
@@ -1060,6 +1065,25 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
+   /*
+    * See if we already got some plugin definition before and its exactly the same.
+    */
+   if (p_ctx->plugin_definition) {
+      if (bstrcmp(p_ctx->plugin_definition, (char *)value)) {
+         return bRC_OK;
+      }
+
+      free(p_ctx->plugin_definition);
+   }
+
+   /*
+    * Keep track of the last processed plugin definition.
+    */
+   p_ctx->plugin_definition = bstrdup((char *)value);
+
+   /*
+    * Keep overrides passed in via pluginoptions.
+    */
    keep_existing = (p_ctx->plugin_options) ? true : false;
 
    /*
@@ -1462,6 +1486,14 @@ static bRC connect_to_gluster(bpContext *ctx, bool is_backup)
       return bRC_Error;
    }
 
+   /*
+    * If we get called and we already have a handle to gfapi we should tear it down.
+    */
+   if (p_ctx->glfs) {
+      glfs_fini(p_ctx->glfs);
+      p_ctx->glfs = NULL;
+   }
+
    p_ctx->glfs = glfs_new(p_ctx->volumename);
    if (!p_ctx->glfs) {
       goto bail_out;
@@ -1513,6 +1545,16 @@ static bRC setup_backup(bpContext *ctx, void *value)
 
    if (!p_ctx || !value) {
       goto bail_out;
+   }
+
+   /*
+    * If we are already having a handle to gfapi and we are getting the
+    * same plugin definition there is no need to tear down the whole stuff and
+    * setup exactly the same.
+    */
+   if (p_ctx->glfs &&
+       bstrcmp((char *)value, p_ctx->plugin_definition)) {
+      return bRC_OK;
    }
 
    if (connect_to_gluster(ctx, true) != bRC_OK) {
@@ -1640,11 +1682,17 @@ static bRC setup_restore(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-   if (connect_to_gluster(ctx, false) != bRC_OK) {
-      return bRC_Error;
+   /*
+    * If we are already having a handle to gfapi and we are getting the
+    * same plugin definition there is no need to tear down the whole stuff and
+    * setup exactly the same.
+    */
+   if (p_ctx->glfs &&
+       bstrcmp((char *)value, p_ctx->plugin_definition)) {
+      return bRC_OK;
    }
 
-   return bRC_OK;
+   return connect_to_gluster(ctx, false);
 }
 
 /*
