@@ -1664,6 +1664,13 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
 
    switch(io->func) {
    case IO_OPEN:
+      /*
+       * Close the gfd when it was not closed before.
+       */
+      if (p_ctx->gfd) {
+         glfs_close(p_ctx->gfd);
+      }
+
       if (io->flags & (O_CREAT | O_WRONLY)) {
          p_ctx->gfd = glfs_creat(p_ctx->glfs, io->fname, io->flags, io->mode);
       } else {
