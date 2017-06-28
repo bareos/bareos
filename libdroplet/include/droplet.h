@@ -513,31 +513,40 @@ struct dpl_backend_s;
 typedef struct dpl_ctx
 {
   /*
-   * profile
+   * Profile
    */
-  int n_conn_buckets;         /*!< number of buckets         */
-  int n_conn_max;             /*!< max connexions            */
-  int n_conn_max_hits;        /*!< before auto-close         */
-  int conn_idle_time;         /*!< auto-close after (sec)    */
-  int conn_timeout;           /*!< connection timeout (sec)  */
-  int read_timeout;           /*!< read timeout (sec)        */
-  int write_timeout;          /*!< write timeout (sec)       */
-  int use_https;
-  dpl_addrlist_t *addrlist;   /*!< list of addresses to contact */
-  int cur_host;               /*!< current host beeing used in addrlist */
-  int blacklist_expiretime;   /*!< expiration time of blacklisting */
-  char *base_path;            /*!< or RootURI */
+  int use_https:1;
+  int encode_slashes:1;         /*!< Client wants slashes encoded */
+  int empty_folder_emulation:1; /*!< Folders are represented as empty objects (otherwise, they're purely virtual) */
+  int keep_alive:1;             /*!< Client supports keep-alive */
+  int url_encoding:1;           /*!< Some servers does not handle url encoding */
+  int preserve_root_path:1;     /*!< Preserve "/" for root path access in HTTP requests */
+  int trace_buffers:1;
+  int trace_binary:1;           /*!< Default is trace ascii */
+  int ssl_comp:1;               /*!< SSL compression support (default to false) */
+  int cert_verif:1;             /*!< SSL certificate verification (default to true) */
+  int max_redirects;            /*!< Maximum number of redirects */
+  int n_conn_buckets;           /*!< Number of buckets         */
+  int n_conn_max;               /*!< Max connexions            */
+  int n_conn_max_hits;          /*!< Before auto-close         */
+  int conn_idle_time;           /*!< Auto-close after (sec)    */
+  int conn_timeout;             /*!< Connection timeout (sec)  */
+  int read_timeout;             /*!< Read timeout (sec)        */
+  int write_timeout;            /*!< Write timeout (sec)       */
+  dpl_addrlist_t *addrlist;     /*!< List of addresses to contact */
+  int cur_host;                 /*!< Current host beeing used in addrlist */
+  int blacklist_expiretime;     /*!< Expiration time of blacklisting */
+  char *base_path;              /*!< or RootURI */
   char *access_key;
   char *secret_key;
   unsigned char aws_auth_sign_version; /*!< S3 Auth signature version */
-  char aws_region[32];        /*!< AWS Region */
+  char aws_region[32];          /*!< AWS Region */
   /* SSL */
-  char *ssl_cert_file;        /*!< SSL certificate of the client*/
-  char *ssl_key_file;         /*!< SSL private key of the client*/
-  char *ssl_password;         /*!< password for the SSL private key*/
-  char *ssl_ca_list;          /*!< SSL certificate authority (CA) list*/
-  char *ssl_crl_list;          /*!< SSL certificate revocation list (CRL) list*/
-  int cert_verif;             /*!< SSL certificate verification (default to true) */
+  char *ssl_cert_file;          /*!< SSL certificate of the client*/
+  char *ssl_key_file;           /*!< SSL private key of the client*/
+  char *ssl_password;           /*!< password for the SSL private key*/
+  char *ssl_ca_list;            /*!< SSL certificate authority (CA) list*/
+  char *ssl_crl_list;           /*!< SSL certificate revocation list (CRL) list*/
 /*!< SSL method among SSLv3,TLSv1,TLSv1.1,TLSv1.2 and SSLv23 */
 #if OPENSSL_VERSION_NUMBER >= 0x10000000L
   const SSL_METHOD *ssl_method;
@@ -545,21 +554,13 @@ typedef struct dpl_ctx
   SSL_METHOD *ssl_method;
 #endif
   char *ssl_cipher_list;
-  int ssl_comp;               /*!< SSL compression support (default to false) */
   /* log */
   unsigned int trace_level;
-  int trace_buffers;
-  int trace_binary;          /*!< default is trace ascii */
-  char *pricing;             /*!< might be NULL */
+  unsigned int default_behavior_flags;
+  char *pricing;                /*!< might be NULL */
   unsigned int read_buf_size;
   char *encrypt_key;
-  int encode_slashes;        /*!< client wants slashes encoded */
-  int empty_folder_emulation;/*!< folders are represented as empty objects (otherwise, they're purely virtual) */
-  int keep_alive;            /*!< client supports keep-alive */
-  int url_encoding;          /*!< some servers does not handle url encoding */
-  int max_redirects;         /*!< maximum number of redirects */
-  int preserve_root_path;    /*!< Preserve "/" for root path access in HTTP requests */
-  uint32_t enterprise_number; /*!< for generating native IDs */
+  uint32_t enterprise_number;   /*!< for generating native IDs */
   struct dpl_backend_s *backend;
 
   /*
@@ -644,7 +645,7 @@ typedef struct
   char *host;
   char *port;
   dpl_behavior_flag_t behavior_flags;
-  
+
   dpl_method_t method;
   char *bucket;
   char *resource;
