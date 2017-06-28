@@ -8,4 +8,4 @@ Description: Scality Droplet Library
 Version: @VERSION@
 Requires: libcrypto libxml-2.0 @JSON_PKG_NAME@
 Libs: -L${libdir} -ldroplet
-Cflags: -I${includedir}/droplet-3.0
+Cflags:

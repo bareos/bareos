@@ -85,12 +85,12 @@ libdroplet_la_SOURCES = \
 	src/backend/posix/reqbuilder.c \
 	src/backend/posix/replyparser.c
 
-libdropletincludedir = $(includedir)/droplet-3.0/
+libdropletincludedir = $(includedir)
 libdropletinclude_HEADERS = \
 	include/droplet.h \
 	include/dropletp.h
 
-libdropletdropletincludedir = $(includedir)/droplet-3.0/droplet
+libdropletdropletincludedir = $(includedir)/droplet
 libdropletdropletinclude_HEADERS = \
 	include/droplet/conn.h \
 	include/droplet/converters.h \
@@ -116,14 +116,14 @@ libdropletdropletinclude_HEADERS = \
 	include/droplet/queue.h \
 	include/droplet/json_adapter.h
 
-libdropletdroplets3includedir = $(includedir)/droplet-3.0/droplet/s3
+libdropletdroplets3includedir = $(includedir)/droplet/s3
 libdropletdroplets3include_HEADERS = \
 	include/droplet/s3/backend.h \
 	include/droplet/s3/replyparser.h \
 	include/droplet/s3/reqbuilder.h \
 	include/droplet/s3/s3.h
 
-libdropletdropletcdmiincludedir = $(includedir)/droplet-3.0/droplet/cdmi
+libdropletdropletcdmiincludedir = $(includedir)/droplet/cdmi
 libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/backend.h \
 	include/droplet/cdmi/replyparser.h \
@@ -132,14 +132,14 @@ libdropletdropletcdmiinclude_HEADERS = \
 	include/droplet/cdmi/crcmodel.h \
 	include/droplet/cdmi/cdmi.h
 
-libdropletdropletswiftincludedir = $(includedir)/droplet-3.0/droplet/swift
+libdropletdropletswiftincludedir = $(includedir)/droplet/swift
 libdropletdropletswiftinclude_HEADERS = \
 	include/droplet/swift/backend.h \
 	include/droplet/swift/replyparser.h \
 	include/droplet/swift/reqbuilder.h \
 	include/droplet/swift/swift.h
 
-libdropletdropletsrwsincludedir = $(includedir)/droplet-3.0/droplet/srws
+libdropletdropletsrwsincludedir = $(includedir)/droplet/srws
 libdropletdropletsrwsinclude_HEADERS = \
 	include/droplet/srws/backend.h \
 	include/droplet/srws/replyparser.h \
@@ -147,7 +147,7 @@ libdropletdropletsrwsinclude_HEADERS = \
 	include/droplet/srws/srws.h \
 	include/droplet/srws/key.h
 
-libdropletdropletsproxydincludedir = $(includedir)/droplet-3.0/droplet/sproxyd
+libdropletdropletsproxydincludedir = $(includedir)/droplet/sproxyd
 libdropletdropletsproxydinclude_HEADERS = \
 	include/droplet/sproxyd/backend.h \
 	include/droplet/sproxyd/replyparser.h \
@@ -155,18 +155,18 @@ libdropletdropletsproxydinclude_HEADERS = \
 	include/droplet/sproxyd/sproxyd.h \
 	include/droplet/sproxyd/key.h
 
-libdropletdropletposixincludedir = $(includedir)/droplet-3.0/droplet/posix
+libdropletdropletposixincludedir = $(includedir)/droplet/posix
 libdropletdropletposixinclude_HEADERS = \
 	include/droplet/posix/backend.h \
 	include/droplet/posix/reqbuilder.h \
 	include/droplet/posix/replyparser.h \
 	include/droplet/posix/posix.h
 
-libdropletdropletuksincludedir = $(includedir)/droplet-3.0/droplet/uks
+libdropletdropletuksincludedir = $(includedir)/droplet/uks
 libdropletdropletuksinclude_HEADERS = \
 	include/droplet/uks/uks.h
 
-libdropletdropletscalincludedir = $(includedir)/droplet-3.0/droplet/scal
+libdropletdropletscalincludedir = $(includedir)/droplet/scal
 libdropletdropletscalinclude_HEADERS = \
 	include/droplet/scal/gc.h
 
