@@ -81,7 +81,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
    }
 
    new_mode = attr->statp.st_mode;
-   Dmsg3(200, "type=%d newmode=%x file=%s\n", attr->type, new_mode, attr->ofname);
+   Dmsg3(200, "type=%d newmode=%04o file=%s\n", attr->type, (new_mode & ~S_IFMT), attr->ofname);
    parent_mode = S_IWUSR | S_IXUSR | new_mode;
    gid = attr->statp.st_gid;
    uid = attr->statp.st_uid;
@@ -298,7 +298,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
             if (is_bopen(bfd)) {
                Qmsg1(jcr, M_ERROR, 0, _("bpkt already open fid=%d\n"), bfd->fid);
             }
-            Dmsg2(400, "open %s flags=0x%x\n", attr->ofname, flags);
+            Dmsg2(400, "open %s flags=%08o\n", attr->ofname, flags);
             if ((bopen(bfd, attr->ofname, flags, 0, 0)) < 0) {
                berrno be;
                be.set_errno(bfd->berrno);
@@ -414,7 +414,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
        */
    case FT_DIRBEGIN:
    case FT_DIREND:
-      Dmsg2(200, "Make dir mode=%o dir=%s\n", new_mode, attr->ofname);
+      Dmsg2(200, "Make dir mode=%04o dir=%s\n", (new_mode & ~S_IFMT), attr->ofname);
       if (!makepath(attr, attr->ofname, new_mode, parent_mode, uid, gid, 0)) {
          return CF_ERROR;
       }
