@@ -28,6 +28,22 @@ extern Suite    *s3_auth_v4_suite(void);
  * be NULL.
  */
 
+/* Bit comparison macros with improved output compared to fail_unless(). */
+/* O may be any comparison operator. */
+#define _dpl_assert_bit(X, O, Y) \
+    do { \
+	struct x { \
+	    int a:1; \
+	}; \
+	struct x _x; \
+	_x.a=(X); \
+	struct x _y; \
+	_y.a=(Y); \
+	ck_assert_msg(_x.a O _y.a, "Assertion '"#X#O#Y"' failed: "#X"==%d, "#Y"==%d", _x.a, _y.a); \
+    } while(0)
+#define dpl_assert_bit_eq(X, Y) _dpl_assert_bit(X, ==, Y)
+#define dpl_assert_bit_ne(X, Y) _dpl_assert_bit(X, !=, Y)
+
 /* Integer comparison macros with improved output compared to fail_unless(). */
 /* O may be any comparison operator. */
 #define _dpl_assert_int(X, O, Y) \

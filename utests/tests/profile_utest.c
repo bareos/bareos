@@ -268,7 +268,7 @@ START_TEST(ctx_new_params_test)
   dpl_assert_str_eq(ctx->droplet_dir, dropdir);
   dpl_assert_str_eq(ctx->profile_name, "default");
   dpl_assert_str_eq(ctx->base_path, "/polaroid");
-  dpl_assert_int_eq(ctx->use_https, 1);
+  dpl_assert_bit_eq(ctx->use_https, 1);
   dpl_assert_int_eq(ctx->blacklist_expiretime, 42);
   dpl_assert_int_eq(ctx->header_size, 12345);
   dpl_assert_str_eq(ctx->access_key, "letterpress");
@@ -282,7 +282,7 @@ START_TEST(ctx_new_params_test)
   dpl_assert_int_eq(ctx->read_buf_size, 8765);
   dpl_assert_str_eq(ctx->encrypt_key, "distillery");
   dpl_assert_str_eq(ctx->backend->name, "swift");
-  dpl_assert_int_eq(ctx->encode_slashes, 1);
+  dpl_assert_bit_eq(ctx->encode_slashes, 1);
 
   dpl_ctx_free(ctx);
   free(dropdir);
