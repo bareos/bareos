@@ -1508,6 +1508,7 @@ bail_out:
  */
 static bRC setup_backup(bpContext *ctx, void *value)
 {
+   bRC retval = bRC_Error;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx || !value) {
@@ -1563,9 +1564,24 @@ static bRC setup_backup(bpContext *ctx, void *value)
        * As we need to get it from the gfflilelist we use get_next_file_to_backup()
        * to do the setup for us it retrieves the entry and does a setup of filetype etc.
        */
-      if (get_next_file_to_backup(ctx) == bRC_Error) {
+      switch (get_next_file_to_backup(ctx)) {
+      case bRC_OK:
+         /*
+          * get_next_file_to_backup() normally returns bRC_More to indicate that there are
+          * more files to backup. But when using glusterfind we use an external filelist which
+          * could be empty in that special case we get bRC_OK back from get_next_file_to_backup()
+          * and then only in setup_backup() we return bRC_Skip which will skip processing of any
+          * more files to backup.
+          */
+         retval = bRC_Skip;
+         break;
+      case bRC_Error:
          Jmsg(ctx, M_FATAL, "Failed to get first file to backup\n");
          Dmsg(ctx, dbglvl, "Failed to get first file to backup\n");
+         goto bail_out;
+      default:
+         retval = bRC_OK;
+         break;
       }
    } else {
       p_ctx->crawl_fs = true;
@@ -1605,12 +1621,12 @@ static bRC setup_backup(bpContext *ctx, void *value)
       } else {
          pm_strcpy(p_ctx->next_filename, "/");
       }
+
+      retval = bRC_OK;
    }
 
-   return bRC_OK;
-
 bail_out:
-   return bRC_Error;
+   return retval;
 }
 
 /*
