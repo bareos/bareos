@@ -35,13 +35,6 @@
 
 /** @file */
 
-static char     *randbuf = 
-  "this isn't a very good way to seed the PRNG but will suffice"
-  "this isn't a very good way to seed the PRNG but will suffice"
-  "this isn't a very good way to seed the PRNG but will suffice"
-  "this isn't a very good way to seed the PRNG but will suffice"
-  "this isn't a very good way to seed the PRNG but will suffice";
-
 int dpl_header_size;
 
 const char *
@@ -124,7 +117,6 @@ dpl_init()
   SSL_load_error_strings();
   ERR_load_crypto_strings();
 
-  /* RAND_seed(randbuf, strlen(randbuf)); */
   int ret = RAND_status();
   if (0 == ret) {
     DPL_LOG(NULL, DPL_WARNING, "PRNG not properly seeded, seeding it...");
