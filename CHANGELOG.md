@@ -9,8 +9,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Job Totals Dashboard Widget
-- Running Jobs Dashboard Widget
+- Running Jobs Dashboard Widget (requires core commit eae7ad953ed5c92cee562c2246719e073220603c for proper functionality)
 - Bootstrap Table Extension
+- New configuration.ini variable (autorefresh_interval) introduced
+  to define the dashboard refresh interval (default: 60sec.)
+- Slovak localization
+- Turkish localization
 
 ### Changed
 - Russian translation improved
@@ -36,9 +40,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [16.2.5] - 2017-02-01
 
 ### Added
-- Chinese localization added
-- Spanish localization added
-- Italian localization added
+- Chinese localization
+- Spanish localization
+- Italian localization
 
 ### Changed
 - Fix to bugreport #684
@@ -63,42 +67,97 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [16.2.4-rc1] - 2016-09-23
 
 ### Added
+- Russian localization
+- French localization
+- Basic NGINX config
+- Enable/Disable Clients
+- Enable/Disable Jobs
+- Enable/Disable Schedules
+- Catalog Handling
+- Configurable Tables
+- Selenium Test
+- Required ZF2 Components now included
+
 ### Changed
+- Job listings: Also list Consolidate Jobs
+- Configuration
+- Console Profile
+- Documentation
+- Packaging
+- External Components updated
+- Label Media
+- Run Jobs Action: Job types extended
+- Session Handling
+
 ### Removed
+- Old PHP Unit Tests removed
+- Travis CI hhvm
 
 ## [15.2.4] - 2016-06-16
 
 ### Added
+- Missing Job Levels added
+
 ### Changed
-### Removed
+- Fix routing
+- Session Handling: Cookie lifetime
+- Fix Restore Modul Filetree
 
 ## [15.2.3] - 2016-02-26
 
-### Added
 ### Changed
-### Removed
+- Fix to bugreport #548
+- Fix routing
+- Packaging
 
 ## [15.2.2] - 2015-11-19
 
 ### Added
+- jQuery plugin library DataTables introduced
+
 ### Changed
-### Removed
+- Fix to bugreport #534
+- API 2 adjustments
+- External components update
+- Restore modul improvements
 
 ## [15.2.1] - 2015-09-18
 
 ### Added
+- Restore Modul
+
 ### Changed
-### Removed
+- Documentation
+- Configuration
+- Packaging
+- Session Handling
+- Routing fixes
 
 ## [14.2.1] - 2015-04-20
 
-### Added
 ### Changed
-### Removed
+- External components updated
+- Native DIRD connectivity
+- Documentation
+- Fix rerun jobs
+- Fix packaging
+- Fix config reader
+- Fix to bugreport #434
+- Fix to bugreport #429
 
 ## [14.2.0] - 2015-02-27
 
 ### Added
+- Authentication and Session Handling
+- PostgreSQL and MySQL compatibility
+- Travis CI Tests
+
 ### Changed
-### Removed
+- jQuery update from version 1.11.1 to version 1.11.2
+- Twitter Bootstrap update to version 3.3.1
+- Documentation
+- Fix packaging
+- Fix ZF2 dependencies
+- Fix to bugreport #57
+- Fix to bugreport #14
 
