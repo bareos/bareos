@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -374,6 +374,8 @@ bool BSOCK_TCP::set_keepalive(JCR *jcr, int sockfd, bool enable, int keepalive_s
 
 bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
 {
+   Enter(400);
+
    int32_t rc;
    bool ok = true;
 
@@ -411,6 +413,9 @@ bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
       }
       ok = false;
    }
+
+   Leave(400);
+
    return ok;
 }
 
@@ -424,9 +429,22 @@ bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
  */
 bool BSOCK_TCP::send()
 {
+   /*
+    * Send msg (length: msglen).
+    * As send() and recv() uses the same buffer (msg and msglen)
+    * store the original msglen in an own variable,
+    * that will not be modifed by recv().
+    */
+   const int32_t o_msglen = msglen;
    int32_t pktsiz;
-   int32_t *hdr;
+   int32_t written = 0;
+   int32_t packet_msglen = 0;
    bool ok = true;
+   /*
+    * Store packet length at head of message -- note, we have reserved an int32_t just before msg,
+    * So we can store there
+    */
+   int32_t *hdr = (int32_t *)(msg - (int)header_length);
 
    if (errors) {
       if (!m_suppress_error_msgs) {
@@ -444,41 +462,44 @@ bool BSOCK_TCP::send()
       return false;
    }
 
-   if (msglen > max_message_len) {
-      if (!m_suppress_error_msgs) {
-         Qmsg4(m_jcr, M_ERROR, 0,
-             _("Socket has insane msglen=%d on call to %s:%s:%d\n"),
-             msglen, m_who, m_host, m_port);
-      }
-      return false;
-   }
-
    if (m_use_locking) {
       P(m_mutex);
    }
 
    /*
-    * Store packet length at head of message.
-    * Note: we have reserved an int32_t just before msg,
-    *       so it can be stored there.
-    */
-   hdr = (int32_t *)(msg - (int)header_length);
-
-   /*
     * Compute total packet length
     */
-   if (msglen <= 0) {
+   if (o_msglen <= 0) {
       pktsiz = header_length;                /* signal, no data */
+      *hdr = htonl(o_msglen);                /* store signal */
+      ok = send_packet(hdr, pktsiz);
    } else {
       /*
-       * msglen > 0 and msglen <= max_message_len
-       * message fits into one Bareos packet
+       * msg might be to long for a single Bareos packet.
+       * If so, send msg as multiple packages.
        */
-      pktsiz = header_length + msglen;      /* header + data */
-   }
+      while (ok && (written < o_msglen)) {
+         if ((o_msglen - written) > max_message_len) {
+            /*
+             * Message is to large for a single Bareos packet.
+             * Send it via multiple packets.
+             */
+            pktsiz = max_packet_size;                  /* header + data */
+            packet_msglen = max_message_len;
+         } else {
+            /*
+             * Remaining message fits into one Bareos packet
+             */
+            pktsiz = header_length + (o_msglen-written); /* header + data */
+            packet_msglen = (o_msglen-written);
+         }
 
-   *hdr = htonl(msglen);                  /* store signal or message length */
-   ok = send_packet(hdr, pktsiz);
+         *hdr = htonl(packet_msglen);        /* store length */
+         ok = send_packet(hdr, pktsiz);
+         written += packet_msglen;
+         hdr = (int32_t *)(msg + written - (int)header_length);
+      }
+   }
 
    if (m_use_locking) {
       V(m_mutex);
