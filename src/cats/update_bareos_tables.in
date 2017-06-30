@@ -144,7 +144,7 @@ do
       echo "  Updating the database to schema version 2170 will increase the required disk space."
       echo "  Especially it will require around twice the amount of disk space, during the migration."
       if [ "$FORCE" != "yes" ]; then
-         echo "  Please verfiy you got enough disk space available and confirm by pressing ENTER"
+         echo "  Please verfiy you got enough disk space available and confirm by pressing <ENTER>."
          read input
       fi
    fi

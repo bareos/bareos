@@ -43,12 +43,14 @@ static void update_slots(UAContext *ua);
  * Update a Pool Record in the database.
  *  It is always updated from the Resource record.
  *
+ *    update volume pool=<pool-name> volume=<volume-name>
+ *         changes pool info for volume
  *    update pool=<pool-name>
  *         updates pool from Pool resource
- *    update media pool=<pool-name> volume=<volume-name>
- *         changes pool info for volume
  *    update slots[=..] [scan]
  *         updates autochanger slots
+ *    update jobid[=..] ...
+ *         update job information
  *    update stats [days=...]
  *         updates long term statistics
  */

@@ -1,7 +1,5 @@
 Catalog {
   Name = MyCatalog
-  # Uncomment the following lines if you want the dbi driver
-  @uncomment_dbi@ dbdriver = "dbi:@DEFAULT_DB_TYPE@"; dbaddress = 127.0.0.1; dbport = @db_port@
   #dbdriver = "@DEFAULT_DB_TYPE@"
   dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
   dbname = "@db_name@"
