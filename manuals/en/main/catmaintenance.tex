@@ -77,7 +77,7 @@ Bareos comes with a number of scripts to prepare and update the databases. All t
 \file{make_bareos_tables}      & installation & create Bareos tables \\
 \file{grant_bareos_privileges} & installation & grant database access privileges \\
 \hline
-\file{update_bareos_tables}    & update       & update the database schema \\
+\file{update_bareos_tables} [-f]   & update       & update the database schema \\
 \hline
 \file{drop_bareos_tables}      & deinstallation & remove Bareos database tables \\
 \file{drop_bareos_database}    & deinstallation & remove Bareos database \\
@@ -108,32 +108,31 @@ The database preparation scripts have following configuration options:
     \item[db\_type] \hfill
         \begin{itemize}
             \item command line parameter \$1
-            \item config file \configFileDirUnix: catalog.MyCatalog.dbdriver
+            \item \linkResourceDirective{Dir}{Catalog}{DB Driver} from the configuration
             \item installed database backends
             \item fallback: postgresql
         \end{itemize}
     \item[db\_name] \hfill
         \begin{itemize}
             \item environment variable \variable{db_name}
-            \item config file \configFileDirUnix: catalog.MyCatalog.dbname
+            \item \linkResourceDirective{Dir}{Catalog}{DB Name} from the configuration
             \item default: bareos
         \end{itemize}
     \item[db\_user] \hfill
         \begin{itemize}
             \item environment variable \variable{db_user}
-            \item config file \configFileDirUnix: catalog.MyCatalog.dbuser
+            \item \linkResourceDirective{Dir}{Catalog}{DB User} from the configuration
             \item default: bareos
         \end{itemize}
     \item[db\_password] \hfill
         \begin{itemize}
             \item environment variable \variable{db_password}
-            \item config file \configFileDirUnix: catalog.MyCatalog.dbpassword
+            \item \linkResourceDirective{Dir}{Catalog}{DB Password} from the configuration
             \item default: \textit{none}
         \end{itemize}
 \end{description}
 
-Reading the settings from the configuration file \configFileDirUnix is of course only possible,
-if the current user have read access to this file.
+Reading the settings from the configuration require read permission for the current user.
 The normal PostgreSQL administrator user (\user{postgres}) don't have these permissions.
 So if you plan to use non-default database settings, you might add the user \user{postgres} to the group \group{bareos}.
 
@@ -144,7 +143,7 @@ See the following section about howto achieve this for the different database sy
 
 To view and test the currently configured settings, use following commands:
 \begin{commands}{Show current database configuration}
-<command> </command><parameter>/usr/sbin/bareos-dbcheck -B -c /etc/bareos/bareos-dir.conf</parameter>
+<command> </command><parameter>/usr/sbin/bareos-dbcheck -B</parameter>
 catalog=MyCatalog
 db_name=bareos
 db_driver=mysql
@@ -167,7 +166,7 @@ Database=bareos User=bareos
 MySQL connect failed either server not running or your authorization is incorrect.
 bareos-dir: mysql.c:239-0 closedb ref=0 connected=0 db=0
 25-Apr 16:25 bareos-dir ERROR TERMINATION
-Please correct configuration file: bareos-dir.conf
+Please correct the configuration in /etc/bareos/bareos-dir.d/*/*.conf
 \end{commands}
 
 
@@ -347,7 +346,7 @@ On productive systems you normally want to have password secured access.
 
 The bareos database preparation scripts require password-less access to the database.
 To guarantee this, create a MySQL credentials file \elink{\file{~/.my.cnf}}{http://dev.mysql.com/doc/refman/4.1/en/password-security.html} with the credentials of the database administrator:
-\begin{config}{MySQL credentials file ~/.my.cnf}
+\begin{config}{MySQL credentials file .my.cnf}
 [client]
 host=localhost
 user=root
@@ -370,8 +369,6 @@ Choose a database password and add it into the Bareos Director configuration fil
 #
 Catalog {
   Name = MyCatalog
-  # Uncomment the following lines if you want the dbi driver
-  # dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport =  
   dbdriver = "mysql"
   dbname = "bareos"
   dbuser = "bareos"
@@ -383,7 +380,7 @@ Catalog {
 After this, run the Bareos database preparation scripts.
 For Bareos $<=$ 13.2.2, the database password must be specified as environment variable \variable{db_password}.
 From \sinceVersion{dir}{MySQL password from configuration file}{13.2.3} 
-the database password is read from \configFileDirUnix, if no environment variable is given.
+the database password is read from the configuration, if no environment variable is given.
 
 \begin{commands}{Setup Bareos catalog database}
 export db_password=<input>YourSecretPassword</input>
@@ -466,29 +463,22 @@ If you want to change the Bareos database credentials, do the following:
 
 \begin{itemize}
     \item stop the Bareos director
-    \item modify the configuration file \configFileDirUnix
+    \item modify the configuration
     \item rerun the grant script \command{grant_bareos_privileges} (or modify database user directly)
     \item start the Bareos director
 \end{itemize}
 
-Modify the configuration file \configFileDirUnix:
+Modify the configuration, set a new password:
 
-\begin{bconfig}{Bareos catalog configuration: set new password}
-...
-#
-# Generic catalog service
-#
+\begin{bareosConfigResource}{bareos-dir}{Catalog}{MyCatalog}
 Catalog {
   Name = MyCatalog
-  # Uncomment the following lines if you want the dbi driver
-  # dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport =  
   dbdriver = "mysql"
   dbname = "bareos"
   dbuser = "bareos"
   dbpassword = "MyNewSecretPassword"
 }
-...
-\end{bconfig}
+\end{bareosConfigResource}
 
 Rerun the Bareos grant script \command{grant_bareos_privileges} ...
 
@@ -528,8 +518,7 @@ mysql> <input>SELECT user,host,password FROM mysql.user WHERE user='bareos';</in
 +--------+-----------+-------------------------------------------+
 3 rows in set (0.00 sec)
 
-mysql> 
-
+mysql>
 \end{commands}
 
 
@@ -572,6 +561,48 @@ sqlite>
 
 \section{Retention Periods}
 
+\subsection{Database Size}
+\index[general]{Size!Database}
+\index[general]{Database Size}
+
+As mentioned above, if you do not do automatic pruning, your Catalog will grow
+each time you run a Job. Normally, you should decide how long you want File
+records to be maintained in the Catalog and set the {\bf File Retention}
+period to that time. Then you can either wait and see how big your Catalog
+gets or make a calculation assuming approximately 154 bytes for each File
+saved and knowing the number of Files that are saved during each backup and
+the number of Clients you backup.
+
+For example, suppose you do a backup of two systems, each with 100,000 files.
+Suppose further that you do a Full backup weekly and an Incremental every day,
+and that the Incremental backup typically saves 4,000 files. The size of your
+database after a month can roughly be calculated as:
+
+\footnotesize
+\begin{verbatim}
+Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
+\end{verbatim}
+\normalsize
+
+where we have assumed four weeks in a month and 26 incremental backups per month.
+This would give the following:
+
+\footnotesize
+\begin{verbatim}
+Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
+\end{verbatim}
+\normalsize
+
+So for the above two systems, we should expect to have a database size of
+approximately 200 Megabytes. Of course, this will vary according to how many
+files are actually backed up.
+
+You will note that the File table (containing the file attributes) make up
+the large bulk of the number of records as well as the space used.
+As a consequence, the most important Retention
+period will be the {\bf File Retention} period.
+
+
 Without proper setup and maintenance, your Catalog may continue to grow
 indefinitely as you run Jobs and backup Files, and/or it may become
 very inefficient and slow. How fast the size of your
@@ -582,7 +613,7 @@ deleting old expired records (dates older than the Retention period), your
 database size will remain constant.
 
 
-\subsection*{Setting Retention Periods}
+\subsection{Setting Retention Periods}
 \index[general]{Setting Retention Periods}
 \index[general]{Periods!Setting Retention}
 \label{Retention}
@@ -654,10 +685,11 @@ modifier specification.
 
 The default Job Retention period is 180 days.
 
-\item [AutoPrune = {\textless}yes/no{\textgreater}]
+\item \linkResourceDirective{Dir}{Client}{Auto Prune}
    \index[general]{AutoPrune}
    \index[general]{Job!Retention!AutoPrune}
-   If AutoPrune is set to  {\bf yes} (default), Bareos will  automatically apply
+   If set to  {\bf yes},
+Bareos will automatically apply
 the File retention period and the Job  retention period for the Client at the
 end of the Job.
 If you turn this off by setting it to {\bf no}, your  Catalog will grow each
@@ -665,10 +697,9 @@ time you run a Job.
 \end{description}
 
 
-\subsubsection{Job statistics}
+\subsubsection{Job Statistics}
 
-%\chapter{Using Bareos catalog to grab information}
-\label{UseBareosCatalogToExtractInformationChapter}
+\label{sec:JobStatistics}
 \index[general]{Statistics}
 \index[general]{Job!Statistics}
 
@@ -695,27 +726,28 @@ However, these statistics are accurate only if your job retention is greater
 than your statistics period. Ie, if jobs are purged from the catalog, you won't
 be able to use them.
 
-Now, you can use the \textbf{update stats [days=num]} console command to fill
+Now, you can use the \bcommand{update}{stats [days=num]} console command to fill
 the JobHistory table with new Job records. If you want to be sure to take in
-account only \textbf{good jobs}, ie if one of your important job has failed but
+account only good jobs, ie if one of your important job has failed but
 you have fixed the problem and restarted it on time, you probably want to
-delete the first \textit{bad} job record and keep only the successful one. For
+delete the first bad job record and keep only the successful one. For
 that simply let your staff do the job, and update JobHistory table after two or
-three days depending on your organization using the \textbf{[days=num]} option.
+three days depending on your organization using the \parameter{[days=num]} option.
 
 These statistics records aren't used for restoring, but mainly for
 capacity planning, billings, etc.
 
-The \configdirective{Statistics Retention = {\textless}time{\textgreater}} director directive defines
+The \linkResourceDirective{Dir}{Director}{Statistics Retention} defines
 the length of time that Bareos will keep statistics job records in the Catalog
 database after the Job End time. This information is stored in the \texttt{JobHistory} table.
 When this time
-period expires, and if user runs \texttt{prune stats} command, Bareos will
+period expires, and if user runs \bcommand{prune}{stats} command, Bareos will
 prune (remove) Job records that are older than the specified period.
 
-You can use the following Job resource in your nightly \textbf{BackupCatalog}
+You can use the following Job resource in your nightly \job{BackupCatalog}
 job to maintain statistics.
-\begin{verbatim}
+
+\begin{bareosConfigResource}{bareos-dir}{Job}{BackupCatalog}
 Job {
   Name = BackupCatalog
   ...
@@ -726,7 +758,7 @@ Job {
     RunsOnClient = no
   }
 }
-\end{verbatim}
+\end{bareosConfigResource}
 
 
 \section{PostgreSQL}
@@ -1181,14 +1213,13 @@ select * from pg_indexes where tablename='file';
 \end{verbatim}
 \normalsize
 
-If you do not see output that indicates that all three indexes
-are created, you can create the two additional indexes using:
+If the indexes are not present, especially the JobId index, you can
+create them with the following commands:
 
 \footnotesize
 \begin{verbatim}
 psql bareos
 CREATE INDEX file_jobid_idx on file (jobid);
-CREATE INDEX file_jpf_idx on file (jobid, pathid, filenameid);
 \end{verbatim}
 \normalsize
 
@@ -1211,7 +1242,6 @@ create them with the following commands:
 \begin{verbatim}
 mysql bareos
 CREATE INDEX file_jobid_idx on File (JobId);
-CREATE INDEX file_jpf_idx on File (JobId, FilenameId, PathId);
 \end{verbatim}
 \normalsize
 
@@ -1263,7 +1293,6 @@ create them with the following commands:
 \begin{verbatim}
 sqlite <path>/bareos.db
 CREATE INDEX file_jobid_idx on File (JobId);
-CREATE INDEX file_jfp_idx on File (JobId, PathId, FilenameId);
 \end{verbatim}
 \normalsize
 
@@ -1299,15 +1328,15 @@ The basic sequence of events to make this work correctly is as follows:
 \item After running your nightly backups, run a Catalog backup Job
 \item The Catalog backup job must be scheduled after your last nightly backup
 
-\item You use {\bf RunBeforeJob} to create the ASCII  backup file and {\bf
-   RunAfterJob} to clean up
+\item You use \linkResourceDirective{Dir}{Job}{Run Before Job} to create the ASCII  backup file
+      and \linkResourceDirective{Dir}{Job}{Run After Job} to clean up
 \end{itemize}
 
 Assuming that you start all your nightly backup jobs at 1:05 am (and that they
 run one after another), you can do the catalog backup with the following
 additional Director configuration statements:
 
-\begin{bconfig}{Bareos Catalog Backup Job}
+\begin{bareosConfigResource}{bareos-dir}{Job}{BackupCatalog}
 # Backup the catalog database (after the nightly save)
 Job {
   Name = "BackupCatalog"
@@ -1328,12 +1357,17 @@ Job {
   # Should be sent to another system, please change recipient accordingly
   Write Bootstrap = "|/usr/sbin/bsmtp -h localhost -f \"\(Bareos\) \" -s \"Bootstrap for Job %j\" root@localhost"
 }
+\end{bareosConfigResource}
 
+\begin{bareosConfigResource}{bareos-dir}{Schedule}{WeeklyCycleAfterBackup}
 # This schedule does the catalog. It starts after the WeeklyCycle
 Schedule {
-  Name = "WeeklyCycleAfterBackup
+  Name = "WeeklyCycleAfterBackup"
   Run = Level=Full sun-sat at 1:10
 }
+\end{bareosConfigResource}
+
+\begin{bareosConfigResource}{bareos-dir}{FileSet}{Catalog}
 # This is the backup of the catalog
 FileSet {
   Name = "Catalog"
@@ -1345,54 +1379,10 @@ FileSet {
     File = "/etc/bareos"                # configuration
   }
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
 It is preferable
 to write/send the \ilink{bootstrap}{BootstrapChapter} file to another computer. It will allow
 you to quickly recover the database backup should that be necessary.  If
 you do not have a bootstrap file, it is still possible to recover your
 database backup, but it will be more work and take longer.
-
-
-
-\section{Database Size}
-\index[general]{Size!Database}
-\index[general]{Database Size}
-\label{Size}
-
-As mentioned above, if you do not do automatic pruning, your Catalog will grow
-each time you run a Job. Normally, you should decide how long you want File
-records to be maintained in the Catalog and set the {\bf File Retention}
-period to that time. Then you can either wait and see how big your Catalog
-gets or make a calculation assuming approximately 154 bytes for each File
-saved and knowing the number of Files that are saved during each backup and
-the number of Clients you backup.
-
-For example, suppose you do a backup of two systems, each with 100,000 files.
-Suppose further that you do a Full backup weekly and an Incremental every day,
-and that the Incremental backup typically saves 4,000 files. The size of your
-database after a month can roughly be calculated as:
-
-\footnotesize
-\begin{verbatim}
-Size = 154 * No. Systems * (100,000 * 4 + 10,000 * 26)
-\end{verbatim}
-\normalsize
-
-where we have assumed four weeks in a month and 26 incremental backups per month.
-This would give the following:
-
-\footnotesize
-\begin{verbatim}
-Size = 154 * 2 * (100,000 * 4 + 10,000 * 26) = 203,280,000 bytes
-\end{verbatim}
-\normalsize
-
-So for the above two systems, we should expect to have a database size of
-approximately 200 Megabytes. Of course, this will vary according to how many
-files are actually backed up.
-
-You will note that the File table (containing the file attributes) make up
-the large bulk of the number of records as well as the space used.
-As a consequence, the most important Retention
-period will be the {\bf File Retention} period.

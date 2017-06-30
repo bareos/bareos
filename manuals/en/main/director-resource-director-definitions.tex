@@ -221,17 +221,13 @@ With this directive, it will call the specified command to delete these files. S
 \label{PruneStatistics}%
 The \configdirective{Statistics Retention} directive defines the length of time that
 Bareos will keep statistics job records in the Catalog database after the
-Job End time (in \texttt{JobHistory} table). When this time period expires,
-and if user runs \texttt{prune stats} command, Bareos will prune (remove)
+Job End time (in the catalog \dbtable{JobHisto} table). When this time period expires,
+and if user runs \bcommand{prune}{stats} command, Bareos will prune (remove)
 Job records that are older than the specified period.
 
 Theses statistics records aren't use for restore purpose, but mainly for
 capacity planning, billings, etc.
-See chapter about \ilink{how to extract information from the catalog}{UseBareosCatalogToExtractInformationChapter}
- for additional information.
-
-See the \ilink{Configuration chapter}{Time} of this manual for additional
-details of time specification.
+See chapter \nameref{sec:JobStatistics} for additional information.
 }
 
 
@@ -239,7 +235,7 @@ details of time specification.
 In case you want check that the number of active clients don't exceed a specific number,
 you can define this number here and check with the \bcommand{status subscriptions}{} command.
 
-However, this is only indended to give a hint. No active limiting is implemented.
+However, this is only intended to give a hint. No active limiting is implemented.
 }
 
 
@@ -266,7 +262,9 @@ may put its status files. This directory should be used only  by Bareos but
 may be shared by other Bareos daemons.
 Standard shell expansion of the {\bf
 directory}  is done when the configuration file is read so that values such
-as {\bf \$HOME} will be properly expanded.
+as \path|$HOME|
+\hide{$}
+will be properly expanded.
 
 The working directory specified must already exist and be
 readable and writable by the Bareos daemon referencing it.

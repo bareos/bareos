@@ -1689,15 +1689,18 @@ unmount [jobid=<id> | job=<job-name>]
    of updating a  Pool record, the new information will be automatically taken
    from  the corresponding Director's configuration resource record. It  can be
    used to increase the maximum number of volumes permitted or  to set a maximum
-   number of volumes. The following main  keywords may be specified:
+   number of volumes. The following main keywords may be specified:
 
-\footnotesize
-\begin{verbatim}
-   media, volume, pool, slots, stats
-\end{verbatim}
-\normalsize
+    \begin{itemize}
+      \item volume
+      \item pool
+      \item slots
+      \item iobid
+      \item stats
+    \end{itemize}
 
-In the case of updating a  Volume, you will be prompted for which value you
+In the case of updating a  Volume (\bcommand{update}{volume}),
+you will be prompted for which value you
 wish to change.  The following Volume parameters may be changed:
 
 \footnotesize
@@ -1720,7 +1723,7 @@ wish to change.  The following Volume parameters may be changed:
 \end{verbatim}
 \normalsize
 
-   For slots {\bf update slots}, Bareos will obtain a list of slots and
+   For slots \bcommand{update}{slots}, Bareos will obtain a list of slots and
    their barcodes from the Storage daemon, and for each barcode found, it
    will automatically update the slot in the catalog Media record to
    correspond to the new value.  This is very useful if you have moved
@@ -1733,11 +1736,11 @@ wish to change.  The following Volume parameters may be changed:
    autochanger.
 
    If you do not have barcodes, you can accomplish the same thing
-   by using the {\bf update slots scan} command.
-   The {\bf scan} keyword tells Bareos to physically mount each tape and to
+   by using the \bcommand{update}{slots scan} command.
+   The \parameter{scan} keyword tells Bareos to physically mount each tape and to
    read its VolumeName.
 
-   For Pool {\bf update pool}, Bareos will move the Volume record from its
+   For Pool \bcommand{update}{pool}, Bareos will move the Volume record from its
    existing pool to the pool specified.
 
    For {\bf Volume from Pool}, {\bf All Volumes from Pool} and {\bf All Volumes
@@ -1745,13 +1748,22 @@ wish to change.  The following Volume parameters may be changed:
    Recycle, RecyclePool, VolRetention, VolUseDuration, MaxVolJobs, MaxVolFiles,
    and MaxVolBytes.
 
+   For updating the statistics, use \bcommand{updates}{stats}, see \nameref{sec:JobStatistics}.
+
    The full form of the update command with all command line arguments is:
 
 \begin{bconsole}{update}
-update volume=<volume-name> pool=<poolname>
-  slots volstatus=<volume-status> VolRetention=<volume-retention>
-  VolUse=<volume-use-period> MaxVolJobs=nnn MaxVolBytes=nnn Recycle=yes|no
-  slot=nnn enabled=n recyclepool=<pool-name>
+update  volume=<volume-name> [volstatus=<status>]
+        [volretention=<time-def>] [pool=<pool-name>]
+        [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>] |
+        pool=<pool-name> [maxvolbytes=<size>] [maxvolfiles=<nb>]
+        [maxvoljobs=<nb>][enabled=<yes/no>] [recyclepool=<pool-name>]
+        [actiononpurge=<action>] |
+        slots [storage=<storage-name>] [scan] |
+        jobid=<jobid> [jobname=<name>] [starttime=<time-def>]
+        [client=<client-name>] [filesetid=<fileset-id>]
+        [jobtype=<job-type>] |
+        stats [days=<number>]
 \end{bconsole}
 
 
