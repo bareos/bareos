@@ -78,6 +78,7 @@
 #include "backends/gfapi_device.h"
 #endif
 #ifdef HAVE_OBJECTSTORE
+#include "backends/chunked_device.h"
 #include "backends/object_store_device.h"
 #endif
 #ifdef HAVE_RADOS
