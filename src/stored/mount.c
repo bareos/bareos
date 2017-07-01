@@ -690,7 +690,7 @@ bool DCR::is_eod_valid()
       char ed1[50], ed2[50];
 
       boffset_t pos;
-      pos = dev->lseek(dcr, (boffset_t)0, SEEK_END);
+      pos = dev->lseek(dcr, (boffset_t)0, SEEK_CUR);
       if (dev->VolCatInfo.VolCatBytes == (uint64_t)pos) {
          Jmsg(jcr, M_INFO, 0, _("Ready to append to end of Volume \"%s\""
                                 " size=%s\n"),
