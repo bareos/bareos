@@ -203,13 +203,6 @@ typedef struct s_sdpluginFuncs {
 #define sdplug_func(plugin) ((psdFuncs *)(plugin->pfuncs))
 #define sdplug_info(plugin) ((genpInfo *)(plugin->pinfo))
 
-class DEVRES;
-typedef struct s_sdbareosDevStatTrigger {
-   DEVRES *device;
-   POOLMEM *status;
-   int status_length;
-} bsdDevStatTrig;
-
 #ifdef __cplusplus
 }
 #endif
