@@ -23579,6 +23579,14 @@ $as_echo "#define HAVE_SYS_POLL_H 1" >>confdefs.h
 fi
 
 
+ac_fn_c_check_header_mongrel "$LINENO" "sys/mman.h" "ac_cv_header_sys_mman_h" "$ac_includes_default"
+if test "x$ac_cv_header_sys_mman_h" = xyes; then :
+
+$as_echo "#define HAVE_SYS_MMAN_H 1" >>confdefs.h
+
+fi
+
+
 for ac_func in glob strcasecmp select poll setenv putenv tcgetattr
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
@@ -23603,7 +23611,7 @@ _ACEOF
 fi
 done
 
-for ac_func in nanosleep nl_langinfo
+for ac_func in mmap nanosleep nl_langinfo
 do :
   as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 ac_fn_c_check_func "$LINENO" "$ac_func" "$as_ac_var"
@@ -33796,14 +33804,18 @@ fi
 
 
 
+BUILD_SD_BACKENDS=""
 if test x$use_libtool != xno; then
-   BUILD_SD_BACKENDS="libbareossd-fifo.la libbareossd-gentape.la libbareossd-tape.la"
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-fifo.la"
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gentape.la"
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-tape.la"
 
    if test X"$have_glusterfs" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gfapi.la"
    fi
 
    if test X"$have_droplet" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-chunked.la"
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-object.la"
    fi
 
@@ -33818,10 +33830,7 @@ if test x$use_libtool != xno; then
    if test X"$have_elasto" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-elasto.la"
    fi
-else
-   BUILD_SD_BACKENDS=""
 fi
-
 
 
 
