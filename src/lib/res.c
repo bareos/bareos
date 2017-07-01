@@ -43,7 +43,7 @@ extern CONFIG *my_config;             /* Our Global config */
  * Define the Union of all the common resource structure definitions.
  */
 union URES {
-   MSGSRES  res_msgs;
+   MSGSRES res_msgs;
    RES hdr;
 };
 
@@ -56,18 +56,23 @@ void b_LockRes(const char *file, int line)
    int errstat;
 
 #ifdef TRACE_RES
+   char ed1[50];
+
    Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n",
          res_locked, my_config->m_res_lock.w_active, file, line);
 
-    if (res_locked) {
-       Pmsg2(000, "LockRes writerid=%lu myid=%lu\n",
-             my_config->m_res_lock.writer_id, pthread_self());
-     }
+   if (res_locked) {
+      Pmsg2(000, "LockRes writerid=%lu myid=%s\n",
+            my_config->m_res_lock.writer_id,
+            edit_pthread(pthread_self(), ed1, sizeof(ed1)));
+   }
 #endif
+
    if ((errstat = rwl_writelock(&my_config->m_res_lock)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
             file, line, strerror(errstat));
    }
+
    res_locked++;
 }
 

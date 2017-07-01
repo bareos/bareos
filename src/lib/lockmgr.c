@@ -248,8 +248,6 @@ static bool contains_cycle(dlist *g)
    return false;
 }
 
-/****************************************************************/
-
 class lmgr_thread_t: public SMARTALLOC
 {
 public:
@@ -275,14 +273,18 @@ public:
    }
 
    void _dump(FILE *fp) {
-      fprintf(fp, "threadid=%p max=%i current=%i\n",
-              (void *)thread_id, max, current);
-      for(int i=0; i<=current; i++) {
+      char ed1[50];
+
+      fprintf(fp, "threadid=%s max=%i current=%i\n",
+              edit_pthread(thread_id, ed1, sizeof(ed1)), max, current);
+
+      for (int i = 0; i <= current; i++) {
          fprintf(fp, "   lock=%p state=%s priority=%i %s:%i\n",
                  lock_list[i].lock,
-                 (lock_list[i].state=='W')?"Wanted ":"Granted",
+                 (lock_list[i].state=='W') ? "Wanted " : "Granted",
                  lock_list[i].priority,
-                 lock_list[i].file, lock_list[i].line);
+                 lock_list[i].file,
+                 lock_list[i].line);
       }
    }
 

@@ -130,22 +130,25 @@ static void callback_child_timer(watchdog_t *self)
  */
 btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait)
 {
+   char ed1[50];
    btimer_t *wid;
+
    wid = btimer_start_common(wait);
    if (wid == NULL) {
       Dmsg1(dbglvl, "start_thread_timer return NULL from common. wait=%d.\n", wait);
       return NULL;
    }
+
    wid->type = TYPE_PTHREAD;
    wid->tid = tid;
    wid->jcr = jcr;
-
    wid->wd->callback = callback_thread_timer;
    wid->wd->one_shot = true;
    wid->wd->interval = wait;
    register_watchdog(wid->wd);
 
-   Dmsg3(dbglvl, "Start thread timer %p tid %p for %d secs.\n", wid, tid, wait);
+   Dmsg3(dbglvl, "Start thread timer %p tid %s for %d secs.\n",
+         wid, edit_pthread(tid, ed1, sizeof(ed1)), wait);
 
    return wid;
 }
@@ -158,14 +161,18 @@ btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait)
  */
 btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
 {
+   char ed1[50];
    btimer_t *wid;
+
    if (wait <= 0) {                 /* wait should be > 0 */
       return NULL;
    }
+
    wid = btimer_start_common(wait);
    if (wid == NULL) {
       return NULL;
    }
+
    wid->type = TYPE_BSOCK;
    wid->tid = pthread_self();
    wid->bsock = bsock;
@@ -176,8 +183,8 @@ btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
    wid->wd->interval = wait;
    register_watchdog(wid->wd);
 
-   Dmsg4(dbglvl, "Start bsock timer %p tid=%p for %d secs at %d\n", wid,
-         wid->tid, wait, time(NULL));
+   Dmsg4(dbglvl, "Start bsock timer %p tid=%s for %d secs at %d\n",
+         wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), wait, time(NULL));
 
    return wid;
 }
@@ -187,11 +194,15 @@ btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
  */
 void stop_bsock_timer(btimer_t *wid)
 {
+   char ed1[50];
+
    if (wid == NULL) {
       Dmsg0(900, "stop_bsock_timer called with NULL btimer_id\n");
       return;
    }
-   Dmsg3(dbglvl, "Stop bsock timer %p tid=%p at %d.\n", wid, wid->tid, time(NULL));
+
+   Dmsg3(dbglvl, "Stop bsock timer %p tid=%s at %d.\n",
+         wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
    stop_btimer(wid);
 }
 
@@ -201,11 +212,15 @@ void stop_bsock_timer(btimer_t *wid)
  */
 void stop_thread_timer(btimer_t *wid)
 {
+   char ed1[50];
+
    if (wid == NULL) {
       Dmsg0(dbglvl, "stop_thread_timer called with NULL btimer_id\n");
       return;
    }
-   Dmsg2(dbglvl, "Stop thread timer %p tid=%p.\n", wid, wid->tid);
+
+   Dmsg2(dbglvl, "Stop thread timer %p tid=%s.\n",
+         wid, edit_pthread(wid->tid, ed1, sizeof(ed1)));
    stop_btimer(wid);
 }
 
@@ -220,12 +235,14 @@ static void destructor_thread_timer(watchdog_t *self)
 
 static void callback_thread_timer(watchdog_t *self)
 {
+   char ed1[50];
    btimer_t *wid = (btimer_t *)self->data;
 
    Dmsg4(dbglvl, "thread timer %p kill %s tid=%p at %d.\n", self,
-      wid->type == TYPE_BSOCK ? "bsock" : "thread", wid->tid, time(NULL));
+         wid->type == TYPE_BSOCK ? "bsock" : "thread",
+         edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
    if (wid->jcr) {
-      Dmsg2(dbglvl, "killed jid=%u Job=%s\n", wid->jcr->JobId, wid->jcr->Job);
+      Dmsg2(dbglvl, "killed JobId=%u Job=%s\n", wid->jcr->JobId, wid->jcr->Job);
    }
 
    if (wid->type == TYPE_BSOCK && wid->bsock) {
