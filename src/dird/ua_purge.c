@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -156,6 +156,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
          }
          return true;
       }
+      break;
    /* Jobs */
    case 1:
       switch(find_arg_keyword(ua, jobs_keywords)) {
@@ -171,6 +172,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
          }
          return true;
       }
+      break;
    /* Volume */
    case 2:
       /*
@@ -217,6 +219,7 @@ bool purge_cmd(UAContext *ua, const char *cmd)
          }
          return true;
       }
+      break;
    default:
       break;
    }
@@ -248,9 +251,9 @@ bool purge_cmd(UAContext *ua, const char *cmd)
 }
 
 /**
- * Purge File records from the database. For any Job which
- * is older than the retention period, we unconditionally delete
- * all File records for that Job.  This is simple enough that no
+ * Purge File records from the database.
+ * We unconditionally delete all File records for that Job.
+ * This is simple enough that no
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds meeting the prune conditions, then delete all File records
  * pointing to each of those JobIds.
@@ -278,14 +281,17 @@ static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
    Dmsg1(050, "select sql=%s\n", query.c_str());
    ua->db->sql_query(query.c_str(), file_delete_handler, (void *)&del);
 
-   purge_files_from_job_list(ua, del);
-
    if (del.num_ids == 0) {
       ua->warning_msg(_("No Files found for client %s to purge from %s catalog.\n"),
          client->name(), client->catalog->name());
    } else {
-      ua->info_msg(_("Files for %d Jobs for client \"%s\" purged from %s catalog.\n"), del.num_ids,
-         client->name(), client->catalog->name());
+      ua->info_msg(_("Found Files in %d Jobs for client \"%s\" in catalog \"%s\".\n"),
+         del.num_ids, client->name(), client->catalog->name());
+      if (!get_confirmation(ua, "Purge (yes/no)? ")) {
+         ua->info_msg(_("Purge canceled.\n"));
+      } else {
+         purge_files_from_job_list(ua, del);
+      }
    }
 
    if (del.JobId) {
@@ -297,9 +303,9 @@ static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
 
 
 /**
- * Purge Job records from the database. For any Job which
- * is older than the retention period, we unconditionally delete
- * it and all File records for that Job.  This is simple enough that no
+ * Purge Job records from the database.
+ * We unconditionally delete the job and all File records for that Job.
+ * This is simple enough that no
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds then delete the Job, Files, and JobMedia records in that list.
  */
@@ -328,14 +334,17 @@ static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
    Dmsg1(150, "select sql=%s\n", query.c_str());
    ua->db->sql_query(query.c_str(), job_delete_handler, (void *)&del);
 
-   purge_job_list_from_catalog(ua, del);
-
    if (del.num_ids == 0) {
-      ua->warning_msg(_("No Files found for client %s to purge from %s catalog.\n"),
+      ua->warning_msg(_("No Jobs found for client %s to purge from %s catalog.\n"),
          client->name(), client->catalog->name());
    } else {
-      ua->info_msg(_("%d Jobs for client %s purged from %s catalog.\n"), del.num_ids,
+      ua->info_msg(_("Found %d Jobs for client \"%s\" in catalog \"%s\".\n"), del.num_ids,
          client->name(), client->catalog->name());
+      if (!get_confirmation(ua, "Purge (yes/no)? ")) {
+         ua->info_msg(_("Purge canceled.\n"));
+      } else {
+         purge_job_list_from_catalog(ua, del);
+      }
    }
 
    if (del.JobId) {
@@ -572,7 +581,7 @@ bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
             bstrcmp(mr->VolStatus, "Error");
    if (!status) {
       ua->error_msg(_("\nVolume \"%s\" has VolStatus \"%s\" and cannot be purged.\n"
-                     "The VolStatus must be: Append, Full, Used, or Error to be purged.\n"),
+                     "The VolStatus must be: Append, Full, Used or Error to be purged.\n"),
                      mr->VolumeName, mr->VolStatus);
       return false;
    }

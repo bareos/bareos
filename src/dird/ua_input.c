@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -180,6 +180,10 @@ bool get_confirmation(UAContext *ua, const char *prompt)
 {
    if (find_arg(ua, NT_("yes")) >= 0) {
       return true;
+   }
+
+   if (ua->api || ua->batch) {
+      return false;
    }
 
    if (get_yesno(ua, prompt)) {
