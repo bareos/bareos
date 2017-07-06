@@ -127,6 +127,18 @@ IMPLEMENT_ASN1_FUNCTIONS(SignerInfo)
 IMPLEMENT_ASN1_FUNCTIONS(RecipientInfo)
 IMPLEMENT_ASN1_FUNCTIONS(SignatureData)
 IMPLEMENT_ASN1_FUNCTIONS(CryptoData)
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+/* Openssl Version < 1.1 */
+
+#define OBJ_get0_data(o) ((o)->data)
+#define OBJ_length(o) ((o)->length)
+
+#define X509_EXTENSION_get_data(ext) ((ext)->value)
+#define EVP_PKEY_id(key)             ((key)->type)
+
+#define EVP_PKEY_up_ref(x509_key) CRYPTO_add(&(x509_key->references), 1, CRYPTO_LOCK_EVP_PKEY)
+
 IMPLEMENT_STACK_OF(SignerInfo)
 IMPLEMENT_STACK_OF(RecipientInfo)
 
@@ -154,15 +166,6 @@ IMPLEMENT_STACK_OF(RecipientInfo)
 #define sk_SignerInfo_sort(st) SKM_sk_sort(SignerInfo, (st))
 #define sk_SignerInfo_is_sorted(st) SKM_sk_is_sorted(SignerInfo, (st))
 
-#define d2i_ASN1_SET_OF_SignerInfo(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
-        SKM_ASN1_SET_OF_d2i(SignerInfo, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class))
-#define i2d_ASN1_SET_OF_SignerInfo(st, pp, i2d_func, ex_tag, ex_class, is_set) \
-        SKM_ASN1_SET_OF_i2d(SignerInfo, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
-#define ASN1_seq_pack_SignerInfo(st, i2d_func, buf, len) \
-        SKM_ASN1_seq_pack(SignerInfo, (st), (i2d_func), (buf), (len))
-#define ASN1_seq_unpack_SignerInfo(buf, len, d2i_func, free_func) \
-        SKM_ASN1_seq_unpack(SignerInfo, (buf), (len), (d2i_func), (free_func))
-
 #define sk_RecipientInfo_new(st) SKM_sk_new(RecipientInfo, (st))
 #define sk_RecipientInfo_new_null() SKM_sk_new_null(RecipientInfo)
 #define sk_RecipientInfo_free(st) SKM_sk_free(RecipientInfo, (st))
@@ -183,6 +186,30 @@ IMPLEMENT_STACK_OF(RecipientInfo)
 #define sk_RecipientInfo_pop(st) SKM_sk_pop(RecipientInfo, (st))
 #define sk_RecipientInfo_sort(st) SKM_sk_sort(RecipientInfo, (st))
 #define sk_RecipientInfo_is_sorted(st) SKM_sk_is_sorted(RecipientInfo, (st))
+
+#else
+/* Openssl Version >= 1.1 */
+DEFINE_STACK_OF(SignerInfo)
+DEFINE_STACK_OF(RecipientInfo)
+
+#define M_ASN1_OCTET_STRING_free(a)     ASN1_STRING_free((ASN1_STRING *)a)
+#define M_ASN1_OCTET_STRING_cmp(a,b)    ASN1_STRING_cmp((const ASN1_STRING *)a,(const ASN1_STRING *)b)
+#define M_ASN1_OCTET_STRING_dup(a)      (ASN1_OCTET_STRING *) ASN1_STRING_dup((const ASN1_STRING *)a)
+#define M_ASN1_OCTET_STRING_set(a,b,c)  ASN1_STRING_set((ASN1_STRING *)a,b,c)
+
+#define M_ASN1_STRING_length(x)         ((x)->length)
+#define M_ASN1_STRING_data(x)           ((x)->data)
+
+#endif
+
+#define d2i_ASN1_SET_OF_SignerInfo(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
+        SKM_ASN1_SET_OF_d2i(SignerInfo, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class))
+#define i2d_ASN1_SET_OF_SignerInfo(st, pp, i2d_func, ex_tag, ex_class, is_set) \
+        SKM_ASN1_SET_OF_i2d(SignerInfo, (st), (pp), (i2d_func), (ex_tag), (ex_class), (is_set))
+#define ASN1_seq_pack_SignerInfo(st, i2d_func, buf, len) \
+        SKM_ASN1_seq_pack(SignerInfo, (st), (i2d_func), (buf), (len))
+#define ASN1_seq_unpack_SignerInfo(buf, len, d2i_func, free_func) \
+        SKM_ASN1_seq_unpack(SignerInfo, (buf), (len), (d2i_func), (free_func))
 
 #define d2i_ASN1_SET_OF_RecipientInfo(st, pp, length, d2i_func, free_func, ex_tag, ex_class) \
         SKM_ASN1_SET_OF_d2i(RecipientInfo, (st), (pp), (length), (d2i_func), (free_func), (ex_tag), (ex_class))
@@ -205,8 +232,52 @@ struct X509_Keypair {
 struct Digest {
    crypto_digest_t type;
    JCR *jcr;
-   EVP_MD_CTX ctx;
+
+#if OPENSSL_VERSION_NUMBER < 0x10100000L
+   /* Openssl Version < 1.1 */
+   private:
+      EVP_MD_CTX ctx;
+
+   public:
+      Digest(JCR *jcr, crypto_digest_t type)
+         : jcr(jcr),
+         type(type)  {
+            EVP_MD_CTX_init(&ctx);
+         }
+
+      ~Digest() {
+         EVP_MD_CTX_cleanup(&ctx);
+      }
+
+
+      EVP_MD_CTX& get_ctx() {
+         return ctx;
+      }
+#else
+   /* Openssl Version >= 1.1 */
+
+   private:
+      EVP_MD_CTX* ctx;
+   public:
+      EVP_MD_CTX& get_ctx() {
+         return *ctx;
+      }
+
+      Digest(JCR *jcr, crypto_digest_t type)
+         : jcr(jcr),
+         type(type)  {
+            ctx = EVP_MD_CTX_new();
+            EVP_MD_CTX_init(ctx);
+         }
+
+      ~Digest() {
+         EVP_MD_CTX_free(ctx);
+         ctx = NULL;
+      }
+#endif
 };
+
+
 
 /* Message Signature Structure */
 struct Signature {
@@ -223,7 +294,17 @@ struct Crypto_Session {
 
 /* Symmetric Cipher Context */
 struct Cipher_Context {
-   EVP_CIPHER_CTX ctx;
+   EVP_CIPHER_CTX* ctx;
+
+   Cipher_Context() {
+      ctx = EVP_CIPHER_CTX_new();
+   }
+
+   ~Cipher_Context() {
+      EVP_CIPHER_CTX_free(ctx);
+   }
+
+
 };
 
 /* PEM Password Dispatch Context */
@@ -238,7 +319,7 @@ typedef struct PEM_CB_Context {
  *          NULL on failure.
  */
 static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
-   X509_EXTENSION *ext;
+   X509_EXTENSION *ext = NULL;
    const X509V3_EXT_METHOD *method;
    ASN1_OCTET_STRING *keyid;
    int i;
@@ -264,24 +345,24 @@ static ASN1_OCTET_STRING *openssl_cert_keyid(X509 *cert) {
       return NULL;
    }
 
-   ext_value_data = ext->value->data;
+   ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
 #if (OPENSSL_VERSION_NUMBER > 0x00907000L)
    if (method->it) {
       /* New style ASN1 */
 
       /* Decode ASN1 item in data */
-      keyid = (ASN1_OCTET_STRING *) ASN1_item_d2i(NULL, &ext_value_data, ext->value->length,
+      keyid = (ASN1_OCTET_STRING *) ASN1_item_d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length,
                                                   ASN1_ITEM_ptr(method->it));
    } else {
       /* Old style ASN1 */
 
       /* Decode ASN1 item in data */
-      keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ext->value->length);
+      keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length);
    }
 
 #else
-   keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, ext->value->length);
+   keyid = (ASN1_OCTET_STRING *) method->d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length);
 #endif
 
    return keyid;
@@ -313,6 +394,7 @@ X509_KEYPAIR *crypto_keypair_new(void)
  * API is available. Instead, the reference count is
  * incremented.
  */
+
 X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
 {
    X509_KEYPAIR *newpair;
@@ -326,13 +408,13 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
 
    /* Increment the public key ref count */
    if (keypair->pubkey) {
-      CRYPTO_add(&(keypair->pubkey->references), 1, CRYPTO_LOCK_EVP_PKEY);
+      EVP_PKEY_up_ref(keypair->pubkey);
       newpair->pubkey = keypair->pubkey;
    }
 
    /* Increment the private key ref count */
    if (keypair->privkey) {
-      CRYPTO_add(&(keypair->privkey->references), 1, CRYPTO_LOCK_EVP_PKEY);
+      EVP_PKEY_up_ref(keypair->privkey);
       newpair->privkey = keypair->privkey;
    }
 
@@ -348,6 +430,7 @@ X509_KEYPAIR *crypto_keypair_dup(X509_KEYPAIR *keypair)
 
    return newpair;
 }
+
 
 /*
  * Load a public key from a PEM-encoded x509 certificate.
@@ -386,9 +469,9 @@ int crypto_keypair_load_cert(X509_KEYPAIR *keypair, const char *file)
    }
 
    /* Validate the public key type (only RSA is supported) */
-   if (EVP_PKEY_type(keypair->pubkey->type) != EVP_PKEY_RSA) {
+   if (EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) != EVP_PKEY_RSA) {
        Jmsg1(NULL, M_ERROR, 0,
-             _("Unsupported key type provided: %d\n"), EVP_PKEY_type(keypair->pubkey->type));
+             _("Unsupported key type provided: %d\n"), EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)));
        goto err;
    }
 
@@ -513,6 +596,7 @@ void crypto_keypair_free(X509_KEYPAIR *keypair)
    free(keypair);
 }
 
+
 /*
  * Create a new message digest context of the specified type
  *  Returns: A pointer to a DIGEST object on success.
@@ -520,16 +604,10 @@ void crypto_keypair_free(X509_KEYPAIR *keypair)
  */
 DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
 {
-   DIGEST *digest;
+   DIGEST *digest = new DIGEST(jcr, type);
    const EVP_MD *md = NULL; /* Quell invalid uninitialized warnings */
 
-   digest = (DIGEST *)malloc(sizeof(DIGEST));
-   digest->type = type;
-   digest->jcr = jcr;
    Dmsg1(150, "crypto_digest_new jcr=%p\n", jcr);
-
-   /* Initialize the OpenSSL message digest context */
-   EVP_MD_CTX_init(&digest->ctx);
 
    /* Determine the correct OpenSSL message digest type */
    switch (type) {
@@ -553,7 +631,7 @@ DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
    }
 
    /* Initialize the backing OpenSSL context */
-   if (EVP_DigestInit_ex(&digest->ctx, md, NULL) == 0) {
+   if (EVP_DigestInit_ex(&digest->get_ctx(), md, NULL) == 0) {
       goto err;
    }
 
@@ -574,7 +652,7 @@ err:
  */
 bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
 {
-   if (EVP_DigestUpdate(&digest->ctx, data, length) == 0) {
+   if (EVP_DigestUpdate(&digest->get_ctx(), data, length) == 0) {
       Dmsg0(150, "digest update failed\n");
       openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest update failed"));
       return false;
@@ -592,7 +670,7 @@ bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length)
  */
 bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
 {
-   if (!EVP_DigestFinal(&digest->ctx, dest, (unsigned int *)length)) {
+   if (!EVP_DigestFinal(&digest->get_ctx(), dest, (unsigned int *)length)) {
       Dmsg0(150, "digest finalize failed\n");
       openssl_post_errors(digest->jcr, M_ERROR, _("OpenSSL digest finalize failed"));
       return false;
@@ -606,8 +684,7 @@ bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length)
  */
 void crypto_digest_free(DIGEST *digest)
 {
-  EVP_MD_CTX_cleanup(&digest->ctx);
-  free(digest);
+   delete digest;
 }
 
 /*
@@ -733,7 +810,7 @@ crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST 
          sigLen = M_ASN1_STRING_length(si->signature);
          sigData = M_ASN1_STRING_data(si->signature);
 
-         ok = EVP_VerifyFinal(&digest->ctx, sigData, sigLen, keypair->pubkey);
+         ok = EVP_VerifyFinal(&digest->get_ctx(), sigData, sigLen, keypair->pubkey);
          if (ok >= 1) {
             return CRYPTO_ERROR_NONE;
          } else if (ok == 0) {
@@ -798,15 +875,16 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
    M_ASN1_OCTET_STRING_free(si->subjectKeyIdentifier);
    si->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
 
+
    /* Set our signature algorithm. We currently require RSA */
-   assert(EVP_PKEY_type(keypair->pubkey->type) == EVP_PKEY_RSA);
+   assert(EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
    /* This is slightly evil. Reach into the MD structure and grab the key type */
-   si->signatureAlgorithm = OBJ_nid2obj(digest->ctx.digest->pkey_type);
+   si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_CTX_type(&digest->get_ctx()));
 
    /* Finalize/Sign our Digest */
    len = EVP_PKEY_size(keypair->privkey);
    buf = (unsigned char *) malloc(len);
-   if (!EVP_SignFinal(&digest->ctx, buf, &len, keypair->privkey)) {
+   if (!EVP_SignFinal(&digest->get_ctx(), buf, &len, keypair->privkey)) {
       openssl_post_errors(M_ERROR, _("Signature creation failed"));
       goto err;
    }
@@ -1074,7 +1152,7 @@ CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys)
       ri->subjectKeyIdentifier = M_ASN1_OCTET_STRING_dup(keypair->keyid);
 
       /* Set our key encryption algorithm. We currently require RSA */
-      assert(keypair->pubkey && EVP_PKEY_type(keypair->pubkey->type) == EVP_PKEY_RSA);
+      assert(keypair->pubkey && EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
       ri->keyEncryptionAlgorithm = OBJ_nid2obj(NID_rsaEncryption);
 
       /* Encrypt the session key */
@@ -1191,7 +1269,7 @@ crypto_error_t crypto_session_decode(const uint8_t *data, uint32_t length, alist
             /* Match found, extract symmetric encryption session data */
 
             /* RSA is required. */
-            assert(EVP_PKEY_type(keypair->privkey->type) == EVP_PKEY_RSA);
+            assert(EVP_PKEY_type(EVP_PKEY_id(keypair->privkey)) == EVP_PKEY_RSA);
 
             /* If we recieve a RecipientInfo structure that does not use
              * RSA, return an error */
@@ -1248,10 +1326,8 @@ void crypto_session_free(CRYPTO_SESSION *cs)
  */
 CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *blocksize)
 {
-   CIPHER_CONTEXT *cipher_ctx;
+   CIPHER_CONTEXT *cipher_ctx = new CIPHER_CONTEXT;
    const EVP_CIPHER *ec;
-
-   cipher_ctx = (CIPHER_CONTEXT *)malloc(sizeof(CIPHER_CONTEXT));
 
    /*
     * Acquire a cipher instance for the given ASN.1 cipher NID
@@ -1259,28 +1335,26 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    if ((ec = EVP_get_cipherbyobj(cs->cryptoData->contentEncryptionAlgorithm)) == NULL) {
       Jmsg1(NULL, M_ERROR, 0,
          _("Unsupported contentEncryptionAlgorithm: %d\n"), OBJ_obj2nid(cs->cryptoData->contentEncryptionAlgorithm));
-      free(cipher_ctx);
+      delete cipher_ctx;
       return NULL;
    }
 
-   /* Initialize the OpenSSL cipher context */
-   EVP_CIPHER_CTX_init(&cipher_ctx->ctx);
    if (encrypt) {
       /* Initialize for encryption */
-      if (!EVP_CipherInit_ex(&cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
+      if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 1)) {
          openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    } else {
       /* Initialize for decryption */
-      if (!EVP_CipherInit_ex(&cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
+      if (!EVP_CipherInit_ex(cipher_ctx->ctx, ec, NULL, NULL, NULL, 0)) {
          openssl_post_errors(M_ERROR, _("OpenSSL cipher context initialization failed"));
          goto err;
       }
    }
 
    /* Set the key size */
-   if (!EVP_CIPHER_CTX_set_key_length(&cipher_ctx->ctx, cs->session_key_len)) {
+   if (!EVP_CIPHER_CTX_set_key_length(cipher_ctx->ctx, cs->session_key_len)) {
       openssl_post_errors(M_ERROR, _("Encryption session provided an invalid symmetric key"));
       goto err;
    }
@@ -1292,16 +1366,16 @@ CIPHER_CONTEXT *crypto_cipher_new(CRYPTO_SESSION *cs, bool encrypt, uint32_t *bl
    }
 
    /* Add the key and IV to the cipher context */
-   if (!EVP_CipherInit_ex(&cipher_ctx->ctx, NULL, NULL, cs->session_key, M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
+   if (!EVP_CipherInit_ex(cipher_ctx->ctx, NULL, NULL, cs->session_key, M_ASN1_STRING_data(cs->cryptoData->iv), -1)) {
       openssl_post_errors(M_ERROR, _("OpenSSL cipher context key/IV initialization failed"));
       goto err;
    }
 
-   *blocksize = EVP_CIPHER_CTX_block_size(&cipher_ctx->ctx);
+   *blocksize = EVP_CIPHER_CTX_block_size(cipher_ctx->ctx);
    return cipher_ctx;
 
 err:
-   crypto_cipher_free(cipher_ctx);
+   delete cipher_ctx;
    return NULL;
 }
 
@@ -1312,7 +1386,7 @@ err:
  */
 bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint32_t length, const uint8_t *dest, uint32_t *written)
 {
-   if (!EVP_CipherUpdate(&cipher_ctx->ctx, (unsigned char *)dest, (int *)written, (const unsigned char *)data, length)) {
+   if (!EVP_CipherUpdate(cipher_ctx->ctx, (unsigned char *)dest, (int *)written, (const unsigned char *)data, length)) {
       /* This really shouldn't fail */
       return false;
    } else {
@@ -1330,7 +1404,7 @@ bool crypto_cipher_update(CIPHER_CONTEXT *cipher_ctx, const uint8_t *data, uint3
  */
 bool crypto_cipher_finalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t *written)
 {
-   if (!EVP_CipherFinal_ex(&cipher_ctx->ctx, (unsigned char *)dest, (int *) written)) {
+   if (!EVP_CipherFinal_ex(cipher_ctx->ctx, (unsigned char *)dest, (int *) written)) {
       /* This really shouldn't fail */
       return false;
    } else {
@@ -1343,8 +1417,7 @@ bool crypto_cipher_finalize(CIPHER_CONTEXT *cipher_ctx, uint8_t *dest, uint32_t 
  */
 void crypto_cipher_free(CIPHER_CONTEXT *cipher_ctx)
 {
-   EVP_CIPHER_CTX_cleanup(&cipher_ctx->ctx);
-   free (cipher_ctx);
+   delete cipher_ctx;
 }
 
 const char *crypto_digest_name(DIGEST *digest)
