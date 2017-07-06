@@ -377,10 +377,18 @@ static struct ua_cmdstruct commands[] = {
    { NT_("setip"), setip_cmd, _("Sets new client address -- if authorized"),
      NT_(""), false, true },
    { NT_("show"), show_cmd, _("Show resource records"),
-     NT_("jobdefs=<job-defaults> | job=<job-name> | pool=<pool-name> | fileset=<fileset-name> |\n"
-         "schedule=<schedule-name> | client=<client-name> | message=<message-resource-name> |\n"
-         "profile=<profile-name> | jobdefs | jobs | pools | filesets | schedules | clients |\n"
-         "messages | profiles | consoles | disabled [ clients | jobs | schedules ] | all [verbose]"), true, true },
+     NT_("catalog=<catalog-name> | client=<client-name> | console=<console-name> | "
+         "director=<director-name> | fileset=<fileset-name> | "
+         "jobdefs=<job-defaults> | job=<job-name> | message=<message-resource-name> | "
+         "pool=<pool-name> | profile=<profile-name> | "
+         "schedule=<schedule-name> | storage=<storage-name> "
+         "|\n"
+         "catalog | clients | consoles | directors | filesets | jobdefs | jobs | "
+         "messages | pools | profiles | schedules | storages "
+         "|\n"
+         "disabled [ clients | jobs | schedules ] "
+         "|\n"
+         "all [verbose]"), true, true },
    { NT_("sqlquery"), sqlquery_cmd, _("Use SQL to query catalog"),
      NT_(""), false, true },
    { NT_("time"), time_cmd, _("Print current time"),
