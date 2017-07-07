@@ -882,10 +882,7 @@ static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
 bail_out:
    close_db(ua);
    if (sd) {
-      sd->signal(BNET_TERMINATE);
-      sd->close();
-      delete ua->jcr->store_bsock;
-      ua->jcr->store_bsock = NULL;
+      close_sd_bsock(ua);
    }
    ua->jcr->res.wstore = NULL;
    if (results) {

@@ -1617,6 +1617,8 @@ static void status_slots(UAContext *ua, STORERES *store)
    slot_number_t max_slots;
    changer_vol_list_t *vol_list = NULL;
 
+   ua->jcr->res.wstore = store;
+
    /*
     * Slot | Volume | Status | MediaType | Pool
     */

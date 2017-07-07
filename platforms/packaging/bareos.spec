@@ -146,7 +146,11 @@ BuildRequires: perl
 BuildRequires: readline-devel
 BuildRequires: libstdc++-devel
 BuildRequires: zlib-devel
+%if 0%{?fedora_version} > 25
+BuildRequires: compat-openssl10-devel
+%else
 BuildRequires: openssl-devel
+%endif
 BuildRequires: libacl-devel
 BuildRequires: pkgconfig
 BuildRequires: lzo-devel
@@ -432,7 +436,11 @@ Requires:   sqlite-devel
 %endif
 %endif
 %if 0%{?rhel_version} || 0%{?centos_version} || 0%{?fedora_version}
+%if 0%{?fedora_version} > 25
+Requires: compat-openssl10-devel
+%else
 Requires:   openssl-devel
+%endif
 %else
 Requires:   libopenssl-devel
 %endif
