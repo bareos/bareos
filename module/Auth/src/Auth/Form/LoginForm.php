@@ -218,6 +218,12 @@ class LoginForm extends Form
          case 'cn_CN':
             $l['cn_CN'] = 'Chinese';
             break;
+         case 'cs':
+            $l['cs_CZ'] = 'Czech';
+            break;
+         case 'cs_CZ':
+            $l['cs_CZ'] = 'Czech';
+            break;
          case 'en_EN':
             $l['en_EN'] = 'English';
             break;
@@ -287,6 +293,7 @@ class LoginForm extends Form
       $locales = array();
 
       $locales['cn_CN'] = "Chinese";
+      $locales['cs_CZ'] = "Czech";
       $locales['nl_BE'] = "Dutch/Belgium";
       $locales['en_EN'] = "English";
       $locales['fr_FR'] = "French";

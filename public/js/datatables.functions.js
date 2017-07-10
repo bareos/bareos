@@ -30,6 +30,10 @@ function setDtLocale(val) {
       case 'cn_CN':
          dt_locale = 'cn_CN';
          break;
+      case 'cs':
+      case 'cs_CZ':
+         dt_locale = 'cs_CZ';
+         break;
       case 'en':
       case 'en_EN':
          dt_locale = 'en_EN';
@@ -65,7 +69,7 @@ function setDtLocale(val) {
       case 'sk':
       case 'sk_SK':
          dt_locale = 'sk_SK';
-         break;        
+         break;
       default:
          dt_locale = 'en_EN';
    }
@@ -418,6 +422,10 @@ function getLocale(locale) {
       case 'cn':
       case 'cn_CN':
          lang = 'Chinese.json';
+         break;
+      case 'cs':
+      case 'cs_CZ':
+         lang = 'Czech.json';
          break;
       case 'en':
       case 'en_EN':
