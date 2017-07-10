@@ -1,0 +1,241 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-05-24 17:59+0200\n"
+"PO-Revision-Date: 2017-07-08 19:51+0200\n"
+"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
+"Language-Team: \n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: ../../js/datatables.functions.js:89
+msgid "Backup"
+msgstr "Záloha"
+
+#: ../../js/datatables.functions.js:92
+msgid "Migrated"
+msgstr "Přestěhováno"
+
+#: ../../js/datatables.functions.js:95
+msgid "Verify"
+msgstr "Ověřit"
+
+#: ../../js/datatables.functions.js:98
+msgid "Restore"
+msgstr "Obnovit"
+
+#: ../../js/datatables.functions.js:101
+msgid "Console program"
+msgstr "Konzolový program"
+
+#: ../../js/datatables.functions.js:104
+msgid "Internal system job"
+msgstr "Vnitřní systémová úloha"
+
+#: ../../js/datatables.functions.js:107
+msgid "Admin"
+msgstr "Správce"
+
+#: ../../js/datatables.functions.js:110
+msgid "Archive"
+msgstr "Archiv"
+
+#: ../../js/datatables.functions.js:113
+msgid "Copy of a job"
+msgstr "Kopie úlohy"
+
+#: ../../js/datatables.functions.js:116
+msgid "Copy job"
+msgstr "Zkopírovat úlohu"
+
+#: ../../js/datatables.functions.js:119
+msgid "Migration job"
+msgstr "Stěhovací úloha"
+
+#: ../../js/datatables.functions.js:122
+msgid "Scan"
+msgstr "Prohledat"
+
+#: ../../js/datatables.functions.js:125
+msgid "Consolidate"
+msgstr "Sjednotit"
+
+#: ../../js/datatables.functions.js:137 ../../js/datatables.functions.js:176
+#: ../../js/datatables.functions.js:206
+msgid "Full"
+msgstr "Úplná"
+
+#: ../../js/datatables.functions.js:139
+msgid "Differential"
+msgstr "Rozdílová"
+
+#: ../../js/datatables.functions.js:141
+msgid "Incremental"
+msgstr "Přírůstková"
+
+#: ../../js/datatables.functions.js:143
+msgid "VirtualFull"
+msgstr "Virtuální úplná"
+
+#: ../../js/datatables.functions.js:145
+msgid "Base"
+msgstr "Základ"
+
+#: ../../js/datatables.functions.js:147
+msgid "Catalog"
+msgstr "Katalog"
+
+#: ../../js/datatables.functions.js:149
+msgid "InitCatalog"
+msgstr "Inicializovat katalog"
+
+#: ../../js/datatables.functions.js:151
+msgid "VolumeToCatalog"
+msgstr "Svazek na katalog"
+
+#: ../../js/datatables.functions.js:153
+msgid "DiskToCatalog"
+msgstr "Jednotka datového úložiště na katalog"
+
+#: ../../js/datatables.functions.js:155
+msgid "Data"
+msgstr "Data"
+
+#: ../../js/datatables.functions.js:157
+msgid "None"
+msgstr "Nichts"
+
+#: ../../js/datatables.functions.js:171 ../../js/datatables.functions.js:201
+msgid "day(s)"
+msgstr "Tag(e)"
+
+#: ../../js/datatables.functions.js:176 ../../js/datatables.functions.js:206
+msgid "Used"
+msgstr "Využito"
+
+#: ../../js/datatables.functions.js:188
+msgid "expired"
+msgstr "platnost skončila"
+
+#: ../../js/datatables.functions.js:192
+msgid "expires in 1 day"
+msgstr "platnost skončí za 1 den"
+
+#: ../../js/datatables.functions.js:196
+msgid "expires in"
+msgstr "platnost skončí za"
+
+#: ../../js/datatables.functions.js:196
+msgid "days"
+msgstr "dny"
+
+#: ../../js/datatables.functions.js:232
+msgid "never"
+msgstr "nikdy"
+
+#: ../../js/datatables.functions.js:241
+msgid "today"
+msgstr "dnes"
+
+#: ../../js/datatables.functions.js:244
+msgid "day(s) ago"
+msgstr "dny předtím"
+
+#: ../../js/datatables.functions.js:247
+msgid "month(s) ago"
+msgstr "měsíci předtím"
+
+#: ../../js/datatables.functions.js:250
+msgid "year(s) ago"
+msgstr "roky předtím"
+
+#: ../../js/datatables.functions.js:283
+msgid "enabled"
+msgstr "zapnuto"
+
+#: ../../js/datatables.functions.js:286
+msgid "disabled"
+msgstr "vypnuto"
+
+#: ../../js/datatables.functions.js:294
+msgid "Yes"
+msgstr "Ano"
+
+#: ../../js/datatables.functions.js:297
+msgid "No"
+msgstr "Ne"
+
+#: ../../js/datatables.functions.js:307 ../../js/datatables.functions.js:311
+#: ../../js/datatables.functions.js:315
+msgid "Failure"
+msgstr "Nezdar"
+
+#: ../../js/datatables.functions.js:319
+msgid "Success"
+msgstr "Úspěch"
+
+#: ../../js/datatables.functions.js:323
+msgid "Running"
+msgstr "Spuštěné"
+
+#: ../../js/datatables.functions.js:327
+msgid "Queued"
+msgstr "Zařazeno do fronty"
+
+#: ../../js/datatables.functions.js:331
+msgid "Blocked"
+msgstr "Blokováno"
+
+#: ../../js/datatables.functions.js:335
+msgid "Verify found differences"
+msgstr "Ověřit nalezené rozdíly"
+
+#: ../../js/datatables.functions.js:339
+msgid "Canceled"
+msgstr "Zrušeno"
+
+#: ../../js/datatables.functions.js:343 ../../js/datatables.functions.js:347
+#: ../../js/datatables.functions.js:351 ../../js/datatables.functions.js:355
+#: ../../js/datatables.functions.js:359 ../../js/datatables.functions.js:363
+#: ../../js/datatables.functions.js:367 ../../js/datatables.functions.js:371
+#: ../../js/datatables.functions.js:375 ../../js/datatables.functions.js:379
+msgid "Waiting"
+msgstr "Čekající"
+
+#: ../../js/datatables.functions.js:383
+msgid "SD despooling attributes"
+msgstr "Atributy SD vybírání z fronty"
+
+#: ../../js/datatables.functions.js:387
+msgid "Doing batch insert file records"
+msgstr "Dělání dávkového vkládání souborových záznamů"
+
+#: ../../js/datatables.functions.js:391
+msgid "Incomplete"
+msgstr "Neúplné"
+
+#: ../../js/datatables.functions.js:395
+msgid "Committing data"
+msgstr "Aplikace dat"
+
+#: ../../js/datatables.functions.js:399
+msgid "Warning"
+msgstr "Varování"
+
+#: ../../js/datatables.functions.js:403
+msgid "Doing data despooling"
+msgstr "Vybírání dat z fronty"
+
+#: ../../js/datatables.functions.js:407
+msgid "Queued waiting for device"
+msgstr "Čekání na zařízení zařazeno do fronty"
