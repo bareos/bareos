@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   to define the dashboard refresh interval (default: 60sec.)
 - Slovak localization
 - Turkish localization
+- Czech localization
 
 ### Changed
 - Russian translation improved
