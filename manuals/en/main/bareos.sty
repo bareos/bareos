@@ -265,12 +265,28 @@
 %
 \newcommand{\warning}[1]{Please note! \textit{#1}}
 
+
+\newcommand{\releasenoteSection}[1]{
+    \section*{#1}
+    \addcontentsline{toc}{section}{\protect\numberline{}#1}%
+}
+
 % 1: version, 2: description
 \newcommand{\releasenote}[2]{
     \subsection*{bareos-#1}
+    \addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
+    \label{bareos-#1}
     \index[general]{bareos-#1!Release Notes}%
     #2
 }
+
+\newcommand{\releasenoteUnstable}[2]{
+    \subsection*{\textit{bareos-#1 (unstable)}}
+    %\addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
+    %\index[general]{bareos-#1!Release Notes}%
+    #2
+}
+
 
 \newcommand{\sinceVersion}[3]{%
 % 1: daemon (dir|sd|fd),

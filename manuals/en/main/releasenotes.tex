@@ -14,7 +14,32 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \warning{While all the source code is published on \elink{GitHub}{https://github.com/bareos/bareos}, the releases of packages on \url{http://download.bareos.org} is limited to the initial versions of a major release. Later maintenance releases are only published on \url{https://download.bareos.com}.}
 
-\section*{Bareos-16.2}
+\releasenoteSection{Bareos-17.2}
+
+\releasenoteUnstable{17.2.2}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & \\
+Database Version  & 2170\\
+Release Ticket    & \\
+Url               & \\
+\end{tabular}
+
+This release contains several enhancements. Excerpt:
+\begin{itemize}
+  \item Denormalization of the \dbtable{File} database table
+  \begin{itemize}
+    \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions).
+    \item For the denormalization the database schema must be modified.
+          \warning{Updating the database to schema version 2170 will increase the required disk space.
+                Especially it will require around twice the amount of the current database disk space during the migration.}
+  \end{itemize}
+\end{itemize}
+
+}
+
+
+\releasenoteSection{Bareos-16.2}
 
 \releasenote{16.2.6}{
 
@@ -109,7 +134,7 @@ First stable release of the Bareos 16.2 branch.
 \end{itemize}
 }
 
-\section*{Bareos-15.2}
+\releasenoteSection{Bareos-15.2}
 
 \releasenote{15.2.4}{
 
@@ -182,7 +207,7 @@ When coming from bareos-14.2.x, the following things have changed (same as in ba
 
 
 
-\releasenote{15.2.1}{
+\releasenoteUnstable{15.2.1}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
 Code Release      & 2015-09-16\\
@@ -209,7 +234,7 @@ Beta release.
 }
 
 
-\section*{Bareos-14.2}
+\releasenoteSection{Bareos-14.2}
 
 It is known, that \command{drop_database} scripts will not longer work on PostgreSQL $<$ 8.4. However, as \command{drop_database} scripts are very seldom needed, package dependencies do not yet enforce PostgreSQL $>=$ 8.4.
 We plan to ensure this in future version of Bareos.
@@ -346,7 +371,7 @@ Url               & \releaseUrlDownloadBareosOrg{14.2} \\
 First stable release of the Bareos 14.2 branch.
 }
 
-\releasenote{14.2.1}{
+\releasenoteUnstable{14.2.1}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
 Code Release & 2014-09-22 \\
@@ -358,7 +383,7 @@ Url               & \releaseUrlDownloadBareosOrg{14.2} \\
 Beta release.
 }
 
-\section*{Bareos-13.2}
+\releasenoteSection{Bareos-13.2}
 
 \releasenote{13.2.5}{
 
@@ -404,7 +429,7 @@ Url               & \releaseUrlDownloadBareosOrg{13.2} \\
 
 
 
-\section*{Bareos-12.4}
+\releasenoteSection{Bareos-12.4}
 
 
 \releasenote{12.4.8}{
