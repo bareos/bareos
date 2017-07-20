@@ -31,9 +31,37 @@ This release contains several bugfixes and enhancements. Excerpt:
   \item Director now closes all configuration files when reloading failed.
   \item Storage daemon now closes the network connection when MaximumConcurrentJobs reached.
   \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
-  \item \bcommand{.bvfs_lsdirs} no longer shows empty directories from accurate jobs.
   \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
   \item The device spool size calculation when using secure erase was fixed.
+  \item \bcommand{.bvfs_lsdirs} no longer shows empty directories from accurate jobs.
+    \begin{itemize}
+        \item \warning{This decreases performance if your environment has a large numbers of directories. Creating an index improves the performance.}
+        %In Bareos 16.2.6 the SQL Query used by \bcommand{.bvfs_lsdirs}{} was changed to not show
+        %empty directories from accurate jobs. It turned out that that the changed
+        %query causes performance issues when larger amounts of directories were backed up.\\
+        \item \postgresql
+        \begin{itemize}
+            \item When using PostgreSQL, creating the following partial improves the performance sufficiently:\\
+                \sqlcommand{CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0;}
+
+            \item Run following command to create the partial index:\\
+                \path@su - postgres -c 'echo "CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0; ANALYZE File;" | psql bareos'@
+
+        \end{itemize}
+        \item \mysql
+        \begin{itemize}
+            \item When using MySQL or MariaDB, creating the following index improves the performance:\\
+                \sqlcommand{CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);}
+
+            \item Run following command to create the index:\\
+                \path@echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos@
+
+            \item  However, with larger amounts of directories and/or involved jobs, even with this index
+                the performance of \bcommand{.bvfs_lsdirs}{} may still be insufficient. We are working on optimizing
+                the SQL query for MySQL/MariaDB to solve this problem.
+        \end{itemize}
+    \end{itemize}
+
   \item Packages for Univention UCS 4.2 have been added.
   \item Packages for Debian 9 (Stretch) have been added.
   \item WebUI: The post install script of the bareos-webui RPM package for RHEL/CentOS was fixed, it no longer tries to run a2enmod which does not exist on RHEL/CentOS.
@@ -43,7 +71,6 @@ This release contains several bugfixes and enhancements. Excerpt:
 \end{itemize}
 
 }
-
 
 \releasenote{16.2.5}{
 
