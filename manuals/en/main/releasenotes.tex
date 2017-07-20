@@ -45,7 +45,7 @@ This release contains several bugfixes and enhancements. Excerpt:
                 \sqlcommand{CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0;}
 
             \item Run following command to create the partial index:\\
-                \path@su - postgres -c 'echo "CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0; ANALYZE File;" | psql bareos'@
+                \path!su - postgres -c 'echo "CREATE INDEX file_jfnidpart_idx ON File(JobId, FilenameId) WHERE FileIndex = 0; ANALYZE File;" | psql bareos'!
 
         \end{itemize}
         \item \mysql
@@ -54,7 +54,7 @@ This release contains several bugfixes and enhancements. Excerpt:
                 \sqlcommand{CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);}
 
             \item Run following command to create the index:\\
-                \path@echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos@
+                \path!echo "CREATE INDEX PathId_JobId_FileIndex_FileNameId ON File(PathId,JobId,FileIndex,FilenameId);" | mysql -u root bareos!
 
             \item  However, with larger amounts of directories and/or involved jobs, even with this index
                 the performance of \bcommand{.bvfs_lsdirs}{} may still be insufficient. We are working on optimizing
