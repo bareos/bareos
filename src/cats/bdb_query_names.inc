@@ -64,7 +64,7 @@ const char *B_DB::query_names[] = {
 "uar_sel_jobid_copies",
 "get_jobstatus_details",
 "bvfs_versions_6",
-"bvfs_lsdirs_6",
+"bvfs_lsdirs_7",
 "bvfs_clear_cache_0",
 "bvfs_update_path_visibility_3",
 NULL

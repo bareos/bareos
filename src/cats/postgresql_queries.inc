@@ -653,16 +653,16 @@ SELECT TYPE,
        JobId,
        LStat,
        FileId
-FROM
-  ( SELECT DISTINCT ON (Name) 'F' AS TYPE,
+FROM (
+   SELECT DISTINCT ON (Name) 'F' AS TYPE,
                        PathId,
                        FileName AS Name,
                        JobId,
                        LStat,
                        FileId,
                        FileIndex
-   FROM
-     (SELECT FileId,
+   FROM (
+      SELECT FileId,
              JobId,
              PathId,
              Name AS FileName,
@@ -682,11 +682,15 @@ FROM
                MD5
         FROM BaseFiles
         JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
-        AND File.PathId = %s ) AS T
+        AND File.PathId = %s
+   ) AS T
    JOIN Job USING (JobId)
-   WHERE FileName != '' %s
+   WHERE
+      FileName != ''
+      %s
    ORDER BY FileName,
-            StartTime DESC) AS A
+            StartTime DESC
+) AS A
 WHERE A.FileIndex > 0
 LIMIT %lld
 OFFSET %lld
@@ -831,7 +835,7 @@ LIMIT %d
 OFFSET %d
 ),
 
-/* 0064_bvfs_lsdirs_6 */
+/* 0064_bvfs_lsdirs_7 */
 SQL_QUERY(
 SELECT 'D', PathId, Path, JobId, LStat, FileId
 FROM (
@@ -855,7 +859,7 @@ FROM (
          %s
    ) AS listpath1
    JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId)
-   LEFT JOIN (
+   JOIN (
       SELECT
          File1.PathId AS PathId,
          File1.JobId AS JobId,
@@ -864,7 +868,15 @@ FROM (
       FROM File AS File1
       WHERE
          File1.Name = '' AND
-         File1.JobId IN (%s)
+         File1.JobId IN (%s) AND
+         File1.PathId NOT IN (
+          SELECT PathId FROM File
+          WHERE File.Name = ''
+                AND JobId = (
+                    SELECT MAX(JobId) FROM PathVisibility
+                    WHERE PathId = File1.PathId
+                          AND JobId IN (%s))
+                AND FileIndex = 0)
    ) AS listfile1
    ON (listpath1.PathId = listfile1.PathId)
 ) AS A

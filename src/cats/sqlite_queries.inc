@@ -680,42 +680,44 @@ SELECT 'F',
        File.JobId,
        File.LStat,
        File.FileId
-FROM Job,
-     File,
-  (SELECT MAX(JobTDate) AS JobTDate,
-          PathId,
-          Name
-   FROM
-     (SELECT JobTDate,
-             PathId,
-             File.Name
-      FROM File
-      JOIN Job USING (JobId)
-      WHERE File.JobId IN (%s)
-        AND PathId = %s
+FROM
+   Job,
+   File,
+   (
+      SELECT MAX(JobTDate) AS JobTDate, PathId, Name
+      FROM (
+         SELECT JobTDate, PathId, File.Name
+         FROM File
+         JOIN Job USING (JobId)
+         WHERE
+            File.JobId IN (%s) AND
+            PathId = %s
         UNION ALL
-        SELECT JobTDate,
-               PathId,
-               File.Name
+        SELECT JobTDate, PathId, File.Name
         FROM BaseFiles
         JOIN File USING (FileId)
-        JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s)
-        AND PathId = %s ) AS tmp
-   GROUP BY PathId,
-            Name
-   LIMIT %lld
-   OFFSET %lld ) AS T1
-WHERE T1.JobTDate = Job.JobTDate
-  AND Job.JobId = File.JobId
-  AND T1.PathId = File.PathId
-  AND T1.Name = File.Name
-  AND File.Name != ''
-  AND File.FileIndex > 0 %s
-  AND (Job.JobId IN
-         (SELECT DISTINCT BaseJobId
-          FROM BaseFiles
-          WHERE JobId IN (%s))
-       OR Job.JobId IN (%s))
+        JOIN Job ON (BaseJobId = Job.JobId)
+        WHERE
+           BaseFiles.JobId IN (%s) AND
+           PathId = %s
+      ) AS tmp
+      GROUP BY PathId, Name
+      LIMIT %lld
+      OFFSET %lld
+   ) AS T1
+WHERE
+   T1.JobTDate = Job.JobTDate AND
+   Job.JobId = File.JobId AND
+   T1.PathId = File.PathId AND
+   T1.Name = File.Name AND
+   File.Name != '' AND
+   File.FileIndex > 0 %s
+   AND (
+      Job.JobId IN (
+         SELECT DISTINCT BaseJobId FROM BaseFiles WHERE JobId IN (%s)
+      ) OR
+      Job.JobId IN (%s)
+   )
 ),
 
 /* 0049_batch_lock_path_query */
@@ -847,7 +849,7 @@ LIMIT %d
 OFFSET %d
 ),
 
-/* 0064_bvfs_lsdirs_6 */
+/* 0064_bvfs_lsdirs_7 */
 SQL_QUERY(
 SELECT 'D', PathId, Path, JobId, LStat, FileId
 FROM (
@@ -871,7 +873,7 @@ FROM (
          %s
    ) AS listpath1
    JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId)
-   LEFT JOIN (
+   JOIN (
       SELECT
          File1.PathId AS PathId,
          File1.JobId AS JobId,
@@ -880,7 +882,15 @@ FROM (
       FROM File AS File1
       WHERE
          File1.Name = '' AND
-         File1.JobId IN (%s)
+         File1.JobId IN (%s) AND
+         File1.PathId NOT IN (
+          SELECT PathId FROM File
+          WHERE File.Name = ''
+                AND JobId = (
+                    SELECT MAX(JobId) FROM PathVisibility
+                    WHERE PathId = File1.PathId
+                          AND JobId IN (%s))
+                AND FileIndex = 0)
    ) AS listfile1
    ON (listpath1.PathId = listfile1.PathId)
 ) AS A

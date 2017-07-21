@@ -66,7 +66,7 @@ public:
       SQL_QUERY_uar_sel_jobid_copies = 60,
       SQL_QUERY_get_jobstatus_details = 61,
       SQL_QUERY_bvfs_versions_6 = 62,
-      SQL_QUERY_bvfs_lsdirs_6 = 63,
+      SQL_QUERY_bvfs_lsdirs_7 = 63,
       SQL_QUERY_bvfs_clear_cache_0 = 64,
       SQL_QUERY_bvfs_update_path_visibility_3 = 65,
       SQL_QUERY_NUMBER = 66

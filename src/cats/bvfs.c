@@ -660,7 +660,7 @@ bool Bvfs::ls_dirs()
     */
    *prev_dir = 0;
 
-   db->fill_query(query, B_DB::SQL_QUERY_bvfs_lsdirs_6, edit_uint64(pwd_id, ed1), jobids, filter.c_str(), jobids, limit, offset);
+   db->fill_query(query, B_DB::SQL_QUERY_bvfs_lsdirs_7, edit_uint64(pwd_id, ed1), jobids, filter.c_str(), jobids, jobids, limit, offset);
    nb_record = db->bvfs_ls_dirs(query, this);
 
    return nb_record == limit;

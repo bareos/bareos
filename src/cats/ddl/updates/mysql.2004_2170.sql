@@ -20,11 +20,11 @@ CREATE TABLE           TmpMergeFilenameIntoFileTable (
    FileIndex        INTEGER   UNSIGNED            DEFAULT 0,
    JobId            INTEGER   UNSIGNED  NOT NULL  REFERENCES Job,
    PathId           INTEGER   UNSIGNED  NOT NULL  REFERENCES Path,
-   Name             BLOB                NOT NULL,
    DeltaSeq         SMALLINT  UNSIGNED            DEFAULT 0,
    MarkId           INTEGER   UNSIGNED            DEFAULT 0,
    LStat            TINYBLOB            NOT NULL,
    MD5              TINYBLOB            NOT NULL,
+   Name             BLOB                NOT NULL,
    PRIMARY KEY (FileId)
 );
 
@@ -40,8 +40,8 @@ DROP TABLE File;
 ALTER TABLE TmpMergeFilenameIntoFileTable RENAME TO File;
 
 -- adapt index
-CREATE INDEX JobId ON File (JobId);
 CREATE INDEX JobId_PathId_Name ON File (JobId, PathId, Name(255));
+CREATE INDEX Name_PathId_JobId_FileIndex_Name (Name(255), PathId, JobId, FileIndex)
 
 UPDATE Version SET VersionId = 2170;
 

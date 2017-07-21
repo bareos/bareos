@@ -26,11 +26,11 @@ CREATE TABLE TmpMergeFilenameIntoFileTable (
    FileIndex        INTEGER     NOT NULL  DEFAULT 0,
    JobId            INTEGER     NOT NULL,
    PathId           INTEGER     NOT NULL,
-   Name             TEXT        NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
    LStat            TEXT        NOT NULL,
    Md5              TEXT        NOT NULL,
+   Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
 
@@ -51,6 +51,7 @@ CREATE INDEX file_jobid_idx ON File (JobId);
 ALTER SEQUENCE TmpMergeFilenameIntoFileTable_fileid_seq RENAME TO file_fileid_seq;
 SELECT setval('file_fileid_seq', (SELECT max(fileid) from file));
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
+CREATE INDEX file_jidpart_idx ON File(JobId) WHERE FileIndex = 0 AND Name = '';
 
 UPDATE Version SET VersionId = 2170;
 

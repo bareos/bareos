@@ -27,15 +27,21 @@ CREATE TABLE File (
    FileIndex        INTEGER     NOT NULL  DEFAULT 0,
    JobId            INTEGER     NOT NULL,
    PathId           INTEGER     NOT NULL,
-   Name             TEXT        NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
    LStat            TEXT        NOT NULL,
    Md5              TEXT        NOT NULL,
+   Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
-CREATE INDEX file_jobid_idx ON File (JobId);
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
+-- This index is important for bvfs performance, especially
+-- for .bvfs_lsdirs which is used by bareos-webui.
+-- As it's a partial index, it will only contain data from
+-- from accurate jobs with delete directories, so that the
+-- impact on backups will be low. Nevertheless, it will
+-- improve the performance, even when not using accurate.
+CREATE INDEX file_jidpart_idx ON File(JobId) WHERE FileIndex = 0 AND Name = '';
 
 --
 -- Add this if you have a good number of job
