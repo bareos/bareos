@@ -166,11 +166,27 @@ static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_R
    return resultbuffer.c_str();
 }
 
-static const char *record_md5_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
+static const char *record_digest_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
 {
    char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
-   bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_MD5_SIZE, true);
+   switch (rec->maskedStream) {
+      case STREAM_MD5_DIGEST:
+         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_MD5_SIZE, true);
+         break;
+      case STREAM_SHA1_DIGEST:
+         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA1_SIZE, true);
+         break;
+      case STREAM_SHA256_DIGEST:
+         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA256_SIZE, true);
+         break;
+      case STREAM_SHA512_DIGEST:
+         bin_to_base64(digest, sizeof(digest), (char *)rec->data, CRYPTO_DIGEST_SHA512_SIZE, true);
+         break;
+      default:
+         return "";
+   }
+
    resultbuffer.bsprintf("%s (base64)", digest);
 
    return resultbuffer.c_str();
@@ -392,7 +408,10 @@ static const char *get_record_short_info(POOL_MEM &resultbuffer, JCR *jcr, const
       record_unix_attributes_to_str(resultbuffer, jcr, rec);
       break;
    case STREAM_MD5_DIGEST:
-      record_md5_to_str(resultbuffer, rec);
+   case STREAM_SHA1_DIGEST:
+   case STREAM_SHA256_DIGEST:
+   case STREAM_SHA512_DIGEST:
+      record_digest_to_str(resultbuffer, rec);
       break;
    case STREAM_PLUGIN_NAME: {
       char data[100];
