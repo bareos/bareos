@@ -13,7 +13,7 @@
 Storage {                             # definition of myself
   Name = @hostname@-sd
   Maximum Concurrent Jobs = 20
-  Secure Erase Command = "@scriptdir@/wipe-sd.sh"
+  Secure Erase Command = "@confdir@/wipe-sd.sh"
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
   # if "Plugin Names" is defined, only the specified plugins will be loaded,

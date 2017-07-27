@@ -1,0 +1,34 @@
+Source: bareos-regress
+Section: admin
+Priority: optional
+Maintainer: Bareos Packager <packager@bareos.com>
+Build-Depends: debhelper (>= 7.0.50~),
+  make,
+  rsync,
+  sed,
+  bareos-database-sqlite3,
+  bareos-regress-config
+Standards-Version: 3.9.1
+Homepage: https://github.com/bareos/bareos-regress
+Vcs-Git: git://github.com/bareos/bareos-regress.git
+Vcs-Browser: https://github.com/bareos/bareos-regress.git
+
+Package: bareos-regress
+Architecture: all
+# acl: tests/acl-xattr-test
+# attr: tests/acl-xattr-test
+# cmake: for ctest
+Depends: ${misc:Depends},
+  acl,
+  attr,
+  bareos,
+  bareos-database-sqlite3,
+  bareos-regress-config,
+  bareos-storage-fifo,
+  bareos-tools,
+  cmake,
+  make,
+  sed
+Description: Backup Archiving Recovery Open Sourced - regression testing
+ This package contains Bareos regression tests.
+ Don't use them on productive systems.

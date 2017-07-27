@@ -1,16 +1,39 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup 
 #   then restore it.
 #
 
 unset LANG
 TestName="source-addr-test"
 JobName=backup
-. scripts/functions
 
-scripts/cleanup
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
+
 scripts/copy-confs
+
+change_jobname BackupClient1FileList $JobName
+
+
+
+start_test
 
 #
 # Zap out any schedule in default conf file so that
@@ -18,9 +41,9 @@ scripts/copy-confs
 #
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-echo "s%Name = \"BackupClient1\"%Name = \"backup\";  client run after job = \"netstat -tan\"%g" >>${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+echo "s%Name = \"$JobName\"%Name = \"$JobName\";  client run after job = \"netstat -tan\"%g" >>${outf}
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 PATH=$PATH:/sbin:/usr/sbin
 #
@@ -42,28 +65,22 @@ if [ "$IP" = '' ]; then
     #    inet 192.168.121.195  netmask 255.255.255.0  broadcast 192.168.121.255
     IP=`ifconfig ${INTERFACE} | perl -ne '/inet (.+?) / && print $1'`
     if [ "$IP" = '' ]; then
-        echo "Can't detect ip address"
-        exit 0
+        set_error "Can't detect ip address for interface ${INTERFACE}"
+        exit 1
     fi
 fi
 
 outf="tmp/sed_tmp"
 echo "s/QueryFile/DirSourceAddress=$IP; QueryFile/g" > $outf
 echo "s/Address =/Address = 127.0.0.1 #/g" >> $outf
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} ${cwd}/tmp/1 > $scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} ${cwd}/tmp/1 > ${conf}/bareos-dir.conf
 
 # Set source address on the FD as well
 echo "s/Maximum Concurrent Jobs/FDSourceAddress=$IP; Maximum Concurrent Jobs/g" >$outf
-cp $scripts/bareos-fd.conf $tmp/2
-sed -f ${outf} ${cwd}/tmp/2 > $scripts/bareos-fd.conf
+cp ${conf}/bareos-fd.conf $tmp/2
+sed -f ${outf} ${cwd}/tmp/2 > ${conf}/bareos-fd.conf
 
-DIRPORT=$BASEPORT
-FDPORT=$(($BASEPORT + 1))
-SDPORT=$(($BASEPORT + 2))
-
-change_jobname BackupClient1 $JobName
-start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -104,14 +121,14 @@ stop_bareos
 
 # sleep 5
 print_debug "Detecting connections to SD sourced from ${IP}"
-grep -E "127.0.0.1(.|:)$SDPORT .* ${IP}"   $tmp/log1.out > $tmp/log3.out
+grep -E "127.0.0.1(.|:)$BAREOS_SD_PORT .* ${IP}"   $tmp/log1.out > $tmp/log3.out
 if [ $? -ne 0 ]; then
    stat=2
    print_debug "Couldn't detect a connection to the SD sourced from SourceAddress ${IP}"
 fi
 
 print_debug "and connections to FD sourced from ${IP}"
-grep -E "127.0.0.1(.|:)$FDPORT .* ${IP}"  $tmp/log1.out >> $tmp/log3.out
+grep -E "127.0.0.1(.|:)$BAREOS_FD_PORT .* ${IP}"  $tmp/log1.out >> $tmp/log3.out
 if [ $? -ne 0 ]; then
    stat=2
    print_debug "Couldn't detect a connection to the FD sourced from SourceAddress ${IP}"

@@ -1,9 +1,0 @@
-@@out@ nul
-messages
-@@out@ tmp/log1.out
-label storage=File volume=TestVolume002
-label storage=File volume=TestVolume001
-run job=@JobName@ yes
-wait
-messages
-quit

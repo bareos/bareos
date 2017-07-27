@@ -14,10 +14,19 @@ scripts/copy-2disk-drive-confs
 scripts/prepare-disk-changer
 CLIENT=2drive2disk
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
 start_test
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null

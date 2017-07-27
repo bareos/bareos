@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then do a
+# Run a simple backup  then do a
 #   Virtual Full backup to another device.
 #
 # This script uses the disk autochanger
@@ -13,9 +13,20 @@ JobName=Vbackup
 scripts/cleanup
 scripts/copy-virtual-confs
 scripts/prepare-disk-changer
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 #
@@ -37,26 +48,26 @@ label storage=DiskChanger volume=ChangerVolume004 slot=4 Pool=Full drive=0
 label storage=DiskChanger volume=ChangerVolume005 slot=5 Pool=Full drive=0
 setdebug level=0 storage=DiskChanger
 @# run several jobs
-@exec "sh -c 'date > ${cwd}/build/date'"
+@exec "sh -c 'date > ${BackupDirectory}/date'"
 run job=$JobName level=Full storage=DiskChanger yes
 wait
 messages
 list jobs
 list volumes
-@exec "sh -c 'touch ${cwd}/build/src/dird/*.c'"
+@exec "sh -c 'touch ${BackupDirectory}/*.c'"
 run job=$JobName level=Incremental storage=DiskChanger yes
 wait
 messages
 list jobs
 list volumes
-@exec "sh -c 'touch ${cwd}/build/src/dird/*.o'"
+@exec "sh -c 'touch ${BackupDirectory}/*.c'"
 run job=$JobName level=Differential storage=DiskChanger yes
 wait
 messages
 list jobs
 list volumes
-@exec "sh -c 'date > ${cwd}/build/date'"
-@exec "sh -c 'touch ${cwd}/build/src/dird/*.o'"
+@exec "sh -c 'date > ${BackupDirectory}/date'"
+@exec "sh -c 'touch ${BackupDirectory}/*.c'"
 run job=$JobName level=Incremental storage=DiskChanger yes
 wait
 messages
@@ -101,7 +112,7 @@ Default
 list jobs
 list volumes
 messages
-@exec "sh -c 'touch ${cwd}/build/src/dird/*.o'"
+@exec "sh -c 'touch ${BackupDirectory}/*.c'"
 @#
 @# Do an incremental on top of the Virtual Full
 @#

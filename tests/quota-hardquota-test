@@ -14,7 +14,7 @@ rm -f bin/bareos-dir.conf
 /bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf.quota-hardquota-test bin/bareos-dir.conf
 
 # create test data
-dd if=/dev/zero of=${cwd}/tmp/testdata bs=40000k count=1
+dd if=/dev/zero of=${cwd}/tmp/testdata bs=40000k count=1 >/dev/null
 
 echo "${cwd}/tmp/testdata" >${cwd}/tmp/file-list
 start_test

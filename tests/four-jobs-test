@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
 #
@@ -10,7 +10,19 @@ JobName=SpanVol
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 change_jobname CompressedTest $JobName
 start_test
@@ -27,8 +39,8 @@ END_OF_DATA
 run_bareos
 check_for_zombie_jobs storage=File
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
+echo "test" > ${BackupDirectory}/test1.txt
 
 #
 # run a second job
@@ -46,8 +58,8 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=File
 
-touch ${cwd}/build/src/dird/*.c
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
+echo "test" > ${BackupDirectory}/test2.txt
 #
 # run a third job
 #
@@ -65,7 +77,8 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
+echo "test" > ${BackupDirectory}/test3.txt
 #
 # run a fourth job
 #

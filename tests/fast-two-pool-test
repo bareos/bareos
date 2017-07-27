@@ -1,11 +1,10 @@
 #!/bin/sh
 #
-# This is Arno's test.  It uses two pools, two tapes, and
+# This test uses two pools, two tapes, and
 #  an autochanger. Note, the Director has three Pools in its
 #  conf:  Default, Full, and Inc.  Default is used in the
 #  NightlySave job by default.  What is backed up is what
-#  is in ${cwd}/tmp/file-list, which is by default the Bareos
-#  source code (i.e. the build directory).
+#  is in ${cwd}/tmp/file-list.
 #
 #  Note, we use the virtual disk autochanger.
 #
@@ -17,12 +16,22 @@ scripts/cleanup
 scripts/copy-2disk-confs
 scripts/prepare-disk-changer
 
-# Make a relatively large backup set 5 x source code directory
-#  Reduced to 1 for portable
-echo "${cwd}/build" >${cwd}/tmp/file-list
-echo "${cwd}/build" >${cwd}/tmp/file-list
-echo "${cwd}/build" >${cwd}/tmp/file-list
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+# TODO: use larger backup data set.
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+# Make a relatively large backup by using making it multiple times.
+echo "${BackupDirectory}" >${tmp}/file-list
+echo "${BackupDirectory}" >>${tmp}/file-list
+echo "${BackupDirectory}" >>${tmp}/file-list
+echo "${BackupDirectory}" >>${tmp}/file-list
+
 
 start_test
 

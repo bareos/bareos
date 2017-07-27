@@ -21,8 +21,8 @@ ln bin/wipe.sh bin/wipe-fd.sh
 #
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 change_jobname BackupClient1 $JobName
 start_test

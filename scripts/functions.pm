@@ -119,19 +119,19 @@ sub start_bareos
 {
     my $ret;
     $ENV{LANG}='C';
-    system("$bin/bareos start");
+    system("$scripts/bareos start");
     $ret = $? == 0;
     open(FP, ">$tmp/bcmd");
     print FP "sql\ntruncate client_group;\ntruncate client_group_member;\nupdate Media set LocationId=0;\ntruncate location;\n\n";
     close(FP);
-    system("cat $tmp/bcmd | $bin/bconsole >/dev/null");
+    system("cat $tmp/bcmd | $bin/bconsole -c $conf >/dev/null");
     return $ret;
 }
 
 sub stop_bareos
 {
     $ENV{LANG}='C';
-    system("$bin/bareos stop");
+    system("$scripts/bareos stop");
     return $? == 0;
 }
 
@@ -142,7 +142,7 @@ sub get_resource
     open(FP, $file) or die "Can't open $file";
     my $content = join("", <FP>);
 
-    if ($content =~ m/(^$type {[^}]+?Name\s*=\s*"?$name"?[^}]+?^})/ms) {
+    if ($content =~ m/(^$type \{[^\}]+?Name\s*=\s*"?$name"?[^\}]+?^\})/ms) {
         $ret = $1;
     }
 

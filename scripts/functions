@@ -53,8 +53,47 @@ cleanup()
     ${rscripts}/cleanup
 }
 
+#
+# Creates a directory "${tmp}/data" from a tgz file.
+# This directory can be used a data to backup.
+# Initialize ${tmp}/file-list with this directory,
+# if it does not already exists.
+#
+setup_data()
+{
+    SRC=${1:-data/small.tgz}
+    RC=0
+
+    if [ -z "$SRC" ]; then
+       set_error "setup_data: no source given."
+       return 1
+    fi
+    if [ ! -e "$SRC" ]; then
+        set_error "setup_data $SRC: $SRC not found."
+        return 1
+    fi
+
+    mkdir -p ${tmp}/data
+    (cd ${tmp}/data && tar xzf ${cwd}/$SRC)
+    RC=$?
+
+    if [ ! -e ${tmp}/file-list ]; then
+       echo "${tmp}/data" >${tmp}/file-list
+    fi
+
+    return $RC
+}
+
 start_test()
 {
+   # in case of an exit during the test,
+   # call the 'end_test' function.
+   trap '
+         EXITCODE=$?;
+         echo "exit($EXITCODE) is called. Set test to failure and end test.";
+         estat=998;
+         end_test;
+      ' EXIT
    check_encoding
    # Turn off email
    outf="${tmp}/sed_tmp"
@@ -64,11 +103,13 @@ start_test()
       cp ${conf}/bareos-dir.conf ${tmp}/1
       sed -f ${outf} ${tmp}/1 > ${conf}/bareos-dir.conf
    fi
+   STARTDATE=`date +%R:%S`
    echo " "
    echo " "
-   echo " === Starting $TestName at `date +%R:%S` ==="
-   echo " === Starting $TestName at `date +%R:%S` ===" >> ${working}/log
-   echo " "
+   echo "=== $TestName: starting at $STARTDATE ==="
+   echo "=== $TestName: starting at $STARTDATE ===" >> ${working}/log
+   echo "="
+   echo "="
    export TestName
    export zstat
    export estat
@@ -78,7 +119,7 @@ start_test()
    rstat=0
    dstat=0
    # marker for cleanup()
-   date > ${working}/CLEANUPMARKER
+   echo "$STARTDATE" > ${working}/CLEANUPMARKER
 }
 
 require_root()
@@ -135,10 +176,16 @@ if test x${AUTOCHANGER} = x/dev/null ; then
 fi
 }
 
+is_debug()
+{
+  test "$debug" -gt 0
+  return $?
+}
+
 set_debug()
 {
    debug=$1
-   if test "$debug" -eq 1 ; then
+   if is_debug; then
      out="tee"
    else
      out="output"
@@ -151,9 +198,35 @@ print_debug()
    if test $? -eq 0; then
      echo "$*" >> $tmp/err.log
    fi
-   if test "$debug" -eq 1; then
-     echo "$*"
+   if is_debug; then
+     echo "$*" >&2
    fi
+}
+
+write_stdin_to_file()
+{
+  FILE="$1"
+
+  # empty file
+  >${FILE}
+
+  # read stdin and write to file
+  while read input; do
+    printf '%s\n' "$input" >>${FILE}
+  done
+}
+
+log_stdin()
+{
+  FILE="${1:-${tmp}/debug.log}"
+
+  # read stdin and write to file
+  while read input; do
+    # print if debug is set
+    print_debug "$input"
+    # write to log file
+    printf '%s\n' "$input" >>${FILE}
+  done
 }
 
 set_error()
@@ -175,6 +248,34 @@ check_files_written()
     fi
 }
 
+check_linked_against()
+{
+   LIB="$1"
+   BIN=${2:-${bin}/bareos-fd}
+
+   #
+   # See if library is linked against libfastlz
+   #
+   cnt=`ldd ${BIN} 2>/dev/null | grep -c ${LIB}`
+   if test ${cnt} -lt 1; then
+      print_debug "ERROR: ${BIN} not linked against ${LIB}."
+      return 1
+   fi
+
+   return 0
+}
+
+bls_files_verbose()
+{
+   local STORAGE=${1}
+   local VOLUME=${2}
+   # JobId is not yet evaluated
+   #local JOBID=${3}
+   #local FILENAME=${4}
+
+   ${bin}/bls "${STORAGE}" -V "${VOLUME}" -c ${conf} -v
+   return $?
+}
 
 
 check_compression()
@@ -193,7 +294,9 @@ check_compression()
    fi
 
    print_debug "Is ${FILENAME} compressed with ${COMPRESSION_DESCRIPTION} ?"
-   if ! ${bin}/bls "${STORAGE}" -V "${VOLUME}" -v | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "; then
+   if OUT=$(bls_files_verbose "${STORAGE}" "${VOLUME}" | grep -A1 "| ${FILENAME}$" | grep -i "| ${COMPRESSION_DESCRIPTION}, "); then
+      print_debug "$OUT"
+   else
       set_error "Use of compression algorithm ${COMPRESSION_DESCRIPTION} in job=${JOBID}, file=${FILENAME} not detected."
    fi
 }
@@ -241,6 +344,16 @@ run_bareos()
    else
      ${scripts}/bareos start >/dev/null 2>&1
    fi
+
+   # check daemons
+   DAEMON_STATUS_OUT=`${scripts}/bareos status`
+   DAEMON_STATUS=$?
+   print_debug "$DAEMON_STATUS_OUT"
+
+   if [ $DAEMON_STATUS -ne 0 ]; then
+      exit 1
+   fi
+ 
    run_bconsole
    return $?
 }
@@ -250,9 +363,9 @@ run_bconsole()
    bconsole_file=${1:-${tmp}/bconcmds}
    if [ -f $bconsole_file ]; then
       if test "$debug" -eq 1 ; then
-        cat $bconsole_file | ${bin}/bconsole
+        cat $bconsole_file | ${bin}/bconsole -c ${conf}
       else
-        cat $bconsole_file | ${bin}/bconsole 2>&1 >/dev/null
+        cat $bconsole_file | ${bin}/bconsole -c ${conf} 2>&1 >/dev/null
       fi
    fi
    return $?
@@ -261,23 +374,27 @@ run_bconsole()
 run_btape()
 {
    if test "$debug" -eq 1 ; then
-     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf}/bareos-sd.conf tape | tee ${tmp}/log1.out
+     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf} tape | tee ${tmp}/log1.out
    else
-     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf}/bareos-sd.conf tape >${tmp}/log1.out 2>&1
+     cat ${tmp}/bconcmds | ${bin}/btape -c ${conf} tape >${tmp}/log1.out 2>&1
    fi
 }
 
 run_bscan()
 {
    if test "$debug" -eq 1 ; then
-      ${bin}/bscan $* | tee ${tmp}/log.out
+      ${bin}/bscan -c ${conf} $* | tee ${tmp}/log.out
    else
-      ${bin}/bscan $* 2>&1 >/dev/null
+      ${bin}/bscan -c ${conf} $* 2>&1 >/dev/null
    fi
 }
 
 bscan_libdbi()
 {
+   # examples for LIBDBI settings:
+   # LIBDBI="dbdriver = "dbi:postgresql"; dbaddress = 127.0.0.1; dbport = 5432"
+   # LIBDBI="dbdriver = "dbi:sqlite"; dbaddress = 127.0.0.1; dbport = 0"
+
    B=`echo $LIBDBI | sed 's/;//' | sed 's/;//g'`
    B_D=`echo $B | awk '{print $3}'`
    B_t=`echo $B | awk '{print $6}'`
@@ -299,6 +416,46 @@ stop_bareos()
    else
       ${scripts}/bareos stop 2>&1 >/dev/null
    fi
+}
+
+change_files()
+{
+   #
+   # Use this function to modified some files after a full backup
+   # so that an incremental backup will see some modified files.
+   #
+   # Don't rely on specific filenames and paths,
+   # as these might change in the future.
+   #
+   DIR=${1:-${BackupDirectory-}}
+
+   if [ -z "$DIR" ]; then
+      print_debug "ERROR: change_files: no directory given."
+      return 1
+   fi
+
+   if [ ! -d "$DIR" ]; then
+      print_debug "ERROR: change_files($DIR): this is not a directory."
+      return 1
+   fi
+
+   for i in `seq 1 9`; do
+      mkdir -p ${DIR}/test$i
+      echo "testdata" >> ${DIR}/test$i/test$i.txt
+   done
+
+   return 0
+}
+
+get_file_size()
+{
+   FILE="$1"
+   SIZE=-1
+   if [ -e "$FILE" ]; then
+      SIZE=`du "$FILE" | cut -f 1`
+   fi
+   print_debug "$FILE: $SIZE bytes"
+   echo "$SIZE"
 }
 
 check_for_zombie_jobs()
@@ -392,17 +549,69 @@ check_log()
 
 check_restore_diff()
 {
-   dest=${1:-$src}
-   if test "$debug" -eq 1 ; then
-      $rscripts/diff.pl -s ${dest} -d ${tmp}/bareos-restores/${dest}
-      diff -ur ${dest} ${tmp}/bareos-restores/${dest}
-   else
-      diff -ur ${dest} ${tmp}/bareos-restores/${dest} 2>&1 >/dev/null
-   fi
+   # $dest will be set to
+   #   * the first function parameter, or
+   #   * ${BackupDirectory} (set by test), or
+   #   * ${src}
+   dest=${1:-${BackupDirectory:-$src}}
+
+   $rscripts/diff.pl -s ${dest} -d ${tmp}/bareos-restores/${dest}
    result=$?
+   OUT=`diff -ur ${dest} ${tmp}/bareos-restores/${dest}`
+   result=`expr "$result" + $?`
+   if is_debug; then
+       printf "%s\n" "$OUT"
+   fi
+
    if [ $result -ne 0 -a ${dstat:-0} -eq 0 ]; then
       dstat=$result
    fi
+
+   return $result
+}
+
+check_restore_only_files_diff()
+{
+   #
+   # all parameter have to be full path files.
+   # They will be check for differences to the restore location.
+   #
+   differences=0
+   for i in "$@"; do
+      if ! diff -ur "$i" "${tmp}/bareos-restores/$i"; then
+         differences=`expr $differences + 1`
+         dstat=1
+      fi
+   done
+
+   test $differences -eq 0
+   return $?
+}
+
+check_restore_files_diff()
+{
+   if ! check_restore_only_files_diff "$@"; then
+      return $?
+   fi
+
+   #
+   # check if only the files given as parameters have been restored
+   #
+
+   # get list of all restored files
+   RESTORED_FILES=`find ${tmp}/bareos-restores -type f | sed "s%^${tmp}/bareos-restores%%"`
+   # remove all files given as parameter from the list
+   for i in "$@"; do
+      RESTORED_FILES=`printf "%s" "$RESTORED_FILES" | grep -v "$i"`
+   done
+   if [ "$RESTORED_FILES" ]; then
+       print_debug "given files: $@"
+       print_debug "additional restored files: $RESTORED_FILES"
+       set_error "More files then given as parameter have been restored."
+       return 1
+   fi
+
+   return 0
 }
 
 check_restore_bin_diff()
@@ -436,6 +645,10 @@ check_restore_tmp_build_diff()
 #
 end_test()
 {
+   # End of test.
+   # Remove exit trap (set in start_test)
+   trap '' EXIT
+
    if [ x$notracedump != xyes ]; then
       cat ${working}/bareos.*.traceback 2>/dev/null
       cp -f  ${working}/bareos.*.traceback ${dumps} 2>/dev/null
@@ -445,20 +658,21 @@ end_test()
    if [ -f $tmp/err.log ]; then
       cat $tmp/err.log
    fi
+   ENDDATE=`date +%R:%S`
    if [ $estat != 0 ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
       echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: estat=$estat zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
       echo " "
       exit 1
    fi
    if [ $zstat != 0 ] ; then
       echo " "
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "  !!!!! $TestName failed!!! $ENDDATA !!!!! "
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
       echo " "
       exit 1
@@ -466,9 +680,9 @@ end_test()
    if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
       echo " "
       echo " "
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! "
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! "
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat"
-      echo "  !!!!! $TestName failed!!! `date +%R:%S` !!!!! " >>test.out
+      echo "  !!!!! $TestName failed!!! $ENDDATE !!!!! " >>test.out
       echo "   Status: zombie=$zstat backup=$bstat restore=$rstat diff=$dstat" >>test.out
       if [ $bstat != 0 -o $rstat != 0 ] ; then
          echo "  !!!!! Bad termination status       !!!!! "
@@ -479,16 +693,16 @@ end_test()
       fi
       echo "   Status: backup=$bstat restore=$rstat diff=$dstat"
       echo "   Status: backup=$bstat restore=$rstat diff=$dstat" >>test.out
-      echo "   Test owner of $SITE_NAME is $EMAIL"
-      echo "   Test owner of $SITE_NAME is $EMAIL" >>test.out
       echo " "
       exit 1
    else
-      echo "  ===== $TestName OK `date +%R:%S` ===== "
-      echo "  ===== $TestName OK `date +%R:%S` ===== " >>test.out
-      if test "$debug" -eq 0 ; then
-         ${rscripts}/cleanup
-      fi
+      echo "="
+      echo "="
+      echo "=== $TestName: OK at $ENDDATE === "
+      echo "=== $TestName: OK at $ENDDATE === " >>test.out
+      #if ! is_debug; then
+      #   ${rscripts}/cleanup
+      #fi
    fi
 }
 
@@ -504,7 +718,7 @@ copy_test_confs()
    ${rscripts}/copy-test-confs
 }
 
-disable_pluguins()
+disable_plugins()
 {
    for i in ${conf}/bareos-fd.conf; do
       sed 's/Plugin/#Plugin/' $i > $tmp/1
@@ -593,13 +807,14 @@ esac
 }
 
 
-# Save current directory
-cwd=`pwd`
 if test "x${REGRESS_DEBUG}" = "x1"; then
    set_debug 1
 else
    set_debug 0
 fi
+
+# Save current directory
+cwd=`pwd`
 
 # Source the configuration variables
 . ${cwd}/config
@@ -614,8 +829,14 @@ bin=${bin:-"$cwd/bin"}
 # Bareos scripts
 scripts=${scripts:-"$cwd/bin"}
 
+# Bareos Plugin Directory
+plugindir=${plugindir:-"$cwd/bin/plugins"}
+
 # Bareos conf files
 conf=${conf:-"$cwd/bin"}
+confdir="$conf"
+configs="$conf"
+BAREOS_CONFIG_DIR="$conf"
 
 # Regress scripts
 rscripts=${rscripts:-"$cwd/scripts"}
@@ -632,8 +853,11 @@ src=${src:-"$cwd/build"}
 # Temp source directory so we don't mess up $src
 tmpsrc=${tmpsrc:-"$cwd/tmp/build"}
 
+export BAREOS_CONFIG_DIR
 export bin
 export conf
+export confdir
+export configs
 export working
 export dumps
 export scripts
@@ -642,9 +866,18 @@ export tmp
 export src
 export tmpsrc
 
+export dirport=$BASEPORT
+export fdport=$(($BASEPORT + 1))
+export sdport=$(($BASEPORT + 2))
+export BAREOS_DIR_PORT=$dirport
+export BAREOS_FD_PORT=$fdport
+export BAREOS_SD_PORT=$sdport
+
+export PERLLIB="$cwd"
 bperl="perl -Mscripts::functions"
 export bperl
 
+mkdir -p ${working}
 mkdir -p ${tmp}
 touch ${tmp}/dir.out ${tmp}/fd.out ${tmp}/sd.out
 

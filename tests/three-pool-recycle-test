@@ -1,11 +1,10 @@
 #!/bin/sh
 #
-# This is Arno's test.  It uses three pools, three tapes, and
+# This test uses three pools, three tapes, and
 #  an autochanger. Note, the Director has four Pools in its
 #  conf:  Default, Full, Inc, and Scratch.  Default is used in the
 #  NightlySave job by default.  What is backed up is what
-#  is in ${cwd}/tmp/file-list, which is by default the Bareos
-#  source code (i.e. the build directory).
+#  is in ${cwd}/tmp/file-list.
 #
 #  Note, we use the virtual disk autochanger.
 #
@@ -22,7 +21,18 @@ scripts/prepare-disk-changer
 cp ${cwd}/bin/bareos-dir.conf ${cwd}/tmp/1
 sed "s%Client Run Before Job%#Client Run Before Job%" ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 

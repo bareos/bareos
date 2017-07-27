@@ -8,8 +8,8 @@
 # Of course, this implies that all tests must terminate normally
 # within the timeout period (900 seconds).
 #
-if [ -f bin/timelimit ]; then
-   WARNTIME=900 KILLTIME=50 bin/timelimit $*
+if [ -f ${bin}/timelimit ]; then
+   WARNTIME=900 KILLTIME=50 ${bin}/timelimit $*
    if [ $? != 0 ] ; then
       echo " "
       echo "=== Test $* timed out ==="

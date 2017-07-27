@@ -4,14 +4,40 @@
 #  - test bextract
 #  - with strip path
 #
-# Run a accurate backup of the Bareos build directory
+# Run a accurate backup 
 #   then restore it.
 #
 
 TestName="accurate-test"
 JobName=backup
 . scripts/functions
-$rscripts/cleanup
+
+p() {
+   echo "##############################################" >> ${cwd}/tmp/log1.out
+   echo "$*" >> ${cwd}/tmp/log1.out
+   echo "##############################################" >> ${cwd}/tmp/log2.out
+   echo "$*" >> ${cwd}/tmp/log2.out
+   if is_debug; then
+      echo "##############################################"
+      echo "$*"
+   fi
+}
+
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
 
 copy_test_confs
 cp -f $rscripts/bareos-dir.conf.accurate $conf/bareos-dir.conf
@@ -20,36 +46,20 @@ cp tmp/1 $conf/bareos-fd.conf
 
 change_jobname BackupClient1 $JobName
 
-p() {
-   echo "##############################################" >> ${cwd}/tmp/log1.out
-   echo "$*" >> ${cwd}/tmp/log1.out
-   echo "##############################################" >> ${cwd}/tmp/log2.out
-   echo "$*" >> ${cwd}/tmp/log2.out
-   if test "$debug" -eq 1 ; then
-      echo "##############################################"
-      echo "$*"
-   fi
-}
-
-# cleanup
-rm -rf ${cwd}/build/accurate.new
-rm -rf ${cwd}/build/accurate
-
-
 # add extra files
-mkdir -p ${cwd}/build/accurate
-mkdir -p ${cwd}/build/accurate/dirtest
-echo "test test" > ${cwd}/build/accurate/dirtest/hello
-echo "test test" > ${cwd}/build/accurate/xxx
-echo "test test" > ${cwd}/build/accurate/yyy
-echo "test test" > ${cwd}/build/accurate/zzz
-echo "test test" > ${cwd}/build/accurate/zzzzzz
-echo "test test" > ${cwd}/build/accurate/xxxxxx
-echo "test test" > ${cwd}/build/accurate/yyyyyy
-echo "test test" > ${cwd}/build/accurate/xxxxxxxxx
-echo "test test" > ${cwd}/build/accurate/yyyyyyyyy
-echo "test test" > ${cwd}/build/accurate/zzzzzzzzz
-echo ${cwd}/build > ${cwd}/tmp/file-list
+mkdir -p ${BackupDirectory}/build/accurate
+mkdir -p ${BackupDirectory}/build/accurate/dirtest
+echo "test test" > ${BackupDirectory}/build/accurate/dirtest/hello
+echo "test test" > ${BackupDirectory}/build/accurate/xxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyy
+echo "test test" > ${BackupDirectory}/build/accurate/zzz
+echo "test test" > ${BackupDirectory}/build/accurate/zzzzzz
+echo "test test" > ${BackupDirectory}/build/accurate/xxxxxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyyyyy
+echo "test test" > ${BackupDirectory}/build/accurate/xxxxxxxxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyyyyyyyy
+echo "test test" > ${BackupDirectory}/build/accurate/zzzzzzzzz
+echo ${BackupDirectory} > ${cwd}/tmp/file-list
 
 start_test
 
@@ -94,8 +104,8 @@ rm -rf ${cwd}/tmp/bareos-restores
 ################################################################
 p Now do a second backup after making few changes
 ################################################################
-rm ${cwd}/build/accurate/xxx  # delete a file
-rm ${cwd}/build/accurate/dirtest/hello
+rm ${BackupDirectory}/build/accurate/xxx  # delete a file
+rm ${BackupDirectory}/build/accurate/dirtest/hello
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -109,8 +119,8 @@ rm -rf ${cwd}/tmp/bareos-restores
 ################################################################
 p Now do a third backup after making few changes
 ################################################################
-rm ${cwd}/build/accurate/yyyyyy  # delete a file
-rmdir ${cwd}/build/accurate/dirtest
+rm ${BackupDirectory}/build/accurate/yyyyyy  # delete a file
+rmdir ${BackupDirectory}/build/accurate/dirtest
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -122,9 +132,9 @@ check_files_written ${cwd}/tmp/log1.out 3
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Now do a 4 backup after making few changes
+p "Now do a 4 backup after making few changes"
 ################################################################
-rm ${cwd}/build/accurate/zzzzzz  # delete a file
+rm ${BackupDirectory}/build/accurate/zzzzzz  # delete a file
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -138,7 +148,7 @@ rm -rf ${cwd}/tmp/bareos-restores
 ################################################################
 p Now do a 5 backup after making few changes
 ################################################################
-rm ${cwd}/build/accurate/zzzzzzzzz
+rm ${BackupDirectory}/build/accurate/zzzzzzzzz
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -150,9 +160,9 @@ check_files_written ${cwd}/tmp/log1.out 2
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Now do a backup after making few changes
+p "Now do a backup after making few changes"
 ################################################################
-touch ${cwd}/build/accurate/aaaaaa
+touch ${BackupDirectory}/build/accurate/aaaaaa
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -167,7 +177,7 @@ rm -rf ${cwd}/tmp/bareos-restores
 p Check with bls
 ################################################################
 
-$bin/bls -c $conf/bareos-sd.conf -V 'TestVolume001' FileStorage > $tmp/bls.out
+$bin/bls -c $conf -V 'TestVolume001' FileStorage > $tmp/bls.out
 grep -- '----' $tmp/bls.out | grep xxx > /dev/null
 if [ $? != 0 ] ; then
     print_debug "ERROR: Should find deleted files into $tmp/bls.out"
@@ -175,11 +185,11 @@ if [ $? != 0 ] ; then
 fi
 
 ################################################################
-p Now do a backup after making few changes
+p "Now do a backup after making few changes"
 ################################################################
 
 # some files will have disappear, others have their old mtime/ctime
-mv ${cwd}/build/accurate ${cwd}/build/accurate.new
+mv ${BackupDirectory}/build/accurate ${BackupDirectory}/build/accurate.new
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -219,11 +229,11 @@ check_restore_diff
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Now do an other test in differential mode + incremental
+p "Now do an other test in differential mode + incremental"
 ################################################################
 
 # make some changes
-mv ${cwd}/build/accurate.new ${cwd}/build/accurate
+mv ${BackupDirectory}/build/accurate.new ${BackupDirectory}/build/accurate
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
@@ -251,10 +261,10 @@ check_restore_diff
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Now do a backup after making few changes
+p "Now do a backup after making few changes"
 ################################################################
-rm ${cwd}/build/accurate/aaaaaa
-touch ${cwd}/build/accurate/bbbbbb
+rm ${BackupDirectory}/build/accurate/aaaaaa
+touch ${BackupDirectory}/build/accurate/bbbbbb
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -264,9 +274,9 @@ check_two_logs
 check_restore_diff
 
 ################################################################
-p Now do a backup after making few changes
+p "Now do a backup after making few changes"
 ################################################################
-mv ${cwd}/tmp/bareos-restores ${cwd}/build/accurate/
+mv ${cwd}/tmp/bareos-restores ${BackupDirectory}/build/accurate/
 
 run_bconsole
 check_for_zombie_jobs storage=File
@@ -274,7 +284,7 @@ check_for_zombie_jobs storage=File
 check_two_logs
 check_restore_diff
 
-rm -rf ${cwd}/tmp/bareos-restores ${cwd}/build/accurate/bareos-restores
+rm -rf ${cwd}/tmp/bareos-restores ${BackupDirectory}/build/accurate/bareos-restores
 
 #
 #################################################################
@@ -321,7 +331,7 @@ check_restore_diff
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Now do a test with other attributes: owner, gid, rights
+p "Now do a test with other attributes: owner, gid, rights"
 ################################################################
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -355,7 +365,7 @@ rm -rf ${cwd}/tmp/bareos-restores
 p Use the p option for verify
 ################################################################
 
-chmod 400 ${cwd}/build/accurate/yyy
+chmod 400 ${BackupDirectory}/build/accurate/yyy
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
@@ -384,7 +394,7 @@ check_files_written ${cwd}/tmp/log1.out 1
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Test strippath option
+p "Test strippath option"
 ################################################################
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -402,7 +412,7 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 # run incremental
-rm -f ${cwd}/build/accurate/yyy
+rm -f ${BackupDirectory}/build/accurate/yyy
 run_bconsole
 check_for_zombie_jobs storage=File
 

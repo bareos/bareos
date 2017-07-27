@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the Sparse option
+# Run a simple backup  using the Sparse option
 #   then restore it.
 #
 TestName="sparse-test"
@@ -9,7 +9,19 @@ JobName=SparseTest
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 start_test
 

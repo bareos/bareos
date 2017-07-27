@@ -55,7 +55,7 @@ Director {                            # define myself
   Password = "@dir_password@"         # Console password
   Messages = Daemon
   Auditing = yes
-  Secure Erase Command = "@scriptdir@/wipe-dir.sh"
+  Secure Erase Command = "@confdir@/wipe-dir.sh"
   # Enable the Heartbeat if you experience connection losses
   # (eg. because of your router or firewall configuration).
   # Additionally the Heartbeat can be enabled in bareos-sd and bareos-fd.
@@ -112,10 +112,10 @@ Job {
   # This creates an ASCII copy of the catalog
   # Arguments to make_catalog_backup.pl are:
   #  make_catalog_backup.pl <catalog-name>
-  RunBeforeJob = "@scriptdir@/make_catalog_backup.pl MyCatalog"
+  RunBeforeJob = "@confdir@/make_catalog_backup.pl MyCatalog"
 
   # This deletes the copy of the catalog
-  RunAfterJob  = "@scriptdir@/delete_catalog_backup"
+  RunAfterJob  = "@confdir@/delete_catalog_backup"
 
   # This sends the bootstrap via mail for disaster recovery.
   # Should be sent to another system, please change recipient accordingly
@@ -250,10 +250,7 @@ Storage {
 #
 Catalog {
   Name = MyCatalog
-  # Uncomment the following lines if you want the dbi driver
-  #@uncomment_dbi@ dbdriver = "dbi:@DEFAULT_DB_TYPE@"; dbaddress = 127.0.0.1; dbport = @db_port@
-  #dbdriver = "@DEFAULT_DB_TYPE@"
-  dbdriver = "@db_engine@"
+  dbdriver = "@db_type@"
   dbname = "@db_name@"
   dbuser = "@db_user@"
   dbpassword = "@db_password@"

@@ -1,15 +1,20 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup using the compressed option
 #   then backup a second time and finally restore it
 #
 TestName="exclude-dir-test"
 JobName=exclude-dir
-. scripts/functions
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
 
-cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
+
 cat >> $conf/bareos-dir.conf <<EOF
 FileSet {
   Name = "ExcludeDir"
@@ -19,7 +24,7 @@ FileSet {
       signature=MD5
       compression=GZIP
     }
-    File = "$cwd/build"
+    File = "$BackupDirectory"
   }
   Include {
     Exclude Dir Containing = "bareos-dir.conf"
@@ -29,18 +34,26 @@ FileSet {
     }
     File = "$conf"
     File = "$rscripts"
-    File = "$cwd/build/po"
+    File = "${BackupDirectory}/build/po"
   }
 }
 EOF
 sed 's/FileSet="CompressedSet"/FileSet=ExcludeDir/' $conf/bareos-dir.conf >$tmp/1
 cp -f $tmp/1 $conf/bareos-dir.conf
 change_jobname CompressedTest $JobName
-start_test
 
-mkdir -p ${cwd}/build/src/xxtestdir
-touch ${cwd}/build/src/xxtestdir/.nobkp
-cp ${cwd}/build/src/dird/*.c ${cwd}/build/src/xxtestdir
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+mkdir -p ${BackupDirectory}/build/po
+echo "test" > ${BackupDirectory}/build/po/fr.po
+mkdir -p ${BackupDirectory}/build/src/xxtestdir
+touch ${BackupDirectory}/build/src/xxtestdir/.nobkp
+cp ${BackupDirectory}/*.c ${BackupDirectory}/build/src/xxtestdir
+
+
+start_test
 
 cat >tmp/bconcmds <<END_OF_DATA
 @$out /dev/null
@@ -68,8 +81,8 @@ stop_bareos
 check_two_logs
 
 # should be ok if we remove the xxtestdir
-rm -rf ${cwd}/build/src/xxtestdir
-check_restore_diff
+rm -rf ${BackupDirectory}/build/src/xxtestdir
+check_restore_diff ${BackupDirectory}
 
 grep '/xxtestdir' $tmp/log3.out > /dev/null
 if [ $? = 0 ]; then

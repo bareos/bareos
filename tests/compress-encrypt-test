@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup with encryption and compression of the Bareos build directory
+# Run a simple backup with encryption and compression
 #   then verify the signatures.
 #
 TestName="compressed-encrypt-test"
@@ -9,7 +9,17 @@ JobName=CompressedTest
 
 scripts/cleanup
 scripts/copy-crypto-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 start_test
 

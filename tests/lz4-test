@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup using the compressed option
 #   then restore it.
 #
 TestName="lz4-test"
@@ -10,19 +10,25 @@ JobName=lz4
 #
 # See if library is linked against libfastlz
 #
-cnt=`ldd ${bin}/libbareos.so 2>/dev/null | grep -c libfastlz`
-if test ${cnt} -lt 1; then
+if ! check_linked_against fastlz; then
    echo "$TestName skipped: not linked for fastlz compression"
    exit 0
 fi
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
 
-# set compatible mode for filedaemon so that lz4hc is allowed
-cp ${scripts}/bareos-fd.conf ${scripts}/bareos-fd.conf.tmp
-sed  -e 's#FileDaemon {.*#FileDaemon { compatible=no#' < ${scripts}/bareos-fd.conf.tmp > ${scripts}/bareos-fd.conf
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 

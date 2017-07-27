@@ -4,7 +4,7 @@
 #
 # This test will wait forever whilst the last job waits for an appendable
 # volume.
-# You can run ./bin/bconsole -c bin/bconsole.conf from within the regress
+# You can run ./${bin}/bconsole -c ${conf}/bconsole.conf from within the regress
 # directory, and use 'list media' to see where the volumes have ended up, as
 # well as any other commands you like.
 #
@@ -24,17 +24,25 @@
 #   (that is now in the wrong pool) to 'Used'.
 
 TestName="broken-media-bug-2-test"
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
 . scripts/functions
 
-cwd=`pwd`
 scripts/cleanup
+
 /bin/cp -f scripts/broken-media-bug-2-bareos-dir.conf bin/bareos-dir.conf
 /bin/cp -f scripts/broken-media-bug-2-bareos-sd.conf bin/bareos-sd.conf
 /bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
 /bin/cp -f scripts/test-console.conf bin/bconsole.conf
-hugefile=${cwd}/build/hugefile
+hugefile=${BackupDirectory}/hugefile
 hugefilesize=300
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
 
 start_test
 

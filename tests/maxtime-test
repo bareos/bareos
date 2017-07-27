@@ -10,11 +10,20 @@ JobName=backup
 
 copy_test_confs
 
-rm -f ${cwd}/tmp/RUN*log
-cp -f ${cwd}/scripts/bareos-dir.conf.maxtime ${cwd}/bin/bareos-dir.conf
+cp -f ${cwd}/scripts/bareos-dir.conf.maxtime ${conf}/bareos-dir.conf
 WHEN=`date '+%Y-%m-%d %H:%M:%S'`
 
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 
@@ -24,7 +33,7 @@ messages
 @$out ${cwd}/tmp/log1.out
 label volume=TestVolume001 pool=PoolA
 @$out ${cwd}/tmp/RUN_MAXTIME.log
-@# no media => have to wait
+@# no media => have to wait (MaxWaitTime=30sec)
 run job=RUN_MAXWAITTIME comment="Should fail" pool=Default yes
 @sleep 2
 @# storage is used by RUN_MAXWAITTIME => have to wait
@@ -32,7 +41,7 @@ run job=RUN_MAXSTARTDELAY comment="Should fail" pool=PoolA when="$WHEN" yes
 @sleep 2
 @# storage is used by the first MAXWAITTIME, but should work
 run job=RUN_MAXWAITTIME comment="Should work" pool=PoolA yes
-@sleep 30
+@sleep 120
 label volume=TestVolume002 pool=Default
 mount
 @sleep 2
@@ -46,15 +55,13 @@ st dir
 quit
 END_OF_DATA
 
-(mkfifo ${cwd}/tmp/fifo
- mkfifo ${cwd}/tmp/fifo2
- mkfifo ${cwd}/tmp/fifo3) 2> /dev/null
+mkfifo ${tmp}/fifo1
+mkfifo ${tmp}/fifo2
+mkfifo ${tmp}/fifo3
 
 run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
-
-rm -f ${cwd}/tmp/fifo ${cwd}/tmp/fifo2 ${cwd}/tmp/fifo3
 
 dstat=0
 bstat=0
@@ -62,9 +69,8 @@ rstat=0
 touch ${cwd}/tmp/log2.out
 
 grep -e '1: Fatal error: Max wait time exceeded. Job canceled.' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
-if [ $? -eq 0 ]
-then
-    [ "$debug" = 1 ] && echo MAXWAITTIME ok
+if [ $? -eq 0 ]; then
+    print_debug "MAXWAITTIME ok"
 else
    echo "MAXWAITTIME in error"
    bstat=1
@@ -76,31 +82,27 @@ f=$?
 grep -e 'NEVER start this' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
 s=$?
 
-if [ $f -eq 0 -a $s -ne 0 ]
-then
-    [ "$debug" = 1 ] && echo MAXSTARTDELAY ok
+if [ $f -eq 0 -a $s -ne 0 ]; then
+   print_debug "MAXSTARTDELAY ok"
 else
    echo "MAXSTARTDELAY in error"
    bstat=1
 fi
 
 grep -e '4: Fatal error: Max run time exceeded. Job canceled.' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
-if [ $? -eq 0 ]
-then
-    [ "$debug" = 1 ] && echo MAXRUNTIME ok
+if [ $? -eq 0 ]; then
+   print_debug "MAXRUNTIME ok"
 else
    echo "MAXRUNTIME in error"
    bstat=1
 fi
 
 grep 'Termination: *Backup OK' ${cwd}/tmp/RUN_MAXTIME.log >/dev/null
-if [ $? -eq 0 ]
-then
-    [ "$debug" = 1 ] && echo MAXRUNTIME2 ok
+if [ $? -eq 0 ]; then
+   print_debug "MAXRUNTIME2 ok"
 else
    echo "MAXRUNTIME2 in error"
    bstat=1
 fi
-
 
 end_test

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup. Then create some
 #   new files, do an Incremental and restore those two files.
 #
 TestName="incremental-tape"
@@ -11,24 +11,28 @@ require_tape_drive
 
 scripts/cleanup-tape
 scripts/copy-tape-confs
-
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-if test ! -d ${cwd}/tmp/build ; then
-   mkdir -p ${cwd}/tmp/build
-fi
-cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
-cd ${cwd}/tmp
-echo "${cwd}/tmp/build/ficheriro1.txt" >restore-list
-echo "${cwd}/tmp/build/ficheriro2.txt" >>restore-list
-cd ${cwd}
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+echo "${BackupDirectory}/ficheriro1.txt" >${tmp}/restore-list
+echo "${BackupDirectory}/ficheriro2.txt" >>${tmp}/restore-list
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
-@$out   ${cwd}/tmp/log1.out
+@$out ${cwd}/tmp/log1.out
 label storage=tape volume=TestVolume001 slot=0 pool=Default
 run job=$JobName yes
 wait
@@ -39,20 +43,21 @@ END_OF_DATA
 run_bareos
 check_for_zombie_jobs storage=tape
 
-echo "ficheriro1.txt" >${cwd}/tmp/build/ficheriro1.txt
-echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
+
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
-@$out   ${cwd}/tmp/log1.out
+@$out ${cwd}/tmp/log1.out
 run level=Incremental job=$JobName yes
 wait
 messages
 @#
 @# now do a restore
 @#
-@$out   ${cwd}/tmp/log2.out
+@$out ${cwd}/tmp/log2.out
 restore where=${cwd}/tmp/bareos-restores storage=tape
 7
 <${cwd}/tmp/restore-list
@@ -66,12 +71,8 @@ END_OF_DATA
 run_bconsole
 check_for_zombie_jobs storage=tape
 stop_bareos
-
-#
-# Delete .c files because we will only restored the txt files
-#
-rm -f ${cwd}/tmp/build/*.c
-
 check_two_logs
-check_restore_tmp_build_diff
+
+check_restore_files_diff `cat ${tmp}/restore-list`
+
 end_test

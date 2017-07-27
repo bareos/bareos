@@ -17,7 +17,16 @@ CLIENT=2drive2disk
 change_jobname NightlySave $JobName
 start_test
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 # Turn off Prefer Mounted Volumes so we use 2 drives
 outf="${cwd}/tmp/sed_tmp"

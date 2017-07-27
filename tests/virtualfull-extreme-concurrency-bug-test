@@ -4,14 +4,16 @@
 #  deadlock.  First create a lot of backups, then run
 #  virtual fulls on them.
 #
+# FIXME: not working
+#
 TestName="virtualfull-extreme-concurrency-bug-test"
 . scripts/functions
 
 # Setup conf files
 scripts/cleanup
 scripts/copy-test-confs
-cp scripts/virtualfull-extreme-bacula-dir.conf bin/bacula-dir.conf
-cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
+cp scripts/virtualfull-extreme-bacula-dir.conf ${conf}/bareos-dir.conf
+#cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
 
 # we have 20 distinct jobs. Each of those is run once at full level,
 # then four times incremental, each time adding data so we end up with
@@ -19,15 +21,17 @@ cp scripts/migrate-bacula-sd.conf bin/bacula-sd.conf
 # We should have jobs where several virtual fulls compete for volumes.
 
 
-# Backup Bacula stored+objects directory
-# Backup director
-rm -rf ${tmpsrc}
-mkdir ${tmpsrc}
-echo "${tmpsrc}" >${tmp}/file-list
-for i in `ls ${src}/src/stored/*` ; do
-  cp -p $i ${tmpsrc}
-done
-# Get path to temp source files to restore
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 
@@ -41,7 +45,7 @@ messages
 END_OF_DATA
 
 # Start Bacula and do label
-run_bacula
+run_bareos
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @output /dev/null
@@ -81,12 +85,11 @@ END_OF_DATA
 
 # add more files to backup source, so following incrementals
 # have something to back up
-for a in wx-console filed lib tools ; do
-  #echo ">>> adding ${a} to backup"
-  for i in `ls ${src}/src/${a}/*` ; do
-    cp -p "$i" ${tmpsrc}  >/dev/null 2>&1
-  done
-  #echo "now $(ls ${tmpsrc}|wc -l) files to back up"
+for a in `seq 11 14`; do
+   change_files
+   #echo ">>> adding ${a} to backup"
+   date > ${BackupDirectory}/run-01-$a.txt
+   #echo "now $(ls ${BackUpDirectory}|wc -l) files to back up"
 
   cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out a
@@ -163,7 +166,7 @@ run_bconsole
 for a in `seq 1 12` ; do
   #echo ">>> adding files to backup: ${a}"
   for b in `seq 1 150` ; do
-    date > "${tmpsrc}/run${a}-${b}.data"
+    date > "${BackupDirectory}/run${a}-${b}.data"
   done
   #echo "now $(ls ${tmpsrc}|wc -l) files to back up"
 
@@ -197,9 +200,6 @@ END_OF_DATA
 # Run Backup Jobs
   run_bconsole
 done
-
-# restore file list
-ls ${tmpsrc}/* >${tmp}/restore-list
 
 # now do the final virtual full levels.
 #echo ">>>> Now the 2nd VFull"
@@ -251,8 +251,8 @@ END_OF_DATA
 # Do restore
 run_bconsole
 sleep 2
-stop_bacula
+stop_bareos
 
 check_two_logs
-check_restore_tmp_build_diff
+check_restore_diff
 end_test

@@ -9,7 +9,7 @@ Director {                            # define myself
   QueryFile = "@scriptdir@/query.sql"
   WorkingDirectory = "@working_dir@"
   PidDirectory = "@piddir@"
-  PluginDirectory = "@sbindir@"
+  PluginDirectory = "@plugindir@"
   Maximum Concurrent Jobs = 51
   Heartbeat Interval = 330
   Password = "pNvX1WiXnwv2C/F7E52LGvw6rKjbbPvu2kyuPa9pVaL3"         # Console password
@@ -680,7 +680,7 @@ Pool {
 Job {
   Name = "RestoreFiles"
   Type = Restore
-  Client = Fake
+  Client = HotV01-fd
   FileSet = "Full Set"
   Storage = File
   Messages = Standard
@@ -704,6 +704,7 @@ FileSet {
 # Generic catalog service
 Catalog {
   Name = MyCatalog
+  dbdriver = "@db_type@"
   dbname = @db_name@; user = @db_user@; password = "@db_password@"
 }
 

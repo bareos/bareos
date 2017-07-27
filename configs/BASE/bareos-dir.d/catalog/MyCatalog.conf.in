@@ -1,7 +1,6 @@
 Catalog {
   Name = MyCatalog
-  #dbdriver = "@DEFAULT_DB_TYPE@"
-  #dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  dbdriver = "@db_type@"
   dbname = "@db_name@"
   dbuser = "@db_user@"
   dbpassword = "@db_password@"

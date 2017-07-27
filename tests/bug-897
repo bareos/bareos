@@ -17,14 +17,23 @@ rm -f ${cwd}/tmp/RUN_FD_FAILED
 
 /bin/cp -f scripts/bareos-dir.conf.testrunscript bin/bareos-dir.conf
 
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
-echo "${cwd}/tmp/fifo" >> ${cwd}/tmp/file-list
-mkfifo "${cwd}/tmp/fifo"
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+echo "${tmp}/fifo" >> ${tmp}/file-list
+mkfifo "${tmp}/fifo"
 
 # use this to be able to cancel a running job
 (
-  cat > ${cwd}/tmp/fifo < /dev/zero
-  cat > ${cwd}/tmp/fifo < /dev/zero
+  cat > ${tmp}/fifo < /dev/zero
+  cat > ${tmp}/fifo < /dev/zero
 ) &
 
 start_test

@@ -18,13 +18,18 @@ scripts/copy-testa-confs
 /bin/cp -f scripts/testb-bareos-dir.conf bin/bareos-dir.conf
 
 echo "${cwd}/tmp/largefile" >${cwd}/tmp/file-list
-# Create 56MB file with random data
-echo "Creating a 56MB file with random data ..."
-dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=55000 >/dev/null 2>&1
-echo "largefile created"
-
 change_jobname MultiVol $JobName
+
+
 start_test
+
+# Create 56MB file with random data
+print_debug "Creating a 56MB file with random data ..."
+if dd if=/dev/urandom of=${cwd}/tmp/largefile bs=1024 count=55000 >/dev/null 2>&1; then
+   print_debug "largefile created"
+fi
+
+
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null

@@ -12,7 +12,7 @@
 FileDaemon {                          # definition of myself
   Name = @hostname@-fd
   Maximum Concurrent Jobs = 20
-  Secure Erase Command = "@scriptdir@/wipe-fd.sh"
+  Secure Erase Command = "@confdir@/wipe-fd.sh"
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
   # if "Plugin Names" is defined, only the specified plugins will be loaded,

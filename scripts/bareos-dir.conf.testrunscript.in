@@ -5,8 +5,6 @@
 #   file or directory names in the Include directive of the
 #   FileSet resource.
 #
-#  For Bareos release 1.39.27 (24 October 2006) -- debian testing/unstable
-#
 #  You might also want to change the default email address
 #   from root to your address.  See the "mail" and "operator"
 #   directives in the Messages resource.
@@ -279,7 +277,10 @@ Storage {
 Catalog {
   Name = MyCatalog
   @libdbi@
-  dbname = @db_name@; user = @db_user@; password = "@db_password@"
+  dbdriver = "@db_type@"
+  dbname = @db_name@
+  user = @db_user@
+  password = "@db_password@"
 }
 
 

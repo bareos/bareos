@@ -6,4 +6,4 @@
 /bin/cp -f scripts/bareos-sd-migration.conf bin/bareos-sd.conf
 /bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
 /bin/cp -f scripts/test-console.conf bin/bconsole.conf
-/bin/cp -f scripts/test-console.conf bin/bat.conf
+

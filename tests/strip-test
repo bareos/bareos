@@ -9,17 +9,23 @@ JobName=stripTest
 scripts/cleanup
 scripts/copy-strip-confs
 
-# Make a copy of build/src/dird to be backed up
-rm -rf ${tmp}/$$-strip
-mkdir -p ${tmp}/$$-strip
-cp -rpf ${cwd}/build/src/console/ ${tmp}/$$-strip/
-echo "${tmp}/$$-strip" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 # Now, strip the first 4 parts of the path (which is what
 #   the backup will do and put the result in rpath
-echo "${tmp}/$$-strip/" >${tmp}/1
-rpath=`cut -f5- -d'/' ${tmp}/1`
-#echo "========= $rpath"
+rpath="`echo ${BackupDirectory} | cut -f5- -d'/'`"
+print_debug "orig path =$BackupDirectory"
+print_debug "strip path=$rpath"
 
 change_jobname NightlySave $JobName
 start_test
@@ -69,12 +75,10 @@ stop_bareos
 check_two_logs
 #
 if test "$debug" -eq 1 ; then
-   diff -ur ${tmp}/$$-strip/ ${tmp}/bareos-restores/${rpath}
+   diff -ur ${BackupDirectory} ${tmp}/bareos-restores/${rpath}
 else
-   diff -r ${tmp}/$$-strip/ ${tmp}/bareos-restores/${rpath} 2>&1 >/dev/null
+   diff -r ${BackupDirectory} ${tmp}/bareos-restores/${rpath} 2>&1 >/dev/null
 fi
 dstat=$?
-
-rm -rf ${tmp}/$$-strip
 
 end_test

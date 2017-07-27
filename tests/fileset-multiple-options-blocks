@@ -19,7 +19,7 @@ VolumeName=TestVolume001
 # Directory to backup.
 # This example uses a subdirectory of the bareos source/build directory,
 # that contains some file but isn't to large.
-BackupDirectory="${tmp}/data/"
+BackupDirectory="${tmp}/data"
 
 # Remove old configuration, working and tmp files. Setup the database.
 cleanup

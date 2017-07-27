@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then restore it.
 #
 

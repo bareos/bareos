@@ -39,7 +39,7 @@ copy_configs
 
 # create test data
 MEGABYTE=1000000
-dd if=/dev/zero of=${cwd}/tmp/testdata bs=$MEGABYTE count=10
+dd if=/dev/zero of=${cwd}/tmp/testdata bs=$MEGABYTE count=10 >/dev/null
 
 echo "${cwd}/tmp/testdata" >${cwd}/tmp/file-list
 start_test

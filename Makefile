@@ -9,27 +9,24 @@
 # Then edit config and set the value for what are appropriate for you.
 #
 
-first_rule: all
+nothing:
 
-all:
-
-setup: bareos sed
+setup: prepare bareos sed
 
 #
 # Some machines cannot handle the sticky bit and other garbage that
 #  is in weird-files, so we load and run it only on Linux machines.
 #
-bareos: all
-	@rm -rf bin build weird-files tmp
-	@rm -f w.tar.gz w.tar
-	@cp weird-files.tar.gz w.tar.gz
-	@-gunzip -f w.tar.gz
-	@-tar xf w.tar
-	@rm -f w.tar.gz w.tar
-	@rm -rf tmp working dumps
-	mkdir tmp working dumps
+bareos: prepare
 	echo "Doing: scripts/setup"
 	scripts/setup
+
+prepare:
+	@rm -rf weird-files
+	# ignore errors
+	tar -xzf weird-files.tar.gz || true
+	@rm -rf tmp working dumps
+	mkdir tmp working dumps
 
 sed:
 	echo "Doing: scripts/do_sed"
@@ -46,6 +43,32 @@ full_test:
 # These tests require you to run as root
 root_test:
 	./all-root-tests
+
+DEST := $(DESTDIR)/var/lib/bareos/bareos-regress
+install:
+	mkdir -p $(DEST)
+	# directories
+	rsync -a configs $(DEST)
+	rsync -a data $(DEST)
+	rsync -a scripts $(DEST)
+	rsync -a tests $(DEST)
+	# files
+	rsync -a \
+		CTestCustom.cmake \
+		DartConfiguration.tcl* DartTestfile.txt* \
+		Makefile all-* \
+		debug do_* \
+		encrypt-* endtime experimental-* \
+		make-ctest-adds	misc-tests \
+		nightly-* prototype.conf \
+		rtest run* \
+		startover_libdbi.sh starttime tape \
+		weird-files.tar.gz \
+		$(DEST)
+	mkdir -p $(DEST)/bin
+	mkdir -p $(DEST)/dumps
+	mkdir -p $(DEST)/tmp
+	mkdir -p $(DEST)/working
 
 clean:
 	scripts/cleanup

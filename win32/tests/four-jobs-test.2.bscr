@@ -1,7 +1,0 @@
-@output nul
-messages
-@@out@  tmp/log1.out
-run job=@JobName@ yes
-wait
-messages
-quit

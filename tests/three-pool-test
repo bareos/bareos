@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory. Create three
+# Run a simple backup . Create three
 #   tapes, each in a different pool, then run two jobs both of which
 #   want the tape that is not loaded.  Note, they both have
 #   prefers non-mounted tapes.  This should expose bug #801
@@ -16,7 +16,19 @@ scripts/copy-2disk-drive-confs
 scripts/prepare-disk-changer
 CLIENT=2drive2disk
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 change_jobname NightlySave $JobName
 start_test
 

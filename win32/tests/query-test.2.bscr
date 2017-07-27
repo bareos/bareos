@@ -1,9 +1,0 @@
-@output nul
-messages
-@@out@ tmp/log1.out
-@# Force differental on the second Volume
-update volume=TestVolume001 VolStatus=Used
-run level=differental job=@JobName@ yes
-wait
-messages
-@output

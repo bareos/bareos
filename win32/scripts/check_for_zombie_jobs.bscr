@@ -1,8 +1,0 @@
-@output tmp/dir.out
-status dir
-@output tmp/fd.out
-status client
-@output tmp/sd.out
-status @storage@
-@output
-quit

@@ -1,5 +1,6 @@
 Director {                            # define myself
   Name = bareos-dir
+  Dir Port = @dirport@
   QueryFile = "@scriptdir@/query.sql"
   Maximum Concurrent Jobs = 10
   Password = "@dir_password@"         # Console password

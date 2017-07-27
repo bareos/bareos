@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory without
+# Run a simple backup  without
 # md5 signature then restore it.
 #
 TestName="no-chksum-test"
@@ -17,8 +17,8 @@ scripts/copy-confs
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" > $outf
 echo "s%  signature =%# signature =%g" >> $outf
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f $outf $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f $outf $tmp/1 >${conf}/bareos-dir.conf
 
 change_jobname BackupClient1 $JobName
 start_test
@@ -45,16 +45,16 @@ run_bconsole
 #
 # Now do a second backup after making a few changes
 #
-touch ${cwd}/build/po/fr.po
+touch ${BackupDirectory}/fr.po
 #
 
 run_bconsole
 
-dd if=/dev/zero of=$cwd/build/bigfile count=500000 > /dev/null
+dd if=/dev/zero of=$BackupDirectory/bigfile count=500000 > /dev/null
 
 run_bconsole
 
-rm -f $cwd/build/bigfile
+rm -f $BackupDirectory/bigfile
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null

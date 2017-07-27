@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then migrate it
+# Run a simple backup  then migrate it
 #   to another device, then see how prune code handle that
 #
 # This script uses the virtual disk autochanger
@@ -13,7 +13,19 @@ JobName=MigrationJobSave
 scripts/cleanup
 scripts/copy-migration-confs
 scripts/prepare-disk-changer
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 change_jobname NightlySave $JobName
 dircfg=$conf/bareos-dir.conf

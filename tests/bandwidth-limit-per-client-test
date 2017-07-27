@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the Sparse option then restore it.
+# Run a simple backup using the Sparse option then restore it.
 #
 TestName="bandwidth-limit-per-client-test"
 JobName=BackupClient1
@@ -10,7 +10,7 @@ scripts/cleanup
 scripts/copy-test-confs
 
 rm -f bin/bareos-dir.conf
-/bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf bin/bareos-dir.conf
+/bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf ${configs}/bareos-dir.conf
 
 #
 # create test data
@@ -56,3 +56,4 @@ else
 fi
 
 end_test
+

@@ -3,20 +3,28 @@
 . scripts/functions
 
 #
-# Run a simple backup of the Bareos build directory with TLS
+# Run a simple backup  with TLS
 #   communications code enabled then restore it.
 #
 TestName="tls-client-initiated-connection-backup-test"
 Client=connectingclient-fd
 JobName=backup-connectingclient-fd
-BackupDirectory="${cwd}/build/autoconf/"
 
 cleanup
 
 copy_configs
 
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
 echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 

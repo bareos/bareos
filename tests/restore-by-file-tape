@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   to a tape where the maximum tape file size is set to 1M
 #   then restore a few files from it.  Note, by setting the maximum
 #   file size to 1M, it runs very slow. There are about 64 files that
@@ -15,13 +15,27 @@ require_tape_drive
 scripts/cleanup-tape
 scripts/copy-tape-confs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-sed s%\^%${cwd}% ${cwd}/scripts/flist | sort | uniq >${cwd}/tmp/restore2-list
 
 cp ${cwd}/bin/bareos-sd.conf ${cwd}/tmp/1
 sed "s%# Maximum File Size%  Maximum File Size%" ${cwd}/tmp/1 >${cwd}/bin/bareos-sd.conf
 
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+number_of_files_to_restore=5
+find "${BackupDirectory}" -type f | head -n ${number_of_files_to_restore} | sort | uniq >${tmp}/restore-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -36,7 +50,7 @@ messages
 @# now do a restore
 @#
 @$out   ${cwd}/tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores storage=tape file=<${cwd}/tmp/restore2-list
+restore where=${cwd}/tmp/bareos-restores storage=tape file=<${cwd}/tmp/restore-list
 yes
 wait
 messages
@@ -52,12 +66,7 @@ dstat=0
 # We need to stop and start Bareos to
 #  test appending to a previously written tape
 #
-for i in `cat ${cwd}/tmp/restore2-list`; do
-   diff $i ${cwd}/tmp/bareos-restores$i
-   if [ $? != 0 ] ; then
-      dstat=1
-   fi
-done
+check_restore_files_diff `cat ${tmp}/restore-list`
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -72,7 +81,7 @@ messages
 @$out   ${cwd}/tmp/log2.out
 restore where=${cwd}/tmp/bareos-restores
 7
-<${cwd}/tmp/restore2-list
+<${cwd}/tmp/restore-list
 
 yes
 wait
@@ -90,13 +99,6 @@ stop_bareos
 
 check_two_logs
 
-scripts/check_for_zombie_jobs storage=tape
-stop_bareos
-for i in `cat ${cwd}/tmp/restore2-list`; do
-   diff $i ${cwd}/tmp/bareos-restores$i
-   if [ $? != 0 ] ; then
-      dstat=1
-   fi
-done
+check_restore_files_diff `cat ${tmp}/restore-list`
 
 end_test

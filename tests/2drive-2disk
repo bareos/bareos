@@ -1,15 +1,25 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup then create some
 #   new files, do an Incremental and restore those two files.
 #
 # This script uses the virtual disk autochanger and two drives
 #
 TestName="2drive-2disk"
 JobName="2drive2disk"
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
 . scripts/functions
 
 scripts/cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 scripts/copy-2disk-drive-confs
 scripts/prepare-disk-changer
 
@@ -18,7 +28,8 @@ CLIENT=2drive2disk
 change_jobname localhost-fd $JobName
 start_test
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 # Turn off Prefer Mounted Volumes so we use 2 drives
 outf="${cwd}/tmp/sed_tmp"

@@ -12,11 +12,20 @@ JobName=backup
 
 copy_test_confs
 
-rm -f ${cwd}/tmp/RUN*log
 cp -f ${cwd}/scripts/bareos-dir.conf.maxruntime ${cwd}/bin/bareos-dir.conf
 WHEN=`date '+%Y-%m-%d %H:%M:%S'`
 
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 
@@ -43,8 +52,6 @@ END_OF_DATA
 run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
-
-rm -f ${cwd}/tmp/fifo ${cwd}/tmp/fifo2 ${cwd}/tmp/fifo3
 
 dstat=0
 bstat=0

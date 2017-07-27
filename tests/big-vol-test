@@ -10,10 +10,18 @@ JobName=bigvol
 
 scripts/cleanup
 scripts/copy-test-confs
-cwd=`pwd`
-echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -34,15 +42,13 @@ check_for_zombie_jobs storage=File
 #
 # Now increase the size of the Volume using gigaslam
 #
-cd ${cwd}/tmp
 # make big file
 size=5200000000
-${cwd}/bin/grow TestVolume001 ${size}
+${bin}/grow ${tmp}/TestVolume001 ${size}
 if [ $? != 0 ]; then
-   echo "Execute of ${cwd}/bin/grow failed."
+   echo "Execute of ${bin}/grow failed."
    exit 1
 fi
-cd ${cwd}
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a backup of the build directory but force it to have
+# Run a backup but force it to have
 #   a comm error, and check that it restarts correctly.
 #
 TestName="restart-base-job-test"
@@ -9,7 +9,19 @@ JobName=RestartJobWithBase
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 change_jobname NightlySave $JobName
 
@@ -25,7 +37,7 @@ label storage=File volume=TestVolume001
 run job=$JobName level=Base yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/fr.po"
 setdebug level=0 trace=0 hangup=100 client
 setdebug level=200 trace=1 dir
 run job=$JobName yes

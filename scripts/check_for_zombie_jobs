@@ -14,7 +14,7 @@ else
     client="client"
 fi
 
-${bin}/bconsole -c ${scripts}/bconsole.conf <<END_OF_DATA 2>&1 >/dev/null
+${bin}/bconsole -c ${conf}/bconsole.conf <<END_OF_DATA 2>&1 >/dev/null
 @output ${tmp}/dir.out
 status dir
 @output ${tmp}/fd.out

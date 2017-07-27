@@ -1,8 +1,5 @@
 #!/bin/sh
 ./starttime
-if [ ! -f bin/tape_options ] ; then
-  touch bin/tape_options
-fi
 echo " " >test.out
 hostname >>test.out
 echo " " >>test.out

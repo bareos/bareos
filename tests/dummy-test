@@ -182,5 +182,5 @@ check_two_logs
 # Delete .c files because we will only restored the txt files
 #
 rm -f ${tmpsrc}/*.c
-check_restore_tmp_build_diff
+check_restore_diff "${tmpsrc}"
 end_test

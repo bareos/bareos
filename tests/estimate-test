@@ -1,13 +1,28 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   then restore it.
 #
 TestName="estimate-test"
 . scripts/functions
-JobName=BackupClient1
+JobName=BackupClient1FileList
 
-scripts/cleanup
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
+
 scripts/copy-confs
 
 #
@@ -16,14 +31,15 @@ scripts/copy-confs
 #
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 start_test
 
 rm -rf ${cwd}/build/src/test ${cwd}/build/po/test
-mkdir -p ${cwd}/build/src/test
-touch ${cwd}/build/src/test/test1 ${cwd}/build/src/test/test2
+mkdir -p ${BackupDirectory}/build/src/test
+mkdir -p ${BackupDirectory}/build/po/
+touch ${BackupDirectory}/build/src/test/test1 ${BackupDirectory}/build/src/test/test2
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -49,7 +65,7 @@ run_bareos
 check_two_logs
 check_restore_diff
 
-mv ${cwd}/build/src/test ${cwd}/build/po/test
+mv ${BackupDirectory}/build/src/test ${BackupDirectory}/build/po/test
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -73,8 +89,8 @@ END_OF_DATA
 
 run_bconsole
 
-cp $scripts/bareos-dir.conf $tmp/1
-sed 's/JobDefs {/JobDefs { Accurate=yes/' $tmp/1>$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed 's/JobDefs {/JobDefs { Accurate=yes/' $tmp/1>${conf}/bareos-dir.conf
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -99,7 +115,7 @@ END_OF_DATA
 
 run_bconsole
 
-rm -rf ${cwd}/build/po/test
+rm -rf ${BackupDirectory}/build/po/test
 
 grep test1 $tmp/log3.out > /dev/null
 if [ $? = 0 ]; then

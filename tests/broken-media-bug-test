@@ -22,9 +22,22 @@ scripts/cleanup
 /bin/cp -f scripts/test-bareos-sd.conf bin/bareos-sd.conf
 /bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
 /bin/cp -f scripts/test-console.conf bin/bconsole.conf
-hugefile=${cwd}/build/hugefile
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+hugefile=${BackupDirectory}/hugefile
 hugefilesize=300
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+
+
 
 start_test
 
@@ -74,5 +87,4 @@ stop_bareos
 
 check_two_logs
 check_restore_diff
-rm -f "$hugefile"
 end_test

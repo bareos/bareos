@@ -16,7 +16,17 @@ rm -f ${cwd}/tmp/RUN_FD_FAILED
 touch ${cwd}/tmp/log1.out
 /bin/cp -f scripts/bareos-dir.conf.testrunscript bin/bareos-dir.conf
 
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 

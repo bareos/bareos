@@ -1,8 +1,7 @@
 #!/bin/sh
 #
 # Run a simple backup with encryption and no other options
-#    (i.e. no compression and no sparse handling) of the
-#    Bareos build directory.
+#    (i.e. no compression and no sparse handling).
 #
 TestName="data-encrypt-test"
 JobName=Crypto
@@ -10,9 +9,21 @@ JobName=Crypto
 
 scripts/cleanup
 scripts/copy-crypto-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
 
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -44,8 +55,8 @@ sleep 2
 check_for_zombie_jobs storage=File
 stop_bareos
 
-du -s build
-du -s ${cwd}/tmp/bareos-restores/
+du -s ${BackupDirectory}
+du -s ${tmp}/bareos-restores/
 
 check_two_logs
 check_restore_diff

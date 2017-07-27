@@ -1,14 +1,25 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
-#   then restore it.
+# Run a simple backup, then restore it.
 #
 TestName="backup-bareos-client-initiated-connection-test"
 JobName=backup
+
 . scripts/functions
 
 scripts/cleanup
 scripts/copy-confs
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 #
 # Zap out any schedule in default conf file so that
@@ -16,8 +27,8 @@ scripts/copy-confs
 #
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 dircfg=$conf/bareos-dir.conf
 $bperl -e "add_attribute('$dircfg', 'Connection From Director To Client', 'yes', 'Client')"
@@ -53,6 +64,11 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
+#
+# Now do a second backup after making a few changes
+#
+echo "test test" > ${BackupDirectory}/xxx
+
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
 messages
@@ -71,13 +87,6 @@ messages
 quit
 END_OF_DATA
 
-#
-# Now do a second backup after making a few changes
-#
-touch ${cwd}/build/src/dird/*.c
-echo "test test" > ${cwd}/build/src/dird/xxx
-#
-
 run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
@@ -85,3 +94,4 @@ stop_bareos
 check_two_logs
 check_restore_diff
 end_test
+

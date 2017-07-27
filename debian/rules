@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+# Uncomment this to turn on verbose mode.
+export DH_VERBOSE = 1
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS = -v
+
+override_dh_auto_test:
+
+#override_dh_build:
+#override_dh_auto_build:
+	#tmp="$$PWD/tmp" make sed
+
+%:
+	if ! [ -e config ]; then ln -s /etc/bareos/bareos-regress.conf config; fi
+	dh $@
+	rm -f config
+

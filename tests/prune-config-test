@@ -10,9 +10,6 @@ JobName=NightlySave
 scripts/cleanup
 scripts/copy-test-confs
 
-start_test
-
-echo $PWD/build/po > tmp/file-list
 
 # We want to have pruning only when doing prune command
 $bperl -e 'add_attribute("$conf/bareos-dir.conf", "AutoPrune", "No", "Client")'
@@ -22,7 +19,19 @@ $bperl -e 'add_attribute("$conf/bareos-dir.conf", "Job Retention", "1s", "Client
 $bperl -e 'print get_resource("$conf/bareos-dir.conf", "Job", "NightlySave")' | \
     sed s/NightlySave/DailySave/ | sed 's/Full Set/CompressedSet/' > $tmp/1
 
-cat $tmp/1 >> $conf/bareos-dir.conf
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
+start_test
 
 cat <<EOF > ${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -32,11 +41,11 @@ label storage=File volume=TestVolume001
 run job=$JobName level=full yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/fr.po"
 run job=$JobName level=incremental yes
 wait
 messages
-@exec "touch $cwd/build/po/de.po"
+@exec "touch $BackupDirectory/de.po"
 run job=$JobName level=incremental yes
 wait
 messages
@@ -44,11 +53,11 @@ messages
 run job=DailySave level=full yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/fr.po"
 run job=DailySave level=incremental yes
 wait
 messages
-@exec "touch $cwd/build/po/de.po"
+@exec "touch $BackupDirectory/de.po"
 run job=DailySave level=incremental yes
 wait
 messages

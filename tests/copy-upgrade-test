@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then copy it
+# Run a simple backup then copy it
 #   to another device. We test that when the original job is purged
 #   the next copy is "upgraded" to Type=B
 #
@@ -14,12 +14,19 @@ JobName=CopyJobSave
 scripts/cleanup
 scripts/copy-migration-confs
 scripts/prepare-disk-changer
-echo "${cwd}/build" >${cwd}/tmp/file-list
 sed 's/migrate/copy/g' ${cwd}/bin/bareos-dir.conf > ${cwd}/tmp/1
 sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bareos-dir.conf
-
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+
 start_test
 
 #
@@ -44,7 +51,7 @@ END_OF_DATA
 
 run_bareos
 
-echo test > ${cwd}/build/po/test
+echo test > ${BackupDirectory}/test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
@@ -55,7 +62,7 @@ END_OF_DATA
 
 run_bconsole
 
-echo test1 > ${cwd}/build/po/test1
+echo test1 > ${BackupDirectory}/test1
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
@@ -164,7 +171,7 @@ delete jobid=3,9,15
 EOF
 run_bconsole
 
-rm -f ${cwd}/build/po/test1
+rm -f ${BackupDirectory}/test1
 rm -rf ${cwd}/tmp/bareos-restores
 run_bconsole ${cwd}/tmp/bconcmds.resto
 check_two_logs

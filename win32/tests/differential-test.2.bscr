@@ -1,9 +1,0 @@
-@@out@ nul
-messages
-@@out@ tmp/log1.out
-@# Force differential on the second Volume
-update volume=TestVolume002 VolStatus=Used
-run level=differential job=@JobName@ yes
-wait
-messages
-@@out@

@@ -22,7 +22,7 @@ for i in 2 3 4; do
   print;
   ' $conf/bareos-sd.conf > $conf/bareos-sd$i.conf
   mkdir -p ${tmp}/$i
-  sed "s/bareos-sd.conf/bareos-sd${i}.conf/" $scripts/bareos-ctl-sd \
+  sed "s/bareos-sd.conf/bareos-sd${i}.conf/"  ${scripts}/bareos-ctl-sd \
       > $tmp/bareos-ctl-sd$i
   chmod +x $tmp/bareos-ctl-sd$i
   mkdir -p $tmp/$i
@@ -39,9 +39,21 @@ print;
 ' $conf/bareos-dir.conf > $tmp/1
 cp $tmp/1 $conf/bareos-dir.conf
 
-disable_pluguins
+disable_plugins
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 change_jobname $JobName
 start_test
@@ -71,19 +83,19 @@ label storage=File4 volume=File4-Vol001 Pool=Default
 run job=$JobName storage=tape yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/fr.po"
 run job=$JobName storage=File yes
 wait
 messages
-@exec "touch $cwd/build/po/de.po"
+@exec "touch $BackupDirectory/de.po"
 run job=$JobName storage=File2 yes
 wait
 messages
-@exec "touch $cwd/build/po/it.po"
+@exec "touch $BackupDirectory/it.po"
 run job=$JobName storage=File3 yes
 wait
 messages
-@exec "touch $cwd/build/po/es.po"
+@exec "touch $BackupDirectory/es.po"
 run job=$JobName storage=File4 yes
 wait
 messages
@@ -92,8 +104,8 @@ END_OF_DATA
 
 run_bareos
 
-echo "ficheriro1.txt" >${cwd}/build/po/ficheriro1.txt
-echo "ficheriro2.txt" >${cwd}/build/po/ficheriro2.txt
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -101,19 +113,19 @@ cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 messages
 @$out ${cwd}/tmp/log1.out
 @# Force Incremental on the second Volume
-@exec "touch $cwd/build/po/fi.po"
+@exec "touch $BackupDirectory/fi.po"
 run level=Incremental storage=File job=$JobName yes
 wait
 messages
-@exec "touch $cwd/build/po/uk.po"
+@exec "touch $BackupDirectory/uk.po"
 run level=Incremental storage=File2 job=$JobName yes
 wait
 messages
-@exec "touch $cwd/build/po/sv.po $cwd/build/po/test.po"
+@exec "touch $BackupDirectory/sv.po $BackupDirectory/test.po"
 run level=Incremental storage=File3 job=$JobName yes
 wait
 messages
-@exec "touch $cwd/build/po/README"
+@exec "touch $BackupDirectory/README"
 run level=Incremental storage=File4 job=$JobName yes
 wait
 messages
@@ -128,14 +140,14 @@ wait
 messages
 @$out ${cwd}/tmp/status.out
 status all
-@exec "touch $cwd/build/po/POTFILES"
+@exec "touch $BackupDirectory/POTFILES"
 @$out ${cwd}/tmp/log1.out
 run level=Incremental storage=File4 job=$JobName yes
 wait
 messages
 @# run a job that will wait for a volume
 @$out ${cwd}/tmp/log23.out
-@exec "touch $cwd/build/po/ChangeLog"
+@exec "touch $BackupDirectory/ChangeLog"
 run level=Incremental pool=Special storage=File3 job=$JobName yes
 @sleep 5
 messages

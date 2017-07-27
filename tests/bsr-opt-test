@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory but
+# Run a simple backup but
 #   split the archive into two volumes, then restore
 #   files on only one of the volumes and ensure that
 #   the other volume is not used.  I.e. bsr optimization
@@ -12,9 +12,16 @@ JobName=bsr-opt
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -23,7 +30,7 @@ messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001
 label storage=File1 volume=TestVolume002
-update Volume=TestVolume001 MaxVolBytes=3000000
+update Volume=TestVolume001 MaxVolBytes=10000
 run job=$JobName storage=File1 yes
 wait
 messages
@@ -34,7 +41,7 @@ messages
 setdebug level=150 storage=File1
 restore bootstrap=${cwd}/working/restore.bsr where=${cwd}/tmp/bareos-restores select storage=File1
 unmark *
-cd ${cwd}/build/src/cats
+cd ${BackupDirectory}
 mark *
 ls
 done
@@ -54,28 +61,14 @@ stop_bareos
 #
 grep TestVolume002 working/restore.bsr 2>&1 >/dev/null
 bsrstat=$?
+if [ $bsrstat != 0 ]; then
+   echo "  !!!!! Volume selection error         !!!!! "
+   echo "  !!!!! Volume selection error         !!!!! " >>test.out
+fi
+
 check_two_logs
 
-diff -r build/src/cats  ${cwd}/tmp/bareos-restores${cwd}/build/src/cats 2>&1 >/dev/null
-if [ $? != 0 -o $bsrstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
-   echo " "
-   echo " "
-   echo "  !!!!! bsr-opt-test Bareos source failed!!! !!!!! "
-   echo "  !!!!! bsr-opt-test failed!!! !!!!! " >>test.out
-   if [ $bstat != 0 -o $rstat != 0 ] ; then
-      echo "  !!!!! Bad Job termination status     !!!!! "
-      echo "  !!!!! Bad Job termination status     !!!!! " >>test.out
-   elif [ $bsrstat != 0 ] ; then
-      echo "  !!!!! Volume selection error         !!!!! "
-      echo "  !!!!! Volume selection error         !!!!! " >>test.out
-   else
-      echo "  !!!!! Restored files differ          !!!!! "
-      echo "  !!!!! Restored files differ          !!!!! " >>test.out
-   fi
-   echo " "
-   exit 1
-else
-   echo "  ===== bsr-opt-test Bareos source OK `date +%R:%S` ===== "
-   echo "  ===== bsr-opt-test OK `date +%R:%S` ===== " >>test.out
-   scripts/cleanup
-fi
+check_restore_diff
+
+# end tests and check for error codes
+end_test

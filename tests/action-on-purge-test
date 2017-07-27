@@ -98,7 +98,7 @@ print_debug "Check all media"
 perl -Mscripts::functions -e 'foreach $i (1..5){check_min_volume_size(4096,"TestVolume00$i")}'
 
 if [ $? != 0 ]; then
-    print_debug `ls -l $tmp`
+    print_debug "`ls -l $tmp`"
     print_debug "Initialization problem"
     estat=2
 fi
@@ -111,7 +111,7 @@ check_min_volume_size(4096, "TestVolume002","TestVolume003","TestVolume004","Tes
 check_max_volume_size(4096, "TestVolume001")'
 
 if [ $? != 0 ]; then
-    print_debug `ls -l $tmp`
+    print_debug "`ls -l $tmp`"
     ls -l $tmp
     estat=2
 fi
@@ -126,7 +126,7 @@ check_min_volume_size(4096, "TestVolume002", "TestVolume005");
 check_max_volume_size(4096, "TestVolume001", "TestVolume003", "TestVolume004")'
 
 if [ $? != 0 ]; then
-    print_debug `ls -l $tmp`
+    print_debug "`ls -l $tmp`"
     ls -l $tmp
     estat=2
 fi

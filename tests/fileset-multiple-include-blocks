@@ -16,11 +16,10 @@ Client=bareos-fd
 JobName=backup-bareos-fd
 Storage=File1
 VolumeName=TestVolume001
+DataDirs="1 2 3 4"
 
 # Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${tmp}/data/"
+BackupDirectory="${tmp}/data"
 
 # Remove old configuration, working and tmp files. Setup the database.
 cleanup
@@ -36,7 +35,7 @@ cleanup
 # only these will be taken.
 copy_configs
 
-for i in 1 2 3 4; do
+for i in $DataDirs; do
     mkdir -p ${tmp}/data/data$i
     echo "test" > ${tmp}/data/data$i/test.dat
 done
@@ -84,7 +83,9 @@ check_two_logs
 # check for differences between original files and restored files
 # gives an error, because top-level data directory is not backuped
 # (and has therefore other permissions)
-check_restore_diff ${BackupDirectory}
+for i in $DataDirs; do
+   check_restore_diff ${BackupDirectory}/data$i
+done
 
 # do some manual testing
 if ! [ -d ${BackupDirectory} ]; then

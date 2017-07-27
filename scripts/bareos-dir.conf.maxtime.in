@@ -50,7 +50,7 @@ FileSet {
      read fifo = yes
    }
    # wait 60s per fifo
-   File=@tmpdir@/fifo
+   File=@tmpdir@/fifo1
    File=@tmpdir@/fifo2
    File=@tmpdir@/fifo3
  }
@@ -60,7 +60,7 @@ Job {
   Name = "RUN_MAXWAITTIME"
   JobDefs = DefaultJob
   FileSet = FS_TESTJOB
-  MaxWaitTime = 1min
+  MaxWaitTime = 30sec
 }
 
 Job {
@@ -107,7 +107,10 @@ Storage {
 Catalog {
   Name = MyCatalog
   @libdbi@
-  dbname = @db_name@; user = @db_user@; password = "@db_password@"
+  dbdriver = "@db_type@"
+  dbname = @db_name@
+  user = @db_user@
+  password = "@db_password@"
 }
 
 

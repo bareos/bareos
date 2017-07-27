@@ -9,12 +9,21 @@ JobName=BigFileSet
 
 copy_test_confs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 cp ${cwd}/bin/bareos-dir.conf ${cwd}/tmp/1
 sed "s%# Label Format%  Label Format%" ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
 
 change_jobname MonsterFileSet $JobName
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+# TODO: use a larger data directory.
+setup_data data/small.tgz
+
 start_test
 
 cat <<END_OF_SCRIPT >${cwd}/tmp/bconcmds
@@ -77,3 +86,4 @@ dstat=0
 bstat=0
 rstat=0
 end_test
+

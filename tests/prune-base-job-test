@@ -1,13 +1,37 @@
 #!/bin/sh
+
+. scripts/functions
+
+p() {
+    echo "##############################################" >> ${cwd}/tmp/log1.out
+    echo "$*" >> ${cwd}/tmp/log1.out
+    echo "##############################################" >> ${cwd}/tmp/log2.out
+    echo "$*" >> ${cwd}/tmp/log2.out
+}
+
 #
-# Run a basejob backup of the Bareos build directory
+# Run a basejob backup 
 #   then restore it.
 #
 
 TestName="prune-base-job-test"
 JobName=backup
-. scripts/functions
-$rscripts/cleanup
+
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
 
 copy_test_confs
 echo 's/backup_advance/base_backup/' > $tmp/s
@@ -25,17 +49,11 @@ dircfg=$conf/bareos-dir.conf
 $bperl -e "add_attribute('$dircfg', 'AutoPrune', 'No', 'Client')"
 $bperl -e "add_attribute('$dircfg', 'Job Retention', '1s', 'Client')"
 $bperl -e "add_attribute('$dircfg', 'File', '<$tmp/lst', 'FileSet', 'FS_TESTJOB_ADVANCE')"
-p() {
-    echo "##############################################" >> ${cwd}/tmp/log1.out
-    echo "$*" >> ${cwd}/tmp/log1.out
-    echo "##############################################" >> ${cwd}/tmp/log2.out
-    echo "$*" >> ${cwd}/tmp/log2.out
-}
-
 
 echo ${cwd}/bin > ${cwd}/tmp/lst
 echo ${cwd}/bin > ${cwd}/tmp/file-list
-echo ${cwd}/build >> ${cwd}/tmp/file-list
+echo ${BackupDirectory}/build >> ${cwd}/tmp/file-list
+mkdir -p ${BackupDirectory}/build/po
 
 start_test
 
@@ -49,8 +67,8 @@ END_OF_DATA
 run_bareos
 
 ################################################################
-p Now do a backup using base backup
-################################################################
+p "Now do a backup using base backup"
+#ckupDirectory}/build###############################################################
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
@@ -68,7 +86,7 @@ label volume=TestVolume002 storage=File pool=Default
 run job=backup level=full yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/build/po/fr.po"
 run job=backup level=incremental yes
 wait
 messages
@@ -95,13 +113,13 @@ run_bconsole
 check_for_zombie_jobs storage=File
 
 check_two_logs
-check_restore_diff
+check_restore_diff $BackupDirectory/build || exit 1
 
 export bstat dstat estat
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log4.out
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/build/po/fr.po"
 run job=backup level=incremental yes
 wait
 messages

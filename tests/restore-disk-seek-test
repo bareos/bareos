@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a backup of the full bareos build directory, but with the
+# Run a backup, but with the
 #   Maximum File Size set. Then do a restore of a few files to kick in
 #   disk seeking (not yet enabled), and ensure that the restored files
 #   match. Even though disk seeking is not yet enabled, this is a good test,
@@ -12,32 +12,7 @@ JobName=restore-disk-seek
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-rm -rf ${cwd}/tmp/build
-mkdir -p ${cwd}/tmp/build
-# Copy only the .c files (to be restored)
-#  set files to "*.c" for all c files
-files="ua_tree.c ua_update.c"
-#  files="*.c"
-for i in ${files}; do
-   cp -p ${cwd}/build/src/dird/${i} ${cwd}/tmp/build
-done
-cd ${cwd}/tmp/build
-ls >../1
-cd ..
-sed s%\^%${cwd}/tmp/build/% 1 | sort | uniq >restore-list
-#
-# At this point restore-list contains the list
-#  of files we will restore
-#
-rm -f 1
-cd ${cwd}
-#
-# Now arrange to backup *everything*
-#
-rm -rf  ${cwd}/tmp/build
-mkdir -p ${cwd}/tmp/build
-cp -fp ${cwd}/build/src/dird/* ${cwd}/tmp/build
+
 #
 # Enable MaximumFileSize to ensure lots of JobMedia records and thus
 #  lots of seeking
@@ -46,6 +21,34 @@ cp ${cwd}/bin/bareos-sd.conf ${cwd}/tmp/1
 sed "s%# Maximum File Size%  Maximum File Size%" ${cwd}/tmp/1 >${cwd}/bin/bareos-sd.conf
 
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Copy only the .c files (to be restored)
+#  set files to "*.c" for all c files
+files="ua_tree.c ua_update.c"
+#  files="*.c"
+mkdir -p ${BackupDirectory}
+for i in ${files}; do
+   echo "test" > ${BackupDirectory}/$i
+done
+#
+# restore-list contains the list
+#  of files we will restore
+#
+find "${BackupDirectory}" -type f | sort | uniq >${tmp}/restore-list
+
+# add more data to be backuped.
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -80,13 +83,6 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
-# Now setup a control directory of only what we *should* restore
-rm -rf ${cwd}/tmp/build
-mkdir -p  ${cwd}/tmp/build
-for i in ${files}; do
-   cp -p ${cwd}/build/src/dird/${i} ${cwd}/tmp/build
-done
-
 check_two_logs
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
 end_test

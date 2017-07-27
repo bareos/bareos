@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
 #
@@ -12,9 +12,20 @@ require_tape_drive
 
 scripts/cleanup-tape
 scripts/copy-tape-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -30,8 +41,7 @@ run_bareos
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 1 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
 
 #
 # run a second job
@@ -50,8 +60,8 @@ run_bconsole
 
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 2 done"
-touch ${cwd}/build/src/dird/*.c
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
+
 #
 # run a third job
 #
@@ -70,7 +80,7 @@ run_bconsole
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 3 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+touch ${BackupDirectory}/*.c
 #
 # run a fourth job
 #

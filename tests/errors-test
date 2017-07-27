@@ -13,7 +13,18 @@ copy_test_confs
 
 rm -f ${cwd}/tmp/*.log
 /bin/cp -f scripts/bareos-dir.conf.errors bin/bareos-dir.conf
-echo "${cwd}/build/po" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 

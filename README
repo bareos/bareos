@@ -1,51 +1,79 @@
-             Bareos Regression
-               Kern Sibbald
+Bareos Regression
+=================
+
+Origial author: Kern Sibbald
 
 This is Bareos's regression script directory.
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 Warning!!!! Make sure not to run it on the same system
 with your production Catalog because the tables will all
-be cleared. You can run it on the your production system
-if you use a different database. E.g. if your production
-system uses MySQL, you can use SQLite here.
+be deleted (dropped and recreated).
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
+bareos-regress package
+======================
+
+When using the bareos-regress package,
+the software is already preconfigured to test bareos,
+provided by the normal install packages.
+The Bareos packages include a package that provide the required configuration:
+bareos-regress-config
+
+  # as root: stop all running bareos daemon
+
+  # switch to user to bareos
+  su - bareos -s /bin/bash
+
+  # enable debug output
+  export REGRESS_DEBUG=1
+
+  # run a single test (and verify that it ends with "OK"
+  tests/backup-bareos-test
+
+  # run all disk tests
+  ./all-disk-tests
+
+
+
+Local Build
+===========
+
+get sources from github
+-----------------------
+
+  # get Bareos core
+  git clone https://github.com/bareos/bareos-regress
+
+  # get bareos-regress
+  git clone https://github.com/bareos/bareos-regress
 
 To set it up, create your personal configuration file, by
 copying prototype.conf to config or simply editing prototype.conf
 directly then copying it to the file config.
 
-cp prototype.conf config
+  cd bareos-regress
+  cp prototype.conf config
 
 You must end up with a file named config in the main regress
 directory that has all the specifications that correspond to
 your system.
 
-If you are using SQLite, make sure that depkgs is pre-built if it
-isn't already: (cd your-depkgs; make sqlite).
-
-Note, if you use any database other than SQLite, be sure it is not
-your production database because Bareos will delete all the tables
-and recreate them.  With SQLite, a new different database is created,
-so it will not affect your production system.
-
-Using the .conf file, you can now select between any Catalog type:
-SQLite, SQLite3, MySQL, or PostgreSQL.  Be aware, however, if you
-use an installed database on a production server, running these
-tests will delete all the tables !!!!!!!!!!!!!!!!!!  I run my
-tests on a non-production machine, and in addition, I normally use
-SQLite as the database, while my production uses MySQL.
+Note, be sure it is not your production database
+because Bareos will delete all the tables
+and recreate them.
 
 Then do:
 
    make setup
 
-You run the above one time.  This will build a Makefile from
-Makefile.in and your xxx.conf file, copy the Bareos source,
-configure, build it, and configure all the Bareos scripts
-and conf files.  If you change your source, you will need to
-redo this command.
+You run the above one time.
+This will substitute all variables in the *.in files,
+copy the Bareos source, configure and build it.
+If you change your source, you will need to redo this command.
+
+If you only change some bareos-regress *.in files,
+only a "make sed" is required.
 
 Then you can run any of the tests in the tests subdirectory.
 Each test whose name ends in -root requires you to be root for
@@ -54,7 +82,7 @@ test. Aside from the required "make setup", each test is totally
 self-initalizing and should clean up after itself.
 
 All the tests expect you to execute them from the main regress
-directory!
+directory.
 
 Running the disk based tests:
 
@@ -92,7 +120,7 @@ or all non-root tests (my normal testing under my account)
 
   ./all-non-root-tests
 
-or all tests (I only run these before a production release):
+or all tests
 
    su
    ./all-tests
@@ -117,22 +145,23 @@ ending with:
                 and it is assumed to be mounted.
   -changer  => you have an autochanger
 
-Adding tests:
 
-If you want to add more tests, do so by putting the shell script
-in the tests subdirectory. Be careful when adding (or better not)
-new clients, pools, and such to the test-bareos-dir.conf.in file
-as it may invalidate a good number of tests, which respond to
-questions by answering with a number (i.e. the order of the selection
-list is known). It might be better to add your own testb-bareos...
-configuration file.
+Adding tests
+============
+
+If you want to add more tests, you can start from the example tests/1-example-test
+and follow the instructions in this file, especially about where the configuration comes from
+(configs/BASE plus individual extensions).
 
 To avoid re-doing a make setup if you have made a change to the
 conf files, and you do not need a new copy of the source, you can simply do:
 
    make sed
 
-Debugging failed tests:
+
+
+Debugging failed tests
+======================
 
 Prior versions required editing the tests/xxxx and changing a debug flag.
 However, that has been replaced by two environment variables:
@@ -181,7 +210,6 @@ In shell window 1
 (ignore the error message it prints complaining that the daemon
 you are debugging is already running, which is in fact the case).
 
-
 That is all there is to it.  The debugger window will get some
 output and will stop waiting for input if anything goes wrong
 like a seg fault.  At that point, you can enter commands.
@@ -190,9 +218,11 @@ The procedure avoids modifying the test scripts and trying to
 find pids and the such.  If you want less debug output when
 debugging, don't set REGRESS_DEBUG=1.
 
-===
 
-Also, if you run from time to time on a computer that is not connected
+Troubleshooting
+===============
+
+If you run from time to time on a computer that is not connected
 to the network, please be sure that "hostname" is set to "localhost",
 otherwise, your tests may fail because the hostname used by Bareos's
 ./configure cannot be properly resolved.
@@ -223,34 +253,3 @@ free_addresses(dlist*) + 53 in section .text
 info symbol 0x8082d58
 add_address(dlist**, IPADDR::i_type, unsigned short, int, char const*, char
 const*, char**) + 568 in section .text
-
-Testing a Binary Installation:
-
-If you have installed your Bareos from a binary release such as (rpms or
-debs), you can still run regression tests on it.  First, make sure that your
-regression config file uses the same catalog backend as your installed
-binaries.  Then define the variables bin and scripts variables in your config
-file.
-
-Example:
-bin=/opt/bareos/bin
-scripts=/opt/bareos/scripts
-
-The ./scripts/prepare-other-loc will tweak the regress scripts to use
-your binary location. You will need to run it manually once before you run any
-regression tests.
-
-$ ./scripts/prepare-other-loc
-$ ./tests/backup-bareos-test
-...
-
-All regression scripts must be run by hand or by calling the test scripts.
-These are principally scripts that begin with all_... such as all_disk_tests},
-./all_tests
-
-None of the
-./do_disk, ./do_all, ./nightly...  scripts will work.
-
-If you want to switch back to running the regression scripts from source, first
-remove the bin and scripts variables from your config file and
-rerun the make setup step.

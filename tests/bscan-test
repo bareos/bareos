@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory but
+# Run a simple backup but
 #   split the archive into two volumes then bscan it
 #   into the catalog after the backup. It also to a limited
 #   extent tests the purge volume and delete volume commands.
@@ -12,9 +12,19 @@ JobName=bscan
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >tmp/file-list
 
 change_jobname NightlySave $JobName
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
@@ -25,7 +35,7 @@ label storage=File1
 TestVolume001
 label storage=File1
 TestVolume002
-update Volume=TestVolume001 MaxVolBytes=3000000
+update Volume=TestVolume001 MaxVolBytes=10000
 run job=$JobName storage=File1
 yes
 wait
@@ -66,11 +76,13 @@ else
   PASSWD="-P ${db_password}"
 fi
 
-if test "$debug" -eq 1 ; then
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp
-else
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp >tmp/log3.out 2>&1
+BSCAN_OUT="write_stdin_to_file ${tmp}/log-bscan.out"
+if is_debug; then
+   BSCAN_OUT="tee ${tmp}/log-bscan.out"
 fi
+
+#$bin/bscan -w ${working} $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp >tmp/log3.out 2>&1
+$bin/bscan -c ${conf} $BSCANLIBDBI -B ${DBTYPE} -n ${db_name} -u ${db_user} $PASSWD -m -s -v -b $tmp/bscan.bsr ${tmp} 2>&1 | $BSCAN_OUT
 
 cat <<END_OF_DATA >tmp/bconcmds
 @$out /dev/null

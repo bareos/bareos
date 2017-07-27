@@ -10,10 +10,20 @@ require_tape_drive
 
 scripts/cleanup-tape
 scripts/copy-tape-confs
-
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds

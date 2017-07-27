@@ -27,7 +27,7 @@ FileSet {
      }
      Options {
         exclude     = yes
-        wild        = "*"
+        wilddir     = @tmpdir@/data/*
      }
 
      File=@tmpdir@/data/

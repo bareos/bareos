@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   then restore it.
 # We have bad configuration for Messages resources, everything
 # should work
@@ -11,8 +11,8 @@ JobName=backup
 
 scripts/cleanup
 scripts/copy-confs
-change_jobname BackupClient1 $JobName
-start_test
+change_jobname BackupClient1FileList $JobName
+
 #
 # Zap out any schedule in default conf file so that
 #  it doesn't start during our test
@@ -28,9 +28,22 @@ echo 's%Bareos daemon message%DELETE THIS MESSAGE Bareos daemon message%' >> $ou
 echo 's%Bareos:%DELETE THIS MESSAGE Bareos:%' >> $outf
 #echo 's%mailcommand = "%mailcommand = "/nowhere%g' >> $outf
 
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
+start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null

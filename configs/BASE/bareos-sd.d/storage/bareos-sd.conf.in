@@ -1,5 +1,6 @@
 Storage {
   Name = bareos1-sd
+  Sd Port = @sdport@
   Maximum Concurrent Jobs = 20
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
@@ -10,9 +11,9 @@ Storage {
   # Plugin Names = ""
 
   TLS Require = yes
-  TLS Certificate = "@scriptdir@/tls/bareos-sd1.bareos.org-cert.pem"
-  TLS Key = "@scriptdir@/tls/bareos-sd1.bareos.org-key.pem"
-  TLS CA Certificate File = "@scriptdir@/tls/bareos-ca.pem"
+  TLS Certificate = "@confdir@/tls/bareos-sd1.bareos.org-cert.pem"
+  TLS Key = "@confdir@/tls/bareos-sd1.bareos.org-key.pem"
+  TLS CA Certificate File = "@confdir@/tls/bareos-ca.pem"
   TLS Allowed CN = client1.bareos.org
 }
 

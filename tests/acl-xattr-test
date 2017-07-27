@@ -1,6 +1,9 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
-# Run a backup of the Bareos build directory with some acls then restore it.
+# Run a backup  with some acls then restore it.
 #
 # For Linux:
 #    Your filesystem must be mounted with the acl option (mount -o remount,acl,user_xattr /tmp)
@@ -30,7 +33,15 @@
 #
 TestName="acl-xattr-test"
 JobName=backup
-. scripts/functions
+
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
 
 #
 # See if the right software is installed.
@@ -84,8 +95,15 @@ case `uname -s` in
       ;;
 esac
 
-scripts/cleanup
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+
+start_test
+
+
 scripts/copy-confs
+change_jobname BackupClient1FileList $JobName
 
 #
 # Zap out any schedule in default conf file so that
@@ -94,16 +112,20 @@ scripts/copy-confs
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" > $outf
 echo "s/Options {/Options { aclsupport=yes; xattrsupport = yes/" >> $outf
-cp ${cwd}/bin/bareos-dir.conf  $cwd/tmp/1
-sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
+cp ${conf}/bareos-dir.conf  $cwd/tmp/1
+sed -f ${outf} ${cwd}/tmp/1 >${conf}/bareos-dir.conf
 
-d=${cwd}/build/acl
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
+
+d="${BackupDirectory}/acl"
 
 uid=`id -u`
 rm -rf $d
-mkdir -p $d
 mkdir -p $d/acl-dir
-cp ${cwd}/bin/bconsole $d
+cp ${bin}/bconsole $d
 ls -la $d
 
 case `uname -s` in
@@ -113,12 +135,12 @@ case `uname -s` in
       setfacl -m user:nobody:--- $d/acl-dir 2>/dev/null 1>/dev/null
       setfacl -m user:nobody:--- $d/bconsole 2>/dev/null 1>/dev/null
       setfacl -m group:nogroup:--x $d/bconsole 2>/dev/null 1>/dev/null
-      cp ${cwd}/bin/bconsole $d/acl-dir
-      cp ${cwd}/bin/bconsole $d/other
+      cp ${bin}/bconsole $d/acl-dir
+      cp ${bin}/bconsole $d/other
       setfattr -h -n user.bareos.test -v rulez $d/other 2>/dev/null 1>/dev/null
       setfattr -h -n user.bareos.secondtest -v rulez $d/other 2>/dev/null 1>/dev/null
 
-      ( cd $cwd/build
+      ( cd ${BackupDirectory}
         getfacl --omit-header -R acl 2>/dev/null > $cwd/tmp/org
         getfattr --only-values -h -n user.bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
         getfattr --only-values -h -n user.bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
@@ -131,12 +153,12 @@ case `uname -s` in
       chmod +a "user:nobody deny read,write,execute" $d/acl-dir
       chmod +a "user:nobody deny read,write,execute" $d/bconsole
       chmod +a "group:nogroup allow execute" $d/bconsole
-      cp ${cwd}/bin/bconsole $d/acl-dir
-      cp ${cwd}/bin/bconsole $d/other
+      cp ${bin}/bconsole $d/acl-dir
+      cp ${bin}/bconsole $d/other
       xattr -w  bareos.test "rulez" $d/other 2>/dev/null 1>/dev/null
       xattr -w  bareos.secondtest "rulez" $d/other 2>/dev/null 1>/dev/null
 
-      ( cd $cwd/build
+      ( cd ${BackupDirectory}
         ls -lde -R acl > $cwd/tmp/org
         xattr -p bareos.test $d/other 2>/dev/null > $cwd/tmp/attr.org
         xattr -p bareos.secondtest $d/other 2>/dev/null >> $cwd/tmp/attr.org
@@ -160,14 +182,14 @@ case `uname -s` in
          /bin/chmod A+user:nobody:--- $d/bconsole
          /bin/chmod A+group:nogroup:--x $d/bconsole
       fi
-      cp ${cwd}/bin/bconsole $d/other
+      cp ${bin}/bconsole $d/other
       /bin/runat $d/other 'cat > bareos.test' << EOF
 rulez
 EOF
       /bin/runat $d/other 'cat > bareos.secondtest' << EOF
 rulez
 EOF
-      ( cd $cwd/build
+      ( cd ${BackupDirectory}
         /bin/ls -ldv -R acl > $cwd/tmp/org
         /bin/runat $d/other 'cat bareos.test' > $cwd/tmp/attr.org
         /bin/runat $d/other 'cat bareos.secondtest' >> $cwd/tmp/attr.org
@@ -179,12 +201,12 @@ EOF
       setfacl -m user:nobody:--- $d/acl-dir
       setfacl -m user:nobody:--- $d/bconsole
       setfacl -m group:nogroup:--x $d/bconsole
-      cp ${cwd}/bin/bconsole $d/acl-dir
-      cp ${cwd}/bin/bconsole $d/other
+      cp ${bin}/bconsole $d/acl-dir
+      cp ${bin}/bconsole $d/other
       setextattr user bareos.test rulez $d/other 2>/dev/null 1>/dev/null
       setextattr user bareos.secondtest rulez $d/other 2>/dev/null 1>/dev/null
 
-      ( cd $cwd/build
+      ( cd ${BackupDirectory}
         for file in acl/*
         do
            getfacl $file
@@ -194,11 +216,11 @@ EOF
       )
       ;;
    NetBSD)
-      cp ${cwd}/bin/bconsole $d/other
+      cp ${bin}/bconsole $d/other
       setextattr user bareos.test rulez $d/other 2>/dev/null 1>/dev/null
       setextattr user bareos.secondtest rulez $d/other 2>/dev/null 1>/dev/null
 
-      ( cd $cwd/build
+      ( cd ${BackupDirectory}
         cp /dev/null $cwd/tmp/org
         getextattr user bareos.test $d/other > $cwd/tmp/attr.org
         getextattr user bareos.secondtest $d/other >> $cwd/tmp/attr.org
@@ -206,8 +228,6 @@ EOF
       ;;
 esac
 
-change_jobname BackupClient1 $JobName
-start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -235,7 +255,7 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
-rd=$cwd/tmp/bareos-restores$cwd/build/acl
+rd=$cwd/tmp/bareos-restores${BackupDirectory}/acl
 case `uname -s` in
    Linux)
       ( cd $rd/..
@@ -289,9 +309,5 @@ fi
 
 check_two_logs
 check_restore_diff
-
-if [ x$REGRESS_DEBUG != x ]; then
-  rm -rf $d
-fi
 
 end_test

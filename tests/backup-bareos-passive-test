@@ -1,7 +1,7 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
-#   then restore it.
+# Set Client in Passive mode.
+# Run simple backups and restore them.
 #
 TestName="backup-bareos-passive-test"
 JobName=backup
@@ -16,8 +16,8 @@ scripts/copy-confs
 #
 outf="$tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 dircfg=$conf/bareos-dir.conf
 $bperl -e "add_attribute('$dircfg', 'passive', 'Yes', 'Client')"
@@ -25,7 +25,20 @@ $bperl -e "add_attribute('$dircfg', 'passive', 'Yes', 'Client')"
 fdcfg=$conf/bareos-fd.conf
 $bperl -e "add_attribute('$fdcfg', 'Compatible', 'No', 'FileDaemon')"
 
-change_jobname BackupClient1 $JobName
+change_jobname BackupClient1FileList $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >$tmp/bconcmds
@@ -33,26 +46,7 @@ cat <<END_OF_DATA >$tmp/bconcmds
 messages
 @$out $tmp/log1.out
 setdebug level=100 storage=File
-label volume=TestVolume001 storage=File pool=File
 run job=$JobName yes
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-@sleep 1
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-@sleep 1
-status storage=File
-status storage=File
-status storage=File
-status storage=File
-status storage=File
 wait
 messages
 @#
@@ -68,7 +62,11 @@ END_OF_DATA
 
 run_bareos
 check_for_zombie_jobs storage=File
-stop_bareos
+
+#
+# Now do a second backup after making a few changes
+#
+change_files
 
 cat <<END_OF_DATA >$tmp/bconcmds
 @$out /dev/null
@@ -89,14 +87,7 @@ messages
 quit
 END_OF_DATA
 
-#
-# Now do a second backup after making a few changes
-#
-touch ${cwd}/build/src/dird/*.c
-echo "test test" > ${cwd}/build/src/dird/xxx
-#
-
-run_bareos
+run_bconsole
 check_for_zombie_jobs storage=File
 stop_bareos
 

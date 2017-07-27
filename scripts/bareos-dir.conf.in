@@ -63,6 +63,12 @@ Job {
   JobDefs = "DefaultJob"
 }
 
+Job {
+  Name = "BackupClient1FileList"
+  JobDefs = "DefaultJob"
+  FileSet = "FS_TESTJOB1"
+}
+
 #
 # Backup the catalog database (after the nightly save)
 #
@@ -188,8 +194,7 @@ Storage {
 #
 Catalog {
   Name = MyCatalog
-  #dbdriver = "@DEFAULT_DB_TYPE@"
-  dbdriver = "XXX_REPLACE_WITH_DATABASE_DRIVER_XXX"
+  dbdriver = "@db_type@"
   dbname = "@db_name@"
   dbuser = "@db_user@"
   dbpassword = "@db_password@"

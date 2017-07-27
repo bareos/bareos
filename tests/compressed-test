@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup using the compressed option
 #   then restore it.
 #
 TestName="compressed-test"
@@ -9,9 +9,19 @@ JobName=compressed
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds

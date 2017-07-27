@@ -1,12 +1,19 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup, then create some
 #   new files, do an Incremental and restore those two files.
 #
 # This script uses the virtual disk autochanger and two drives
 #
+# TODO: add check to verify that 2 drives are used.
+#
 TestName="2drive-incremental-2disk"
 JobName="2drive2disk"
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
 . scripts/functions
 
 scripts/cleanup
@@ -17,23 +24,24 @@ CLIENT=2drive2disk
 change_jobname localhost-fd $JobName
 start_test
 
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-if test ! -d ${cwd}/tmp/build ; then
-   mkdir -p ${cwd}/tmp/build
-fi
-cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
-cd ${cwd}/tmp
-echo "${cwd}/tmp/build/ficheriro1.txt" >restore-list
-echo "${cwd}/tmp/build/ficheriro2.txt" >>restore-list
-cd ${cwd}
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 # Turn off Prefer Mounted Volumes so we use 2 drives
 outf="${cwd}/tmp/sed_tmp"
 echo "s%# Prefer Mounted Volumes%  Prefer Mounted Volumes%g" >${outf}
-cp ${cwd}/bin/bareos-dir.conf ${cwd}/tmp/1
+cp ${confdir}/bareos-dir.conf ${cwd}/tmp/1
 # Comment the next line out to write everything to one drive
 #  otherwise, it writes the two jobs to different drives
-sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
+sed -f ${outf} ${cwd}/tmp/1 >${confdir}/bareos-dir.conf
 
 # Write out bconsole commands
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -66,9 +74,11 @@ quit
 END_OF_DATA
 
 run_bareos
-echo "ficheriro1.txt" >${cwd}/tmp/build/ficheriro1.txt
-echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
+echo "${BackupDirectory}/ficheriro1.txt" >${tmp}/restore-list
+echo "${BackupDirectory}/ficheriro2.txt" >>${tmp}/restore-list
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -88,9 +98,9 @@ messages
 @# now do a restore
 @#
 @$out ${cwd}/tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores
+restore where=${tmp}/bareos-restores
 7
-<${cwd}/tmp/restore-list
+<${tmp}/restore-list
 
 yes
 wait
@@ -106,16 +116,11 @@ stop_bareos
 
 check_two_logs
 # The restore should read from TestVolume002, which was on drive 1
-grep TestVolume002 ${cwd}/tmp/log2.out >/dev/null 2>&1
-# Note rstat may already be set, so we don't just store into it
-if [ $? != 0 ] ; then
-   rstat=$?
+if ! grep TestVolume002 ${tmp}/log2.out >/dev/null 2>&1; then
+   rstat=1
 fi
 
-#
-# Delete .c files because we will only restored the txt files
-#
-rm -f ${cwd}/tmp/build/*.c
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
 
 end_test
+

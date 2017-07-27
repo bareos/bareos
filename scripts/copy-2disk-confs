@@ -6,7 +6,7 @@
 /bin/cp -f scripts/bareos-sd-2disk.conf bin/bareos-sd.conf
 /bin/cp -f scripts/test-bareos-fd.conf bin/bareos-fd.conf
 /bin/cp -f scripts/test-console.conf bin/bconsole.conf
-/bin/cp -f scripts/test-console.conf bin/bat.conf
+
 outf="tmp/sed_tmp"
 echo "s%# Autochanger = yes%  Autochanger = yes%g" >${outf}
 cp bin/bareos-dir.conf tmp/1

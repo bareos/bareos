@@ -1,7 +1,7 @@
 #!/bin/sh
 # Not yet working
 #
-# Run a simple backup of the Bareos build directory then copy it
+# Run a simple backup  then copy it
 #   to another device.
 ##
 TestName="prune-copy-test"
@@ -12,7 +12,19 @@ JobName=CopyJobSave
 scripts/cleanup
 scripts/copy-migration-confs
 scripts/prepare-disk-changer
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 sed 's/migrate/copy/g' ${cwd}/bin/bareos-dir.conf > ${cwd}/tmp/1
 sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bareos-dir.conf
 
@@ -67,7 +79,7 @@ messages
 @# This final job that runs should be Incremental and
 @# not upgraded to full.
 @sleep 2
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch $BackupDirectory/fr.po"
 run job=$JobName level=Incremental yes
 wait
 messages

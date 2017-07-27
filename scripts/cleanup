@@ -4,7 +4,6 @@
 # Cleanup left over files -- both before and after test run
 #
 
-. ./config
 . scripts/functions
 
 if [ ! -f ${working}/CLEANUPMARKER ]; then
@@ -14,32 +13,33 @@ fi
 
 cwd=`pwd`
 
-rm -rf ${tmp}/FileVolume*
-rm -rf ${tmp}/TestVolume001 ${tmp}bareos-restores ${tmp}/Small*
-rm -rf ${tmp}/sed_tmp ${tmp}/file-list
 rm -rf ${tmp}/*
-rm -rf ${working}/log ${tmp}/TEST-*
-rm -rf ${working}/log ${tmp}/Backup-*
+rm -rf ${working}/log
 rm -rf ${working}/*.bsr ${working}/log*.sd
 rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
 rm -rf ${working}/*.state
 rm -rf ${working}/CLEANUPMARKER
-rm -rf ${tmp}disk-changer
 find . -name "gigaslam.gif" -exec rm -f {} \;
 # cleanup old config files
-rm -f  ${conf}/bareos-*.conf
-rm -rf ${conf}/bareos-*.d/
+# don't delete mtx-changer.conf (and other files?)
+rm -f  ${conf}/*.cert
+rm -f  ${conf}/bareos*.conf
+rm -f  ${conf}/bconsole*.conf
+rm -rf ${conf}/*.d/
+rm -f  ${conf}/*.pem
 rm -rf ${conf}/bareos-dir-export/
+rm -rf ${conf}/tls/
 
 
 # bin directory does not always exist
-if [ -d ${bin} ] ; then
-  if [ -f ${bin}/bareos ] ; then
-     ${bin}/bareos stop 2>&1 >/dev/null
+if [ -d ${scripts} ] ; then
+  if [ -f ${scripts}/bareos ] ; then
+     ${scripts}/bareos stop 2>&1 >/dev/null
   fi
-  cd ${scripts}
-  ./drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
-  ./make_bareos_tables ${DBTYPE} >/dev/null 2>&1
-  ./grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
-  cd ${cwd}
+  ${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1
+  print_debug "creating database (${DBTYPE})"
+  ${scripts}/create_bareos_tables ${DBTYPE} >/dev/null 2>&1
+  ${scripts}/make_bareos_tables ${DBTYPE} >/dev/null 2>&1
+  ${scripts}/grant_bareos_privileges ${DBTYPE} >/dev/null 2>&1
 fi
+

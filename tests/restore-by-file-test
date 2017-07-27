@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then restore it.
 #
 
@@ -10,17 +10,23 @@ JobName=restorebyfile
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-mkdir -p ${cwd}/tmp/build
-cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
-cd ${cwd}/tmp/build
-ls >../1
-cd ..
-sed s%\^%${cwd}/tmp/build/% 1 | sort | uniq >restore-list
-rm -f 1
-cd ${cwd}
-
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+number_of_files_to_restore=5
+find "${BackupDirectory}" -type f | head -n ${number_of_files_to_restore} | sort | uniq >${tmp}/restore-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -110,5 +116,5 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
 end_test

@@ -2,17 +2,15 @@
 #
 # Configure the dart files
 #
-cwd=`pwd`
-. ${cwd}/config
+. scripts/functions
 
-mkdir -p ${cwd}/bin
-out="${cwd}/tmp/sed_tmp"
+out="${tmp}/sed_tmp"
 
 scripts/create_sed
-
 
 sed -f ${out} ${cwd}/DartConfiguration.tcl.in >${cwd}/DartConfiguration.tcl
 sed -f ${out} ${cwd}/DartTestfile.txt.in >${cwd}/DartTestfile.txt
 
-sed -f ${out} ${cwd}/scripts/update-ctest.in >${cwd}/scripts/update-ctest
-chmod +x ${cwd}/scripts/update-ctest
+sed -f ${out} ${rscripts}/update-ctest.in >${rscripts}/update-ctest
+chmod +x ${rscripts}/update-ctest
+

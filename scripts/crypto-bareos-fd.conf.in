@@ -23,8 +23,8 @@ FileDaemon {                          # this is me
   Pid Directory = "@piddir@"
   PKI Signatures = Yes
   PKI Encryption = Yes
-  PKI Keypair = "@scriptdir@/cryptokeypair.pem"
-  PKI Master Key = "@scriptdir@/master2048.cert"
+  PKI Keypair = "@confdir@/cryptokeypair.pem"
+  PKI Master Key = "@confdir@/master2048.cert"
 }
 
 # Send all messages except skipped files back to Director

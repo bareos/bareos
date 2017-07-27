@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup then create some
 #   new files, do a differential and restore those two files.
 #
 TestName="differential-test"
@@ -9,15 +9,23 @@ JobName=differential
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-mkdir -p ${cwd}/tmp/build
-cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
-cd ${cwd}/tmp
-echo "${cwd}/tmp/build/ficheriro1.txt" >restore-list
-echo "${cwd}/tmp/build/ficheriro2.txt" >>restore-list
-cd ${cwd}
-
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+echo "${BackupDirectory}/ficheriro1.txt" >${tmp}/restore-list
+echo "${BackupDirectory}/ficheriro2.txt" >>${tmp}/restore-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -36,8 +44,8 @@ END_OF_DATA
 run_bareos
 
 scripts/check_for_zombie_jobs storage=File
-echo "ficheriro1.txt" >${cwd}/tmp/build/ficheriro1.txt
-echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -53,7 +61,7 @@ END_OF_DATA
 run_bconsole
 
 scripts/check_for_zombie_jobs storage=File
-echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -78,9 +86,6 @@ scripts/check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-#
-# Delete .c files because we will only restore the txt files
-#
-rm -f ${cwd}/tmp/build/*.c
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
+
 end_test

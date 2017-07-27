@@ -15,14 +15,22 @@ scripts/cleanup
 scripts/copy-2tape-confs
 scripts/prepare-two-tapes
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 #outf="tmp/sed_tmp"
 #echo "s%# Maximum File Size%  Maximum File Size%g" >${outf}
 #cp ${cwd}/bin/bareos-sd.conf ${cwd}/tmp/1
 #sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bareos-sd.conf
 
 change_jobname $JobName
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 start_test
 
 # Write out bconsole commands
@@ -74,3 +82,4 @@ stop_bareos
 check_two_logs
 check_restore_diff
 end_test
+

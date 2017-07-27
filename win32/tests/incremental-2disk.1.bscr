@@ -1,9 +1,0 @@
-@@out@ nul
-messages
-@@out@ tmp/log1.out
-label storage=DDS-4 volume=TestVolume001 slot=1 Pool=Default drive=0
-label storage=DDS-4 volume=TestVolume002 slot=2 Pool=Default drive=0
-run job=@JobName@ yes
-wait
-messages
-quit

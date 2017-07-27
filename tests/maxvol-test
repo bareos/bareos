@@ -11,13 +11,26 @@ JobName=maxvol
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
 
-cp -f ${cwd}/bin/bareos-dir.conf ${cwd}/tmp/1
-sed "s%# Maximum Volume Jobs%  Maximum Volume Jobs%" ${cwd}/tmp/1 >${cwd}/bin/bareos-dir.conf
+cp -f ${conf}/bareos-dir.conf ${cwd}/tmp/1
+sed "s%# Maximum Volume Jobs%  Maximum Volume Jobs%" ${cwd}/tmp/1 >${conf}/bareos-dir.conf
 
 
 change_jobname NightlySave $JobName
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds

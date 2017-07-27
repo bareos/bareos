@@ -3,6 +3,5 @@
 /bin/cp -f ${rscripts}/test-bareos-sd.conf ${conf}/bareos-sd.conf
 /bin/cp -f ${rscripts}/test-bareos-fd.conf ${conf}/bareos-fd.conf
 /bin/cp -f ${rscripts}/test-console.conf ${conf}/bconsole.conf
-/bin/cp -f ${rscripts}/test-console.conf ${conf}/bat.conf
 
 ${rscripts}/set_tape_options

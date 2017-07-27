@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then copy it
+# Run a simple backup then copy it
 #   to another device.
 #
 # This script uses the virtual disk autochanger
@@ -13,11 +13,19 @@ JobName=CopyJobSave
 scripts/cleanup
 scripts/copy-migration-confs
 scripts/prepare-disk-changer
-echo "${cwd}/build" >${cwd}/tmp/file-list
 sed 's/migrate/copy/g' ${cwd}/bin/bareos-dir.conf > ${cwd}/tmp/1
 sed 's/Migrate/Copy/g' ${cwd}/tmp/1 > ${cwd}/bin/bareos-dir.conf
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+
 start_test
 
 #

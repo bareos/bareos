@@ -6,7 +6,6 @@ TestName="duplicate-job-test"
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build/README.NDMP" >${cwd}/tmp/file-list
 
 # increase the maximum concurrent jobs for FD, SD and DIR
 perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-dir.conf",100)'
@@ -40,7 +39,19 @@ echo 's%CompressedTest%CancelRunningDuplicatesNo%' > $outf
 echo 's%Backup%Backup; AllowDuplicateJobs = no;CancelLowerLevelDuplicates=no;CancelQueuedDuplicates=no; CancelRunningDuplicates=no%' >> $outf
 sed -f $outf $tmp/1 >> $conf/bareos-dir.conf
 
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 when=`perl -Mscripts::functions -e "get_time(300)"`
+
 
 start_test
 

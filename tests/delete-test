@@ -10,9 +10,19 @@ JobName=NightlySave
 scripts/cleanup
 scripts/copy-test-confs
 
-start_test
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
 
-echo $PWD/build/po > tmp/file-list
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
+start_test
 
 cat <<EOF > ${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -22,11 +32,11 @@ label storage=File volume=TestVolume001
 run job=$JobName level=full yes
 wait
 messages
-@exec "touch $cwd/build/po/fr.po"
+@exec "touch ${BackupDirectory}/fr.po"
 run job=$JobName level=incremental yes
 wait
 messages
-@exec "touch $cwd/build/po/de.po"
+@exec "touch ${BackupDirectory}/de.po"
 run job=$JobName level=incremental yes
 wait
 messages

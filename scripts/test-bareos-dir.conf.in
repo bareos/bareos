@@ -266,6 +266,7 @@ Storage {
 Catalog {
   Name = MyCatalog
   @libdbi@
+  dbdriver = "@db_type@"
   dbname = @db_name@; user = @db_user@; password = "@db_password@"
 }
 

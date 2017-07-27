@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory but
+# Run a simple backup but
 #   create two volumes and set a short Volume duration on
 #   the first so that it will be used, recycled.  Then
 #   Bug #1032 indicates it will get a changer error when
@@ -20,9 +20,20 @@ scripts/cleanup
 scripts/copy-2tape-confs
 scripts/prepare-two-tapes
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds

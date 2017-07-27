@@ -35,9 +35,21 @@ for i in 2 3 4; do
     sed "s/FileStorage/FileStorage$i/" $tmp/2 >> $conf/bareos-sd.conf
 done
 
-disable_pluguins
+disable_plugins
 
-echo "$cwd/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 echo "$tmp/fifo" >>${cwd}/tmp/file-list
 
 mkfifo $tmp/fifo

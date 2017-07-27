@@ -1,13 +1,39 @@
 #!/bin/sh
 #
-# Run a basejob backup of the Bareos build directory
+# Run a basejob backup
 #   then restore it.
 #
 
 TestName="base-job-test"
 JobName=backup
 . scripts/functions
-$rscripts/cleanup
+
+p() {
+   echo "##############################################" >> ${cwd}/tmp/log1.out
+   echo "$*" >> ${cwd}/tmp/log1.out
+   echo "##############################################" >> ${cwd}/tmp/log2.out
+   echo "$*" >> ${cwd}/tmp/log2.out
+   if is_debug; then
+      echo "##############################################"
+      echo "$*"
+   fi
+}
+
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+# Remove old configuration, working and tmp files. Setup the database.
+cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/po.tgz
 
 copy_test_confs
 echo 's/backup_advance/base_backup/' > $tmp/s
@@ -20,37 +46,25 @@ cp tmp/1 $conf/bareos-fd.conf
 
 change_jobname BackupClient1 $JobName
 
-p() {
-    echo "##############################################" >> ${cwd}/tmp/log1.out
-    echo "$*" >> ${cwd}/tmp/log1.out
-    echo "##############################################" >> ${cwd}/tmp/log2.out
-    echo "$*" >> ${cwd}/tmp/log2.out
-}
-
-# cleanup
-rm -rf ${cwd}/build/accurate.new
-rm -rf ${cwd}/build/accurate
-
-
 # add extra files
-mkdir ${cwd}/build/accurate
-mkdir ${cwd}/build/accurate/dirtest
-echo "test test" > ${cwd}/build/accurate/dirtest/hello
-echo "test test" > ${cwd}/build/accurate/xxx
-echo "test test" > ${cwd}/build/accurate/yyy
-echo "test test" > ${cwd}/build/accurate/zzz
-echo "test test" > ${cwd}/build/accurate/zzzzzz
-echo "test test" > ${cwd}/build/accurate/xxxxxx
-echo "test test" > ${cwd}/build/accurate/yyyyyy
-echo "test test" > ${cwd}/build/accurate/xxxxxxxxx
-echo "test test" > ${cwd}/build/accurate/yyyyyyyyy
-echo "test test" > ${cwd}/build/accurate/zzzzzzzzz
-echo ${cwd}/build > ${cwd}/tmp/file-list
+mkdir -p ${BackupDirectory}/build/accurate
+mkdir -p ${BackupDirectory}/build/accurate/dirtest
+echo "test test" > ${BackupDirectory}/build/accurate/dirtest/hello
+echo "test test" > ${BackupDirectory}/build/accurate/xxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyy
+echo "test test" > ${BackupDirectory}/build/accurate/zzz
+echo "test test" > ${BackupDirectory}/build/accurate/zzzzzz
+echo "test test" > ${BackupDirectory}/build/accurate/xxxxxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyyyyy
+echo "test test" > ${BackupDirectory}/build/accurate/xxxxxxxxx
+echo "test test" > ${BackupDirectory}/build/accurate/yyyyyyyyy
+echo "test test" > ${BackupDirectory}/build/accurate/zzzzzzzzz
+echo ${BackupDirectory} > ${cwd}/tmp/file-list
 
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@output /dev/null
+@$out /dev/null
 messages
 label volume=TestVolume001 storage=File pool=Default
 messages
@@ -59,7 +73,7 @@ END_OF_DATA
 run_bareos
 
 ################################################################
-p Now do a backup using base backup
+p "Now do a backup using base backup"
 ################################################################
 
 echo ${cwd}/bin >> ${cwd}/tmp/file-list
@@ -74,7 +88,7 @@ END_OF_DATA
 
 run_bconsole
 
-echo ${cwd}/build > ${cwd}/tmp/file-list
+echo ${BackupDirectory}/build > ${cwd}/tmp/file-list
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log4.out
@@ -92,12 +106,11 @@ wait
 messages
 END_OF_DATA
 
-
 run_bconsole
 check_for_zombie_jobs storage=File
 
 check_two_logs
-check_restore_diff
+check_restore_diff ${BackupDirectory}/build || exit 1
 
 rm -rf ${cwd}/tmp/bareos-restores
 
@@ -114,8 +127,12 @@ if [ $? -ne 0 ]; then
 fi
 
 ################################################################
-p Now do a backup after making few changes
+p "Now do a backup after making few changes"
 ################################################################
+
+rm ${BackupDirectory}/build/accurate/yyyyyy  # delete a file
+rm -rf ${BackupDirectory}/build/accurate/dirtest
+
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log1.out
 update volume=TestVolume002 volstatus=Used
@@ -134,21 +151,17 @@ wait
 messages
 END_OF_DATA
 
-rm ${cwd}/build/accurate/yyyyyy  # delete a file
-rm -rf ${cwd}/build/accurate/dirtest
-
-
 run_bconsole
 check_for_zombie_jobs storage=File
 
 check_two_logs
-check_restore_diff
+check_restore_diff || exit 1
 check_files_written ${cwd}/tmp/log1.out 4
 
 rm -rf ${cwd}/tmp/bareos-restores
 
 ################################################################
-p Test the job purge
+p "Test the job purge"
 ################################################################
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out ${cwd}/tmp/log3.out
@@ -172,10 +185,10 @@ fi
 
 
 ################################################################
-p Test list commands
+p "Test list commands"
 ################################################################
 
-touch ${cwd}/build/po/fr.po
+touch ${BackupDirectory}/build/po/fr.po
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 run level=full job=backup yes

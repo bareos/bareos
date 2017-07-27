@@ -13,8 +13,6 @@ require_autochanger
 
 scripts/cleanup
 scripts/copy-tape-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
-MTX=$AUTOCHANGER_SCRIPT
 
 sleep=90
 
@@ -30,6 +28,19 @@ load_slot1
 init_drive ${TAPE_DRIVE}
 
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 # Label second volume

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
 #
@@ -13,20 +13,31 @@ require_tape_drive
 scripts/cleanup-tape
 scripts/copy-tape-confs
 
-CRYPTO_CACHE="working/bareos-sd.8103.cryptoc"
+CRYPTO_CACHE="working/bareos-sd.${BAREOS_SD_PORT}.cryptoc"
 
 rm -f  ${CRYPTO_CACHE}
 
 # prepare director
-KEY_ENCRYPTION_KEY=`bin/bscrypto -g -`
-echo "Key Encryption Key = \"$KEY_ENCRYPTION_KEY\"" > bin/scsicrypto-dir.conf
+KEY_ENCRYPTION_KEY=`${bin}/bscrypto -g -`
+echo "Key Encryption Key = \"$KEY_ENCRYPTION_KEY\"" > ${conf}/scsicrypto-dir.conf
 
-/bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName}  bin/bareos-dir.conf
-/bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf.${TestName} bin/bareos-sd.conf
-
-echo "${cwd}/build" >${cwd}/tmp/file-list
+/bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName}  ${conf}/bareos-dir.conf
+/bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf.${TestName} ${conf}/bareos-sd.conf
 
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -44,8 +55,7 @@ scripts/check_for_zombie_jobs storage=tape
 echo "Backup 1 done"
 
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+change_files
 
 #
 # run a second job
@@ -65,8 +75,8 @@ run_bconsole
 
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 2 done"
-touch ${cwd}/build/src/dird/*.c
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+change_files
+
 #
 # run a third job
 #
@@ -86,7 +96,8 @@ run_bconsole
 scripts/check_for_zombie_jobs storage=tape
 echo "Backup 3 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+change_files
+
 #
 # run a fourth job
 #
@@ -153,7 +164,7 @@ echo "---------------------"
 
 echo "Key Encryption Key:"
 echo
-cat bin/scsicrypto-dir.conf
+cat ${conf}/scsicrypto-dir.conf
 echo
 echo "---------------------"
 

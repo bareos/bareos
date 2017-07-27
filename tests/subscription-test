@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
 #
@@ -10,14 +10,21 @@ JobName=BackupClient1
 
 scripts/cleanup
 scripts/copy-test-confs
-
-
-
-/bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName}  bin/bareos-dir.conf
-
-echo "${cwd}/build/src/tests" >${cwd}/tmp/file-list
-
+/bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName} ${conf}/bareos-dir.conf
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -58,9 +65,9 @@ fi
 
 
 # update subscriptions to 5
-cp ${scripts}/bareos-dir.conf ${scripts}/bareos-dir.conf.tmp
-sed 's#Subscriptions = 1#Subscriptions = 5#g' < ${scripts}/bareos-dir.conf.tmp > ${scripts}/bareos-dir.conf
-touch ${cwd}/build/src/tests/*
+cp ${conf}/bareos-dir.conf ${tmp}/bareos-dir.conf.tmp
+sed 's#Subscriptions = 1#Subscriptions = 5#g' < ${tmp}/bareos-dir.conf.tmp > ${conf}/bareos-dir.conf
+change_files
 
 #
 # run second backup

@@ -11,11 +11,6 @@ Client=bareos-fd
 JobName=backup-bareos-fd
 when=`perl -Mscripts::functions -e "get_time(300)"`
 
-# Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${cwd}/build/src/tests/"
-
 # Remove old configuration, working and tmp files. Setup the database.
 cleanup
 
@@ -36,9 +31,17 @@ copy_configs
 #perl -Mscripts::functions -e 'set_maximum_concurrent_jobs("$conf/bareos-fd.conf",100)'
 
 
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
-#echo "${cwd}/build/README.NDMP" >${cwd}/tmp/file-list
 echo "${BackupDirectory}" >${tmp}/file-list
+
 
 # start the test
 start_test

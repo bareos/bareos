@@ -14,9 +14,9 @@ Client {
   # compatible = yes
 
   TLS Require = yes
-  TLS Certificate = "@scriptdir@/tls/client1.bareos.org-cert.pem"
-  TLS Key = "@scriptdir@/tls/client1.bareos.org-key.pem"
-  TLS CA Certificate File = "@scriptdir@/tls/bareos-ca.pem"
+  TLS Certificate = "@confdir@/tls/client1.bareos.org-cert.pem"
+  TLS Key = "@confdir@/tls/client1.bareos.org-key.pem"
+  TLS CA Certificate File = "@confdir@/tls/bareos-ca.pem"
   TLS Allowed CN = bareos-sd1.bareos.org
   TLS Allowed CN = bareos-sd2.bareos.org
 }

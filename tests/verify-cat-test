@@ -9,7 +9,19 @@ JobName=VerifyCatalog
 cwd=`pwd`
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 #echo "${cwd}/do_all" >${cwd}/tmp/file-list
 #echo "${cwd}/do_all_tapes" >>${cwd}/tmp/file-list
 #echo "${cwd}/do_file" >>${cwd}/tmp/file-list
@@ -21,7 +33,7 @@ cat <<END_OF_DATA >tmp/bconcmds
 @output /dev/null
 messages
 @$out tmp/log1.out
-@#exec "sh -c 'touch ${cwd}/build/xxx_new_file'"
+@#exec "sh -c 'touch ${BackupDirectory}/xxx_new_file'"
 run job=VerifyVolume level=InitCatalog yes
 wait
 messages
@@ -29,7 +41,7 @@ messages
 @# now do a verify Catalog
 @#
 @$out ${cwd}/tmp/original
-@#exec "sh -c 'rm -f ${cwd}/build/xxx_new_file'"
+@#exec "sh -c 'rm -f ${BackupDirectory}/xxx_new_file'"
 run job=VerifyVolume level=Catalog yes
 wait
 messages

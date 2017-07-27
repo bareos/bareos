@@ -1,6 +1,9 @@
 #!/bin/sh
+
+. scripts/functions
+
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   to a tape then restore it, we do that twice to ensure that
 #   we can correctly append to a tape.
 # We also use the purge and the relabel commands as
@@ -8,15 +11,22 @@
 #
 TestName="backup-to-null"
 JobName=backuptonull
-. scripts/functions
 
 scripts/cleanup
 scripts/copy-fifo-confs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
 
 change_jobname NightlySave $JobName
-rm -f ${cwd}/tmp/log1.out ${cwd}/tmp/log2.out
 start_test
 
 
@@ -38,13 +48,11 @@ END_OF_DATA
 
 run_bareos
 check_for_zombie_jobs storage=Dummy
-stop_bareos
 
 #
 # Now do a second backup after making a few changes
 #
-touch ${cwd}/build/src/dird/*.c
-echo "test test" > ${cwd}/build/src/dird/xxx
+echo "test test" > ${BackupDirectory}/xxx
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -59,7 +67,7 @@ messages
 quit
 END_OF_DATA
 
-run_bareos
+run_bconsole
 check_for_zombie_jobs storage=Dummy
 stop_bareos
 
@@ -72,3 +80,4 @@ dstat=$?
 rstat=0
 
 end_test
+

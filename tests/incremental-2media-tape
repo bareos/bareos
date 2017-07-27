@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup, then create some
 #   new files, do an Incremental onto a different medium
 #   and then restore everything.
 #
@@ -14,26 +14,34 @@ require_tape_drive
 require_second_drive
 
 scripts/cleanup
+
 # Get conf files
 /bin/cp -f scripts/bareos-dir-2d.conf bin/bareos-dir.conf
 /bin/cp -f scripts/bareos-sd-2d.conf bin/bareos-sd.conf
 /bin/cp -f scripts/bareos-fd-2d.conf bin/bareos-fd.conf
 /bin/cp -f scripts/bconsole-2d.conf bin/bconsole.conf
 
-# get proper SD tape definitions
-cp -f scripts/linux_tape_options bin/tape_options
-if test x`uname` = xFreeBSD ; then
-   cp -f scripts/freebsd_tape_options bin/tape_options
-fi
+${rscripts}/set_tape_options
 
 mt -f /dev/nst0 rewind
 mt -f /dev/nst0 weof
 mt -f /dev/nst1 rewind
 mt -f /dev/nst1 weof
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 # Write out bconsole commands
@@ -53,8 +61,8 @@ run_bareos
 
 echo "Backup 1 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+echo "test" > ${BackupDirectory}/test1.txt
+echo "test" > ${BackupDirectory}/test2.txt
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null

@@ -18,6 +18,7 @@ dirport=${BASEPORT}
 fdport=`expr ${BASEPORT} '+' 1`
 sdport=`expr ${BASEPORT} '+' 2`
 sdport2=`expr ${BASEPORT} '+' 3`
+db_type=${DBTYPE:-"postgresql"}
 db_name=${db_name:-"regress"}
 db_user=${db_user:-"regress"}
 db_password=${db_password:-""}
@@ -28,9 +29,10 @@ if test ${os} = "Linux" -o ${os} = "FreeBSD"; then
 else
   os=${os}-`./scripts/get-os`
 fi
-dbengine=`echo ${WHICHDB} | sed -e 's/--with-//' -e 's/=.*//'`
-bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
-bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+if [ -r ${srcdir}/src/include/version.h ]; then
+  bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+  bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
+fi
 builddir="${src}"
 hostname="${hostname:-$HOST}"
 
@@ -40,6 +42,7 @@ echo "s%@archivedir@%${tmp}%g" >>${out}
 echo "s%@bindir@%${bin}%g" >>${out}
 echo "s%@sbindir@%${bin}%g" >>${out}
 echo "s%@scriptdir@%${scripts}%g" >>${out}
+echo "s%@plugindir@%${plugindir}%g" >>${out}
 echo "s%@working_dir@%${working}%g" >>${out}
 echo "s%@piddir@%${working}%g" >>${out}
 echo "s%@job_email@%${EMAIL}%g" >>${out}
@@ -70,7 +73,6 @@ echo "s%@sdport@%${sdport}%g" >>${out}
 echo "s%@sdport2@%${sdport2}%g" >>${out}
 echo "s%@fdport@%${fdport}%g" >>${out}
 echo "s%@regressdir@%${cwd}%g" >>${out}
-echo "s%@dbengine@%${dbengine}%g" >>${out}
 echo "s%@srcdir@%${srcdir}%g" >>${out}
 echo "s%@sitename@%${SITE_NAME}%g" >>${out}
 echo "s%@os@%${os}%g" >>${out}
@@ -83,10 +85,11 @@ echo "s%@win32_store_addr@%${WIN32_STORE_ADDR}%g" >>${out}
 echo "s%@win32_file@%${WIN32_FILE}%g" >>${out}
 echo "s%@win32_port@%${WIN32_PORT}%g" >>${out}
 echo "s%@win32_password@%${WIN32_PASSWORD}%g" >>${out}
+echo "s%@db_type@%${DBTYPE}%g" >>${out}
 echo "s%@db_name@%${db_name}%g" >>${out}
 echo "s%@db_user@%${db_user}%g" >>${out}
 echo "s%@db_password@%${db_password}%g" >>${out}
 echo "s%@builddir@%${builddir}%g" >>${out}
 echo "s%@BUILD_DIR@%${builddir}%g" >>${out}
-echo "s%@confdir@%${scripts}%g" >>${out}
+echo "s%@confdir@%${confdir}%g" >>${out}
 echo "s%@uncomment_dbi@%#%g" >>${out}

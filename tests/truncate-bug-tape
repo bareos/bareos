@@ -11,9 +11,21 @@ require_tape_drive
 scripts/cleanup-tape
 scripts/copy-tape-confs
 
-echo "${cwd}/build/src" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
+
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
@@ -55,7 +67,7 @@ restore where=${cwd}/tmp/bareos-restores storage=tape
 3
 @# select JobId=4 (i.e. file five on the tape)
 4
-cd ${cwd}/build
+cd ${BackupDirectory}
 @# mark a single file
 mark configure
 done

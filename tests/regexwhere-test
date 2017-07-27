@@ -23,7 +23,19 @@ echo "s%, \!restored%%g" >${outf}
 cp ${cwd}/bin/bareos-fd.conf ${cwd}/tmp/1
 sed -f ${outf} ${cwd}/tmp/1 >${cwd}/bin/bareos-fd.conf
 
-echo "${cwd}/build/po" >tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+# po.tgz: build/po/*
+setup_data data/po.tgz
+echo "test" > ${BackupDirectory}/README.txt
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 start_test
 
@@ -38,7 +50,7 @@ messages
 @$out tmp/RUN_JobA
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 1
@@ -48,10 +60,12 @@ messages
 @##################################
 @$out tmp/RUN_JobB
 restore
+@# Select the most recent backup for a client
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
+@# Restore Job: 2: JobB
 2
 yes
 wait
@@ -60,7 +74,7 @@ messages
 @$out tmp/RUN_JobC
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 3
@@ -71,7 +85,7 @@ messages
 @$out tmp/RUN_JobD
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 4
@@ -82,7 +96,7 @@ messages
 @$out tmp/RUN_JobE
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 5
@@ -93,7 +107,7 @@ messages
 @$out tmp/RUN_JobF
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 6
@@ -104,7 +118,7 @@ messages
 @$out tmp/RUN_JobG
 restore strip_prefix="${cwd}" add_prefix="${tmp}/bareos-restore.$$"
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 7
@@ -115,7 +129,7 @@ messages
 @$out tmp/RUN_JobH
 restore add_suffix=.old
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 7
@@ -126,7 +140,7 @@ messages
 @$out tmp/RUN_JobI
 restore regexwhere="!Po!old!i,!old!po!,!\$!.old!"
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 7
@@ -137,7 +151,7 @@ messages
 @$out tmp/RUN_JobJ
 restore
 5
-cd ${cwd}/build/po
+cd ${BackupDirectory}/build/po
 m *.po
 done
 7
@@ -181,10 +195,9 @@ export rstat
 
 J=JobA
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "${cwd}/build/po/fr.old.po" tmp/RUN_$J > /dev/null
+grep "${BackupDirectory}/build/po/fr.old.po" tmp/RUN_$J > /dev/null
 
-if [ $? = 0 ]
-then
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -193,21 +206,20 @@ fi
 
 J=JobB
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "tmp/bareos-restore${cwd}/po/fr.po.old" tmp/RUN_$J > /dev/null
 # $cwd begins with /
-if [ $? = 0 ]
-then
+FILE="${tmp}/bareos-restore${BackupDirectory}/po/fr.po.old"
+grep "$FILE" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
-   echo "$J in error"
+	echo "$J in error (file $FILE not found)"
    rstat=1
 fi
 
 J=JobC
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "tmp/bareos-restore${cwd}/build/po/fr.po" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+grep "tmp/bareos-restore${BackupDirectory}/build/po/fr.po" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -216,8 +228,7 @@ fi
 
 J=JobD
 grep "Restore Error"  tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -226,20 +237,19 @@ fi
 
 J=JobE
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "${cwd}/tmp/fr.po"  tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+FILE="${BackupDirectory}/tmp/fr.po"
+grep "${FILE}"  tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
-   echo "$J in error"
+   echo "$J in error (file $FILE not found)"
    rstat=1
 fi
 
 J=JobF
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "${cwd}/build/po/fr.po" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+grep "${BackupDirectory}/build/po/fr.po" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -248,21 +258,19 @@ fi
 
 J=JobG
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "tmp/bareos-restore.$$/build/po/fr.po" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+FILE="tmp/bareos-restore.$$/tmp/data/build/po/fr.po"
+grep "${FILE}"  tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
-   echo "$J in error"
+   echo "$J in error (file $FILE not found)"
    rstat=1
 fi
-rm -rf ${tmp}/bareos-restore.$$
 
 J=JobH
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "${cwd}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+grep "${BackupDirectory}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -271,9 +279,8 @@ fi
 
 J=JobI
 grep "Restore OK"  tmp/RUN_$J > /dev/null && \
-grep "${cwd}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+grep "${BackupDirectory}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -285,9 +292,8 @@ J=JobJ
 grep "Restore OK"      tmp/RUN_$J > /dev/null && \
 grep "/etc/passwd.old" tmp/RUN_$J > /dev/null && \
 grep "Where: *tmp/bareos-restore-it" tmp/RUN_$J > /dev/null && \
-grep "${cwd}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
-if [ $? = 0 ]
-then
+grep "${BackupDirectory}/build/po/fr.po.old" tmp/RUN_$J > /dev/null
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo $J ok
 else
    echo "$J in error"
@@ -296,14 +302,13 @@ fi
 
 # test with bregtest
 
-find ${cwd}/build > tmp/list
+find ${BackupDirectory} > tmp/list
 # thanks to BSD like system for that...
 sed -e 's/[Rr][Ee][Aa][Dd][Mm][Ee]/readme/' -e 's/\([ch]\)$/.old.\1/' tmp/list > tmp/list.sed
-bin/bregtest -s -f tmp/list -e '/readme/readme/i,/([ch])$/.old.$1/' > tmp/list.bsed
+${bin}/bregtest -s -f tmp/list -e '/readme/readme/i,/([ch])$/.old.$1/' > tmp/list.bsed
 
 diff tmp/list.bsed tmp/list.sed >/dev/null 2>&1
-if [ $? = 0 ]
-then
+if [ $? = 0 ]; then
     [ "$debug" = 1 ] && echo bregtest ok
 else
    echo "bregtest test in error"

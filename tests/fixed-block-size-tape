@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   to a tape where we set the minimum and maximum block
 #   sizes.
 #
@@ -10,10 +10,9 @@ JobName=fixedblocksize
 
 require_tape_drive
 
+scripts/cleanup
+
 copy_tape_confs
-
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 cp ${cwd}/bin/bareos-sd.conf ${cwd}/tmp/1
 echo "s%# Maximum Block Size%  Maximum Block Size%" >${cwd}/tmp/2
 echo "s%# Minimum Block Size%  Minimum Block Size%" >>${cwd}/tmp/2
@@ -28,6 +27,19 @@ fi
 rm -f ${cwd}/tmp/1 ${cwd}/tmp/2
 
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 

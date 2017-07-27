@@ -5,16 +5,10 @@
 # Define the Name of the test as "TestName".
 # Should be the same as the filename, therefore we use the filename as default.
 TestName="`basename $0`"
-#TestName="1-example-test"
 
 # set other test specific variables
 Client=tls-passive-fd
 JobName=backup-bareos-fd
-
-# Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${cwd}/build/src/tests/"
 
 # Remove old configuration, working and tmp files. Setup the database.
 cleanup
@@ -30,8 +24,17 @@ cleanup
 # only these will be taken.
 copy_configs
 
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
 echo "${BackupDirectory}" >${tmp}/file-list
+
 
 # start the test
 start_test

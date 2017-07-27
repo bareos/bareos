@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup 
 #  to two tapes where the maximum tape file size is set to 1M
 #  Note, this test simulates the tape filling and writing to
 #   the next tape. One minor wrinkle: we create the two tapes
@@ -20,7 +20,19 @@ scripts/cleanup
 scripts/copy-2disk-confs
 scripts/prepare-disk-changer
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 
 outf="${cwd}/tmp/sed_tmp"
 echo "s%# Maximum File Size%  Maximum File Size%g" >${outf}

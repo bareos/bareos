@@ -8,31 +8,35 @@ out="${tmp}/sed_tmp"
 ${rscripts}/create_sed
 
 # Process .in files with sed script
-for file in ${rscripts}/*.in \
+for file in ${cwd}/*.in \
+            ${rscripts}/*.in \
             ${rconfigs}/*/*.in \
             ${rconfigs}/*/*/*/*.in
 do
   sed -f ${out} ${file} > `echo "${file}" | sed -e 's/.in$//'`
 done
 
-chmod 755 ${rscripts}/regress-config
-
 # These files have no fancy sed stuff, so we just copy them over
-cp ${rscripts}/win32-bareos-sd-tape.conf.in ${rscripts}/win32-bareos-sd-tape.conf
-cp ${rscripts}/win32-bareos-fd.conf.in      ${rscripts}/win32-bareos-fd.conf
+#cp ${rscripts}/win32-bareos-sd-tape.conf.in ${rscripts}/win32-bareos-sd-tape.conf
+#cp ${rscripts}/win32-bareos-fd.conf.in      ${rscripts}/win32-bareos-fd.conf
 
-if test -f ${conf}/bareos-sd.conf ; then
-  cp ${conf}/bareos-sd.conf ${tmp}/bac$$
-  sed "s% /tmp%${tmp}%g" ${tmp}/bac$$ >${conf}/bareos-sd.conf
-fi
+#if test -f ${conf}/bareos-sd.conf ; then
+#  cp ${conf}/bareos-sd.conf ${tmp}/bac$$
+#  sed "s% /tmp%${tmp}%g" ${tmp}/bac$$ >${conf}/bareos-sd.conf
+#fi
+chmod 755 ${rscripts}/regress-config
 chmod 755 ${rscripts}/cleanup-*tape ${rscripts}/cleanup-*drive ${rscripts}/prepare-two-tapes
-rm -f ${tmp}/tmp/bac$$
-cp ${scripts}/mtx-changer ${tmp}/bac$$
-sed "s%^MTX.*$%MTX=${AUTOCHANGER_PATH}%g" ${tmp}/bac$$ >${scripts}/mtx-changer
-chmod 755 ${scripts}/mtx-changer ${rscripts}/prepare-fake-autochanger
+
+#if [ -w ${scripts}/mtx-changer ]; then
+#  rm -f ${tmp}/bac$$
+#  cp ${scripts}/mtx-changer ${tmp}/bac$$
+#  sed "s%^MTX.*$%MTX=${AUTOCHANGER_PATH}%g" ${tmp}/bac$$ >${scripts}/mtx-changer
+#  chmod 755 ${scripts}/mtx-changer
+#fi
 
 ${rscripts}/set_tape_options
 ${rscripts}/config_dart
 
-rm -f ${out}
-rm -f ${tmp}/bac$$
+#rm -f ${out}
+#rm -f ${tmp}/bac$$
+

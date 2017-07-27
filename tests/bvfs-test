@@ -2,16 +2,9 @@
 
 . scripts/functions
 
-#
-# Example regression test.
-#
-# Use this as a template for your own tests.
-#
-
 # Define the Name of the test as "TestName".
 # Should be the same as the filename, therefore we use the filename as default.
 TestName="`basename $0`"
-#TestName="1-example-test"
 
 # set other test specific variables
 Client=bareos-fd
@@ -20,9 +13,8 @@ BackupJobIds="1,2"
 BvfsPathId="b201"
 
 # Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${cwd}/build/src/tests/"
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
 BackupFileExtra=${BackupDirectory}/extrafile.txt
 
 # Remove old configuration, working and tmp files. Setup the database.
@@ -41,6 +33,10 @@ copy_configs
 
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
 echo "${BackupDirectory}" >${tmp}/file-list
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
 
 # start the test
 start_test
@@ -96,20 +92,34 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 .bvfs_lsdir jobid=${BackupJobIds} path=/
 
 @$out ${tmp}/log-bvfs-lsdir-BackupDirectory.out w
-.bvfs_lsdir jobid=${BackupJobIds} path=${BackupDirectory}
+.bvfs_lsdir jobid=${BackupJobIds} path=${BackupDirectory}/
 
 @$out ${tmp}/log-bvfs-lsfiles-BackupDirectory.out w
-.bvfs_lsfiles jobid=${BackupJobIds} pathid=1
+@#.bvfs_lsfiles jobid=${BackupJobIds} pathid=1
+.bvfs_lsfiles jobid=${BackupJobIds} path=${BackupDirectory}/
 
 @$out ${tmp}/log-bvfs-versions-extrafile.out w
-.bvfs_versions jobid=0 client=${Client} path=${BackupDirectory} fname=extrafile.txt
+.bvfs_versions jobid=0 client=${Client} path=${BackupDirectory}/ fname=extrafile.txt
+END_OF_DATA
 
+run_bconsole
+LOG=${tmp}/log-bvfs-lsdir-BackupDirectory.out
+# expect:
+# 1 0   19  1   x GoHK EHt C GHH GHH A BAA BAA I BWDNOj BZwlgI BZwlgI A A C .
+# 2   0   0   0   A A A A A A A A A A A A A A ..
+# need to get dirid of "."
+DirId=$(sed -n 's/^\([0-9]\+\)\W.*[a-zA-Z]\+\W\.$/\1/p' $LOG)
+if [ -z "$DirId" ]; then
+    set_error "failed to find DirId of backup directory (using '.bvfs_lsdir path=${BackupDirectory}/')."
+fi
+
+cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${tmp}/log-bvfs-restore.out w
 @#
 @# now do a restore
 @#
-.bvfs_restore path=${BvfsPathId} jobid=${BackupJobIds} dirid=1
-@#.bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b201
+@#.bvfs_restore path=b201 fileid=numlist dirid=numlist hardlink=numlist path=b201
+.bvfs_restore path=${BvfsPathId} jobid=${BackupJobIds} dirid=${DirId}
 
 restore client=${Client} where=${tmp}/bareos-restores storage=File1 file=?${BvfsPathId} yes
 wait
@@ -123,6 +133,8 @@ messages
 @$out ${tmp}/log-bvfs-cleanup.out w
 .sql query="SELECT count(*) FROM ${BvfsPathId};"
 .bvfs_cleanup path=${BvfsPathId}
+@# table should not exist any more, so query will fail. Don't log.
+@$out /dev/null
 .sql query="SELECT count(*) FROM ${BvfsPathId};"
 
 @$out ${tmp}/log-bvfs-clear-cache.out w
@@ -181,9 +193,8 @@ check_log ${LOG}
 # expect:
 # 1 0   19  1   x GoHK EHt C GHH GHH A BAA BAA I BWDNOj BZwlgI BZwlgI A A C .
 # 2   0   0   0   A A A A A A A A A A A A A A ..
-# pathid=1, as this is the first directory with content.
-if ! grep -q "^1.*\W\.$" ${LOG}; then
-    set_error "failed to find backup directory (using '.bvfs_lsdir path=${BackupDirectory}')."
+if ! grep -q "^[0-9]\+\W.*\W\.$" ${LOG}; then
+    set_error "failed to find backup directory (using '.bvfs_lsdir path=${BackupDirectory}/')."
 fi
 
 LOG=${tmp}/log-bvfs-lsfiles-BackupDirectory.out

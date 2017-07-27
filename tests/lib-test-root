@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   then restore it.
 #
 TestName="lib-test-root"

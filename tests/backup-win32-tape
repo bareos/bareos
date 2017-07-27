@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   to a tape then restore it, we do that twice to ensure that
 #   we can correctly append to a tape.
 #
@@ -13,11 +13,16 @@ require_tape_drive_drive
 scripts/cleanup-tape
 scripts/copy-win32-confs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
 
 change_jobname $JobName
 start_test
-
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
@@ -46,5 +51,5 @@ check_for_zombie_jobs storage=tape
 stop_bareos
 
 check_two_logs
-check_restore_diff
+check_restore_diff "$BackupDirectory"
 end_test

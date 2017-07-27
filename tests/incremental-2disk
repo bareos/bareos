@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup then create some
 #   new files, do an Incremental and restore those two files.
 #
 # This script uses the virtual disk autochanger
@@ -13,17 +13,22 @@ scripts/cleanup
 scripts/copy-2disk-confs
 scripts/prepare-disk-changer
 
-echo "${cwd}/tmp/build" >${cwd}/tmp/file-list
-if test ! -d ${cwd}/tmp/build ; then
-   mkdir -p ${cwd}/tmp/build
-fi
-cp -p ${cwd}/build/src/dird/*.c ${cwd}/tmp/build
-cd ${cwd}/tmp
-echo "${cwd}/tmp/build/ficheriro1.txt" >restore-list
-echo "${cwd}/tmp/build/ficheriro2.txt" >>restore-list
-cd ${cwd}
-
 change_jobname $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/flat-c.tgz
+echo "${BackupDirectory}/ficheriro1.txt" >${tmp}/restore-list
+echo "${BackupDirectory}/ficheriro2.txt" >>${tmp}/restore-list
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 # Write out bconsole commands
@@ -41,8 +46,8 @@ END_OF_DATA
 
 run_bareos
 
-echo "ficheriro1.txt" >${cwd}/tmp/build/ficheriro1.txt
-echo "ficheriro2.txt" >${cwd}/tmp/build/ficheriro2.txt
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -72,13 +77,10 @@ run_bconsole
 
 check_for_zombie_jobs storage=File
 stop_bareos
-#
-# Delete .c files because we will only restored the txt files
-#
-rm -f ${cwd}/tmp/build/*.c
 
 check_two_logs
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
+
 
 #
 # This script seems to more or less randomly fail, so we
@@ -90,7 +92,7 @@ if [ $dstat != 0 -o $bstat != 0 -o $rstat != 0 ] ; then
    echo "  "
    cat ${cwd}/tmp/log2.out
    echo "  "
-   diff -r ${cwd}/tmp/build ${cwd}/tmp/bareos-restores${cwd}/tmp/build
+   diff -r ${BackupDirectory} ${cwd}/tmp/bareos-restores/${BackupDirectory}
 fi
 
 end_test

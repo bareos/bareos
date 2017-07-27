@@ -16,7 +16,6 @@ NewClient="dynclient1-fd"
 cleanup
 
 copy_configs
-echo "${BackupDirectory}" >${tmp}/file-list
 
 start_test
 

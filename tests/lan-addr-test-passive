@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory
+# Run a simple backup
 #   then restore it.
 #
 
@@ -18,9 +18,9 @@ scripts/copy-confs
 #
 outf="tmp/sed_tmp"
 echo "s%  Schedule =%# Schedule =%g" >${outf}
-echo "s%Name = \"BackupClient1\"%Name = \"backup\";  client run after job = \"netstat -tan\"%g" >>${outf}
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} $tmp/1 >$scripts/bareos-dir.conf
+echo "s%Name = \"BackupClient1FileList\"%Name = \"backup\";  client run after job = \"netstat -tan\"%g" >>${outf}
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
 
 PATH=$PATH:/sbin:/usr/sbin
 #
@@ -50,14 +50,22 @@ fi
 outf="tmp/sed_tmp"
 echo "s/Address =/Address = 127.0.0.1; LAN Address = $IP #/g" > $outf
 echo 's/Client {/Client {; Passive=yes/g' >> $outf
-cp $scripts/bareos-dir.conf $tmp/1
-sed -f ${outf} ${cwd}/tmp/1 > $scripts/bareos-dir.conf
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} ${cwd}/tmp/1 > ${conf}/bareos-dir.conf
 
-DIRPORT=$BASEPORT
-FDPORT=$(($BASEPORT + 1))
-SDPORT=$(($BASEPORT + 2))
 
-change_jobname BackupClient1 $JobName
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -98,7 +106,7 @@ stop_bareos
 
 
 print_debug "and connections to FD with source and target ${IP}"
-grep -E "${IP}(.|:)$FDPORT .* ${IP}"  $tmp/log1.out >> $tmp/log3.out
+grep -E "${IP}(.|:)${BAREOS_FD_PORT} .* ${IP}"  $tmp/log1.out >> $tmp/log3.out
 if [ $? -ne 0 ]; then
    stat=2
    print_debug "Couldn't detect a connection to the FD with source and target ${IP}"

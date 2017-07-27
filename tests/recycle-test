@@ -1,12 +1,12 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory but
+# Run a simple backup  but
 #   create three volumes and do six backups causing the
 #   volumes to be recycled, and cycling through the volumes
 #   twice. Tests maxvoljobs and volretention.
 #
 # Note, this test is a bit tricky, in that if you get too
-#   much data in the regress/build directory, the test will
+#   much backup data, the test will
 #   fail because it will run out of enough volumes to backup
 #   all the data.
 #
@@ -16,7 +16,18 @@ JobName=Recycle
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
 
 change_jobname NightlySave $JobName
 start_test

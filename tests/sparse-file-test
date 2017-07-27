@@ -1,28 +1,31 @@
 #!/bin/sh
-#
-# Run a simple backup of the Bareos build directory using the Sparse option
-#   then restore it.
-#
-TestName="gigaslam-sparse-test"
-JobName=SparseTest
-#JobName=SparseCompressedTest
 
 . scripts/functions
+
+#
+# Run a simple backup using the Sparse option
+#   then restore it.
+#
+TestName="sparse-file-test"
+JobName=SparseTest
 
 scripts/cleanup
 scripts/copy-test-confs
 
 # Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${cwd}/build/src/tests/"
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
 
 # the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
 echo "${BackupDirectory}" >${tmp}/file-list
 
-mkdir -p "${BackupDirectory}"
-
 SPARSEFILE="${BackupDirectory}/gigaslam.gif"
+
+start_test
 
 # create a sparse file
 scripts/create_sparse_file.sh ${SPARSEFILE} 100M
@@ -36,8 +39,6 @@ if [ ! -e "${SPARSEFILE}" ]; then
     set_error "Failed to create sparse file."
     exit 1
 fi
-
-start_test
 
 cat >${cwd}/tmp/bconcmds <<END_OF_DATA
 @$out /dev/null
@@ -66,8 +67,11 @@ run_bareos
 check_for_zombie_jobs storage=File
 stop_bareos
 
-size_orig=`du ${SPARSEFILE} | cut -f 1`
-size=`du ${cwd}/tmp/bareos-restores/${SPARSEFILE} | cut -f 1`
+check_two_logs
+check_restore_diff "${BackupDirectory}"
+
+size_orig=`get_file_size ${SPARSEFILE}`
+size=`get_file_size ${cwd}/tmp/bareos-restores/${SPARSEFILE}`
 if [ -z "$size" ]; then
     set_error "Failed to determine size of restored sparse file."
 elif [ $size -gt 120 ]; then
@@ -76,9 +80,6 @@ fi
 
 print_debug "size orig:     $size_orig"
 print_debug "size restored: $size"
-
-check_two_logs
-check_restore_diff "${BackupDirectory}"
 
 rm -f ${SPARSEFILE}
 

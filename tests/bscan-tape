@@ -1,26 +1,35 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup using the compressed option
 #   then backup four times, each with incremental then
 #   do a bscan and restore.
 #   It should require at least 4 different bsrs.
 #
-. scripts/functions
 
 TestName="bscan-tape"
 JobName=bscantape
-BackupDirectory="${cwd}/build/src/"
+. scripts/functions
 
 require_tape_drive
 
 copy_tape_confs
 
+change_jobname NightlySave $JobName
+
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
 echo "${BackupDirectory}" >${tmp}/file-list
 
-cp ${cwd}/bin/bareos-sd.conf tmp/1
-sed "s%# Maximum File Size%  Maximum File Size%" tmp/1 >${cwd}/bin/bareos-sd.conf
+cp ${conf}/bareos-sd.conf tmp/1
+sed "s%# Maximum File Size%  Maximum File Size%" tmp/1 >${conf}/bareos-sd.conf
 
-change_jobname NightlySave $JobName
 start_test
 
 cat <<END_OF_DATA >tmp/bconcmds
@@ -40,8 +49,7 @@ check_for_zombie_jobs storage=tape
 
 echo "Backup 1 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/dird/*.c ${cwd}/build/src/dird/*.o
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+echo "test test" > ${BackupDirectory}/additional2.txt
 
 #
 # run a second job
@@ -60,23 +68,21 @@ run_bconsole
 scripts/check_for_zombie_jobs storage=tape
 
 echo "Backup 2 done"
-touch ${cwd}/build/src/dird/*.c
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
+echo "test test" > ${BackupDirectory}/additional3.txt
+
 #
 # run a third job
 #
-
 run_bconsole
 scripts/check_for_zombie_jobs storage=tape
 
 echo "Backup 3 done"
 # make some files for the incremental to pick up
-touch ${cwd}/build/src/lib/*.c ${cwd}/build/src/lib/*.o
-#echo "abc" > ${cwd}/build/src/lib/dummy
+echo "test test" > ${BackupDirectory}/additional4.txt
+
 #
 # run a fourth job
 #
-
 run_bconsole
 scripts/check_for_zombie_jobs storage=tape
 
@@ -128,8 +134,8 @@ END_OF_DATA
 run_bareos
 check_for_zombie_jobs storage=tape
 stop_bareos
-rm -f  ${cwd}/build/src/lib/dummy
 
 check_two_logs
 check_restore_diff ${BackupDirectory}
 end_test
+

@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory using the compressed option
+# Run a simple backup  using the compressed option
 #   then restore a few selected files.
 #
 TestName="restore2-by-file-test"
@@ -8,10 +8,23 @@ JobName=restore2byfile
 . scripts/functions
 copy_test_confs
 
-echo "${cwd}/build" >${cwd}/tmp/file-list
-sed s%\^%${cwd}% ${cwd}/scripts/flist | sort | uniq >${cwd}/tmp/restore2-list
-
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+number_of_files_to_restore=5
+find "${BackupDirectory}" -type f | head -n ${number_of_files_to_restore} | sort | uniq >${tmp}/restore-list
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -26,7 +39,7 @@ messages
 @# now do a restore
 @#
 @$out ${cwd}/tmp/log2.out
-restore where=${cwd}/tmp/bareos-restores storage=File file=<${cwd}/tmp/restore2-list
+restore where=${cwd}/tmp/bareos-restores storage=File file=<${cwd}/tmp/restore-list
 yes
 wait
 messages
@@ -38,11 +51,7 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-dstat=0
-for i in `cat ${cwd}/tmp/restore2-list`; do
-   diff $i ${cwd}/tmp/bareos-restores$i
-   if [ $? != 0 ] ; then
-      dstat=1
-   fi
-done
+
+check_restore_files_diff `cat ${tmp}/restore-list`
+
 end_test

@@ -18,12 +18,20 @@ Client=bareos-fd
 JobName=backup-bareos-fd
 
 # Directory to backup.
-# This example uses a subdirectory of the bareos source/build directory,
-# that contains some file but isn't to large.
-BackupDirectory="${cwd}/build/src/tests/"
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
 
 # Remove old configuration, working and tmp files. Setup the database.
 cleanup
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
 
 # Config files will be copied to required location.
 # Base configuration files come from the
@@ -36,8 +44,10 @@ cleanup
 # only these will be taken.
 copy_configs
 
-# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
-echo "${BackupDirectory}" >${tmp}/file-list
+# The default fileset FS_TESTJOB backups all files and directories defined in "${tmp}/file-list".
+# setup_data() sets this automatically to "$tmp/data/",
+# so it only be needs to be set if another directory is used.
+#echo "${BackupDirectory}" >${tmp}/file-list
 
 # start the test
 start_test
@@ -72,7 +82,9 @@ END_OF_DATA
 run_bareos
 
 # verify that all are terminated
-check_for_zombie_jobs storage=File1 client=${Client}
+if ! check_for_zombie_jobs storage=File1 client=${Client}; then
+    set_error "zombie jobs"
+fi
 
 # stop bareos
 stop_bareos
@@ -99,3 +111,4 @@ fi
 
 # end tests and check for error codes
 end_test
+

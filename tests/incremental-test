@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory then create some
+# Run a simple backup. Then create some
 #   new files, do an Incremental and restore those two files.
 #
 TestName="incremental-test"
@@ -9,15 +9,23 @@ JobName=Incremental
 
 ${rscripts}/cleanup
 ${rscripts}/copy-test-confs
-echo "${tmpsrc}" >${tmp}/file-list
-mkdir -p ${tmpsrc}
-cp -p ${src}/src/dird/*.c ${tmpsrc}
-cd ${tmp}
-echo "${tmpsrc}/ficheriro1.txt" >restore-list
-echo "${tmpsrc}/ficheriro2.txt" >>restore-list
-cd ${cwd}
-
 change_jobname CompressedTest $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+echo "${BackupDirectory}/ficheriro1.txt" >${tmp}/restore-list
+echo "${BackupDirectory}/ficheriro2.txt" >>${tmp}/restore-list
+
+
 start_test
 
 cat <<END_OF_DATA >${tmp}/bconcmds
@@ -41,9 +49,9 @@ check_for_zombie_jobs storage=File
 #
 # Now create two new files to be restored later
 #
-sleep 1
-echo "ficheriro1.txt" >${tmpsrc}/ficheriro1.txt
-cp -f ${tmpsrc}/dird.c ${tmpsrc}/ficheriro2.txt
+#sleep 1
+echo "ficheriro1.txt" >${BackupDirectory}/ficheriro1.txt
+echo "ficheriro2.txt" >${BackupDirectory}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
@@ -59,9 +67,9 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
+#sleep 1
+touch ${BackupDirectory}/ficheriro1.txt
+touch ${BackupDirectory}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
@@ -75,12 +83,10 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 1
-cd ${tmpsrc}
-cp -f ficheriro2.txt 1
-sed "s%a%b%g" 1 >ficheriro2.txt
-rm -f 1
-cd ${cwd}
+#sleep 1
+echo "next ficheriro1.txt" >>${BackupDirectory}/ficheriro1.txt
+echo "next ficheriro2.txt" >>${BackupDirectory}/ficheriro2.txt
+
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
@@ -93,9 +99,10 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
+#sleep 1
+touch ${BackupDirectory}/ficheriro1.txt
+touch ${BackupDirectory}/ficheriro2.txt
+
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
@@ -108,9 +115,10 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
+#sleep 1
+touch ${BackupDirectory}/ficheriro1.txt
+touch ${BackupDirectory}/ficheriro2.txt
+
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
@@ -123,9 +131,10 @@ END_OF_DATA
 
 run_bconsole
 
-sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
+#sleep 1
+touch ${BackupDirectory}/ficheriro1.txt
+touch ${BackupDirectory}/ficheriro2.txt
+
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
@@ -137,9 +146,12 @@ quit
 END_OF_DATA
 
 run_bconsole
+
+# make sure, timestamp differs
 sleep 1
-touch ${tmpsrc}/ficheriro1.txt
-touch ${tmpsrc}/ficheriro2.txt
+
+echo "last test" >> ${BackupDirectory}/ficheriro1.txt
+echo "last test" >> ${BackupDirectory}/ficheriro2.txt
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
@@ -168,9 +180,6 @@ check_for_zombie_jobs storage=File
 stop_bareos
 
 check_two_logs
-#
-# Delete .c files because we will only restored the txt files
-#
-rm -f ${tmpsrc}/*.c
-check_restore_tmp_build_diff
+check_restore_files_diff `cat ${tmp}/restore-list`
+
 end_test

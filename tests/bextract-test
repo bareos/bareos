@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Run a simple backup of the Bareos build directory but
+# Run a simple backup but
 #   split the archive into two volumes, then build a BSR with
 #   the restore command and use bextract to restore the files.
 #
@@ -10,9 +10,17 @@ JobName="bextract"
 
 scripts/cleanup
 scripts/copy-test-confs
-echo "${cwd}/build" >${cwd}/tmp/file-list
-
 change_jobname NightlySave $JobName
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+
 start_test
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
@@ -21,7 +29,7 @@ messages
 @$out ${cwd}/tmp/log1.out
 label storage=File1 volume=TestVolume001 pool=Default
 label storage=File1 volume=TestVolume002 pool=Default
-update Volume=TestVolume001 MaxVolBytes=3000000
+update Volume=TestVolume001 MaxVolBytes=10000
 @#setdebug level=400 dir
 setdebug level=400 storage=File1
 run job=$JobName storage=File1 yes
@@ -44,9 +52,9 @@ stop_bareos
 
 mkdir -p ${cwd}/tmp/bareos-restores
 if test "$debug" -eq 1 ; then
-  $bin/bextract -v -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores
+  $bin/bextract -v -c ${conf} -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores
 else
-  $bin/bextract -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores 2>&1 >/dev/null
+  $bin/bextract -c ${conf} -b working/restore.bsr ${cwd}/tmp ${cwd}/tmp/bareos-restores 2>&1 >/dev/null
 fi
 rstat=$?
 grep "^  Termination: *Backup OK" ${cwd}/tmp/log1.out 2>&1 >/dev/null
