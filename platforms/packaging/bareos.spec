@@ -1,7 +1,7 @@
 #
 # spec file for package bareos
 # Copyright (c) 2011-2012 Bruno Friedmann (Ioda-Net) and Philipp Storz (dass IT)
-#               2013-2016 Bareos GmbH & Co KG
+#               2013-2017 Bareos GmbH & Co KG
 #
 
 Name: 		bareos
@@ -463,6 +463,11 @@ Requires:   libmysqlclient-devel
 %endif
 %endif
 
+%package    regress-config
+Summary:    Required files for bareos-regress
+Group:      Development/Languages/C and C++
+Requires:   %{name}-common = %{version}
+
 %if 0%{?python_plugins}
 %package    director-python-plugin
 Summary:    Python plugin for Bareos Director daemon
@@ -641,6 +646,13 @@ This package contains the tray monitor (QT based).
 
 This package contains bareos development files.
 
+%description regress-config
+%{dscr}
+
+This package contains required files for Bareos regression testing.
+
+
+
 %prep
 %setup
 
@@ -779,14 +791,9 @@ for F in  \
     %{_sysconfdir}/init.d/bareos-sd \
     %{_sysconfdir}/init.d/bareos-fd \
 %endif
-    %{script_dir}/bareos \
     %{script_dir}/bareos_config \
     %{script_dir}/btraceback.dbx \
     %{script_dir}/btraceback.mdb \
-    %{script_dir}/bareos-ctl-funcs \
-    %{script_dir}/bareos-ctl-dir \
-    %{script_dir}/bareos-ctl-fd \
-    %{script_dir}/bareos-ctl-sd \
     %{_docdir}/%{name}/INSTALL \
     %{_sbindir}/%{name}
 do
@@ -1255,6 +1262,20 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/BackupRados.conf.example
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/job/RestoreRados.conf.example
 %endif
+
+%files regress-config
+%defattr(-, root, root)
+%{script_dir}/bareos
+%{script_dir}/bareos-ctl-*
+%{_bindir}/timelimit
+%{_sbindir}/timelimit
+%{_sbindir}/bbatch
+%{_sbindir}/bregtest
+%{_sbindir}/grow
+%{_sbindir}/testls
+# must be readable by package build user of bareos-regress.
+%attr(0644, %{daemon_user}, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bareos-regress.conf
+
 
 #
 # Define some macros for updating the system settings.

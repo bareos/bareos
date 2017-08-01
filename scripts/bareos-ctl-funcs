@@ -16,8 +16,8 @@ pidofproc() {
    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
       pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
       if [ "$pid" != "" ] ; then
-	 echo $pid
-	 return 0
+         echo $pid
+         return 0
       fi
    fi
 
@@ -72,31 +72,31 @@ killproc() {
    # Kill it.
    if [ "$pid" != "" ] ; then
       if [ "$notset" = "1" ] ; then
-	 if ${PS} -p "$pid">/dev/null 2>&1; then
-	     # TERM first, then KILL if not dead
-	     kill -TERM $pid 2>/dev/null
-	     sleep 1
-	     if ${PS} -p "$pid" >/dev/null 2>&1 ; then
-		 sleep 1
-		 if ${PS} -p "$pid" >/dev/null 2>&1 ; then
-		     sleep 3
-		     if ${PS} -p "$pid" >/dev/null 2>&1 ; then
-			 kill -KILL $pid 2>/dev/null
-		     fi
-		 fi
-	     fi
-	  fi
-	  ${PS} -p "$pid" >/dev/null 2>&1
-	  RC=$?
-	  [ $RC -eq 0 ] && failure "$base shutdown" || success "$base shutdown"
-      #    RC=$((! $RC))
-      # use specified level only
+         if ${PS} -p "$pid">/dev/null 2>&1; then
+            # TERM first, then KILL if not dead
+            kill -TERM $pid 2>/dev/null
+            sleep 1
+            if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+               sleep 1
+               if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+                  sleep 3
+                  if ${PS} -p "$pid" >/dev/null 2>&1 ; then
+                     kill -KILL $pid 2>/dev/null
+                  fi
+               fi
+            fi
+         fi
+         ${PS} -p "$pid" >/dev/null 2>&1
+         RC=$?
+         [ $RC -eq 0 ] && failure "$base shutdown" || success "$base shutdown"
+         #    RC=$((! $RC))
+         # use specified level only
       else
-	 if ${PS} -p "$pid" >/dev/null 2>&1; then
-	    kill $killlevel $pid 2>/dev/null
-	    RC=$?
-	    [ $RC -eq 0 ] && success "$base $killlevel" || failure "$base $killlevel"
-	 fi
+         if ${PS} -p "$pid" >/dev/null 2>&1; then
+            kill $killlevel $pid 2>/dev/null
+            RC=$?
+            [ $RC -eq 0 ] && success "$base $killlevel" || failure "$base $killlevel"
+         fi
       fi
    else
       failure "$base shutdown"
@@ -110,25 +110,24 @@ killproc() {
 
 # Function that checks if the configuration is OK and the Database can be connected
 checkcfg() {
+   RC=0
    echo "Checking Configuration and Database connection ... "
-   if [ ! -z "${DIR_USER}" ]; then
-      su -s /bin/sh ${DIR_USER} -c "${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t"
+   if [ ! -z "${DIR_USER}" -a "${DIR_USER}" != "${USER}" ]; then
+      su -s /bin/sh ${DIR_USER} -c "${BAREOS_DIR_BIN} ${OPTIONS} -f -t"
+      RC=$?
    else
-      ${BACDIRBIN}/bareos-dir ${OPTIONS} -f -t
+      ${BAREOS_DIR_BIN} ${OPTIONS} -f -t
+      RC=$?
    fi
-   if [ $? -eq 0 ]; then
-      return 0
-   else
-      return 1
-   fi
+   return $RC
 }
 
 status() {
    pid=""
    # Test syntax.
    if [ $# = 0 ] ; then
-       echo "Usage: status {program} {port}"
-       return 1
+      echo "Usage: status {program} {port}"
+      return 1
    fi
 
    # Get base program name
@@ -153,9 +152,9 @@ status() {
    fi
 
    pid=`${PSCMD} | ${AWK} 'BEGIN { prog=ARGV[1]; ARGC=1 }
-                           { if ((prog == $2) || (("(" prog ")") == $2) ||
-		                (("[" prog "]") == $2) ||
-		                ((prog ":") == $2)) { print $1 ; exit 0 } }' $1`
+   { if ((prog == $2) || (("(" prog ")") == $2) ||
+      (("[" prog "]") == $2) ||
+      ((prog ":") == $2)) { print $1 ; exit 0 } }' $1`
    if [ "$pid" != "" ] ; then
       echo "$base (pid $pid) is running..."
       return 0
@@ -165,8 +164,8 @@ status() {
    if [ -f ${PIDDIR}/$base.$2.pid ] ; then
       pid=`head -n 1 ${PIDDIR}/$base.$2.pid`
       if [ "$pid" != "" ] ; then
-	 echo "$base dead but pid file exists"
-	 return 1
+         echo "$base dead but pid file exists"
+         return 1
       fi
    fi
 

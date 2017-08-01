@@ -1,0 +1,9 @@
+@scriptdir@/bareos
+@scriptdir@/bareos-ctl-*
+/usr/bin/timelimit
+/usr/sbin/timelimit
+/usr/sbin/bbatch
+/usr/sbin/bregtest
+/usr/sbin/grow
+/usr/sbin/testls
+@confdir@/bareos-regress.conf

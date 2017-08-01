@@ -22,7 +22,7 @@ fd_subdirs = src scripts src/lib src/findlib @LMDB_DIR@ src/filed \
        @TRAY_MONITOR_DIR@ src/console @FD_PLUGIN_DIR@
 
 # Non-client-only directores
-subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools
+subdirs = src/cats @NDMP_DIR@ @DIRD_DIR@ @STORED_DIR@ @SD_BACKENDS_DIR@ @SD_PLUGIN_DIR@ @DIR_PLUGIN_DIR@ src/tools src/tests
 
 unittest_dirs = @UNITTEST_DIRS@
 unittest_base_dirs = $(unittest_dirs:/unittests= )

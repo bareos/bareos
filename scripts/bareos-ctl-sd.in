@@ -22,15 +22,15 @@ AWK=@AWK@
 #  easier to "steal" this code for the development
 #  environment where they are different.
 #
-BACSDBIN=@sbindir@
-BACSDCFG=@confdir@
+BIN=@sbindir@/bareos-sd
 PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 
-SD_PORT=@sd_port@
+BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_SD_PORT=${BAREOS_SD_PORT:-@sd_port@}
+BAREOS_SD_USER=${BAREOS_SD_USER:-@sd_user@}
+BAREOS_SD_GROUP=${BAREOS_SD_GROUP:-@sd_group@}
 
-SD_USER=@sd_user@
-SD_GROUP=@sd_group@
 Bareos="@BAREOS@"
 PIDOF="@PIDOF@"
 PGREP="@PGREP@"
@@ -48,47 +48,53 @@ if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
 fi
 
 case "$1" in
-   start)
-      [ -x ${BACSDBIN}/bareos-sd ] && {
-	 echo "Starting the $Bareos Storage daemon"
-	 OPTIONS=''
-	 if [ "${SD_USER}" != '' ]; then
-	    OPTIONS="${OPTIONS} -u ${SD_USER}"
-	 fi
+    start)
+        if [ -x ${BIN} ]; then
+            echo "Starting the $Bareos Storage daemon"
+            OPTIONS=''
+            if [ "${BAREOS_SD_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_SD_USER}"
+            fi
 
-	 if [ "${SD_GROUP}" != '' ]; then
-	    OPTIONS="${OPTIONS} -g ${SD_GROUP}"
-	 fi
+            if [ "${BAREOS_SD_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_SD_GROUP}"
+            fi
 
-	 if [ "x${VALGRIND_SD}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}
-	 else
-	    ${BACSDBIN}/bareos-sd $2 $3 ${OPTIONS} -v -c ${BACSDCFG}
-	 fi
-      }
-      ;;
+            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+            fi
 
+            if [ "x${VALGRIND_SD}" = "x1" ]; then
+                valgrind --leak-check=full ${BIN} $2 $3 ${OPTIONS} -v
+            else
+                ${BIN} $2 $3 ${OPTIONS} -v
+            fi
+        fi
+        ;;
 
-   stop)
-      [ -x ${BACSDBIN}/bareos-sd ] && {
-	 echo "Stopping the $Bareos Storage daemon"
-	 killproc ${BACSDBIN}/bareos-sd ${SD_PORT}
-      }
-      ;;
+    stop)
+        if [ -x ${BIN} ]; then
+            echo "Stopping the $Bareos Storage daemon"
+            killproc ${BIN} ${BAREOS_SD_PORT}
+        fi
+        ;;
 
-   restart)
-      $0 stop
-      sleep 5
-      $0 start
-      ;;
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
 
-   status)
-      [ -x ${BACSDBIN}/bareos-sd   ] && status ${BACSDBIN}/bareos-sd  ${SD_PORT}
-      ;;
+    status)
+        [ -x ${BIN} ] && status ${BIN} ${BAREOS_SD_PORT}
+        exit $?
+        ;;
 
-   *)
-      echo "Usage: $0 {start|stop|restart|status}"
-      exit 1
-      ;;
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
 esac
+
 exit 0
+

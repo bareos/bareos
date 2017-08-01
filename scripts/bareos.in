@@ -41,9 +41,20 @@ case "$1" in
       ;;
 
    status)
-      [ -x ${SCRIPTDIR}/bareos-ctl-sd ] && ${SCRIPTDIR}/bareos-ctl-sd status
-      [ -x ${SCRIPTDIR}/bareos-ctl-fd ] && ${SCRIPTDIR}/bareos-ctl-fd status
-      [ -x ${SCRIPTDIR}/bareos-ctl-dir ] && ${SCRIPTDIR}/bareos-ctl-dir status
+      if [ -x ${SCRIPTDIR}/bareos-ctl-dir ]; then
+         ${SCRIPTDIR}/bareos-ctl-dir status
+         status_dir=$?
+      fi
+      if [ -x ${SCRIPTDIR}/bareos-ctl-sd ]; then
+         ${SCRIPTDIR}/bareos-ctl-sd status
+         status_sd=$?
+      fi
+      if [ -x ${SCRIPTDIR}/bareos-ctl-fd ]; then
+         ${SCRIPTDIR}/bareos-ctl-fd status
+         status_fd=$?
+      fi
+      status_all=`expr ${status_dir:-0} + ${status_sd:-0} + ${status_fd:-0}`
+      exit ${status_all}
       ;;
 
    *)

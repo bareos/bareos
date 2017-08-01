@@ -4256,6 +4256,8 @@ debian|ubuntu|univention)
       debian/bareos-storage.install \
       debian/bareos-storage.postinst \
       debian/bareos-storage.preinst \
+      debian/bareos-regress-config.install \
+      debian/bareos-regress-config.preinst \
       debian/bareos-tools.install \
       debian/bareos-traymonitor.install \
       debian/bareos-traymonitor.postinst \
@@ -4609,6 +4611,7 @@ scripts/bareos-ctl-fd \
 scripts/bareos-ctl-sd \
 scripts/devel_bareos \
 scripts/Makefile \
+scripts/bareos-regress.conf \
 scripts/logrotate \
 scripts/mtx-changer \
 scripts/disk-changer \

@@ -22,15 +22,15 @@ AWK=@AWK@
 #  easier to "steal" this code for the development
 #  environment where they are different.
 #
-BACFDBIN=@sbindir@
-BACFDCFG=@confdir@
+BIN=@sbindir@/bareos-fd
 PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 
-FD_PORT=@fd_port@
+BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_FD_PORT=${BAREOS_FD_PORT:-@fd_port@}
+BAREOS_FD_USER=${BAREOS_FD_USER:-@fd_user@}
+BAREOS_FD_GROUP=${BAREOS_FD_GROUP:-@fd_group@}
 
-FD_USER=@fd_user@
-FD_GROUP=@fd_group@
 Bareos="@BAREOS@"
 PIDOF="@PIDOF@"
 PGREP="@PGREP@"
@@ -48,47 +48,52 @@ if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
 fi
 
 case "$1" in
-   start)
-      [ -x ${BACFDBIN}/bareos-fd ] && {
-	 echo "Starting the $Bareos File daemon"
-	 OPTIONS=''
-	 if [ "${FD_USER}" != '' ]; then
-	    OPTIONS="${OPTIONS} -u ${FD_USER}"
-	 fi
+    start)
+        if [ -x ${BIN} ]; then
+            echo "Starting the $Bareos File daemon"
+            OPTIONS=''
+            if [ "${BAREOS_FD_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_FD_USER}"
+            fi
 
-	 if [ "${FD_GROUP}" != '' ]; then
-	    OPTIONS="${OPTIONS} -g ${FD_GROUP}"
-	 fi
+            if [ "${BAREOS_FD_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_FD_GROUP}"
+            fi
 
-	 if [ "x${VALGRIND_FD}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}
-	 else
-	    ${BACFDBIN}/bareos-fd $2 $3 ${OPTIONS} -v -c ${BACFDCFG}
-	 fi
-      }
-      ;;
+            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+            fi
 
-   stop)
-      # Stop the FD first so that SD will fail jobs and update catalog
-      [ -x ${BACFDBIN}/bareos-fd ] && {
-	 echo "Stopping the $Bareos File daemon"
-	 killproc ${BACFDBIN}/bareos-fd ${FD_PORT}
-      }
-      ;;
+            if [ "x${VALGRIND_FD}" = "x1" ]; then
+                valgrind --leak-check=full ${BIN} $2 $3 ${OPTIONS} -v
+            else
+                ${BIN} $2 $3 ${OPTIONS} -v
+            fi
+        fi
+        ;;
 
-   restart)
-      $0 stop
-      sleep 5
-      $0 start
-      ;;
+    stop)
+        if [ -x ${BIN} ]; then
+            echo "Stopping the $Bareos File daemon"
+            killproc ${BIN} ${BAREOS_FD_PORT}
+        fi
+        ;;
 
-   status)
-      [ -x ${BACFDBIN}/bareos-fd ] && status ${BACFDBIN}/bareos-fd  ${FD_PORT}
-      ;;
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
 
-   *)
-      echo "Usage: $0 {start|stop|restart|status}"
-      exit 1
-      ;;
+    status)
+        [ -x ${BIN} ] && status ${BIN} ${BAREOS_FD_PORT}
+        exit $?
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
 esac
+
 exit 0

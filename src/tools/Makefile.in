@@ -26,7 +26,7 @@ OPENSSL_LIBS_NONSHARED = @OPENSSL_LIBS_NONSHARED@
 GNUTLS_LIBS_NONSHARED = @GNUTLS_LIBS_NONSHARED@
 
 TOOLS = bsmtp drivetype fstype bregex bwild bpluginfo bscrypto timelimit
-TOOLS_BIN = bsmtp bwild bregex
+TOOLS_BIN = bsmtp bwild bregex timelimit
 TOOLS_SBIN = bpluginfo bscrypto
 
 INCLUDES += -I$(srcdir) -I$(basedir) -I$(basedir)/include

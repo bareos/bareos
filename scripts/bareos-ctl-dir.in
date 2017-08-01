@@ -22,15 +22,16 @@ AWK=@AWK@
 #  easier to "steal" this code for the development
 #  environment where they are different.
 #
-BACDIRBIN=@sbindir@
-BACDIRCFG=@confdir@
+BIN=@sbindir@/bareos-dir
+BAREOS_DIR_BIN=$BIN
 PIDDIR=@piddir@
 SUBSYSDIR=@subsysdir@
 
-DIR_PORT=@dir_port@
+BAREOS_CONFIG_DIR=${BAREOS_CONFIG_DIR:-@confdir@}
+BAREOS_DIR_PORT=${BAREOS_DIR_PORT:-@dir_port@}
+BAREOS_DIR_USER=${BAREOS_DIR_USER:-@dir_user@}
+BAREOS_DIR_GROUP=${BAREOS_DIR_GROUP:-@dir_group@}
 
-DIR_USER=@dir_user@
-DIR_GROUP=@dir_group@
 Bareos="@BAREOS@"
 PIDOF="@PIDOF@"
 PGREP="@PGREP@"
@@ -48,52 +49,59 @@ if [ -d "/lib/tls" -a $OS = "Linux" -a `uname -r | cut -c1-3` = "2.4" ] ; then
 fi
 
 case "$1" in
-   start)
-      [ -x ${BACDIRBIN}/bareos-dir ] && {
-	 echo "Starting the $Bareos Director daemon"
-	 OPTIONS=''
-	 if [ "${DIR_USER}" != '' ]; then
-	    OPTIONS="${OPTIONS} -u ${DIR_USER}"
-	 fi
+    start)
+        if [ -x ${BIN} ]; then
+            echo "Starting the $Bareos Director daemon"
+            OPTIONS=''
+            if [ "${BAREOS_DIR_USER}" != '' ]; then
+                OPTIONS="${OPTIONS} -u ${BAREOS_DIR_USER}"
+            fi
 
-	 if [ "${DIR_GROUP}" != '' ]; then
-	    OPTIONS="${OPTIONS} -g ${DIR_GROUP}"
-	 fi
+            if [ "${BAREOS_DIR_GROUP}" != '' ]; then
+                OPTIONS="${OPTIONS} -g ${BAREOS_DIR_GROUP}"
+            fi
 
-         checkcfg
-         if [ $? != 0 ]; then
-            exit 1
-         fi
+            if [ "${BAREOS_CONFIG_DIR}" != '' ]; then
+                OPTIONS="${OPTIONS} -c ${BAREOS_CONFIG_DIR}"
+            fi
 
-	 if [ "x${VALGRIND_DIR}" = "x1" ]; then
-	    valgrind --leak-check=full ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}
-	 else
-	    ${BACDIRBIN}/bareos-dir $2 $3 ${OPTIONS} -v -c ${BACDIRCFG}
-	 fi
-	 sleep 1
-      }
-      ;;
+            checkcfg
+            if [ $? != 0 ]; then
+                exit 1
+            fi
 
-   stop)
-      [ -x ${BACDIRBIN}/bareos-dir ] && {
-	 echo "Stopping the $Bareos Director daemon"
-	 killproc ${BACDIRBIN}/bareos-dir ${DIR_PORT}
-      }
-      ;;
+            if [ "x${VALGRIND_DIR}" = "x1" ]; then
+                valgrind --leak-check=full ${BIN} $2 $3 ${OPTIONS} -v
+            else
+                ${BIN} $2 $3 ${OPTIONS} -v
+            fi
+            sleep 1
+        fi
+        ;;
 
-   restart)
-      $0 stop
-      sleep 5
-      $0 start
-      ;;
+    stop)
+        if [ -x ${BIN} ]; then
+            echo "Stopping the $Bareos Director daemon"
+            killproc ${BIN} ${BAREOS_DIR_PORT}
+        fi
+        ;;
 
-   status)
-      [ -x ${BACDIRBIN}/bareos-dir ] && status ${BACDIRBIN}/bareos-dir ${DIR_PORT}
-      ;;
+    restart)
+        $0 stop
+        sleep 5
+        $0 start
+        ;;
 
-   *)
-      echo "Usage: $0 {start|stop|restart|status}"
-      exit 1
-      ;;
+    status)
+        [ -x ${BIN} ] && status ${BIN} ${BAREOS_DIR_PORT}
+        exit $?
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop|restart|status}"
+        exit 1
+        ;;
 esac
+
 exit 0
+

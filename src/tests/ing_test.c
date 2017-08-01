@@ -29,7 +29,6 @@
 #ifdef needed
 #include "bareos.h"
 #include "cats/cats.h"
-#include "cats/sql_glue.h"
 
 /* Local variables */
 static B_DB *db;
