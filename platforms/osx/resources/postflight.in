@@ -1,31 +1,7 @@
 #!/bin/sh
 
-function genpw() {
-  openssl rand -base64 33
-}
+@scriptdir@/bareos-config initilaize_local_hostname
 
-# copy example config files and fix permissions
-if [ ! -f $3@FD_CONF@ ]; then
-  DIR_PW=$(genpw)
-  FD_PW=$(genpw)
-  SD_PW=$(genpw)
-  MON_DIR_PW=$(genpw)
-  MON_FD_PW=$(genpw)
-  MON_SD_PW=$(genpw)
-  HOSTNAME=$(hostname -s)
-  mkdir -p "$(dirname $3@FD_CONF@)"
-  sed \
-    -e "s,@DIR_PW@,$DIR_PW,g" \
-    -e "s,@FD_PW@,$FD_PW,g" \
-    -e "s,@SD_PW@,$SD_PW,g" \
-    -e "s,@MON_DIR_PW@,$MON_DIR_PW,g" \
-    -e "s,@MON_FD_PW@,$MON_FD_PW,g" \
-    -e "s,@MON_SD_PW@,$MON_SD_PW,g" \
-    -e "s,@BASENAME@,$HOSTNAME,g" \
-    -e "s,@HOSTNAME@,$HOSTNAME,g" \
-    "$3@PREFIX@/etc/bareos-fd.conf.example" > "$3@FD_CONF@"
-fi
-chmod 0600 "$3@FD_CONF@"
 
 # install startup item
 mkdir -p -m 0755 "$3/Library/LaunchDaemons"

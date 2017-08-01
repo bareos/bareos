@@ -904,7 +904,11 @@ replace()
     for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf 2>/dev/null`; do
         if [ -f "$file" ]; then
             echo "replacing '${SEARCH}' with '${REPLACE}' in $file"
-            sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+            if [ "$os_type" = "Darwin" ]; then
+                 sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
+            else
+		 sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+            fi
         fi
     done
     return 0

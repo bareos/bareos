@@ -16,7 +16,7 @@ Requirements:
 
 Example (compile and create package from within bareos source tree):
 $ ./configure --enable-client-only
-$ make -C platforms/osx
+$ make -C platforms/osx all
 
 By moving the contents of platforms/osx to some other directory (e.g.
 ~/bareos-standalone-bulder), it is possible to create installer packages from

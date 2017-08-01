@@ -36,7 +36,6 @@ BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
 BAREOS_SOURCE:=${WORKING_DIR}/bareos-${BAREOS_VERSION}
 BAREOS_DESTDIR:=${WORKING_DIR}/destdir
 BAREOS_PREFIX:=/usr/local
-BAREOS_FD_CONF:=${BAREOS_PREFIX}/etc/bareos/bareos-fd.conf
 BAREOS_WORKING_DIR:=/var/run/bareos/working
 #BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
 
@@ -63,7 +62,8 @@ CONFIGFLAGS:=--enable-client-only --prefix=${BAREOS_PREFIX} \
     --with-dir-password=@DIR_PW@ --with-fd-password=@FD_PW@ \
     --with-sd-password=@SD_PW@ --with-mon-dir-password=@MON_DIR_PW@ \
     --with-mon-fd-password=@MON_FD_PW@ --with-mon-sd-password=@MON_SD_PW@ \
-    --with-basename=@BASENAME@ --with-hostname=@HOSTNAME@ \
+    --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+    --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
     --with-working-dir=${BAREOS_WORKING_DIR}
 CPPFLAGS:=
 CFLAGS:=-O -g
@@ -79,7 +79,6 @@ CXXPP:=cpp
 INFILE_SUBST=\
   -e "s,@PREFIX@,${BAREOS_PREFIX},g" \
   -e "s,@BAREOS_VERSION@,${BAREOS_VERSION},g" \
-  -e "s,@FD_CONF@,${BAREOS_FD_CONF},g" \
   -e "s,@BAREOS_DESTDIR@,${BAREOS_DESTDIR},g" \
   -e "s,@PACKAGE_ID@,${PACKAGE_ID},g"
 

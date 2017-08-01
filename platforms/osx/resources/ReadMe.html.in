@@ -47,6 +47,10 @@
     Use launchctl to enable and disable the bareos file daemon.
     <pre>sudo launchctl load -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist</pre></br>
     <pre>sudo launchctl unload -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist</pre></br>
+
+    You can also use launchctl to check if the daemon is running.
+    <pre>sudo launchctl list</pre>
+    Here you should find org.bareos.bareos-fd.plist listed.
   </p>
   <h2>Resources</h2>
   <p>
