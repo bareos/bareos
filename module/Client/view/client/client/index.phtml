@@ -185,9 +185,9 @@ $this->headTitle($title);
                   if(row.available_fd === "" || row.available_fd === null || row.available_fd === undefined) {
                      return '<span class="label label-default" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Unknown update status">'+row.installed_fd+'</span>';
                   }
-                  if(data.update_fd === true) {
-                     if(data.update_dird === true) {
-                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+data.available_dird+' required first)</span>';
+                  if(row.update_fd === true) {
+                     if(row.update_dird === true) {
+                        return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span> <span class="text-danger" data-toggle="tooltip" data-placement="top">(Director upgrade '+row.available_dird+' required first)</span>';
                      }
                      else {
                         return '<span class="label label-danger" id="label-fd-version" data-toggle="tooltip" data-placement="top" title="Version '+row.available_fd+' is available">'+row.installed_fd+'</span>';
