@@ -1239,10 +1239,10 @@ void apply_pool_overrides(JCR *jcr, bool force)
             pool_override = true;
             if (jcr->res.run_inc_pool_override) {
                pm_strcpy(jcr->res.pool_source, _("Run IncPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Run IncPool override\n");
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.inc_pool->name(), "Run IncPool override\n");
             } else {
                pm_strcpy(jcr->res.pool_source, _("Job IncPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Job IncPool override\n");
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.inc_pool->name(), "Job IncPool override\n");
             }
          }
          break;
@@ -1252,10 +1252,10 @@ void apply_pool_overrides(JCR *jcr, bool force)
             pool_override = true;
             if (jcr->res.run_diff_pool_override) {
                pm_strcpy(jcr->res.pool_source, _("Run DiffPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Run DiffPool override\n");
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.diff_pool->name(), "Run DiffPool override\n");
             } else {
                pm_strcpy(jcr->res.pool_source, _("Job DiffPool override"));
-               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.full_pool->name(), "Job DiffPool override\n");
+               Dmsg2(100, "Pool set to '%s' because of %s", jcr->res.diff_pool->name(), "Job DiffPool override\n");
             }
          }
          break;
