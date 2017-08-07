@@ -62,8 +62,8 @@ BuildRequires: mod_php_any
 %define _apache_conf_dir /etc/apache2/conf.d/
 %define daemon_user  wwwrun
 %define daemon_group www
-Requires:   apache
-Requires:   mod_php_any
+Requires: apache
+Recommends: mod_php_any
 %else
 #if 0#{?fedora} || 0#{?rhel_version} || 0#{?centos_version}
 BuildRequires: httpd
