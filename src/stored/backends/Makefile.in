@@ -83,6 +83,7 @@ STORED_RESTYPES = autochanger device director ndmp messages storage
 $(ELASTO_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(ELASTO_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(CHEPHFS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -97,6 +98,7 @@ $(GFAPI_LOBJS):
 $(OBJECT_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DROPLET_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(RADOS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
