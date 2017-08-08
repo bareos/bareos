@@ -44,6 +44,7 @@ Vendor: 	The Bareos Team
 %define build_sqlite3 1
 %define check_cmocka 1
 %define glusterfs 0
+%define objectstorage 0
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
@@ -123,6 +124,10 @@ BuildRequires: systemd
 BuildRequires: systemd-rpm-macros
 %endif
 %{?systemd_requires}
+%endif
+
+%if 0%{?objectstorage}
+BuildRequires: libdroplet-devel
 %endif
 
 %if 0%{?glusterfs}
@@ -304,6 +309,15 @@ Provides:   %{name}-sd
 Requires(pre): pwdutils
 %else
 Requires(pre): shadow-utils
+%endif
+
+%if 0%{?objectstorage}
+%package    storage-object
+Summary:    Object Storage support for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
+Requires:   libdroplet-common
 %endif
 
 %if 0%{?glusterfs}
@@ -566,6 +580,13 @@ This package contains the Storage Daemon
 
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
+
+%if 0%{?objectstorage}
+%description storage-object
+%{dscr}
+
+This package contains the Storage backend for Object Storage.
+%endif
 
 %if 0%{?glusterfs}
 %description storage-glusterfs
@@ -1012,6 +1033,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{backend_dir}/libbareossd-fifo*.so
 %{_sysconfdir}/bareos/bareos-dir.d/storage/NULL.conf.example
 %{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
+
+%if 0%{?objectstorage}
+%files storage-object
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-chunked*.so
+%{backend_dir}/libbareossd-object*.so
+%{_sysconfdir}/bareos/bareos-dir.d/storage/Object.conf.example
+%{_sysconfdir}/bareos/bareos-sd.d/device/ObjectStorage.conf.example
+%endif
 
 %if 0%{?glusterfs}
 %files storage-glusterfs
