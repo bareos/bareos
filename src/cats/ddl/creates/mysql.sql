@@ -13,8 +13,8 @@ CREATE TABLE Path (
 
 -- We strongly recommend to avoid the temptation to add new indexes.
 -- In general, these will cause very significant performance
--- problems in other areas.  A better approch is to carefully check
--- that all your memory configuation parameters are
+-- problems in other areas.  A better approach is to carefully check
+-- that all your memory configuration parameters are
 -- suitable for the size of your installation. If you backup
 -- millions of files, you need to adapt the database memory
 -- configuration parameters concerning sorting, joining and global
@@ -37,6 +37,8 @@ CREATE TABLE File (
    MarkId           INTEGER   UNSIGNED            DEFAULT 0,
    LStat            TINYBLOB            NOT NULL,
    MD5              TINYBLOB            NOT NULL,
+   Fhinfo           NUMERIC(20)                   DEFAULT 0,
+   Fhnode           NUMERIC(20)                   DEFAULT 0,
    Name             BLOB                NOT NULL,
    PRIMARY KEY (FileId),
    INDEX (JobId, PathId, Name(255)),
@@ -203,6 +205,7 @@ CREATE TABLE JobMedia (
    EndFile INTEGER UNSIGNED DEFAULT 0,
    StartBlock INTEGER UNSIGNED DEFAULT 0,
    EndBlock INTEGER UNSIGNED DEFAULT 0,
+   JobBytes NUMERIC(20) DEFAULT 0,
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId),
    INDEX (JobId, MediaId)
@@ -457,5 +460,5 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2170;
-INSERT INTO Version (VersionId) VALUES (2170);
+DELETE FROM Version WHERE VersionId<=2171;
+INSERT INTO Version (VersionId) VALUES (2171);

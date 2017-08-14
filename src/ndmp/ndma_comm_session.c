@@ -73,7 +73,10 @@ ndma_client_session (struct ndm_session *sess, struct ndm_job_param *job, int sw
 	if (rc) return rc;
 
 	memcpy (&sess->control_acb->job, job, sizeof(struct ndm_job_param ));
-	sess->control_acb->swap_connect = swap_connect;
+
+   sess->control_acb->job.index_log.nfc = sess->param->log.nfc;
+
+   sess->control_acb->swap_connect = swap_connect;
 
 	rc = ndma_session_commission (sess);
 	if (rc) return rc;
@@ -135,7 +138,7 @@ ndma_server_session (struct ndm_session *sess, int control_sock)
 		perror ("getpeername");
 	} else {
 		char ip_addr[100];
-		ndmalogf (sess, 0, 2, "Connection accepted from %s",
+		ndmalogf (sess, 0, 2, "Connection accepted from %s:%u",
 			inet_ntop ( AF_INET,
 				   &(((struct sockaddr_in *)&sa)->sin_addr),
 				   ip_addr, sizeof(ip_addr)));
@@ -176,13 +179,14 @@ ndma_server_session (struct ndm_session *sess, int control_sock)
 		ndma_session_quantum (sess, 1000);
 	}
 
-#if 0
+#if 1
 	{
 		char ip_addr[100];
-		ndmalogf (sess, 0, 2, "Connection close %s",
-			inet_ntop( AF_INET,
-			&((struct sockaddr_in *)&sa)->sin_addr,
-			ip_addr, sizeof(ip_addr)));
+		ndmalogf (sess, 0, 2, "Connection close %s:%u",
+			inet_ntop ( AF_INET,
+				   &(((struct sockaddr_in *)&sa)->sin_addr),
+				   ip_addr, sizeof(ip_addr)),
+         ntohs(((struct sockaddr_in *)&sa)->sin_port));
 	}
 #endif
 

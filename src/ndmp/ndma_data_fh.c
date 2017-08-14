@@ -67,7 +67,8 @@ ndmda_fh_commission (struct ndm_session *sess)
 	da->fhh_buf = NDMOS_API_MALLOC (NDMDA_N_FHH_BUF);
 	if (!da->fhh_buf)
 		return -1;
-	ndmfhh_commission (fhh, da->fhh_buf, sizeof *da->fhh_buf);
+	//ndmfhh_commission (fhh, da->fhh_buf, sizeof *da->fhh_buf);
+	ndmfhh_commission (fhh, da->fhh_buf, NDMDA_N_FHH_BUF);
 
 	return 0;
 }

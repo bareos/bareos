@@ -204,7 +204,7 @@ bool user_select_files_from_tree(TREE_CTX *tree)
  *
  * See uar_sel_files in sql_cmds.c for query that calls us.
  * row[0]=Path, row[1]=Filename, row[2]=FileIndex
- * row[3]=JobId row[4]=LStat row[5]=DeltaSeq
+ * row[3]=JobId row[4]=LStat row[5]=DeltaSeq row[6]=Fhinfo row[7]=Fhnode
  */
 int insert_tree_handler(void *ctx, int num_fields, char **row)
 {
@@ -236,8 +236,10 @@ int insert_tree_handler(void *ctx, int num_fields, char **row)
    JobId = str_to_int64(row[3]);
    FileIndex = str_to_int64(row[2]);
    delta_seq = str_to_int64(row[5]);
-   Dmsg6(150, "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d\n",
-         node, row[3], row[2], row[5], node->delta_seq, LinkFI);
+   node->fhinfo = str_to_int64(row[6]);
+   node->fhnode = str_to_int64(row[7]);
+   Dmsg8(150, "node=0x%p JobId=%s FileIndex=%s Delta=%s node.delta=%d LinkFI=%d, fhinfo=%d, fhnode=%d\n",
+         node, row[3], row[2], row[5], node->delta_seq, LinkFI, node->fhinfo, node->fhnode);
 
    /*
     * TODO: check with hardlinks

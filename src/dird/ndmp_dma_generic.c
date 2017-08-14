@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -47,6 +47,7 @@
  * Per NDMP format specific options.
  */
 static ndmp_backup_format_option ndmp_backup_format_options[] = {
+   /* format uses_file_history  uses_level restore_prefix_relative needs_namelist */
    { (char *)"dump", true, true, true, true },
    { (char *)"tar", true, false, true, true },
    { (char *)"smtape", false, true, false, true },
@@ -219,6 +220,28 @@ static inline bool fill_ndmp_agent_config(JCR *jcr,
       Jmsg(jcr, M_FATAL, 0, _("Illegal authtype %d for NDMP Job\n"), authtype);
       return false;
    }
+   /*
+    *  sanity checks
+    */
+   if (!address)  {
+      Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: address is missing\n"));
+      return false;
+   }
+
+   if (!username) {
+      Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: username is missing\n"));
+      return false;
+   }
+
+   if (!password) {
+      Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: password is missing\n"));
+      return false;
+   }
+
+   if (!port)     {
+      Jmsg(jcr, M_FATAL, 0, _("fill_ndmp_agent_config: port is missing\n"));
+      return false;
+   }
 
    agent->port = port;
    bstrncpy(agent->host, address, sizeof(agent->host));
@@ -363,6 +386,9 @@ bail_out:
    return false;
 }
 
+
+
+
 bool ndmp_build_storage_job(JCR *jcr,
                             STORERES *store,
                             bool init_tape,
@@ -375,29 +401,75 @@ bool ndmp_build_storage_job(JCR *jcr,
    job->operation = operation;
    job->bu_type = jcr->backup_format;
 
-   if (init_tape) {
-      /*
-       * Setup the TAPE agent of the NDMP job.
-       */
-      ASSERT(store->password.encoding == p_encoding_clear);
-      if (!fill_ndmp_agent_config(jcr, &job->tape_agent,
-                                  store->Protocol, store->AuthType,
-                                  store->address, store->SDport,
-                                  store->username, store->password.value)) {
-         goto bail_out;
-      }
+   if (!fill_ndmp_agent_config(jcr, &job->data_agent, store->Protocol,
+                               store->AuthType, store->address,
+                               store->SDport, store->username,
+                               store->password.value)) {
+      goto bail_out;
    }
 
-   if (init_robot) {
-      /*
-       * Setup the ROBOT agent of the NDMP job.
-       */
-      if (!fill_ndmp_agent_config(jcr, &job->robot_agent,
-                                  store->Protocol, store->AuthType,
-                                  store->address, store->SDport,
-                                  store->username, store->password.value)) {
-         goto bail_out;
-      }
+
+  if (init_tape) {
+     /*
+      * Setup the TAPE agent of the NDMP job.
+      */
+     ASSERT(store->password.encoding == p_encoding_clear);
+     if (!fill_ndmp_agent_config(jcr, &job->tape_agent,
+                                 store->Protocol, store->AuthType,
+                                 store->address, store->SDport,
+                                 store->username, store->password.value)) {
+        goto bail_out;
+     }
+  }
+
+  if (init_robot) {
+     /*
+      * Setup the ROBOT agent of the NDMP job.
+      */
+     if (!fill_ndmp_agent_config(jcr, &job->robot_agent,
+                                 store->Protocol, store->AuthType,
+                                 store->address, store->SDport,
+                                 store->username, store->password.value)) {
+        goto bail_out;
+     }
+  }
+
+
+
+   return true;
+
+bail_out:
+   return false;
+}
+
+bool ndmp_build_client_and_storage_job(JCR *jcr,
+                            STORERES *store,
+                            CLIENTRES *client,
+                            bool init_tape,
+                            bool init_robot,
+                            int operation,
+                            struct ndm_job_param *job)
+{
+   /*
+    * setup storage job
+    * i.e. setup tape_agent and robot_agent
+    */
+   ndmp_build_storage_job(jcr, store, init_tape, init_robot,
+                            operation, job);
+
+   /*
+    * now configure client job
+    * i.e. setup data_agent
+    */
+
+   //job->operation = operation;
+   //job->bu_type = jcr->backup_format;
+
+   if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
+                               client->AuthType, client->address,
+                               client->FDport, client->username,
+                               client->password.value)) {
+      goto bail_out;
    }
 
    return true;

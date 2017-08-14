@@ -32,6 +32,8 @@
 #include "bareos.h"
 #include "dird.h"
 
+const int dbglvl = 10;
+
 /* Forward referenced functions */
 
 /**

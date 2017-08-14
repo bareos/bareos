@@ -64,6 +64,10 @@ NDMP_HELPER_SRCS = md5c.c ndmos.c smc_api.c smc_parse.c smc_pp.c wraplib.c
 NDMJOB_SRCS = ndmjob_args.c ndmjob_fhdb.c ndmjob_job.c ndmjob_main.c \
 	      ndmjob_main_util.c ndmjob_rules.c ndmjob_simulator.c ndmjr_none.c
 
+WRAP_TAR_SRCS = wrap_tar.c snoop_tar.c
+
+WRAP_TEST_SRCS = wrap_test.c
+
 #
 # libbareosndmp
 #
@@ -72,9 +76,12 @@ LIBBAREOSNDMP_OBJS = $(LIBBAREOSNDMP_SRCS:.c=.o)
 LIBBAREOSNDMP_LOBJS = $(LIBBAREOSNDMP_SRCS:.c=.lo)
 
 NDMJOB_OBJS = $(NDMJOB_SRCS:.c=.lo)
+WRAP_TAR_OBJS = $(WRAP_TAR_SRCS:.c=.lo)
+WRAP_TEST_OBJS = $(WRAP_TEST_SRCS:.c=.lo)
 
 INCLUDES += -I. -I$(srcdir) -I$(basedir) -I$(basedir)/include
-CFLAGS += -DNDMOS_OPTION_NO_TEST_AGENTS
+CFLAGS += -DNDMOS_OPTION_PRETTYPRINT_HUMAN_READABLE_IP
+# CFLAGS += -DNDMOS_OPTION_NO_TEST_AGENTS
 
 .SUFFIXES:	.c .cc .o .lo .ch .dvi .pdf .tex .view .w .1
 .PHONY:
@@ -98,7 +105,7 @@ CFLAGS += -DNDMOS_OPTION_NO_TEST_AGENTS
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 #-------------------------------------------------------------------------
-all: Makefile libbareosndmp$(DEFAULT_ARCHIVE_TYPE)
+all: Makefile libbareosndmp$(DEFAULT_ARCHIVE_TYPE) # ndmjob wrap_tar wrap_test
 	@echo "==== Make of lib is good ===="
 	@echo " "
 
@@ -115,12 +122,27 @@ ndmjob: libbareosndmp$(DEFAULT_ARCHIVE_TYPE) $(NDMJOB_OBJS)
 	@echo "Linking $@ ..."
 	$(LIBTOOL_LINK) $(CC) $(WLDFLAGS) $(LDFLAGS) -o $@ $(NDMJOB_OBJS) -lbareosndmp
 
+wrap_tar: libbareosndmp$(DEFAULT_ARCHIVE_TYPE) $(WRAP_TAR_OBJS)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CC) $(WLDFLAGS) $(LDFLAGS) -o $@ $(WRAP_TAR_OBJS) -lbareosndmp
+
+wrap_test: libbareosndmp$(DEFAULT_ARCHIVE_TYPE) $(WRAP_TEST_OBJS)
+	@echo "Linking $@ ..."
+	$(LIBTOOL_LINK) $(CC) $(WLDFLAGS) $(LDFLAGS) -o $@ $(WRAP_TEST_OBJS) -lbareosndmp
+
+
 Makefile: $(srcdir)/Makefile.in $(topdir)/config.status
 	cd $(topdir) \
 	  && CONFIG_FILES=$(thisdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install-ndmjob: ndmjob
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) ndmjob $(DESTDIR)$(sbindir)/ndmjob
+
+install-wrap_tar: wrap_tar
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) wrap_tar $(DESTDIR)$(sbindir)/wrap_tar
+
+install-wrap_test: wrap_test
+	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) wrap_test $(DESTDIR)$(sbindir)/wrap_test
 
 install-includes:
 	$(MKDIR) $(DESTDIR)/$(includedir)/bareos/ndmp
@@ -143,7 +165,7 @@ libtool-clean:
 clean:	libtool-clean
 	@$(RMF) core a.out *.o *.bak *.tex *.pdf *~ *.intpro *.extpro 1 2 3
 	@$(RMF) $(RPC_GEN_FILES)
-	@$(RMF) ndmjob
+	@$(RMF) ndmjob wrap_tar wrap_test
 
 realclean: clean
 	@$(RMF) tags
@@ -167,7 +189,7 @@ ndmp4.h ndmp4_xdr.c: ndmp4.x
 ndmp9.h ndmp9_xdr.c: ndmp9.x
 	$(RPCGEN) ndmp9.x
 
-ndmos.lo: ndmos.c
+ndmos.lo: ndmos.c ndmos_common.c ndmos_linux.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CC) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CFLAGS) $(INCLUDES) $(DINCLUDE) \
 		-DNDMOS_CONST_PRODUCT_NAME='"BAREOS NDMP"' \

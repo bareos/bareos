@@ -38,8 +38,13 @@ LDLIBS = ../lib/libbareos.a \
 SVRSRCS = admin.c archive.c authenticate.c autoprune.c backup.c bsr.c \
 	  catreq.c consolidate.c dir_plugins.c dird_conf.c dird.c \
 	  expand.c fd_cmds.c getmsg.c inc_conf.c job.c jobq.c migrate.c \
-	  mountreq.c msgchan.c ndmp_dma_backup.c ndmp_dma_generic.c \
-	  ndmp_dma_restore.c ndmp_dma_storage.c ndmp_fhdb_helpers.c \
+	  mountreq.c msgchan.c \
+	  ndmp_dma_backup_common.c ndmp_dma_backup_NDMP_BAREOS.c \
+	  ndmp_dma_backup_NDMP_NATIVE.c \
+	  ndmp_dma_generic.c\
+	  ndmp_dma_restore_common.c ndmp_dma_restore_NDMP_BAREOS.c \
+	  ndmp_dma_restore_NDMP_NATIVE.c \
+	  ndmp_dma_storage.c ndmp_fhdb_helpers.c \
 	  ndmp_fhdb_mem.c ndmp_fhdb_lmdb.c newvol.c next_vol.c quota.c \
 	  recycle.c restore.c run_conf.c sd_cmds.c scheduler.c \
 	  socket_server.c stats.c storage.c ua_acl.c ua_audit.c ua_cmds.c \

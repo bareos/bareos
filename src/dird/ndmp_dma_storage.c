@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -83,6 +83,7 @@ extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev
    }
 
    Dmsg1(100, "%s\n", msg);
+   //Jmsg(NULL, M_INFO, 0, "%s\n", msg);
 }
 
 /**
@@ -202,6 +203,7 @@ static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_sessi
       return false;
    }
    ndmp_job.have_robot = 1;
+   ndmp_job.auto_remedy = 1;
 
    /*
     * Initialize a new NDMP session
@@ -225,9 +227,7 @@ static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
    if (edp->PVolTag) {
       vl->VolName = bstrdup((char *)edp->primary_vol_tag->volume_id);
       strip_trailing_junk(vl->VolName);
-   }
-
-   if (edp->AVolTag) {
+   } else if (edp->AVolTag) {
       vl->VolName = bstrdup((char *)edp->alternate_vol_tag->volume_id);
       strip_trailing_junk(vl->VolName);
    }
@@ -244,7 +244,7 @@ static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
  * the fact if things are full or empty as that data is kind of volatile
  * and you should use a vol_list for that.
  */
-static void ndmp_fill_storage_mappings(UAContext *ua, STORERES *store, struct ndm_session *ndmp_sess)
+static void ndmp_fill_storage_mappings(STORERES *store, struct ndm_session *ndmp_sess)
 {
    drive_number_t drive;
    slot_number_t slot,
@@ -298,6 +298,9 @@ static void ndmp_fill_storage_mappings(UAContext *ua, STORERES *store, struct nd
    /*
     * Loop over each mapping entry ordered by the Index field and assign a
     * logical number to it.
+    * For the slots,
+    * - first do the normal slots
+    * - second the I/E slots so that they are always at the end
     */
    foreach_dlist(mapping, store->rss->storage_mappings) {
       switch (mapping->Type) {
@@ -315,6 +318,7 @@ static void ndmp_fill_storage_mappings(UAContext *ua, STORERES *store, struct nd
          break;
       }
    }
+
 }
 
 /**
@@ -328,6 +332,7 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
    vol_list_t *vl = NULL;
    dlist *vol_list = NULL;
 
+   ua->warning_msg(_ ("get ndmp_vol_list...\n"));
    if (!get_robot_element_status(ua->jcr, store, &ndmp_sess)) {
       return (dlist *)NULL;
    }
@@ -336,7 +341,7 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
     * If we have no storage mappings create them now from the data we just retrieved.
     */
    if (!store->rss->storage_mappings) {
-      ndmp_fill_storage_mappings(ua, store, ndmp_sess);
+      ndmp_fill_storage_mappings(store, ndmp_sess);
    }
 
    /*
@@ -498,7 +503,26 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
 /**
  * Update the mapping table from logical to physical storage addresses.
  */
-static bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
+bool ndmp_update_storage_mappings(JCR* jcr, STORERES *store) 
+{
+   struct ndm_session *ndmp_sess;
+
+   if (!get_robot_element_status(jcr, store, &ndmp_sess)) {
+      return false;
+   }
+
+   ndmp_fill_storage_mappings(store, ndmp_sess);
+
+   cleanup_ndmp_session(ndmp_sess);
+
+   return true;
+   
+} 
+
+/**
+ * Update the mapping table from logical to physical storage addresses.
+ */
+bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
 {
    struct ndm_session *ndmp_sess;
 
@@ -506,7 +530,7 @@ static bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
       return false;
    }
 
-   ndmp_fill_storage_mappings(ua, store, ndmp_sess);
+   ndmp_fill_storage_mappings(store, ndmp_sess);
 
    cleanup_ndmp_session(ndmp_sess);
 
@@ -629,6 +653,8 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
    ndmp_job.to_addr = slot_mapping;
    ndmp_job.to_addr_given = 1;
 
+   ua->warning_msg(_ ("transferring form slot %hd to slot %hd...\n"), src_slot, dst_slot );
+
    /*
     * Set the remote robotics name to use.
     * We use the ndmscsi_target_from_str() function which parses the NDMJOB format of a
@@ -640,6 +666,7 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
       return retval;
    }
    ndmp_job.have_robot = 1;
+   ndmp_job.auto_remedy = 1;
 
    /*
     * Initialize a new NDMP session
@@ -662,7 +689,7 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
 /**
  * Lookup the name of a drive in a NDMP autochanger.
  */
-static char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
+char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
 {
    int cnt = 0;
    char *tapedevice;
@@ -691,9 +718,8 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
    struct ndm_job_param ndmp_job;
    struct ndm_session *ndmp_sess;
 
-   Dmsg3(100, "ndmp_autochanger_volume_operation: operation %s, drive %hd, slot %hd\n",
-         operation, drive, slot);
-
+   Dmsg3(100, "ndmp_autochanger_volume_operation: operation %s, drive %hd, slot %hd\n", operation, drive, slot);
+   ua->warning_msg(_("ndmp_autochanger_volume_operation: operation %s, drive %hd, slot %hd\n"), operation, drive, slot);
    /*
     * See if this is an autochanger.
     */
@@ -746,7 +772,7 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
    /*
     * Map the logical address to a physical one.
     */
-   drive_mapping = lookup_storage_mapping(store, slot_type_drive, LOGICAL_TO_PHYSICAL, slot);
+   drive_mapping = lookup_storage_mapping(store, slot_type_drive, PHYSICAL_TO_LOGICAL, slot);
    if (drive_mapping == -1) {
       ua->error_msg("No slot mapping for drive %hd\n", drive);
       return retval;
@@ -765,6 +791,7 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
       return retval;
    }
    ndmp_job.have_robot = 1;
+   ndmp_job.auto_remedy = 1;
 
    /*
     * Initialize a new NDMP session
@@ -796,8 +823,8 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    struct ndm_session *ndmp_sess;
    struct ndmmedia *media;
 
-   Dmsg4(100,"ndmp_send_label_request: VolumeName = %s MediaType=%s PoolName=%s drive = %hd\n",
-         mr->VolumeName, mr->MediaType, pr->Name, drive);
+   Dmsg4(100,"ndmp_send_label_request: VolumeName=%s MediaType=%s PoolName=%s drive=%hd\n", mr->VolumeName, mr->MediaType, pr->Name, drive);
+   ua->warning_msg(_("ndmp_send_label_request: VolumeName=%s MediaType=%s PoolName=%s drive=%hd\n"), mr->VolumeName, mr->MediaType, pr->Name, drive);
 
    /*
     * See if this is an autochanger.
@@ -823,9 +850,11 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
    if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
+      Dmsg0(100,"ndmp_send_label_request: no robot to use\n");
       return retval;
    }
    ndmp_job.have_robot = 1;
+   ndmp_job.auto_remedy = 1;
 
    /*
     * Set the remote tape drive to use.
@@ -833,7 +862,7 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    ndmp_job.tape_device = lookup_ndmp_drive(store, drive);
    if (!ndmp_job.tape_device) {
       actuallyfree(ndmp_job.robot_target);
-      return retval;
+
    }
 
    /*
@@ -853,6 +882,8 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
       media = ndma_store_media(&ndmp_job.media_tab, 0);
    }
    bstrncpy(media->label, mr->VolumeName, NDMMEDIA_LABEL_MAX - 1);
+   media->valid_label =  NDMP9_VALIDITY_VALID;
+
 
    /*
     * Initialize a new NDMP session

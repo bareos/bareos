@@ -421,8 +421,12 @@ static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
 
    /* NOTE!! This test MUST come after sesstime and sessid tests */
    if (!match_findex(bsr, bsr->FileIndex, rec, 1)) {
-      Dmsg3(dbglevel, "Fail on findex=%d. bsr=%d,%d\n",
-         rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
+      if (bsr->FileIndex) {
+         Dmsg3(dbglevel, "Fail on findex=%d. bsr=%d,%d\n",
+            rec->FileIndex, bsr->FileIndex->findex, bsr->FileIndex->findex2);
+      } else {
+         Dmsg0(dbglevel, "No bsr->FileIndex!\n");
+      }
       goto no_match;
    }
    Dmsg3(dbglevel, "match on findex=%d. bsr=%d,%d\n",

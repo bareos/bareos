@@ -154,7 +154,7 @@ struct JOBMEDIA_DBR {
    uint32_t EndFile;                  /**< End file on Volume */
    uint32_t StartBlock;               /**< start block on tape */
    uint32_t EndBlock;                 /**< last block */
-// uint32_t Copy;                     /**< identical copy */
+   uint64_t JobBytes;                 /**< job bytes */
 };
 
 
@@ -172,6 +172,7 @@ struct VOL_PARAMS {
    uint64_t StartAddr;                /**< Start address */
    uint64_t EndAddr;                  /**< End address */
    int32_t InChanger;                 /**< InChanger flag */
+   uint64_t JobBytes;                 /**< job bytes */
 // uint32_t Copy;                     /**< identical copy */
 // uint32_t Stripe;                   /**< RAIT strip number */
 };
@@ -195,6 +196,8 @@ struct ATTR_DBR {
    FileId_t FileId;
    char *Digest;
    int DigestType;
+   uint64_t Fhinfo;                  /**< NDMP fh_info for DAR*/
+   uint64_t Fhnode;                  /**< NDMP fh_node for DAR*/
 };
 
 /**
@@ -532,7 +535,7 @@ class pathid_cache;
 /**
  * Current database version number for all drivers
  */
-#define BDB_VERSION 2170
+#define BDB_VERSION 2171
 
 #ifdef _BDB_PRIV_INTERFACE_
 /*
@@ -721,6 +724,7 @@ public:
    bool get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetention);
    int get_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem);
    bool get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx);
+   bool get_ndmp_environment_string(JCR *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM *querystring, POOL_MEM &volumes);
    bool verify_media_ids_from_single_storage(JCR *jcr, dbid_list &mediaIds);
 

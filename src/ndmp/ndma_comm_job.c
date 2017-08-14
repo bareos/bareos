@@ -69,7 +69,7 @@ ndma_job_audit (struct ndm_job_param *job, char *errbuf, int errskip)
 
 	switch (job->operation) {
 	default:
-		ERROR ("invalid operatiton")
+		ERROR ("invalid operation")
 		return -1;
 
 	case NDM_JOB_OP_BACKUP:		audit_what = "DfbBmM";	break;

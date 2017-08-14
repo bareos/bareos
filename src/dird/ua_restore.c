@@ -202,29 +202,6 @@ bool restore_cmd(UAContext *ua, const char *cmd)
       break;
    }
 
-   if (rx.bsr->JobId) {
-      char ed1[50];
-      if (!complete_bsr(ua, rx.bsr)) {   /* find Vol, SessId, SessTime from JobIds */
-         ua->error_msg(_("Unable to construct a valid BSR. Cannot continue.\n"));
-         goto bail_out;
-      }
-      if (!(rx.selected_files = write_bsr_file(ua, rx))) {
-         ua->warning_msg(_("No files selected to be restored.\n"));
-         goto bail_out;
-      }
-      display_bsr_info(ua, rx);          /* display vols needed, etc */
-
-      if (rx.selected_files==1) {
-         ua->info_msg(_("\n1 file selected to be restored.\n\n"));
-      } else {
-         ua->info_msg(_("\n%s files selected to be restored.\n\n"),
-            edit_uint64_with_commas(rx.selected_files, ed1));
-      }
-   } else {
-      ua->warning_msg(_("No files selected to be restored.\n"));
-      goto bail_out;
-   }
-
    if (rx.restore_jobs == 1) {
       job = rx.restore_job;
    } else {
@@ -232,6 +209,39 @@ bool restore_cmd(UAContext *ua, const char *cmd)
    }
    if (!job) {
       goto bail_out;
+   }
+
+   /*
+    * When doing NDMP_NATIVE restores, we don't create any bootstrap file
+    * as we only send a namelist for restore. The storage handling is
+    * done by the NDMP state machine via robot and tape interface.
+    */
+   if (job->Protocol == PT_NDMP_NATIVE) {
+      ua->info_msg(_("Skipping BSR creation as we are doing NDMP_NATIVE restore.\n"));
+
+   } else {
+      if (rx.bsr->JobId) {
+         char ed1[50];
+         if (!complete_bsr(ua, rx.bsr)) {   /* find Vol, SessId, SessTime from JobIds */
+            ua->error_msg(_("Unable to construct a valid BSR. Cannot continue.\n"));
+            goto bail_out;
+         }
+         if (!(rx.selected_files = write_bsr_file(ua, rx))) {
+            ua->warning_msg(_("No files selected to be restored.\n"));
+            goto bail_out;
+         }
+         display_bsr_info(ua, rx);          /* display vols needed, etc */
+
+         if (rx.selected_files==1) {
+            ua->info_msg(_("\n1 file selected to be restored.\n\n"));
+         } else {
+            ua->info_msg(_("\n%s files selected to be restored.\n\n"),
+                  edit_uint64_with_commas(rx.selected_files, ed1));
+         }
+      } else {
+         ua->warning_msg(_("No files selected to be restored.\n"));
+         goto bail_out;
+      }
    }
 
    if (!get_client_name(ua, &rx)) {

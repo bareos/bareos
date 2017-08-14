@@ -20,6 +20,8 @@ SELECT FileId,
        LStat,
        MD5,
        File.DeltaSeq AS DeltaSeq,
+       File.Fhinfo AS Fhinfo,
+       File.Fhnode AS Fhnode,
        Job.JobTDate AS JobTDate
 FROM Job,
      File,
@@ -27,12 +29,16 @@ FROM Job,
   ( SELECT MAX(JobTDate) AS JobTDate,
            PathId,
            FileName,
-           DeltaSeq
+           DeltaSeq,
+           Fhinfo,
+           Fhnode
    FROM
      ( SELECT JobTDate,
               PathId,
               File.Name AS FileName,
-              DeltaSeq
+              DeltaSeq,
+              Fhinfo,
+              Fhnode
       FROM File
       JOIN Job USING (JobId)
       WHERE File.JobId IN (%s)
@@ -40,13 +46,17 @@ FROM Job,
         SELECT JobTDate,
                PathId,
                File.Name AS FileName,
-               DeltaSeq
+               DeltaSeq,
+               Fhinfo,
+               Fhnode
         FROM BaseFiles
         JOIN File USING (FileId)
         JOIN Job ON (BaseJobId = Job.JobId) WHERE BaseFiles.JobId IN (%s) ) AS tmp
    GROUP BY PathId,
             FileName,
-            DeltaSeq) AS T1
+            DeltaSeq,
+            Fhinfo,
+            Fhnode) AS T1
 WHERE (Job.JobId IN
          (SELECT DISTINCT BaseJobId
           FROM BaseFiles

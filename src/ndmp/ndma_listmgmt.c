@@ -80,7 +80,7 @@ ndma_enumerate_env_list (struct ndm_env_table *envtab)
 
 /*
  * Add a new entry to an environment list table.
- * Return entry if caller want to modify it.
+ * Return entry if caller wants to modify it.
  */
 struct ndm_env_entry *
 ndma_store_env_list (struct ndm_env_table *envtab, ndmp9_pval *pv)

@@ -413,7 +413,9 @@ SELECT DISTINCT ON (Name,
                    FileName AS Name,
                    LStat,
                    MD5,
-                   DeltaSeq
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
 FROM
   (SELECT FileId,
           JobId,
@@ -422,7 +424,9 @@ FROM
           FileIndex,
           LStat,
           MD5,
-          DeltaSeq
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
    FROM File
    WHERE JobId IN (%s)
      UNION ALL
@@ -433,7 +437,9 @@ FROM
             File.FileIndex,
             LStat,
             MD5,
-            DeltaSeq
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
      FROM BaseFiles
      JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)
@@ -454,7 +460,9 @@ SELECT DISTINCT ON (Name,
                    Filename AS Name,
                    LStat,
                    MD5,
-                   DeltaSeq
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
 FROM
   (SELECT FileId,
           JobId,
@@ -463,7 +471,9 @@ FROM
           FileIndex,
           LStat,
           MD5,
-          DeltaSeq
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
    FROM File
    WHERE JobId IN (%s)
      UNION ALL
@@ -474,7 +484,9 @@ FROM
             File.FileIndex,
             LStat,
             MD5,
-            DeltaSeq
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
      FROM BaseFiles
      JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)
@@ -494,7 +506,9 @@ SELECT DISTINCT ON (File.Name,
                    PathId,
                    File.Name,
                    LStat,
-                   MD5
+                   MD5,
+                   Fhinfo,
+                   Fhnode
 FROM File
 JOIN Job USING (JobId)
 WHERE JobId IN (%s)
@@ -540,7 +554,9 @@ SELECT Path.Path AS Path,
        Temp.JobId AS JobId,
        Temp.LStat AS LStat,
        Temp.FileId AS FileId,
-       Temp.MD5 AS MD5
+       Temp.MD5 AS MD5,
+       Temp.Fhinfo AS Fhinfo,
+       Temp.Fhnode AS Fhnode
 FROM (%s) AS Temp
 JOIN Path ON (Path.PathId = Temp.PathId)
 WHERE Temp.FileIndex > 0

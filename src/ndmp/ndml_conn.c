@@ -111,6 +111,7 @@ ndmconn_destruct (struct ndmconn *conn)
 
 	if (conn->was_allocated) {
 		NDMOS_API_FREE (conn);
+	   conn->was_allocated = 0;
 		conn = 0;
 	}
 }

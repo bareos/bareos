@@ -105,7 +105,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
 
    if (jcr->getJobLevel() == L_VERIFY_DISK_TO_CATALOG) {
       Mmsg(cmd,
-"SELECT FileId, LStat, MD5 FROM File,Job WHERE "
+"SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File,Job WHERE "
 "File.JobId=Job.JobId AND File.PathId=%s AND "
 "File.Name='%s' AND Job.Type='B' AND Job.JobStatus IN ('T','W') AND "
 "ClientId=%s ORDER BY StartTime DESC LIMIT 1",
@@ -114,7 +114,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
       edit_int64(jr->ClientId,ed3));
    } else if (jcr->getJobLevel() == L_VERIFY_VOLUME_TO_CATALOG) {
       Mmsg(cmd,
-           "SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
+           "SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
            "File.Name='%s' AND File.FileIndex=%u",
            edit_int64(fdbr->JobId, ed1),
            edit_int64(fdbr->PathId, ed2),
@@ -122,7 +122,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
            jr->FileIndex);
    } else {
       Mmsg(cmd,
-"SELECT FileId, LStat, MD5 FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
+"SELECT FileId, LStat, MD5, Fhinfo, Fhnode FROM File WHERE File.JobId=%s AND File.PathId=%s AND "
 "File.Name='%s'",
       edit_int64(fdbr->JobId, ed1),
       edit_int64(fdbr->PathId, ed2),
@@ -369,7 +369,7 @@ int B_DB::get_job_volume_names(JCR *jcr, JobId_t JobId, POOLMEM *&VolumeNames)
 }
 
 /**
- * Find Volume parameters for a give JobId
+ * Find Volume parameters for a given JobId
  * Returns: 0 on error or no Volumes found
  *          number of volumes on success
  *          List of Volumes and start/end file/blocks (malloced structure!)
@@ -389,7 +389,8 @@ int B_DB::get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolPar
    Mmsg(cmd,
 "SELECT VolumeName,MediaType,FirstIndex,LastIndex,StartFile,"
 "JobMedia.EndFile,StartBlock,JobMedia.EndBlock,"
-"Slot,StorageId,InChanger"
+"Slot,StorageId,InChanger,"
+"JobBytes"
 " FROM JobMedia,Media WHERE JobMedia.JobId=%s"
 " AND JobMedia.MediaId=Media.MediaId ORDER BY VolIndex,JobMediaId",
         edit_int64(JobId, ed1));
@@ -426,11 +427,13 @@ int B_DB::get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolPar
                EndFile = str_to_uint64(row[5]);
                StartBlock = str_to_uint64(row[6]);
                EndBlock = str_to_uint64(row[7]);
-               Vols[i].StartAddr = (((uint64_t)StartFile)<<32) | StartBlock;
-               Vols[i].EndAddr =   (((uint64_t)EndFile)<<32) | EndBlock;
                Vols[i].Slot = str_to_uint64(row[8]);
                StorageId = str_to_uint64(row[9]);
                Vols[i].InChanger = str_to_uint64(row[10]);
+               Vols[i].JobBytes = str_to_uint64(row[11]);
+
+               Vols[i].StartAddr = (((uint64_t)StartFile)<<32) | StartBlock;
+               Vols[i].EndAddr =   (((uint64_t)EndFile)<<32) | EndBlock;
                Vols[i].Storage[0] = 0;
                SId[i] = StorageId;
             }
@@ -920,8 +923,6 @@ int B_DB::get_num_media_records(JCR *jcr)
  */
 bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t *ids[])
 {
-   SQL_ROW row;
-   int i = 0;
    bool ok = true;
    char ed1[50];
    char esc[MAX_NAME_LENGTH * 2 + 1];
@@ -929,7 +930,6 @@ bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_id
    bool have_volumes = false;
    db_lock(this);
    *ids = NULL;
-   DBId_t *id;
 
    if (*volumes.c_str()) {
       have_volumes = true;
@@ -970,32 +970,11 @@ bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_id
       pm_strcat(cmd, buf.c_str());
    }
 
-   if (have_volumes) {
-      Mmsg(buf, "AND VolumeName IN (%s) ", volumes.c_str());
-      pm_strcat(cmd, buf.c_str());
-   }
+   Dmsg1(100, "query=%s\n", cmd);
 
-   Dmsg1(100, "q=%s\n", cmd);
-
-   if (QUERY_DB(jcr, cmd)) {
-      *num_ids = sql_num_rows();
-      if (*num_ids > 0) {
-         id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
-         while ((row = sql_fetch_row()) != NULL) {
-            id[i++] = str_to_uint64(row[0]);
-         }
-         *ids = id;
-      }
-      sql_free_result();
-      ok = true;
-   } else {
-      Mmsg(errmsg, _("Media id select failed: ERR=%s\n"), sql_strerror());
-      Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
-      ok = false;
-   }
-   db_unlock(this);
    return ok;
 }
+
 
 /**
  * This function returns a list of all the DBIds that are returned for the query.
@@ -1210,7 +1189,7 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
     * or Migration
     */
    Mmsg(query,
-"SELECT Path.Path, T1.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5 "
+"SELECT Path.Path, T1.Name, T1.FileIndex, T1.JobId, LStat, DeltaSeq, MD5, Fhinfo, Fhnode "
  "FROM ( %s ) AS T1 "
  "JOIN Path ON (Path.PathId = T1.PathId) "
 "WHERE FileIndex > 0 "
@@ -1353,7 +1332,7 @@ bool B_DB::get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_
    POOL_MEM query(PM_MESSAGE);
 
    Mmsg(query,
- "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5 "
+ "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5, Fhinfo, Fhnode "
    "FROM new_basefile%lld ORDER BY JobId, FileIndex ASC",
         (uint64_t) jcr->JobId);
 
@@ -1625,8 +1604,35 @@ bail_out:
    return dumplevel;
 }
 
+
 /**
- * Fetch the NDMP Job Environment Strings
+ * Fetch the NDMP Job Environment Strings for NDMP_NATIVE Backups
+ *
+ * Returns false: on failure
+ *         true: on success
+ */
+bool B_DB::get_ndmp_environment_string(JCR *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx)
+{
+   POOL_MEM query(PM_FNAME);
+   char ed1[50];
+   db_int64_ctx lctx;
+   bool retval = false;
+
+   /*
+    * Lookup all environment settings belonging to this JobId.
+    */
+   Mmsg(query, "SELECT EnvName, EnvValue FROM NDMPJobEnvironment "
+               "WHERE JobId='%s' ",
+               edit_uint64(JobId, ed1));
+
+   retval = sql_query_with_handler(query.c_str(), result_handler, ctx);
+
+   return retval;
+}
+
+
+/**
+ * Fetch the NDMP Job Environment Strings for NDMP_BAREOS Backups
  *
  * Returns false: on failure
  *         true: on success

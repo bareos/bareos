@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2015-2016 Planets Communications B.V.
-   Copyright (C) 2015-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2015-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,12 +35,32 @@
 #include "ndmp/ndmagents.h"
 
 /**
- * Store all entries in the FHDB as hardlinked items to the NDMP archive in the backup catalog.
+ * Store all entries from the FHDB in the Database.
+ *
+ * * NMDP_BAREOS backup (remote NDMP, we use our emulated tape drive in the SD),
+ *   files are stored as hardlinked items to the NDMP * archive in the backup catalog.
+ *   This way, any file that was selected for restore will trigger the NDMP
+ *   Backup Stream File itself to be restored
+ *
+ * * NDMP_NATIVE (real NDMP backup),
+ *   files are stored as they come in including the Fhinfo and Fhnode date that is needed
+ *   for direct access recovery (DAR) and Directory DAR (DDAR)
  */
 void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
-                                 char *attributes, int8_t FileType, uint64_t Node, uint64_t Offset)
+                                 char *attributes, int8_t FileType, uint64_t Node, uint64_t Fhinfo)
 {
    ATTR_DBR *ar;
+   bool ndmp_bareos_backup;
+
+   ndmp_bareos_backup = (jcr->getJobProtocol() == PT_NDMP_BAREOS);
+   /*
+    * when doing NDMP native backup, we do not get any attributes from the SD
+    * so we need to create an attribute record
+    */
+   if (!jcr->ar) {
+      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar->Digest = NULL;
+   }
 
    ar = jcr->ar;
    if (jcr->cached_attribute) {
@@ -53,14 +73,28 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
    }
 
    /*
-    * We only update some fields of this structure the rest is already filled
+    * When we do NDMP_BAREOS backup, we only update some fields of this structure the rest is already filled
     * before by initial attributes saved by the tape agent in the storage daemon.
+    *
+    * With NDMP_NATIVE Backup, we do not get any attributes before so we need to fill everything we need here
     */
-   jcr->ar->fname = fname;
-   jcr->ar->link = linked_fname;
-   jcr->ar->attr = attributes;
-   jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
-   jcr->ar->FileType = FileType;
+   if (ndmp_bareos_backup) {
+      jcr->ar->fname = fname;
+      jcr->ar->link = linked_fname;
+      jcr->ar->attr = attributes;
+      jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
+      jcr->ar->FileType = FileType;
+   } else {
+      jcr->ar->JobId = jcr->JobId;
+      jcr->ar->fname = fname;
+      jcr->ar->attr = attributes;
+      jcr->ar->Stream = STREAM_UNIX_ATTRIBUTES;
+      jcr->ar->FileType = FileType;
+      jcr->ar->Fhinfo = Fhinfo;
+      jcr->ar->Fhnode = Node;
+      jcr->ar->FileIndex = 1;
+      jcr->ar->DeltaSeq = 0;
+   }
 
    if (!jcr->db->create_attributes_record(jcr, ar)) {
       Jmsg1(jcr, M_FATAL, 0, _("Attribute create error: ERR=%s"), jcr->db->strerror());
@@ -69,7 +103,7 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
 }
 
 void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
-                        int8_t *FileType, POOL_MEM &attribs)
+      int8_t *FileType, POOL_MEM &attribs)
 {
    struct stat statp;
 
@@ -79,52 +113,61 @@ void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
    memset(&statp, 0, sizeof(statp));
 
    Dmsg11(100, "ftype:%d mtime:%lu atime:%lu ctime:%lu uid:%lu gid:%lu mode:%lu size:%llu links:%lu node:%llu fh_info:%llu \n",
-          fstat->ftype, fstat->mtime.value, fstat->atime.value, fstat->ctime.value, fstat->uid.value, fstat->gid.value,
-          fstat->mode.value, fstat->size.value, fstat->links.value, fstat->node.value, fstat->fh_info.value);
+         fstat->ftype,
+         fstat->mtime.value,
+         fstat->atime.value,
+         fstat->ctime.value,
+         fstat->uid.value,
+         fstat->gid.value,
+         fstat->mode.value,
+         fstat->size.value,
+         fstat->links.value,
+         fstat->node.value,
+         fstat->fh_info.value);
 
    /*
     * If we got a valid mode of the file fill the UNIX stat struct.
     */
    if (fstat->mode.valid == NDMP9_VALIDITY_VALID) {
       switch (fstat->ftype) {
-      case NDMP9_FILE_DIR:
-         statp.st_mode = fstat->mode.value | S_IFDIR;
-         *FileType = FT_DIREND;
-         break;
-      case NDMP9_FILE_FIFO:
-         statp.st_mode = fstat->mode.value | S_IFIFO;
-         *FileType = FT_FIFO;
-         break;
-      case NDMP9_FILE_CSPEC:
-         statp.st_mode = fstat->mode.value | S_IFCHR;
-         *FileType = FT_SPEC;
-         break;
-      case NDMP9_FILE_BSPEC:
-         statp.st_mode = fstat->mode.value | S_IFBLK;
-         *FileType = FT_SPEC;
-         break;
-      case NDMP9_FILE_REG:
-         statp.st_mode = fstat->mode.value | S_IFREG;
-         *FileType = FT_REG;
-         break;
-      case NDMP9_FILE_SLINK:
-         statp.st_mode = fstat->mode.value | S_IFLNK;
-         *FileType = FT_LNK;
-         break;
-      case NDMP9_FILE_SOCK:
-         statp.st_mode = fstat->mode.value | S_IFSOCK;
-         *FileType = FT_SPEC;
-         break;
-      case NDMP9_FILE_REGISTRY:
-         statp.st_mode = fstat->mode.value | S_IFREG;
-         *FileType = FT_REG;
-         break;
-      case NDMP9_FILE_OTHER:
-         statp.st_mode = fstat->mode.value | S_IFREG;
-         *FileType = FT_REG;
-         break;
-      default:
-         break;
+         case NDMP9_FILE_DIR:
+            statp.st_mode = fstat->mode.value | S_IFDIR;
+            *FileType = FT_DIREND;
+            break;
+         case NDMP9_FILE_FIFO:
+            statp.st_mode = fstat->mode.value | S_IFIFO;
+            *FileType = FT_FIFO;
+            break;
+         case NDMP9_FILE_CSPEC:
+            statp.st_mode = fstat->mode.value | S_IFCHR;
+            *FileType = FT_SPEC;
+            break;
+         case NDMP9_FILE_BSPEC:
+            statp.st_mode = fstat->mode.value | S_IFBLK;
+            *FileType = FT_SPEC;
+            break;
+         case NDMP9_FILE_REG:
+            statp.st_mode = fstat->mode.value | S_IFREG;
+            *FileType = FT_REG;
+            break;
+         case NDMP9_FILE_SLINK:
+            statp.st_mode = fstat->mode.value | S_IFLNK;
+            *FileType = FT_LNK;
+            break;
+         case NDMP9_FILE_SOCK:
+            statp.st_mode = fstat->mode.value | S_IFSOCK;
+            *FileType = FT_SPEC;
+            break;
+         case NDMP9_FILE_REGISTRY:
+            statp.st_mode = fstat->mode.value | S_IFREG;
+            *FileType = FT_REG;
+            break;
+         case NDMP9_FILE_OTHER:
+            statp.st_mode = fstat->mode.value | S_IFREG;
+            *FileType = FT_REG;
+            break;
+         default:
+            break;
       }
 
       if (fstat->mtime.valid == NDMP9_VALIDITY_VALID) {

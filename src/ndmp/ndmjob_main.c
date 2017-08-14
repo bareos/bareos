@@ -86,6 +86,8 @@ main (int ac, char *av[])
 		the_param.log_level = v_verbose;
 	the_param.config_file_name = o_config_file;
 
+	ndmjob_register_callbacks (&the_session, &the_param.log);
+
 	if (the_mode == NDM_JOB_OP_DAEMON) {
 		the_session.param = &the_param;
 
@@ -98,7 +100,6 @@ main (int ac, char *av[])
 		exit_program ();
 	}
 
-	ndmjob_register_callbacks (&the_session, &the_param.log);
 
 #ifndef NDMOS_OPTION_NO_CONTROL_AGENT
 	build_job();		/* might not return */

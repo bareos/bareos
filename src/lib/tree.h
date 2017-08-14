@@ -77,6 +77,8 @@ struct s_tree_node {
    struct s_tree_node *parent;
    struct s_tree_node *next;          /* next hash of FileIndex */
    struct delta_list *delta_list;     /* delta parts for this node */
+   uint64_t fhinfo;                   /* NDMP Fh_info */
+   uint64_t fhnode;                   /* NDMP Fh_node */
 };
 typedef struct s_tree_node TREE_NODE;
 

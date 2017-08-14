@@ -43,6 +43,10 @@
  * 3. The daemon specific file, which contains the Resource
  *    definitions as well as any specific store routines
  *    for the resource records.
+ *
+ */
+/*
+ * Kern Sibbald, January MM
  */
 
 #define NEED_JANSSON_NAMESPACE 1
@@ -90,7 +94,7 @@ static int32_t res_all_size = sizeof(res_all);
 /**
  * Definition of records permitted within each
  * resource with the routine to process the record
- * information. NOTE! quoted names must be in lower case.
+ * information.
  *
  * Director Resource
  *
@@ -652,7 +656,9 @@ struct s_jt jobtypes[] = {
  */
 static struct s_kw backupprotocols[] = {
    { "Native", PT_NATIVE },
-   { "NDMP", PT_NDMP },
+   { "NDMP_BAREOS", PT_NDMP_BAREOS}, /* alias for PT_NDMP */
+   { "NDMP", PT_NDMP_BAREOS},
+   { "NDMP_NATIVE", PT_NDMP_NATIVE },
    { NULL, 0 }
 };
 
@@ -3312,7 +3318,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /***
- * Store Protocol (Native, NDMP)
+ * Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
  */
 static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
@@ -3364,7 +3370,7 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/***
+/**
  * Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
  */
 static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3391,7 +3397,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/***
+/**
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
 static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -4093,7 +4099,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
          for (int j = 0; backupprotocols[j].name; j++) {
             if (backupprotocols[j].token == protocol) {
                /*
-                * Supress printing default value.
+                * Suppress printing default value.
                 */
                if (items[i].flags & CFG_ITEM_DEFAULT) {
                   if (bstrcasecmp(items[i].default_value, backupprotocols[j].name)) {

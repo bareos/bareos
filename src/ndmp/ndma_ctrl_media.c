@@ -716,7 +716,20 @@ ndmca_media_set_window_current (struct ndm_session *sess)
 		return -1;
 	}
 
-	rc = ndmca_mover_set_window (sess, me->begin_offset, me->n_bytes);
+
+   /*
+    * The RFC says:
+    * A window length of all ones (binary) MUST only be specified with a
+      zero offset since the offset plus the length MUST not result in an
+      overflow condition.
+    */
+   if (me->n_bytes == NDMP_LENGTH_INFINITY){
+      rc = ndmca_mover_set_window (sess, me->begin_offset,
+                                         me->n_bytes - me->begin_offset);
+   } else {
+	   rc = ndmca_mover_set_window (sess, me->begin_offset, me->n_bytes);
+   }
+
 	if (rc == 0)
 	    job->last_w_offset = me->begin_offset;
 	return rc;

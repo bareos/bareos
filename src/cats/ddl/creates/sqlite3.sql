@@ -26,6 +26,8 @@ CREATE TABLE File (
    MarkId           INTEGER   UNSIGNED            DEFAULT 0,
    LStat            TINYBLOB            NOT NULL,
    MD5              TINYBLOB            NOT NULL,
+   Fhinfo           TEXT                          DEFAULT 0,
+   Fhnode           TEXT                          DEFAULT 0,
    PRIMARY KEY (FileId)
 );
 CREATE INDEX File_JobId ON File (JobId);
@@ -159,6 +161,7 @@ CREATE TABLE JobMedia (
    EndFile INTEGER UNSIGNED DEFAULT 0,
    StartBlock INTEGER UNSIGNED DEFAULT 0,
    EndBlock INTEGER UNSIGNED DEFAULT 0,
+   JobBytes TEXT DEFAULT 0,
    VolIndex INTEGER UNSIGNED DEFAULT 0,
    PRIMARY KEY(JobMediaId)
 );
@@ -470,8 +473,8 @@ INSERT INTO Status (JobStatus,JobStatusLong,Severity) VALUES
 -- Initialize Version
 --   DELETE should not be required,
 --   but prevents errors if create script is called multiple times
-DELETE FROM Version WHERE VersionId<=2170;
-INSERT INTO Version (VersionId) VALUES (2170);
+DELETE FROM Version WHERE VersionId<=2171;
+INSERT INTO Version (VersionId) VALUES (2171);
 
 PRAGMA default_cache_size = 100000;
 PRAGMA synchronous = NORMAL;

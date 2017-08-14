@@ -115,7 +115,10 @@ int native_to_ndmp_loglevel(int NdmpLoglevel, int debuglevel, NIS *nis);
 bool ndmp_build_client_job(JCR *jcr, CLIENTRES *client, STORERES *store, int operation,
                            struct ndm_job_param *job);
 bool ndmp_build_storage_job(JCR *jcr, STORERES *store, bool init_tape, bool init_robot,
-                            int operation, struct ndm_job_param *job);
+                           int operation, struct ndm_job_param *job);
+bool ndmp_build_client_and_storage_job(JCR *jcr, STORERES *store, CLIENTRES *client,
+                           bool init_tape, bool init_robot, int operation, struct ndm_job_param *job);
+
 extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *msg);
 void ndmp_do_query(UAContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
 
@@ -123,7 +126,7 @@ void ndmp_do_query(UAContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel);
  * NDMP FHDB specific helpers.
  */
 void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
-                                 char *attributes, int8_t FileType, uint64_t Node, uint64_t Offset);
+                                 char *attributes, int8_t FileType, uint64_t Node, uint64_t fhinfo);
 void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
                         int8_t *FileType, POOL_MEM &attribs);
 
@@ -141,8 +144,10 @@ void ndmp_fhdb_mem_register(struct ndmlog *ixlog);
 void ndmp_fhdb_mem_unregister(struct ndmlog *ixlog);
 void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog);
 
-
+/*
+ * NDMP Media Info in DB storage and retrieval
+ */
+bool store_ndmmedia_info_in_database(ndmmedia *media, JCR  *jcr);
+bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JCR  *jcr);
 extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_name, ndmp9_file_stat *fstat);
-
-
 #endif

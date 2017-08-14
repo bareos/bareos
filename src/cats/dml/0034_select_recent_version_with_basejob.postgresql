@@ -7,7 +7,9 @@ SELECT DISTINCT ON (Name,
                    FileName AS Name,
                    LStat,
                    MD5,
-                   DeltaSeq
+                   DeltaSeq,
+                   Fhinfo,
+                   Fhnode
 FROM
   (SELECT FileId,
           JobId,
@@ -16,7 +18,9 @@ FROM
           FileIndex,
           LStat,
           MD5,
-          DeltaSeq
+          DeltaSeq,
+          Fhinfo,
+          Fhnode
    FROM File
    WHERE JobId IN (%s)
      UNION ALL
@@ -27,7 +31,9 @@ FROM
             File.FileIndex,
             LStat,
             MD5,
-            DeltaSeq
+            DeltaSeq,
+            Fhinfo,
+            Fhnode
      FROM BaseFiles
      JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
 JOIN Job USING (JobId)

@@ -596,7 +596,8 @@ void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
+   case PT_NDMP_NATIVE:
       Jmsg(jcr, msg_type, 0, _("%s %s %s (%s):\n"
            "  Build OS:               %s %s %s\n"
            "  JobId:                  %d\n"

@@ -104,6 +104,12 @@ ndmca_control_agent (struct ndm_session *sess)
 	struct ndm_job_param *	job = &sess->control_acb->job;
 	int			rc = -1;
 
+   if (!sess->control_acb->smc_cb) {
+            sess->control_acb->smc_cb = NDMOS_API_MALLOC (sizeof(struct smc_ctrl_block));
+            NDMOS_MACRO_ZEROFILL (sess->control_acb->smc_cb);
+   }
+
+
 	switch (job->operation) {
 	default:
 		ndmalogf (sess, 0, 0, "Job operation invalid");

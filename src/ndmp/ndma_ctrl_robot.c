@@ -59,6 +59,12 @@ ndmca_robot_prep_target (struct ndm_session *sess)
 	struct smc_ctrl_block *	smc = sess->control_acb->smc_cb;
 	int			rc;
 
+   if (!smc) {
+      ndmalogf (sess, 0, 0,
+            "Allocating robot target");
+      return -1;
+   }
+
 	NDMOS_MACRO_ZEROFILL (smc);
 
 	smc->app_data = sess->plumb.robot;

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -302,8 +302,10 @@ void B_DB_SQLITE::start_transaction(JCR *jcr)
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
    }
+
    if (!jcr->ar) {
       jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar->Digest = NULL;
    }
 
    if (!m_allow_transactions) {
@@ -611,7 +613,11 @@ bool B_DB_SQLITE::sql_batch_start(JCR *jcr)
                                       "Name blob,"
                                       "LStat tinyblob,"
                                       "MD5 tinyblob,"
-                                      "DeltaSeq integer)");
+                                      "DeltaSeq integer,"
+                                      "Fhinfo TEXT,"
+                                      "Fhnode TEXT "
+                                      ")"
+         );
    db_unlock(this);
 
    return retval;
@@ -636,7 +642,7 @@ bool B_DB_SQLITE::sql_batch_end(JCR *jcr, const char *error)
 bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
 {
    const char *digest;
-   char ed1[50];
+   char ed1[50], ed2[50], ed3[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
    escape_string(jcr, esc_name, fname, fnl);
@@ -651,9 +657,11 @@ bool B_DB_SQLITE::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    }
 
    Mmsg(cmd, "INSERT INTO batch VALUES "
-        "(%u,%s,'%s','%s','%s','%s',%u)",
+        "(%u,%s,'%s','%s','%s','%s',%u,'%s','%s')",
         ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
-        esc_name, ar->attr, digest, ar->DeltaSeq);
+        esc_name, ar->attr, digest, ar->DeltaSeq,
+        edit_uint64(ar->Fhinfo,ed2),
+        edit_uint64(ar->Fhnode,ed3));
 
    return sql_query_without_handler(cmd);
 }

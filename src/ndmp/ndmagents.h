@@ -252,7 +252,7 @@ struct ndm_job_param {
 	char *			tape_device;	/* eg "/dev/rmt0" */
 	unsigned		tape_timeout;	/* secs total to retry open */
 	unsigned		record_size;	/* in bytes, 10k typical */
-        uint64_t		last_w_offset;	/* last window offset sent */
+   uint64_t		last_w_offset;	/* last window offset sent */
 	struct ndmscsi_target *	tape_target;	/* unused for now */
 	char *			tape_tcp;	/* tcp direct */
 	NDM_FLAG_DECL(use_eject)		/* eject upon close (unload) */

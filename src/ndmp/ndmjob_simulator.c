@@ -1569,8 +1569,8 @@ ndmjob_scsi_open (struct ndm_session *sess, char *name)
 	struct stat			st;
 	struct ndm_robot_agent *	ra = sess->robot_acb;
 
-	if (!name || strlen(name) > sizeof(ra->sim_dir)-1)
-		return NDMP9_NO_DEVICE_ERR;
+//	if (!name || strlen(name) > sizeof(ra->sim_dir)-1)
+//		return NDMP9_NO_DEVICE_ERR;
 
 	/* check that it's a directory */
 	if (stat (name, &st) < 0)
@@ -1601,7 +1601,7 @@ ndmjob_scsi_execute_cdb (struct ndm_session *sess,
                 ndmp9_execute_cdb_request *request,
                 ndmp9_execute_cdb_reply *reply)
 {
-	char cdb_byte;
+	unsigned char cdb_byte;
 	int i;
 
 	cdb_byte = request->cdb.cdb_val[0];

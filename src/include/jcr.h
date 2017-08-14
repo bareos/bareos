@@ -103,7 +103,8 @@
  */
 enum {
    PT_NATIVE = 0,
-   PT_NDMP
+   PT_NDMP_BAREOS, /* alias for PT_NDMP */
+   PT_NDMP_NATIVE
 };
 
 /**

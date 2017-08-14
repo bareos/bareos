@@ -197,20 +197,58 @@ bool start_storage_daemon_message_thread(JCR *jcr);
 int bget_dirmsg(BSOCK *bs, bool allow_any_msg = false);
 void wait_for_storage_daemon_termination(JCR *jcr);
 
+/* ndmp_dma_backup_common.c */
+bool fill_backup_environment(JCR *jcr,
+                             INCEXE *ie,
+                             char *filesystem,
+                             struct ndm_job_param *job);
+int native_to_ndmp_level(JCR *jcr, char *filesystem);
+void register_callback_hooks(struct ndmlog *ixlog);
+void unregister_callback_hooks(struct ndmlog *ixlog);
+void process_fhdb(struct ndmlog *ixlog);
+
 /* ndmp_dma_backup.c */
 bool do_ndmp_backup_init(JCR *jcr);
 bool do_ndmp_backup(JCR *jcr);
 void ndmp_backup_cleanup(JCR *jcr, int TermCode);
+
+/* ndmp_dma_backup_NATIVE_NDMP.c */
+bool do_ndmp_backup_init_ndmp_native(JCR *jcr);
+bool do_ndmp_backup_ndmp_native(JCR *jcr);
+
 
 /* ndmp_dma_generic.c */
 bool ndmp_validate_client(JCR *jcr);
 bool ndmp_validate_storage(JCR *jcr);
 void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd);
 
-/* ndmp_dma_restore.c */
+/* ndmp_dma_restore_common.c */
+void add_to_namelist(struct ndm_job_param *job,
+                                   char *filename,
+                                   const char *restore_prefix,
+                                   char *name,
+                                   char *other_name,
+                                   uint64_t node,
+                                   uint64_t fhinfo);
+int set_files_to_restore_ndmp_native(JCR *jcr,
+                              struct ndm_job_param *job,
+                              int32_t FileIndex,
+                              const char *restore_prefix,
+                              const char *ndmp_filesystem);
+int ndmp_env_handler(void *ctx, int num_fields, char **row);
+bool extract_post_restore_stats(JCR *jcr,
+                                struct ndm_session *sess);
+
+/* ndmp_dma_restore_NDMP_BAREOS.c */
 bool do_ndmp_restore_init(JCR *jcr);
 bool do_ndmp_restore(JCR *jcr);
 void ndmp_restore_cleanup(JCR *jcr, int TermCode);
+
+
+/* ndmp_dma_restore_NDMP_NATIVE.c */
+bool do_ndmp_restore_ndmp_native(JCR *jcr);
+bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr);
+
 
 /* ndmp_dma_storage.c */
 void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd);
@@ -224,6 +262,8 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
 bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
                              MEDIA_DBR *omr, POOL_DBR *pr, bool relabel,
                              drive_number_t drive, slot_number_t slot);
+char *lookup_ndmp_drive(STORERES *store, drive_number_t drive);
+bool ndmp_update_storage_mappings(JCR* jcr, STORERES *store);
 
 /* next_vol.c */
 void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr);

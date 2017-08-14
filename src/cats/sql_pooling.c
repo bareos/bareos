@@ -788,7 +788,7 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
       } else {
          /*
           * See if we can shrink the connection pool.
-          * Only try to shrink when the last update on the pool was more then the validate time ago.
+          * Only try to shrink when the last update on the pool was more than the validate time ago.
           */
          if ((now - spd->last_update) >= spd->validate_timeout) {
             Dmsg0(100, "db_sql_close_pooled_connection trying to shrink connection pool\n");

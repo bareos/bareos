@@ -515,6 +515,16 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       ar->DigestType = CRYPTO_DIGEST_NONE;
       jcr->cached_attribute = true;
 
+
+      /*
+       * Fhinfo and Fhnode are not sent from the SD,
+       * they exist only in NDMP 2-Way backups so we
+       * set them to 0 here
+       */
+      ar->Fhinfo = 0;
+      ar->Fhnode = 0;
+
+
       Dmsg2(400, "dird<filed: stream=%d %s\n", Stream, fname);
       Dmsg1(400, "dird<filed: attr=%s\n", attr);
       break;

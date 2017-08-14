@@ -78,11 +78,15 @@ ndmca_op_robot_startup (struct ndm_session *sess, int verify_media_flag)
 	if (!job->have_robot)
 		return 0;
 
-	rc = ndmca_connect_robot_agent (sess);
-	if (rc) return rc;	/* already tattled */
+   if (!sess->control_acb->smc_cb) {
+      sess->control_acb->smc_cb = NDMOS_API_MALLOC (sizeof(struct smc_ctrl_block));
+      NDMOS_MACRO_ZEROFILL (sess->control_acb->smc_cb);
+   }
+   rc = ndmca_connect_robot_agent (sess);
+   if (rc) return rc;	/* already tattled */
 
-	rc = ndmca_robot_prep_target (sess);
-	if (rc) return rc;	/* already tattled */
+   rc = ndmca_robot_prep_target (sess);
+   if (rc) return rc;	/* already tattled */
 
 	rc = ndmca_robot_check_ready (sess);
 	if (rc) {	/* already tattled */

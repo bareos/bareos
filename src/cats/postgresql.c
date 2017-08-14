@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1026,6 +1026,8 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
 
    Dmsg0(500, "sql_batch_start started\n");
 
+//   Jmsg(jcr, M_INFO, 0, "sql_batch_start: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
+
    if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
                                   "FileIndex int,"
                                   "JobId int,"
@@ -1033,7 +1035,9 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
                                   "Name varchar,"
                                   "LStat varchar,"
                                   "Md5 varchar,"
-                                  "DeltaSeq smallint)")) {
+                                  "DeltaSeq smallint,"
+                                  "Fhinfo NUMERIC(20),"
+                                  "Fhnode NUMERIC(20))")) {
       Dmsg0(500, "sql_batch_start failed\n");
       return false;
    }
@@ -1095,6 +1099,8 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
 
    Dmsg0(500, "sql_batch_end started\n");
 
+//   Jmsg(jcr, M_INFO, 0, "sql_batch_end: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
+
    do {
       res = PQputCopyEnd(m_db_handle, error);
    } while (res == 0 && --count > 0);
@@ -1133,7 +1139,7 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    int count=30;
    size_t len;
    const char *digest;
-   char ed1[50];
+   char ed1[50], ed2[50], ed3[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
    pgsql_copy_escape(esc_name, fname, fnl);
@@ -1147,9 +1153,11 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       digest = ar->Digest;
    }
 
-   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\n",
+   len = Mmsg(cmd, "%u\t%s\t%s\t%s\t%s\t%s\t%u\t%s\t%s\n",
               ar->FileIndex, edit_int64(ar->JobId, ed1), esc_path,
-              esc_name, ar->attr, digest, ar->DeltaSeq);
+              esc_name, ar->attr, digest, ar->DeltaSeq,
+              edit_uint64(ar->Fhinfo,ed2),
+              edit_uint64(ar->Fhnode,ed3));
 
    do {
       res = PQputCopyData(m_db_handle, cmd, len);
@@ -1169,6 +1177,7 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    }
 
    Dmsg0(500, "sql_batch_insert finishing\n");
+//   Jmsg(jcr, M_INFO, 0, "sql_batch_insert: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
 
    return true;
 }

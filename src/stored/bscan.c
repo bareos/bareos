@@ -668,15 +668,18 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
             }
 
             if (rec->VolSessionId != jr.VolSessionId) {
-               Pmsg3(000, _("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d Vol=%d\n"), jr.JobId, jr.VolSessionId, rec->VolSessionId);
+               Pmsg3(000, _("SOS_LABEL: VolSessId mismatch for JobId=%u. DB=%d Vol=%d\n"),
+                  jr.JobId, jr.VolSessionId, rec->VolSessionId);
                return true;              /* ignore error */
             }
             if (rec->VolSessionTime != jr.VolSessionTime) {
-               Pmsg3(000, _("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d Vol=%d\n"), jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
+               Pmsg3(000, _("SOS_LABEL: VolSessTime mismatch for JobId=%u. DB=%d Vol=%d\n"),
+                  jr.JobId, jr.VolSessionTime, rec->VolSessionTime);
                return true;              /* ignore error */
             }
             if (jr.PoolId != pr.PoolId) {
-               Pmsg3(000, _("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%d Vol=%d\n"), jr.JobId, jr.PoolId, pr.PoolId);
+               Pmsg3(000, _("SOS_LABEL: PoolId mismatch for JobId=%u. DB=%d Vol=%d\n"),
+               jr.JobId, jr.PoolId, pr.PoolId);
                return true;              /* ignore error */
             }
          }
@@ -701,7 +704,8 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
             mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
             if (!mjcr) {
-               Pmsg2(000, _("Could not find SessId=%d SessTime=%d for EOS record.\n"), rec->VolSessionId, rec->VolSessionTime);
+               Pmsg2(000, _("Could not find SessId=%d SessTime=%d for EOS record.\n"),
+                  rec->VolSessionId, rec->VolSessionTime);
                break;
             }
 

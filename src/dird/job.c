@@ -245,8 +245,14 @@ bool setup_job(JCR *jcr, bool suppress_output)
       }
 
       switch (jcr->getJobProtocol()) {
-      case PT_NDMP:
+      case PT_NDMP_BAREOS:
          if (!do_ndmp_backup_init(jcr)) {
+            ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
+            goto bail_out;
+         }
+         break;
+      case PT_NDMP_NATIVE:
+         if (!do_ndmp_backup_init_ndmp_native(jcr)) {
             ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
             goto bail_out;
          }
@@ -274,7 +280,8 @@ bool setup_job(JCR *jcr, bool suppress_output)
       break;
    case JT_RESTORE:
       switch (jcr->getJobProtocol()) {
-      case PT_NDMP:
+      case PT_NDMP_BAREOS:
+      case PT_NDMP_NATIVE:
          if (!do_ndmp_restore_init(jcr)) {
             ndmp_restore_cleanup(jcr, JS_ErrorTerminated);
             goto bail_out;
@@ -473,9 +480,20 @@ static void *job_thread(void *arg)
    switch (jcr->getJobType()) {
    case JT_BACKUP:
       switch (jcr->getJobProtocol()) {
-      case PT_NDMP:
+      case PT_NDMP_BAREOS:
          if (!job_canceled(jcr)) {
             if (do_ndmp_backup(jcr)) {
+               do_autoprune(jcr);
+            } else {
+               ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
+            }
+         } else {
+            ndmp_backup_cleanup(jcr, JS_Canceled);
+         }
+         break;
+      case PT_NDMP_NATIVE:
+         if (!job_canceled(jcr)) {
+            if (do_ndmp_backup_ndmp_native(jcr)) {
                do_autoprune(jcr);
             } else {
                ndmp_backup_cleanup(jcr, JS_ErrorTerminated);
@@ -522,9 +540,20 @@ static void *job_thread(void *arg)
       break;
    case JT_RESTORE:
       switch (jcr->getJobProtocol()) {
-      case PT_NDMP:
+      case PT_NDMP_BAREOS:
          if (!job_canceled(jcr)) {
             if (do_ndmp_restore(jcr)) {
+               do_autoprune(jcr);
+            } else {
+               ndmp_restore_cleanup(jcr, JS_ErrorTerminated);
+            }
+         } else {
+            ndmp_restore_cleanup(jcr, JS_Canceled);
+         }
+         break;
+      case PT_NDMP_NATIVE:
+         if (!job_canceled(jcr)) {
+            if (do_ndmp_restore_ndmp_native(jcr)) {
                do_autoprune(jcr);
             } else {
                ndmp_restore_cleanup(jcr, JS_ErrorTerminated);

@@ -528,7 +528,7 @@ static bool cancel_cmd(JCR *cjcr)
     * When canceling a NDMP job make sure we call the end_of_ndmp_* functions.
     */
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
       switch (jcr->getJobType()) {
       case JT_BACKUP:
          end_of_ndmp_backup(jcr);

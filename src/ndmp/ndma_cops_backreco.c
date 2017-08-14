@@ -247,7 +247,7 @@ ndmca_monitor_backup (struct ndm_session *sess)
 			ndmalogf (sess, 0, 3, "Mover paused, reason=%s",
 					ndmp9_mover_pause_reason_to_str (pr));
 
-			/* backups are different then recoverys... When
+			/* backups are different than recoverys... When
                          * we reach the end of a window, we signal EOW
                          * except in V2 where we signal EOF. EOM occurs
 			 * at EOT (or EOF does).

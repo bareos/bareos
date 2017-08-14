@@ -7,7 +7,9 @@ SELECT DISTINCT ON (File.Name,
                    PathId,
                    File.Name,
                    LStat,
-                   MD5
+                   MD5,
+                   Fhinfo,
+                   Fhnode
 FROM File
 JOIN Job USING (JobId)
 WHERE JobId IN (%s)

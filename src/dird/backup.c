@@ -215,7 +215,7 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
 
    /* sending with checksum */
    if (jcr->use_accurate_chksum &&
-       num_fields == 7 &&
+       num_fields == 9 &&
        row[6][0] && /* skip checksum = '0' */
        row[6][1]) {
       jcr->file_bsock->fsend("%s%s%c%s%c%s%c%s",
@@ -1023,7 +1023,7 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
    jobstatus_to_ascii(jcr->SDJobStatus, sd_term_msg, sizeof(sd_term_msg));
 
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
       Mmsg(level_info, _(
            "  Backup Level:           %s%s\n"),
            level_to_str(jcr->getJobLevel()), jcr->since);
@@ -1038,6 +1038,17 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
            edit_uint64_with_suffix(jcr->jr.JobBytes, ec4),
            edit_uint64_with_commas(jcr->SDJobBytes, ec5),
            edit_uint64_with_suffix(jcr->SDJobBytes, ec6));
+      break;
+   case PT_NDMP_NATIVE:
+      Mmsg(level_info, _(
+           "  Backup Level:           %s%s\n"),
+           level_to_str(jcr->getJobLevel()), jcr->since);
+      Mmsg(statistics, _(
+           "  NDMP Files Written:     %s\n"
+           "  NDMP Bytes Written:     %s (%sB)\n"),
+           edit_uint64_with_commas(jcr->jr.JobFiles, ec1),
+           edit_uint64_with_commas(jcr->jr.JobBytes, ec3),
+           edit_uint64_with_suffix(jcr->jr.JobBytes, ec4));
       break;
    default:
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {
@@ -1093,7 +1104,8 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
    }
 
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
+   case PT_NDMP_NATIVE:
       break;
    default:
       if (jcr->is_JobLevel(L_VIRTUAL_FULL)) {

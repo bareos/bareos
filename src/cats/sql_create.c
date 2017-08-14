@@ -110,7 +110,7 @@ bool B_DB::create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
 {
    bool retval = false;
    int count;
-   char ed1[50], ed2[50];
+   char ed1[50], ed2[50], ed3[50];
 
    db_lock(this);
 
@@ -128,13 +128,15 @@ bool B_DB::create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
 
    Mmsg(cmd,
         "INSERT INTO JobMedia (JobId,MediaId,FirstIndex,LastIndex,"
-        "StartFile,EndFile,StartBlock,EndBlock,VolIndex) "
-        "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u)",
+        "StartFile,EndFile,StartBlock,EndBlock,VolIndex,JobBytes) "
+        "VALUES (%s,%s,%u,%u,%u,%u,%u,%u,%u,%s)",
         edit_int64(jm->JobId, ed1),
         edit_int64(jm->MediaId, ed2),
         jm->FirstIndex, jm->LastIndex,
-        jm->StartFile, jm->EndFile, jm->StartBlock, jm->EndBlock,count);
-
+        jm->StartFile, jm->EndFile,
+        jm->StartBlock, jm->EndBlock,
+        count,
+        edit_uint64(jm->JobBytes, ed3));
    Dmsg0(300, cmd);
    if (!INSERT_DB(jcr, cmd)) {
       Mmsg2(errmsg, _("Create JobMedia record %s failed: ERR=%s\n"), cmd, sql_strerror());
@@ -829,7 +831,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    Dmsg1(50,"db_create_file_record changes=%u\n", changes);
 
    jcr->JobStatus = JS_AttrInserting;
-   if (!sql_batch_end(jcr, NULL)) {
+   if (!jcr->db_batch->sql_batch_end(jcr, NULL)) {
       Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
       goto bail_out;
    }
@@ -840,25 +842,26 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    /*
     * We have to lock tables
     */
-   if (!sql_query(SQL_QUERY_batch_lock_path_query)) {
+   if (!jcr->db_batch->sql_query(SQL_QUERY_batch_lock_path_query)) {
       Jmsg1(jcr, M_FATAL, 0, "Lock Path table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query(SQL_QUERY_batch_fill_path_query)) {
+   if (!jcr->db_batch->sql_query(SQL_QUERY_batch_fill_path_query)) {
       Jmsg1(jcr, M_FATAL, 0, "Fill Path table %s\n",errmsg);
-      sql_query(SQL_QUERY_batch_unlock_tables_query);
+      jcr->db_batch->sql_query(SQL_QUERY_batch_unlock_tables_query);
       goto bail_out;
    }
 
-   if (!sql_query(SQL_QUERY_batch_unlock_tables_query)) {
+   if (!jcr->db_batch->sql_query(SQL_QUERY_batch_unlock_tables_query)) {
       Jmsg1(jcr, M_FATAL, 0, "Unlock Path table %s\n", errmsg);
       goto bail_out;
    }
 
-   if (!sql_query( "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq) "
+   if (!jcr->db_batch->sql_query(
+                     "INSERT INTO File (FileIndex, JobId, PathId, Name, LStat, MD5, DeltaSeq, Fhinfo, Fhnode) "
                      "SELECT batch.FileIndex, batch.JobId, Path.PathId, "
-                     "batch.Name,batch.LStat, batch.MD5, batch.DeltaSeq "
+                     "batch.Name, batch.LStat, batch.MD5, batch.DeltaSeq, batch.Fhinfo, batch.Fhnode "
                      "FROM batch "
                      "JOIN Path ON (batch.Path = Path.Path) ")) {
       Jmsg1(jcr, M_FATAL, 0, "Fill File table %s\n", errmsg);
@@ -992,9 +995,9 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
    /* Must create it */
    Mmsg(cmd,
         "INSERT INTO File (FileIndex,JobId,PathId,Name,"
-        "LStat,MD5,DeltaSeq) VALUES (%u,%u,%u,'%s','%s','%s',%u)",
+        "LStat,MD5,DeltaSeq,Fhinfo,Fhnode) VALUES (%u,%u,%u,'%s','%s','%s',%u,%llu,%llu)",
         ar->FileIndex, ar->JobId, ar->PathId, esc_name,
-        ar->attr, digest, ar->DeltaSeq);
+        ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
 
    ar->FileId = sql_insert_autokey_record(cmd, NT_("File"));
    if (ar->FileId == 0) {

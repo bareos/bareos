@@ -6,7 +6,9 @@ SELECT Path.Path AS Path,
        Temp.JobId AS JobId,
        Temp.LStat AS LStat,
        Temp.FileId AS FileId,
-       Temp.MD5 AS MD5
+       Temp.MD5 AS MD5,
+       Temp.Fhinfo AS Fhinfo,
+       Temp.Fhnode AS Fhnode
 FROM (%s) AS Temp
 JOIN Path ON (Path.PathId = Temp.PathId)
 WHERE Temp.FileIndex > 0 ON

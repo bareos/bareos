@@ -667,6 +667,8 @@ ndmos_chan_poll (struct ndmchan *chtab[], unsigned n_chtab, int milli_timo)
 		case NDMCHAN_MODE_READ:
 			if (pfdtab[n_pfdtab].revents & POLLIN)
 				ch->ready = 1;
+			if (pfdtab[n_pfdtab].revents & POLLHUP)
+				ch->eof = 1;
 			break;
 
 		case NDMCHAN_MODE_WRITE:

@@ -547,6 +547,7 @@ ndmta_write_quantum (struct ndm_session *sess)
 		cur_blockno = ta->tape_state.blockno.value;
 		if (cur_blockno < want_blockno) {
 			xsr_count = want_blockno - cur_blockno;
+	      ndmalogf (sess, 0, 6, "NDMP9_MTIO_FSR %lu", xsr_count);
 			error = ndmos_tape_mtio (sess, NDMP9_MTIO_FSR,
 						xsr_count, &xsr_resid);
 			if (error == NDMP9_EOF_ERR) {
@@ -565,6 +566,7 @@ ndmta_write_quantum (struct ndm_session *sess)
 				goto again;
 			}
 		} else if (cur_blockno > want_blockno) {
+	      ndmalogf (sess, 0, 6, "NDMP9_MTIO_BSR %lu", xsr_count);
 			xsr_count = cur_blockno - want_blockno;
 			error = ndmos_tape_mtio (sess, NDMP9_MTIO_BSR,
 						xsr_count, &xsr_resid);

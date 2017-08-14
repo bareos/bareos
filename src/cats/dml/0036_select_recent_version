@@ -7,6 +7,8 @@ SELECT j1.JobId AS JobId,
        f1.Name AS Name,
        f1.LStat AS LStat,
        f1.MD5 AS MD5,
+       f1.Fhinfo AS Fhinfo,
+       f1.Fhnode AS Fhnode,
        j1.JobTDate
 FROM
   (SELECT max(JobTDate) AS JobTDate,

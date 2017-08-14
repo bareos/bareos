@@ -206,7 +206,7 @@ bool do_job_run(JCR *jcr)
 
    memset(jcr->sd_auth_key, 0, strlen(jcr->sd_auth_key));
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
       if (jcr->authenticated && !job_canceled(jcr)) {
          Dmsg2(800, "Running jid=%d %p\n", jcr->JobId, jcr);
 
@@ -258,7 +258,7 @@ bool nextrun_cmd(JCR *jcr)
    int errstat = 0;
 
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
       /*
        * We expect a next NDMP backup stream so clear the authenticated flag
        * and start waiting for the Next backup to Start.
@@ -341,7 +341,7 @@ bool finish_cmd(JCR *jcr)
     * finish cmd some do not (Native backup for example does NOT)
     */
    switch (jcr->getJobProtocol()) {
-   case PT_NDMP:
+   case PT_NDMP_BAREOS:
       Dmsg1(200, "Finish_cmd: %s", jcr->dir_bsock->msg);
 
       jcr->end_time = time(NULL);

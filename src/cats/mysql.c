@@ -711,7 +711,9 @@ bool B_DB_MYSQL::sql_batch_start(JCR *jcr)
                               "Name blob,"
                               "LStat tinyblob,"
                               "MD5 tinyblob,"
-                              "DeltaSeq integer)");
+                              "DeltaSeq integer,"
+                              "Fhinfo NUMERIC(20),"
+                              "Fhnode NUMERIC(20) )");
    db_unlock(this);
 
    /*
@@ -748,7 +750,7 @@ bool B_DB_MYSQL::sql_batch_end(JCR *jcr, const char *error)
 bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
 {
    const char *digest;
-   char ed1[50];
+   char ed1[50], ed2[50], ed3[50];
 
    esc_name = check_pool_memory_size(esc_name, fnl*2+1);
    escape_string(jcr, esc_name, fname, fnl);
@@ -767,18 +769,20 @@ bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
     */
    if (changes == 0) {
       Mmsg(cmd, "INSERT INTO batch VALUES "
-           "(%u,%s,'%s','%s','%s','%s',%u)",
+           "(%u,%s,'%s','%s','%s','%s',%u,'%s','%s')",
            ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
-           esc_name, ar->attr, digest, ar->DeltaSeq);
+           esc_name, ar->attr, digest, ar->DeltaSeq,
+           edit_uint64(ar->Fhinfo,ed2),
+           edit_uint64(ar->Fhnode,ed3));
       changes++;
    } else {
       /*
        * We use the esc_obj for temporary storage otherwise
        * we keep on copying data.
        */
-      Mmsg(esc_obj, ",(%u,%s,'%s','%s','%s','%s',%u)",
+      Mmsg(esc_obj, ",(%u,%s,'%s','%s','%s','%s',%u,%u,%u)",
            ar->FileIndex, edit_int64(ar->JobId,ed1), esc_path,
-           esc_name, ar->attr, digest, ar->DeltaSeq);
+           esc_name, ar->attr, digest, ar->DeltaSeq, ar->Fhinfo, ar->Fhnode);
       pm_strcat(cmd, esc_obj);
       changes++;
    }

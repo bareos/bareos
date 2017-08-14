@@ -133,7 +133,7 @@ retry:
          }
          break;
       default:
-         Dmsg2(dbglvl, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
+         Dmsg2(dbglvl, _("Unable to insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          Jmsg2(nis->jcr, M_FATAL, 0, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          goto bail_out;
       }

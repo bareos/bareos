@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -191,10 +191,12 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int3
             len = strlen(ndmp_filesystem);
             if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, len)) {
                add_to_namelist(job,  restore_pathname.c_str() + len, restore_prefix,
-                               (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
+                               (char *)"", (char *)"",
+                               NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
             } else {
                add_to_namelist(job,  restore_pathname.c_str(), restore_prefix,
-                               (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
+                               (char *)"", (char *)"",
+                               NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
             }
             cnt++;
          }
@@ -204,25 +206,6 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int3
    }
 
    return cnt;
-}
-
-/**
- * Database handler that handles the returned environment data for a given JobId.
- */
-static int ndmp_env_handler(void *ctx, int num_fields, char **row)
-{
-   struct ndm_env_table *envtab;
-   ndmp9_pval pv;
-
-   if (row[0] && row[1]) {
-      envtab = (struct ndm_env_table *)ctx;
-      pv.name = row[0];
-      pv.value = row[1];
-
-      ndma_store_env_list(envtab, &pv);
-   }
-
-   return 0;
 }
 
 /**
@@ -415,7 +398,8 @@ static inline bool fill_restore_environment(JCR *jcr,
           * There is no specific filename selected so restore everything.
           */
          add_to_namelist(job, (char *)"", destination_path.c_str(),
-                         (char *)"", (char *)"", NDMP_INVALID_U_QUAD);
+                         (char *)"", (char *)"",
+                         NDMP_INVALID_U_QUAD, NDMP_INVALID_U_QUAD);
       }
    }
 
@@ -432,44 +416,6 @@ static inline bool fill_restore_environment(JCR *jcr,
 
    free(restore_pathname);
    return true;
-}
-
-/**
- * Extract any post backup statistics.
- */
-static inline bool extract_post_restore_stats(JCR *jcr,
-                                              struct ndm_session *sess)
-{
-   bool retval = true;
-   struct ndmmedia *media;
-
-   /*
-    * See if an error was raised during the backup session.
-    */
-   if (sess->error_raised) {
-      return false;
-   }
-
-   /*
-    * See if there is any media error.
-    */
-   for (media = sess->control_acb->job.result_media_tab.head; media; media = media->next) {
-      if (media->media_open_error ||
-          media->media_io_error ||
-          media->label_io_error ||
-          media->label_mismatch ||
-          media->fmark_error) {
-         retval = false;
-      }
-   }
-
-   /*
-    * Update the Job statistics from the NDMP statistics.
-    */
-   jcr->JobBytes += sess->control_acb->job.bytes_read;
-   jcr->JobFiles++;
-
-   return retval;
 }
 
 /**
@@ -895,6 +841,7 @@ bail_out:
    return retval;
 }
 
+
 /**
  * Run a NDMP restore session.
  */
@@ -1029,5 +976,11 @@ bool do_ndmp_restore(JCR *jcr)
 void ndmp_restore_cleanup(JCR *jcr, int TermCode)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+}
+
+bool do_ndmp_restore_ndmp_native(JCR *jcr)
+{
+   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+   return false;
 }
 #endif /* HAVE_NDMP */
