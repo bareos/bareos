@@ -338,6 +338,45 @@ set by the user. The following environment variables are currently set automatic
 
 \warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options - Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
 
+\begin{bconfig}{NDMP Fileset Isilon Include/Exclude}
+Fileset {
+  Name = "isilon fileset"
+  Include {
+    Options {
+        #meta = "USER=root"
+        meta = "USE_TBB_IF_AVAILABLE=y"
+        meta = "HIST=Y" # Y F
+        meta = "DIRECT=N" # Y
+        meta = "UPDATE=Y"
+        meta = "BUTYPE=DUMP"
+
+        #
+        # EXCLUDE
+        #
+        #meta = "EXCLUDE=[b-z]*"
+
+        #
+        # INCLUDE
+        #
+        meta = "FILES=a*"
+
+        #
+        # Note:
+        #
+        # Isilon OneFS 8.0.1 has no "INCLUDE" environment variable,
+        # instead it is called the "FILES" environment variable
+        # for file and directory inclusion, see the example above.
+        #
+        # For more details on inclusion and exclusion, please have a look at
+        # the Isilon OneFS 8.0.1 CLI Administration Guide Page 663, for more
+        # details about environment variables see page 678.
+        #
+    }
+    File = /ifs/home/users
+  }
+}
+\end{bconfig}
+
 
 \subsection{Bareos Director: Configure NDMP Jobs}
 
