@@ -20,7 +20,8 @@ A million repetitions of "a"
 #if __LITTLE_ENDIAN__
 #define LITTLE_ENDIAN
 #endif
-/* #define SHA1HANDSOFF * Copies data before messing with it. */
+/* #define SHA1HANDSOFF * Copies data before messing with it. Do not modify original data! */
+#define SHA1HANDSOFF
 
 #include "sha1.h"
 

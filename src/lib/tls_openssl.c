@@ -60,7 +60,7 @@ struct TLS_Connection {
    SSL *openssl;
 };
 
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
 struct TLS_CRL_Reload_Context {
    time_t mtime;
    char *crl_file_name;
@@ -446,7 +446,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
       goto err;
    }
 
-#if (OPENSSL_VERSION_NUMBER >= 0x00907000L)
+#if (OPENSSL_VERSION_NUMBER >= 0x00907000L)  && (OPENSSL_VERSION_NUMBER < 0x10100000L)
    /*
     * Set certificate revocation list.
     */
@@ -716,7 +716,7 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char 
                break;
             }
 
-            ext_value_data = ext->value->data;
+            ext_value_data = X509_EXTENSION_get_data(ext)->data;
 
 #if (OPENSSL_VERSION_NUMBER > 0x00907000L)
             if (method->it) {
@@ -724,14 +724,14 @@ bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char 
                 * New style ASN1
                 * Decode ASN1 item in data
                 */
-               extstr = ASN1_item_d2i(NULL, &ext_value_data, ext->value->length,
+               extstr = ASN1_item_d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length,
                                       ASN1_ITEM_ptr(method->it));
             } else {
                /*
                 * Old style ASN1
                 * Decode ASN1 item in data
                 */
-               extstr = method->d2i(NULL, &ext_value_data, ext->value->length);
+               extstr = method->d2i(NULL, &ext_value_data, X509_EXTENSION_get_data(ext)->length);
             }
 
 #else
