@@ -230,8 +230,8 @@ struct X509_Keypair {
 
 /* Message Digest Structure */
 struct Digest {
-   crypto_digest_t type;
    JCR *jcr;
+   crypto_digest_t type;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L
    /* Openssl Version < 1.1 */
