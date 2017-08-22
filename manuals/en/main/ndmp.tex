@@ -309,46 +309,60 @@ Fileset {
   Name = "NDMP Fileset"
   Include {
     Options {
-        meta = "USE_TBB_IF_AVAILABLE=y"
         meta = "BUTYPE=DUMP"
-        meta = "ENCODING=ISO_8859_1"
-        meta = "RESTORE_HARDLINK_BY_TABLE=y"
+        meta = "USE_TBB_IF_AVAILABLE=y"
         meta = "FH_REPORT_FULL_DIRENTS=y"
+        meta = "RESTORE_HARDLINK_BY_TABLE=y"
     }
     File = /ifs/home
   }
 }
 \end{bconfig}
 
-Use multiple \configdirective{File} directives in \linkResourceDirective{Dir}{FileSet}{Include} to backup multiple directories.
-
-\warning{Some NDMP environment variables are set automatically by the DMA in the director and should NOT be
-set by the user. The following environment variables are currently set automatically:
-\begin{itemize}
-    \item HIST
-    \item TYPE
-    \item DIRECT
-    \item LEVEL
-    \item UPDATE
-    \item EXCLUDE
-    \item INCLUDE
-    \item FILESYSTEM
-    \item PREFIX
-\end{itemize}}
+% meta = "ENCODING=ISO_8859_1"
 
 \warning{Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options - Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.}
 
+\warning{Avoid using multiple \linkResourceDirective{Dir}{FileSet}{Include} \configdirective{File} directives.
+The \bareosDir would try to handle them by running multiple NDMP jobs in a single Bareos job.
+Even if this is working fine during backup, restore jobs will cause trouble.}
+
+Some NDMP environment variables are set automatically by the DMA in the \bareosDir.
+The following environment variables are currently set automatically:
+\begin{description}
+    \item[FILESYSTEM] is set to the \linkResourceDirective{Dir}{FileSet}{Include} \configdirective{File} directive.
+    \item[HIST] = Y \\
+        Specifies the file history format:
+        \begin{description}
+        \item[Y] Specifies the default file history format determined by your NDMP backup settings.
+        \item[N] Disables file history. Without file hostory, single file restore is not possible with Bareos.
+        \end{description}
+        Some NDMP environments (eg. Isilon OneFS) allow additional parameter:
+        \begin{description}
+        \item[F] Specifies path-based file history. This is the most efficient with Bareos.
+            % because it don't require to temporary store information in LMDB
+        \item[D] Specifies directory or node file history.
+        \end{description}
+    \item[LEVEL] is set accordingly to \nameref{sec:NdmpBackupLevel}.
+    \item[PREFIX]
+    \item[TYPE] is set accordingly to BUTYPE. Default \bquote{DUMP}.
+    \item[UPDATE] = Y
+\end{description}
+
+\subsubsection{Example NDMP Fileset to backup a subset of a NDMP filesystem}
+
+The following fileset is intended to backup all files and directories matching \path|/ifs/home/users/a*|.
+It has been tested against Isilon OneFS 7.2.0.1.
+See \externalReferenceIsilonNdmpEnvironmentVariables for details about the supported NDMP environment variables.
+Excludes are not used in this example.
+
 \begin{bconfig}{NDMP Fileset Isilon Include/Exclude}
 Fileset {
-  Name = "isilon fileset"
+  Name = "isilon_fileset_home_a"
   Include {
     Options {
-        #meta = "USER=root"
-        meta = "USE_TBB_IF_AVAILABLE=y"
-        meta = "HIST=Y" # Y F
-        meta = "DIRECT=N" # Y
-        meta = "UPDATE=Y"
         meta = "BUTYPE=DUMP"
+        meta = "USE_TBB_IF_AVAILABLE=y"
 
         #
         # EXCLUDE
@@ -359,24 +373,11 @@ Fileset {
         # INCLUDE
         #
         meta = "FILES=a*"
-
-        #
-        # Note:
-        #
-        # Isilon OneFS 8.0.1 has no "INCLUDE" environment variable,
-        # instead it is called the "FILES" environment variable
-        # for file and directory inclusion, see the example above.
-        #
-        # For more details on inclusion and exclusion, please have a look at
-        # the Isilon OneFS 8.0.1 CLI Administration Guide Page 663, for more
-        # details about environment variables see page 678.
-        #
     }
     File = /ifs/home/users
   }
 }
 \end{bconfig}
-
 
 \subsection{Bareos Director: Configure NDMP Jobs}
 
@@ -562,6 +563,7 @@ One NDMP main backup file is created for every directory specified in the used F
 The other files show the file history and are hardlinks to the backup file.
 
 \subsection{NDMP Backup Level}
+\label{sec:NdmpBackupLevel}
 \index[general]{NDMP!Level}
 The trailing number in the main backup file (after the \path|%| character)
 indicates the NDMP backup level:
@@ -962,6 +964,16 @@ This will create a lot of debugging output that will help to find the problem du
 
 \section{Limitations}
 
+\subsection{NDMP Fileset limitations}
+
+\limitation*{NDMP}{A NDMP fileset should only contain a single File directive and Meta options}{%
+Using multiple \linkResourceDirective{Dir}{FileSet}{Include} \configdirective{File} directives should be avoided.
+The \bareosDir would try to handle them by running multiple NDMP jobs in a single Bareos job.
+Even if this is working fine during backup, restore jobs will cause trouble.
+
+Normally (\linkResourceDirective{Dir}{Client}{Protocol}=Native) Filesets get handled by the \bareosFd. When connecting directly to a NDMP Clients (\linkResourceDirective{Dir}{Client}{Protocol}=NDMP*), no \bareosFd is involved and therefore most Fileset options can't be used. Instead, parameters are handled via \configdirective{Options - Meta} from \linkResourceDirective{Dir}{FileSet}{Include}.
+}
+
 \subsection{NDMP Job limitations when scanning in volumes}
 \label{sec:ndmp-filehistory}
 \index[general]{NDMP!File History}
@@ -1007,10 +1019,11 @@ Bareos NDMP support have been tested against:
 
 \begin{tabular}{l | l | l | l | l | l}
 \hline
-Vendor     & Product                       & NDMP Subsystem & Bareos version & Features & Remarks \\
+Vendor     & Product                       & NDMP Subsystem       & Bareos version & Features & Remarks \\
 \hline
-Isilon     & Isilon OneFS v7.1.1.5         & Isilon NDMP 2.2      & bareos-15.2.2 & & \\
-NetApp     &                               & Release 8.2.3 7-Mode & bareos-15.2.2 & & \\
-Oracle/Sun & ZFS Storage Appliance, OS 8.3 &                      & bareos-15.2.2 & & \\
+Isilon     & Isilon OneFS v7.2.0.1         & Isilon NDMP 2.2      & bareos-16.2.6  &          & \\
+Isilon     & Isilon OneFS v7.1.1.5         & Isilon NDMP 2.2      & bareos-15.2.2  &          & \\
+NetApp     &                               & Release 8.2.3 7-Mode & bareos-15.2.2  &          & \\
+Oracle/Sun & ZFS Storage Appliance, OS 8.3 &                      & bareos-15.2.2  &          & \\
 \hline
 \end{tabular}
