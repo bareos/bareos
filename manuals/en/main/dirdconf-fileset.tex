@@ -506,30 +506,38 @@ The directives within an Options resource may be one of the following:
 
 
 
- \item [signature={\textless}SHA1{\textbar}MD5{\textgreater}] \hfill \\
-    \begin{description}
-        \item [signature=SHA1] \hfill \\
-        \index[dir]{signature}
-        \index[dir]{SHA1}
-        \index[dir]{Directive!signature}
-        An SHA1 signature will be computed for all The SHA1 algorithm is
-        purported to be some what slower than the MD5 algorithm, but at the same
-        time is significantly better from a cryptographic point of view (i.e.
-        much fewer collisions, much lower probability of being hacked.) It adds
-        four more bytes than the MD5 signature.  We strongly recommend that
-        either this option or MD5 be specified as a default for all files.
-        Note, only one of the two options MD5 or SHA1 can be computed for any
-        file.
+ \item [signature={\textless}MD5{\textbar}SHA1{\textbar}SHA256{\textbar}SHA512{\textgreater}] \hfill \\
+        \index[dir]{signature}%
+        \index[dir]{Directive!signature}%
+It is strongly recommend to use signatures for your backups.
+Note, only one type of signature can be computed per file.
 
+    \begin{description}
         \item [signature=MD5] \hfill \\
-        \index[dir]{signature}
-        \index[dir]{MD5}
-        \index[dir]{Directive!signature}
-        An MD5 signature will be computed for all files saved.  Adding this
+        \index[dir]{MD5}%
+        \index[dir]{signature!MD5}%
+        An MD5 signature will be computed for each files saved.  Adding this
         option generates about 5\% extra overhead for each file saved.  In
         addition to the additional CPU time, the MD5 signature adds 16 more
-        bytes per file to your catalog.  We strongly recommend that this option
-        or the SHA1 option be specified as a default for all files.
+        bytes per file to your catalog.
+
+        \item [signature=SHA1] \hfill \\
+        \index[dir]{SHA1}%
+        \index[dir]{signature!SHA1}%
+        An SHA1 signature will be computed for each files saved.
+        The SHA1 algorithm is
+        purported to be some what slower than the MD5 algorithm, but at the same
+        time is significantly better from a cryptographic point of view (i.e.
+        much fewer collisions).
+        The SHA1 signature requires adds 20 bytes per file to your catalog.
+
+        \item [signature=SHA256] \hfill \\
+        \index[dir]{SHA256}%
+        \index[dir]{signature!SHA256}%
+
+        \item [signature=SHA512] \hfill \\
+        \index[dir]{SHA512}%
+        \index[dir]{signature!SHA512}%
     \end{description}
 
 
