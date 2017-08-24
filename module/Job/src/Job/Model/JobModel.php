@@ -38,35 +38,39 @@ class JobModel
     */
    public function getJobs(&$bsock=null, $jobname=null, $days=null)
    {
-      if(isset($bsock)) {
-         if($days == "all") {
-            if($jobname == "all") {
+      if (isset($bsock)) {
+         if ($days == "all") {
+            if ($jobname == "all") {
                $cmd = 'llist jobs';
-            }
-            else {
+            } else {
                $cmd = 'llist jobs jobname="'.$jobname.'"';
             }
-         }
-         else  {
-            if($jobname == "all") {
+         } else  {
+            if ($jobname == "all") {
                $cmd = 'llist jobs days='.$days;
-            }
-            else {
+            } else {
                $cmd = 'llist jobs jobname="'.$jobname.'" days='.$days;
             }
          }
-         $result = $bsock->send_command($cmd, 2, null);
-         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-            //return false;
-            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $error['result']['error'];
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+         while (true) {
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+               $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               return $error['result']['error'];
+            } else {
+               $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($jobs['result']['jobs']) || is_null($jobs['result']['jobs']) ) {
+                  return $retval;
+               } else {
+                  $retval = array_merge($retval, $jobs['result']['jobs']);
+               }
+            }
+            $offset = $offset + $limit;
          }
-         else {
-            $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $jobs['result']['jobs'];
-         }
-      }
-      else {
+      } else {
          throw new \Exception('Missing argument.');
       }
    }
@@ -84,34 +88,44 @@ class JobModel
     */
    public function getJobsByStatus(&$bsock=null, $jobname=null, $status=null, $days=null, $hours=null)
    {
-      if(isset($bsock, $status)) {
-         if(isset($days)) {
-            if($days == "all") {
+      if (isset($bsock, $status)) {
+         if (isset($days)) {
+            if ($days == "all") {
                $cmd = 'llist jobs jobstatus='.$status.'';
-            }
-            else {
+            } else {
                $cmd = 'llist jobs jobstatus='.$status.' days='.$days.'';
             }
-         }
-         elseif(isset($hours)) {
-            if($hours == "all") {
+         } elseif (isset($hours)) {
+            if ($hours == "all") {
                $cmd = 'llist jobs jobstatus='.$status.'';
-            }
-            else {
+            } else {
                $cmd = 'llist jobs jobstatus='.$status.' hours='.$hours.'';
             }
-         }
-         else {
+         } else {
             $cmd = 'llist jobs jobstatus='.$status.'';
          }
-         if($jobname != "all") {
+         if ($jobname != "all") {
             $cmd .= ' jobname="'.$jobname.'"';
          }
-         $result = $bsock->send_command($cmd, 2, null);
-         $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return array_reverse($jobs['result']['jobs']);
-      }
-      else {
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+         while (true) {
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+               $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               return $error['result']['error'];
+            } else {
+               $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($jobs['result']['jobs']) || is_null($jobs['result']['jobs']) ) {
+                  return array_reverse($retval);
+               } else {
+                  $retval = array_merge($retval, $jobs['result']['jobs']);
+               }
+            }
+            $offset = $offset + $limit;
+         }
+      } else {
          throw new \Exception('Missing argument.');
       }
    }
@@ -149,19 +163,26 @@ class JobModel
    {
       if(isset($bsock, $id)) {
          $cmd = 'list joblog jobid='.$id.'';
-         $result = $bsock->send_command($cmd, 2, null);
-         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-            //return false;
-            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $error['result']['error'];
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+         while (true) {
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+               $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               return $error['result']['error'];
+            }
+            else {
+               $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($log['result']['joblog']) || is_null($log['result']['joblog']) ) {
+                  return $retval;
+               } else {
+                  $retval = array_merge($retval, $log['result']['joblog']);
+               }
+            }
+            $offset = $offset + $limit;
          }
-         else {
-            $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $log['result']['joblog'];
-         }
-
-      }
-      else {
+      } else {
          throw new \Exception('Missing argument.');
       }
    }
