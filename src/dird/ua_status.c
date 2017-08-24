@@ -253,6 +253,7 @@ static void do_all_status(UAContext *ua)
    CLIENTRES *client, **unique_client;
    int i, j;
    bool found;
+   int32_t previous_JobStatus = 0;
 
    do_director_status(ua);
 
@@ -284,9 +285,12 @@ static void do_all_status(UAContext *ua)
    }
    UnlockRes();
 
+   previous_JobStatus = ua->jcr->JobStatus;
+
    /* Call each unique Storage daemon */
    for (j = 0; j < i; j++) {
       storage_status(ua, unique_store[j], NULL);
+      ua->jcr->JobStatus = previous_JobStatus;
    }
    free(unique_store);
 
@@ -318,9 +322,12 @@ static void do_all_status(UAContext *ua)
    }
    UnlockRes();
 
+   previous_JobStatus = ua->jcr->JobStatus;
+
    /* Call each unique File daemon */
    for (j = 0; j < i; j++) {
       client_status(ua, unique_client[j], NULL);
+      ua->jcr->JobStatus = previous_JobStatus;
    }
    free(unique_client);
 
