@@ -107,17 +107,25 @@ class PoolModel
    {
       if(isset($bsock, $pool)) {
          $cmd = 'llist media pool="'.$pool.'"';
-         $result = $bsock->send_command($cmd, 2, null);
-         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $error['result']['error'];
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+         while (true) {
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+               $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               return $error['result']['error'];
+            } else {
+               $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($media['result']['volumes']) || is_null($media['result']['volumes']) ) {
+                  return $retval;
+               } else {
+                  $retval = array_merge($retval, $media['result']['volumes']);
+               }
+            }
+            $offset = $offset + $limit;
          }
-         else {
-            $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $media['result']['volumes'];
-         }
-      }
-      else {
+      } else {
          throw new \Exception('Missing argument.');
       }
    }

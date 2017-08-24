@@ -39,17 +39,25 @@ class MediaModel
    {
       if(isset($bsock)) {
          $cmd = 'llist volumes all';
-         $result = $bsock->send_command($cmd, 2, null);
-         if(preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
-            $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $error['result']['error'];
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+         while (true) {
+            $result = $bsock->send_command($cmd . ' limit=' . $limit . ' offset=' . $offset, 2, null);
+            if (preg_match('/Failed to send result as json. Maybe result message to long?/', $result)) {
+               $error = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               return $error['result']['error'];
+            } else {
+               $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($volumes['result']['volumes']) || is_null($volumes['result']['volumes']) ) {
+                  return $retval;
+               } else {
+                  $retval = array_merge($retval, $volumes['result']['volumes']);
+               }
+            }
+            $offset = $offset + $limit;
          }
-         else {
-            $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            return $volumes['result']['volumes'];
-         }
-      }
-      else {
+      } else {
          throw new \Exception('Missing argument.');
       }
    }
