@@ -18,9 +18,9 @@ In your JobDefs or Job Definition configure the plugin itself:
       JobDefs = "DefaultJob"
     }
 
-* collectorHost: IP our resolvable address of your graphite host
+* collectorHost (default graphite): IP our resolvable address of your graphite host
 * collectorPort (default 2003): graphite server port
-* metricPrefix: prefix, added to all metric names
+* metricPrefix (default apps) : prefix, added to all metric names
 
 Metrics
 
