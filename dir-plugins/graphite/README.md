@@ -25,6 +25,6 @@ In your JobDefs or Job Definition configure the plugin itself:
 Metrics
 
 * <metricPrefix>.bareos.jobs.<jobName>.status.(error|warning|success)
-* <metricPrefix>.bareos.jobs.<jobName>.status.jobbytes
-* <metricPrefix>.bareos.jobs.<jobName>.status.runningtime
-* <metricPrefix>.bareos.jobs.<jobName>.status.throughput
+* <metricPrefix>.bareos.jobs.<jobName>.jobbytes
+* <metricPrefix>.bareos.jobs.<jobName>.runningtime
+* <metricPrefix>.bareos.jobs.<jobName>.throughput
