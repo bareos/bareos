@@ -997,9 +997,11 @@ The workaround for that problem is to restore the full backup and each increment
 
 \subsection{Restore always transfers the full main backup file to the Primary Storage System}
 
+Bareos do not support NDMP \bquote{Direct Access Restore} (DAR).
+
 On restore, the full main backup file (\path|@NDMP/...%.|)
 is always transfered back to the Primary Storage System,
-together with a description, want files to restore.
+together with a description, what files to restore.
 
 The reason for this is that the Primary Storage System handles the backup data by itself.
 Bareos will not modify the backup data it receives from the Primary Storage System.
