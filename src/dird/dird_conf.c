@@ -45,9 +45,6 @@
  *    for the resource records.
  *
  */
-/*
- * Kern Sibbald, January MM
- */
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
@@ -291,10 +288,12 @@ static RES_ITEM store_items[] = {
    { "PairedStorage", CFG_TYPE_RES, ITEM(res_store.paired_storage), R_STORAGE, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_store.max_bandwidth), 0, 0, NULL, NULL, NULL },
    { "CollectStatistics", CFG_TYPE_BOOL, ITEM(res_store.collectstats), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
-   { "ChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store.changer_device), 0, 0, NULL, "16.2.4-",
-     "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in specific NDMP environments." },
-   { "TapeDevice", CFG_TYPE_ALIST_STR, ITEM(res_store.tape_devices), 0, 0, NULL, "16.2.4-",
-     "Allows direct control of Storage Daemon Tape devices by the Director. Only used in specific NDMP environments." },
+   { "NdmpChangerDevice", CFG_TYPE_STRNAME, ITEM(res_store.ndmp_changer_device), 0, 0, NULL, "16.2.4-",
+     "Allows direct control of a Storage Daemon Auto Changer device by the Director. Only used in NDMP_NATIVE environments." },
+   // TapeDevice has never been used in production and intended for NDMP_NATIVE only.
+   // Instead of TapeDevice, the required Devices should be configured using the Device directive.
+   //{ "TapeDevice", CFG_TYPE_ALIST_STR, ITEM(res_store.tape_devices), 0, CFG_ITEM_ALIAS | CFG_ITEM_DEPRECATED, NULL, "16.2.4-17.2.2",
+   //  "Allows direct control of Storage Daemon Tape devices by the Director. Only used in NDMP_NATIVE environments." },
    TLS_CONFIG(res_store)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
@@ -2599,11 +2598,8 @@ void free_resource(RES *sres, int type)
       if (res->res_store.media_type) {
          free(res->res_store.media_type);
       }
-      if (res->res_store.changer_device) {
-         free(res->res_store.changer_device);
-      }
-      if (res->res_store.tape_devices) {
-         delete res->res_store.tape_devices;
+      if (res->res_store.ndmp_changer_device) {
+         free(res->res_store.ndmp_changer_device);
       }
       if (res->res_store.device) {
          delete res->res_store.device;
@@ -2845,7 +2841,6 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
       } else {
          int status;
 
-         res->res_store.tape_devices = res_all.res_store.tape_devices;
          res->res_store.paired_storage = res_all.res_store.paired_storage;
          res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
 

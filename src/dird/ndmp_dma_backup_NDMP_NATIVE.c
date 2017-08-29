@@ -205,10 +205,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
    STORERES *store = jcr->res.wstore;
    int drive = 0;
 
-   int index = 1;
-
-
-   int NUMBER_OF_VOLS=4;
    /*
     * Initialize the ndmp backup job. We build the generic job only once
     * and reuse the job definition for each separate sub-backup we perform as
@@ -227,7 +223,7 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
     * device in the form NAME[,[CNUM,]SID[,LUN]
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
       Dmsg0(100,"ndmp_send_label_request: no robot to use\n");
       return retval;
@@ -242,7 +238,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
    /*
     * Set the remote tape drive to use.
     */
-
    ndmp_job.tape_device = lookup_ndmp_drive(store, drive);
    ndmp_job.record_size = jcr->res.client->ndmp_blocksize;
 
@@ -329,10 +324,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
          /* register the callbacks */
          ndmca_media_register_callbacks (&ndmp_sess, &media_callbacks);
 
-
-         /* configure first tape */
-         //ndmp_load_next(&ndmp_sess);
-
          /*
           * The full ndmp archive has a virtual filename, we need it to hardlink the individual
           * file records to it. So we allocate it here once so its available during the whole
@@ -349,13 +340,10 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
          }
          nis->virtual_filename = bstrdup(virtual_filename.c_str());
 
-         //ndma_job_auto_adjust(&ndmp_sess.control_acb->job);
-
-         /* disabled because of "missing media entry" error
-         if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
-            goto cleanup;
-         }
-         */
+         // FIXME: disabled because of "missing media entry" error
+         //if (!ndmp_validate_job(jcr, &ndmp_sess.control_acb->job)) {
+         //   goto cleanup;
+         //}
 
          /*
           * Commission the session for a run.
@@ -405,15 +393,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
          ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
          /*
-          * Release any tape device name allocated.
-          */
-         /*
-            if (ndmp_sess.control_acb->job.tape_device) {
-            free(ndmp_sess.control_acb->job.tape_device);
-            ndmp_sess.control_acb->job.tape_device = NULL;
-            }
-            */
-         /*
           * Destroy the session.
           */
          ndma_session_destroy(&ndmp_sess);
@@ -437,16 +416,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
    status = JS_Terminated;
    retval = true;
 
-   /*
-    * Tell the storage daemon we are done.
-    */
-#if 0
-   if (jcr->store_bsock) {
-      jcr->store_bsock->fsend("finish");
-      wait_for_storage_daemon_termination(jcr);
-      db_write_batch_file_records(jcr);    /* used by bulk batch file insert */
-   }
-#endif
    /*
     * If we do incremental backups it can happen that the backup is empty if
     * nothing changed but we always write a filestream. So we use the counter
@@ -494,11 +463,6 @@ bail_out:
    status = JS_ErrorTerminated;
    jcr->setJobStatus(JS_ErrorTerminated);
 
-   if (jcr->store_bsock) {
-      cancel_storage_daemon_job(jcr);
-      wait_for_storage_daemon_termination(jcr);
-   }
-
 ok_out:
    if (nis) {
       if (nis->virtual_filename) {
@@ -506,7 +470,6 @@ ok_out:
       }
       free(nis);
    }
-   free_paired_storage(jcr);
 
    if (status == JS_Terminated) {
       ndmp_backup_cleanup(jcr, status);
@@ -586,8 +549,9 @@ static inline bool extract_post_backup_stats_ndmp_native(JCR *jcr,
       return false;
    }
 
-   //Jmsg(jcr, M_INFO, 0, _("extract_post_backup_stats\n"));
-
+   /*
+    * extract_post_backup_stats
+    */
    for (media = sess->control_acb->job.media_tab.head; media; media = media->next) {
 
       /*
@@ -675,11 +639,6 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
-}
-
-void ndmp_backup_cleanup_ndmp_native(JCR *jcr, int TermCode)
-{
-   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
 #endif /* HAVE_NDMP */

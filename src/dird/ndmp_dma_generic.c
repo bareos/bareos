@@ -461,10 +461,6 @@ bool ndmp_build_client_and_storage_job(JCR *jcr,
     * now configure client job
     * i.e. setup data_agent
     */
-
-   //job->operation = operation;
-   //job->bu_type = jcr->backup_format;
-
    if (!fill_ndmp_agent_config(jcr, &job->data_agent, client->Protocol,
                                client->AuthType, client->address,
                                client->FDport, client->username,

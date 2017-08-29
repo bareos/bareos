@@ -786,7 +786,6 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
              * Keep track that we finished this part of the restore.
              */
             cnt++;
-
          }
       }
 
@@ -897,70 +896,8 @@ bail_out:
    return false;
 }
 
-/**
- * Cleanup a NDMP restore session.
- */
-void ndmp_restore_cleanup(JCR *jcr, int TermCode)
-{
-   char term_code[100];
-   const char *term_msg;
-   int msg_type = M_INFO;
+#else /* HAVE_NDMP */
 
-   Dmsg0(20, "In ndmp_restore_cleanup\n");
-   update_job_end(jcr, TermCode);
-
-   if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
-      secure_erase(jcr, jcr->RestoreBootstrap);
-      jcr->unlink_bsr = false;
-   }
-
-   if (job_canceled(jcr)) {
-      cancel_storage_daemon_job(jcr);
-   }
-
-   switch (TermCode) {
-   case JS_Terminated:
-      if (jcr->ExpectedFiles > jcr->jr.JobFiles) {
-         term_msg = _("Restore OK -- warning file count mismatch");
-      } else {
-         term_msg = _("Restore OK");
-      }
-      break;
-   case JS_Warnings:
-         term_msg = _("Restore OK -- with warnings");
-         break;
-   case JS_FatalError:
-   case JS_ErrorTerminated:
-      term_msg = _("*** Restore Error ***");
-      msg_type = M_ERROR;          /* Generate error message */
-      if (jcr->store_bsock) {
-         jcr->store_bsock->signal(BNET_TERMINATE);
-         if (jcr->SD_msg_chan_started) {
-            pthread_cancel(jcr->SD_msg_chan);
-         }
-      }
-      break;
-   case JS_Canceled:
-      term_msg = _("Restore Canceled");
-      if (jcr->store_bsock) {
-         jcr->store_bsock->signal(BNET_TERMINATE);
-         if (jcr->SD_msg_chan_started) {
-            pthread_cancel(jcr->SD_msg_chan);
-         }
-      }
-      break;
-   default:
-      term_msg = term_code;
-      sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
-      break;
-   }
-
-   generate_restore_summary(jcr, msg_type, term_msg);
-
-   Dmsg0(20, "Leaving ndmp_restore_cleanup\n");
-}
-
-#else
 bool do_ndmp_restore_init(JCR *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
@@ -971,11 +908,6 @@ bool do_ndmp_restore(JCR *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
-}
-
-void ndmp_restore_cleanup(JCR *jcr, int TermCode)
-{
-   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
 bool do_ndmp_restore_ndmp_native(JCR *jcr)

@@ -1026,8 +1026,6 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
 
    Dmsg0(500, "sql_batch_start started\n");
 
-//   Jmsg(jcr, M_INFO, 0, "sql_batch_start: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
-
    if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
                                   "FileIndex int,"
                                   "JobId int,"
@@ -1098,8 +1096,6 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
    PGresult *pg_result;
 
    Dmsg0(500, "sql_batch_end started\n");
-
-//   Jmsg(jcr, M_INFO, 0, "sql_batch_end: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
 
    do {
       res = PQputCopyEnd(m_db_handle, error);
@@ -1177,7 +1173,6 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
    }
 
    Dmsg0(500, "sql_batch_insert finishing\n");
-//   Jmsg(jcr, M_INFO, 0, "sql_batch_insert: m_db_handle is :%p, jcr is %p\n", (void *) m_db_handle , (void *) jcr);
 
    return true;
 }

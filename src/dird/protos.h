@@ -206,11 +206,11 @@ int native_to_ndmp_level(JCR *jcr, char *filesystem);
 void register_callback_hooks(struct ndmlog *ixlog);
 void unregister_callback_hooks(struct ndmlog *ixlog);
 void process_fhdb(struct ndmlog *ixlog);
+void ndmp_backup_cleanup(JCR *jcr, int TermCode);
 
 /* ndmp_dma_backup.c */
 bool do_ndmp_backup_init(JCR *jcr);
 bool do_ndmp_backup(JCR *jcr);
-void ndmp_backup_cleanup(JCR *jcr, int TermCode);
 
 /* ndmp_dma_backup_NATIVE_NDMP.c */
 bool do_ndmp_backup_init_ndmp_native(JCR *jcr);
@@ -238,16 +238,15 @@ int set_files_to_restore_ndmp_native(JCR *jcr,
 int ndmp_env_handler(void *ctx, int num_fields, char **row);
 bool extract_post_restore_stats(JCR *jcr,
                                 struct ndm_session *sess);
+void ndmp_restore_cleanup(JCR *jcr, int TermCode);
 
 /* ndmp_dma_restore_NDMP_BAREOS.c */
 bool do_ndmp_restore_init(JCR *jcr);
 bool do_ndmp_restore(JCR *jcr);
-void ndmp_restore_cleanup(JCR *jcr, int TermCode);
 
 
 /* ndmp_dma_restore_NDMP_NATIVE.c */
 bool do_ndmp_restore_ndmp_native(JCR *jcr);
-bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr);
 
 
 /* ndmp_dma_storage.c */

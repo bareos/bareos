@@ -52,7 +52,7 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
        */
       Dmsg2(100, "bndmp_fhdb_add_file: New filename ==> %s%s\n", nis->filesystem, raw_name);
 
-   //   if (nis->jcr->ar) {
+      //if (nis->jcr->ar) {
          /*
           * See if this is the top level entry of the tree e.g. len == 0
           */

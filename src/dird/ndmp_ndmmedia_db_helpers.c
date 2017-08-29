@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -220,13 +220,12 @@ bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JCR  *jcr)
       media->n_bytes = VolParams[i].JobBytes;
       media->valid_n_bytes = NDMP9_VALIDITY_VALID;
 
-      // Vols[i].StartAddr = (((uint64_t)StartFile)<<32) | StartBlock;
+      //Vols[i].StartAddr = (((uint64_t)StartFile)<<32) | StartBlock;
       //VolParams[i].StartAddr >>= 32;
       media->file_mark_offset = VolParams[i].StartAddr;
 
       media->valid_filemark = NDMP9_VALIDITY_VALID;
 #if 0
-
       Jmsg(jcr, M_INFO, 0, _("label           : %s\n"), media->label);
       Jmsg(jcr, M_INFO, 0, _("file_mark_offset: %d\n"), media->file_mark_offset);
       Jmsg(jcr, M_INFO, 0, _("Logical slot is : %d\n"), media->slot_addr);

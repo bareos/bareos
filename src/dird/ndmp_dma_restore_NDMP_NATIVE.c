@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -253,34 +253,23 @@ int set_files_to_restore_ndmp_native(JCR *jcr, struct ndm_job_param *job, int32_
    return cnt;
 }
 
-/*
- * The bootstrap is stored in a file, so open the file, and loop
- * through it processing each storage device in turn. If the
- * storage is different from the prior one, we open a new connection
- * to the new storage and do a restore for that part.
- *
- * This permits handling multiple storage daemons for a single
- * restore.  E.g. your Full is stored on tape, and Incrementals
- * on disk.
+/**
+ * Execute native NDMP restore.
  */
-bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr)
+static bool do_ndmp_native_restore(JCR *jcr)
 {
    int cnt;
    BSOCK *sd;
    BSR *bsr;
    NIS *nis = NULL;
    int32_t current_fi = 0;
-   bootstrap_info info;
-   BSR_FINDEX *fileindex;
    struct ndm_session ndmp_sess;
    struct ndm_job_param ndmp_job;
    bool session_initialized = false;
    bool retval = false;
    int NdmpLoglevel;
-
    char mediabuf[100];
    ndmmedia *media;
-
    slot_number_t ndmp_slot;
 
    if (jcr->res.client->ndmp_loglevel > me->ndmp_loglevel) {
@@ -301,8 +290,9 @@ bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr)
 
    ndmp_sess.dump_media_info = 1; // for debugging
 
-   // session initialize
-
+   /*
+    * session initialize
+    */
    ndmp_sess.param = (struct ndm_session_param *)malloc(sizeof(struct ndm_session_param));
    memset(ndmp_sess.param, 0, sizeof(struct ndm_session_param));
    ndmp_sess.param->log.deliver = ndmp_loghandler;
@@ -381,7 +371,7 @@ bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr)
     * Set the robot to use
     */
    ndmp_sess.control_acb->job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.rstore->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_sess.control_acb->job.robot_target, jcr->res.rstore->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_sess.control_acb->job.robot_target);
       Dmsg0(100,"no robot to use\n");
       goto bail_out;
@@ -441,15 +431,6 @@ bool do_ndmp_restore_bootstrap_ndmp_native(JCR *jcr)
    ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
 
    /*
-    * Release any tape device name allocated.
-    */
-#if 0
-   if (ndmp_sess.control_acb->job.tape_device) {
-      free(ndmp_sess.control_acb->job.tape_device);
-      ndmp_sess.control_acb->job.tape_device = NULL;
-   }
-#endif
-   /*
     * Destroy the session.
     */
    ndma_session_destroy(&ndmp_sess);
@@ -480,11 +461,7 @@ cleanup_ndmp:
       ndma_destroy_env_list(&ndmp_sess.control_acb->job.env_tab);
       ndma_destroy_env_list(&ndmp_sess.control_acb->job.result_env_tab);
       ndma_destroy_nlist(&ndmp_sess.control_acb->job.nlist_tab);
-#if 0
-      if (ndmp_sess.control_acb->job.tape_device) {
-         free(ndmp_sess.control_acb->job.tape_device);
-      }
-#endif
+
       /*
        * Destroy the session.
        */
@@ -500,8 +477,6 @@ cleanup:
    if (nis) {
       free(nis);
    }
-   //free_paired_storage(jcr);
-   //close_bootstrap_file(info);
 
 bail_out:
    free_tree(jcr->restore_tree_root);
@@ -534,34 +509,15 @@ bool do_ndmp_restore_ndmp_native(JCR *jcr)
       return false;
    }
 
-   /* if (!jcr->RestoreBootstrap) { */
-   /*    Jmsg(jcr, M_FATAL, 0, _("Cannot restore without a bootstrap file.\n" */
-   /*         "You probably ran a restore job directly. All restore jobs must\n" */
-   /*         "be run using the restore command.\n")); */
-   /*    goto bail_out; */
-   /* } */
-
    /*
     * Print Job Start message
     */
    Jmsg(jcr, M_INFO, 0, _("Start Restore Job %s\n"), jcr->Job);
 
-   /*
-    * Read the bootstrap file and do the restore
-    */
-   /* if (!do_ndmp_restore_bootstrap(jcr)) { */
-   /*    goto bail_out; */
-   /* } */
-
-    if (!do_ndmp_restore_bootstrap_ndmp_native(jcr)) {
+   if (!do_ndmp_native_restore(jcr)) {
       goto bail_out;
-    }
-   /*
-    * Wait for Job Termination
-    */
-#if 0
-   status = ndmp_wait_for_job_termination(jcr);
-#endif
+   }
+
    status = JS_Terminated;
    ndmp_restore_cleanup(jcr, status);
    return true;
@@ -569,7 +525,5 @@ bool do_ndmp_restore_ndmp_native(JCR *jcr)
 bail_out:
    return false;
 }
-
-
 
 #endif /* HAVE_NDMP */

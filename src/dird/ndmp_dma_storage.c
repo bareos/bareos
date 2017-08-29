@@ -83,7 +83,6 @@ extern "C" void ndmp_robot_status_handler(struct ndmlog *log, char *tag, int lev
    }
 
    Dmsg1(100, "%s\n", msg);
-   //Jmsg(NULL, M_INFO, 0, "%s\n", msg);
 }
 
 /**
@@ -179,7 +178,7 @@ static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_sessi
    /*
     * See if this is an autochanger.
     */
-   if (!store->autochanger || !store->changer_device) {
+   if (!store->autochanger || !store->ndmp_changer_device) {
       return false;
    }
 
@@ -198,7 +197,7 @@ static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_sessi
     * device in the form NAME[,[CNUM,]SID[,LUN]
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
       return false;
    }
@@ -332,7 +331,7 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
    vol_list_t *vl = NULL;
    dlist *vol_list = NULL;
 
-   ua->warning_msg(_ ("get ndmp_vol_list...\n"));
+   ua->warning_msg(_("get ndmp_vol_list...\n"));
    if (!get_robot_element_status(ua->jcr, store, &ndmp_sess)) {
       return (dlist *)NULL;
    }
@@ -618,7 +617,7 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
    /*
     * See if this is an autochanger.
     */
-   if (!store->autochanger || !store->changer_device) {
+   if (!store->autochanger || !store->ndmp_changer_device) {
       return retval;
    }
 
@@ -661,7 +660,7 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
     * device in the form NAME[,[CNUM,]SID[,LUN]
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
       return retval;
    }
@@ -694,8 +693,8 @@ char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
    int cnt = 0;
    char *tapedevice;
 
-   if (store->tape_devices) {
-      foreach_alist(tapedevice, store->tape_devices) {
+   if (store->device) {
+      foreach_alist(tapedevice, store->device) {
          if (cnt == drive) {
             return tapedevice;
          }
@@ -723,7 +722,7 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
    /*
     * See if this is an autochanger.
     */
-   if (!store->autochanger || !store->changer_device) {
+   if (!store->autochanger || !store->ndmp_changer_device) {
       return retval;
    }
 
@@ -786,7 +785,7 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
     * device in the form NAME[,[CNUM,]SID[,LUN]
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
       return retval;
    }
@@ -829,7 +828,7 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    /*
     * See if this is an autochanger.
     */
-   if (!store->autochanger || !store->changer_device) {
+   if (!store->autochanger || !store->ndmp_changer_device) {
       return retval;
    }
 
@@ -848,7 +847,7 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
     * device in the form NAME[,[CNUM,]SID[,LUN]
     */
    ndmp_job.robot_target = (struct ndmscsi_target *)actuallymalloc(sizeof(struct ndmscsi_target));
-   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->changer_device) != 0) {
+   if (ndmscsi_target_from_str(ndmp_job.robot_target, store->ndmp_changer_device) != 0) {
       actuallyfree(ndmp_job.robot_target);
       Dmsg0(100,"ndmp_send_label_request: no robot to use\n");
       return retval;

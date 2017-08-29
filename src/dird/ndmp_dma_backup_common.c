@@ -284,5 +284,83 @@ void process_fhdb(struct ndmlog *ixlog)
 #endif
 }
 
+/*
+ * Cleanup a NDMP backup session.
+ */
+void ndmp_backup_cleanup(JCR *jcr, int TermCode)
+{
+   const char *term_msg;
+   char term_code[100];
+   int msg_type = M_INFO;
+   CLIENT_DBR cr;
+
+   Dmsg2(100, "Enter ndmp_backup_cleanup %d %c\n", TermCode, TermCode);
+   memset(&cr, 0, sizeof(cr));
+
+   if (jcr->is_JobStatus(JS_Terminated) &&
+      (jcr->JobErrors || jcr->SDErrors || jcr->JobWarnings)) {
+      TermCode = JS_Warnings;
+   }
+
+   update_job_end(jcr, TermCode);
+
+   if (!jcr->db->get_job_record(jcr, &jcr->jr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Job record for Job report: ERR=%s"),
+         jcr->db->strerror());
+      jcr->setJobStatus(JS_ErrorTerminated);
+   }
+
+   bstrncpy(cr.Name, jcr->res.client->name(), sizeof(cr.Name));
+   if (!jcr->db->get_client_record(jcr, &cr)) {
+      Jmsg(jcr, M_WARNING, 0, _("Error getting Client record for Job report: ERR=%s"),
+         jcr->db->strerror());
+   }
+
+   update_bootstrap_file(jcr);
+
+   switch (jcr->JobStatus) {
+      case JS_Terminated:
+         term_msg = _("Backup OK");
+         break;
+      case JS_Warnings:
+         term_msg = _("Backup OK -- with warnings");
+         break;
+      case JS_FatalError:
+      case JS_ErrorTerminated:
+         term_msg = _("*** Backup Error ***");
+         msg_type = M_ERROR;          /* Generate error message */
+         if (jcr->store_bsock) {
+            jcr->store_bsock->signal(BNET_TERMINATE);
+            if (jcr->SD_msg_chan_started) {
+               pthread_cancel(jcr->SD_msg_chan);
+            }
+         }
+         break;
+      case JS_Canceled:
+         term_msg = _("Backup Canceled");
+         if (jcr->store_bsock) {
+            jcr->store_bsock->signal(BNET_TERMINATE);
+            if (jcr->SD_msg_chan_started) {
+               pthread_cancel(jcr->SD_msg_chan);
+            }
+         }
+         break;
+      default:
+         term_msg = term_code;
+         sprintf(term_code, _("Inappropriate term code: %c\n"), jcr->JobStatus);
+         break;
+   }
+
+   generate_backup_summary(jcr, &cr, msg_type, term_msg);
+
+   Dmsg0(100, "Leave ndmp_backup_cleanup\n");
+}
+
+#else  /* HAVE_NDMP */
+
+void ndmp_backup_cleanup(JCR *jcr, int TermCode)
+{
+   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+}
 
 #endif /* HAVE_NDMP */

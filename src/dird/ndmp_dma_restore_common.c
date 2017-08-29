@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,8 +35,6 @@
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
-
-//#define NDMP_NEED_ENV_KEYWORDS 1
 
 /*
  * Add a filename to the files we want to restore.
@@ -177,5 +175,74 @@ bool extract_post_restore_stats(JCR *jcr,
    return retval;
 }
 
+/**
+ * Cleanup a NDMP restore session.
+ */
+void ndmp_restore_cleanup(JCR *jcr, int TermCode)
+{
+   char term_code[100];
+   const char *term_msg;
+   int msg_type = M_INFO;
+
+   Dmsg0(20, "In ndmp_restore_cleanup\n");
+   update_job_end(jcr, TermCode);
+
+   if (jcr->unlink_bsr && jcr->RestoreBootstrap) {
+      secure_erase(jcr, jcr->RestoreBootstrap);
+      jcr->unlink_bsr = false;
+   }
+
+   if (job_canceled(jcr)) {
+      cancel_storage_daemon_job(jcr);
+   }
+
+   switch (TermCode) {
+   case JS_Terminated:
+      if (jcr->ExpectedFiles > jcr->jr.JobFiles) {
+         term_msg = _("Restore OK -- warning file count mismatch");
+      } else {
+         term_msg = _("Restore OK");
+      }
+      break;
+   case JS_Warnings:
+         term_msg = _("Restore OK -- with warnings");
+         break;
+   case JS_FatalError:
+   case JS_ErrorTerminated:
+      term_msg = _("*** Restore Error ***");
+      msg_type = M_ERROR;          /* Generate error message */
+      if (jcr->store_bsock) {
+         jcr->store_bsock->signal(BNET_TERMINATE);
+         if (jcr->SD_msg_chan_started) {
+            pthread_cancel(jcr->SD_msg_chan);
+         }
+      }
+      break;
+   case JS_Canceled:
+      term_msg = _("Restore Canceled");
+      if (jcr->store_bsock) {
+         jcr->store_bsock->signal(BNET_TERMINATE);
+         if (jcr->SD_msg_chan_started) {
+            pthread_cancel(jcr->SD_msg_chan);
+         }
+      }
+      break;
+   default:
+      term_msg = term_code;
+      sprintf(term_code, _("Inappropriate term code: %c\n"), TermCode);
+      break;
+   }
+
+   generate_restore_summary(jcr, msg_type, term_msg);
+
+   Dmsg0(20, "Leaving ndmp_restore_cleanup\n");
+}
+
+#else  /* HAVE_NDMP */
+
+void ndmp_restore_cleanup(JCR *jcr, int TermCode)
+{
+   Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
+}
 
 #endif /* HAVE_NDMP */
