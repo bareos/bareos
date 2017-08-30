@@ -26,5 +26,6 @@ Metrics
 
 * <metricPrefix>.bareos.jobs.<jobName>.status.(error|warning|success)
 * <metricPrefix>.bareos.jobs.<jobName>.jobbytes
+* <metricPrefix>.bareos.jobs.<jobName>.jobfiles
 * <metricPrefix>.bareos.jobs.<jobName>.runningtime
 * <metricPrefix>.bareos.jobs.<jobName>.throughput
