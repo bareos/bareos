@@ -45,18 +45,22 @@ Information.
 }
 
 \defDirective{Dir}{Storage}{Device}{}{}{%
-This directive refers to a \linkResourceDirective{Sd}{Device}{Name}
-or \linkResourceDirective{Sd}{Autochanger}{Name}.
+
+If \linkResourceDirective{Dir}{Job}{Protocol} is not \parameter{NDMP_NATIVE} (default is \linkResourceDirectiveValue{Dir}{Job}{Protocol}{Native}), this directive refers to one or multiple \linkResourceDirective{Sd}{Device}{Name}
+or a single \linkResourceDirective{Sd}{Autochanger}{Name}.
 
 If an Autochanger should be used, it had to refer to a configured \linkResourceDirective{Sd}{Autochanger}{Name}.
 In this case, also set \linkResourceDirectiveValue{Dir}{Storage}{Auto Changer}{yes}.
 
-In all other cases, refer to a configured \linkResourceDirective{Sd}{Device}{Name}.
+Otherwise it refers to one or more configured \linkResourceDirective{Sd}{Device}{Name}, see  \nameref{sec:MultipleStorageDevices}.
 
-This
-name is not the physical device name, but the logical device name as
+This name is not the physical device name, but the logical device name as
 defined in the \bareosSd resource.
+
+If \resourceDirectiveValue{Dir}{Job}{Protocol}{NDMP_NATIVE}, it refers to tape devices on the NDMP \TapeAgent, see \nameref{sec:NdmpNative}.
 }
+
+
 
 \defDirective{Dir}{Storage}{Enabled}{}{}{%
 }

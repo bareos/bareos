@@ -593,6 +593,20 @@ exceed 4 billion and thus  require a 64 bit value.
 
    Don't use quotes around the number, see \nameref{sec:Quotes}.
 
+\item [job protocol]
+    \index[general]{Data Type!job protocol}
+    \label{DataTypeJobProtocol}
+
+The protocol to run a the job.
+Following protocols are available:
+\begin{description}
+    \item[Native] Native Bareos job protocol.
+    \item[NDMP] Deprecated. Alias for \NdmpBareos.
+    \item[NDMP\_BAREOS] Since Bareos \sinceVersion{dir}{NDMP BAREOS}{17.2.3}. See \nameref{sec:NdmpBareos}.
+    \item[NDMP\_NATIVE] Since Bareos \sinceVersion{dir}{NDMP NATIVE}{17.2.3}. See \nameref{sec:NdmpNative}.
+\end{description}
+
+
 
 \item [name]
     \index[general]{Data Type!name}

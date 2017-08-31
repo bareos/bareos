@@ -23,6 +23,8 @@
 % therefore use \textasciicircum instead.
 % However, ^ works inside verbatim and lst environments.
 
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}}
+
 \newcommand{\bareosFd}{Bareos File Daemon\xspace}
 \newcommand{\bareosSd}{Bareos Storage Daemon\xspace}
 \newcommand{\bareosDir}{Bareos Director\xspace}
@@ -76,6 +78,7 @@
 \csdef{dtPath}{\ilink{path}{DataTypePath}}
 % use csdef instead of newcommand, because command contains numbers
 \csdef{dtPint32}{\dtUInt}
+\csdef{dtProtocolType}{\ilink{job protocol}{DataTypeJobProtocol}}
 \csdef{dtRes}{\ilink{resource-name}{DataTypeRes}}
 \csdef{dtPort}{\dtNetPort}
 \csdef{dtScheduleRunCommand}{{job-overrides{\gt} {\lt}date-time-specification}}
@@ -257,6 +260,15 @@
 \newcommand{\sqlite}{Sqlite\xspace}
 \newcommand{\vmware}{VMware\registered}
 \newcommand{\vSphere}{VMware vSphere\registered}
+
+% NDMP
+\newcommand{\DataManagementAgent}{Data Management Agent\xspace}
+\newcommand{\DataAgent}{Data Agent\xspace}
+\newcommand{\TapeAgent}{Tape Agent\xspace}
+\newcommand{\RobotAgent}{Robot Agent\xspace}
+
+\newcommand{\NdmpBareos}{NDMP\_BAREOS}
+\newcommand{\NdmpNative}{NDMP\_NATIVE}
 
 % Bareos quote
 \newcommand{\bquote}[1]{``#1''}
