@@ -66,7 +66,7 @@ $this->headTitle($title);
 
 <div class="panel panel-default">
 <div class="panel-heading">
-<h3 class="panel-title"><?php echo $this->translate("Last backups"); ?></h3>
+<h3 class="panel-title"><?php echo $this->translate("Last successful backups"); ?></h3>
 </div>
 
 <div class="panel-body">
@@ -80,6 +80,7 @@ $this->headTitle($title);
    <th><?php echo $this->translate("Level"); ?></th>
    <th><?php echo $this->translate("Files"); ?></th>
    <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
    <th><?php echo $this->translate("Actions"); ?></th>
 </thead>
 </table>
@@ -205,6 +206,13 @@ $this->headTitle($title);
                sortable: true,
                formatter: function(value) {
                   return formatBytes(value);
+               }
+            },
+            {
+               field: 'jobstatus',
+               sortable: false,
+               formatter: function(value) {
+                  return formatJobStatus(value);
                }
             },
             {
