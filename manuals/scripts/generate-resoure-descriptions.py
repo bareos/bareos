@@ -169,6 +169,12 @@ class BareosConfigurationSchema2Latex:
                 default+=" \\textit{\\small(platform specific)}"
         return default
 
+    def getLatexDescription(self, data):
+        description = ""
+        if data.get('description'):
+            description = data.get('description').replace('_','\_')
+        return description
+
     def getLatexTable(self, subtree, latexDefine="define%(key)s", latexLink="\\hyperlink{key%(key)s}{%(key)s}" ):
         result="\\begin{center}\n"
         result+="\\begin{longtable}{ l | l | l | l }\n"
@@ -254,7 +260,7 @@ class BareosConfigurationSchema2Latex:
                 'datatype': self.getLatexDatatypeRef( data['datatype'] ),
                 'default': self.getLatexDefaultValue( data ),
                 'version': data.get( 'start_version', "" ),
-                'description': data.get( 'description', "" ),
+                'description': self.getLatexDescription(data),
                 'required': '',
             }
 
