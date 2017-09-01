@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - TLS: Enforce TLSv1_2
 - ZF2 components updated to version 2.4.13
 - Fix to bugreport #840
+- Fix to bugreport #812
 - Russian translation improved
 - Past24h Jobs Widget
 
