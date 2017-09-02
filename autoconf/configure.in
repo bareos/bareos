@@ -594,6 +594,8 @@ AC_ARG_ENABLE(client-only,
    [
        if test x$enableval = xyes; then
 	  build_client_only=yes
+	  build_dird=no
+	  build_stored=no
 	  db_backends="None"
 	  DB_BACKENDS="none"
        fi
