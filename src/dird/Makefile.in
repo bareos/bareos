@@ -151,7 +151,11 @@ install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-dbcheck $(DESTDIR)$(sbindir)/bareos-dbcheck
 	# copy configuration resource files to directory structure
 	@SRCCONFDIR=../defaultconfigs/bareos-dir.d/; \
-	DESTCONFDIR=${DESTDIR}${confdir}/bareos-dir.d/; \
+	if [ "$configtemplatedir" ]; then \
+	   DESTCONFDIR=${DESTDIR}${configtemplatedir}/bareos-dir.d/; \
+	else \
+	   DESTCONFDIR=${DESTDIR}${confdir}/bareos-dir.d/; \
+	fi; \
 	echo "installing configuration resource files to $$DESTCONFDIR"; \
 	$(MKDIR) $$DESTCONFDIR; \
 	for RESTYPE in $(DIRD_RESTYPES); do \

@@ -95,19 +95,19 @@ install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bconsole $(DESTDIR)$(bindir)/bconsole;
 	@if ! [ -r $(DESTDIR)$(sbindir)/bconsole ]; then $(SYMLINK) $(bindir)/bconsole $(DESTDIR)$(sbindir)/bconsole; fi
 	@srcconf=bconsole.conf; \
-	if  test -f ${DESTDIR}${confdir}/$$srcconf; then \
+	if [ "$configtemplatedir" ]; then \
+	   DESTCONFDIR=${DESTDIR}${configtemplatedir}; \
+	else \
+	   DESTCONFDIR=${DESTDIR}${confdir}; \
+	fi; \
+	if test -f $${DESTCONFDIR}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \
 	else \
 	   destconf=$$srcconf; \
-	   if  test -f ${DESTDIR}${confdir}/console.conf; then \
-	      echo "Existing console.conf moved to bconsole.conf"; \
-	      @$(MV) ${DESTDIR}${confdir}/console.conf ${DESTDIR}${confdir}/bconsole.conf; \
-	      destconf=$$srcconf.new; \
-	   fi; \
 	fi; \
-	echo "${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf"; \
-	${INSTALL_CONFIG} $$srcconf ${DESTDIR}${confdir}/$$destconf
+	echo "${INSTALL_CONFIG} $$srcconf $${DESTCONFDIR}/$$destconf"; \
+	${INSTALL_CONFIG} $$srcconf $${DESTCONFDIR}/$$destconf
 	if test -f static-bconsole; then \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) static-bconsole $(DESTDIR)$(sbindir)/static-bconsole; \
 	fi

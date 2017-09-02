@@ -4166,7 +4166,6 @@ dnl
 dnl PFILES are platform specific files
 PFILES="platforms/Makefile"
 PSCMD="ps -e"
-MACOSX=
 COMPRESS_MANPAGES=yes
 
 case "$DISTNAME" in
@@ -4203,19 +4202,20 @@ bsdi)
        platforms/bsdi/bareos-dir"
    largefile_support="yes"
   ;;
-darwin)
+darwin|osx)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
-   MACOSX=macosx
    PFILES="${PFILES} \
-      platforms/darwin/Makefile"
-  ;;
-osx)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   MACOSX=macosx
-   PFILES="${PFILES} \
-      platforms/osx/Makefile"
+      platforms/osx/Makefile \
+      platforms/osx/Makefile-standalone \
+      platforms/osx/files/installer.pmdoc/01destdir.xml \
+      platforms/osx/files/installer.pmdoc/index.xml \
+      platforms/osx/files/org.bareos.bareos-fd.plist \
+      platforms/osx/files/uninstall.command \
+      platforms/osx/resources/ReadMe.html \
+      platforms/osx/resources/postinstall \
+      platforms/osx/resources/preinstall \
+      "
   ;;
 debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
@@ -4494,7 +4494,6 @@ AC_DEFINE_UNQUOTED(lld, "$lld", [Set to correct scanf value for long long int])
 AC_DEFINE_UNQUOTED(llu, "$llu", [Set to correct scanf value for long long unsigned int])
 AC_SUBST(TAPEDRIVE)
 AC_SUBST(PSCMD)
-AC_SUBST(MACOSX)
 AC_SUBST(DISTNAME)
 AC_SUBST(DISTVER)
 AC_SUBST(COMPRESS_MANPAGES)

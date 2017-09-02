@@ -124,7 +124,11 @@ devclean: realclean
 install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bareos-fd $(DESTDIR)$(sbindir)/bareos-fd
 	@SRCCONFDIR=../defaultconfigs/bareos-fd.d/; \
-	DESTCONFDIR=${DESTDIR}${confdir}/bareos-fd.d/; \
+	if [ "$configtemplatedir" ]; then \
+	   DESTCONFDIR=${DESTDIR}${configtemplatedir}/bareos-fd.d/; \
+	else \
+	   DESTCONFDIR=${DESTDIR}${confdir}/bareos-fd.d/; \
+	fi; \
 	echo "installing configuration resource files to $$DESTCONFDIR"; \
 	$(MKDIR) $$DESTCONFDIR; \
 	for RESTYPE in $(FILED_RESTYPES); do \

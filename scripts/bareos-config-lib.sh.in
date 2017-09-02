@@ -325,6 +325,28 @@ get_config_path()
     fi
 }
 
+get_config_path2()
+{
+    # configuration component (either file or bareos-dir, ...)
+    BASEDIR="${1}"
+    COMPONENT="${2}"
+
+    if ! [ -d "${BASEDIR}" ]; then
+        warn "base directory \"${BASEDIR}\" does not exists."
+        return 1
+    fi
+
+    if [ -f "${BASEDIR}/${COMPONENT}.conf" ]; then
+        printf "%s" "${BASEDIR}/${COMPONENT}.conf"
+    elif [ -d "${BASEDIR}/${COMPONENT}.d/" ]; then
+        printf "%s" "${BASEDIR}/${COMPONENT}.d/"
+    else
+        warn "failed to find config for component \"${COMPONENT}\" in directory \"${BASEDIR}\"."
+        return 1
+    fi
+}
+
+
 has_config()
 {
     # configuration component (either file or bareos-dir, ...)
@@ -351,6 +373,38 @@ has_config()
 
 deploy_config()
 {
+    local RC=1
+    ARGS=$#
+    SOURCE=${1:-}
+    DEST=${2:-}
+    COMPONENT=${3:-}
+
+    [ -d "$SOURCE" ] || return 1
+    [ -n "$DEST" ] || return 1
+
+    if [ $ARGS -eq 2 ]; then
+	deploy_config2 "$SOURCE" "$DEST"
+	RC=$?
+    elif [ $ARGS -eq 3 ]; then
+	deploy_config3 "$SOURCE" "$DEST" "$COMPONENT"
+	RC=$?
+    fi
+
+    if [ $RC -eq 0 ]; then
+      initialize_local_hostname
+      initialize_passwords
+      if [ "${DAEMON_USER}" -a "${DAEMON_GROUP}" ]; then
+          chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
+      fi
+      chmod -R 750 "$DEST"
+    fi
+
+    return $RC
+}
+
+
+deploy_config2()
+{
     #
     # Copy configuration from SOURCE to DEST and apply settings.
     # Only copies new files. It does not overwrite existing files.
@@ -366,19 +420,59 @@ deploy_config()
     local RC=1
 
     [ -d "$SOURCE" ] || return 1
-    [ -d "$DEST" ] || return 1
+    if ! [ -e "$DEST" ]; then
+        mkdir -p "$DEST"
+    fi
 
     #
     # Copy all files, but do not overwrite existing file.
     # Use verbose to detect, when new files have been copied.
+    # On MacOS, only single letter cp options are available.
     #
-    OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
+    #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
+    OUT=`cp -v -r -n "$SOURCE/." "$DEST/."`
     if [ "$OUT" ]; then
-      initialize_local_hostname
-      initialize_passwords
-      chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
-      chmod -R 750 "$DEST"
       RC=0
+    fi
+
+    return $RC
+}
+
+deploy_config3()
+{
+    #
+    # Copy configuration from SOURCE to DEST and apply settings.
+    # Only copies new files. It does not overwrite existing files.
+    #
+    # Returns:
+    #   0: if new config files have been copied
+    #   1: otherwise (on error or if no new config files are available)
+    #
+
+    local RC=1
+
+    SOURCE=${1:-}
+    DEST=${2:-}
+    COMPONENT=${3:-}
+
+    [ -d "$SOURCE" ] || return 1
+    if ! [ -e "$DEST" ]; then
+        mkdir -p "$DEST"
+    fi
+
+    if ! SOURCE_CONFIG_PATH=`get_config_path2 "${SOURCE}" "${COMPONENT}"`; then
+        return 1
+    fi
+
+    if [ -d "${SOURCE_CONFIG_PATH}" ]; then
+	deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/"
+	RC=$?
+    else
+	DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
+	if [ ! -f "${DEST_CONFIG_PATH}" ]; then
+	    cp ${SOURCE_CONFIG_PATH} ${DEST_CONFIG_PATH}
+	    RC=$?
+        fi
     fi
 
     return $RC
@@ -938,7 +1032,14 @@ replace_password()
 
     for file in `grep -l ${SEARCH} ${DIR_CFG}/*.conf ${DIR_CFG}/bareos-*.d/*/*.conf ${DIR_CFG}/tray-monitor.d/*/*.conf 2>/dev/null`; do
         echo "replacing '${SEARCH}' in $file"
-        sed -i'' "s#${SEARCH}#${REPLACE}#g" ${file};
+        if [ "$os_type" = "Darwin" ]; then
+           sed -i '' "s#${SEARCH}#${REPLACE}#g" "${file}"
+        else
+           sed -i'' "s#${SEARCH}#${REPLACE}#g" "${file}"
+        fi
+        # following "sed -i" would work for GNU sed as well as BSD/Mac sed.
+        # However, it creates a backup file.
+        #sed -i.installer_backup "s#${SEARCH}#${REPLACE}#g" ${file}
     done
     return 0
 }

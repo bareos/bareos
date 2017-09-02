@@ -1,17 +1,16 @@
 #
-# This is the makefile template for the platform directory
-# which contains general platform installation.
-#
-#  17 August 2009 -- Lorenz Schori
-#
-#   for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
+# Makefor for MacOS X specific parts for
+# for Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
 #
 
-GITVERSION=$(shell git log --pretty=format:"%at" -1)
+@MCOMMON@
+
+#GITVERSION=$(shell git log --pretty=format:"%at" -1)
 
 # bareos version and download site
-BAREOS_VERSION:=@VERSION@.git.$(GITVERSION)
-BAREOS_DL_URL:=http://github.com/bareos/bareos/archive/Release/${BAREOS_VERSION}.tar.gz
+#BAREOS_VERSION:=@VERSION@.git.$(GITVERSION)
+BAREOS_VERSION:=@VERSION@
+#BAREOS_DL_URL:=http://github.com/bareos/bareos/archive/Release/${BAREOS_VERSION}.tar.gz
 
 # Build universal binary
 ARCHFLAGS:=
@@ -27,16 +26,16 @@ TAR:=/usr/bin/tar
 ########### you should not have to edit anything beyond this line ###########
 
 # Build paths
-DL_DIR:=dl
+#DL_DIR:=dl
 BUILD_DIR:=build
 PRODUCTS_DIR:=products
 
 WORKING_DIR:=${BUILD_DIR}/${BAREOS_VERSION}
-BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
+#BAREOS_TAR:=${DL_DIR}/bareos-${BAREOS_VERSION}.tar.gz
 BAREOS_SOURCE:=${WORKING_DIR}/bareos-${BAREOS_VERSION}
 BAREOS_DESTDIR:=${WORKING_DIR}/destdir
+RESOURCE_DESTDIR:=${WORKING_DIR}/resources
 BAREOS_PREFIX:=/usr/local
-BAREOS_WORKING_DIR:=/var/run/bareos/working
 #BAREOS_PMDOC:=${WORKING_DIR}/installer.pmdoc
 
 # Detect whether we sit inside the bareos source tree. In this case we won't
@@ -46,103 +45,57 @@ CURSUB:=$(CURDIR:%/platforms/osx=%)
 ifneq ($(CURDIR),$(CURSUB))
 	BAREOS_TAR:=
 	BAREOS_SOURCE:=../../
-#	BAREOS_VERSION:=$(shell sed -n 's,^VERSION=,,p' $(CURSUB)/autoconf/Make.common)
 endif
 
-PACKAGE_TITLE:=bareos-filedaemon-${BAREOS_VERSION}
+PACKAGE_TITLE:=bareos-client-${BAREOS_VERSION}
 PACKAGE_ID:=org.bareos.bareos-fd.pkg
 PACKAGE_DIR:=${PRODUCTS_DIR}/${PACKAGE_TITLE}
 PACKAGE_BUNDLE:=${PACKAGE_DIR}/${PACKAGE_TITLE}.pkg
 PACKAGE_DMG:=${PRODUCTS_DIR}/${PACKAGE_TITLE}.dmg
-PACKAGE_RESOURCES:=ReadMe.html postflight preupgrade
-PACKAGE_XRESOURCES:=postflight preupgrade
 
-# Flags for the toolchain
-CONFIGFLAGS:=--enable-client-only --prefix=${BAREOS_PREFIX} \
-    --with-dir-password=@DIR_PW@ --with-fd-password=@FD_PW@ \
-    --with-sd-password=@SD_PW@ --with-mon-dir-password=@MON_DIR_PW@ \
-    --with-mon-fd-password=@MON_FD_PW@ --with-mon-sd-password=@MON_SD_PW@ \
-    --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-    --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-    --with-working-dir=${BAREOS_WORKING_DIR}
-CPPFLAGS:=
-CFLAGS:=-O -g
-CXXFLAGS:=${CFLAGS}
-LDFLAGS:=
 
-CC:=gcc
-CPP:=cpp
-CXX:=g++
-CXXPP:=cpp
-
-# Placeholders for *.in files
-INFILE_SUBST=\
-  -e "s,@PREFIX@,${BAREOS_PREFIX},g" \
-  -e "s,@BAREOS_VERSION@,${BAREOS_VERSION},g" \
-  -e "s,@BAREOS_DESTDIR@,${BAREOS_DESTDIR},g" \
-  -e "s,@PACKAGE_ID@,${PACKAGE_ID},g"
 
 nothing:
 
 all: dmg
 
+install:
+	$(MKDIR)                                            "${DESTDIR}/Library/LaunchDaemons"
+	$(INSTALL_DATA)    files/org.bareos.bareos-fd.plist "$(DESTDIR)/Library/LaunchDaemons/"
+
+
 dmg: pkg
 	hdiutil create -srcfolder "${PACKAGE_DIR}" "${PACKAGE_DMG}"
 
-pkg: ${BAREOS_DESTDIR} ${WORKING_DIR}/resources
+
+pkg: ${BAREOS_DESTDIR} ${RESOURCE_DESTDIR}
 	mkdir -p "${PACKAGE_DIR}"
-	mkdir -p "${CURDIR}/${BAREOS_DESTDIR}${BAREOS_WORKING_DIR}"
-	${PB} --identifier "${PACKAGE_ID}" --root "${CURDIR}/${BAREOS_DESTDIR}" "bareos-${BAREOS_VERSION}.pkg"
+	${PB} --identifier "${PACKAGE_ID}" --version "${BAREOS_VERSION}" --root "${CURDIR}/${BAREOS_DESTDIR}" --scripts "${RESOURCE_DESTDIR}" "$(PACKAGE_TITLE).pkg"
 
-	cp "bareos-${BAREOS_VERSION}.pkg" "${PACKAGE_DIR}"
-	cp ${WORKING_DIR}/resources/ReadMe.html "${PACKAGE_DIR}/ReadMe.html"
+	$(INSTALL_DATA) "${PACKAGE_TITLE}.pkg"  "${PACKAGE_DIR}"
+	$(INSTALL_DATA) "resources/ReadMe.html" "${PACKAGE_DIR}"
 
-	# sed ${INFILE_SUBST} \
-	# 	files/uninstall.command.in > "${PACKAGE_DIR}/uninstall.command";
-	# chmod 0775 "${PACKAGE_DIR}/uninstall.command"
-
-${WORKING_DIR}/resources: ${BAREOS_DESTDIR}
-	mkdir -p "${WORKING_DIR}/resources"
-
-	for res in ${PACKAGE_RESOURCES}; do \
-		sed ${INFILE_SUBST} \
-			resources/$$res.in > "${WORKING_DIR}/resources/$$res"; \
-	done
-
-	for xres in ${PACKAGE_XRESOURCES}; do \
-		chmod +x "${WORKING_DIR}/resources/$$xres"; \
-	done
-
-	cp "${BAREOS_SOURCE}/LICENSE" "${WORKING_DIR}/resources/License.txt"
-
-install:
+${RESOURCE_DESTDIR}:
+	$(MKDIR)                                            "$(RESOURCE_DESTDIR)"
+	$(INSTALL_DATA)    ${BAREOS_SOURCE}/LICENSE         "$(RESOURCE_DESTDIR)/License.txt"
+	# used? or only as extra file?
+	$(INSTALL_DATA)    resources/*.html                 "$(RESOURCE_DESTDIR)"
+	$(INSTALL_PROGRAM) resources/preinstall             "$(RESOURCE_DESTDIR)"
+	$(INSTALL_PROGRAM) resources/postinstall            "$(RESOURCE_DESTDIR)"
 
 ${BAREOS_DESTDIR}: ${BAREOS_SOURCE}
-	(cd ${BAREOS_SOURCE} && ./configure ${CONFIGFLAGS} CPPFLAGS="${CPPFLAGS}" CFLAGS="${CFLAGS}" CXXFLAGS="${CXXFLAGS}" LDFLAGS="${LDFLAGS}" CC="${CC}" CPP="${CPP}" CXX="${CXX}" CXXPP="${CXXPP}")
-	${MAKE} -C ${BAREOS_SOURCE}
+	# make sure, Bareos is compiled and install it to {BAREOS_DESTDIR}
+
+	# don't call configure from Makefile.in, as it produces itself (Makefile).
+	# (cd ${BAREOS_SOURCE} && platforms/osc/configure.sh)
+	# ${MAKE} -C ${BAREOS_SOURCE}
 	${MAKE} -C ${BAREOS_SOURCE} install DESTDIR="${CURDIR}/${BAREOS_DESTDIR}"
 
-	rm -rf "${BAREOS_DESTDIR}/tmp"
-
-	for conffile in ${BAREOS_DESTDIR}${BAREOS_PREFIX}/etc/bareos/*.conf; do \
-		mv $$conffile $$conffile.example; \
-	done
-
-	mkdir -p "${BAREOS_DESTDIR}/Library/LaunchDaemons"
-	sed ${INFILE_SUBST} ${CURDIR}/files/org.bareos.bareos-fd.plist.in \
-		> "${BAREOS_DESTDIR}/Library/LaunchDaemons/org.bareos.bareos-fd.plist"
-
-${BAREOS_SOURCE}: ${BAREOS_TAR}
-	mkdir -p "${WORKING_DIR}"
-	${TAR} -xzf "${BAREOS_TAR}" -C "${WORKING_DIR}"
-
-${BAREOS_TAR}:
-	mkdir -p "${DL_DIR}"
-	${CURL} -L -o "${BAREOS_TAR}" "${BAREOS_DL_URL}"
+${BAREOS_SOURCE}:
 
 .PHONY: distclean clean install
 distclean: clean
-	rm -rf "${DL_DIR}" "${PRODUCTS_DIR}"
+	rm -rf "${PRODUCTS_DIR}"
 
 clean:
 	rm -rf "${BUILD_DIR}" "${PACKAGE_DIR}" "${PACKAGE_DMG}"
