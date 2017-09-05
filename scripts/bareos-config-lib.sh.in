@@ -18,7 +18,7 @@ DIRECTOR_DAEMON_GROUP="@dir_group@"
 DAEMON_USER="$DIRECTOR_DAEMON_USER"
 DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 
-DB_NAME="@DB_NAME@"
+DB_NAME="@db_name@"
 DB_VERSION="@BDB_VERSION@"
 SQL_DDL_DIR="@scriptdir@/ddl"
 SQLITE_BINDIR="@SQLITE_BINDIR@"
@@ -862,7 +862,6 @@ apply_dbconfig_settings()
                 BAREOS_SQLITE_DB="`get_working_dir`/`get_database_name $DB_NAME`.db"
                 if [ ! -f $BAREOS_SQLITE_DB ]; then
                     ln -s "${dbc_basepath}/${dbc_dbname}" "$BAREOS_SQLITE_DB"
-                    ls -a `get_working_dir`/bareos* || true
                 fi
             fi
             ;;
