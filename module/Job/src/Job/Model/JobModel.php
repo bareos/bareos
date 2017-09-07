@@ -286,7 +286,7 @@ class JobModel
    public function getRunningJobsStatistics(&$bsock = null) {
       if(isset($bsock)) {
 
-         $jobstats = [];
+         $jobstats = array();
          $i = 0;
 
          // GET RUNNING JOBS
