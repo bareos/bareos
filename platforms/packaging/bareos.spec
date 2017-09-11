@@ -1056,7 +1056,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files common
 # common shared libraries (without db)
 %defattr(-, root, root)
-%attr(-, root, %{daemon_group}) %dir %{_sysconfdir}/bareos
+%attr(0755, root, %{daemon_group})           %dir %{_sysconfdir}/bareos
 %if !0%{?client_only}
 # these directories belong to bareos-common,
 # as other packages may contain configurations for the director.
