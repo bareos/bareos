@@ -179,24 +179,24 @@ e.g. Isilon with their \bquote{Isilon Backup Accelerator}.
 \begin{center}
 \begin{tabular}{l | c | c}
 \hline
-                             & NDMP\_NATIVE    & NDMP\_BAREOS \\
+                             & \NdmpBareos     & \NdmpNative \\
 \hline
-\DataManagementAgent         & \bareosDir      & \bareosDir \\
-\TapeAgent                   & external        & \bareosSd \\
-requires external \TapeAgent & \bcheckmark     &             \\
+\DataManagementAgent         & \bareosDir      & \bareosDir  \\
+\TapeAgent                   & \bareosSd       & external    \\
+requires external \TapeAgent &                 & \bcheckmark \\
 backup to tape (and VTL)     & \bcheckmark     & \bcheckmark \\
 backup to other \linkResourceDirective{Sd}{Device}{Device Type}
-                             &                 & \bcheckmark \\
-2-way backup                 & \bcheckmark     &             \\
-3-way backup                 & untested        & \bcheckmark \\
+                             & \bcheckmark     & \\
+2-way backup                 &                 & \bcheckmark \\
+3-way backup                 & \bcheckmark     & untested    \\
 Full Backups                 & \bcheckmark     & \bcheckmark \\
 Differential Backups         & \bcheckmark     & \bcheckmark \\
 Incremental Backups          & \cmlink{sec:NdmpBackupLevel} (8) & \cmlink{sec:NdmpBackupLevel} (8)\\
 Single File Restore          & \bcheckmark     & \bcheckmark \\
-DAR                          & \bcheckmark     & \\
-DDAR                         & \bcheckmark     & \\
+DAR                          &                 & \bcheckmark \\
+DDAR                         &                 & \bcheckmark \\
 \ilink{Copy and Migration jobs}{MigrationChapter}
-                             &                 & \bcheckmark \\
+                             & \bcheckmark     & \\
 \hline
 \end{tabular}
 \end{center}
@@ -1126,7 +1126,7 @@ For the same reason, the information about the number of files of a job (e.g. Jo
 
 \subsubsection{Restore always transfers the full main backup file to the Primary Storage System}
 
-The \NdmpBareos implementation do not support NDMP \bquote{Direct Access Restore} (DAR).
+Contrary to \NdmpNative, the \NdmpBareos implementation do not support NDMP \bquote{Direct Access Restore} (DAR).
 
 On restore, the full main backup file (\path|@NDMP/...%.|)
 is always transfered back to the Primary Storage System,
