@@ -895,3 +895,43 @@ depending on how your current setup is:
 \begin{center}
 \includegraphics[width=0.8\linewidth]{\idir blocksize-decisionchart}
 \end{center}
+
+\section{Tape Drive Cleaning}
+
+Bareos has no build-in functionality for tape drive cleaning.
+Fortunately this is not required as most modern tape libraries
+have build in auto-cleaning functionality.
+This functionality might require an empty tape drive,
+so the tape library gets aware, that it is currently not used.
+However, by default Bareos keeps tapes in the drives,
+in case the same tape is required again.
+
+The directive \linkResourceDirective{Dir}{Pool}{Cleaning Prefix}
+is only used for making sure that Bareos does not try to write backups on a cleaning tape.
+
+If your tape libraries auto-cleaning won't work when there are tapes in the drives,
+it's probably best to set up an admin job that removes the tapes from the drives.
+This job has to run, when no other backups do run.
+A job definition for an admin job to do that may look like this:
+
+\begin{bareosConfigResource}{bareos-dir}{job}{ReleaseAllTapeDrives}
+Job {
+    Name = ReleaseAllTapeDrives
+    JobDefs = DefaultJob
+    Schedule = "WeeklyCycleAfterBackup"
+    Type = Admin
+    Priority = 200
+
+    RunScript {
+        Runs When = Before
+        Runs On Client = no
+        Console = "release storage=Tape alldrives"
+    }
+}
+\end{bareosConfigResource}
+
+Replace \resourcename{Dir}{Storage}{Tape} by the storage name of your tape library.
+Use the highest \linkResourceDirective{Dir}{Job}{Priority}
+value to make sure no other jobs are running.
+In the default configuration for example, the \job{CatalogBackup} job
+has Priority = 100. The higher the number, the lower the job priority.
