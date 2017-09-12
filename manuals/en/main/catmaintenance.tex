@@ -1129,6 +1129,26 @@ set:
 
 
 
+\subsection{MySQL: Lock Wait Timeout}
+
+In large environments, the Bareos \mysql backend may run in a lock wait timeout.
+This can be seen as Bareos message, e.g.:
+
+\begin{bmessage}{Bareos error message because of \mysql lock time timeout}
+Fatal error: sql_create.c:899 Fill File table Query failed: INSERT INTO File (FileIndex, JobId, PathId, FilenameId, LStat, MD5, DeltaSeq) SELECT batch.FileIndex, batch.JobId, Path.PathId, Filename.FilenameId,batch.LStat, batch.MD5, batch.DeltaSeq FROM batch JOIN Path ON (batch.Path = Path.Path) JOIN Filename ON (batch.Name = Filename.Name): ERR=Lock wait timeout exceeded; try restarting transaction
+\end{bmessage}
+
+In this case the \mysql \configline{innodb_lock_wait_timeout} must be increased.
+A value of 300 should be sufficient.
+
+\begin{config}{/etc/my.cnf.d/server.cnf}
+...
+[mysqld]
+innodb_lock_wait_timeout = 300
+...
+\end{config}
+
+
 
 % TODO: hidden, because outdated information. should we improve or remove it?
 \hide{
