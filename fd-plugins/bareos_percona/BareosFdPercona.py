@@ -40,7 +40,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
     '''
 
     def __init__(self, context, plugindef):
-        #BareosFdPluginBaseclass.__init__(self, context, plugindef)
+        # BareosFdPluginBaseclass.__init__(self, context, plugindef)
         super(BareosFdPercona, self).__init__(context, plugindef)
         # we first create and backup the stream and after that
         # the lsn file as restore-object
@@ -64,7 +64,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.dumpbinary = "xtrabackup"
 
-        if not 'restorecommand' in self.options:
+        if 'restorecommand' not in self.options:
             self.restorecommand = "xbstream -x -C "
         else:
             self.restorecommand = self.options['restorecommand']
@@ -99,7 +99,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
 
     def check_plugin_options(self, context, mandatory_options=None):
         accurate_enabled = GetValue(context, bVariable['bVarAccurate'])
-        if not accurate_enabled is None and accurate_enabled != 0:
+        if accurate_enabled is not None and accurate_enabled != 0:
             JobMessage(context, bJobMessageType['M_FATAL'],
                        "start_backup_job: Accurate backup not allowed please disable in Job\n")
             return bRCs['bRC_Error']
@@ -175,7 +175,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
                 try:
                     last_lsn = int(mysqlStdOut)
                 except:
-                    JobMessage(context, bJobMessageType['M_FATAL'], "Error reading LSN: \"%s\" not an integer" %mysqlStdOut)
+                    JobMessage(context, bJobMessageType['M_FATAL'], "Error reading LSN: \"%s\" not an integer" % mysqlStdOut)
                     return bRCs['bRC_Error']
             if self.max_to_lsn > 0 and self.max_to_lsn >= last_lsn and self.strictIncremental:
                 bareosfd.DebugMessage(
