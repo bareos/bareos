@@ -72,7 +72,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         # By default, standard mysql-config files will be used, set
         # this option to use extra files
         if 'mycnf' in self.options:
-            self.mycnf = "--defaults-extra-file=%s" % self.options['mycnf']
+            self.mycnf = "--defaults-extra-file=%s " % self.options['mycnf']
         else:
             self.mycnf = ""
 
@@ -83,13 +83,12 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.strictIncremental = False
 
-        # if dumpoptions is set, we use that completely here, otherwise defaults
+        self.dumpoptions = self.mycnf
+
+        # if dumpoptions is set, we use that here, otherwise defaults
         if 'dumpoptions' in self.options:
-            self.dumpoptions = self.options['dumpoptions']
+            self.dumpoptions += self.options['dumpoptions']
         else:
-            self.dumpoptions = ""
-            if self.mycnf != "":
-                self.dumpoptions += "--defaults-extra-file=%s " % self.mycnf
             self.dumpoptions += "--backup --stream=xbstream"
 
         self.dumpoptions += " --extra-lsndir=%s" % self.tempdir
