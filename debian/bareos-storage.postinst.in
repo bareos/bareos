@@ -25,9 +25,6 @@ storage_daemon_user=$daemon_user
 #file_daemon_user=root
 storage_daemon_group=$daemon_group
 
-DEFCONFIGDIR="@configtemplatedir@/bareos-sd.d/"
-CONFIGDIR="/etc/bareos/bareos-sd.d/"
-
 
 
 permissions()
@@ -38,7 +35,7 @@ permissions()
 
 case "$1" in
     configure)
-        /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR" || true
+        /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "bareos-sd" || true
         permissions
         /usr/lib/bareos/scripts/bareos-config setup_sd_user
         # on Univention distributions the ucr command allows to open the firewall

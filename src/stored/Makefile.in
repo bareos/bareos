@@ -246,11 +246,7 @@ install: all @LIBTOOL_INSTALL_TARGET@
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) btape $(DESTDIR)$(sbindir)/btape
 	# copy configuration resource files to directory structure
 	@SRCCONFDIR=../defaultconfigs/bareos-sd.d/; \
-	if [ "$configtemplatedir" ]; then \
-	   DESTCONFDIR=${DESTDIR}${configtemplatedir}/bareos-sd.d/; \
-	else \
-	   DESTCONFDIR=${DESTDIR}${confdir}/bareos-sd.d/; \
-	fi; \
+	DESTCONFDIR=${DESTDIR}${configtemplatedir}/bareos-sd.d/; \
 	echo "installing configuration resource files to $$DESTCONFDIR"; \
 	$(MKDIR) $$DESTCONFDIR; \
 	for RESTYPE in $(STORED_RESTYPES); do \

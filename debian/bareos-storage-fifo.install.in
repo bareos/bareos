@@ -1,3 +1,4 @@
 @backenddir@/libbareossd-fifo*.so
-@confdir@/bareos-dir.d/storage/NULL.conf.example
-@confdir@/bareos-sd.d/device/NULL.conf.example
+@configtemplatedir@/bareos-dir.d/storage/NULL.conf.example
+@configtemplatedir@/bareos-sd.d/device/NULL.conf.example
+

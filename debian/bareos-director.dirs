@@ -1,17 +1,3 @@
-/etc/bareos/bareos-dir.d
-/etc/bareos/bareos-dir.d/catalog
-/etc/bareos/bareos-dir.d/client
-/etc/bareos/bareos-dir.d/console
-/etc/bareos/bareos-dir.d/counter
-/etc/bareos/bareos-dir.d/director
-/etc/bareos/bareos-dir.d/fileset
-/etc/bareos/bareos-dir.d/job
-/etc/bareos/bareos-dir.d/jobdefs
-/etc/bareos/bareos-dir.d/messages
-/etc/bareos/bareos-dir.d/pool
-/etc/bareos/bareos-dir.d/profile
-/etc/bareos/bareos-dir.d/schedule
-/etc/bareos/bareos-dir.d/storage
 /etc/bareos/bareos-dir-export/
 /etc/bareos/bareos-dir-export/client
 /usr/lib/bareos

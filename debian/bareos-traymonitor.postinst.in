@@ -20,18 +20,17 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-DEFCONFIGDIR="@configtemplatedir@/tray-monitor.d/"
-CONFIGDIR="/etc/bareos/tray-monitor.d/"
 
 permissions()
 {
+  CONFIGDIR="@confdir@/tray-monitor.d/"
   chown -R root:${daemon_group} ${CONFIGDIR}
   chmod -R 755 ${CONFIGDIR}
 }
 
 case "$1" in
     configure)
-        /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR" || true
+        /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "tray-monitor" || true
         permissions
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)

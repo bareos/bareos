@@ -181,7 +181,7 @@ install-config:
 	# copy configuration resource files to directory structure
 	@for COMPONENT in bareos-dir.d bareos-sd.d; do \
 		SRCCONFDIR=$(CONF_EXTRA_DIR)/$$COMPONENT/; \
-		DESTCONFDIR=${DESTDIR}${confdir}/$$COMPONENT/; \
+		DESTCONFDIR=${DESTDIR}${configtemplatedir}/$$COMPONENT/; \
 		echo "installing configuration resource files to $$DESTCONFDIR"; \
 		$(MKDIR) $$DESTCONFDIR; \
 		for RESTYPE in $(STORED_RESTYPES); do \

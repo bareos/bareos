@@ -1,5 +1,5 @@
 @scriptdir@/bconsole
-@confdir@/bconsole.conf      @configtemplatedir@
+@configtemplatedir@/bconsole.conf
 /usr/bin/bconsole
 /usr/sbin/bconsole
 /usr/share/man/man1/bconsole.1.gz

@@ -1359,7 +1359,7 @@ dnl Where to place the Bareos configure files
 dnl ------------------------------------------
 confdir=`eval echo ${sysconfdir}/bareos`
 AC_ARG_WITH(confdir,
-   AC_HELP_STRING([--with-confdir=PATH], [specify directory for Bareos configuration files]),
+   AC_HELP_STRING([--with-confdir=PATH], [specify directory where Bareos looks for configuration files]),
    [
        if test "x$withval" != "xno" ; then
 	 confdir=$withval
@@ -1368,6 +1368,21 @@ AC_ARG_WITH(confdir,
 )
 AC_SUBST(confdir)
 AC_DEFINE_UNQUOTED(CONFDIR, "$confdir", [Where are Bareos config files stored])
+
+# ------------------------------------------
+# Where to place configtemplatedir (configuration template files)
+# ------------------------------------------
+configtemplatedir=`eval echo ${confdir}`
+AC_ARG_WITH(configtemplatedir,
+   AC_HELP_STRING([--with-configtemplatedir=PATH], [specify directory to which configuration will be installed]),
+   [
+       if test "x$withval" != "xno" ; then
+	  configtemplatedir=$withval
+       fi
+   ]
+)
+
+AC_SUBST(configtemplatedir)
 
 dnl ------------------------------------------
 dnl Where to place working dir
@@ -1517,22 +1532,6 @@ AC_ARG_WITH(plugindir,
 )
 
 AC_SUBST(plugindir)
-
-# ------------------------------------------
-# Where to place configtemplatedir (configuration template files)
-# ------------------------------------------
-configtemplatedir=`eval echo ${libdir}`
-AC_ARG_WITH(configtemplatedir,
-   AC_HELP_STRING([--with-configtemplatedir=PATH], [specify path of Bareos configuration templates directory (Debian only)]),
-   [
-       if test "x$withval" != "xno" ; then
-	  configtemplatedir=$withval
-       fi
-   ]
-)
-
-AC_SUBST(configtemplatedir)
-
 
 dnl ------------------------------------------
 dnl Where to send dump email
@@ -4763,7 +4762,8 @@ Configuration on `date`:
    Install system binaries:      ${sbindir}
    Install libraries:            ${libdir}
    Install system config files:  ${sysconfdir}
-   Install Bareos config files:  ${confdir}
+   Install Bareos config files:  ${configtemplatedir}
+   Bareos config files:          ${confdir}
    Scripts directory:            ${scriptdir}
    Archive directory:            ${archivedir}
    Working directory:            ${working_dir}

@@ -1,8 +1,8 @@
 @plugindir@/cephfs-fd.so
-/etc/bareos/bareos-dir.d/fileset/plugin-cephfs.conf.example
-/etc/bareos/bareos-dir.d/job/BackupCephfs.conf.example
-/etc/bareos/bareos-dir.d/job/RestoreCephfs.conf.example
+@configtemplatedir@/bareos-dir.d/fileset/plugin-cephfs.conf.example
+@configtemplatedir@/bareos-dir.d/job/BackupCephfs.conf.example
+@configtemplatedir@/bareos-dir.d/job/RestoreCephfs.conf.example
 @plugindir@/rados-fd.so
-/etc/bareos/bareos-dir.d/fileset/plugin-rados.conf.example
-/etc/bareos/bareos-dir.d/job/BackupRados.conf.example
-/etc/bareos/bareos-dir.d/job/RestoreRados.conf.example
+@configtemplatedir@/bareos-dir.d/fileset/plugin-rados.conf.example
+@configtemplatedir@/bareos-dir.d/job/BackupRados.conf.example
+@configtemplatedir@/bareos-dir.d/job/RestoreRados.conf.example

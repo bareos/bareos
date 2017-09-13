@@ -95,11 +95,7 @@ install: all
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bconsole $(DESTDIR)$(bindir)/bconsole;
 	@if ! [ -r $(DESTDIR)$(sbindir)/bconsole ]; then $(SYMLINK) $(bindir)/bconsole $(DESTDIR)$(sbindir)/bconsole; fi
 	@srcconf=bconsole.conf; \
-	if [ "$configtemplatedir" ]; then \
-	   DESTCONFDIR=${DESTDIR}${configtemplatedir}; \
-	else \
-	   DESTCONFDIR=${DESTDIR}${confdir}; \
-	fi; \
+	DESTCONFDIR=${DESTDIR}${configtemplatedir}; \
 	if test -f $${DESTCONFDIR}/$$srcconf; then \
 	   destconf=$$srcconf.new; \
 	   echo "  ==> Found existing $$srcconf, installing new conf file as $$destconf"; \

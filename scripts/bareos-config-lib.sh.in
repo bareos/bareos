@@ -373,141 +373,148 @@ has_config()
 
 deploy_config()
 {
-    local RC=1
-    ARGS=$#
-    SOURCE=${1:-}
-    DEST=${2:-}
-    COMPONENT=${3:-}
+   local RC=1
+   ARGS=$#
+   SOURCE=${1:-}
+   DEST=${2:-}
+   COMPONENT=${3:-}
 
-    [ -d "$SOURCE" ] || return 1
-    [ -n "$DEST" ] || return 1
+   [ -d "$SOURCE" ] || return 1
+   [ -n "$DEST" ] || return 1
 
-    if [ $ARGS -eq 2 ]; then
-	deploy_config2 "$SOURCE" "$DEST"
-	RC=$?
-    elif [ $ARGS -eq 3 ]; then
-	deploy_config3 "$SOURCE" "$DEST" "$COMPONENT"
-	RC=$?
-    fi
+   if [ $ARGS -eq 2 ]; then
+      deploy_config2 "$SOURCE" "$DEST"
+      RC=$?
+   elif [ $ARGS -eq 3 ]; then
+      deploy_config3 "$SOURCE" "$DEST" "$COMPONENT"
+      RC=$?
+   fi
 
-    if [ $RC -eq 0 ]; then
+   if [ $RC -eq 0 ]; then
       initialize_local_hostname
       initialize_passwords
       if [ "${DAEMON_USER}" -a "${DAEMON_GROUP}" ]; then
-          chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
+         chown -R ${DAEMON_USER}:${DAEMON_GROUP} "$DEST"
       fi
-      chmod -R 750 "$DEST"
-    fi
+      # chmod ... X: set x on directories, but not on files.
+      if [ "$os_type" = "Darwin" ]; then
+         # MacOS users from the "admin" group should be able to change the configuration files.
+         chgrp -R admin "$DEST"
+         chmod -R ug=rwX,o= "$DEST"
+      else
+         chmod -R u=rwX,g=rX,o= "$DEST"
+      fi
+   fi
 
-    return $RC
+   return $RC
 }
 
 
 deploy_config2()
 {
-    #
-    # Copy configuration from SOURCE to DEST and apply settings.
-    # Only copies new files. It does not overwrite existing files.
-    #
-    # Returns:
-    #   0: if new config files have been copied
-    #   1: otherwise (on error or if no new config files are available)
-    #
+   #
+   # Copy configuration from SOURCE to DEST and apply settings.
+   # Only copies new files. It does not overwrite existing files.
+   #
+   # Returns:
+   #   0: if new config files have been copied
+   #   1: otherwise (on error or if no new config files are available)
+   #
 
-    SOURCE=${1:-}
-    DEST=${2:-}
+   SOURCE=${1:-}
+   DEST=${2:-}
 
-    local RC=1
+   local RC=1
 
-    [ -d "$SOURCE" ] || return 1
-    if ! [ -e "$DEST" ]; then
-        mkdir -p "$DEST"
-    fi
+   [ -d "$SOURCE" ] || return 1
+   if ! [ -e "$DEST" ]; then
+      mkdir -p "$DEST"
+   fi
 
-    #
-    # Copy all files, but do not overwrite existing file.
-    # Use verbose to detect, when new files have been copied.
-    # On MacOS, only single letter cp options are available.
-    #
-    #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
-    OUT=`cp -v -r -n "$SOURCE/." "$DEST/."`
-    if [ "$OUT" ]; then
+   #
+   # Copy all files, but do not overwrite existing file.
+   # Use verbose to detect, when new files have been copied.
+   # On MacOS, only single letter cp options are available.
+   #
+   #OUT=`cp --verbose --recursive --no-clobber "$SOURCE/." "$DEST/."`
+   OUT=`cp -v -r -n "$SOURCE/." "$DEST/."`
+   if [ "$OUT" ]; then
       RC=0
-    fi
+   fi
 
-    return $RC
+   return $RC
 }
 
 deploy_config3()
 {
-    #
-    # Copy configuration from SOURCE to DEST and apply settings.
-    # Only copies new files. It does not overwrite existing files.
-    #
-    # Returns:
-    #   0: if new config files have been copied
-    #   1: otherwise (on error or if no new config files are available)
-    #
+   #
+   # Copy configuration from SOURCE to DEST and apply settings.
+   # Only copies new files. It does not overwrite existing files.
+   #
+   # Returns:
+   #   0: if new config files have been copied
+   #   1: otherwise (on error or if no new config files are available)
+   #
 
-    local RC=1
+   local RC=1
 
-    SOURCE=${1:-}
-    DEST=${2:-}
-    COMPONENT=${3:-}
+   SOURCE=${1:-}
+   DEST=${2:-}
+   COMPONENT=${3:-}
 
-    [ -d "$SOURCE" ] || return 1
-    if ! [ -e "$DEST" ]; then
-        mkdir -p "$DEST"
-    fi
+   [ -d "$SOURCE" ] || return 1
+   if ! [ -e "$DEST" ]; then
+      mkdir -p "$DEST"
+   fi
 
-    if ! SOURCE_CONFIG_PATH=`get_config_path2 "${SOURCE}" "${COMPONENT}"`; then
-        return 1
-    fi
+   if ! SOURCE_CONFIG_PATH=`get_config_path2 "${SOURCE}" "${COMPONENT}"`; then
+      return 1
+   fi
 
-    if [ -d "${SOURCE_CONFIG_PATH}" ]; then
-	deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/"
-	RC=$?
-    else
-	DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
-	if [ ! -f "${DEST_CONFIG_PATH}" ]; then
-	    cp ${SOURCE_CONFIG_PATH} ${DEST_CONFIG_PATH}
-	    RC=$?
-        fi
-    fi
+   if [ -d "${SOURCE_CONFIG_PATH}" ]; then
+      deploy_config2 "${SOURCE_CONFIG_PATH}" "${DEST}/${COMPONENT}.d/"
+      RC=$?
+   else
+      DEST_CONFIG_PATH="${DEST}/${COMPONENT}.conf"
+      if [ ! -f "${DEST_CONFIG_PATH}" ]; then
+         cp ${SOURCE_CONFIG_PATH} ${DEST_CONFIG_PATH}
+         RC=$?
+      fi
+   fi
 
-    return $RC
+   return $RC
 }
 
 get_config_param()
 {
-    #
-    # get parameter values from a Bareos configuration file
-    #
+   #
+   # get parameter values from a Bareos configuration file
+   #
 
-    # configuration file
-    CFG_FILE="${1-}"
-    # section, currently ignored
-    SECTION="${2-}"
-    # name of the section, currently ignored
-    NAME="${3-}"
-    # parameter to get from config file
-    PARAM="${4-}"
-    # default value, if parameter is not found
-    DEFAULT="${5-}"
+   # configuration file
+   CFG_FILE="${1-}"
+   # section, currently ignored
+   SECTION="${2-}"
+   # name of the section, currently ignored
+   NAME="${3-}"
+   # parameter to get from config file
+   PARAM="${4-}"
+   # default value, if parameter is not found
+   DEFAULT="${5-}"
 
-    if [ ! -r "${CFG_FILE}" ]; then
-        warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
-        # if default value is given, return it anyway
-        [ "$DEFAULT" ] && echo "$DEFAULT"
-        return 1
-    fi
+   if [ ! -r "${CFG_FILE}" ]; then
+      warn "failed to get parameter ${SECTION} ${NAME} ${PARAM}: can't read ${CFG_FILE}"
+      # if default value is given, return it anyway
+      [ "$DEFAULT" ] && echo "$DEFAULT"
+      return 1
+   fi
 
-    # get parameter from configuration file
-    VALUE=`egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE} |\
-              cut -d'=' -f2 | \
-              sed -e 's/[ 	]*"//' -e 's/"//'`
-    [ "$VALUE" ] || VALUE="$DEFAULT"
-    echo "$VALUE"
+   # get parameter from configuration file
+   VALUE=`egrep -i "^[ 	]*${PARAM}[ 	]*=" ${CFG_FILE} |\
+      cut -d'=' -f2 | \
+      sed -e 's/[ 	]*"//' -e 's/"//'`
+   [ "$VALUE" ] || VALUE="$DEFAULT"
+   echo "$VALUE"
 }
 
 

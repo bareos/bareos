@@ -20,9 +20,6 @@ set -e
 daemon_user=bareos
 daemon_group=bareos
 
-DEFCONFIGDIR="@configtemplatedir@/bareos-dir.d/"
-CONFIGDIR="/etc/bareos/bareos-dir.d/"
-
 permissions()
 {
     for dir in /etc/bareos/bareos-dir-export/ /etc/bareos/bareos-dir-export/client; do
@@ -33,7 +30,7 @@ permissions()
 
 case "$1" in
     configure)
-        if /usr/lib/bareos/scripts/bareos-config deploy_config "$DEFCONFIGDIR" "$CONFIGDIR"; then
+        if /usr/lib/bareos/scripts/bareos-config deploy_config "@configtemplatedir@" "@confdir@" "bareos-dir"; then
             /usr/lib/bareos/scripts/bareos-config initialize_database_driver
             /usr/lib/bareos/scripts/bareos-config apply_dbconfig_settings
         fi
