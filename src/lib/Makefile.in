@@ -48,7 +48,7 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 		plugins.h protos.h queue.h rblist.h runscript.h rwlock.h \
 		scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h \
 		serial.h sha1.h smartall.h status.h tls.h tree.h var.h \
-		waitq.h watchdog.h workq.h
+		watchdog.h workq.h
 
 #
 # libbareos
