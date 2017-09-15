@@ -5,6 +5,7 @@ DIR_CFG=@confdir@
 CFG_DIR=${DIR_CFG}/bareos-dir.conf
 DIR_SCRIPTS=@scriptdir@
 DBCHECK="@sbindir@/bareos-dbcheck -B"
+AWK="@AWK@"
 
 SEC_GROUPS="tape disk"
 
@@ -502,7 +503,7 @@ set_config_param_in_file()
     fi
 
     TEMP=`mktemp`
-    awk -v SECTION="$SECTION" -v NAME="$NAME" -v PARAM="$PARAM" -v VALUE="$VALUE" '
+    $AWK -v SECTION="$SECTION" -v NAME="$NAME" -v PARAM="$PARAM" -v VALUE="$VALUE" '
   BEGIN {
     IGNORECASE = 1;
     FS = "=";
