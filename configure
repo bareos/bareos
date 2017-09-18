@@ -638,7 +638,6 @@ BUILD_FD_PLUGINS
 COMPRESS_MANPAGES
 DISTVER
 DISTNAME
-MACOSX
 PSCMD
 TAPEDRIVE
 SYSTEMD_UNITDIR
@@ -739,7 +738,6 @@ piddir
 smtp_host
 job_email
 dump_email
-configtemplatedir
 plugindir
 logdir
 bsrdir
@@ -749,6 +747,7 @@ hostname
 basename
 archivedir
 working_dir
+configtemplatedir
 confdir
 GNUTLS_LIBS_NONSHARED
 GNUTLS_INC
@@ -1035,6 +1034,7 @@ enable_tls
 with_openssl
 with_gnutls
 with_confdir
+with_configtemplatedir
 with_working_dir
 with_archivedir
 with_basename
@@ -1044,7 +1044,6 @@ with_backenddir
 with_bsrdir
 with_logdir
 with_plugindir
-with_configtemplatedir
 with_dump_email
 with_job_email
 with_smtp_host
@@ -1810,7 +1809,11 @@ Optional Packages:
                           enable tcpwrappers support
   --with-openssl[=DIR]    Include OpenSSL support. DIR is the OpenSSL base
   --with-gnutls[=DIR]     Include GNUTLS support. DIR is the GNUTLS base
-  --with-confdir=PATH     specify directory for Bareos configuration files
+  --with-confdir=PATH     specify directory where Bareos looks for
+                          configuration files
+  --with-configtemplatedir=PATH
+                          specify directory to which configuration will be
+                          installed
   --with-working-dir=PATH specify path of Bareos working directory
   --with-archivedir=PATH  specify path of SD archive directory
   --with-basename=RESNAME specify base resource name for daemons
@@ -1820,9 +1823,6 @@ Optional Packages:
   --with-bsrdir=PATH      specify path of Bareos bsrs directory
   --with-logdir=PATH      specify path of Bareos logs directory
   --with-plugindir=PATH   specify path of Bareos plugins directory
-  --with-configtemplatedir=PATH
-                          specify path of Bareos configuration templates
-                          directory (Debian only)
   --with-dump-email=EMAIL dump email address
   --with-job-email=EMAIL  job output email address
   --with-smtp-host=HOST   SMTP mail host address
@@ -22862,6 +22862,8 @@ if test "${enable_client_only+set}" = set; then :
   enableval=$enable_client_only;
        if test x$enableval = xyes; then
 	  build_client_only=yes
+	  build_dird=no
+	  build_stored=no
 	  db_backends="None"
 	  DB_BACKENDS="none"
        fi
@@ -24680,6 +24682,24 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+# ------------------------------------------
+# Where to place configtemplatedir (configuration template files)
+# ------------------------------------------
+configtemplatedir=`eval echo ${confdir}`
+
+# Check whether --with-configtemplatedir was given.
+if test "${with_configtemplatedir+set}" = set; then :
+  withval=$with_configtemplatedir;
+       if test "x$withval" != "xno" ; then
+	  configtemplatedir=$withval
+       fi
+
+
+fi
+
+
+
+
 working_dir=`eval echo ${prefix}/var/bareos/working`
 
 # Check whether --with-working-dir was given.
@@ -24838,25 +24858,6 @@ if test "${with_plugindir+set}" = set; then :
 
 
 fi
-
-
-
-
-# ------------------------------------------
-# Where to place configtemplatedir (configuration template files)
-# ------------------------------------------
-configtemplatedir=`eval echo ${libdir}`
-
-# Check whether --with-configtemplatedir was given.
-if test "${with_configtemplatedir+set}" = set; then :
-  withval=$with_configtemplatedir;
-       if test "x$withval" != "xno" ; then
-	  configtemplatedir=$withval
-       fi
-
-
-fi
-
 
 
 
@@ -33358,7 +33359,6 @@ WLDFLAGS=
 
 PFILES="platforms/Makefile"
 PSCMD="ps -e"
-MACOSX=
 COMPRESS_MANPAGES=yes
 
 case "$DISTNAME" in
@@ -33395,19 +33395,20 @@ bsdi)
        platforms/bsdi/bareos-dir"
    largefile_support="yes"
   ;;
-darwin)
+darwin|osx)
    TAPEDRIVE="/dev/nst0"
    PSCMD="ps -e -o pid,command"
-   MACOSX=macosx
    PFILES="${PFILES} \
-      platforms/darwin/Makefile"
-  ;;
-osx)
-   TAPEDRIVE="/dev/nst0"
-   PSCMD="ps -e -o pid,command"
-   MACOSX=macosx
-   PFILES="${PFILES} \
-      platforms/osx/Makefile"
+      platforms/osx/Makefile \
+      platforms/osx/Makefile-standalone \
+      platforms/osx/files/installer.pmdoc/01destdir.xml \
+      platforms/osx/files/installer.pmdoc/index.xml \
+      platforms/osx/files/org.bareos.bareos-fd.plist \
+      platforms/osx/files/uninstall.command \
+      platforms/osx/resources/ReadMe.html \
+      platforms/osx/resources/postinstall \
+      platforms/osx/resources/preinstall \
+      "
   ;;
 debian|ubuntu|univention)
    TAPEDRIVE="/dev/nst0"
@@ -33747,7 +33748,6 @@ _ACEOF
 cat >>confdefs.h <<_ACEOF
 #define llu "$llu"
 _ACEOF
-
 
 
 
@@ -36550,7 +36550,8 @@ Configuration on `date`:
    Install system binaries:      ${sbindir}
    Install libraries:            ${libdir}
    Install system config files:  ${sysconfdir}
-   Install Bareos config files:  ${confdir}
+   Install Bareos config files:  ${configtemplatedir}
+   Bareos config files:          ${confdir}
    Scripts directory:            ${scriptdir}
    Archive directory:            ${archivedir}
    Working directory:            ${working_dir}
