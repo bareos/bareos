@@ -949,5 +949,39 @@ ON (b.JobId=%s AND a.PathId = b.PathId)
 WHERE b.PathId IS NULL
 ),
 
+/* 0067_list_volumes_count_0 */
+SQL_QUERY(
+SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media;
+),
+
+/* 0068_list_volumes_by_name_count_1 */
+SQL_QUERY(
+SELECT COUNT(DISTINCT Media.MediaId) as count
+FROM Media
+WHERE VolumeName='%s'
+),
+
+/* 0069_list_volumes_by_poolid_count_1 */
+SQL_QUERY(
+SELECT COUNT(DISTINCT Media.MediaId) as count
+FROM Media
+WHERE Media.PoolId=%s
+),
+
+/* 0070_list_joblog_2 */
+SQL_QUERY(
+SELECT Time, LogText FROM Log
+WHERE Log.JobId=%s
+ORDER BY Log.LogId
+%s
+),
+
+/* 0071_list_joblog_count_1 */
+SQL_QUERY(
+SELECT COUNT(*) AS count
+FROM Log
+WHERE Log.JobId=%s
+),
+
 NULL
 };

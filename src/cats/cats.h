@@ -134,6 +134,7 @@ struct JOB_DBR {
     * Extra stuff not in DB
     */
    int limit;                         /**< limit records to display */
+   int offset;                        /**< offset records to display */
    faddr_t rec_addr;
    uint32_t FileIndex;                /**< added during Verify */
 };
@@ -737,9 +738,9 @@ public:
    void list_files_for_job(JCR *jcr, uint32_t jobid, OUTPUT_FORMATTER *sendit);
    void list_filesets(JCR *jcr, JOB_DBR *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_storage_records(JCR *jcr, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_jobmedia_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_joblog_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_joblog_records(JCR *jcr, JobId_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_jobstatistics_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);

@@ -65,6 +65,7 @@ typedef enum of_filter_state {
  */
 typedef enum of_filter_type {
    OF_FILTER_LIMIT,
+   OF_FILTER_OFFSET,
    OF_FILTER_ACL,
    OF_FILTER_RESOURCE,
    OF_FILTER_ENABLED,
@@ -74,6 +75,10 @@ typedef enum of_filter_type {
 typedef struct of_limit_filter_tuple {
    int limit;                         /* Filter output to a maximum of limit entries */
 } of_limit_filter_tuple;
+
+typedef struct of_offset_filter_tuple {
+   int offset;
+} of_offset_filter_tuple;
 
 typedef struct of_acl_filter_tuple {
    int column;                        /* Filter resource is located in this column */
@@ -89,6 +94,7 @@ typedef struct of_filter_tuple {
    of_filter_type type;
    union {
       of_limit_filter_tuple limit_filter;
+      of_offset_filter_tuple offset_filter;
       of_acl_filter_tuple acl_filter;
       of_res_filter_tuple res_filter;
    } u;
@@ -119,6 +125,7 @@ private:
    char *hidden_columns;
    POOL_MEM *result_message_plain;
    static const unsigned int max_message_length_shown_in_error = 1024;
+   int num_rows_filtered;
 #if HAVE_JANSSON
    json_t *result_json;
    alist *result_stack_json;
@@ -129,6 +136,10 @@ private:
    /*
     * Methods
     */
+   int get_num_rows_filtered() { return num_rows_filtered; };
+   void set_num_rows_filtered(int value) { num_rows_filtered = value; };
+   void clear_num_rows_filtered() { set_num_rows_filtered(0); };
+
    void create_new_res_filter(of_filter_type type, int column, int restype);
    bool process_text_buffer();
 
@@ -201,6 +212,7 @@ public:
     * Filtering.
     */
    void add_limit_filter_tuple(int limit);
+   void add_offset_filter_tuple(int offset);
    void add_acl_filter_tuple(int column, int acltype);
    void add_res_filter_tuple(int column, int restype);
    void add_enabled_filter_tuple(int column, int restype);

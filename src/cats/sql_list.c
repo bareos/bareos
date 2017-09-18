@@ -187,7 +187,7 @@ bail_out:
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId
  */
-void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendit, e_list_type type)
+void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -219,8 +219,9 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendi
                    "Comment,Name AS Storage "
                    "FROM Media "
                    "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE Media.PoolId=%s ORDER BY MediaId",
-              edit_int64(mdbr->PoolId, ed1));
+                   "WHERE Media.PoolId=%s ORDER BY MediaId "
+                   "%s",
+              edit_int64(mdbr->PoolId, ed1), range);
       } else {
           Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
                     "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
@@ -232,7 +233,8 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendi
                     "Comment,Name AS Storage "
                     "FROM Media "
                     "LEFT JOIN Storage USING(StorageId) "
-                    "ORDER BY MediaId");
+                    "ORDER BY MediaId "
+                    "%s", range);
       }
    } else {
       if (mdbr->VolumeName[0] != 0) {
@@ -248,15 +250,29 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, OUTPUT_FORMATTER *sendi
                    "MediaType,LastWritten,Name AS Storage "
                    "FROM Media "
                    "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE PoolId=%s ORDER BY MediaId",
-              edit_int64(mdbr->PoolId, ed1));
+                   "WHERE PoolId=%s ORDER BY MediaId "
+                   "%s",
+              edit_int64(mdbr->PoolId, ed1), range);
       } else {
          Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
                    "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
                    "MediaType,LastWritten,Name AS Storage "
                    "FROM Media "
                    "LEFT JOIN Storage USING(StorageId) "
-                   "ORDER BY MediaId");
+                   "ORDER BY MediaId "
+                   "%s",
+              range);
+      }
+   }
+
+   if (count) {
+      /* NOTE: ACLs are ignored. */
+      if (mdbr->VolumeName[0] != 0) {
+         fill_query(SQL_QUERY_list_volumes_by_name_count_1, esc);
+      } else if (mdbr->PoolId > 0) {
+         fill_query(SQL_QUERY_list_volumes_by_poolid_count_1, edit_int64(mdbr->PoolId, ed1));
+      } else {
+         fill_query(SQL_QUERY_list_volumes_count_0);
       }
    }
 
@@ -414,28 +430,30 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_joblog_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void B_DB::list_joblog_records(JCR *jcr, uint32_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
 
    if (JobId <= 0) {
       return;
    }
+
    db_lock(this);
-   if (type == VERT_LIST) {
-      Mmsg(cmd, "SELECT Time, LogText FROM Log "
-                     "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
+   if (count) {
+      fill_query(SQL_QUERY_list_joblog_count_1, edit_int64(JobId, ed1));
    } else {
-      Mmsg(cmd, "SELECT Time, LogText FROM Log "
-                     "WHERE Log.JobId=%s ORDER BY Log.LogId", edit_int64(JobId, ed1));
-      /*
-       * When something else then a vertical list is requested set the list type
-       * to RAW_LIST e.g. non formated raw data as that makes the only sense for
-       * the logtext output. The logtext already has things like \n etc in it
-       * so we should just dump the raw content out for the best visible output.
-       */
-      type = RAW_LIST;
+      fill_query(SQL_QUERY_list_joblog_2, edit_int64(JobId, ed1), range);
+      if (type != VERT_LIST) {
+         /*
+          * When something else then a vertical list is requested set the list type
+          * to RAW_LIST e.g. non formated raw data as that makes the only sense for
+          * the logtext output. The logtext already has things like \n etc in it
+          * so we should just dump the raw content out for the best visible output.
+          */
+         type = RAW_LIST;
+      }
    }
+
    if (!QUERY_DB(jcr, cmd)) {
       goto bail_out;
    }

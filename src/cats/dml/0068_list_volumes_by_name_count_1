@@ -1,0 +1,3 @@
+SELECT COUNT(DISTINCT Media.MediaId) as count
+FROM Media
+WHERE VolumeName='%s'

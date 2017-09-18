@@ -55,6 +55,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
    filter_ctx = filter_ctx_arg;
    api = api_mode;
    compact = false;
+   num_rows_filtered = 0;
 
    filters = NULL;
    hidden_columns = NULL;
@@ -457,6 +458,21 @@ void OUTPUT_FORMATTER::add_limit_filter_tuple(int limit)
    filters->append(tuple);
 }
 
+void OUTPUT_FORMATTER::add_offset_filter_tuple(int offset)
+{
+   of_filter_tuple *tuple;
+
+   if (!filters) {
+      filters = New(alist(10, true));
+   }
+
+   tuple = (of_filter_tuple *)malloc(sizeof(of_filter_tuple));
+   tuple->type = OF_FILTER_OFFSET;
+   tuple->u.offset_filter.offset = offset;
+
+   filters->append(tuple);
+}
+
 void OUTPUT_FORMATTER::add_acl_filter_tuple(int column, int acltype)
 {
    of_filter_tuple *tuple;
@@ -537,6 +553,7 @@ bool OUTPUT_FORMATTER::filter_data(void *data)
             }
             break;
          case OF_FILTER_STATE_SUPPRESS:
+            num_rows_filtered++;
             return false;
          case OF_FILTER_STATE_UNKNOWN:
             if (tuple->type == OF_FILTER_ACL) {
@@ -556,6 +573,7 @@ bool OUTPUT_FORMATTER::filter_data(void *data)
    if (acl_filter_unknown > 0 && acl_filter_show == 0) {
       Dmsg2(200, "tri-state filtering acl_filter_unknown %d, acl_filter_show %d\n",
             acl_filter_unknown, acl_filter_show);
+      num_rows_filtered++;
       return false;
    }
 
@@ -679,6 +697,12 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
     * Clear any pending hidden columns.
     */
    clear_hidden_columns();
+
+   /*
+    * Clear num_rows_filtered
+    */
+   clear_num_rows_filtered();
+
 }
 
 #if HAVE_JANSSON
@@ -784,8 +808,10 @@ bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
 void OUTPUT_FORMATTER::json_finalize_result(bool result)
 {
    json_t *msg_obj = json_object();
-   json_t *error_obj;
-   json_t *data_obj;
+   json_t *error_obj = NULL;
+   json_t *data_obj = NULL;
+   json_t *meta_obj = NULL;
+   json_t *range_obj = NULL;
    POOL_MEM error_msg;
    char *string;
    size_t string_length = 0;
@@ -808,6 +834,24 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
       json_object_set_new(msg_obj, "error", error_obj);
    } else {
       json_object_set(msg_obj, "result", result_json);
+      if (has_filters()) {
+         meta_obj = json_object();
+         json_object_set_new(result_json, "meta", meta_obj);
+
+         range_obj = json_object();
+
+         of_filter_tuple *tuple;
+         foreach_alist(tuple, filters) {
+            if (tuple->type == OF_FILTER_LIMIT) {
+               json_object_set_new(range_obj, "limit", json_integer(tuple->u.limit_filter.limit));
+            }
+            if (tuple->type == OF_FILTER_OFFSET) {
+               json_object_set_new(range_obj, "offset", json_integer(tuple->u.offset_filter.offset));
+            }
+         }
+         json_object_set_new(range_obj, "filtered", json_integer(get_num_rows_filtered()));
+         json_object_set_new(meta_obj, "range", range_obj);
+      }
    }
 
    if (compact) {

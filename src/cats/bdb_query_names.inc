@@ -67,5 +67,10 @@ const char *B_DB::query_names[] = {
 "bvfs_lsdirs_7",
 "bvfs_clear_cache_0",
 "bvfs_update_path_visibility_3",
+"list_volumes_count_0",
+"list_volumes_by_name_count_1",
+"list_volumes_by_poolid_count_1",
+"list_joblog_2",
+"list_joblog_count_1",
 NULL
 };

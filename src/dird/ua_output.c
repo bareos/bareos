@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -507,16 +507,8 @@ static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
       POOL_MEM temp(PM_MESSAGE);
 
       jr->limit = atoi(ua->argv[i]);
+      ua->send->add_limit_filter_tuple(jr->limit);
 
-      /*
-       * When any acl filters are set create a limit filter using the filter framework
-       * and increase the database LIMIT clause to 10 * the limit. The filter framework
-       * will make sure the end-user will only see the wanted limit.
-       */
-      if (ua->send->has_acl_filters()) {
-         ua->send->add_limit_filter_tuple(jr->limit);
-         jr->limit = jr->limit * 10;
-      }
       temp.bsprintf(" LIMIT %d", jr->limit);
       pm_strcat(query_range, temp.c_str());
 
@@ -525,6 +517,8 @@ static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
        */
       i = find_arg_with_value(ua, NT_("offset"));
       if (i >= 0) {
+         jr->offset = atoi(ua->argv[i]);
+         ua->send->add_offset_filter_tuple(jr->offset);
          temp.bsprintf(" OFFSET %d", atoi(ua->argv[i]));
          pm_strcat(query_range, temp.c_str());
       }
@@ -791,7 +785,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid >= 0) {
-         ua->db->list_joblog_records(ua->jcr, jobid, ua->send, llist);
+         ua->db->list_joblog_records(ua->jcr, jobid, query_range.c_str(), count, ua->send, llist);
       } else {
          ua->error_msg(_("jobid not found in db, access to job or client denied by ACL, or client not found in db\n"));
       }
@@ -903,12 +897,12 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
-         int count;
+         int num_vols = 0;
          POOLMEM *VolumeName;
 
          VolumeName = get_pool_memory(PM_FNAME);
-         count = ua->db->get_job_volume_names(ua->jcr, jobid, VolumeName);
-         ua->send_msg(_("Jobid %d used %d Volume(s): %s\n"), jobid, count, VolumeName);
+         num_vols = ua->db->get_job_volume_names(ua->jcr, jobid, VolumeName);
+         ua->send_msg(_("Jobid %d used %d Volume(s): %s\n"), jobid, num_vols, VolumeName);
          free_pool_memory(VolumeName);
       } else if (jobid == 0) {
          /*
@@ -917,7 +911,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
          if (ua->argv[1]) {
             bstrncpy(mr.VolumeName, ua->argv[1], sizeof(mr.VolumeName));
             ua->send->object_start("volume");
-            ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
+            ua->db->list_media_records(ua->jcr, &mr, query_range.c_str(), count, ua->send, llist);
             ua->send->object_end("volume");
          } else {
             /*
@@ -933,9 +927,11 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   return true;
                }
 
+               set_query_range(query_range, ua, &jr);
+
                mr.PoolId = pr.PoolId;
                ua->send->array_start("volumes");
-               ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
+               ua->db->list_media_records(ua->jcr, &mr, query_range.c_str(), count, ua->send, llist);
                ua->send->array_end("volumes");
                return true;
             } else {
@@ -951,7 +947,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                   if (current) {
                      set_res_filter(ua, 1, R_POOL); /* PoolName */
                   }
-                  ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
+                  ua->db->list_media_records(ua->jcr, &mr, query_range.c_str(), count, ua->send, llist);
                   ua->send->array_end("volumes");
                } else {
                   /*
@@ -974,7 +970,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
                            ua->send->decoration( "Pool: %s\n", pr.Name );
                            ua->send->array_start(pr.Name);
                            mr.PoolId = ids[i];
-                           ua->db->list_media_records(ua->jcr, &mr, ua->send, llist);
+                           ua->db->list_media_records(ua->jcr, &mr, query_range.c_str(), count, ua->send, llist);
                            ua->send->array_end(pr.Name);
                         }
                      }
@@ -1579,15 +1575,9 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
 
    switch (tuple->type) {
    case OF_FILTER_LIMIT:
-      if (tuple->u.limit_filter.limit > 0) {
-         Dmsg1(200, "filterit: limit filter still %d entries to display\n",
-               tuple->u.limit_filter.limit);
-         tuple->u.limit_filter.limit--;
-      } else {
-         Dmsg0(200, "filterit: limit filter reached don't display entry\n");
-         retval = OF_FILTER_STATE_SUPPRESS;
-      }
-      goto bail_out;
+      break;
+   case OF_FILTER_OFFSET:
+      break;
    case OF_FILTER_ACL:
       if (!row[tuple->u.acl_filter.column] ||
           strlen(row[tuple->u.acl_filter.column]) == 0) {

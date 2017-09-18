@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -286,7 +286,7 @@ static struct ua_cmdstruct commands[] = {
          "pools |\n"
          "pool=<pool-name> |\n"
          "storages |\n"
-         "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"
+         "volumes [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] [count] |\n"
          "volume=<volume-name> |\n"
          "[current] | [enabled | disabled] |\n"
          "[limit=<number> [offset=<number>]]"), true, true },
@@ -301,7 +301,7 @@ static struct ua_cmdstruct commands[] = {
          "jobs [job=<job-name>] [client=<client-name>] [jobstatus=<status>] [volume=<volumename>] [days=<number>] [hours=<number>] [last] [count] |\n"
          "job=<job-name> [client=<client-name>] [jobstatus=<status>] [joblevel=<joblevel>] [volume=<volumename>] [days=<number>] [hours=<number>] |\n"
          "jobid=<jobid> | ujobid=<complete_name> |\n"
-         "joblog jobid=<jobid> | joblog ujobid=<complete_name> |\n"
+         "joblog jobid=<jobid> [count] | joblog ujobid=<complete_name> [count] |\n"
          "jobmedia jobid=<jobid> | jobmedia ujobid=<complete_name> |\n"
          "jobtotals |\n"
          "media [ jobid=<jobid> | ujobid=<complete_name> | pool=<pool-name> | all ] |\n"

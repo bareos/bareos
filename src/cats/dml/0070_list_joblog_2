@@ -1,0 +1,5 @@
+SELECT Time, LogText FROM Log
+WHERE Log.JobId=%s
+ORDER BY Log.LogId
+%s
+

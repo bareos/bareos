@@ -69,6 +69,11 @@ public:
       SQL_QUERY_bvfs_lsdirs_7 = 63,
       SQL_QUERY_bvfs_clear_cache_0 = 64,
       SQL_QUERY_bvfs_update_path_visibility_3 = 65,
-      SQL_QUERY_NUMBER = 66
+      SQL_QUERY_list_volumes_count_0 = 66,
+      SQL_QUERY_list_volumes_by_name_count_1 = 67,
+      SQL_QUERY_list_volumes_by_poolid_count_1 = 68,
+      SQL_QUERY_list_joblog_2 = 69,
+      SQL_QUERY_list_joblog_count_1 = 70,
+      SQL_QUERY_NUMBER = 71
    } SQL_QUERY_ENUM;
 };

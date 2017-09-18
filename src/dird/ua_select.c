@@ -842,7 +842,7 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
       }
 
       mr->PoolId = pr.PoolId;
-      ua->db->list_media_records(ua->jcr, mr, ua->send, HORZ_LIST);
+      ua->db->list_media_records(ua->jcr, mr, NULL, false, ua->send, HORZ_LIST);
 
       if (!get_cmd(ua, _("Enter *MediaId or Volume name: "))) {
          goto bail_out;
