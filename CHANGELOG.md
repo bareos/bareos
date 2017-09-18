@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Added
 - Job Totals Dashboard Widget
-- Running Jobs Dashboard Widget (requires core commit eae7ad953ed5c92cee562c2246719e073220603c for proper functionality)
+- Running Jobs Dashboard Widget
 - Bootstrap Table Extension
 - New configuration.ini variable (autorefresh_interval) introduced
   to define the dashboard refresh interval (default: 60sec.)
