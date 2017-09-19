@@ -41,7 +41,7 @@ ALTER TABLE TmpMergeFilenameIntoFileTable RENAME TO File;
 
 -- adapt index
 CREATE INDEX JobId_PathId_Name ON File (JobId, PathId, Name(255));
-CREATE INDEX Name_PathId_JobId_FileIndex_Name ON File (Name(255), PathId, JobId, FileIndex);
+CREATE INDEX PathId_JobId_FileIndex ON File (PathId, JobId, FileIndex);
 
 UPDATE Version SET VersionId = 2170;
 

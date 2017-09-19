@@ -25,7 +25,7 @@ CREATE TABLE Path (
 -- In File table
 -- FileIndex is 0 for FT_DELETED files
 -- Name is '' for directories
--- The index INDEX (PathId, JobId, FileIndex, Name(255)) is
+-- The index INDEX (PathId, JobId, FileIndex) is
 -- important for bvfs performance, especially
 -- for .bvfs_lsdirs which is used by bareos-webui.
 CREATE TABLE File (
@@ -42,7 +42,7 @@ CREATE TABLE File (
    Name             BLOB                NOT NULL,
    PRIMARY KEY (FileId),
    INDEX (JobId, PathId, Name(255)),
-   INDEX (Name(255), PathId, JobId, FileIndex)
+   INDEX (PathId, JobId, FileIndex)
 );
 
 --
