@@ -49,7 +49,7 @@ class MediaModel
                return $error['result']['error'];
             } else {
                $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-               if ( empty($volumes['result']['volumes']) || is_null($volumes['result']['volumes']) ) {
+               if ( empty($volumes['result']['volumes']) && $volumes['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
                   $retval = array_merge($retval, $volumes['result']['volumes']);

@@ -62,7 +62,7 @@ class JobModel
                return $error['result']['error'];
             } else {
                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-               if ( empty($jobs['result']['jobs']) || is_null($jobs['result']['jobs']) ) {
+               if ( empty($jobs['result']['jobs']) && $jobs['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
                   $retval = array_merge($retval, $jobs['result']['jobs']);
@@ -117,7 +117,7 @@ class JobModel
                return $error['result']['error'];
             } else {
                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-               if ( empty($jobs['result']['jobs']) || is_null($jobs['result']['jobs']) ) {
+               if ( empty($jobs['result']['jobs']) && $jobs['result']['meta']['range']['filtered'] === 0 ) {
                   return array_reverse($retval);
                } else {
                   $retval = array_merge($retval, $jobs['result']['jobs']);
@@ -174,7 +174,7 @@ class JobModel
             }
             else {
                $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-               if ( empty($log['result']['joblog']) || is_null($log['result']['joblog']) ) {
+               if ( empty($log['result']['joblog']) && $log['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
                   $retval = array_merge($retval, $log['result']['joblog']);
