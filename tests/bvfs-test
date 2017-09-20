@@ -112,10 +112,29 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @#.bvfs_restore fileid=numlist dirid=numlist hardlink=numlist path=b201
 
 restore client=${Client} where=${tmp}/bareos-restores storage=File1 file=?${BvfsPathId} yes
-.bvfs_cleanup path=${BvfsPathId}
-
 wait
 messages
+
+@$out ${tmp}/log-bvfs-cache.out w
+.sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
+.sql query="SELECT count(*) FROM PathHierarchy;"
+.sql query="SELECT count(*) FROM PathVisibility;"
+
+@$out ${tmp}/log-bvfs-cleanup.out w
+.sql query="SELECT count(*) FROM ${BvfsPathId};"
+.bvfs_cleanup path=${BvfsPathId}
+.sql query="SELECT count(*) FROM ${BvfsPathId};"
+
+@$out ${tmp}/log-bvfs-clear-cache.out w
+.bvfs_clear_cache yes
+
+@$out ${tmp}/log-bvfs-cleared-cache-hascache.out w
+.sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
+@$out ${tmp}/log-bvfs-cleared-cache-PathHierarchy.out w
+.sql query="SELECT count(*) FROM PathHierarchy;"
+@$out ${tmp}/log-bvfs-cleared-cache-PathVisibility.out w
+.sql query="SELECT count(*) FROM PathVisibility;"
+
 quit
 END_OF_DATA
 
@@ -129,29 +148,95 @@ stop_bareos
 
 # check tmp/log1.out and tmp/log2.out for errors
 #check_two_logs
-check_log ${tmp}/log-bvfs-jobids.out
-check_log ${tmp}/log-bvfs-get-root-path.out
-check_log ${tmp}/log-bvfs-lsdir-root.out
-check_log ${tmp}/log-bvfs-lsdir-BackupDirectory.out
 
-check_log ${tmp}/log-bvfs-lsfiles-BackupDirectory.out
-if ! grep -q "\Wextrafile.txt" ${tmp}/log-bvfs-lsfiles-BackupDirectory.out; then
-   set_error "File not found using .bvfs_lsfiles."
+LOG=${tmp}/log-bvfs-jobids.out
+check_log ${LOG}
+# expect: 1,2
+if ! grep -q "^[0-9,]*2$" ${LOG}; then
+    set_error "failed to find required job ids."
 fi
 
-check_log ${tmp}/log-bvfs-versions-extrafile.out
-versions=`grep "^[0-9]\+\W" ${tmp}/log-bvfs-versions-extrafile.out | wc -l`
+LOG=${tmp}/log-bvfs-get-root-path.out
+check_log ${LOG}
+# expect:
+# 10    0   0   0   A A A A A A A A A A A A A A .
+# 9   0   0   0   A A A A A A A A A A A A A A /
+if ! grep -q "\W/$" ${LOG}; then
+    set_error "root directory not found (using '.bvfs_lsdir path=')."
+fi
+
+LOG=${tmp}/log-bvfs-lsdir-root.out
+check_log ${LOG}
+# expect:
+# 9   0   0   0   A A A A A A A A A A A A A A .
+# 10  0   0   0   A A A A A A A A A A A A A A ..
+# 8   0   0   0   A A A A A A A A A A A A A A TOP_DIRECTORY
+dirs=`grep "^[0-9]\+\W" ${LOG} | wc -l`
+if [ "$dirs" -lt 3 ]; then
+    set_error "failed to find top directory (using '.bvfs_lsdir path=/')."
+fi
+
+LOG=${tmp}/log-bvfs-lsdir-BackupDirectory.out
+check_log ${LOG}
+# expect:
+# 1 0   19  1   x GoHK EHt C GHH GHH A BAA BAA I BWDNOj BZwlgI BZwlgI A A C .
+# 2   0   0   0   A A A A A A A A A A A A A A ..
+# pathid=1, as this is the first directory with content.
+if ! grep -q "^1.*\W\.$" ${LOG}; then
+    set_error "failed to find backup directory (using '.bvfs_lsdir path=${BackupDirectory}')."
+fi
+
+LOG=${tmp}/log-bvfs-lsfiles-BackupDirectory.out
+check_log ${LOG}
+if ! grep -q "\Wextrafile.txt" ${LOG}; then
+   set_error "file not found using .bvfs_lsfiles."
+fi
+
+LOG=${tmp}/log-bvfs-versions-extrafile.out
+check_log ${LOG}
+versions=`grep "^[0-9]\+\W" ${LOG} | wc -l`
 if [ "$versions" !=  "2" ]; then
-   set_error "Expected 2 versions of file ${BackupFileExtra}, found ${versions}."
+   set_error "expected 2 versions of file ${BackupFileExtra}, found ${versions}."
 fi
 
-check_log ${tmp}/log-bvfs-restore.out
+LOG=${tmp}/log-bvfs-restore.out
+check_log ${LOG}
 # check for differences between original files and restored files
 check_restore_diff ${BackupDirectory}
 
 # do some manual testing
 if [ ! -d ${BackupDirectory} ]; then
-    set_error "Directory ${BackupDirectory} does not exists any more."
+    set_error "directory ${BackupDirectory} does not exists any more."
+fi
+
+LOG=${tmp}/log-bvfs-cleared-cache-hascache.out
+check_log ${LOG}
+# expect:
+# .sql query="SELECT count(*) FROM Job WHERE HasCache!=0;"
+# +----------+
+# | count(*) |
+# +----------+
+# | 0        |
+# +----------+
+#
+# Get the 5. line and remove all "|" and " "
+COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+if [ "${COUNT}" -ne "0" ]; then
+    set_error "after .bvfs_clear_cache HasCache should be 0, not ${COUNT}."
+fi
+
+LOG=${tmp}/log-bvfs-cleared-cache-PathHierarchy.out
+check_log ${LOG}
+COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+if [ "${COUNT}" -ne "0" ]; then
+    set_error "after .bvfs_clear_cache PathHierarchy table should be empty (but has ${COUNT} entries)."
+fi
+
+LOG=${tmp}/log-bvfs-cleared-cache-PathVisibility.out
+check_log ${LOG}
+COUNT=`sed -e '5!d' -e 's/|//g' -e 's/ //g' $LOG`
+if [ "${COUNT}" -ne "0" ]; then
+    set_error "after .bvfs_clear_cache PathVisibility table should be empty (but has ${COUNT} entries)."
 fi
 
 # end tests and check for error codes
