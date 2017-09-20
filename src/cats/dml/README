@@ -7,3 +7,8 @@ create_queryfiles.sh
 
 The .inc files only need to be updated when the queries
 are altered or new ones are added.
+
+NOTE:
+  * each query must consist of a single SQL statement,
+    as more statement, separated by columns (";") need special result handling for MySQL.
+

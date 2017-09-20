@@ -755,7 +755,23 @@ static bool check_temp(char *output_table)
 
 void Bvfs::clear_cache()
 {
-   db->sql_query(B_DB::SQL_QUERY_bvfs_clear_cache_0);
+   /*
+    * FIXME:
+    * can't use predefined query,
+    * as MySQL queries do only support single SQL statements,
+    * not multiple.
+    */
+   //db->sql_query(B_DB::SQL_QUERY_bvfs_clear_cache_0);
+   db->start_transaction(jcr);
+   db->sql_query("UPDATE Job SET HasCache=0");
+   if (db->get_type_index() == SQL_TYPE_SQLITE3) {
+      db->sql_query("DELETE FROM PathHierarchy;");
+      db->sql_query("DELETE FROM PathVisibility;");
+   } else {
+      db->sql_query("TRUNCATE PathHierarchy");
+      db->sql_query("TRUNCATE PathVisibility");
+   }
+   db->end_transaction(jcr);
 }
 
 bool Bvfs::drop_restore_list(char *output_table)

@@ -526,6 +526,11 @@ retry_query:
       m_result = NULL;
    }
 
+   /*
+    * query has to be a single SQL statement (not multiple joined by columns (";")).
+    * If multiple SQL statements have to be used, they can produce multiple results,
+    * each of them needs handling.
+    */
    status = mysql_query(m_db_handle, query);
    switch (status) {
    case 0:

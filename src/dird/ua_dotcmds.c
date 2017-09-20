@@ -385,13 +385,17 @@ bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd)
 {
    int i;
 
-   if ((i = find_arg_with_value(ua, "path")) >= 0) {
-      if (!open_client_db(ua, true)) {
-         return false;
-      }
-      Bvfs fs(ua->jcr, ua->db);
-      fs.drop_restore_list(ua->argv[i]);
+   if ((i = find_arg_with_value(ua, "path")) < 0) {
+      ua->error_msg("Can't find path argument\n");
+      return false;             /* not enough param */
    }
+
+   if (!open_client_db(ua, true)) {
+      return false;
+   }
+
+   Bvfs fs(ua->jcr, ua->db);
+   fs.drop_restore_list(ua->argv[i]);
 
    return true;
 }
