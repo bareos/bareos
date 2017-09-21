@@ -8,9 +8,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Removed
+
+## [17.2.4-rc1]
+
+### Added
 - Job Totals Dashboard Widget
 - Running Jobs Dashboard Widget
 - Bootstrap Table Extension
+- Job submodule run customized jobs
+- Job Module: Used Volumes Widget
 - New configuration.ini variable (autorefresh_interval) introduced
   to define the dashboard refresh interval (default: 60sec.)
 - Slovak localization
