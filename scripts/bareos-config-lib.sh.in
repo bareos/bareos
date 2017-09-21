@@ -160,7 +160,7 @@ get_database_version_by_release()
     # add marker to list,
     # sort the list reverse, assuming versions x.y.z  and lines x.y.z=db_version,
     # get entry one line after marker
-    db_version=`printf "$VERSIONS" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9\.]=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }"`
+    db_version=`printf "$VERSIONS" | sort -t. -k 1,1rn -k 2,2rn -k 3,3rn | sed -r -n "/[0-9.]+.*=$MARKER$/{ N; s/(.*)=(.*)\n(.*)=(.*)/\4/p }"`
 
     if [ -z "$db_version" ]; then
         db_version=`sed -n "s/^default=//p" $MAP`
