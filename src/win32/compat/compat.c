@@ -382,7 +382,7 @@ static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_nam
 
    /**
     * Strip any trailing slash, if we stored something
-    * but leave "c:\" with backslash (root directory case
+    * but leave "c:\" with backslash (root directory case)
     */
    if (*fname != 0 && win32_name[-1] == '\\' && strlen (fname) != 3) {
       win32_name[-1] = 0;
@@ -2917,29 +2917,27 @@ bool win32_restore_file_attributes(POOLMEM *ofname, HANDLE handle, WIN32_FILE_AT
    bool retval = false;
 
    Dmsg1(100, "SetFileAtts %s\n", ofname);
-   if (!(atts->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)) {
-      if (p_SetFileAttributesW) {
-         BOOL b;
-         POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
+   if (p_SetFileAttributesW) {
+      BOOL b;
+      POOLMEM *pwszBuf = get_pool_memory(PM_FNAME);
 
-         make_win32_path_UTF8_2_wchar(pwszBuf, ofname);
-         b = p_SetFileAttributesW((LPCWSTR)pwszBuf, atts->dwFileAttributes & SET_ATTRS);
-         free_pool_memory(pwszBuf);
+      make_win32_path_UTF8_2_wchar(pwszBuf, ofname);
+      b = p_SetFileAttributesW((LPCWSTR)pwszBuf, atts->dwFileAttributes & SET_ATTRS);
+      free_pool_memory(pwszBuf);
 
-         if (!b) {
-            goto bail_out;
-         }
-      } else {
-         BOOL b;
-         POOLMEM *win32_ofile = get_pool_memory(PM_FNAME);
+      if (!b) {
+         goto bail_out;
+      }
+   } else {
+      BOOL b;
+      POOLMEM *win32_ofile = get_pool_memory(PM_FNAME);
 
-         unix_name_to_win32(win32_ofile, ofname);
-         b = p_SetFileAttributesA(win32_ofile, atts->dwFileAttributes & SET_ATTRS);
-         free_pool_memory(win32_ofile);
+      unix_name_to_win32(win32_ofile, ofname);
+      b = p_SetFileAttributesA(win32_ofile, atts->dwFileAttributes & SET_ATTRS);
+      free_pool_memory(win32_ofile);
 
-         if (!b) {
-            goto bail_out;
-         }
+      if (!b) {
+         goto bail_out;
       }
    }
 

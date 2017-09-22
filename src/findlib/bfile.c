@@ -653,14 +653,14 @@ static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, m
        * Open existing for write
        */
       if (bfd->use_backup_api) {
-         dwaccess = GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
+         dwaccess = GENERIC_READ | GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
          if (flags & O_NOFOLLOW) {
             dwflags = FILE_FLAG_BACKUP_SEMANTICS;
          } else {
             dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
          }
       } else {
-         dwaccess = GENERIC_WRITE;
+         dwaccess = GENERIC_READ | GENERIC_WRITE;
          dwflags = 0;
       }
 
