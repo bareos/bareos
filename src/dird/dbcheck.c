@@ -80,7 +80,6 @@ static int make_name_list(const char *query, NAME_LIST *name_list);
 static void print_name_list(NAME_LIST *name_list);
 static void free_name_list(NAME_LIST *name_list);
 static char *get_cmd(const char *prompt);
-static void eliminate_duplicate_filenames();
 static void eliminate_duplicate_paths();
 static void eliminate_orphaned_jobmedia_records();
 static void eliminate_orphaned_file_records();
@@ -327,7 +326,6 @@ int main (int argc, char *argv[])
    if (batch) {
       repair_bad_paths();
       repair_bad_filenames();
-      eliminate_duplicate_filenames();
       eliminate_duplicate_paths();
       eliminate_orphaned_jobmedia_records();
       eliminate_orphaned_file_records();
@@ -404,38 +402,36 @@ static void do_interactive_mode()
 "     2) Toggle verbose flag\n"
 "     3) Repair bad Filename records\n"
 "     4) Repair bad Path records\n"
-"     5) Eliminate duplicate Filename records\n"
-"     6) Eliminate duplicate Path records\n"
-"     7) Eliminate orphaned Jobmedia records\n"
-"     8) Eliminate orphaned File records\n"
-"     9) Eliminate orphaned Path records\n"
-"    10) Eliminate orphaned Filename records\n"
-"    11) Eliminate orphaned FileSet records\n"
-"    12) Eliminate orphaned Client records\n"
-"    13) Eliminate orphaned Job records\n"
-"    14) Eliminate all Admin records\n"
-"    15) Eliminate all Restore records\n"
-"    16) All (3-15)\n"
-"    17) Quit\n"));
+"     5) Eliminate duplicate Path records\n"
+"     6) Eliminate orphaned Jobmedia records\n"
+"     7) Eliminate orphaned File records\n"
+"     8) Eliminate orphaned Path records\n"
+"     9) Eliminate orphaned Filename records\n"
+"    10) Eliminate orphaned FileSet records\n"
+"    11) Eliminate orphaned Client records\n"
+"    12) Eliminate orphaned Job records\n"
+"    13) Eliminate all Admin records\n"
+"    14) Eliminate all Restore records\n"
+"    15) All (3-15)\n"
+"    16) Quit\n"));
        } else {
          printf(_("\n"
 "     1) Toggle modify database flag\n"
 "     2) Toggle verbose flag\n"
 "     3) Check for bad Filename records\n"
 "     4) Check for bad Path records\n"
-"     5) Check for duplicate Filename records\n"
-"     6) Check for duplicate Path records\n"
-"     7) Check for orphaned Jobmedia records\n"
-"     8) Check for orphaned File records\n"
-"     9) Check for orphaned Path records\n"
-"    10) Check for orphaned Filename records\n"
-"    11) Check for orphaned FileSet records\n"
-"    12) Check for orphaned Client records\n"
-"    13) Check for orphaned Job records\n"
-"    14) Check for all Admin records\n"
-"    15) Check for all Restore records\n"
-"    16) All (3-15)\n"
-"    17) Quit\n"));
+"     5) Check for duplicate Path records\n"
+"     6) Check for orphaned Jobmedia records\n"
+"     7) Check for orphaned File records\n"
+"     8) Check for orphaned Path records\n"
+"     9) Check for orphaned Filename records\n"
+"    10) Check for orphaned FileSet records\n"
+"    11) Check for orphaned Client records\n"
+"    12) Check for orphaned Job records\n"
+"    13) Check for all Admin records\n"
+"    14) Check for all Restore records\n"
+"    15) All (3-15)\n"
+"    16) Quit\n"));
        }
 
       cmd = get_cmd(_("Select function number: "));
@@ -463,54 +459,50 @@ static void do_interactive_mode()
             repair_bad_paths();
             break;
          case 5:
-            eliminate_duplicate_filenames();
-            break;
-         case 6:
             eliminate_duplicate_paths();
             break;
-         case 7:
+         case 6:
             eliminate_orphaned_jobmedia_records();
             break;
-         case 8:
+         case 7:
             eliminate_orphaned_file_records();
             break;
-         case 9:
+         case 8:
             eliminate_orphaned_path_records();
             break;
-         case 10:
+         case 9:
             eliminate_orphaned_filename_records();
             break;
-         case 11:
+         case 10:
             eliminate_orphaned_fileset_records();
             break;
-         case 12:
+         case 11:
             eliminate_orphaned_client_records();
             break;
-         case 13:
+         case 12:
             eliminate_orphaned_job_records();
             break;
-         case 14:
+         case 13:
             eliminate_admin_records();
             break;
+         case 14:
+            eliminate_restore_records();
+            break;
          case 15:
+            repair_bad_filenames();
+            repair_bad_paths();
+            eliminate_duplicate_paths();
+            eliminate_orphaned_jobmedia_records();
+            eliminate_orphaned_file_records();
+            eliminate_orphaned_path_records();
+            eliminate_orphaned_filename_records();
+            eliminate_orphaned_fileset_records();
+            eliminate_orphaned_client_records();
+            eliminate_orphaned_job_records();
+            eliminate_admin_records();
             eliminate_restore_records();
             break;
          case 16:
-            repair_bad_filenames();
-            repair_bad_paths();
-            eliminate_duplicate_filenames();
-            eliminate_duplicate_paths();
-            eliminate_orphaned_jobmedia_records();
-            eliminate_orphaned_file_records();
-            eliminate_orphaned_path_records();
-            eliminate_orphaned_filename_records();
-            eliminate_orphaned_fileset_records();
-            eliminate_orphaned_client_records();
-            eliminate_orphaned_job_records();
-            eliminate_admin_records();
-            eliminate_restore_records();
-            break;
-         case 17:
             quit = true;
             break;
          }
@@ -687,74 +679,6 @@ static void free_name_list(NAME_LIST *name_list)
    name_list->num_ids = 0;
 }
 
-static void eliminate_duplicate_filenames()
-{
-   const char *query;
-   char esc_name[5000];
-
-   printf(_("Checking for duplicate Filename entries.\n"));
-   fflush(stdout);
-
-   /*
-    * Make list of duplicated names
-    */
-   query = "SELECT Name, count(Name) as Count FROM Filename GROUP BY  Name "
-           "HAVING count(Name) > 1";
-
-   if (!make_name_list(query, &name_list)) {
-      exit(1);
-   }
-   printf(_("Found %d duplicate Filename records.\n"), name_list.num_ids);
-   fflush(stdout);
-   if (name_list.num_ids && verbose && yes_no(_("Print the list? (yes/no): "))) {
-      print_name_list(&name_list);
-   }
-   if (quit) {
-      return;
-   }
-   if (fix) {
-      /*
-       * Loop through list of duplicate names
-       */
-      for (int i=0; i<name_list.num_ids; i++) {
-         /*
-          * Get all the Ids of each name
-          */
-         db->escape_string(NULL, esc_name, name_list.name[i], strlen(name_list.name[i]));
-         bsnprintf(buf, sizeof(buf), "SELECT FilenameId FROM Filename WHERE Name='%s'", esc_name);
-         if (verbose > 1) {
-            printf("%s\n", buf);
-         }
-         if (!make_id_list(buf, &id_list)) {
-            exit(1);
-         }
-         if (verbose) {
-            printf(_("Found %d for: %s\n"), id_list.num_ids, name_list.name[i]);
-         }
-         /*
-          * Force all records to use the first id then delete the other ids
-          */
-         for (int j=1; j<id_list.num_ids; j++) {
-            char ed1[50], ed2[50];
-            bsnprintf(buf, sizeof(buf), "UPDATE File SET FilenameId=%s WHERE FilenameId=%s",
-               edit_int64(id_list.Id[0], ed1), edit_int64(id_list.Id[j], ed2));
-            if (verbose > 1) {
-               printf("%s\n", buf);
-            }
-            db->sql_query(buf, NULL, NULL);
-            bsnprintf(buf, sizeof(buf), "DELETE FROM Filename WHERE FilenameId=%s",
-               ed2);
-            if (verbose > 2) {
-               printf("%s\n", buf);
-            }
-            db->sql_query(buf, NULL, NULL);
-         }
-      }
-      fflush(stdout);
-   }
-   free_name_list(&name_list);
-}
-
 static void eliminate_duplicate_paths()
 {
    const char *query;
@@ -890,8 +814,8 @@ static void eliminate_orphaned_file_records()
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
             bsnprintf(buf, sizeof(buf),
-"SELECT File.FileId,File.JobId,Filename.Name FROM File,Filename "
-"WHERE File.FileId=%s AND File.FilenameId=Filename.FilenameId",
+"SELECT File.FileId,File.JobId,File.Name FROM File "
+"WHERE File.FileId=%s",
                edit_int64(id_list.Id[i], ed1));
             if (!db->sql_query(buf, print_file_handler, NULL)) {
                printf("%s\n", db->strerror());
@@ -992,18 +916,18 @@ static void eliminate_orphaned_filename_records()
    /*
     * Check the existence of the required "one column" index
     */
-   if (!check_idx("FilenameId") )      {
+   if (!check_idx("PathId") )      {
       if (yes_no(_("Create temporary index? (yes/no): "), true)) {
          /*
-          * Create temporary index FilenameId
+          * Create temporary index PathId
           */
-         create_tmp_idx("idxFIchk", "File", "FilenameId");
+         create_tmp_idx("idxFIchk", "File", "PathId");
       }
    }
 
-   const char *query = "SELECT Filename.FilenameId,File.FilenameId FROM Filename "
-                "LEFT OUTER JOIN File USING(FilenameId) "
-                "WHERE File.FilenameId IS NULL LIMIT 300000";
+   const char *query = "SELECT File.FileId,Path.PathId FROM File "
+                "LEFT OUTER JOIN Path USING(PathId) "
+                "WHERE Path.PathId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned Filename entries. This may take some time!\n"));
    if (verbose > 1) {
@@ -1022,7 +946,7 @@ static void eliminate_orphaned_filename_records()
       if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
          for (int i=0; i < id_list.num_ids; i++) {
             char ed1[50];
-            bsnprintf(buf, sizeof(buf), "SELECT Name FROM Filename WHERE FilenameId=%s",
+            bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
                edit_int64(id_list.Id[i], ed1));
             db->sql_query(buf, print_name_handler, NULL);
          }
@@ -1033,7 +957,7 @@ static void eliminate_orphaned_filename_records()
       if (fix && id_list.num_ids > 0) {
          printf(_("Deleting %d orphaned Filename records.\n"), id_list.num_ids);
          fflush(stdout);
-         delete_id_list("DELETE FROM Filename WHERE FilenameId=%s", &id_list);
+         delete_id_list("DELETE FROM File WHERE FileId=%s", &id_list);
       } else {
          break;                       /* get out if not updating db */
       }
@@ -1261,7 +1185,7 @@ static void repair_bad_filenames()
    int i;
 
    printf(_("Checking for Filenames with a trailing slash\n"));
-   query = "SELECT FilenameId,Name from Filename "
+   query = "SELECT FileId,Name from File "
            "WHERE Name LIKE '%/'";
    if (verbose > 1) {
       printf("%s\n", query);
@@ -1275,7 +1199,7 @@ static void repair_bad_filenames()
       for (i=0; i < id_list.num_ids; i++) {
          char ed1[50];
          bsnprintf(buf, sizeof(buf),
-            "SELECT Name FROM Filename WHERE FilenameId=%s",
+            "SELECT Name FROM File WHERE FileId=%s",
                 edit_int64(id_list.Id[i], ed1));
          if (!db->sql_query(buf, print_name_handler, NULL)) {
             printf("%s\n", db->strerror());
@@ -1295,7 +1219,7 @@ static void repair_bad_filenames()
          int len;
          char ed1[50];
          bsnprintf(buf, sizeof(buf),
-            "SELECT Name FROM Filename WHERE FilenameId=%s",
+            "SELECT Name FROM File WHERE FileId=%s",
                edit_int64(id_list.Id[i], ed1));
          if (!db->sql_query(buf, get_name_handler, name)) {
             printf("%s\n", db->strerror());
@@ -1314,7 +1238,7 @@ static void repair_bad_filenames()
             db->escape_string(NULL, esc_name, name, len);
          }
          bsnprintf(buf, sizeof(buf),
-            "UPDATE Filename SET Name='%s' WHERE FilenameId=%s",
+            "UPDATE File SET Name='%s' WHERE FileId=%s",
             esc_name, edit_int64(id_list.Id[i], ed1));
          if (verbose > 1) {
             printf("%s\n", buf);
