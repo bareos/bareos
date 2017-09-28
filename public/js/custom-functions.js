@@ -165,14 +165,23 @@ function formatJobLevel(data) {
 }
 
 function formatRetention(data) {
-   var retention;
-   //retention = Math.round( (data / 60 / 60 / 24) );
-   retention = Math.floor((data % 31536000) / 86400);
-   if(retention == 0) {
-      return '-';
+   if( Math.floor(data / 31536000) >= 1 ) {
+      return Math.floor(data / 31536000) + ' ' + iJS._('year(s)');
+   }
+   else if( Math.floor(data / 2678400) >= 1 ) {
+      return Math.floor(data / 2678400) + ' ' + iJS._('month(s)');
+   }
+   else if( Math.floor(data / 86400) >= 1 ) {
+      return Math.floor(data / 86400) + ' ' + iJS._('day(s)');
+   }
+   else if( Math.floor(data / 3600) >= 1 ) {
+      return Math.floor(data / 3600) + ' ' + iJS._('hour(s)');
+   }
+   else if( Math.floor(data / 60) >= 1 ) {
+      return Math.floor(data / 60) + ' ' + iJS._('second(s)');
    }
    else {
-      return retention + ' ' + iJS._('day(s)');
+      return '-';
    }
 }
 
@@ -202,7 +211,7 @@ function formatExpiration(volstatus, lastwritten, volretention) {
       }
    }
    else {
-      return Math.ceil((volretention / 60 / 60 / 24)) + ' ' + iJS._("day(s)");
+      return formatRetention(volretention);
    }
 }
 
