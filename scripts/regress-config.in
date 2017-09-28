@@ -7,7 +7,7 @@
 if test "x@db_password@" = "x"; then
   PASSWD=
 else
-  PASSWD="--with-db-password=@db_password@"
+  PASSWD="-Ddb-password=@db_password@"
 fi
 
 if [ -z "${CFLAGS}" ]; then
@@ -15,37 +15,49 @@ if [ -z "${CFLAGS}" ]; then
    export CFLAGS
 fi
 
-./configure \
-    --bindir=${1}/bin \
-    --sbindir=${1}/bin \
-    --libdir=${1}/bin \
-    --sysconfdir=${1}/bin \
-    --with-confdir=${1}/bin \
-    --mandir=${1}/bin \
-    --docdir=${1}/bin/html \
-    --htmldir=${1}/bin/html \
-    --with-logdir=${1}/working \
-    --with-pid-dir=${1}/working \
-    --with-subsys-dir=${1}/working \
-    --with-plugindir=${1}/bin/plugins \
-    --enable-smartalloc \
-    --enable-lockmgr \
-    --disable-conio \
-    --with-working-dir=${1}/working \
-    --with-archivedir=${1}/tmp \
-    --with-dump-email=${EMAIL} \
-    --with-job-email=${EMAIL} \
-    --with-smtp-host=${SMTP_HOST} \
-    --with-db-name=@db_name@ \
-    --with-db-user=@db_user@ \
+mkdir cmake-build
+cd cmake-build
+
+cmake  .. \
+      -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_INSTALL_PREFIX:PATH=${1}/usr \
+      -DCMAKE_INSTALL_LIBDIR:PATH=${1}/usr/lib \
+      -DINCLUDE_INSTALL_DIR:PATH=${1}/usr/include \
+      -DLIB_INSTALL_DIR:PATH=${1}/usr/lib \
+      -DSYSCONF_INSTALL_DIR:PATH=${1}/etc \
+      -DSHARE_INSTALL_PREFIX:PATH=${1}/usr/share \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+    -Dbindir=${1}/bin \
+    -Dsbindir=${1}/bin \
+    -Dlibdir=${1}/bin \
+    -Dsysconfdir=${1}/bin \
+    -Dconfdir=${1}/bin \
+    -Dmandir=${1}/bin \
+    -Ddocdir=${1}/bin/html \
+    -Dhtmldir=${1}/bin/html \
+    -Dlogdir=${1}/working \
+    -Dpid-dir=${1}/working \
+    -Dsubsys-dir=${1}/working \
+    -Dplugindir=${1}/bin/plugins \
+    -Dsmartalloc=yes\
+    -Dlockmgr=yes \
+    -Dconio=no \
+    -Dworking-dir=${1}/working \
+    -Darchivedir=${1}/tmp \
+    -Ddump-email=${EMAIL} \
+    -Djob-email=${EMAIL} \
+    -Dsmtp-host=${SMTP_HOST} \
+    -Ddb-name=@db_name@ \
+    -Ddb-user=@db_user@ \
     ${PASSWD} \
     ${OPENSSL} \
     ${TCPWRAPPERS} \
     ${SCSICRYPTO} \
     ${WHICHDB} \
-    --with-baseport=${BASEPORT}
+    -Dbaseport=${BASEPORT}
 
 LD_LIBRARY_PATH=${1}/bin:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
+cd ..
 exit 0
