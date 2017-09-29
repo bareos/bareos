@@ -676,38 +676,45 @@ bool Bvfs::ls_dirs()
            "listfile1.JobId AS JobId, listfile1.LStat AS LStat, "
            "listfile1.FileId AS FileId "
     "FROM ( "
-      "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
-      "FROM PathHierarchy AS PathHierarchy1 "
-      "JOIN Path AS Path2 "
-        "ON (PathHierarchy1.PathId = Path2.PathId) "
-      "JOIN PathVisibility AS PathVisibility1 "
-        "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
-      "WHERE PathHierarchy1.PPathId = %s "
-      "AND PathVisibility1.JobId IN (%s) "
-      "AND PathVisibility1.PathId NOT IN ( "
-          "SELECT PathId FROM File "
-          "WHERE FilenameId = %s "
-                "AND JobId = ( "
-                    "SELECT MAX(JobId) FROM PathVisibility "
-                    "WHERE PathId = PathVisibility1.PathId "
-                          "AND JobId IN (%s)) "
-                "AND FileIndex = 0) "
-           "%s "
-     ") AS listpath1 "
-   "JOIN Path AS Path1 ON (listpath1.PathId = Path1.PathId) "
-
-   "LEFT JOIN ( " /* get attributes if any */
-       "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
-              "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
-       "WHERE File1.FilenameId = %s "
-       "AND File1.JobId IN (%s)) AS listfile1 "
-       "ON (listpath1.PathId = listfile1.PathId) "
-    ") AS A ORDER BY 2,3 DESC LIMIT %d OFFSET %d",
+        "SELECT listpath1.PathId AS PathId "
+        "FROM ( "
+            "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
+            "FROM PathHierarchy AS PathHierarchy1 "
+            "INNER JOIN Path AS Path2 "
+                    "ON (PathHierarchy1.PathId = Path2.PathId) "
+            "INNER JOIN PathVisibility AS PathVisibility1 "
+                    "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
+            "WHERE PathHierarchy1.PPathId = %s "
+            "AND PathVisibility1.JobId IN (%s) "
+            "%s "
+        ") AS listpath1 "
+        "LEFT JOIN "
+          "( "
+          "SELECT PVD1.PathId AS PathId "
+          "FROM ( "
+             "SELECT PV1.PathId AS PathId, MAX(JobId) AS MaxJobId "
+             "FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId "
+             ") AS PVD1 "
+          "INNER JOIN File AS F2 "
+                  "ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId "
+                      "AND F2.FilenameId = %s AND F2.FileIndex = 0) "
+          ") AS listpath2 ON (listpath1.PathId = listpath2.PathId) "
+        "WHERE listpath2.PathId IS NULL "
+    ") AS listpath3 "
+    "INNER JOIN Path AS Path1 "
+            "ON (listpath3.PathId = Path1.PathId) "
+    "LEFT JOIN ( "
+        "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
+               "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
+        "WHERE File1.FilenameId = %s "
+        "AND File1.JobId IN (%s)) AS listfile1 "
+    "ON (listpath3.PathId = listfile1.PathId) "
+    ") AS A ORDER BY 2, 3 DESC LIMIT %d OFFSET %d",
         edit_uint64(pwd_id, ed1),
         jobids,
-        edit_uint64(dir_filenameid, ed2),
-        jobids,
         filter.c_str(),
+        jobids,
+        edit_uint64(dir_filenameid, ed2),
         edit_uint64(dir_filenameid, ed2),
         jobids,
         limit, offset);

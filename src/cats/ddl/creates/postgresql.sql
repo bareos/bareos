@@ -47,7 +47,7 @@ CREATE TABLE File
 );
 
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, FilenameId);
-CREATE INDEX file_jobid_idx ON File (JobId);
+CREATE INDEX file_jpfnidpart_idx ON File (PathId, JobId, FilenameId) WHERE FileIndex = 0;
 
 --
 -- Add this if you have a good number of job
