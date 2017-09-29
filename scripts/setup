@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 #
 # Script to setup running Bareos regression tests
@@ -80,12 +80,15 @@ rm -f Makefile config.*
 #
 # Run Bareos configuration, make, install
 #
-./regress-config ${cwd}
+sh -x ./regress-config ${cwd}
 check_exit_code
 
 #
 # Cleanup any build in source
 #
+
+cd cmake-build
+
 make clean
 make ${MAKEOPT}
 check_exit_code
@@ -101,23 +104,24 @@ fi
 #
 # Get all tests -- especially testls
 #
-cd src/tests
-make installall
-check_exit_code
-cd ../..
+#cd src/tests
+#make installall
+#check_exit_code
+#cd ../..
 
 #
 # Get all tools -- especially timelimit
 #
-cd src/tools
-make installall
-check_exit_code
-cd ../..
+#cd src/tools
+#make installall
+#check_exit_code
+#cd ../..
+
 # make -C not available on Solaris, therefore cd in subshell.
-(
-  cd src/plugins/filed
-  make install-test-plugin
-)
+#(
+#  cd src/plugins/filed
+#  make install-test-plugin
+#)
 #disable test-plugin
 mv ${cwd}/bin/plugins/test-plugin-fd.so ${cwd}/bin/plugins/test-plugin-fd.sox
 

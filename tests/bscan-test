@@ -66,11 +66,14 @@ else
   PASSWD="-P ${db_password}"
 fi
 
+debug=1
 if test "$debug" -eq 1 ; then
   $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp
 else
   $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp >tmp/log3.out 2>&1
 fi
+
+echo "$bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr ${cwd}/tmp "
 
 cat <<END_OF_DATA >tmp/bconcmds
 @$out /dev/null
