@@ -38,13 +38,13 @@ cmake  .. \
     -Ddocdir=${1}/bin/html \
     -Dhtmldir=${1}/bin/html \
     -Dlogdir=${1}/working \
-    -Dpid-dir=${1}/working \
+    -Dpiddir=${1}/working \
     -Dsubsys-dir=${1}/working \
     -Dplugindir=${1}/bin/plugins \
     -Dsmartalloc=yes\
     -Dlockmgr=yes \
     -Dconio=no \
-    -Dworking_dir=${1}/working \
+    -Dworkingdir=${1}/working \
     -Darchivedir=${1}/tmp \
     -Ddump_email=${EMAIL} \
     -Djob_email=${EMAIL} \
