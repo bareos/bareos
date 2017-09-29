@@ -4,6 +4,7 @@
 #
 
 . ${1}/config
+
 if test "x@db_password@" = "x"; then
   PASSWD=
 else
@@ -31,6 +32,7 @@ cmake  .. \
     -Dsbindir=${1}/bin \
     -Dlibdir=${1}/bin \
     -Dsysconfdir=${1}/bin \
+    -Dscriptdir=${1}/bin \
     -Dconfdir=${1}/bin \
     -Dmandir=${1}/bin \
     -Ddocdir=${1}/bin/html \
@@ -42,13 +44,13 @@ cmake  .. \
     -Dsmartalloc=yes\
     -Dlockmgr=yes \
     -Dconio=no \
-    -Dworking-dir=${1}/working \
+    -Dworking_dir=${1}/working \
     -Darchivedir=${1}/tmp \
-    -Ddump-email=${EMAIL} \
-    -Djob-email=${EMAIL} \
-    -Dsmtp-host=${SMTP_HOST} \
-    -Ddb-name=@db_name@ \
-    -Ddb-user=@db_user@ \
+    -Ddump_email=${EMAIL} \
+    -Djob_email=${EMAIL} \
+    -Dsmtp_host=${SMTP_HOST} \
+    -Ddb_name=@db_name@ \
+    -Ddb_user=@db_user@ \
     ${PASSWD} \
     ${OPENSSL} \
     ${TCPWRAPPERS} \
@@ -60,4 +62,5 @@ LD_LIBRARY_PATH=${1}/bin:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
 cd ..
+
 exit 0

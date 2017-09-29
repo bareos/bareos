@@ -348,9 +348,9 @@ run_bareos()
    zstat=0
    estat=0
    if test "$debug" -eq 1 ; then
-     ${scripts}/bareos-ctl-dir start -m
-     ${scripts}/bareos-ctl-sd start -m
-     ${scripts}/bareos-ctl-fd start -m $1
+     ${scripts}/bareos-ctl-dir start -m -d 100
+     ${scripts}/bareos-ctl-sd start -m -d 100
+     ${scripts}/bareos-ctl-fd start -m $1 -d 100
    else
      ${scripts}/bareos start >/dev/null 2>&1
    fi
