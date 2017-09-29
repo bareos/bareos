@@ -17,7 +17,7 @@ scripts/cleanup
 # create start script for second sd
 /bin/cp -f bin/bareos-ctl-sd bin/bareos-ctl-sd2
 #/bin/sed 's/bareos-sd.conf/bareos-sd2.conf/g' < bin/bareos-ctl-sd > bin/bareos-ctl-sd2
-/bin/sed "s#BACSDCFG=.*#BACSDCFG=${cwd}/bin/bareos-sd2.conf#g" < bin/bareos-ctl-sd > bin/bareos-ctl-sd2
+/bin/sed "s#BAREOS_CONFIG_DIR=.*#BAREOS_CONFIG_DIR=${cwd}/bin/bareos-sd2.conf#g" < bin/bareos-ctl-sd > bin/bareos-ctl-sd2
 
 /bin/cp -f scripts/bareos-sd-migration-sd-sd1.conf bin/bareos-sd.conf
 /bin/cp -f scripts/bareos-sd-migration-sd-sd2.conf bin/bareos-sd2.conf
