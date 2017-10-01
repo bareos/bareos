@@ -8,14 +8,14 @@ msgstr ""
 "Project-Id-Version: bareos-webui\n"
 "Report-Msgid-Bugs-To: \n"
 "POT-Creation-Date: 2017-06-06 12:14+0200\n"
-"PO-Revision-Date: 2017-01-22 21:12+0100\n"
+"PO-Revision-Date: 2017-10-01 11:31+0200\n"
 "Last-Translator: Sam Verstraete <samverstraete@gmail.com>\n"
 "Language-Team: \n"
 "Language: nl_BE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.11\n"
+"X-Generator: Poedit 2.0.1\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
 #: ../../../module/Application/config/module.config.php:125
@@ -113,7 +113,7 @@ msgid ""
 "is an error, please contact your local administrator."
 msgstr ""
 "Helaas, het lijkt er op dat je niet geautoriseerd bent om deze module uit te "
-"voeren. Als je denkt dat dit een fout is, contacteer dan jouw beheerder. "
+"voeren. Als je denkt dat dit een fout is, contacteer dan jouw beheerder."
 
 #: ../../../module/Application/src/Application/View/Helper/ACLAlert.php:38
 msgid ""
@@ -126,9 +126,9 @@ msgid ""
 msgstr ""
 "Gelieve de <a href=\"http://doc.bareos.org/master/html/bareos-manual-main-"
 "reference.html#sec:webui-console\" target=\"_blank\">Bareos documentatie</a> "
-"te lezen voor bijkomende informatie over hoe de Command ACL instructie van "
+"te lezen om bijkomende informatie over hoe de Command ACL instructie van "
 "jouw Console/Profiel bronnen te configureren. Hierna volgt een lijst met "
-"verplichte commando's die in jouw Command ACL nodig zijn om correct te lopen."
+"verplichte commando's die in jouw Command ACL nodig zijn om correct te lopen:"
 
 #: ../../../module/Application/view/error/404.phtml:3
 msgid "A 404 error occurred"
@@ -155,7 +155,7 @@ msgstr "De gevraagde URL kon niet gepaard worden via routing."
 
 #: ../../../module/Application/view/error/404.phtml:24
 msgid "We cannot determine at this time why a 404 was generated."
-msgstr "We kunnen "
+msgstr "We kunnen op dit moment niet nagaan waarom een 404 werd gegenereerd."
 
 #: ../../../module/Application/view/error/404.phtml:36
 msgid "Controller"
@@ -450,10 +450,12 @@ msgstr "Inschakelen"
 msgid ""
 "Not enough data to estimate progress or statistics collection is disabled."
 msgstr ""
+"Niet genoeg data om de voortgang te schatten of het verzamelen van "
+"statistieken is uitgeschakeld."
 
 #: ../../../module/Dashboard/view/dashboard/dashboard/index.phtml:227
 msgid "There are no jobs running."
-msgstr ""
+msgstr "Er zijn geen lopende taken."
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
@@ -469,25 +471,23 @@ msgstr "Wachtend"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:66
 msgid "Successful"
-msgstr ""
+msgstr "Geslaagd"
 
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:77
 msgid "Failed"
-msgstr ""
+msgstr "Mislukt"
 
 #: ../../../module/Dashboard/view/partial/LastDirectorMessages.phtml:32
 msgid "Current Director messages"
 msgstr "Huidige Director berichten"
 
 #: ../../../module/Dashboard/view/partial/RunningJobs.phtml:31
-#, fuzzy
 msgid "Running Jobs"
-msgstr "Actief"
+msgstr "Lopende taken"
 
 #: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
 msgid "Job Totals"
-msgstr "Taaklijst"
+msgstr "Taak totalen"
 
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
 msgid "Most recent job status per job name"
@@ -632,11 +632,11 @@ msgstr "Opslag"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:155
 msgid "Priority"
-msgstr ""
+msgstr "Prioriteit"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:185
 msgid "When"
-msgstr ""
+msgstr "Wanneer"
 
 #: ../../../module/Job/src/Job/Form/RunJobForm.php:200
 #: ../../../module/Storage/src/Storage/Form/StorageForm.php:93
@@ -664,9 +664,8 @@ msgid "Errors"
 msgstr "Fouten"
 
 #: ../../../module/Job/view/job/job/details.phtml:97
-#, fuzzy
 msgid "Used Volumes"
-msgstr "Volumes"
+msgstr "Gebruikte volumes"
 
 #: ../../../module/Job/view/job/job/details.phtml:102
 #: ../../../module/Storage/view/storage/storage/details.phtml:112
@@ -697,10 +696,9 @@ msgstr "Foutbericht ontvangen van de director:"
 #: ../../../module/Media/view/media/media/details.phtml:123
 #: ../../../module/Media/view/media/media/index.phtml:90
 #: ../../../module/Pool/view/pool/pool/details.phtml:122
-#, fuzzy
 msgid "Failed to send result as json. Maybe the result message is too long?"
 msgstr ""
-"Resultaat als json verzenden is mislukt. Misschien is het resultaat bericht "
+"Resultaat als json verzenden is mislukt. Misschien is het resultaatbericht "
 "te lang?"
 
 #: ../../../module/Job/view/job/job/details.phtml:159
@@ -710,19 +708,17 @@ msgstr "Gepland"
 
 #: ../../../module/Job/view/job/job/details.phtml:180
 msgid "First Index"
-msgstr ""
+msgstr "Eerste index"
 
 #: ../../../module/Job/view/job/job/details.phtml:184
 msgid "Last Index"
-msgstr ""
+msgstr "Laatste index"
 
 #: ../../../module/Job/view/job/job/details.phtml:188
-#, fuzzy
 msgid "Start Block"
-msgstr "Begin"
+msgstr "Beginblok"
 
 #: ../../../module/Job/view/job/job/details.phtml:192
-#, fuzzy
 msgid "End Block"
 msgstr "Eindblok"
 
@@ -847,7 +843,7 @@ msgstr "Aantal keer geschreven"
 #: ../../../module/Storage/view/storage/storage/details.phtml:111
 #: ../../../module/Storage/view/storage/storage/details.phtml:152
 msgid "Slot"
-msgstr "Slot"
+msgstr "Plaats"
 
 #: ../../../module/Media/view/media/media/details.phtml:302
 msgid "Media Id"
@@ -926,7 +922,6 @@ msgid "Scratch Pool Id"
 msgstr "Scratch pool ID"
 
 #: ../../../module/Media/view/media/media/details.phtml:382
-#, fuzzy
 msgid "Recycle Pool Id"
 msgstr "Recycleer pool ID"
 
@@ -1049,26 +1044,25 @@ msgstr "bv. / of /tmp/bareos-restores/"
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:439
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:456
 msgid "Path"
-msgstr ""
+msgstr "Pad"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:475
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:492
 msgid "Limit"
-msgstr ""
+msgstr "Limiet"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:511
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:528
 msgid "Offset"
-msgstr ""
+msgstr "Begin"
 
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:557
 msgid "Related jobs for a most recent full restore"
 msgstr "Verwante taken voor een meest recent volledig herstel"
 
 #: ../../../module/Restore/view/restore/restore/index.phtml:42
-#, fuzzy
 msgid "Error message received:"
-msgstr "Foutbericht ontvangen van de director:"
+msgstr "Foutbericht ontvangen:"
 
 #: ../../../module/Restore/view/restore/restore/index.phtml:59
 #: ../../../module/Storage/view/storage/storage/details.phtml:51
@@ -1107,15 +1101,15 @@ msgstr "Label barcodes"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:82
 msgid "Assign media to this pool."
-msgstr "Media toewijzen aan deze pool"
+msgstr "Media toewijzen aan deze pool."
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:84
 msgid "Use this drive for labeling."
-msgstr "Gebruik deze schijf voor labeling"
+msgstr "Gebruik deze schijf om te labellen."
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:103
 msgid "Import/Export Slots"
-msgstr "Importeer/Exporteer slots"
+msgstr "Importeer/Exporteer plaatsen"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:107
 msgid "Import all"
@@ -1131,11 +1125,11 @@ msgstr "Geladen"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:141
 msgid "Slots"
-msgstr "Slots"
+msgstr "Plaatsen"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:145
 msgid "Update slots"
-msgstr "Slots vernieuwen"
+msgstr "Plaatsen vernieuwen"
 
 #: ../../../module/Storage/view/storage/storage/details.phtml:156
 msgid "Expiration"
