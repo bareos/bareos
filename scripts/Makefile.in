@@ -33,7 +33,7 @@ installdirs:
 	$(MKDIR) $(DESTDIR)$(mandir)
 
 install: installdirs
-	$(INSTALL_SCRIPT) bconsole $(DESTDIR)$(scriptdir)/bconsole
+	#$(INSTALL_SCRIPT) bconsole $(DESTDIR)$(scriptdir)/bconsole
 	$(INSTALL_SCRIPT) bareos $(DESTDIR)$(scriptdir)/bareos
 	$(INSTALL_SCRIPT) bareos_config $(DESTDIR)$(scriptdir)/bareos_config
 	$(INSTALL_SCRIPT) bareos $(DESTDIR)$(sbindir)/bareos
@@ -60,7 +60,6 @@ install: installdirs
 	$(INSTALL_DATA) btraceback.gdb $(DESTDIR)$(scriptdir)/btraceback.gdb
 	$(INSTALL_DATA) btraceback.dbx $(DESTDIR)$(scriptdir)/btraceback.dbx
 	$(INSTALL_DATA) btraceback.mdb $(DESTDIR)$(scriptdir)/btraceback.mdb
-	#$(INSTALL_SCRIPT) -m 700 bareos-password-setup.sh ${DESTDIR}${scriptdir}/bareos-password-setup.sh
 	$(INSTALL_SCRIPT) bareos-config ${DESTDIR}${scriptdir}/bareos-config
 	$(INSTALL_SCRIPT) bareos-config-lib.sh ${DESTDIR}${scriptdir}/bareos-config-lib.sh
 	$(INSTALL_SCRIPT) bareos-explorer ${DESTDIR}${scriptdir}/bareos-explorer
