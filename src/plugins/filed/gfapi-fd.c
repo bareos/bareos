@@ -159,6 +159,7 @@ enum plugin_argument_type {
    argument_none,
    argument_volume_spec,
    argument_snapdir,
+   argument_basedir,
    argument_gf_file_list
 };
 
@@ -170,6 +171,7 @@ struct plugin_argument {
 static plugin_argument plugin_arguments[] = {
    { "volume", argument_volume_spec },
    { "snapdir", argument_snapdir },
+   { "basedir", argument_basedir },
    { "gffilelist", argument_gf_file_list },
    { NULL, argument_none }
 };
@@ -1150,6 +1152,9 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                break;
             case argument_snapdir:
                str_destination = &p_ctx->snapdir;
+               break;
+            case argument_basedir:
+               str_destination = &p_ctx->basedir;
                break;
             case argument_gf_file_list:
                str_destination = &p_ctx->gf_file_list;
