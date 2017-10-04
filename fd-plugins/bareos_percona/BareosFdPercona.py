@@ -72,7 +72,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         # By default, standard mysql-config files will be used, set
         # this option to use extra files
         if 'mycnf' in self.options:
-            self.mycnf = "--defaults-extra-file=%s" % self.options['mycnf']
+            self.mycnf = "--defaults-extra-file=%s " % self.options['mycnf']
         else:
             self.mycnf = ""
 
@@ -83,11 +83,18 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.strictIncremental = False
 
-        # if dumpotions is set, we use that completely here, otherwise defaults
+        self.dumpoptions = self.mycnf
+
+        # if dumpoptions is set, we use that here, otherwise defaults
         if 'dumpoptions' in self.options:
-            self.dumpoptions = self.options['dumpoptions']
+            self.dumpoptions += self.options['dumpoptions']
         else:
-            self.dumpoptions = "%s --backup --datadir=/var/lib/mysql/ --stream=xbstream --extra-lsndir=%s " % (self.mycnf, self.tempdir)
+            self.dumpoptions += "--backup --stream=xbstream"
+
+        self.dumpoptions += " --extra-lsndir=%s" % self.tempdir
+
+        if 'extradumpoptions' in self.options:
+            self.dumpoptions += " " + self.options['extradumpoptions']
 
         # We need to call mysql to get the current Log Sequece Number (LSN)
         if 'mysqlcmd' in self.options:
@@ -168,7 +175,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
             returnCode = last_lsn_proc.poll()
             (mysqlStdOut, mysqlStdErr) = last_lsn_proc.communicate()
             if returnCode != 0 or mysqlStdErr:
-                JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN with command \"%s\", Error: %s" 
+                JobMessage(context, bJobMessageType['M_FATAL'], "Could not get LSN with command \"%s\", Error: %s"
                     % (get_lsn_command, mysqlStdErr))
                 return bRCs['bRC_Error']
             else:
@@ -205,7 +212,7 @@ class BareosFdPercona (BareosFdPluginBaseclass):
             savepkt.fname = "/_percona/xbstream.%010d" % self.jobId
             savepkt.type = bFileType['FT_REG']
             if self.max_to_lsn > 0:
-                self.dumpoptions += "--incremental-lsn=%d" % self.max_to_lsn
+                self.dumpoptions += " --incremental-lsn=%d" % self.max_to_lsn
             self.dumpcommand = ("%s %s" % (self.dumpbinary, self.dumpoptions))
             DebugMessage(context, 100, "Dumper: '" + self.dumpcommand + "'\n")
         elif self.file_to_backup == 'lsnfile':
