@@ -97,16 +97,14 @@ def waitForJob(jobId):
     jobID -- int job ID to wait for
     '''
     command = "wait jobid=%s" % jobId
-    director.send(command)
-    msg = director.recv_msg()
-    pattern = re.compile('.*JobStatus=.*\((\w)\).*', re.MULTILINE)
-    statusMatch = pattern.search(msg)
-    if statusMatch is None:
+    result=jsonDirector.call(command)
+    if 'Job' not in result:
         logger.error("No Job Status found for JobId=%d\n" % jobId)
         return (None, None)
     else:
-        jobStatus = statusMatch.group(1)
-        return (jobStatus, msg)
+        jobStatus = result['Job']['jobstatus']
+        jobMsg = result['Job']['jobstatuslong']
+        return (jobStatus, jobMsg)
 
 
 def incremental(client_joblist=None):
@@ -186,16 +184,13 @@ def runJob(jobCommand, wait=False):
     otherwise wait until job has finished and return
     tupel (jobID, jobStatus), with jobSTatus in {E,f,W,A,T}
     '''
-    director.send(jobCommand)
-    msg = director.recv_msg()
-    pattern = re.compile('.*JobId=(\d+).*', re.MULTILINE)
-    idMatch = pattern.search(msg)
-    if idMatch is None:
-        logger.error("Warning: No JobId returned. Message was: %s" % msg)
-        return (None, None)
-    else:
-        jobId = int(idMatch.group(1))
+    result=jsonDirector.call(jobCommand)
+    if 'run' in result:
+        jobId = int(result['run']['jobid'])
         logger.info("Job scheduled with JobId: %s" % jobId)
+    else:
+        logger.error("Warning: No JobId returned. Message was: %s" % result)
+        return (None, None)
 
     if not wait:
         # TODO get and return jobStatus here (failed, running, waiting)
@@ -324,17 +319,14 @@ if __name__ == '__main__':
         client_archivefilelist = None
 
     try:
-        #director = bareos.bconsole(host, dir_port, dirname)
         director = bareos.bsock.BSock(address=host, port=dir_port, dirname=dirname,
                                       password=bareos.bsock.Password(password))
+        # Another director of class json
+        jsonDirector = bareos.bsock.DirectorConsoleJson(address=host, port=dir_port, dirname=dirname,
+                                                        password=bareos.bsock.Password(password))
     except RuntimeError as e:
         print str(e)
         sys.exit(1)
-    #if not director.login(password):
-    #    logger.error("failed to authenticate")
-    #    sys.exit(1)
-    #logger.debug("authentication successful")
-    #director.init()
 
     logger.debug("Command: " + args.command + "\n")
 
