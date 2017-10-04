@@ -137,7 +137,10 @@ class BareosFdMySQLclass (BareosFdPluginBaseclass):
 
         statp = StatPacket()
         if not size_curr_db == "NULL\n":
-            statp.size = int(size_curr_db)
+            try:
+                statp.size = int(size_curr_db)
+            except ValueError:
+                pass
         savepkt.statp = statp
         savepkt.fname = "/_mysqlbackups_/"+db+".sql"
         savepkt.type = bFileType['FT_REG']
