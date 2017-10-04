@@ -53,7 +53,7 @@ def getArguments():
     parser_query = subparsers.add_parser(
         'query', help='query command is used to query information from director')
     parser_query.add_argument('queryobject', default='status',
-                              choices=['sched', 'schedule', 'status'], help="Object to query")
+                              choices=['sched', 'schedule', 'status', 'lost'], help="Object to query")
     parser_incremental = subparsers.add_parser(
         'incr', help='run incremental job(s) defined for this client')
     parser_restore = subparsers.add_parser(
@@ -84,9 +84,29 @@ def query(queryobject, client):
         director.send(command)
         msg = director.recv_msg()
         sys.stdout.write(msg)
+    elif queryobject in ['lost']:
+        jobids = getClientJobs (client)
+        res = jsonDirector.call('.bvfs_lsfiles jobid={} path={}/'.format(','.join(jobids), os.getcwd()))
+        for file in res['files']:
+            if(os.path.isfile(file['name'])):
+                continue
+            if(os.path.isdir(file['name'])):
+                continue
+            print file['name']
     else:
         logger.error("Unknown query object " + queryobject)
 
+def getClientJobs(client):
+    '''
+    Get list of jobs for a client
+    '''
+    res = jsonDirector.call('list jobs client={}'.format(client))
+    jobids = []
+    for job in res['jobs']:
+        if job['jobstatus'] <> 'T': continue
+        if job['type'] != 'B': continue
+        jobids.append(job['jobid'])
+    return jobids
 
 def waitForJob(jobId):
     '''
