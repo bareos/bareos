@@ -168,8 +168,8 @@ function formatRetention(data) {
    if( Math.floor(data / 31536000) >= 1 ) {
       return Math.floor(data / 31536000) + ' ' + iJS._('year(s)');
    }
-   else if( Math.floor(data / 2678400) >= 1 ) {
-      return Math.floor(data / 2678400) + ' ' + iJS._('month(s)');
+   else if( Math.floor(data / 2592000) >= 1 ) {
+      return Math.floor(data / 2592000) + ' ' + iJS._('month(s)');
    }
    else if( Math.floor(data / 86400) >= 1 ) {
       return Math.floor(data / 86400) + ' ' + iJS._('day(s)');
