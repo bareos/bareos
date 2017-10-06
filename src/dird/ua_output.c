@@ -488,6 +488,14 @@ static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
    int i;
 
    /*
+    * Ensure query range is an empty string instead of NULL
+    * to avoid any issues.
+    */
+   if (query_range.c_str() == NULL) {
+      pm_strcpy(query_range, "");
+   }
+
+   /*
     * See if this is a second call to set_query_range() if so and any acl
     * filters have been set we setup a new query_range filter including a
     * limit filter.
