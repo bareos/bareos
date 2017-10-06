@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: bareos-webui\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-06 12:14+0200\n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
 "PO-Revision-Date: 2017-07-08 22:07+0200\n"
 "Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
 "Language-Team: \n"
@@ -46,8 +46,10 @@ msgid "Run"
 msgstr "Spustit"
 
 #: ../../../module/Application/config/module.config.php:145
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:217
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
 msgid "Restore"
@@ -294,7 +296,7 @@ msgid "Jobretention"
 msgstr "Doba uchovávání úloh"
 
 #: ../../../module/Client/view/client/client/details.phtml:55
-#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:84
 #: ../../../module/Client/view/client/client/index.phtml:57
 #: ../../../module/Job/view/job/job/run.phtml:33
 #: ../../../module/Job/view/job/job/actions.phtml:33
@@ -312,8 +314,8 @@ msgid "Actions"
 msgstr "Akce"
 
 #: ../../../module/Client/view/client/client/details.phtml:69
-msgid "Last backups"
-msgstr "Minulé zálohy"
+msgid "Last successful backups"
+msgstr "Letzte Sicherungen"
 
 #: ../../../module/Client/view/client/client/details.phtml:76
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:42
@@ -375,7 +377,8 @@ msgstr "Soubory"
 msgid "Bytes"
 msgstr "Bajtů"
 
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:56
 #: ../../../module/Client/view/client/client/index.phtml:217
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
@@ -397,9 +400,7 @@ msgstr "Bajtů"
 msgid "Status"
 msgstr "Stav"
 
-#: ../../../module/Client/view/client/client/details.phtml:213
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
+#: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "Zobrazit soubory"
 
@@ -454,6 +455,26 @@ msgstr ""
 msgid "There are no jobs running."
 msgstr "V tuto chvíli neprobíhají žádné úlohy."
 
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
+msgid "Job Totals"
+msgstr "Celkově úloh"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Stav nejnovějších úloh pro jednotlivé názvy úloh"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Job/view/job/job/details.phtml:163
+#: ../../../module/Job/view/job/job/index.phtml:164
+msgid "Start"
+msgstr "Start"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../../../module/Job/view/job/job/details.phtml:167
+#: ../../../module/Job/view/job/job/index.phtml:168
+msgid "End"
+msgstr "Konec"
+
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
 msgstr "Úlohy spuštěné v průběhu minulých 24 hodin"
@@ -481,26 +502,6 @@ msgstr "Aktuální hlášení z řídící části"
 #: ../../../module/Dashboard/view/partial/RunningJobs.phtml:31
 msgid "Running Jobs"
 msgstr "Probíhající úlohy"
-
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
-msgid "Job Totals"
-msgstr "Celkově úloh"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Stav nejnovějších úloh pro jednotlivé názvy úloh"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../../../module/Job/view/job/job/details.phtml:163
-#: ../../../module/Job/view/job/job/index.phtml:164
-msgid "Start"
-msgstr "Start"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../../../module/Job/view/job/job/details.phtml:167
-#: ../../../module/Job/view/job/job/index.phtml:168
-msgid "End"
-msgstr "Konec"
 
 #: ../../../module/Director/view/director/director/console.phtml:33
 #: ../../../module/Director/view/director/director/index.phtml:34
@@ -540,6 +541,10 @@ msgstr "Aktualizovat"
 msgid "Director messages"
 msgstr "Zprávy z řídící části"
 
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Sady souborů"
+
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
 msgstr "Podrobnosti sady souborů"
@@ -555,10 +560,6 @@ msgstr "MD5 kontrolní součet"
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
 msgid "Creation time"
 msgstr "Okamžik vytvoření"
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Sady souborů"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 msgid "jobname"
@@ -1182,6 +1183,9 @@ msgstr "Stav plánovače"
 msgid "Status Scheduler"
 msgstr "Stav plánovače"
 
+#~ msgid "Last backups"
+#~ msgstr "Minulé zálohy"
+
 #~ msgid "Terminated successfully"
 #~ msgstr "Erfolgreich abgeschlossen"
 
@@ -1235,9 +1239,6 @@ msgstr "Stav plánovače"
 
 #~ msgid "Select files to restore"
 #~ msgstr "Dateiauswahl"
-
-#~ msgid "Last successful backups"
-#~ msgstr "Letzte Sicherungen"
 
 #~ msgid "successful"
 #~ msgstr "Erfolgreich"

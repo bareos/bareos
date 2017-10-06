@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: bareos-webui\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-06 12:14+0200\n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
 "PO-Revision-Date: 2016-04-26 16:44+0200\n"
 "Last-Translator: \n"
 "Language-Team: \n"
@@ -46,8 +46,10 @@ msgid "Run"
 msgstr ""
 
 #: ../../../module/Application/config/module.config.php:145
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:217
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
 msgid "Restore"
@@ -287,7 +289,7 @@ msgid "Jobretention"
 msgstr ""
 
 #: ../../../module/Client/view/client/client/details.phtml:55
-#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:84
 #: ../../../module/Client/view/client/client/index.phtml:57
 #: ../../../module/Job/view/job/job/run.phtml:33
 #: ../../../module/Job/view/job/job/actions.phtml:33
@@ -305,7 +307,7 @@ msgid "Actions"
 msgstr ""
 
 #: ../../../module/Client/view/client/client/details.phtml:69
-msgid "Last backups"
+msgid "Last successful backups"
 msgstr ""
 
 #: ../../../module/Client/view/client/client/details.phtml:76
@@ -368,7 +370,8 @@ msgstr ""
 msgid "Bytes"
 msgstr ""
 
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:56
 #: ../../../module/Client/view/client/client/index.phtml:217
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
@@ -390,9 +393,7 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
-#: ../../../module/Client/view/client/client/details.phtml:213
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
+#: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr ""
 
@@ -445,6 +446,26 @@ msgstr ""
 msgid "There are no jobs running."
 msgstr ""
 
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
+msgid "Job Totals"
+msgstr ""
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr ""
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Job/view/job/job/details.phtml:163
+#: ../../../module/Job/view/job/job/index.phtml:164
+msgid "Start"
+msgstr ""
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../../../module/Job/view/job/job/details.phtml:167
+#: ../../../module/Job/view/job/job/index.phtml:168
+msgid "End"
+msgstr ""
+
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
 msgstr ""
@@ -471,26 +492,6 @@ msgstr ""
 
 #: ../../../module/Dashboard/view/partial/RunningJobs.phtml:31
 msgid "Running Jobs"
-msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
-msgid "Job Totals"
-msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../../../module/Job/view/job/job/details.phtml:163
-#: ../../../module/Job/view/job/job/index.phtml:164
-msgid "Start"
-msgstr ""
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../../../module/Job/view/job/job/details.phtml:167
-#: ../../../module/Job/view/job/job/index.phtml:168
-msgid "End"
 msgstr ""
 
 #: ../../../module/Director/view/director/director/console.phtml:33
@@ -530,6 +531,10 @@ msgstr ""
 msgid "Director messages"
 msgstr ""
 
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr ""
+
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
 msgstr ""
@@ -544,10 +549,6 @@ msgstr ""
 
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
 msgid "Creation time"
-msgstr ""
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
 msgstr ""
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:60

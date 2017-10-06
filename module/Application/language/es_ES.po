@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2017-06-06 12:14+0200\n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
 "PO-Revision-Date: 2016-11-16 15:42-0300\n"
 "Last-Translator: Braian Bressan <braian87bressan@hotmail.com>\n"
 "Language-Team: \n"
@@ -43,8 +43,10 @@ msgid "Run"
 msgstr "Ejecutar"
 
 #: ../../../module/Application/config/module.config.php:145
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:217
+#: ../../../module/Job/view/job/job/index.phtml:262
+#: ../../../module/Job/view/job/job/index.phtml:264
 #: ../../../module/Restore/src/Restore/Form/RestoreForm.php:594
 #: ../../../module/Restore/view/restore/restore/index.phtml:26
 msgid "Restore"
@@ -288,7 +290,7 @@ msgid "Jobretention"
 msgstr "Retención de taréas"
 
 #: ../../../module/Client/view/client/client/details.phtml:55
-#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:84
 #: ../../../module/Client/view/client/client/index.phtml:57
 #: ../../../module/Job/view/job/job/run.phtml:33
 #: ../../../module/Job/view/job/job/actions.phtml:33
@@ -306,7 +308,8 @@ msgid "Actions"
 msgstr "Operaciones"
 
 #: ../../../module/Client/view/client/client/details.phtml:69
-msgid "Last backups"
+#, fuzzy
+msgid "Last successful backups"
 msgstr "Última copia de seguridad"
 
 #: ../../../module/Client/view/client/client/details.phtml:76
@@ -369,7 +372,8 @@ msgstr "Archivos"
 msgid "Bytes"
 msgstr "Bytes"
 
-#: ../../../module/Client/view/client/client/details.phtml:141
+#: ../../../module/Client/view/client/client/details.phtml:83
+#: ../../../module/Client/view/client/client/details.phtml:142
 #: ../../../module/Client/view/client/client/index.phtml:56
 #: ../../../module/Client/view/client/client/index.phtml:217
 #: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:40
@@ -391,9 +395,7 @@ msgstr "Bytes"
 msgid "Status"
 msgstr "Estado"
 
-#: ../../../module/Client/view/client/client/details.phtml:213
-#: ../../../module/Job/view/job/job/index.phtml:262
-#: ../../../module/Job/view/job/job/index.phtml:264
+#: ../../../module/Client/view/client/client/details.phtml:221
 msgid "Show Files"
 msgstr "Mostrar Archivos"
 
@@ -447,6 +449,27 @@ msgstr ""
 msgid "There are no jobs running."
 msgstr ""
 
+#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
+#, fuzzy
+msgid "Job Totals"
+msgstr "Lista de taréas"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
+msgid "Most recent job status per job name"
+msgstr "Estado más reciente de taréa por nombre"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
+#: ../../../module/Job/view/job/job/details.phtml:163
+#: ../../../module/Job/view/job/job/index.phtml:164
+msgid "Start"
+msgstr "Inicio"
+
+#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
+#: ../../../module/Job/view/job/job/details.phtml:167
+#: ../../../module/Job/view/job/job/index.phtml:168
+msgid "End"
+msgstr "Fin"
+
 #: ../../../module/Dashboard/view/partial/JobsPast24h.phtml:31
 msgid "Jobs started during the past 24 hours"
 msgstr "Taréas iniciadas en las últimas 24hs"
@@ -475,27 +498,6 @@ msgstr "Mensajes actuales del Director"
 #, fuzzy
 msgid "Running Jobs"
 msgstr "En ejecución"
-
-#: ../../../module/Dashboard/view/partial/JobTotals.phtml:31
-#, fuzzy
-msgid "Job Totals"
-msgstr "Lista de taréas"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:31
-msgid "Most recent job status per job name"
-msgstr "Estado más reciente de taréa por nombre"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:45
-#: ../../../module/Job/view/job/job/details.phtml:163
-#: ../../../module/Job/view/job/job/index.phtml:164
-msgid "Start"
-msgstr "Inicio"
-
-#: ../../../module/Dashboard/view/partial/JobsLastStatus.phtml:46
-#: ../../../module/Job/view/job/job/details.phtml:167
-#: ../../../module/Job/view/job/job/index.phtml:168
-msgid "End"
-msgstr "Fin"
 
 #: ../../../module/Director/view/director/director/console.phtml:33
 #: ../../../module/Director/view/director/director/index.phtml:34
@@ -534,6 +536,10 @@ msgstr "Actualizar"
 msgid "Director messages"
 msgstr "Mensajes del Director"
 
+#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
+msgid "Filesets"
+msgstr "Conjuntos de archivos"
+
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:26
 msgid "Fileset details"
 msgstr "Detalle del conjunto de archivos"
@@ -549,10 +555,6 @@ msgstr "hash MD5"
 #: ../../../module/Fileset/view/fileset/fileset/details.phtml:48
 msgid "Creation time"
 msgstr "Fecha creado"
-
-#: ../../../module/Fileset/view/fileset/fileset/index.phtml:26
-msgid "Filesets"
-msgstr "Conjuntos de archivos"
 
 #: ../../../module/Job/src/Job/Form/JobForm.php:60
 #, fuzzy
