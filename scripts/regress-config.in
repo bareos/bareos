@@ -16,10 +16,12 @@ if [ -z "${CFLAGS}" ]; then
    export CFLAGS
 fi
 
-mkdir cmake-build
-cd cmake-build
+#mkdir cmake-build
+#cd cmake-build
 
-cmake  .. \
+pwd
+rm -f CMakeCache.txt
+cmake  . \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
       -DCMAKE_INSTALL_PREFIX:PATH=${1}/usr \
       -DCMAKE_INSTALL_LIBDIR:PATH=${1}/usr/lib \
@@ -61,6 +63,6 @@ cmake  .. \
 LD_LIBRARY_PATH=${1}/bin:${LD_LIBRARY_PATH}
 export LD_LIBRARY_PATH
 
-cd ..
+#cd ..
 
 exit 0

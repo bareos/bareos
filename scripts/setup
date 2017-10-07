@@ -86,9 +86,6 @@ check_exit_code
 #
 # Cleanup any build in source
 #
-
-cd cmake-build
-
 make clean
 make ${MAKEOPT}
 check_exit_code
