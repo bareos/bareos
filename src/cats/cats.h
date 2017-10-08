@@ -45,7 +45,6 @@
  *   cats directory.
  */
 
-#define SQL_QUERY(...) #__VA_ARGS__
 #define faddr_t long
 
 /**
