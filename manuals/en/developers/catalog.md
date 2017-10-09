@@ -209,6 +209,19 @@ the stand point of total database size. As a consequence, the user must
 take care to periodically reduce the number of File records using the
 <span>**retention**</span> command in the Console program.
 
+
+As MD5 hash (also termed message digests) consists of 128-bit (16-byte).
+A typical format (eg. `md5sum`, ...) to represent them is as a sequence of 32 hexadecimal digits.
+However, in the **MD5** column, the digest is represented as base64.
+
+To compare a Bareos digest with command line tools, you have to use
+
+    openssl dgst -md5 -binary $PATH_OF_YOUR_FILE | base64
+
+Also you have to note, that even the table column is named **MD5**,
+it used to store any kind of digest (MD5, SHA1, ...).
+This is not directly indicated by the value, however, you can determine the type depending of the length of the digest.
+
 ### Job / JobHisto
 
 Column Name | Data Type         | Remark

@@ -41,6 +41,29 @@ This release contains several enhancements. Excerpt:
 
 \releasenoteSection{Bareos-16.2}
 
+\releasenote{16.2.7}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2017-10-09\\
+Database Version  & 2004 (unchanged)\\
+Release Ticket    & \ticket{836}\\
+Url               & \releaseUrlDownloadBareosCom{16.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+    \item Fixes a Director crash, when enabling debugging output
+    \item \bcommand{.bvfs_lsdirs}{}: improve performance, especially when having a large number of directories
+    \item Utilize OpenSSL $\geq$ 1.1 if available
+    \item Windows: fixes silent upgrade (\command{winbareos-*.exe /S})
+    \item Windows: restore attributes also on directories (not only on files)
+    \item Fixes problem with SHA1 signature when compiled without OpenSSL (not relevant for bareos.org/bareos.com packages)
+    \item Packages for openSUSE Leap 42.3 have been added.
+\end{itemize}
+
+}
+
+
 \releasenote{16.2.6}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -58,7 +81,7 @@ This release contains several bugfixes and enhancements. Excerpt:
   \item New directive \configdirective{LanAddress} was added to the Client and Storage Resources of the director to facilitate a network topology where client and storage are situated inside of a LAN, but the Director is outside of that LAN. See \nameref{LanAddress} for details.
   \item A Problem in the storage abstraction layer was fixed where the director picked the wrong storage daemon when multiple storages/storage daemons were used.
   \item The device spool size calculation when using secure erase was fixed.
-  \item \bcommand{.bvfs_lsdirs} no longer shows empty directories from accurate jobs.
+  \item \bcommand{.bvfs_lsdirs}{} no longer shows empty directories from accurate jobs.
     \begin{itemize}
         \item \warning{This decreases performance if your environment has a large numbers of directories. Creating an index improves the performance.}
         %In Bareos 16.2.6 the SQL Query used by \bcommand{.bvfs_lsdirs}{} was changed to not show
