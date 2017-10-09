@@ -31,7 +31,7 @@
 /*
  * Initialize a new circular buffer.
  */
-int circbuf::init()
+int circbuf::init(int capacity)
 {
    if (pthread_mutex_init(&m_lock, NULL) != 0) {
       return -1;
@@ -51,7 +51,11 @@ int circbuf::init()
    m_next_in = 0;
    m_next_out = 0;
    m_size = 0;
-   m_capacity = QSIZE;
+   m_capacity = capacity;
+   if (m_data) {
+      free(m_data);
+   }
+   m_data = (void **)malloc(m_capacity * sizeof(void *));
 
    return 0;
 }
@@ -64,6 +68,10 @@ void circbuf::destroy()
    pthread_cond_destroy(&m_notempty);
    pthread_cond_destroy(&m_notfull);
    pthread_mutex_destroy(&m_lock);
+   if (m_data) {
+      free(m_data);
+      m_data = NULL;
+   }
 }
 
 /*
@@ -86,9 +94,9 @@ int circbuf::enqueue(void *data)
    m_next_in %= m_capacity;
 
    /*
-    * Let a waiting consumer know there is data.
+    * Let any waiting consumer know there is data.
     */
-   pthread_cond_signal(&m_notempty);
+   pthread_cond_broadcast(&m_notempty);
 
    pthread_mutex_unlock(&m_lock);
 
@@ -100,7 +108,7 @@ int circbuf::enqueue(void *data)
  */
 void *circbuf::dequeue()
 {
-   void *data;
+   void *data = NULL;
 
    if (pthread_mutex_lock(&m_lock) != 0) {
       return NULL;
@@ -117,10 +125,7 @@ void *circbuf::dequeue()
     * When we are requested to flush and there is no data left return NULL.
     */
    if (empty() && m_flush) {
-      m_flush = false;
-      pthread_mutex_unlock(&m_lock);
-
-      return NULL;
+      goto bail_out;
    }
 
    data = m_data[m_next_out++];
@@ -128,10 +133,11 @@ void *circbuf::dequeue()
    m_next_out %= m_capacity;
 
    /*
-    * Let a waiting producer know there is room.
+    * Let all waiting producers know there is room.
     */
-   pthread_cond_signal(&m_notfull);
+   pthread_cond_broadcast(&m_notfull);
 
+bail_out:
    pthread_mutex_unlock(&m_lock);
 
    return data;
@@ -169,12 +175,15 @@ int circbuf::flush()
       return -1;
    }
 
+   /*
+    * Set the flush flag.
+    */
    m_flush = true;
 
    /*
-    * Let a waiting consumer know there will be no more data.
+    * Let all waiting consumers know there will be no more data.
     */
-   pthread_cond_signal(&m_notempty);
+   pthread_cond_broadcast(&m_notempty);
 
    pthread_mutex_unlock(&m_lock);
 

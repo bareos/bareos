@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2017 Planets Communications B.V.
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,37 +19,59 @@
    02110-1301, USA.
 */
 /*
- * Marco van Wieringen, August 2013.
+ * Marco van Wieringen, December 2016.
  */
 
 /*
- * Circular buffer used for producer/consumer problem with pthread.
+ * Ordered Circular buffer used for producer/consumer problem with pthread.
  */
 
-#define QSIZE 10              /* # of pointers in the queue */
+#define OQSIZE 10             /* # of pointers in the queue */
 
-class circbuf : public SMARTALLOC {
+enum oc_peek_types {
+   PEEK_FIRST = 0,
+   PEEK_LAST,
+   PEEK_LIST
+};
+
+struct ocbuf_item {
+   dlink link;
+   uint32_t data_size;
+   void *data;
+};
+
+class ordered_circbuf : public SMARTALLOC {
 private:
    int m_size;
-   int m_next_in;
-   int m_next_out;
    int m_capacity;
+   int m_reserved;
    bool m_flush;
    pthread_mutex_t m_lock;    /* Lock the structure */
    pthread_cond_t m_notfull;  /* Full -> not full condition */
    pthread_cond_t m_notempty; /* Empty -> not empty condition */
-   void **m_data;             /* Circular buffer of pointers */
+   dlist *m_data;             /* Circular buffer of pointers */
 
 public:
-   circbuf(int capacity = QSIZE);
-   ~circbuf();
+   ordered_circbuf(int capacity = OQSIZE);
+   ~ordered_circbuf();
    int init(int capacity);
    void destroy();
-   int enqueue(void *data);
-   void *dequeue();
-   int next_slot();
+   void *enqueue(void *data,
+                 uint32_t data_size,
+                 int compare(void *item1, void *item2),
+                 void update(void *item1, void *item2),
+                 bool use_reserved_slot = false,
+                 bool no_signal = false);
+   void *dequeue(bool reserve_slot = false,
+                 bool requeued = false,
+                 struct timespec *ts = NULL,
+                 int timeout = 300);
+   void *peek(enum oc_peek_types type,
+              void *data,
+              int callback(void *item1, void *item2));
+   int unreserve_slot();
    int flush();
-   bool full() { return m_size == m_capacity; };
+   bool full() { return m_size == (m_capacity - m_reserved); };
    bool empty() { return m_size == 0; };
    bool is_flushing() { return m_flush; };
    int capacity() const { return m_capacity; };
@@ -58,16 +80,15 @@ public:
 /*
  * Constructor
  */
-inline circbuf::circbuf(int capacity)
+inline ordered_circbuf::ordered_circbuf(int capacity)
 {
-   m_data = NULL;
    init(capacity);
 }
 
 /*
  * Destructor
  */
-inline circbuf::~circbuf()
+inline ordered_circbuf::~ordered_circbuf()
 {
    destroy();
 }

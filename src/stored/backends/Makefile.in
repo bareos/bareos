@@ -32,6 +32,9 @@ RADOS_LIBS = @RADOS_STRIPER_LIBS@ @RADOS_LIBS@
 CHEPHFS_SRCS = cephfs_device.c
 CHEPHFS_LOBJS = $(CHEPHFS_SRCS:.c=.lo)
 
+CHUNKED_SRCS = chunked_device.c
+CHUNKED_LOBJS = $(CHUNKED_SRCS:.c=.lo)
+
 ELASTO_SRCS = elasto_device.c
 ELASTO_LOBJS = $(ELASTO_SRCS:.c=.lo)
 
@@ -80,6 +83,7 @@ STORED_RESTYPES = autochanger device director ndmp messages storage
 $(ELASTO_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(ELASTO_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(CHEPHFS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -94,6 +98,7 @@ $(GFAPI_LOBJS):
 $(OBJECT_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DROPLET_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(RADOS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -110,6 +115,11 @@ libbareossd-cephfs.la: Makefile $(CHEPHFS_LOBJS)
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(CHEPHFS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-cephfs-$(LIBBAREOSSD_LT_RELEASE).so $(CEPHFS_LIBS) -lbareos
 
+libbareossd-chunked.la: Makefile $(CHUNKED_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(CHUNKED_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
+							   -soname libbareossd-chunked-$(LIBBAREOSSD_LT_RELEASE).so -lbareos
+
 libbareossd-elasto.la: Makefile $(ELASTO_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(ELASTO_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
@@ -120,10 +130,10 @@ libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-gfapi-$(LIBBAREOSSD_LT_RELEASE).so $(GLUSTER_LIBS) -lbareos
 
-libbareossd-object.la: Makefile $(OBJECT_LOBJS)
+libbareossd-object.la: Makefile libbareossd-chunked.la $(OBJECT_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(OBJECT_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-object-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) -lbareos
+							   -soname libbareossd-object-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) libbareossd-chunked.la -lbareos
 
 libbareossd-rados.la: Makefile $(RADOS_LOBJS)
 	@echo "Making $@ ..."

@@ -52,10 +52,6 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp);
 static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp);
 static void sendit(const char *msg, int len, void *arg);
 
-static void trigger_device_status_hook(JCR *jcr,
-                                       DEVRES *device,
-                                       STATUS_PKT *sp,
-                                       bsdEventType eventType);
 static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp);
 static void send_device_status(DEVICE *dev, STATUS_PKT *sp);
 static void list_terminated_jobs(STATUS_PKT *sp);
@@ -214,6 +210,49 @@ static bool need_to_list_device(const char *devicenames, DEVRES *device)
    return true;
 }
 
+/*
+ * Trigger the specific eventtype to get status information from any plugin that
+ * registered the event to return specific device information.
+ */
+static void trigger_device_status_hook(JCR *jcr,
+                                       DEVRES *device,
+                                       STATUS_PKT *sp,
+                                       bsdEventType eventType)
+{
+   bsdDevStatTrig dst;
+
+   dst.device = device;
+   dst.status = get_pool_memory(PM_MESSAGE);
+   dst.status_length = 0;
+
+   if (generate_plugin_event(jcr, eventType, &dst) == bRC_OK) {
+      if (dst.status_length > 0) {
+         sendit(dst.status, dst.status_length, sp);
+      }
+   }
+   free_pool_memory(dst.status);
+}
+
+/*
+ * Ask the device if it want to log something specific in the status overview.
+ */
+static void get_device_specific_status(DEVRES *device,
+                                       STATUS_PKT *sp)
+{
+   bsdDevStatTrig dst;
+
+   dst.device = device;
+   dst.status = get_pool_memory(PM_MESSAGE);
+   dst.status_length = 0;
+
+   if (device->dev->device_status(&dst)) {
+      if (dst.status_length > 0) {
+         sendit(dst.status, dst.status_length, sp);
+      }
+   }
+   free_pool_memory(dst.status);
+}
+
 static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
 {
    int len;
@@ -300,7 +339,9 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
             sendit(msg, len, sp);
          }
 
+         get_device_specific_status(device, sp);
          trigger_device_status_hook(jcr, device, sp, bsdEventDriveStatus);
+
          send_blocked_status(dev, sp);
 
          if (dev->can_append()) {
@@ -346,6 +387,8 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
             len = Mmsg(msg, _("\nDevice \"%s\" is not open or does not exist.\n"), device->name());
             sendit(msg, len, sp);
          }
+
+         get_device_specific_status(device, sp);
       }
 
       if (!sp->api) {
@@ -450,25 +493,6 @@ static void list_status_header(STATUS_PKT *sp)
    if (len > 0) {
       sendit(msg.c_str(), len, sp);
    }
-}
-
-static void trigger_device_status_hook(JCR *jcr,
-                                       DEVRES *device,
-                                       STATUS_PKT *sp,
-                                       bsdEventType eventType)
-{
-   bsdDevStatTrig dst;
-
-   dst.device = device;
-   dst.status = get_pool_memory(PM_MESSAGE);
-   dst.status_length = 0;
-
-   if (generate_plugin_event(jcr, eventType, &dst) == bRC_OK) {
-      if (dst.status_length > 0) {
-         sendit(dst.status, dst.status_length, sp);
-      }
-   }
-   free_pool_memory(dst.status);
 }
 
 static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)

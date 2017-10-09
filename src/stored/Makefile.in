@@ -28,6 +28,7 @@ first_rule: all
 dummy:
 
 AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
+			    chunked_device.c \
 			    elasto_device.c \
 			    gfapi_device.c \
 			    object_store_device.c \
