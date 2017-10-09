@@ -241,6 +241,7 @@ Package:        bareos-storage
 Architecture:   any
 Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0, adduser
 Depends:        bareos-common (= ${binary:Version}), lsb-base (>= 3.2-13), lsof, ${shlibs:Depends}, ${misc:Depends}
+Recommends:     bareos-tools
 Conflicts:      bacula-sd
 Replaces:       bacula-sd
 Breaks:         bareos-storage-tape (<< 14.2.6~)

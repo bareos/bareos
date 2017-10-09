@@ -298,8 +298,11 @@ Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): pwdutils
+Recommends: bareos-tools
 %else
 Requires(pre): shadow-utils
+# Recommends would be enough, however only supported by Fedora >= 24.
+Requires: bareos-tools
 %endif
 
 %if 0%{?glusterfs}
@@ -854,7 +857,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # console package
 %defattr(-, root, root)
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
-%{script_dir}/bconsole
 %{_bindir}/bconsole
 %{_sbindir}/bconsole
 %{_mandir}/man1/bconsole.1.gz
