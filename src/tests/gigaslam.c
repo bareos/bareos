@@ -19,6 +19,9 @@
 
 */
 
+/* Define to make fseeko etc. visible, on some hosts e.g. HP-UX */
+#define _LARGEFILE_SOURCE 1
+
 #define HOW_BIG   1000000000ll
 
 #ifdef __GNUC__

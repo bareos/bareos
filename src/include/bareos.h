@@ -78,6 +78,10 @@
 
 #include "hostconfig.h"
 
+#ifdef HAVE_HPUX_OS
+#undef HAVE_LCHMOD
+#endif
+
 #define _REENTRANT    1
 #define _THREAD_SAFE  1
 #define _POSIX_PTHREAD_SEMANTICS 1
@@ -96,9 +100,6 @@
 #include <stdlib.h>
 #endif
 #if HAVE_UNISTD_H
-#  ifdef HAVE_HPUX_OS
-#  undef _INCLUDE_POSIX1C_SOURCE
-#  endif
 #include <unistd.h>
 #endif
 #if HAVE_UMEM_H
