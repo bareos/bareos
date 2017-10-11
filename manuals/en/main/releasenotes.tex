@@ -16,13 +16,14 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-17.2}
 
-\releasenoteUnstable{17.2.2}{
+\releasenoteUnstable{17.2.4-rc}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
 Code Release      & \\
-Database Version  & 2170\\
-Release Ticket    & \\
-Url               & \\
+Database Version  & 2171\\
+Release Ticket    & \ticket{861}\\
+Url               & \releaseUrlDownloadBareosOrg{17.2} \\
+%                  & \hide{\releaseUrlDownloadBareosCom{17.2}} \\
 \end{tabular}
 
 This release contains several enhancements. Excerpt:
@@ -31,7 +32,7 @@ This release contains several enhancements. Excerpt:
   \begin{itemize}
     \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions).
     \item For the denormalization the database schema must be modified.
-          \warning{Updating the database to schema version 2170 will increase the required disk space.
+          \warning{Updating the database to schema version $\geq$ 2170 will increase the required disk space.
                 Especially it will require around twice the amount of the current database disk space during the migration.}
   \end{itemize}
 \end{itemize}
