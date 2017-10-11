@@ -678,22 +678,27 @@ ssize_t chunked_device::read_chunked(int fd, void *buffer, size_t count)
          /*
           * We cannot fulfill the read from the current chunk, see how much
           * is available and return that and see if by reading the next chunk
-          * we can fulfill the whole read.
+          * we can fulfill the whole read. When then we still have not filled
+          * the whole buffer we keep on reading any next chunk until none are
+          * left and we have reached End Of Media.
           */
          while (retval < (ssize_t)count) {
             /*
              * See how much is left in this chunk.
              */
-            wanted_offset = (m_offset % m_current_chunk->chunk_size);
-            bytes_left = MIN((ssize_t)count, (m_current_chunk->buflen - wanted_offset));
+            if (m_offset < m_current_chunk->end_offset) {
+               wanted_offset = (m_offset % m_current_chunk->chunk_size);
+               bytes_left = MIN((ssize_t)(count - offset),
+                                (ssize_t)(m_current_chunk->buflen - wanted_offset));
 
-            if (bytes_left > 0) {
-               Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n", bytes_left, wanted_offset);
+               if (bytes_left > 0) {
+                  Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n", bytes_left, wanted_offset);
 
-               memcpy(buffer, m_current_chunk->buffer + wanted_offset, bytes_left);
-               m_offset += bytes_left;
-               offset += bytes_left;
-               retval += bytes_left;
+                  memcpy(((char *)buffer + offset), m_current_chunk->buffer + wanted_offset, bytes_left);
+                  m_offset += bytes_left;
+                  offset += bytes_left;
+                  retval += bytes_left;
+               }
             }
 
             /*
@@ -714,13 +719,18 @@ ssize_t chunked_device::read_chunked(int fd, void *buffer, size_t count)
                   goto bail_out;
                }
             } else {
-               bytes_left = MIN((boffset_t)(count - retval), m_current_chunk->buflen);
+               /*
+                * Calculate how much data we can read from the just freshly read chunk.
+                */
+               bytes_left = MIN((ssize_t)(count - offset),
+                                (ssize_t)(m_current_chunk->buflen));
 
                if (bytes_left > 0) {
                   Dmsg2(200, "Reading %d bytes at offset %d from chunk buffer\n", bytes_left, 0);
 
-                  memcpy((char *)buffer + offset, m_current_chunk->buffer, bytes_left);
+                  memcpy(((char *)buffer + offset), m_current_chunk->buffer, bytes_left);
                   m_offset += bytes_left;
+                  offset += bytes_left;
                   retval += bytes_left;
                }
             }
@@ -789,30 +799,30 @@ ssize_t chunked_device::write_chunked(int fd, const void *buffer, size_t count)
          /*
           * Things don't fit so first write as many bytes as can be written into
           * the current chunk and then flush it and write the next bytes into the
-          * next chunk.
+          * next chunk. When then things still don't fit loop until all bytes are
+          * written.
           */
          while (retval < (ssize_t)count) {
             /*
              * See how much is left in this chunk.
              */
-            wanted_offset = (m_offset % m_current_chunk->chunk_size);
-            bytes_left = ((m_current_chunk->end_offset - (m_current_chunk->start_offset + wanted_offset)) + 1);
+            if (m_offset < m_current_chunk->end_offset) {
+               wanted_offset = (m_offset % m_current_chunk->chunk_size);
+               bytes_left = MIN((ssize_t)(count - offset),
+                                (ssize_t)((m_current_chunk->end_offset - (m_current_chunk->start_offset + wanted_offset)) + 1));
 
-            if (bytes_left > 0) {
-               Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n", bytes_left, wanted_offset);
+               if (bytes_left > 0) {
+                  Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n", bytes_left, wanted_offset);
 
-               memcpy(m_current_chunk->buffer + wanted_offset, buffer, bytes_left);
-               m_offset += bytes_left;
-               if ((wanted_offset + bytes_left) > m_current_chunk->buflen) {
-                  m_current_chunk->buflen = wanted_offset + bytes_left;
+                  memcpy(m_current_chunk->buffer + wanted_offset, ((char *)buffer + offset), bytes_left);
+                  m_offset += bytes_left;
+                  if ((wanted_offset + bytes_left) > m_current_chunk->buflen) {
+                     m_current_chunk->buflen = wanted_offset + bytes_left;
+                  }
+                  m_current_chunk->need_flushing = true;
+                  offset += bytes_left;
+                  retval += bytes_left;
                }
-               m_current_chunk->need_flushing = true;
-               retval += bytes_left;
-
-               /*
-                * Keep track of the number of bytes we already consumed.
-                */
-               offset += bytes_left;
             }
 
             /*
@@ -823,14 +833,19 @@ ssize_t chunked_device::write_chunked(int fd, const void *buffer, size_t count)
                goto bail_out;
             }
 
-            bytes_left = MIN((boffset_t)(count - retval), ((m_current_chunk->end_offset - m_current_chunk->start_offset) + 1));
+            /*
+             * Calculate how much data we can fit into the just freshly created chunk.
+             */
+            bytes_left = MIN((ssize_t)(count - offset),
+                             (ssize_t)((m_current_chunk->end_offset - m_current_chunk->start_offset) + 1));
             if (bytes_left > 0) {
                Dmsg2(200, "Writing %d bytes at offset %d in chunk buffer\n", bytes_left, 0);
 
-               memcpy(m_current_chunk->buffer, (char *)buffer + offset, bytes_left);
+               memcpy(m_current_chunk->buffer, ((char *)buffer + offset), bytes_left);
                m_current_chunk->buflen = bytes_left;
                m_current_chunk->need_flushing = true;
                m_offset += bytes_left;
+               offset += bytes_left;
                retval += bytes_left;
             }
          }
