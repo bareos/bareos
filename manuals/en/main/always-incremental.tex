@@ -42,7 +42,7 @@ The Always Incremental Backup Scheme does only incremental backups of clients,
 which reduces the amount of data transferred over the network to a minimum.
 
 \limitation*{Always Incremental Backup}{Only suitable for file based backups}{%
-Always Incremental backups are only suitable for file based backups. Other data can not be combined server side (e.g. vmware plugings, NDMP, ...
+Always Incremental backups are only suitable for file based backups. Other data can not be combined on the server side (e.g. vmware plugings, NDMP, ...)
 }
 
 The Always Incremental Backup Scheme works as follows:
@@ -137,7 +137,8 @@ If not, you have to add them. You can use arbitrary, but valid values.}
 
 \subsection{Storages and Pools}
 
-For the Always Incremental Backup Scheme at least two storages are needed.
+For the Always Incremental Backup Scheme at least two storages are needed. See \nameref{sec:MultipleStorageDevices} how to setup multiple storages.
+
 
 \begin{bareosConfigResource}{bareos-dir}{pool}{AI-Incremental}
 Pool {
