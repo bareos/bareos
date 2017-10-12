@@ -139,7 +139,7 @@ do
       exit 1
    fi
 
-   if [ ${DBVERSION} -le 2170 ]; then
+   if [ ${DBVERSION} -lt 2170 ]; then
       echo "WARNING:"
       echo "  Updating the database to schema version 2170 will increase the required disk space."
       echo "  Especially it will require around twice the amount of disk space, during the migration."
