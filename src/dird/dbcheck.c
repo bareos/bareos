@@ -84,7 +84,6 @@ static void eliminate_duplicate_paths();
 static void eliminate_orphaned_jobmedia_records();
 static void eliminate_orphaned_file_records();
 static void eliminate_orphaned_path_records();
-static void eliminate_orphaned_filename_records();
 static void eliminate_orphaned_fileset_records();
 static void eliminate_orphaned_client_records();
 static void eliminate_orphaned_job_records();
@@ -330,7 +329,6 @@ int main (int argc, char *argv[])
       eliminate_orphaned_jobmedia_records();
       eliminate_orphaned_file_records();
       eliminate_orphaned_path_records();
-      eliminate_orphaned_filename_records();
       eliminate_orphaned_fileset_records();
       eliminate_orphaned_client_records();
       eliminate_orphaned_job_records();
@@ -406,13 +404,12 @@ static void do_interactive_mode()
 "     6) Eliminate orphaned Jobmedia records\n"
 "     7) Eliminate orphaned File records\n"
 "     8) Eliminate orphaned Path records\n"
-"     9) Eliminate orphaned Filename records\n"
 "    10) Eliminate orphaned FileSet records\n"
 "    11) Eliminate orphaned Client records\n"
 "    12) Eliminate orphaned Job records\n"
 "    13) Eliminate all Admin records\n"
 "    14) Eliminate all Restore records\n"
-"    15) All (3-15)\n"
+"    15) All (3-14)\n"
 "    16) Quit\n"));
        } else {
          printf(_("\n"
@@ -424,13 +421,12 @@ static void do_interactive_mode()
 "     6) Check for orphaned Jobmedia records\n"
 "     7) Check for orphaned File records\n"
 "     8) Check for orphaned Path records\n"
-"     9) Check for orphaned Filename records\n"
 "    10) Check for orphaned FileSet records\n"
 "    11) Check for orphaned Client records\n"
 "    12) Check for orphaned Job records\n"
 "    13) Check for all Admin records\n"
 "    14) Check for all Restore records\n"
-"    15) All (3-15)\n"
+"    15) All (3-14)\n"
 "    16) Quit\n"));
        }
 
@@ -470,9 +466,6 @@ static void do_interactive_mode()
          case 8:
             eliminate_orphaned_path_records();
             break;
-         case 9:
-            eliminate_orphaned_filename_records();
-            break;
          case 10:
             eliminate_orphaned_fileset_records();
             break;
@@ -495,7 +488,6 @@ static void do_interactive_mode()
             eliminate_orphaned_jobmedia_records();
             eliminate_orphaned_file_records();
             eliminate_orphaned_path_records();
-            eliminate_orphaned_filename_records();
             eliminate_orphaned_fileset_records();
             eliminate_orphaned_client_records();
             eliminate_orphaned_job_records();
@@ -908,68 +900,6 @@ static void eliminate_orphaned_path_records()
     * Drop temporary index idx_tmp_name
     */
    drop_tmp_idx("idxPIchk", "File");
-}
-
-static void eliminate_orphaned_filename_records()
-{
-   idx_tmp_name = NULL;
-   /*
-    * Check the existence of the required "one column" index
-    */
-   if (!check_idx("PathId") )      {
-      if (yes_no(_("Create temporary index? (yes/no): "), true)) {
-         /*
-          * Create temporary index PathId
-          */
-         create_tmp_idx("idxFIchk", "File", "PathId");
-      }
-   }
-
-   const char *query = "SELECT File.FileId,Path.PathId FROM File "
-                "LEFT OUTER JOIN Path USING(PathId) "
-                "WHERE Path.PathId IS NULL LIMIT 300000";
-
-   printf(_("Checking for orphaned Filename entries. This may take some time!\n"));
-   if (verbose > 1) {
-      printf("%s\n", query);
-   }
-   fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
-      exit(1);
-   }
-   /*
-    * Loop doing 300000 at a time
-    */
-   while (id_list.num_ids != 0) {
-      printf(_("Found %d orphaned Filename records.\n"), id_list.num_ids);
-      fflush(stdout);
-      if (id_list.num_ids && verbose && yes_no(_("Print them? (yes/no): "))) {
-         for (int i=0; i < id_list.num_ids; i++) {
-            char ed1[50];
-            bsnprintf(buf, sizeof(buf), "SELECT Name FROM File WHERE FileId=%s",
-               edit_int64(id_list.Id[i], ed1));
-            db->sql_query(buf, print_name_handler, NULL);
-         }
-      }
-      if (quit) {
-         return;
-      }
-      if (fix && id_list.num_ids > 0) {
-         printf(_("Deleting %d orphaned Filename records.\n"), id_list.num_ids);
-         fflush(stdout);
-         delete_id_list("DELETE FROM File WHERE FileId=%s", &id_list);
-      } else {
-         break;                       /* get out if not updating db */
-      }
-      if (!make_id_list(query, &id_list)) {
-         exit(1);
-      }
-   }
-   /*
-    * Drop temporary index idx_tmp_name
-    */
-   drop_tmp_idx("idxFIchk", "File");
-
 }
 
 static void eliminate_orphaned_fileset_records()
