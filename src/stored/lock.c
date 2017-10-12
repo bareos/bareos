@@ -392,14 +392,13 @@ void DEVICE::rLock(bool locked)
       num_waiting++;             /* indicate that I am waiting */
       while (blocked()) {
          int status;
-#ifndef HAVE_WIN32
-         /*
-          * thread id on Win32 may be a struct
-          */
-         Dmsg3(sd_dbglvl, "rLock blked=%s no_wait=%p me=%p\n", print_blocked(),
-               no_wait_id, pthread_self());
-#endif
-         if ((status = pthread_cond_wait(&this->wait, &m_mutex)) != 0) {
+         char ed1[50], ed2[50];
+
+         Dmsg3(sd_dbglvl, "rLock blked=%s no_wait=%s me=%s\n",
+               print_blocked(),
+               edit_pthread(no_wait_id, ed1, sizeof(ed1)),
+               edit_pthread(pthread_self(), ed2, sizeof(ed2)));
+         if ((status = pthread_cond_wait(&wait, &m_mutex)) != 0) {
             berrno be;
             this->Unlock();
             Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),

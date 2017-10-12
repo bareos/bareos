@@ -235,6 +235,7 @@ bool duration_to_utime(char *str, utime_t *value);
 bool size_to_uint64(char *str, uint64_t *value);
 bool speed_to_uint64(char *str, uint64_t *value);
 char *edit_utime(utime_t val, char *buf, int buf_len);
+char *edit_pthread(pthread_t val, char *buf, int buf_len);
 bool is_a_number(const char *num);
 bool is_a_number_list(const char *n);
 bool is_an_integer(const char *n);

@@ -24,6 +24,16 @@
  * Kern Sibbald, MM
  * Robert Nelson, May, 2006 <robertn@the-nelsons.org>
  * Extracted from other source files Marco van Wieringen, December 2013
+ *
+ * Stacking is the following:
+ *
+ *  win32_tape_device::
+ *         |
+ *         v
+ * generic_tape_device::
+ *         |
+ *         v
+ *      DEVICE::
  */
 /**
  * @file

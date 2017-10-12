@@ -80,6 +80,7 @@
 #include "backends/gfapi_device.h"
 #endif
 #ifdef HAVE_OBJECTSTORE
+#include "backends/chunked_device.h"
 #include "backends/object_store_device.h"
 #endif
 #ifdef HAVE_RADOS
@@ -163,8 +164,8 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
          device->dev_type = B_FIFO_DEV;
       } else if (!bit_is_set(CAP_REQMOUNT, device->cap_bits)) {
          Jmsg2(jcr, M_ERROR, 0,
-               _("%s is an unknown device type. Must be tape or directory, st_mode=%x\n"),
-               device->device_name, statp.st_mode);
+               _("%s is an unknown device type. Must be tape or directory, st_mode=%04o\n"),
+               device->device_name, (statp.st_mode & ~S_IFMT));
          return NULL;
       }
    }
@@ -588,7 +589,7 @@ bool DEVICE::open(DCR *dcr, int omode)
     */
    clone_bits(ST_MAX, preserve, state);
 
-   Dmsg2(100, "preserve=0x%x fd=%d\n", preserve, m_fd);
+   Dmsg2(100, "preserve=%08o fd=%d\n", preserve, m_fd);
 
    return m_fd >= 0;
 }
@@ -653,7 +654,7 @@ void DEVICE::open_device(DCR *dcr, int omode)
    /*
     * If creating file, give 0640 permissions
     */
-   Dmsg3(100, "open disk: mode=%s open(%s, 0x%x, 0640)\n", mode_to_str(omode),
+   Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
          archive_name.c_str(), oflags);
 
    if ((m_fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {

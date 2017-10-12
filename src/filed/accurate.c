@@ -224,8 +224,9 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
           * Backup only the attribute stream
           */
          if (statc.st_mode != ff_pkt->statp.st_mode) {
-            Dmsg3(dbglvl-1, "%s     st_mode  differ. Cat: %x File: %x\n",
-                  fname, (uint32_t)statc.st_mode, (uint32_t)ff_pkt->statp.st_mode);
+            Dmsg3(dbglvl-1, "%s     st_mode  differ. Cat: %04o File: %04o\n",
+                  fname, (uint32_t)(statc.st_mode & ~S_IFMT),
+                  (uint32_t)(ff_pkt->statp.st_mode & ~S_IFMT));
             status = true;
          }
          break;

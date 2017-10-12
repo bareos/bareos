@@ -252,11 +252,21 @@ struct BLOCKSIZES {
    uint32_t min_block_size;
 };
 
-class DEVRES; /* Device resource defined in stored_conf.h */
+class DEVRES; /* Forward reference Device resource defined in stored_conf.h */
 class DCR; /* Forward reference */
 class VOLRES; /* Forward reference */
 
 /**
+ * Device specific status information either returned via DEVICE::device_status()
+ * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
+ */
+typedef struct DevStatTrigger {
+   DEVRES *device;
+   POOLMEM *status;
+   int status_length;
+} bsdDevStatTrig;
+
+/*
  * Device structure definition.
  *
  * There is one of these for each physical device. Everything here is "global" to
@@ -506,6 +516,7 @@ public:
    virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
    virtual bool mount_backend(DCR *dcr, int timeout) { return true; };
    virtual bool unmount_backend(DCR *dcr, int timeout) { return true; };
+   virtual bool device_status(bsdDevStatTrig *dst) { return false; };
    boffset_t lseek(DCR *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
    bool truncate(DCR *dcr) { return d_truncate(dcr); };
 

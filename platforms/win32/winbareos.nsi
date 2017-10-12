@@ -34,6 +34,38 @@ BrandingText "Bareos Installer"
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\bareos-fd.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
+!define INSTALLER_HELP "[/S silent install]$\r$\n\
+[/SILENTKEEPCONFIG keep config on silent upgrades]$\r$\n\
+[/WRITELOGS log to INSTDIR\install.log]$\r$\n\
+[/D=installation directory (HAS TO BE THE LAST OPTION !)]$\r$\n\
+$\r$\n\
+[/CLIENTNAME=name]$\r$\n\
+[/CLIENTPASSWORD=password]$\r$\n\
+[/CLIENTADDRESS=network address]$\r$\n\
+[/CLIENTMONITORPASSWORD=password]$\r$\n\
+[/CLIENTCOMPATIBLE=compatible mode <0=no,1=yes>]$\r$\n\
+$\r$\n\
+[/DIRECTORADDRESS=network address]$\r$\n\
+[/DIRECTORNAME=name]$\r$\n\
+[/DIRECTORPASSWORD=password]$\r$\n\
+$\r$\n\
+[/INSTALLDIRECTOR]$\r$\n\
+[/DBDRIVER=database driver <postgresql (default)|sqlite3>]$\r$\n\
+[/DBADMINUSER=database user (only Postgres)]$\r$\n\
+[/DBADMINPASSWORD=database password (only Postgres)]$\r$\n\
+[/INSTALLWEBUI requires 'Visual C++ Redistributable for Visual Studio 2012 x86', sets /INSTALLDIRECTOR]$\r$\n\
+[/WEBUILISTENADDRESS=network address, default 127.0.0.1]$\r$\n\
+[/WEBUILISTENPORT=network port, default 9100]$\r$\n\
+[/WEBUILOGIN=login name, default admin]$\r$\n\
+[/WEBUIPASSWORD=password, default admin]$\r$\n\
+$\r$\n\
+[/INSTALLSTORAGE]$\r$\n\
+[/STORAGENAME=name]$\r$\n\
+[/STORAGEPASSWORD=password]$\r$\n\
+[/STORAGEADDRESS=network address]$\r$\n\
+[/STORAGEMONITORPASSWORD=password]$\r$\n\
+$\r$\n\
+[/? (this help dialog)]"
 
 SetCompressor lzma
 
@@ -233,9 +265,8 @@ ${EndIf}
 # See http://nsis.sourceforge.net/Tutorial:_Using_labels_in_macro%27s
 
 
-    StrCmp $WriteLogs "yes" 0 +2
-       LogEx::Init false $INSTDIR\sql.log
-    StrCmp $WriteLogs "yes" 0 +2
+    StrCmp $WriteLogs "yes" 0 +3
+      LogEx::Init false $INSTDIR\sql.log
       LogEx::Write "PostgresPath=$PostgresPath"
 
 
@@ -1290,42 +1321,28 @@ Function .onInit
   ${GetParameters} $cmdLineParams
   ClearErrors
 
+  #
+  # enable logging?
+  #
+  StrCpy $WriteLogs "yes"
+  ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
+  IfErrors 0 +2         # error is set if NOT found
+    StrCpy $WriteLogs "no"
+  ClearErrors
+
+!If ${WIN_DEBUG} == yes
+    StrCpy $WriteLogs "yes"
+!EndIf
+
+  StrCmp $WriteLogs "yes" 0 +3
+     LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
+     LogText "Logging started, INSTDIR is $INSTDIR"
+
   #  /? param (help)
   ClearErrors
   ${GetOptions} $cmdLineParams '/?' $R0
   IfErrors +3 0
-  MessageBox MB_OK|MB_ICONINFORMATION "[/CLIENTNAME=Name of the client ressource]$\r$\n\
-                    [/CLIENTPASSWORD=Password to access the client]$\r$\n\
-                    [/CLIENTADDRESS=Network Address of the client]$\r$\n\
-                    [/CLIENTMONITORPASSWORD=Password for monitor access]$\r$\n\
-                    [/CLIENTCOMPATIBLE=(0/1) client compatible setting (0=no,1=yes)]$\r$\n\
-                    $\r$\n\
-                    [/DIRECTORADDRESS=Network Address of the Director (for bconsole)]$\r$\n\
-                    [/DIRECTORNAME=Name of Director to access the client and of the Director accessed by bconsole]$\r$\n\
-                    [/DIRECTORPASSWORD=Password to access Director]$\r$\n\
-                    $\r$\n\
-                    [/STORAGENAME=Name of the storage ressource]$\r$\n\
-                    [/STORAGEPASSWORD=Password to access the storage]$\r$\n\
-                    [/STORAGEADDRESS=Network Address of the storage]$\r$\n\
-                    [/STORAGEMONITORPASSWORD=Password for monitor access]$\r$\n\
-                    $\r$\n\
-                    [/INSTALLDIRECTOR Installs Director and Components, needs postgresql installed locally! ]$\r$\n\
-                    [/INSTALLWEBUI Installs Bareos WebUI Components, REQUIRES Visual C++ Redistributable for Visual Studio 2012 x86, implicitly sets /INSTALLDIRECTOR]$\r$\n\
-                    [/WEBUILISTENADDRESS=webui listen address, default 127.0.0.1]$\r$\n\
-                    [/WEBUILISTENPORT=webui listen port, default 9100]$\r$\n\
-                    [/WEBUILOGIN=Login Name for WebUI, default admin]$\r$\n\
-                    [/WEBUIPASSWORD=Password for WebUI, default admin]$\r$\n\
-                    [/DBDRIVER=Database Driver <postgresql|sqlite3>, postgresql is default if not specified]$\r$\n\
-                    [/DBADMINUSER=Database Admin User (not needed for sqlite3)]$\r$\n\
-                    [/DBADMINPASSWORD=Database Admin Password (not needed for sqlite3)]$\r$\n\
-                    [/INSTALLSTORAGE  Installs Storage Daemon and Components]$\r$\n\
-                    $\r$\n\
-                    [/S silent install without user interaction]$\r$\n\
-                        (deletes config files on uinstall, moves existing config files away and uses newly new ones)$\r$\n\
-                    [/SILENTKEEPCONFIG keep configuration files on silent uninstall and use existing config files during silent install]$\r$\n\
-                    [/D=C:\specify\installation\directory (! HAS TO BE THE LAST OPTION !)$\r$\n\
-                    [/? (this help dialog)] $\r$\n\
-                    [/WRITELOGS lets the installer create log files in INSTDIR]"
+  MessageBox MB_OK|MB_ICONINFORMATION "${INSTALLER_HELP}"
   Abort
 
   # Check if this is Windows NT.
@@ -1337,6 +1354,7 @@ Function .onInit
 
   # Check if we are installing on 64Bit, then do some settings
   ${If} ${RunningX64} # 64Bit OS
+    LogText "Windows 64 bit"
     ${If} ${BIT_WIDTH} == '32'
       MessageBox MB_OK|MB_ICONSTOP "You are running a 32 Bit installer on a 64 Bit OS.$\r$\nPlease use the 64 Bit installer."
       Abort
@@ -1348,6 +1366,7 @@ Function .onInit
     SetRegView 64
     ${EnableX64FSRedirection}
   ${Else} # 32Bit OS
+    LogText "Windows 32 bit"
     ${If} ${BIT_WIDTH} == '64'
       MessageBox MB_OK|MB_ICONSTOP "You are running a 64 Bit installer on a 32 Bit OS.$\r$\nPlease use the 32 Bit installer."
       Abort
@@ -1356,7 +1375,6 @@ Function .onInit
 
 
   !insertmacro getPostgresVars
-
 
   #
   # UPGRADE: if already installed allow to uninstall installed version
@@ -1373,18 +1391,22 @@ Function .onInit
   #
   StrCmp $R0 "" done
 
+  LogText "Prior Bareos version installed: $0"
+
   #
   # As versions before 12.4.5 cannot keep the config files during silent install, we do not support upgrading here
   #
   ${VersionCompare} "12.4.5" "$0" $1
   ${select} $1
   ${case} 1
-      MessageBox MB_OK|MB_ICONSTOP "Upgrade from version $0 is not supported.$\r$\nPlease uninstall and then install again."
+      MessageBox MB_OK|MB_ICONSTOP "Upgrade from version $0 is not supported.$\r$\n \
+         Please uninstall and then install again."
       Abort
   ${endselect}
 
   strcpy $Upgrading "yes"
   ${StrRep} $INSTDIR $R0 "uninst.exe" "" # find current INSTDIR by cutting uninst.exe out of uninstall string
+  LogText "INSTDIR is now $INSTDIR"
 
   MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "${PRODUCT_NAME} version $0 is already installed in $\r$\n \
          '$INSTDIR' on your system.$\r$\n$\n \
@@ -1392,7 +1414,7 @@ Function .onInit
          `Cancel` cancels this upgrade. $\r$\n  $\r$\n \
          It is recommended that you make a copy of your configuration files before upgrading.$\r$\n \
          " \
-  /SD IDCANCEL IDOK uninst
+  /SD IDOK IDOK uninst
   Abort
 
 uninst:
@@ -1403,33 +1425,35 @@ uninst:
   #
   StrCpy $6 "$0" 6
   StrCmp $6 "16.2.4" config_backup_workaround
-  StrCmp $6 "16.2.5" config_backup_workaround no_config_backup_workaround
+  StrCmp $6 "16.2.5" config_backup_workaround
+  Goto no_config_backup_workaround
 
 config_backup_workaround:
-  CreateDirectory "$PLUGINSDIR\config-backup"
-  CopyFiles "$APPDATA\${PRODUCT_NAME}\*.conf" "$PLUGINSDIR\config-backup"
+  IfFileExists "$APPDATA\${PRODUCT_NAME}\*.conf" 0 no_config_backup_workaround
+    LogText "config_backup_workaround"
+    CreateDirectory "$PLUGINSDIR\config-backup"
+    CopyFiles "$APPDATA\${PRODUCT_NAME}\*.conf" "$PLUGINSDIR\config-backup"
+  ClearErrors
 
 no_config_backup_workaround:
-  ClearErrors
-  # run the uninstaller
+  # run the uninstaller in Silent mode.
+  # Keep Configuration files, Do not copy the uninstaller to a temp file.
   ExecWait '$R0 /S /SILENTKEEPCONFIG _?=$INSTDIR'
-            ;Silent Uninstall, Keep Configuration files, Do not copy the uninstaller to a temp file
-
   IfErrors no_remove_uninstaller done
 
 no_remove_uninstaller:
-
   MessageBox MB_OK|MB_ICONEXCLAMATION "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
       FileOpen $R1 $TEMP\abortreason.txt w
       FileWrite $R1 "Error during uninstall of ${PRODUCT_NAME} version $0. Aborting"
       FileClose $R1
-  abort
+  Abort
 
 done:
-
   # config backup workaround: restore config files
-  IfFileExists "$PLUGINSDIR\config-backup\*.conf" 0 +2
+  IfFileExists "$PLUGINSDIR\config-backup\*.conf" 0 +3
+    LogText "restore config-backup from workaround"
     CopyFiles "$PLUGINSDIR\config-backup\*.conf" "$APPDATA\${PRODUCT_NAME}"
+  ClearErrors
 
   ${GetOptions} $cmdLineParams "/CLIENTNAME="  $ClientName
   ClearErrors
@@ -1495,13 +1519,6 @@ done:
 
   strcmp $DbDriver "" +1 +2
   StrCpy $DbDriver "postgresql"
-
-  StrCpy $WriteLogs "yes"
-  ${GetOptions} $cmdLineParams "/WRITELOGS" $R0
-  IfErrors 0 +2         # error is set if NOT found
-    StrCpy $WriteLogs "no"
-  ClearErrors
-
 
   StrCpy $InstallDirector "yes"
   ${GetOptions} $cmdLineParams "/INSTALLDIRECTOR" $R0
@@ -1775,14 +1792,6 @@ ${EndIf}
   strcmp $DbAdminPassword "" +1 +2
   StrCpy $DbAdminPassword ""
 
-
-!If ${WIN_DEBUG} == yes
-  StrCpy $WriteLogs "yes"
-!EndIf
-
-  StrCmp $WriteLogs "yes" 0 +3
-     LogSet on # enable nsis-own logging to $INSTDIR\install.log, needs INSTDIR defined
-     LogText "Logging started, INSTDIR is $INSTDIR"
 
 FunctionEnd
 
