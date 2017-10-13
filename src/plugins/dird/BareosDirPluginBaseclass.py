@@ -49,7 +49,7 @@ class BareosDirPluginBaseclass(object):
         # get some static Bareos values
         self.jobName = bareosdir.GetValue(context, brDirVariable['bDirVarJobName'])
         self.jobLevel = chr(bareosdir.GetValue(context, brDirVariable['bDirVarLevel']))
-        self.jobType = bareosdir.GetValue(context, brDirVariable['bDirVarType'])
+        self.jobType = chr(bareosdir.GetValue(context, brDirVariable['bDirVarType']))
         self.jobId = int(bareosdir.GetValue(context, brDirVariable['bDirVarJobId']))
         self.jobClient = bareosdir.GetValue(context, brDirVariable['bDirVarClient'])
         self.jobStatus = bareosdir.GetValue(context, brDirVariable['bDirVarJobStatus'])
