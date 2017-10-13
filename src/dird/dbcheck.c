@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -73,13 +73,9 @@ CONFIG *my_config = NULL;             /* Our Global config */
 /*
  * Forward referenced functions
  */
-static void print_catalog_details(CATRES *catalog, const char *working_dir);
-static int make_id_list(const char *query, ID_LIST *id_list);
-static int delete_id_list(const char *query, ID_LIST *id_list);
-static int make_name_list(const char *query, NAME_LIST *name_list);
-static void print_name_list(NAME_LIST *name_list);
-static void free_name_list(NAME_LIST *name_list);
-static char *get_cmd(const char *prompt);
+static void set_quit();
+static void toggle_modify();
+static void toggle_verbose();
 static void eliminate_duplicate_paths();
 static void eliminate_orphaned_jobmedia_records();
 static void eliminate_orphaned_file_records();
@@ -91,13 +87,34 @@ static void eliminate_admin_records();
 static void eliminate_restore_records();
 static void repair_bad_paths();
 static void repair_bad_filenames();
-static void do_interactive_mode();
-static bool yes_no(const char *prompt, bool batchvalue = false);
-static bool check_idx(const char *col_name);
-static bool create_tmp_idx(const char *idx_name, const char *table_name,
-              const char *col_name);
-static bool drop_tmp_idx(const char *idx_name, const char *table_name);
-static int check_idx_handler(void *ctx, int num_fields, char **row);
+static void run_all_commands();
+
+struct dbcheck_cmdstruct {
+   void (*func)(); /**< Handler */
+   const char *description; /**< Main purpose */
+   const bool baserepaircmd; /**< command that modifies the database */
+};
+
+static struct dbcheck_cmdstruct commands[] = {
+   { set_quit, "Quit", false },
+   { toggle_modify, "Toggle modify database flag", false },
+   { toggle_verbose, "Toggle verbose flag", false },
+   { repair_bad_paths, "Check for bad Filename records", true },
+   { repair_bad_filenames, "Check for bad Path records", true },
+   { eliminate_duplicate_paths, "Check for duplicate Path records", true },
+   { eliminate_orphaned_jobmedia_records, "Check for orphaned Jobmedia records", true },
+   { eliminate_orphaned_file_records, "Check for orphaned File records", true },
+   { eliminate_orphaned_path_records, "Check for orphaned Path records", true },
+   { eliminate_orphaned_fileset_records, "Check for orphaned FileSet records", true },
+   { eliminate_orphaned_client_records, "Check for orphaned Client records", true },
+   { eliminate_orphaned_job_records, "Check for orphaned Job records", true },
+   { eliminate_admin_records, "Check for all Admin records", true },
+   { eliminate_restore_records, "Check for all Restore records", true },
+   { run_all_commands, "Run ALL checks", false },
+};
+
+const int number_commands=(sizeof(commands)/sizeof(struct dbcheck_cmdstruct));
+
 
 static void usage()
 {
@@ -116,240 +133,68 @@ static void usage()
    exit(1);
 }
 
-int main (int argc, char *argv[])
+/**
+ * helper functions
+ */
+
+/**
+ * Gen next input command from the terminal
+ */
+static char *get_cmd(const char *prompt)
 {
-   int ch;
-   const char *db_driver = NULL;
-   const char *user, *password, *db_name, *dbhost;
-   int dbport = 0;
-   bool print_catalog=false;
-   char *configfile = NULL;
-   char *catalogname = NULL;
-   char *endptr;
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-   alist *backend_directories = NULL;
-#endif
+   static char cmd[1000];
 
-   setlocale(LC_ALL, "");
-   bindtextdomain("bareos", LOCALEDIR);
-   textdomain("bareos");
-   lmgr_init_thread();
-
-   my_name_is(argc, argv, "dbcheck");
-   init_msg(NULL, NULL);           /* setup message handler */
-
-   memset(&id_list, 0, sizeof(id_list));
-   memset(&name_list, 0, sizeof(name_list));
-
-   while ((ch = getopt(argc, argv, "bc:C:D:d:fvBt?")) != -1) {
-      switch (ch) {
-      case 'B':
-         print_catalog = true;     /* get catalog information from config */
-         break;
-      case 'b':                    /* batch */
-         batch = true;
-         break;
-      case 'C':                    /* CatalogName */
-         catalogname = optarg;
-         break;
-      case 'c':                    /* configfile */
-         configfile = optarg;
-         break;
-
-      case 'D':                    /* db_driver */
-         db_driver = optarg;
-         break;
-      case 'd':                    /* debug level */
-         if (*optarg == 't') {
-            dbg_timestamp = true;
-         } else {
-            debug_level = atoi(optarg);
-            if (debug_level <= 0) {
-               debug_level = 1;
-            }
-         }
-         break;
-      case 'f':                    /* fix inconsistencies */
-         fix = true;
-         break;
-      case 'v':
-         verbose++;
-         break;
-      case '?':
-      default:
-         usage();
-      }
+   printf("%s", prompt);
+   fflush(stdout);
+   if (fgets(cmd, sizeof(cmd), stdin) == NULL) {
+      printf("\n");
+      quit = true;
+      return NULL;
    }
-   argc -= optind;
-   argv += optind;
-
-   OSDependentInit();
-
-   if (configfile || (argc == 0)) {
-      CATRES *catalog = NULL;
-      int found = 0;
-      if (argc > 0) {
-         Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
-      }
-      my_config = new_config_parser();
-      parse_dir_config(my_config, configfile, M_ERROR_TERM);
-      LockRes();
-      foreach_res(catalog, R_CATALOG) {
-         if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
-            ++found;
-            break;
-         } else if (!catalogname) { // stop on first if no catalogname is given
-           ++found;
-           break;
-         }
-      }
-      UnlockRes();
-      if (!found) {
-         if (catalogname) {
-            Pmsg2(0, _("Error can not find the Catalog name[%s] in the given config file [%s]\n"), catalogname, configfile);
-         } else {
-            Pmsg1(0, _("Error there is no Catalog section in the given config file [%s]\n"), configfile);
-         }
-         exit(1);
-      } else {
-         LockRes();
-         me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
-         UnlockRes();
-         if (!me) {
-            Pmsg0(0, _("Error no Director resource defined.\n"));
-            exit(1);
-         }
-
-         set_working_directory(me->working_directory);
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-         db_set_backend_dirs(me->backend_directories);
-#endif
-
-         /*
-          * Print catalog information and exit (-B)
-          */
-         if (print_catalog) {
-            print_catalog_details(catalog, me->working_directory);
-            exit(0);
-         }
-
-         db_name = catalog->db_name;
-         user = catalog->db_user;
-         password = catalog->db_password.value;
-         dbhost = catalog->db_address;
-         db_driver = catalog->db_driver;
-         if (dbhost && dbhost[0] == 0) {
-            dbhost = NULL;
-         }
-         dbport = catalog->db_port;
-      }
-   } else {
-      if (argc > 6) {
-         Pmsg0(0, _("Wrong number of arguments.\n"));
-         usage();
-      }
-
-      /*
-       * This is needed by SQLite to find the db
-       */
-      working_directory = argv[0];
-      db_name = "bareos";
-      user = db_name;
-      password = "";
-      dbhost = NULL;
-
-      if (argc == 2) {
-         db_name = argv[1];
-         user = db_name;
-      } else if (argc == 3) {
-         db_name = argv[1];
-         user = argv[2];
-      } else if (argc == 4) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-      } else if (argc == 5) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-         dbhost = argv[4];
-      } else if (argc == 6) {
-         db_name = argv[1];
-         user = argv[2];
-         password = argv[3];
-         dbhost = argv[4];
-         errno = 0;
-         dbport = strtol(argv[5], &endptr, 10);
-         if (*endptr != '\0') {
-            Pmsg0(0, _("Database port must be a numeric value.\n"));
-            exit(1);
-         } else if (errno == ERANGE) {
-            Pmsg0(0, _("Database port must be a int value.\n"));
-            exit(1);
-         }
-      }
-
-#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-      backend_directories = New(alist(10, owned_by_alist));
-      backend_directories->append((char *)backend_directory);
-
-      db_set_backend_dirs( backend_directories );
-#endif
-   }
-
-   /*
-    * Open database
-    */
-   db = db_init_database(NULL,
-                         db_driver,
-                         db_name,
-                         user,
-                         password,
-                         dbhost,
-                         dbport,
-                         NULL,
-                         false,
-                         false,
-                         false,
-                         false);
-   if (!db->open_database(NULL)) {
-      Emsg1(M_FATAL, 0, "%s", db->strerror());
-      return 1;
-   }
-
-   /*
-    * Drop temporary index idx_tmp_name if it already exists
-    */
-   drop_tmp_idx("idxPIchk", "File");
-
-   if (batch) {
-      repair_bad_paths();
-      repair_bad_filenames();
-      eliminate_duplicate_paths();
-      eliminate_orphaned_jobmedia_records();
-      eliminate_orphaned_file_records();
-      eliminate_orphaned_path_records();
-      eliminate_orphaned_fileset_records();
-      eliminate_orphaned_client_records();
-      eliminate_orphaned_job_records();
-      eliminate_admin_records();
-      eliminate_restore_records();
-   } else {
-      do_interactive_mode();
-   }
-
-   /*
-    * Drop temporary index idx_tmp_name
-    */
-   drop_tmp_idx("idxPIchk", "File");
-
-   db->close_database(NULL);
-   db_flush_backends();
-   close_msg(NULL);
-   term_msg();
-   lmgr_cleanup_main();
-   return 0;
+   strip_trailing_junk(cmd);
+   return cmd;
 }
+
+static bool yes_no(const char *prompt, bool batchvalue = true)
+{
+   char *cmd;
+   /*
+    * return the batchvalue if batch operation is set
+    */
+   if (batch) {
+      return batchvalue;
+   }
+   cmd = get_cmd(prompt);
+   if (!cmd) {
+      quit = true;
+      return false;
+   }
+   return (bstrcasecmp(cmd, "yes")) || (bstrcasecmp(cmd, _("yes")));
+}
+
+static void set_quit()
+{
+   quit = true;
+}
+
+static void toggle_modify()
+{
+   fix = !fix;
+   if (fix)
+      printf(_("Database will be modified.\n"));
+   else
+      printf(_("Database will NOT be modified.\n"));
+}
+
+static void toggle_verbose()
+{
+   verbose = verbose ? 0 : 1;
+   if (verbose)
+      printf(_(" Verbose is on.\n"));
+   else
+      printf(_(" Verbose is off.\n"));
+}
+
 
 static void print_catalog_details(CATRES *catalog, const char *working_dir)
 {
@@ -375,131 +220,6 @@ static void print_catalog_details(CATRES *catalog, const char *working_dir)
       db->close_database(NULL);
    }
    free_pool_memory(catalog_details);
-}
-
-static void do_interactive_mode()
-{
-   const char *cmd;
-
-   printf(_("Hello, this is the database check/correct program.\n"));
-   if (fix)
-      printf(_("Modify database is on."));
-   else
-      printf(_("Modify database is off."));
-   if (verbose)
-      printf(_(" Verbose is on.\n"));
-   else
-      printf(_(" Verbose is off.\n"));
-
-   printf(_("Please select the function you want to perform.\n"));
-
-   while (!quit) {
-      if (fix) {
-         printf(_("\n"
-"     1) Toggle modify database flag\n"
-"     2) Toggle verbose flag\n"
-"     3) Repair bad Filename records\n"
-"     4) Repair bad Path records\n"
-"     5) Eliminate duplicate Path records\n"
-"     6) Eliminate orphaned Jobmedia records\n"
-"     7) Eliminate orphaned File records\n"
-"     8) Eliminate orphaned Path records\n"
-"    10) Eliminate orphaned FileSet records\n"
-"    11) Eliminate orphaned Client records\n"
-"    12) Eliminate orphaned Job records\n"
-"    13) Eliminate all Admin records\n"
-"    14) Eliminate all Restore records\n"
-"    15) All (3-14)\n"
-"    16) Quit\n"));
-       } else {
-         printf(_("\n"
-"     1) Toggle modify database flag\n"
-"     2) Toggle verbose flag\n"
-"     3) Check for bad Filename records\n"
-"     4) Check for bad Path records\n"
-"     5) Check for duplicate Path records\n"
-"     6) Check for orphaned Jobmedia records\n"
-"     7) Check for orphaned File records\n"
-"     8) Check for orphaned Path records\n"
-"    10) Check for orphaned FileSet records\n"
-"    11) Check for orphaned Client records\n"
-"    12) Check for orphaned Job records\n"
-"    13) Check for all Admin records\n"
-"    14) Check for all Restore records\n"
-"    15) All (3-14)\n"
-"    16) Quit\n"));
-       }
-
-      cmd = get_cmd(_("Select function number: "));
-      if (cmd) {
-         int item = atoi(cmd);
-         switch (item) {
-         case 1:
-            fix = !fix;
-            if (fix)
-               printf(_("Database will be modified.\n"));
-            else
-               printf(_("Database will NOT be modified.\n"));
-            break;
-         case 2:
-            verbose = verbose ? 0 : 1;
-            if (verbose)
-               printf(_(" Verbose is on.\n"));
-            else
-               printf(_(" Verbose is off.\n"));
-            break;
-         case 3:
-            repair_bad_filenames();
-            break;
-         case 4:
-            repair_bad_paths();
-            break;
-         case 5:
-            eliminate_duplicate_paths();
-            break;
-         case 6:
-            eliminate_orphaned_jobmedia_records();
-            break;
-         case 7:
-            eliminate_orphaned_file_records();
-            break;
-         case 8:
-            eliminate_orphaned_path_records();
-            break;
-         case 10:
-            eliminate_orphaned_fileset_records();
-            break;
-         case 11:
-            eliminate_orphaned_client_records();
-            break;
-         case 12:
-            eliminate_orphaned_job_records();
-            break;
-         case 13:
-            eliminate_admin_records();
-            break;
-         case 14:
-            eliminate_restore_records();
-            break;
-         case 15:
-            repair_bad_filenames();
-            repair_bad_paths();
-            eliminate_duplicate_paths();
-            eliminate_orphaned_jobmedia_records();
-            eliminate_orphaned_file_records();
-            eliminate_orphaned_path_records();
-            eliminate_orphaned_fileset_records();
-            eliminate_orphaned_client_records();
-            eliminate_orphaned_job_records();
-            eliminate_admin_records();
-            eliminate_restore_records();
-            break;
-         case 16:
-            quit = true;
-            break;
-         }
-      }
-   }
 }
 
 static int print_name_handler(void *ctx, int num_fields, char **row)
@@ -554,6 +274,159 @@ static int print_client_handler(void *ctx, int num_fields, char **row)
               NPRT(row[0]), NPRT(row[1]));
    return 0;
 }
+
+/**
+ * database index handling functions
+ *
+ * The code below to add indexes is needed only for MySQL, and
+ *  that to improve the performance.
+ */
+
+#define MAXIDX          100
+typedef struct s_idx_list {
+   char *key_name;
+   int  count_key; /* how many times the index meets *key_name */
+   int  count_col; /* how many times meets the desired column name */
+} IDX_LIST;
+
+static IDX_LIST idx_list[MAXIDX];
+
+/**
+ * Called here with each table index to be added to the list
+ */
+static int check_idx_handler(void *ctx, int num_fields, char **row)
+{
+   /*
+    * Table | Non_unique | Key_name | Seq_in_index | Column_name |...
+    * File  |          0 | PRIMARY  |            1 | FileId      |...
+    */
+   char *name, *key_name, *col_name;
+   int i, len;
+   int found = false;
+
+   name = (char *)ctx;
+   key_name = row[2];
+   col_name = row[4];
+   for(i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)); i++) {
+      if (bstrcasecmp(idx_list[i].key_name, key_name)) {
+         idx_list[i].count_key++;
+         found = true;
+         if (bstrcasecmp(col_name, name)) {
+            idx_list[i].count_col++;
+         }
+         break;
+      }
+   }
+   /*
+    * If the new Key_name, add it to the list
+    */
+   if (!found) {
+      len = strlen(key_name) + 1;
+      idx_list[i].key_name = (char *)malloc(len);
+      bstrncpy(idx_list[i].key_name, key_name, len);
+      idx_list[i].count_key = 1;
+      if (bstrcasecmp(col_name, name)) {
+         idx_list[i].count_col = 1;
+      } else {
+         idx_list[i].count_col = 0;
+      }
+   }
+   return 0;
+}
+
+/**
+ * Return TRUE if "one column" index over *col_name exists
+ */
+static bool check_idx(const char *col_name)
+{
+   int i;
+   int found = false;
+   const char *query = "SHOW INDEX FROM File";
+
+   switch (db->get_type_index()) {
+   case SQL_TYPE_MYSQL:
+      memset(&idx_list, 0, sizeof(idx_list));
+      if (!db->sql_query(query, check_idx_handler, (void *)col_name)) {
+         printf("%s\n", db->strerror());
+         fflush(stdout);
+      }
+      for (i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)) ; i++) {
+         /*
+          * NOTE : if (idx_list[i].count_key > 1) then index idx_list[i].key_name is "multiple-column" index
+          */
+         if ((idx_list[i].count_key == 1) && (idx_list[i].count_col == 1)) {
+            /*
+             * "one column" index over *col_name found
+             */
+            found = true;
+         }
+      }
+      if (found) {
+         if (verbose) {
+            printf(_("Ok. Index over the %s column already exists and dbcheck will work faster.\n"), col_name);
+         }
+      } else {
+         printf(_("Note. Index over the %s column not found, that can greatly slow down dbcheck.\n"), col_name);
+      }
+      fflush(stdout);
+      return found;
+   default:
+      return true;
+   }
+}
+
+/**
+ * Create temporary one-column index
+ */
+static bool create_tmp_idx(const char *idx_name, const char *table_name,
+                           const char *col_name)
+{
+   idx_tmp_name = NULL;
+   printf(_("Create temporary index... This may take some time!\n"));
+   fflush(stdout);
+   bsnprintf(buf, sizeof(buf), "CREATE INDEX %s ON %s (%s)", idx_name, table_name, col_name);
+   if (verbose) {
+      printf("%s\n", buf);
+   }
+   if (db->sql_query(buf, NULL, NULL)) {
+      idx_tmp_name = idx_name;
+      if (verbose) {
+         printf(_("Temporary index created.\n"));
+      }
+   } else {
+      printf("%s\n", db->strerror());
+      return false;
+   }
+   fflush(stdout);
+   return true;
+}
+
+/**
+ * Drop temporary index
+ */
+static bool drop_tmp_idx(const char *idx_name, const char *table_name)
+{
+   if (idx_tmp_name != NULL) {
+      printf(_("Drop temporary index.\n"));
+      fflush(stdout);
+      bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
+      if (verbose) {
+         printf("%s\n", buf);
+      }
+      if (!db->sql_query(buf, NULL, NULL)) {
+         printf("%s\n", db->strerror());
+         return false;
+      } else {
+         if (verbose) {
+            printf(_("Temporary index %s deleted.\n"), idx_tmp_name);
+         }
+      }
+      fflush(stdout);
+   }
+   idx_tmp_name = NULL;
+   return true;
+}
+
 
 /*
  * Called here with each id to be added to the list
@@ -738,6 +611,10 @@ static void eliminate_duplicate_paths()
    free_name_list(&name_list);
 }
 
+/*
+ * repair functions
+ */
+
 static void eliminate_orphaned_jobmedia_records()
 {
    const char *query = "SELECT JobMedia.JobMediaId,Job.JobId FROM JobMedia "
@@ -787,7 +664,7 @@ static void eliminate_orphaned_file_records()
 {
    const char *query = "SELECT File.FileId,Job.JobId FROM File "
                 "LEFT OUTER JOIN Job USING (JobId) "
-               "WHERE Job.JobId IS NULL LIMIT 300000";
+                "WHERE Job.JobId IS NULL LIMIT 300000";
 
    printf(_("Checking for orphaned File entries. This may take some time!\n"));
    if (verbose > 1) {
@@ -1247,187 +1124,289 @@ static void repair_bad_paths()
    }
 }
 
-/**
- * Gen next input command from the terminal
- */
-static char *get_cmd(const char *prompt)
+static void run_all_commands()
 {
-   static char cmd[1000];
+   for( int i=0; i<number_commands; i++) {
+      if (commands[i].baserepaircmd) {
+         printf("===========================================================\n");
+         printf("=\n");
+         printf("= %s, modify=%d\n", commands[i].description, fix);
+         printf("=\n");
 
-   printf("%s", prompt);
-   fflush(stdout);
-   if (fgets(cmd, sizeof(cmd), stdin) == NULL) {
-      printf("\n");
-      quit = true;
-      return NULL;
+         /* execute the real function */
+         (commands[i].func)();
+
+         printf("=\n");
+         printf("=\n");
+         printf("===========================================================\n\n\n\n");
+      }
    }
-   strip_trailing_junk(cmd);
-   return cmd;
 }
 
-static bool yes_no(const char *prompt, bool batchvalue/* = true*/)
+static void print_commands()
 {
-   char *cmd;
-   /*
-    * return the batchvalue if batch operation is set
-    */
-   if (batch) {
-      return batchvalue;
+   for( int i=0; i<number_commands; i++) {
+      printf("    %2d) %s\n", i, commands[i].description);
    }
-   cmd = get_cmd(prompt);
-   if (!cmd) {
-      quit = true;
-      return false;
-   }
-   return (bstrcasecmp(cmd, "yes")) || (bstrcasecmp(cmd, _("yes")));
 }
 
-/*
- * The code below to add indexes is needed only for MySQL, and
- *  that to improve the performance.
- */
+static void do_interactive_mode()
+{
+   const char *cmd;
 
-#define MAXIDX          100
-typedef struct s_idx_list {
-   char *key_name;
-   int  count_key; /* how many times the index meets *key_name */
-   int  count_col; /* how many times meets the desired column name */
-} IDX_LIST;
+   printf(_("Hello, this is the Bareos database check/correct program.\n"));
 
-static IDX_LIST idx_list[MAXIDX];
+   while (!quit) {
+      if (fix)
+         printf(_("Modify database is on."));
+      else
+         printf(_("Modify database is off."));
+      if (verbose)
+         printf(_(" Verbose is on.\n"));
+      else
+         printf(_(" Verbose is off.\n"));
+
+      printf(_("Please select the function you want to perform.\n"));
+
+      print_commands();
+      cmd = get_cmd(_("Select function number: "));
+      if (cmd) {
+         int item = atoi(cmd);
+         if ((item >= 0) && (item<number_commands)) {
+            /* run specified function */
+            (commands[item].func)();
+         }
+      }
+   }
+}
 
 /**
- * Called here with each table index to be added to the list
+ * main
  */
-static int check_idx_handler(void *ctx, int num_fields, char **row)
+int main (int argc, char *argv[])
 {
-   /*
-    * Table | Non_unique | Key_name | Seq_in_index | Column_name |...
-    * File  |          0 | PRIMARY  |            1 | FileId      |...
-    */
-   char *name, *key_name, *col_name;
-   int i, len;
-   int found = false;
+   int ch;
+   const char *db_driver = NULL;
+   const char *user, *password, *db_name, *dbhost;
+   int dbport = 0;
+   bool print_catalog=false;
+   char *configfile = NULL;
+   char *catalogname = NULL;
+   char *endptr;
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+   alist *backend_directories = NULL;
+#endif
 
-   name = (char *)ctx;
-   key_name = row[2];
-   col_name = row[4];
-   for(i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)); i++) {
-      if (bstrcasecmp(idx_list[i].key_name, key_name)) {
-         idx_list[i].count_key++;
-         found = true;
-         if (bstrcasecmp(col_name, name)) {
-            idx_list[i].count_col++;
+   setlocale(LC_ALL, "");
+   bindtextdomain("bareos", LOCALEDIR);
+   textdomain("bareos");
+   lmgr_init_thread();
+
+   my_name_is(argc, argv, "dbcheck");
+   init_msg(NULL, NULL);           /* setup message handler */
+
+   memset(&id_list, 0, sizeof(id_list));
+   memset(&name_list, 0, sizeof(name_list));
+
+   while ((ch = getopt(argc, argv, "bc:C:D:d:fvBt?")) != -1) {
+      switch (ch) {
+      case 'B':
+         print_catalog = true;     /* get catalog information from config */
+         break;
+      case 'b':                    /* batch */
+         batch = true;
+         break;
+      case 'C':                    /* CatalogName */
+         catalogname = optarg;
+         break;
+      case 'c':                    /* configfile */
+         configfile = optarg;
+         break;
+
+      case 'D':                    /* db_driver */
+         db_driver = optarg;
+         break;
+      case 'd':                    /* debug level */
+         if (*optarg == 't') {
+            dbg_timestamp = true;
+         } else {
+            debug_level = atoi(optarg);
+            if (debug_level <= 0) {
+               debug_level = 1;
+            }
          }
          break;
+      case 'f':                    /* fix inconsistencies */
+         fix = true;
+         break;
+      case 'v':
+         verbose++;
+         break;
+      case '?':
+      default:
+         usage();
       }
    }
-   /*
-    * If the new Key_name, add it to the list
-    */
-   if (!found) {
-      len = strlen(key_name) + 1;
-      idx_list[i].key_name = (char *)malloc(len);
-      bstrncpy(idx_list[i].key_name, key_name, len);
-      idx_list[i].count_key = 1;
-      if (bstrcasecmp(col_name, name)) {
-         idx_list[i].count_col = 1;
+   argc -= optind;
+   argv += optind;
+
+   OSDependentInit();
+
+   if (configfile || (argc == 0)) {
+      CATRES *catalog = NULL;
+      int found = 0;
+      if (argc > 0) {
+         Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
+      }
+      my_config = new_config_parser();
+      parse_dir_config(my_config, configfile, M_ERROR_TERM);
+      LockRes();
+      foreach_res(catalog, R_CATALOG) {
+         if (catalogname && bstrcmp(catalog->hdr.name, catalogname)) {
+            ++found;
+            break;
+         } else if (!catalogname) { // stop on first if no catalogname is given
+           ++found;
+           break;
+         }
+      }
+      UnlockRes();
+      if (!found) {
+         if (catalogname) {
+            Pmsg2(0, _("Error can not find the Catalog name[%s] in the given config file [%s]\n"), catalogname, configfile);
+         } else {
+            Pmsg1(0, _("Error there is no Catalog section in the given config file [%s]\n"), configfile);
+         }
+         exit(1);
       } else {
-         idx_list[i].count_col = 0;
+         LockRes();
+         me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+         UnlockRes();
+         if (!me) {
+            Pmsg0(0, _("Error no Director resource defined.\n"));
+            exit(1);
+         }
+
+         set_working_directory(me->working_directory);
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+         db_set_backend_dirs(me->backend_directories);
+#endif
+
+         /*
+          * Print catalog information and exit (-B)
+          */
+         if (print_catalog) {
+            print_catalog_details(catalog, me->working_directory);
+            exit(0);
+         }
+
+         db_name = catalog->db_name;
+         user = catalog->db_user;
+         password = catalog->db_password.value;
+         dbhost = catalog->db_address;
+         db_driver = catalog->db_driver;
+         if (dbhost && dbhost[0] == 0) {
+            dbhost = NULL;
+         }
+         dbport = catalog->db_port;
       }
+   } else {
+      if (argc > 6) {
+         Pmsg0(0, _("Wrong number of arguments.\n"));
+         usage();
+      }
+
+      /*
+       * This is needed by SQLite to find the db
+       */
+      working_directory = argv[0];
+      db_name = "bareos";
+      user = db_name;
+      password = "";
+      dbhost = NULL;
+
+      if (argc == 2) {
+         db_name = argv[1];
+         user = db_name;
+      } else if (argc == 3) {
+         db_name = argv[1];
+         user = argv[2];
+      } else if (argc == 4) {
+         db_name = argv[1];
+         user = argv[2];
+         password = argv[3];
+      } else if (argc == 5) {
+         db_name = argv[1];
+         user = argv[2];
+         password = argv[3];
+         dbhost = argv[4];
+      } else if (argc == 6) {
+         db_name = argv[1];
+         user = argv[2];
+         password = argv[3];
+         dbhost = argv[4];
+         errno = 0;
+         dbport = strtol(argv[5], &endptr, 10);
+         if (*endptr != '\0') {
+            Pmsg0(0, _("Database port must be a numeric value.\n"));
+            exit(1);
+         } else if (errno == ERANGE) {
+            Pmsg0(0, _("Database port must be a int value.\n"));
+            exit(1);
+         }
+      }
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+      backend_directories = New(alist(10, owned_by_alist));
+      backend_directories->append((char *)backend_directory);
+
+      db_set_backend_dirs( backend_directories );
+#endif
    }
+
+   /*
+    * Open database
+    */
+   db = db_init_database(NULL,
+                         db_driver,
+                         db_name,
+                         user,
+                         password,
+                         dbhost,
+                         dbport,
+                         NULL,
+                         false,
+                         false,
+                         false,
+                         false);
+   if (!db->open_database(NULL)) {
+      Emsg1(M_FATAL, 0, "%s", db->strerror());
+      return 1;
+   }
+
+   /*
+    * Drop temporary index idx_tmp_name if it already exists
+    */
+   drop_tmp_idx("idxPIchk", "File");
+
+   if (batch) {
+      run_all_commands();
+   } else {
+      do_interactive_mode();
+   }
+
+   /*
+    * Drop temporary index idx_tmp_name
+    */
+   drop_tmp_idx("idxPIchk", "File");
+
+   db->close_database(NULL);
+   db_flush_backends();
+   close_msg(NULL);
+   term_msg();
+   lmgr_cleanup_main();
+
    return 0;
 }
 
-/**
- * Return TRUE if "one column" index over *col_name exists
- */
-static bool check_idx(const char *col_name)
-{
-   int i;
-   int found = false;
-   const char *query = "SHOW INDEX FROM File";
 
-   switch (db->get_type_index()) {
-   case SQL_TYPE_MYSQL:
-      memset(&idx_list, 0, sizeof(idx_list));
-      if (!db->sql_query(query, check_idx_handler, (void *)col_name)) {
-         printf("%s\n", db->strerror());
-         fflush(stdout);
-      }
-      for (i = 0; (idx_list[i].key_name != NULL) && (i < (MAXIDX - 1)) ; i++) {
-         /*
-          * NOTE : if (idx_list[i].count_key > 1) then index idx_list[i].key_name is "multiple-column" index
-          */
-         if ((idx_list[i].count_key == 1) && (idx_list[i].count_col == 1)) {
-            /*
-             * "one column" index over *col_name found
-             */
-            found = true;
-         }
-      }
-      if (found) {
-         if (verbose) {
-            printf(_("Ok. Index over the %s column already exists and dbcheck will work faster.\n"), col_name);
-         }
-      } else {
-         printf(_("Note. Index over the %s column not found, that can greatly slow down dbcheck.\n"), col_name);
-      }
-      fflush(stdout);
-      return found;
-   default:
-      return true;
-   }
-}
-
-/**
- * Create temporary one-column index
- */
-static bool create_tmp_idx(const char *idx_name, const char *table_name,
-                           const char *col_name)
-{
-   idx_tmp_name = NULL;
-   printf(_("Create temporary index... This may take some time!\n"));
-   fflush(stdout);
-   bsnprintf(buf, sizeof(buf), "CREATE INDEX %s ON %s (%s)", idx_name, table_name, col_name);
-   if (verbose) {
-      printf("%s\n", buf);
-   }
-   if (db->sql_query(buf, NULL, NULL)) {
-      idx_tmp_name = idx_name;
-      if (verbose) {
-         printf(_("Temporary index created.\n"));
-      }
-   } else {
-      printf("%s\n", db->strerror());
-      return false;
-   }
-   fflush(stdout);
-   return true;
-}
-
-/**
- * Drop temporary index
- */
-static bool drop_tmp_idx(const char *idx_name, const char *table_name)
-{
-   if (idx_tmp_name != NULL) {
-      printf(_("Drop temporary index.\n"));
-      fflush(stdout);
-      bsnprintf(buf, sizeof(buf), "DROP INDEX %s ON %s", idx_name, table_name);
-      if (verbose) {
-         printf("%s\n", buf);
-      }
-      if (!db->sql_query(buf, NULL, NULL)) {
-         printf("%s\n", db->strerror());
-         return false;
-      } else {
-         if (verbose) {
-            printf(_("Temporary index %s deleted.\n"), idx_tmp_name);
-         }
-      }
-      fflush(stdout);
-   }
-   idx_tmp_name = NULL;
-   return true;
-}
