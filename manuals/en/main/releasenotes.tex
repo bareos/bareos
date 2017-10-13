@@ -55,6 +55,22 @@ This release contains several bugfixes and enhancements. Excerpt:
 \begin{itemize}
     \item Fixes a Director crash, when enabling debugging output
     \item \bcommand{.bvfs_lsdirs}{}: improve performance, especially when having a large number of directories
+    \begin{itemize}
+      \item To optimize the performance of the SQL query used by \bcommand{.bvfs_lsdirs}{}, it is important to
+      have the following indexes:
+      \item PostgreSQL
+        \begin{itemize}
+          \item \sqlcommand{CREATE INDEX file_jpfnidpart_idx ON File(PathId,JobId,FilenameId) WHERE FileIndex = 0;}
+          \item If the index \sqlcommand{file_jfnidpart_idx} mentioned in 16.2.6 release notes exist, drop it:\\
+            \sqlcommand{DROP INDEX file_jfnidpart_idx;}
+        \end{itemize}
+      \item MySQL/MariaDB
+        \begin{itemize}
+          \item \sqlcommand{CREATE INDEX PathId_JobId_FileNameId_FileIndex ON File(PathId,JobId,FilenameId,FileIndex);}
+          \item If the index \sqlcommand{PathId_JobId_FileIndex_FileNameId} mentioned in 16.2.6 release notes exist, drop it:\\
+            \sqlcommand{DROP INDEX PathId_JobId_FileIndex_FileNameId ON File;}
+        \end{itemize}
+    \end{itemize}
     \item Utilize OpenSSL $\geq$ 1.1 if available
     \item Windows: fixes silent upgrade (\command{winbareos-*.exe /S})
     \item Windows: restore attributes also on directories (not only on files)
