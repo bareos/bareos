@@ -365,8 +365,8 @@ char *edit_utime(utime_t val, char *buf, int buf_len)
    char mybuf[200];
    static const int32_t mult[] = {
       60 * 60 * 24 * 365,
-      60 *60 * 24 *30,
-      60 *60 * 24,
+      60 * 60 * 24 *30,
+      60 * 60 * 24,
       60 * 60,
       60
    };
