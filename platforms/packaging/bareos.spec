@@ -82,6 +82,7 @@ Vendor: 	The Bareos Team
 # SLES 12
 %if 0%{?suse_version} == 1315 && 0%{?is_opensuse} == 0
 %define ceph 1
+%define objectstorage 1
 %endif
 
 #
@@ -106,11 +107,15 @@ Vendor: 	The Bareos Team
 %define python_plugins 0
 %endif
 
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
-%define systemd_support 1
-%if 0%{?fedora_version} != 19
+%if 0%{?fedora_version} >= 20
 %define glusterfs 1
+%define systemd_support 1
 %endif
+
+%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+%define glusterfs 1
+%define objectstorage 1
+%define systemd_support 1
 %endif
 
 %if 0%{?rhel_version} >= 700
@@ -317,7 +322,6 @@ Summary:    Object Storage support for the Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
-Requires:   libdroplet-common
 %endif
 
 %if 0%{?glusterfs}
@@ -1039,8 +1043,8 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-chunked*.so
 %{backend_dir}/libbareossd-object*.so
-%{_sysconfdir}/bareos/bareos-dir.d/storage/Object.conf.example
-%{_sysconfdir}/bareos/bareos-sd.d/device/ObjectStorage.conf.example
+%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/Object.conf.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/ObjectStorage.conf.example
 %endif
 
 %if 0%{?glusterfs}
