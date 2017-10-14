@@ -1,5 +1,4 @@
--- Stop on error. Prevents, that tables get droped, when merging data into new table has failed.
-.bail on
+-- update db schema from 2004 to 2170
 
 -- table UnsavedFiles is not used, therefore dropped.
 DROP TABLE IF EXISTS UnsavedFiles;
@@ -17,15 +16,17 @@ BEGIN;
 
 -- create temporary table to be used as File table later
 CREATE TABLE           TmpMergeFilenameIntoFileTable (
-   FileId           INTEGER             NOT NULL,
+   FileId           BIGINT    UNSIGNED  NOT NULL  AUTO_INCREMENT,
    FileIndex        INTEGER   UNSIGNED            DEFAULT 0,
    JobId            INTEGER   UNSIGNED  NOT NULL  REFERENCES Job,
    PathId           INTEGER   UNSIGNED  NOT NULL  REFERENCES Path,
-   Name             BLOB                NOT NULL,
    DeltaSeq         SMALLINT  UNSIGNED            DEFAULT 0,
    MarkId           INTEGER   UNSIGNED            DEFAULT 0,
+   Fhinfo           NUMERIC(20)                   DEFAULT 0,
+   Fhnode           NUMERIC(20)                   DEFAULT 0,
    LStat            TINYBLOB            NOT NULL,
    MD5              TINYBLOB            NOT NULL,
+   Name             BLOB                NOT NULL,
    PRIMARY KEY (FileId)
 );
 
@@ -41,9 +42,12 @@ DROP TABLE File;
 ALTER TABLE TmpMergeFilenameIntoFileTable RENAME TO File;
 
 -- adapt index
-CREATE INDEX File_JobId ON File (JobId);
-CREATE INDEX File_JobId_PathId_Name ON File (JobId, PathId, Name);
+CREATE INDEX JobId_PathId_Name ON File (JobId, PathId, Name(255));
+CREATE INDEX PathId_JobId_FileIndex ON File (PathId, JobId, FileIndex);
 
-UPDATE Version SET VersionId = 2170;
+-- Add JobMedia JobBytes info, also used by NDMP DAR
+ALTER TABLE JobMedia ADD COLUMN JobBytes NUMERIC(20) DEFAULT 0;
+
+UPDATE Version SET VersionId = 2171;
 
 COMMIT;
