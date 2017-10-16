@@ -98,6 +98,13 @@ $this->headTitle($title);
    </div>
 
    <div class="form-group">
+      <label class="control-label col-md-2"><?php echo $this->formLabel($form->get('type')); ?></label>
+      <div class="control-input col-md-6">
+         <?php echo $this->formInput($form->get('type')); ?>
+      </div>
+   </div>
+
+   <div class="form-group">
       <label class="control-label col-md-2"><?php echo $this->formLabel($form->get('priority')); ?></label>
       <div class="control-input col-md-6">
          <?php echo $this->formInput($form->get('priority')); ?>
@@ -154,10 +161,31 @@ $this->headTitle($title);
 <?php endif; ?>
 
 <script type="text/javascript">
+
+   function updateQueryParams(k, v) {
+      var p = [];
+      var params = [];
+
+      p['jobname'] = '<?php echo $this->jobname; ?>';
+
+      p[k] = v;
+
+      for(key in p) {
+          params.push(key + "=" + p[key]);
+      }
+
+      return params.join('&');
+   }
+
+   $('#job').change(function(event) {
+      window.location.href = window.location.pathname + '?' + updateQueryParams('jobname', this.value);
+   });
+
    $(function() {
       $('#when-datepicker').datetimepicker({
          format: 'YYYY-MM-DD HH:mm:ss',
          sideBySide: true
       });
    });
+
 </script>

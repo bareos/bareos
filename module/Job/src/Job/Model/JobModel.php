@@ -419,6 +419,27 @@ class JobModel
    }
 
    /**
+    * Get job defaults
+    *
+    * @param $bsock
+    * @param $name
+    *
+    * @return array
+    */
+   public function getJobDefaults(&$bsock=null, $name=null)
+   {
+      if(isset($bsock, $name)) {
+         $cmd = '.defaults job="'.$name.'"';
+         $result = $bsock->send_command($cmd, 2, null);
+         $jobdefaults = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         return $jobdefaults['result']['defaults'];
+      }
+      else {
+         throw new \Exception('Missing argument.');
+      }
+   }
+
+   /**
     * Run a custom job
     *
     * @param $bsock

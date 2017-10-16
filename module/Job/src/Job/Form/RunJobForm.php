@@ -34,8 +34,9 @@ class RunJobForm extends Form
    protected $jobs;
    protected $storages;
    protected $pools;
+   protected $jobdefaults;
 
-   public function __construct($clients=null, $jobs=null, $filesets=null, $storages=null, $pools=null)
+   public function __construct($clients=null, $jobs=null, $filesets=null, $storages=null, $pools=null, $jobdefaults=null)
    {
       parent::__construct('runjob');
 
@@ -44,108 +45,218 @@ class RunJobForm extends Form
       $this->filesets = $filesets;
       $this->storages = $storages;
       $this->pools = $pools;
+      $this->jobdefaults = $jobdefaults;
 
       // Client
-      $this->add(array(
-         'name' => 'client',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Client'),
-            'empty_option' => '',
-            'value_options' => $this->getClientList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'client',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['client'])) {
+         $this->add(array(
+            'name' => 'client',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Client'),
+               'empty_option' => '',
+               'value_options' => $this->getClientList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'client',
+               'value' => $jobdefaults['client']
+            )
+         ));
+      }
+      else {
+         $this->add(array(
+            'name' => 'client',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Client'),
+               'empty_option' => '',
+               'value_options' => $this->getClientList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'client',
+               'value' => null
+            )
+         ));
+      }
 
       // Job
-      $this->add(array(
-         'name' => 'job',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Job'),
-            'empty_option' => '',
-            'value_options' => $this->getJobList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'job',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['job'])) {
+         $this->add(array(
+            'name' => 'job',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Job'),
+               'empty_option' => '',
+               'value_options' => $this->getJobList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'job',
+               'value' => $jobdefaults['job']
+            )
+         ));
+      } else {
+         $this->add(array(
+            'name' => 'job',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Job'),
+               'empty_option' => '',
+               'value_options' => $this->getJobList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'job',
+               'value' => null
+            )
+         ));
+      }
 
       // Fileset
-      $this->add(array(
-         'name' => 'fileset',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Fileset'),
-            'empty_option' => '',
-            'value_options' => $this->getFilesetList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'fileset',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['fileset'])) {
+         $this->add(array(
+            'name' => 'fileset',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Fileset'),
+               'empty_option' => '',
+               'value_options' => $this->getFilesetList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'fileset',
+               'value' => $jobdefaults['fileset']
+            )
+         ));
+      } else {
+         $this->add(array(
+            'name' => 'fileset',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Fileset'),
+               'empty_option' => '',
+               'value_options' => $this->getFilesetList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'fileset',
+               'value' => null
+            )
+         ));
+      }
 
       // Storage
-      $this->add(array(
-         'name' => 'storage',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Storage'),
-            'empty_option' => '',
-            'value_options' => $this->getStorageList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'storage',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['storage'])) {
+         $this->add(array(
+            'name' => 'storage',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Storage'),
+               'empty_option' => '',
+               'value_options' => $this->getStorageList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'storage',
+               'value' => $jobdefaults['storage']
+            )
+         ));
+      } else {
+         $this->add(array(
+            'name' => 'storage',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Storage'),
+               'empty_option' => '',
+               'value_options' => $this->getStorageList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'storage',
+               'value' => null
+            )
+         ));
+      }
 
       // Pool
-      $this->add(array(
-         'name' => 'pool',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Pool'),
-            'empty_option' => '',
-            'value_options' => $this->getPoolList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'pool',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['pool'])) {
+         $this->add(array(
+            'name' => 'pool',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Pool'),
+               'empty_option' => '',
+               'value_options' => $this->getPoolList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'pool',
+               'value' => $jobdefaults['pool']
+            )
+         ));
+      } else {
+         $this->add(array(
+            'name' => 'pool',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Pool'),
+               'empty_option' => '',
+               'value_options' => $this->getPoolList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'pool',
+               'value' => null
+            )
+         ));
+      }
 
       // Level
-      $this->add(array(
-         'name' => 'level',
-         'type' => 'select',
-         'options' => array(
-            'label' => _('Level'),
-            'empty_option' => '',
-            'value_options' => $this->getLevelList()
-         ),
-         'attributes' => array(
-            'class' => 'form-control selectpicker show-tick',
-            'data-live-search' => 'true',
-            'id' => 'level',
-            'value' => null
-         )
-      ));
+      if(isset($jobdefaults['level'])) {
+         $this->add(array(
+            'name' => 'level',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Level'),
+               'empty_option' => '',
+               'value_options' => $this->getLevelList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'level',
+               'value' => $jobdefaults['level']
+            )
+         ));
+      } else {
+         $this->add(array(
+            'name' => 'level',
+            'type' => 'select',
+            'options' => array(
+               'label' => _('Level'),
+               'empty_option' => '',
+               'value_options' => $this->getLevelList()
+            ),
+            'attributes' => array(
+               'class' => 'form-control selectpicker show-tick',
+               'data-live-search' => 'true',
+               'id' => 'level',
+               'value' => null
+            )
+         ));
+      }
 
       // Priority
       $this->add(array(
@@ -160,6 +271,40 @@ class RunJobForm extends Form
             'placeholder' => '10'
          )
       ));
+
+      // Type
+      if(isset($jobdefaults['type'])) {
+         $this->add(array(
+            'name' => 'type',
+            'type' => 'Zend\Form\Element\Text',
+            'options' => array(
+               'label' => _('Type'),
+               'empty_option' => '',
+            ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'type',
+               'value' => $jobdefaults['type'],
+               'readonly' => true
+            )
+         ));
+      }
+      else {
+         $this->add(array(
+            'name' => 'type',
+            'type' => 'Zend\Form\Element\Text',
+            'options' => array(
+               'label' => _('Type'),
+               'empty_option' => '',
+            ),
+            'attributes' => array(
+               'class' => 'form-control',
+               'id' => 'type',
+               'value' => null,
+               'readonly' => true
+            )
+         ));
+      }
 
 /*
       // Backup Format
@@ -233,7 +378,7 @@ class RunJobForm extends Form
       $selectData = array();
       if(!empty($this->filesets)) {
          foreach($this->filesets as $fileset) {
-            $selectData[$fileset['fileset']] = $fileset['fileset'];
+            $selectData[$fileset['name']] = $fileset['name'];
          }
       }
       ksort($selectData);

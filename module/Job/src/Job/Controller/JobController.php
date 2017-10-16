@@ -298,15 +298,34 @@ class JobController extends AbstractActionController
 
       $this->bsock = $this->getServiceLocator()->get('director');
 
+      // Get query parameter jobname
+      $jobname = $this->params()->fromQuery('jobname') ? $this->params()->fromQuery('jobname') : null;
+
+      if ($jobname != null) {
+         $jobdefaults = $this->getJobModel()->getJobDefaults($this->bsock, $jobname);
+      }
+
       // Get required form construction data, jobs, clients, etc.
       $clients = $this->getClientModel()->getClients($this->bsock);
-      $jobs = $this->getJobModel()->getJobsByType($this->bsock, null);
-      $filesets = $this->getFilesetModel()->getFilesets($this->bsock);
+
+      // Get the different kind of jobs and merge them. Jobs of the following types
+      // cannot nor wanted to be run. M,V,R,U,I,C and S.
+      $job_type_B = $this->getJobModel()->getJobsByType($this->bsock, "B"); // Backup Job
+      $job_type_D = $this->getJobModel()->getJobsByType($this->bsock, 'D'); // Admin Job
+      $job_type_A = $this->getJobModel()->getJobsByType($this->bsock, 'A'); // Archive Job
+      $job_type_c = $this->getJobModel()->getJobsByType($this->bsock, 'c'); // Copy Job
+      $job_type_g = $this->getJobModel()->getJobsByType($this->bsock, 'g'); // Migration Job
+      $job_type_O = $this->getJobModel()->getJobsByType($this->bsock, 'O'); // Always Incremental Consolidate Job
+      $job_type_V = $this->getJobModel()->getJobsByType($this->bsock, 'V'); // Verify Job
+
+      $jobs = array_merge($job_type_B, $job_type_D, $job_type_A, $job_type_c, $job_type_g, $job_type_O, $job_type_V);
+
+      $filesets = $this->getFilesetModel()->getDotFilesets($this->bsock);
       $storages = $this->getStorageModel()->getStorages($this->bsock);
       $pools = $this->getPoolModel()->getDotPools($this->bsock, null);
 
       // build form
-      $form = new RunJobForm($clients, $jobs, $filesets, $storages, $pools);
+      $form = new RunJobForm($clients, $jobs, $filesets, $storages, $pools, $jobdefaults);
 
       // Set the method attribute for the form
       $form->setAttribute('method', 'post');
