@@ -78,9 +78,15 @@ Vendor: 	The Bareos Team
 %endif
 
 # SLES 12
-%if 0%{?suse_version} == 1315 && 0%{?is_opensuse} == 0
-%define ceph 1
+#%%if 0%{?suse_version} == 1315 && 0%%{?is_opensuse} == 0
+%if 0%{?sle_version} >= 120000
 %define objectstorage 1
+%endif
+
+# Ceph packages have changed with SLE_12_SP2,
+# therefore build it only for SLE_12 and SLE_12_SP1
+%if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
+%define ceph 1
 %endif
 
 #
