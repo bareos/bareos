@@ -23,6 +23,7 @@
  * VADP Dumper - vStorage APIs for Data Protection Dumper program.
  *
  * Marco van Wieringen, July 2014
+ * Renout Gerrits, Oct 2017, added thumbprint
  */
 #include <stdio.h>
 #include <stdint.h>
@@ -52,7 +53,7 @@
 #define VIXDISKLIB_VERSION_MAJOR 5
 #define VIXDISKLIB_VERSION_MINOR 5
 
-#define VSPHERE_DEFAULT_ADMIN_PORT 902
+#define VSPHERE_DEFAULT_ADMIN_PORT 0
 
 /*
  * VixDiskLib does all processing in sectors of 512 bytes.
@@ -71,6 +72,7 @@
 #define CON_PARAMS_KEY "ConnParams"
 #define CON_PARAMS_VM_MOREF_KEY "VmMoRef"
 #define CON_PARAMS_HOST_KEY "VsphereHostName"
+#define CON_PARAMS_THUMBPRINT_KEY "VsphereThumbPrint"
 #define CON_PARAMS_USERNAME_KEY "VsphereUsername"
 #define CON_PARAMS_PASSWORD_KEY "VspherePassword"
 #define CON_PARAMS_SNAPSHOT_MOREF_KEY "VsphereSnapshotMoRef"
@@ -525,6 +527,16 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
          goto bail_out;
       }
 
+      object = json_object_get(connect_params, CON_PARAMS_THUMBPRINT_KEY);
+      if (object) {
+
+          cnxParams.thumbPrint = strdup(json_string_value(object));
+          if (!cnxParams.thumbPrint) {
+              fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_USERNAME_KEY);
+              goto bail_out;
+          }
+      }
+
       object = json_object_get(connect_params, CON_PARAMS_USERNAME_KEY);
       if (!object) {
          fprintf(stderr, "Failed to find %s in JSON definition of object %s\n", CON_PARAMS_USERNAME_KEY, key);
@@ -536,6 +548,7 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
          fprintf(stderr, "Failed to allocate memory for holding %s\n", CON_PARAMS_USERNAME_KEY);
          goto bail_out;
       }
+
 
       object = json_object_get(connect_params, CON_PARAMS_PASSWORD_KEY);
       if (!object) {

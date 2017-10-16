@@ -20,6 +20,7 @@
 # 02110-1301, USA.
 #
 # Author: Stephan Duehr
+# Renout Gerrits, Oct 2017, added thumbprint
 #
 # Bareos python class for VMware related backup and restore
 #
@@ -76,7 +77,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.events.append(bEventType['bEventStartBackupJob'])
         self.events.append(bEventType['bEventStartRestoreJob'])
         bareosfd.RegisterEvents(context, self.events)
-        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass']
+        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass', 'vcthumbprint']
         self.mandatory_options_vmname = ['dc', 'folder', 'vmname']
 
         self.vadp = BareosVADPWrapper()
@@ -1035,6 +1036,7 @@ class BareosVADPWrapper(object):
         cbt_data['ConnParams']['VsphereHostName'] = self.options['vcserver']
         cbt_data['ConnParams']['VsphereUsername'] = self.options['vcuser']
         cbt_data['ConnParams']['VspherePassword'] = self.options['vcpass']
+        cbt_data['ConnParams']['VsphereThumbPrint'] = self.options['vcthumbprint'].replace(" ", ":")
         cbt_data['ConnParams'][
             'VsphereSnapshotMoRef'] = self.create_snap_result._moId
 
