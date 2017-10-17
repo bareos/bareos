@@ -272,11 +272,11 @@ class RestoreController extends AbstractActionController
             else {
                $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
                $this->restore_params['jobids'] = $jobids;
-               $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'], $this->restore_params['id'], $this->restore_params['limit']);
+               $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
             }
          }
          else {
-            $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'], $this->restore_params['id'], $this->restore_params['limit']);
+            $this->directories = $this->getRestoreModel()->getDirectories($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
          }
       }
       catch(Exception $e) {
@@ -300,11 +300,11 @@ class RestoreController extends AbstractActionController
             else {
                $jobids = $this->getRestoreModel()->getJobIds($this->bsock, $this->restore_params['jobid'],$this->restore_params['mergefilesets'],$this->restore_params['mergejobs']);
                $this->restore_params['jobids'] = $jobids;
-               $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'], $this->restore_params['id'], $this->restore_params['limit']);
+               $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobids'], $this->restore_params['id']);
             }
          }
          else {
-            $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'], $this->restore_params['id'], $this->restore_params['limit']);
+            $this->files = $this->getRestoreModel()->getFiles($this->bsock, $this->restore_params['jobid'], $this->restore_params['id']);
          }
       }
       catch(Exception $e) {

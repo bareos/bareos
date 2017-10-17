@@ -98,6 +98,7 @@ $this->headTitle($title);
          echo '<p>'.$this->formRow($form->get('restorejob')).'</p>';
          echo '<p>'.$this->formRow($form->get('replace')).'</p>';
          echo '<p>'.$this->formRow($form->get('where')).'</p>';
+         echo '<p><br />'.$this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary')).'</p>';
          // Hidden fields
          echo $this->formRow($form->get('checked_files'));
          echo $this->formRow($form->get('checked_directories'));
@@ -120,7 +121,7 @@ $this->headTitle($title);
                echo '<strong>';
                echo $this->translate("File selection");
                echo '</strong>';
-
+/*
                echo '<div class="form-group">';
                echo '<label class="control-label col-md-1">';
                echo $this->formLabel($form->get('limit'));
@@ -129,8 +130,8 @@ $this->headTitle($title);
                echo $this->formText($form->get('limit'));
                echo '</div>';
                echo '</div>';
-
-               echo '<div class="panel panel-default" style="height: 600px; overflow: scroll;"><div id="filebrowser"></div></div>';
+*/
+               echo '<div class="panel panel-default" style="height: 550px; overflow: auto; resize: both;"><div id="filebrowser"></div></div>';
 
                /*
                echo '<div class="input-group">';
@@ -143,12 +144,7 @@ $this->headTitle($title);
          }
       ?>
    </div>
-</div>
 
-<div class="row">
-   <div class="col-md-3">
-      <?php echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary')); ?>
-   </div>
 </div>
 
 <?php
@@ -166,6 +162,15 @@ $this->headTitle($title);
    echo $this->headScript()->prependFile($this->basePath() . '/js/moment-with-locales.min.js');
    echo $this->headLink()->prependStylesheet($this->basePath() . '/css/jstree.min.css');
 ?>
+
+<style>
+
+.jsTreeGridHeader {
+   background-color: #eeeeee;
+   color: #000000;
+}
+
+</style>
 
 <script type="text/javascript">
 
@@ -271,27 +276,37 @@ $this->headTitle($title);
    });
 
    $('#filebrowser').jstree({
+      'plugins' : [ "grid", "checkbox", "state", "sort", "search", "types" ],
       'core' : {
+         'animation': false,
+         'force_text': true,
+         'error': function () {
+            alert('Oops, something went wrong, probably too many files.')
+         },
          'data' :{
             'url' : '<?php echo $this->basePath() . "/restore/filebrowser?type=" . $this->restore_params['type'] . "&jobid=" . $this->restore_params['jobid'] . "&mergefilesets=" . $this->restore_params['mergefilesets'] . "&mergejobs=" . $this->restore_params['mergejobs'] . "&limit=" . $this->restore_params['limit']; ?>',
             'dataType' : 'json',
             'data' : function (node) {
                return { 'id' : node.id };
             },
-            //'error' : alert('Error loading filetree') // debug
-         }
+         },
       },
-      'plugins' : [ "grid", "checkbox", "state", "sort", "search", "types" ],
       'grid' : {
+         width: '100%',
+         fixedHeader: true,
+         resizable: false,
          columns: [
             {
-               width: 500,
+               width: '100%',
+               height: '100%',
                header: '<?php echo $this->translate("Name"); ?>',
+               headerClass: 'jsTreeGridHeader',
                title: "_DATA_"
             },
             {
-               width: 125,
+               width: 150,
                header: '<?php echo $this->translate("Size"); ?>',
+               headerClass: 'jsTreeGridHeader',
                value: function(node) {
                   if(node.data.stat.size == 0) {
                      return null;
@@ -302,7 +317,9 @@ $this->headTitle($title);
                }
             },
             {
+               width: 150,
                header: '<?php echo $this->translate("Date"); ?>',
+               headerClass: 'jsTreeGridHeader',
                value: function(node) {
                   if(node.data.stat.mtime == 0) {
                      return null;
@@ -313,7 +330,6 @@ $this->headTitle($title);
                }
             }
          ],
-         resizable: true,
       },
       'search' : {
          "case_sensitive" : false,

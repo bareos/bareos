@@ -34,34 +34,63 @@ class RestoreModel
     * @param $bsock
     * @param $jobid
     * @param $pathid
-    * @param $limit
     *
     * @return array
     */
-   public function getDirectories(&$bsock=null, $jobid=null, $pathid=null, $limit=null) {
+   public function getDirectories(&$bsock=null, $jobid=null, $pathid=null) {
       if(isset($bsock)) {
-         if($pathid == null || $pathid== "#") {
-            $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=';
-         }
-         else {
-            $cmd = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit;
-         }
-         $result = $bsock->send_command($cmd, 2, $jobid);
-         $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         if(empty($directories['result']['directories'])) {
-            $cmd = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
-            $result = $bsock->send_command($cmd, 2, $jobid);
-            $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            if(empty($directories['result']['directories'])) {
-               return null;
+
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+
+         while (true) {
+
+            if($pathid == null || $pathid== "#") {
+               $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
-               return $directories['result']['directories'];
+               $cmd_1 = '.bvfs_lsdirs jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
+
+            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+
+            if(empty($directories['result']['directories'])) {
+               $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
+               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if(count($directories['result']['directories']) == 2) {
+                  $retval = array_merge($retval, $directories['result']['directories']);
+                  // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
+                  foreach($retval as $key => $value) {
+                     if($retval[$key]['name'] === "." || $retval[$key]['name'] === "..")
+                        unset($retval[$key]);
+                  }
+                  return $retval;
+               }
+               else {
+                  $retval = array_merge($retval, $directories['result']['directories']);
+               }
+            }
+            // no more results?
+            elseif (count($directories['result']['directories']) == 2) {
+               $retval = array_merge($retval, $directories['result']['directories']);
+               // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
+               foreach($retval as $key => $value) {
+                  if($retval[$key]['name'] === "." || $retval[$key]['name'] === "..")
+                     unset($retval[$key]);
+               }
+               return $retval;
+            }
+            // continue
+            else {
+               $retval = array_merge($retval, $directories['result']['directories']);
+            }
+            $offset = $offset + $limit;
+
          }
-         else {
-            return $directories['result']['directories'];
-         }
+
       }
       else {
          throw new \Exception('Missing argument.');
@@ -74,34 +103,46 @@ class RestoreModel
     * @param $bsock
     * @param $jobid
     * @param $pathid
-    * @param $limit
     *
     * @return array
     */
-   public function getFiles(&$bsock=null, $jobid=null, $pathid=null, $limit=null) {
-      if(isset($bsock, $limit)) {
-         if($pathid == null || $pathid == "#") {
-            $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=';
-         }
-         else {
-            $cmd = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit;
-         }
-         $result = $bsock->send_command($cmd, 2, $jobid);
-         $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         if(empty($files['result']['files'])) {
-            $cmd = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit;
-            $result = $bsock->send_command($cmd, 2, $jobid);
-            $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-            if(empty($files['result']['files'])) {
-               return null;
+   public function getFiles(&$bsock=null, $jobid=null, $pathid=null) {
+      if(isset($bsock)) {
+
+         $limit = 1000;
+         $offset = 0;
+         $retval = array();
+
+         while (true) {
+
+            if($pathid == null || $pathid == "#") {
+               $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' path= limit='.$limit.' offset='.$offset;
             }
             else {
-               return $files['result']['files'];
+               $cmd_1 = '.bvfs_lsfiles jobid='.$jobid.' pathid='.abs($pathid).' limit='.$limit.' offset='.$offset;
             }
+
+            $result = $bsock->send_command($cmd_1, 2, $jobid);
+            $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+
+            if(empty($files['result']['files'])) {
+               $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
+               $result = $bsock->send_command($cmd_2, 2, $jobid);
+               $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if(empty($files['result']['files'])) {
+                  return $retval;
+               }
+               else {
+                  $retval = array_merge($retval, $files['result']['files']);
+               }
+            }
+            else {
+               $retval = array_merge($retval, $files['result']['files']);
+            }
+            $offset = $offset + $limit;
+
          }
-         else {
-            return $files['result']['files'];
-         }
+
       }
       else {
          throw new \Exception('Missing argument.');
