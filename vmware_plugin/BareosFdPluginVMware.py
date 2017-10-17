@@ -1036,7 +1036,7 @@ class BareosVADPWrapper(object):
         cbt_data['ConnParams']['VsphereHostName'] = self.options['vcserver']
         cbt_data['ConnParams']['VsphereUsername'] = self.options['vcuser']
         cbt_data['ConnParams']['VspherePassword'] = self.options['vcpass']
-        cbt_data['ConnParams']['VsphereThumbPrint'] = self.options['vcthumbprint'].replace(" ", ":")
+        cbt_data['ConnParams']['VsphereThumbPrint'] = ':'.join([self.options['vcthumbprint'][i:i+2] for i in range(0, len(self.options['vcthumbprint']), 2)])
         cbt_data['ConnParams'][
             'VsphereSnapshotMoRef'] = self.create_snap_result._moId
 
