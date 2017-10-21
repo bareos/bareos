@@ -43,10 +43,10 @@
  */
 #ifdef HAVE_TYPEOF
 #define foreach_dlist(var, list) \
-        for((var)=NULL; list ? ((var)=(typeof(var))(list)->next(var)) : NULL; )
+        for((var)=NULL; list ? ((var)=(typeof(var))(list)->next(var)) : false; )
 #else
 #define foreach_dlist(var, list) \
-        for((var)=NULL; list ? (*((void **)&(var))=(void*)((list)->next(var))) : NULL; )
+        for((var)=NULL; list ? (*((void **)&(var))=(void*)((list)->next(var))) : false; )
 #endif
 
 struct dlink {
