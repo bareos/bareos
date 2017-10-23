@@ -153,10 +153,10 @@ rm_if_exists build/git-log
 rm -Rf build/src/ndmp
 
 # remove object files
-find build/ -name '*.o' | xargs rm
-find build/ -name '*.so' | xargs rm
-find build/ -name '*.lo' | xargs rm
-find build/ -name '*.la' | xargs rm
-find build/ -name '*.patch' | xargs rm
-find build/ -name '.libs' | xargs rm -R
+find build/ -name '*.o' | xargs rm -f
+find build/ -name '*.so' | xargs rm -f
+find build/ -name '*.lo' | xargs rm -f
+find build/ -name '*.la' | xargs rm -f
+find build/ -name '*.patch' | xargs rm -f
+find build/ -name '.libs' | xargs rm -f -R
 
