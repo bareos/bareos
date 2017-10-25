@@ -34,11 +34,11 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libreadline.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-GROWSRCS = grow.c
-GROWOBJS = $(GROWSRCS:.c=.o)
+GROWSRCS = grow.cc
+GROWOBJS = $(GROWSRCS:.cc=.o)
 
-BREGTESTSRCS = bregtest.c
-BREGTESTOBJS = $(BREGTESTSRCS:.c=.o)
+BREGTESTSRCS = bregtest.cc
+BREGTESTOBJS = $(BREGTESTSRCS:.cc=.o)
 
 all: grow.exe bregtest.exe
 
@@ -57,7 +57,7 @@ distclean:: clean
 	rm -f *.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

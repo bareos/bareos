@@ -1,5 +1,5 @@
-@libdir@/libbareoscats-[0-9]*.so
-@libdir@/libbareossql-*.so
+@libdir@/libbareoscats.so*
+@libdir@/libbareossql.so*
 @scriptdir@/create_bareos_database
 @scriptdir@/drop_bareos_database
 @scriptdir@/drop_bareos_tables

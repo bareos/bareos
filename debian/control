@@ -14,7 +14,7 @@ Section: admin
 Priority: optional
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
- autotools-dev,
+ cmake,
  bc,
  chrpath,
  debhelper (>= 7.0.50~),
@@ -314,103 +314,12 @@ Description: Backup Archiving Recovery Open Sourced - common tools
  .
  This package provides scripts and configuration to run bareos-regress with the installed Bareos packages.
 
-Package:        bareos-director-python-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - director Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the director.
 
-Package:        bareos-filedaemon-ceph-plugin
-Architecture:   linux-any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-filedaemon (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - file daemon CEPH plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the CEPH plugins for the file daemon.
 
-Package:        bareos-filedaemon-glusterfs-plugin
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-filedaemon (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - file daemon GlusterFS plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the GlusterFS plugin for the file daemon.
 
-Package:        bareos-filedaemon-python-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - file daemon Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the filedaemon.
 
-Package:        bareos-filedaemon-ldap-python-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), bareos-filedaemon-python-plugin (= ${binary:Version}), python-ldap, ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - file daemon LDAP plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the LDAP Python plugin for the filedaemon.
 
-Package:        bareos-storage-ceph
-Architecture:   linux-any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-storage (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon CEPH backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the CEPH backend for the storage daemon.
 
-Package:        bareos-storage-glusterfs
-Architecture:   any
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-storage (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon GlusterFS backend
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the GlusterFS backend for the storage daemon.
 
-Package:        bareos-storage-python-plugin
-Architecture:   any
-Section:        python
-Pre-Depends:    debconf (>= 1.4.30) | debconf-2.0
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Description: Backup Archiving Recovery Open Sourced - storage daemon Python plugin
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides the Python plugin for the storage daemon.
 
-Package:        bareos-traymonitor
-Architecture:   any
-Depends:        bareos-common (= ${binary:Version}), ${shlibs:Depends}, ${misc:Depends}
-Suggests:       kde|gnome-desktop-environment
-Conflicts:      bacula-traymonitor
-Replaces:       bacula-traymonitor
-Description: Backup Archiving Recovery Open Sourced - tray monitor
- Bareos is a set of programs to manage backup, recovery and verification of
- data across a network of computers of different kinds.
- .
- This package provides a tray monitor for the Bareos backup system. It is
- FreeDesktop-compatible, which means it will work under both KDE and
- GNOME.
- .
- The monitor constantly displays the status of Bareos.
 

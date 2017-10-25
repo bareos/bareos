@@ -27,5 +27,5 @@
 @configtemplatedir@/bareos-dir.d/storage/File.conf
 @configtemplatedir@/tray-monitor.d/director/Director-local*.conf
 /usr/sbin/bareos-dir
-/usr/share/man/man8/bareos-dir.8.gz
-/usr/share/man/man8/bareos.8.gz
+/usr/share/man/man8/bareos-dir.8*
+/usr/share/man/man8/bareos.8*

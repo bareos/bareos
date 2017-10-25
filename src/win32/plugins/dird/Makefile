@@ -55,7 +55,7 @@ all: python-dir.dll
 ifeq ($(WIN_VERSION),64)
 python-dir.o: CXXFLAGS += -DMS_WIN64
 endif
-python-dir.o: python-dir.c
+python-dir.o: python-dir.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(PYTHON_INCLUDES) -c -o $@ $<
 
@@ -70,6 +70,6 @@ distclean:: clean
 	rm -f python-dir.dll python-dir.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

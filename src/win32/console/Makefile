@@ -35,8 +35,8 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-CONSSRCS = console.c console_conf.c
-CONSOBJS = $(CONSSRCS:.c=.o)
+CONSSRCS = console.cc console_conf.cc
+CONSOBJS = $(CONSSRCS:.cc=.o)
 
 WINDRESSRCS = consoleres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -54,7 +54,7 @@ distclean:: clean
 	rm -f bconsole.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

@@ -47,13 +47,13 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-SVRSRCS = accurate.c accurate_htable.c accurate_lmdb.c authenticate.c \
-	  backup.c compression.c crypto.c dir_cmd.c estimate.c \
-	  fd_plugins.c filed_conf.c filed.c fileset.c heartbeat.c \
-	  restore.c sd_cmds.c socket_server.c status.c verify.c verify_vol.c \
-	  vss.c vss_XP.c vss_W2K3.c vss_Vista.c service.c main.c
+SVRSRCS = accurate.cc accurate_htable.cc accurate_lmdb.cc authenticate.cc \
+	  backup.cc compression.cc crypto.cc dir_cmd.cc estimate.cc \
+	  fd_plugins.cc filed_conf.cc filed.cc fileset.cc heartbeat.cc \
+	  restore.cc sd_cmds.cc socket_server.cc status.cc verify.cc verify_vol.cc \
+	  vss.cc vss_XP.cc vss_W2K3.cc vss_Vista.cc service.cc main.cc
 
-SVROBJS = $(SVRSRCS:.c=.o)
+SVROBJS = $(SVRSRCS:.cc=.o)
 
 WINDRESSRCS = filedres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -71,7 +71,7 @@ distclean:: clean
 	rm -f bareos-fd.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 
@@ -79,6 +79,6 @@ distclean:: clean
 	@echo "Ressource Compiling $^"
 	$(WINDRES) $^ -o $@
 
-main.o: ../generic/main.c
+main.o: ../generic/main.cc
 	@echo "Compiling $<"
 	$(CXX) -DFILE_DAEMON $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

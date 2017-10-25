@@ -37,8 +37,8 @@ LDLIBS = ../../lib/libbareos.a \
 	      #$(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 
-TEST_LIBSRCS = alist_test.c  bsnprintf_test.c edit_test.c htable_test.c passphrase_test.c rblist_test.c dlist_test.c test_lib.c sellist_test.c scan_test.c base64_test.c devlock_test.c rwlock_test.c junction_test.c
-TEST_LIBOBJS = $(TEST_LIBSRCS:.c=.o)
+TEST_LIBSRCS = alist_test.cc  bsnprintf_test.cc edit_test.cc htable_test.cc passphrase_test.cc rblist_test.cc dlist_test.cc test_lib.cc sellist_test.cc scan_test.cc base64_test.cc devlock_test.cc rwlock_test.cc junction_test.cc
+TEST_LIBOBJS = $(TEST_LIBSRCS:.cc=.o)
 
 #WINDRESSRCS = consoleres.rc
 #WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -59,7 +59,7 @@ distclean:: clean
 	rm -f test_lib.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

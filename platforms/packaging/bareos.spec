@@ -50,6 +50,9 @@ Vendor: 	The Bareos Team
 %define systemd 0
 %define python_plugins 1
 
+# cmake build directory
+%define CMAKE_BUILDDIR       cmake-build
+
 #
 # SUSE (openSUSE, SLES) specific settigs
 #
@@ -151,7 +154,7 @@ BuildRequires: git-core
 
 Source0: %{name}-%{version}.tar.gz
 
-#BuildRequires: elfutils
+BuildRequires: cmake
 BuildRequires: gcc
 BuildRequires: gcc-c++
 BuildRequires: make
@@ -692,87 +695,111 @@ fi
 export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
 %endif
 export MTX=/usr/sbin/mtx
-# Notice keep the upstream order of ./configure --help
-%configure \
-  --prefix=%{_prefix} \
-  --libdir=%{library_dir} \
-  --sbindir=%{_sbindir} \
-  --with-sbin-perm=755 \
-  --sysconfdir=%{_sysconfdir} \
-  --with-confdir=%{_sysconfdir}/bareos \
-  --mandir=%{_mandir} \
-  --docdir=%{_docdir}/%{name} \
-  --htmldir=%{_docdir}/%{name}/html \
-  --with-archivedir=/var/lib/bareos/storage \
-  --with-backenddir=%{backend_dir} \
-  --with-scriptdir=%{script_dir} \
-  --with-working-dir=%{working_dir} \
-  --with-plugindir=%{plugin_dir} \
-  --with-pid-dir=%{pid_dir} \
-  --with-bsrdir=%{bsr_dir} \
-  --with-logdir=/var/log/bareos \
-  --with-subsys-dir=%{_subsysdir} \
+
+
+mkdir %{CMAKE_BUILDDIR}
+pushd %{CMAKE_BUILDDIR}
+
+# use our own cmake call instead of cmake macro as it is different on different platforms/versions
+cmake  .. \
+      -DCMAKE_VERBOSE_MAKEFILE=ON \
+      -DCMAKE_INSTALL_PREFIX:PATH=/usr \
+      -DCMAKE_INSTALL_LIBDIR:PATH=/usr/lib \
+      -DINCLUDE_INSTALL_DIR:PATH=/usr/include \
+      -DLIB_INSTALL_DIR:PATH=/usr/lib \
+      -DSYSCONF_INSTALL_DIR:PATH=/etc \
+      -DSHARE_INSTALL_PREFIX:PATH=/usr/share \
+      -DBUILD_SHARED_LIBS:BOOL=ON \
+  -Dprefix=%{_prefix}\
+  -Dlibdir=%{library_dir} \
+  -Dsbindir=%{_sbindir} \
+  -Dsbin-perm=755 \
+  -Dsysconfdir=%{_sysconfdir} \
+  -Dconfdir=%{_sysconfdir}/bareos \
+  -Dmandir=%{_mandir} \
+  -Ddocdir=%{_docdir}/%{name} \
+  -Dhtmldir=%{_docdir}/%{name}/html \
+  -Darchivedir=/var/lib/bareos/storage \
+  -Dbackenddir=%{backend_dir} \
+  -Dscriptdir=%{script_dir} \
+  -Dworking-dir=%{working_dir} \
+  -Dplugindir=%{plugin_dir} \
+  -Dpid-dir=%{pid_dir} \
+  -Dbsrdir=%{bsr_dir} \
+  -Dlogdir=/var/log/bareos \
+  -Dsubsys-dir=%{_subsysdir} \
 %if 0%{?python_plugins}
-  --with-python \
+  -Dpython=yes \
 %endif
-  --enable-smartalloc \
-  --disable-conio \
-  --enable-readline \
-  --enable-batch-insert \
-  --enable-dynamic-cats-backends \
-  --enable-dynamic-storage-backends \
-  --enable-scsi-crypto \
-  --enable-lmdb \
-  --enable-ndmp \
-  --enable-ipv6 \
-  --enable-acl \
-  --enable-xattr \
+  -Dsmartalloc=yes \
+  -Ddisable-conio=yes \
+  -Dreadline=yes \
+  -Dbatch-insert=yes \
+  -Ddynamic-cats-backends=yes \
+  -Ddynamic-storage-backends=yes \
+  -Dscsi-crypto=yes \
+  -Dlmdb=yes \
+  -Dndmp=yes \
+  -Dipv6=yes \
+  -Dacl=yes \
+  -Dxattr=yes \
+%if 0%{?build_bat}
+  -Dbat=yes \
+%endif
 %if 0%{?build_qt_monitor}
-  --enable-traymonitor \
+  -Dtraymonitor=yes \
 %endif
 %if 0%{?client_only}
-  --enable-client-only \
+  -Dclient-only=yes \
 %endif
-  --with-postgresql \
-  --with-mysql \
+  -Dpostgresql=yes \
+  -Dmysql=yes \
 %if 0%{?build_sqlite3}
-  --with-sqlite3 \
+  -Dsqlite3=yes \
 %endif
-  --with-tcp-wrappers \
-  --with-dir-user=%{director_daemon_user} \
-  --with-dir-group=%{daemon_group} \
-  --with-sd-user=%{storage_daemon_user} \
-  --with-sd-group=%{storage_daemon_group} \
-  --with-fd-user=%{file_daemon_user} \
-  --with-fd-group=%{daemon_group} \
-  --with-dir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
-  --with-fd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
-  --with-sd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
-  --with-mon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
-  --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
-  --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
-  --with-openssl \
-  --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-  --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dtcp-wrappers=yes \
+  -Ddir-user=%{director_daemon_user} \
+  -Ddir-group=%{daemon_group} \
+  -Dsd-user=%{storage_daemon_user} \
+  -Dsd-group=%{storage_daemon_group} \
+  -Dfd-user=%{file_daemon_user} \
+  -Dfd-group=%{daemon_group} \
+  -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+  -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+  -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+  -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+  -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+  -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+  -Dopenssl=yes \
+  -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
 %if 0%{?systemd_support}
-  --with-systemd \
+  -Dsystemd=yes \
 %endif
-  --enable-includes
+  -Dincludes=yes
 
-#Add flags
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags};
+make  DESTDIR=%{buildroot}
 
 %check
 # run unit tests
-%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
+# todo with cmake, does not work right now
+#%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
 
 %install
-%if 0%{?suse_version}
-    %makeinstall DESTDIR=%{buildroot} install
-%else
-    make DESTDIR=%{buildroot} install
-%endif
-make DESTDIR=%{buildroot} install-autostart
+##if 0#{?suse_version}
+#    #makeinstall DESTDIR=#{buildroot} install
+##else
+#    make DESTDIR=#{buildroot} install
+##endif
+#make DESTDIR=#{buildroot} install-autostart
+
+pushd %{CMAKE_BUILDDIR}
+make  DESTDIR=%{buildroot} install
+
+popd
+
+#rm -Rvf build
+
 
 install -d -m 755 %{buildroot}/usr/share/applications
 install -d -m 755 %{buildroot}/usr/share/pixmaps
@@ -853,7 +880,7 @@ rm -f %{buildroot}/%{script_dir}/bareos-glusterfind-wrapper
 
 # remove man page if qt tray monitor is not built
 %if !0%{?build_qt_monitor}
-rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.1.gz
+rm %{buildroot}%{_mandir}/man1/bareos-tray-monitor.*
 %endif
 
 # install systemd service files
@@ -1114,13 +1141,13 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %endif
 %endif
 %dir %{backend_dir}
-%{library_dir}/libbareos-*.so
-%{library_dir}/libbareoscfg-*.so
-%{library_dir}/libbareosfind-*.so
-%{library_dir}/libbareoslmdb-*.so
+%{library_dir}/libbareos.so*
+%{library_dir}/libbareoscfg.so*
+%{library_dir}/libbareosfind.so*
+%{library_dir}/libbareoslmdb.so*
 %if !0%{?client_only}
-%{library_dir}/libbareosndmp-*.so
-%{library_dir}/libbareossd-*.so
+%{library_dir}/libbareosndmp.so*
+%{library_dir}/libbareossd.so*
 %endif
 # generic stuff needed from multiple bareos packages
 %dir /usr/lib/bareos/
@@ -1145,15 +1172,16 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0770, %{daemon_user}, %{daemon_group}) %dir %{working_dir}
 %attr(0775, %{daemon_user}, %{daemon_group}) %dir /var/log/bareos
 %doc AGPL-3.0.txt AUTHORS LICENSE README.*
-%doc build/
+#TODO: cmake does not create build directory
+#doc build/
 
 %if !0%{?client_only}
 
 %files database-common
 # catalog independent files
 %defattr(-, root, root)
-%{library_dir}/libbareossql-*.so
-%{library_dir}/libbareoscats-*.so
+%{library_dir}/libbareossql*.so.*
+%{library_dir}/libbareoscats*.so.*
 %dir %{script_dir}/ddl
 %dir %{script_dir}/ddl/creates
 %dir %{script_dir}/ddl/drops
@@ -1171,23 +1199,20 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # postgresql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/postgresql*.sql
-%{backend_dir}/libbareoscats-postgresql.so
-%{backend_dir}/libbareoscats-postgresql-*.so
+%{backend_dir}/libbareoscats-postgresql.so*
 
 %files database-mysql
 # mysql catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/mysql*.sql
-%{backend_dir}/libbareoscats-mysql.so
-%{backend_dir}/libbareoscats-mysql-*.so
+%{backend_dir}/libbareoscats-mysql.so*
 
 %if 0%{?build_sqlite3}
 %files database-sqlite3
 # sqlite3 catalog files
 %defattr(-, root, root)
 %{script_dir}/ddl/*/sqlite3*.sql
-%{backend_dir}/libbareoscats-sqlite3.so
-%{backend_dir}/libbareoscats-sqlite3-*.so
+%{backend_dir}/libbareoscats-sqlite3.so*
 %endif
 
 %files database-tools
@@ -1234,7 +1259,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files devel
 %defattr(-, root, root)
 /usr/include/bareos
-%{library_dir}/*.la
+#{library_dir}/*.la
 
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin

@@ -42,35 +42,35 @@ LDLIBS_FIND = ../lib/libbareos.a \
 	      $(MINGW_LIB)/libjansson.a \
 	      $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-DEVICE_API_SRCS = generic_tape_device.c win32_tape_device.c \
-		  win32_fifo_device.c win32_file_device.c
+DEVICE_API_SRCS = generic_tape_device.cc win32_tape_device.cc \
+		  win32_fifo_device.cc win32_file_device.cc
 
 # objects used in all daemons collected in (shared) library.
-LIBBAREOSSD_SRCS = acquire.c ansi_label.c askdir.c autochanger.c block.c \
-		   bsr.c butil.c crc32.c dev.c device.c ebcdic.c label.c \
-		   lock.c mount.c read_record.c record.c reserve.c scan.c \
-		   sd_backends.c sd_plugins.c sd_stats.c spool.c \
-		   stored_conf.c vol_mgr.c wait.c $(DEVICE_API_SRCS)
-LIBBAREOSSD_OBJS = $(LIBBAREOSSD_SRCS:.c=.o)
+LIBBAREOSSD_SRCS = acquire.cc ansi_label.cc askdir.cc autochanger.cc block.cc \
+		   bsr.cc butil.cc crc32.cc dev.cc device.cc ebcdic.cc label.cc \
+		   lock.cc mount.cc read_record.cc record.cc reserve.cc scan.cc \
+		   sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc \
+		   stored_conf.cc vol_mgr.cc wait.cc $(DEVICE_API_SRCS)
+LIBBAREOSSD_OBJS = $(LIBBAREOSSD_SRCS:.cc=.o)
 
 DYNAMIC_OBJS = $(LIBBAREOSSD_OBJS)
 
-SVRSRCS = append.c askdir.c authenticate.c dir_cmd.c fd_cmds.c job.c mac.c \
-	  ndmp_tape.c read.c sd_cmds.c sd_stats.c socket_server.c status.c stored.c \
-	  service.c main.c
-SVROBJS = $(SVRSRCS:.c=.o)
+SVRSRCS = append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc job.cc mac.cc \
+	  ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc socket_server.cc status.cc stored.cc \
+	  service.cc main.cc
+SVROBJS = $(SVRSRCS:.cc=.o)
 
-TAPESRCS = btape.c
-TAPEOBJS = $(TAPESRCS:.c=.o)
+TAPESRCS = btape.cc
+TAPEOBJS = $(TAPESRCS:.cc=.o)
 
-BLSSRCS = bls.c
-BLSOBJS = $(BLSSRCS:.c=.o)
+BLSSRCS = bls.cc
+BLSOBJS = $(BLSSRCS:.cc=.o)
 
-BEXTSRCS = bextract.c
-BEXTOBJS = $(BEXTSRCS:.c=.o)
+BEXTSRCS = bextract.cc
+BEXTOBJS = $(BEXTSRCS:.cc=.o)
 
-BSCANSRCS = bscan.c
-BSCANOBJS = $(BSCANSRCS:.c=.o)
+BSCANSRCS = bscan.cc
+BSCANOBJS = $(BSCANSRCS:.cc=.o)
 
 WINDRESSRCS = storedres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -124,7 +124,7 @@ distclean:: clean
 	rm -f libbareossd.dll libbareossd.dll.a bareos-sd.exe btape.exe bls.exe bextract.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

@@ -1,4 +1,4 @@
 /usr/sbin/bareos-dbcheck
 /usr/sbin/bscan
-/usr/share/man/man8/bareos-dbcheck.8.gz
-/usr/share/man/man8/bscan.8.gz
+/usr/share/man/man8/bareos-dbcheck.8*
+/usr/share/man/man8/bscan.8*

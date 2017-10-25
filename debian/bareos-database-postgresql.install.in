@@ -1,7 +1,5 @@
-@backenddir@/libbareoscats-postgresql*.so
+@backenddir@/libbareoscats-postgresql.so*
 @scriptdir@/ddl/*/postgresql*.sql
 /usr/share/dbconfig-common/data/bareos-database-common/install/pgsql
 /usr/share/dbconfig-common/data/bareos-database-common/upgrade-dbadmin/pgsql/*
 /usr/share/dbconfig-common/data/bareos-database-common/upgrade/pgsql/*
-/usr/share/dbconfig-common/scripts/bareos-database-common/upgrade/pgsql/*
-
