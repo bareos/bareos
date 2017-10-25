@@ -371,6 +371,11 @@ static inline void cleanup_cnxParams()
       free(cnxParams.creds.uid.password);
       cnxParams.creds.uid.password = NULL;
    }
+
+   if (cnxParams.thumbPrint) {
+      free(cnxParams.thumbPrint);
+      cnxParams.thumbPrint = NULL;
+   }
 }
 
 static inline void cleanup_vixdisklib()
