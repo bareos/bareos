@@ -35,32 +35,32 @@ LDLIBS = $(MINGW_LIB)/libssl.dll.a \
          $(MINGW_LIB)/libjansson.dll.a \
          $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
-		 berrno.c bget_msg.c binflate.c bnet_server_tcp.c bnet.c \
-		 bpipe.c breg.c bregex.c bsnprintf.c bsock.c bsock_sctp.c \
-		 bsock_tcp.c bsock_udt.c bsys.c btime.c btimers.c \
-		 compression.c connection_pool.c cram-md5.c cbuf.c crypto.c \
-		 crypto_cache.c crypto_gnutls.c crypto_none.c crypto_nss.c \
-		 crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
-		 edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c json.c \
-		 lockmgr.c md5.c mem_pool.c message.c mntent_cache.c \
-		 output_formatter.c passphrase.c path_list.c plugins.c poll.c \
-		 priv.c queue.c rblist.c runscript.c rwlock.c scan.c \
-		 scsi_crypto.c scsi_lli.c sellist.c serial.c sha1.c signal.c \
-		 smartall.c tls_gnutls.c tls_none.c tls_nss.c tls_openssl.c \
-		 tree.c util.c var.c watchdog.c workq.c
-LIBBAREOS_OBJS = $(LIBBAREOS_SRCS:.c=.o)
+LIBBAREOS_SRCS = address_conf.cc alist.cc attr.cc attribs.cc base64.cc \
+		 berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc \
+		 bpipe.cc breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_sctp.cc \
+		 bsock_tcp.cc bsock_udt.cc bsys.cc btime.cc btimers.cc \
+		 compression.cc connection_pool.cc cram-md5.cc cbuf.cc crypto.cc \
+		 crypto_cache.cc crypto_gnutls.cc crypto_none.cc crypto_nss.cc \
+		 crypto_openssl.cc crypto_wrap.cc daemon.cc devlock.cc dlist.cc \
+		 edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc jcr.cc json.cc \
+		 lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc \
+		 output_formatter.cc passphrase.cc path_list.cc plugins.cc poll.cc \
+		 priv.cc queue.cc rblist.cc runscript.cc rwlock.cc scan.cc \
+		 scsi_crypto.cc scsi_lli.cc sellist.cc serial.cc sha1.cc signal.cc \
+		 smartall.cc tls_gnutls.cc tls_none.cc tls_nss.cc tls_openssl.cc \
+		 tree.cc util.cc var.cc watchdog.cc workq.cc
+LIBBAREOS_OBJS = $(LIBBAREOS_SRCS:.cc=.o)
 
-LIBBAREOSCFG_SRCS = ini.c lex.c parse_bsr.c
-LIBBAREOSCFG_OBJS = $(LIBBAREOSCFG_SRCS:.c=.o)
+LIBBAREOSCFG_SRCS = ini.cc lex.cc parse_bsr.cc
+LIBBAREOSCFG_OBJS = $(LIBBAREOSCFG_SRCS:.cc=.o)
 
-COMPAT_SRCS = compat.c glob.c print.c winapi.c
-COMPAT_OBJS = $(COMPAT_SRCS:.c=.o)
+COMPAT_SRCS = compat.cc glob.cc print.cc winapi.cc
+COMPAT_OBJS = $(COMPAT_SRCS:.cc=.o)
 
 DYNAMIC_OBJS = $(LIBBAREOS_OBJS) $(LIBBAREOSCFG_OBJS) $(COMPAT_OBJS)
 
-STATIC_SRCS = parse_conf.c res.c
-STATIC_OBJS = $(STATIC_SRCS:.c=.o)
+STATIC_SRCS = parse_conf.cc res.cc
+STATIC_OBJS = $(STATIC_SRCS:.cc=.o)
 
 all: libbareos.dll libbareos.a
 
@@ -83,11 +83,11 @@ distclean:: clean
 	rm -f libbareos.dll libbareos.dll.a libbareos.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 
 btime.o: DEFINES += -D_POSIX_C_SOURCE=200112
-btime.o: btime.c
+btime.o: btime.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

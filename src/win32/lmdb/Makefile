@@ -26,8 +26,8 @@ INCLUDES = -I../../lmdb
 LDLIBS = $(MINGW_LIB)/libwinpthread.a \
          -lntdll
 
-LIBBAREOSLMDB_SRCS = mdb.c midl.c
-LIBBAREOSLMDB_OBJS = $(LIBBAREOSLMDB_SRCS:.c=.o)
+LIBBAREOSLMDB_SRCS = mdb.cc midl.cc
+LIBBAREOSLMDB_OBJS = $(LIBBAREOSLMDB_SRCS:.cc=.o)
 
 DYNAMIC_OBJS = $(LIBBAREOSLMDB_OBJS)
 
@@ -48,6 +48,6 @@ distclean: clean
 	rm -f libbareoslmdb.dll libbareoslmdb.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CC) $(DLL_USAGE) $(CFLAGS) -c -o $@ $<

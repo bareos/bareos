@@ -37,8 +37,8 @@ LDLIBS = ../../lib/libbareos.a \
 	      #$(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
 
-TEST_SRCS = test_findlib.c drivetype_test.c fstype_test.c
-TEST_OBJS = $(TEST_SRCS:.c=.o)
+TEST_SRCS = test_findlib.cc drivetype_test.cc fstype_test.cc
+TEST_OBJS = $(TEST_SRCS:.cc=.o)
 
 #WINDRESSRCS = consoleres.rc
 #WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -56,7 +56,7 @@ distclean:: clean
 	rm -f test_findlib.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

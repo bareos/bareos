@@ -5,4 +5,4 @@
 @configtemplatedir@/tray-monitor.d/client/FileDaemon-local*.conf
 /usr/sbin/bareos-fd
 @plugindir@/bpipe-fd.so
-/usr/share/man/man8/bareos-fd.8.gz
+/usr/share/man/man8/bareos-fd.8*

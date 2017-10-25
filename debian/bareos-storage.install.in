@@ -7,4 +7,4 @@
 @configtemplatedir@/bareos-sd.d/storage/bareos-sd.conf
 @configtemplatedir@/tray-monitor.d/storage/StorageDaemon-local*.conf
 /usr/sbin/bareos-sd
-/usr/share/man/man8/bareos-sd.8.gz
+/usr/share/man/man8/bareos-sd.8*

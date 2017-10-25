@@ -59,7 +59,7 @@ autoxflate-sd.dll: autoxflate-sd.o
 ifeq ($(WIN_VERSION),64)
 python-sd.o: CXXFLAGS += -DMS_WIN64
 endif
-python-sd.o: python-sd.c
+python-sd.o: python-sd.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(PYTHON_INCLUDES) -c -o $@ $<
 
@@ -74,6 +74,6 @@ distclean:: clean
 	rm -f autoxflate-sd.dll python-sd.dll autoxflate-sd.dll.a python-sd.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

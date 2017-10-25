@@ -6,9 +6,9 @@
 /usr/sbin/bregex
 /usr/sbin/bwild
 /usr/sbin/bpluginfo
-/usr/share/man/man1/bwild.1.gz
-/usr/share/man/man1/bregex.1.gz
-/usr/share/man/man8/bcopy.8.gz
-/usr/share/man/man8/bextract.8.gz
-/usr/share/man/man8/bls.8.gz
-/usr/share/man/man8/bpluginfo.8.gz
+/usr/share/man/man1/bwild.1*
+/usr/share/man/man1/bregex.1*
+/usr/share/man/man8/bcopy.8*
+/usr/share/man/man8/bextract.8*
+/usr/share/man/man8/bls.8*
+/usr/share/man/man8/bpluginfo.8*

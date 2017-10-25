@@ -17,7 +17,8 @@ DH_VERBOSE = 1
 # This has to be exported to make some magic below work.
 DH_OPTIONS = -v
 
-export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+
+
 
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos
@@ -27,68 +28,68 @@ FILE_DAEMON_USER = root
 STORAGE_DAEMON_GROUP = $(DAEMON_GROUP)
 
 define CONFIGURE_COMMON
-  --with-sbin-perm=755 \
-  --libdir=/usr/lib/bareos \
-  --sysconfdir=/etc \
-  --with-confdir=/etc/bareos \
-  --with-archivedir=/var/lib/bareos/storage \
-  --with-backenddir=/usr/lib/bareos/backends \
-  --with-configtemplatedir=/usr/lib/bareos/defaultconfigs \
-  --with-scriptdir=/usr/lib/bareos/scripts \
-  --with-plugindir=/usr/lib/bareos/plugins \
-  --with-working-dir=/var/lib/bareos \
-  --with-pid-dir=/var/lib/bareos \
-  --with-bsrdir=/var/lib/bareos \
-  --with-logdir=/var/log/bareos \
-  --with-subsys-dir=/var/lock \
-  --enable-smartalloc \
-  --disable-conio \
-  --enable-readline \
-  --enable-batch-insert \
-  --enable-dynamic-debian-package-list \
-  --enable-dynamic-cats-backends \
-  --enable-dynamic-storage-backends \
-  --enable-acl \
-  --enable-xattr \
-  --enable-scsi-crypto \
-  --enable-lmdb \
-  --enable-ndmp \
-  --enable-ipv6 \
-  --with-postgresql \
-  --with-mysql \
-  --with-sqlite3 \
-  --with-tcp-wrappers \
-  --with-openssl \
-  --with-dir-user=$(DIRECTOR_DAEMON_USER) \
-  --with-dir-group=$(DAEMON_GROUP) \
-  --with-sd-user=$(STORAGE_DAEMON_USER) \
-  --with-sd-group=$(STORAGE_DAEMON_GROUP) \
-  --with-fd-user=$(FILE_DAEMON_USER) \
-  --with-fd-group=$(DAEMON_GROUP) \
-  --with-dir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
-  --with-fd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
-  --with-sd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
-  --with-mon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
-  --with-mon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
-  --with-mon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
-  --with-basename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-  --with-hostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
-  --enable-includes \
-  --disable-rpath
+  -Dsbin-perm=755 \
+  -Dlibdir=/usr/lib/bareos \
+  -Dsysconfdir=/etc \
+  -Dconfdir=/etc/bareos \
+  -Darchivedir=/var/lib/bareos/storage \
+  -Dbackenddir=/usr/lib/bareos/backends \
+  -Dconfigtemplatedir=/usr/lib/bareos/defaultconfigs \
+  -Dscriptdir=/usr/lib/bareos/scripts \
+  -Dplugindir=/usr/lib/bareos/plugins \
+  -Dworking-dir=/var/lib/bareos \
+  -Dpid-dir=/var/lib/bareos \
+  -Dbsrdir=/var/lib/bareos \
+  -Dlogdir=/var/log/bareos \
+  -Dsubsys-dir=/var/lock \
+  -Dsmartalloc=yes \
+  -Ddisable-conio=yes \
+  -Dreadline=yes \
+  -Dbatch-insert=yes \
+  -Ddynamic-debian-package-list=yes\
+  -Ddynamic-cats-backends=yes \
+  -Ddynamic-storage-backends=yes \
+  -Dscsi-crypto=yes \
+  -Dlmdb=yes \
+  -Dndmp=yes \
+  -Dipv6=yes \
+  -Dacl=yes \
+  -Dxattr=yes \
+  -Dpostgresql=yes \
+  -Dmysql=yes \
+  -Dsqlite3=yes \
+  -Dtcp-wrappers=yes \
+  -Dopenssl=yes \
+  -Ddir-user=$(DIRECTOR_DAEMON_USER) \
+  -Ddir-group=$(DAEMON_GROUP) \
+  -Dsd-user=$(STORAGE_DAEMON_USER) \
+  -Dsd-group=$(STORAGE_DAEMON_GROUP) \
+  -Dfd-user=$(FILE_DAEMON_USER) \
+  -Dfd-group=$(DAEMON_GROUP) \
+  -Ddir-password="XXX_REPLACE_WITH_DIRECTOR_PASSWORD_XXX" \
+  -Dfd-password="XXX_REPLACE_WITH_CLIENT_PASSWORD_XXX" \
+  -Dsd-password="XXX_REPLACE_WITH_STORAGE_PASSWORD_XXX" \
+  -Dmon-dir-password="XXX_REPLACE_WITH_DIRECTOR_MONITOR_PASSWORD_XXX" \
+  -Dmon-fd-password="XXX_REPLACE_WITH_CLIENT_MONITOR_PASSWORD_XXX" \
+  -Dmon-sd-password="XXX_REPLACE_WITH_STORAGE_MONITOR_PASSWORD_XXX" \
+  -Dbasename="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
+  -Dincludes=yes \
+  -Drpath=no
 endef
 
 #  --docdir="\$(_docdir)/bareos" \
 #  --htmldir="\$(_docdir)/bareos/html" \
 
 ifeq ($(DEB_HOST_ARCH_OS),kfreebsd)
-CONFIGURE_COMMON       += --disable-acl --disable-xattr --disable-scsi-crypto --disable-ndmp
+CONFIGURE_COMMON       += -Dacl=no -Dxattr=no -Dscsi-crypto=no -Dndmp=no
 endif
 ifeq ($(DEB_HOST_ARCH_OS),hurd)
-CONFIGURE_COMMON       += --disable-scsi-crypto --disable-ndmp
+CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
 
-CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) --enable-client-only
-CONFIGURE_FULL        = $(CONFIGURE_COMMON) --with-python --enable-traymonitor
+CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
+CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dbat=yes -Dtraymonitor=yes
 
 override_dh_auto_configure:
 	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \
@@ -121,7 +122,13 @@ override_dh_installinit:
 	dh_installinit --package=bareos-filedaemon --name=bareos-fd
 
 override_dh_makeshlibs:
-	dh_makeshlibs -n  -Xusr/lib/bareos/plugins/ -Xusr/lib/bareos/backends/
+	dh_makeshlibs -n
+
+
+
+override_dh_shlibdeps:
+	dh_shlibdeps -l$(shell pwd)/debian/tmp/usr/lib/bareos
+
 
 %:
 	PARALLEL="--parallel"; \

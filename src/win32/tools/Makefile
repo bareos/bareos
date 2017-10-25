@@ -33,20 +33,20 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libz.dll.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid
 
-BSMTPSRCS = bsmtp.c
-BSMTPOBJS = $(BSMTPSRCS:.c=.o)
+BSMTPSRCS = bsmtp.cc
+BSMTPOBJS = $(BSMTPSRCS:.cc=.o)
 
 BSMTPRESSRCS = bsmtpres.rc
 BSMTPRESOBJS = $(BSMTPRESSRCS:.rc=.o)
 
-BREGEXSRCS = bregex.c
-BREGEXOBJS = $(BREGEXSRCS:.c=.o)
+BREGEXSRCS = bregex.cc
+BREGEXOBJS = $(BREGEXSRCS:.cc=.o)
 
 BREGEXRESSRCS = bregexres.rc
 BREGEXRESOBJS = $(BREGEXRESSRCS:.rc=.o)
 
-BWILDSRCS = bwild.c
-BWILDOBJS = $(BWILDSRCS:.c=.o)
+BWILDSRCS = bwild.cc
+BWILDOBJS = $(BWILDSRCS:.cc=.o)
 
 BWILDRESSRCS = bwildres.rc
 BWILDRESOBJS = $(BWILDRESSRCS:.rc=.o)
@@ -72,7 +72,7 @@ distclean:: clean
 	rm -f bsmtp.exe bregex.exe bwild.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 

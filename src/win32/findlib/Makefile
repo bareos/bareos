@@ -31,11 +31,11 @@ LDLIBS = ../lib/libbareos.dll \
 	 $(MINGW_LIB)/libwinpthread.a \
 	 $(WINSOCKLIB)
 
-LIBBAREOSFIND_SRCS = acl.c attribs.c bfile.c create_file.c \
-                     drivetype.c enable_priv.c find_one.c \
-                     find.c fstype.c hardlink.c match.c mkpath.c \
-                     shadowing.c win32.c xattr.c
-LIBBAREOSFIND_OBJS = $(LIBBAREOSFIND_SRCS:.c=.o)
+LIBBAREOSFIND_SRCS = acl.cc attribs.cc bfile.cc create_file.cc \
+                     drivetype.cc enable_priv.cc find_one.cc \
+                     find.cc fstype.cc hardlink.cc match.cc mkpath.cc \
+                     shadowing.cc win32.cc xattr.cc
+LIBBAREOSFIND_OBJS = $(LIBBAREOSFIND_SRCS:.cc=.o)
 
 DYNAMIC_OBJS = $(LIBBAREOSFIND_OBJS)
 
@@ -56,6 +56,6 @@ distclean: clean
 	rm -f libbareosfind.dll libbareosfind.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

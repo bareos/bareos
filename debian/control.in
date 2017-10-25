@@ -14,7 +14,7 @@ Section: admin
 Priority: optional
 Maintainer: Joerg Steffens <joerg.steffens@bareos.com>
 Build-Depends: acl-dev,
- autotools-dev,
+ cmake,
  bc,
  chrpath,
  debhelper (>= 7.0.50~),

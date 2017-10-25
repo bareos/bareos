@@ -29,11 +29,11 @@ INCLUDES = -I../.. \
 	   -I../compat/include
 LDLIBS = ../lib/libbareos.dll
 
-LIBBAREOSCATS_SRCS = bvfs.c cats.c cats_backends.c sql.c sql_create.c \
-		     sql_delete.c sql_find.c sql_get.c sql_list.c \
-		     sql_pooling.c sql_query.c sql_update.c
+LIBBAREOSCATS_SRCS = bvfs.cc cats.cc cats_backends.cc sql.cc sql_create.cc \
+		     sql_delete.cc sql_find.cc sql_get.cc sql_list.cc \
+		     sql_pooling.cc sql_query.cc sql_update.cc
 
-LIBBAREOSCATS_OBJS = $(LIBBAREOSCATS_SRCS:.c=.o)
+LIBBAREOSCATS_OBJS = $(LIBBAREOSCATS_SRCS:.cc=.o)
 
 DEFINES += -D_BDB_PRIV_INTERFACE_
 
@@ -49,7 +49,7 @@ libbareoscats.dll: $(DYNAMIC_OBJS) \
 		bareos$(WIN_VERSION).def
 	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a $(DYNAMIC_OBJS) bareos$(WIN_VERSION).def $(LDLIBS) -o $@
 
-postgresql.o: postgresql.c
+postgresql.o: postgresql.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -Ipgsql/include -c -o $@ $<
 
@@ -70,6 +70,6 @@ distclean: clean
               libbareoscats-sqlite3.dll libbareoscats-sqlite3.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

@@ -48,7 +48,7 @@ bpipe-fd.dll: bpipe-fd.o
 	$(CXX) $(LDFLAGS_DLL) -Wl,--out-implib,$@.a bpipe-fd.o $(LDLIBS) -o $@
 
 mssqlvdi-fd.o: CXXFLAGS += -fpermissive
-mssqlvdi-fd.o: mssqlvdi-fd.c
+mssqlvdi-fd.o: mssqlvdi-fd.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(VDI_INCLUDES) -c -o $@ $<
 
@@ -59,7 +59,7 @@ mssqlvdi-fd.dll: mssqlvdi-fd.o
 ifeq ($(WIN_VERSION),64)
 python-fd.o: CXXFLAGS += -DMS_WIN64
 endif
-python-fd.o: python-fd.c
+python-fd.o: python-fd.cc
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(OPT_CXXFLAGS) $(PYTHON_INCLUDES) -c -o $@ $<
 
@@ -74,6 +74,6 @@ distclean:: clean
 	rm -f bpipe-fd.dll mssqlvdi-fd.dll python-fd.dll bpipe-fd.dll.a mssqlvdi-fd.dll.a python-fd.dll.a
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<

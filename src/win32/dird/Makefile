@@ -35,27 +35,27 @@ LDLIBS = ../lib/libbareos.a \
          $(MINGW_LIB)/libjansson.a \
 	 $(WINSOCKLIB) -lole32 -loleaut32 -luuid -lcomctl32
 
-SVRSRCS = admin.c archive.c authenticate.c autoprune.c backup.c bsr.c \
-	  catreq.c consolidate.c dir_plugins.c dird_conf.c dird.c \
-	  expand.c fd_cmds.c getmsg.c inc_conf.c job.c jobq.c migrate.c \
-	  mountreq.c msgchan.c \
-	  ndmp_dma_backup_common.c ndmp_dma_backup_NDMP_BAREOS.c \
-	  ndmp_dma_backup_NDMP_NATIVE.c \
-	  ndmp_dma_generic.c\
-	  ndmp_dma_restore_common.c ndmp_dma_restore_NDMP_BAREOS.c \
-	  ndmp_dma_restore_NDMP_NATIVE.c \
-	  ndmp_dma_storage.c ndmp_fhdb_helpers.c \
-	  ndmp_fhdb_mem.c ndmp_fhdb_lmdb.c newvol.c next_vol.c quota.c \
-	  recycle.c restore.c run_conf.c sd_cmds.c scheduler.c \
-	  socket_server.c stats.c storage.c ua_acl.c ua_audit.c ua_cmds.c \
-	  ua_configure.c ua_db.c ua_dotcmds.c ua_input.c ua_impexp.c \
-	  ua_label.c ua_output.c ua_prune.c ua_purge.c ua_query.c \
-	  ua_restore.c ua_run.c ua_select.c ua_server.c ua_status.c \
-	  ua_tree.c ua_update.c vbackup.c verify.c service.c main.c
-SVROBJS = $(SVRSRCS:.c=.o)
+SVRSRCS = admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc \
+	  catreq.cc consolidate.cc dir_plugins.cc dird_conf.cc dird.cc \
+	  expand.cc fd_cmds.cc getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc \
+	  mountreq.cc msgchan.cc \
+	  ndmp_dma_backup_common.cc ndmp_dma_backup_NDMP_BAREOS.cc \
+	  ndmp_dma_backup_NDMP_NATIVE.cc \
+	  ndmp_dma_generic.cc\
+	  ndmp_dma_restore_common.cc ndmp_dma_restore_NDMP_BAREOS.cc \
+	  ndmp_dma_restore_NDMP_NATIVE.cc \
+	  ndmp_dma_storage.cc ndmp_fhdb_helpers.cc \
+	  ndmp_fhdb_mem.cc ndmp_fhdb_lmdb.cc newvol.cc next_vol.cc quota.cc \
+	  recycle.cc restore.cc run_conf.cc sd_cmds.cc scheduler.cc \
+	  socket_server.cc stats.cc storage.cc ua_acl.cc ua_audit.cc ua_cmds.cc \
+	  ua_configure.cc ua_db.cc ua_dotcmds.cc ua_input.cc ua_impexp.cc \
+	  ua_label.cc ua_output.cc ua_prune.cc ua_purge.cc ua_query.cc \
+	  ua_restore.cc ua_run.cc ua_select.cc ua_server.cc ua_status.cc \
+	  ua_tree.cc ua_update.cc vbackup.cc verify.cc service.cc main.cc
+SVROBJS = $(SVRSRCS:.cc=.o)
 
-DBCHKSRCS = dbcheck.c dird_conf.c ua_acl.c ua_audit.c run_conf.c inc_conf.c
-DBCHKOBJS = $(DBCHKSRCS:.c=.o)
+DBCHKSRCS = dbcheck.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc
+DBCHKOBJS = $(DBCHKSRCS:.cc=.o)
 
 WINDRESSRCS = dirdres.rc
 WINDRESOBJS = $(WINDRESSRCS:.rc=.o)
@@ -80,7 +80,7 @@ distclean:: clean
 	rm -f bareos-dir.exe bareos-dbcheck.exe
 
 # inference rules
-.c.o:
+.cc.o:
 	@echo "Compiling $<"
 	$(CXX) $(DLL_USAGE) $(CXXFLAGS) -c -o $@ $<
 
