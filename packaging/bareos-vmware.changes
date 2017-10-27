@@ -1,0 +1,5 @@
+bareos-vmware (14.4.0-1) unstable; urgency=low
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- root <root@ci-Debian-7-64>  Wed, 15 Apr 2015 13:25:31 +0200

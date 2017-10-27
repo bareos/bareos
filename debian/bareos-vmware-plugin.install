@@ -1,0 +1,2 @@
+vmware_plugin/*.py /usr/lib/bareos/plugins/vmware_plugin
+vmware_cbt_tool/vmware_cbt_tool.py /usr/sbin
