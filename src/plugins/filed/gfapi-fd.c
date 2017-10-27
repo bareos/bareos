@@ -697,8 +697,13 @@ static bRC get_next_file_to_backup(bpContext *ctx)
          if (status != 0) {
             berrno be;
 
-            Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_stat(%s) failed: %s\n", p_ctx->cwd, be.bstrerror());
-            return bRC_Error;
+            switch (errno) {
+            case ENOENT:
+               continue;
+            default:
+               Jmsg(ctx, M_ERROR, "gfapi-fd: glfs_stat(%s) failed: %s\n", p_ctx->next_filename, be.bstrerror());
+               return bRC_Error;
+            }
          }
       } else {
 #ifndef HAVE_GLFS_READDIRPLUS
