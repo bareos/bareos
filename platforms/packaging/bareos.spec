@@ -782,7 +782,8 @@ make  DESTDIR=%{buildroot}
 
 %check
 # run unit tests
-make check;
+pushd %{CMAKE_BUILDDIR}
+make check
 
 %install
 ##if 0#{?suse_version}
