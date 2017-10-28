@@ -831,7 +831,7 @@ bool db_write_batch_file_records(JCR *jcr)
    Dmsg1(50,"db_create_file_record changes=%u\n",jcr->db_batch->changes);
 
    jcr->JobStatus = JS_AttrInserting;
-   Jmsg1(jcr, M_INFO, 0, "Insert of attributes batch table with %u entries start\n", jcr->db_batch->changes);
+   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table with %u entries start\n", jcr->db_batch->changes);
 
    if (!sql_batch_end(jcr, jcr->db_batch, NULL)) {
       Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", jcr->db_batch->errmsg);
@@ -891,7 +891,7 @@ bool db_write_batch_file_records(JCR *jcr)
    }
 
    jcr->JobStatus = JobStatus;         /* reset entry status */
-   Jmsg0(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
+   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
    retval = true;
 
 bail_out:
