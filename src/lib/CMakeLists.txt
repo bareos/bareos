@@ -78,3 +78,7 @@ set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           )
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
+
+
+
+add_subdirectory(unittests EXCLUDE_FROM_ALL)
