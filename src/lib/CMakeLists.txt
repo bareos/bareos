@@ -81,4 +81,4 @@ INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
 
 
-add_subdirectory(unittests EXCLUDE_FROM_ALL)
+add_subdirectory(unittests)
