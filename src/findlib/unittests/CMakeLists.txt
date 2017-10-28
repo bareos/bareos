@@ -17,19 +17,24 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(../include .. .)
+include_directories(.. ../.. ../../include/)
 
-SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
-      enable_priv.cc find_one.cc find.cc fstype.cc hardlink.cc match.cc
-      mkpath.cc savecwd.cc shadowing.cc xattr.cc)
+set (TEST_SRC
+   drivetype_test.cc
+   fstype_test.cc
+   test_findlib.cc
+   )
 
-add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
-target_link_libraries(bareosfind ${ACL_LIBS})
 
-INSTALL(TARGETS bareosfind DESTINATION ${libdir})
+add_executable(test_findlib
+    ${TEST_SRC}
+    )
+target_link_libraries(test_findlib
+   bareos bareosfind
+   ${JANSSON_LIBRARIES}
+   ${CMOCKA_LIBRARIES}
+   )
 
-set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
-                                          SOVERSION "${SOVERSION}"
-                                          )
-
-add_subdirectory(unittests EXCLUDE_FROM_ALL)
+add_test(NAME test_findlib
+   COMMAND test_findlib)
+add_dependencies(check test_findlib)

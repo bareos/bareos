@@ -782,8 +782,7 @@ make  DESTDIR=%{buildroot}
 
 %check
 # run unit tests
-# todo with cmake, does not work right now
-#%__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
+make check;
 
 %install
 ##if 0#{?suse_version}

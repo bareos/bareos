@@ -30,6 +30,14 @@ SET(host ${CMAKE_SYSTEM})
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+
+
+# enable "make check"
+enable_testing()
+set(CMAKE_CTEST_COMMAND ctest -V)
+add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND})
+
+
 # run git-info to collect sourcecode info
 file(MAKE_DIRECTORY build)
 execute_process(
