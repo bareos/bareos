@@ -32,4 +32,4 @@ set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           )
 
-add_subdirectory(unittests EXCLUDE_FROM_ALL)
+add_subdirectory(unittests)
