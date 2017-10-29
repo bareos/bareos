@@ -25,16 +25,19 @@ set (TEST_SRC
    test_findlib.cc
    )
 
-
 add_executable(test_findlib
     ${TEST_SRC}
     )
 target_link_libraries(test_findlib
-   bareos bareosfind
+   bareosfind bareos
    ${JANSSON_LIBRARIES}
    ${CMOCKA_LIBRARIES}
    )
 
 add_test(NAME test_findlib
-   COMMAND test_findlib)
+   COMMAND "test_findlib"
+   )
+set_property(TEST test_findlib
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib")
+
 add_dependencies(check test_findlib)

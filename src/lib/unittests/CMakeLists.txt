@@ -49,5 +49,9 @@ target_link_libraries(test_lib
    )
 
 add_test(NAME test_lib
-   COMMAND test_lib)
+   COMMAND test_lib
+   )
+set_property(TEST test_lib
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib")
+
 add_dependencies(check test_lib)
