@@ -39,6 +39,8 @@ set (TEST_SRC
    )
 
 
+add_definitions(-DTEST_SMALL_HTABLE)
+
 add_executable(test_lib
     ${TEST_SRC}
     )
@@ -53,5 +55,6 @@ add_test(NAME test_lib
    )
 set_property(TEST test_lib
    PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib")
+
 
 add_dependencies(check test_lib)
