@@ -20,9 +20,8 @@
 include_directories(.. ../.. ../../include/)
 
 set (TEST_SRC
-   drivetype_test.cc
+//   drivetype_test.cc
    fstype_test.cc
-   test_findlib.cc
    )
 
 add_executable(test_findlib
@@ -32,12 +31,16 @@ target_link_libraries(test_findlib
    bareosfind bareos
    ${JANSSON_LIBRARIES}
    ${CMOCKA_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
    )
 
 add_test(NAME test_findlib
    COMMAND "test_findlib"
    )
 set_property(TEST test_findlib
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib")
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib:${CMAKE_BINARY_DIR}/src/findlib"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
 
 add_dependencies(check test_findlib)

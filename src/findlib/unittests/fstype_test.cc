@@ -26,30 +26,34 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include <stdio.h>
 #include "bareos.h"
 #include "findlib/find.h"
 
-void test_fstype(void **state) {
-#ifdef HAVE_WIN32
-   char *fs_to_check[] = {"/", "c:/", NULL};
-#else
-   char *fs_to_check[] = {"/proc", NULL};
-#endif
-   char fs[1000];
+TEST(FstypeTest, RootFs) {
+  char fs[1000];
+  bool retval;
+  retval = fstype("/", fs, sizeof(fs));
+  EXPECT_TRUE(retval);
+  EXPECT_STREQ("xfs", (const char *) fs) << "checking root fs to be xfs";
+}
 
-   char **p = fs_to_check;
-   while ( *p ) {
-      assert_true( fstype(*p, fs, sizeof(fs)) );
-      printf("%s\t%s\n", fs, *p);
-      p++;
-   }
+TEST(FstypeTest, Proc) {
+  char fs[1000];
+  bool retval;
+
+  retval = fstype("/proc", fs, sizeof(fs));
+  EXPECT_TRUE(retval);
+  EXPECT_STREQ("proc", (const char *) fs) << "checking proc to be proc";
+}
+
+TEST(FstypeTest, Run) {
+  char fs[1000];
+  bool retval;
+
+  retval = fstype("/run", fs, sizeof(fs));
+  EXPECT_TRUE(retval);
+  EXPECT_STREQ("tmpfs", (const char *) fs) << "checking run to be tmpfs";
 }
