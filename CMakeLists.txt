@@ -27,7 +27,7 @@ INCLUDE(GNUInstallDirs)
 add_subdirectory(vadp_dumper)
 add_subdirectory(vmware_cbt_tool)
 add_subdirectory(vmware_plugin)
-add_subdirectory(vmware-vix-disklib)
+#add_subdirectory(vmware-vix-disklib)
 
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically

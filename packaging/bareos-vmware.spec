@@ -49,19 +49,19 @@ full and incremental backup so snapshots. Restore of a snapshot
 is currently supported to the origin VM.
 
 
-%package -n     bareos-vmware-vix-disklib
-Summary:        VMware vix disklib distributable libraries
-Group:          Productivity/Archiving/Backup
-Url:            https://www.vmware.com/support/developer/vddk/
-License:        VMware
-AutoReqProv:    no
-%description -n bareos-vmware-vix-disklib
-The Virtual Disk Development Kit (VDDK) is a collection of C/C++ libraries,
-code samples, utilities, and documentation to help you create and access
-VMware virtual disk storage. The VDDK is useful in conjunction with the
-vSphere API for writing backup and recovery software, or similar applications.
-This package only contains the distributable code to comply with
-https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
+#%%package -n     bareos-vmware-vix-disklib
+#Summary:        VMware vix disklib distributable libraries
+#Group:          Productivity/Archiving/Backup
+#Url:            https://www.vmware.com/support/developer/vddk/
+#License:        VMware
+#AutoReqProv:    no
+#%%description -n bareos-vmware-vix-disklib
+#The Virtual Disk Development Kit (VDDK) is a collection of C/C++ libraries,
+#code samples, utilities, and documentation to help you create and access
+#VMware virtual disk storage. The VDDK is useful in conjunction with the
+#vSphere API for writing backup and recovery software, or similar applications.
+#This package only contains the distributable code to comply with
+#https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
 
 
 
@@ -109,13 +109,13 @@ make
 
 %files -n bareos-vmware-plugin
 %defattr(-,root,root)
-%{_libdir}/bareos/
+#%%{_libdir}/bareos/
 %{plugin_dir}/
 %{_sbindir}/vmware_cbt_tool.py
 %doc AUTHORS LICENSE README.md
 
-%files -n bareos-vmware-vix-disklib
-/usr/lib/vmware-vix-disklib/lib64
+#%%files -n bareos-vmware-vix-disklib
+#/usr/lib/vmware-vix-disklib/lib64
 
 
 

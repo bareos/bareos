@@ -1,5 +1,6 @@
-bareos-vmware (14.4.0-1) unstable; urgency=low
+bareos-vmware (0-0) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * generated from https://github.com/bareos/bareos-vmware.git
 
- -- root <root@ci-Debian-7-64>  Wed, 15 Apr 2015 13:25:31 +0200
+ -- Bareos Team <packager@bareos.com>  Mon, 31 Oct 2017 00:00:00 +0200
+
