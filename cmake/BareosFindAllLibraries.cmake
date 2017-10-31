@@ -39,14 +39,6 @@ if (${OPENSSL_FOUND})
    SET(HAVE_OPENSSL 1)
 endif()
 
-#INCLUDE(FindACL)
-
-#INCLUDE(FindFastlz)
-#INCLUDE(FindRados)
-#INCLUDE(FindRadosStriper)
-#INCLUDE(FindUtil)
-##INCLUDE(${CMAKE_CURRENT_LIST_DIR}/cmake/BareosFindLibraryAndHeaders.cmake)
-
 
 INCLUDE(BareosFindLibraryAndHeaders)
 
