@@ -32,6 +32,8 @@ SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 
 
+
+
 # enable "make check"
 enable_testing()
 set(CMAKE_CTEST_COMMAND ctest -V)
@@ -60,6 +62,16 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
    link_directories(/usr/local/lib)
 endif()
 
+# hpux
+if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
+   set(HAVE_HPUX_OS 1)
+   add_definitions(-D_XOPEN_SOURCE_EXTENDED=1)
+   add_definitions(-D_INCLUDE_XOPEN_SOURCE_EXTENDED=1)
+   add_definitions(-D_INCLUDE_LONGLONG=1)
+   include_directories(/usr/local/include/)
+   link_directories(/usr/lib/hpux32 /usr/local/lib/hpux32 /usr/local/lib )
+   link_libraries(dld intl)
+endif()
 
 INCLUDE(BareosFindPrograms)
 

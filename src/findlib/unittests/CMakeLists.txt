@@ -20,7 +20,7 @@
 include_directories(.. ../.. ../../include/)
 
 set (TEST_SRC
-//   drivetype_test.cc
+#   drivetype_test.cc
    fstype_test.cc
    )
 

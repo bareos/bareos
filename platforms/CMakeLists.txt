@@ -26,6 +26,8 @@ IF(NOT client-only)
 
    if (${DISTNAME} STREQUAL ubuntu)
       add_subdirectory(debian)
+   elseif (${DISTNAME} STREQUAL hpux)
+      MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
    else()
       add_subdirectory(${DISTNAME})
    endif()
