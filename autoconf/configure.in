@@ -4564,7 +4564,7 @@ if test x$use_libtool != xno; then
 
    if test X"$have_droplet" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-chunked.la"
-      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-object.la"
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-droplet.la"
    fi
 
    if test X"$have_ceph_rados" = "Xyes" ; then

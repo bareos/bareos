@@ -25,7 +25,7 @@
  *
  * Stacking is the following:
  *
- * object_store_device::
+ *   droplet_device::
  *         |
  *         v
  *   chunked_device::
@@ -44,7 +44,7 @@
 #ifdef HAVE_OBJECTSTORE
 #include "stored.h"
 #include "chunked_device.h"
-#include "object_store_device.h"
+#include "droplet_device.h"
 
 /**
  * Options that can be specified for this device type.
@@ -277,7 +277,7 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
  * This does the real work either by being called from a
  * io-thread or directly blocking the device.
  */
-bool object_store_device::flush_remote_chunk(chunk_io_request *request)
+bool droplet_device::flush_remote_chunk(chunk_io_request *request)
 {
    bool retval = false;
    dpl_status_t status;
@@ -400,7 +400,7 @@ bail_out:
 /*
  * Internal method for reading a chunk from the remote backing store.
  */
-bool object_store_device::read_remote_chunk(chunk_io_request *request)
+bool droplet_device::read_remote_chunk(chunk_io_request *request)
 {
    bool retval = false;
    dpl_status_t status;
@@ -492,7 +492,7 @@ bail_out:
 /*
  * Internal method for truncating a chunked volume on the remote backing store.
  */
-bool object_store_device::truncate_remote_chunked_volume(DCR *dcr)
+bool droplet_device::truncate_remote_chunked_volume(DCR *dcr)
 {
    POOL_MEM chunk_dir(PM_FNAME);
 
@@ -507,7 +507,7 @@ bool object_store_device::truncate_remote_chunked_volume(DCR *dcr)
 /*
  * Initialize backend.
  */
-bool object_store_device::initialize()
+bool droplet_device::initialize()
 {
    dpl_status_t status;
 
@@ -742,7 +742,7 @@ bail_out:
 /*
  * Open a volume using libdroplet.
  */
-int object_store_device::d_open(const char *pathname, int flags, int mode)
+int droplet_device::d_open(const char *pathname, int flags, int mode)
 {
    int retval = -1;
 
@@ -760,7 +760,7 @@ bail_out:
 /**
  * Read data from a volume using libdroplet.
  */
-ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
+ssize_t droplet_device::d_read(int fd, void *buffer, size_t count)
 {
    return read_chunked(fd, buffer, count);
 }
@@ -768,17 +768,17 @@ ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
 /**
  * Write data to a volume using libdroplet.
  */
-ssize_t object_store_device::d_write(int fd, const void *buffer, size_t count)
+ssize_t droplet_device::d_write(int fd, const void *buffer, size_t count)
 {
    return write_chunked(fd, buffer, count);
 }
 
-int object_store_device::d_close(int fd)
+int droplet_device::d_close(int fd)
 {
    return close_chunk();
 }
 
-int object_store_device::d_ioctl(int fd, ioctl_req_t request, char *op)
+int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 {
    return -1;
 }
@@ -786,7 +786,7 @@ int object_store_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 /**
  * Open a directory on the object store and find out size information for a volume.
  */
-ssize_t object_store_device::chunked_remote_volume_size()
+ssize_t droplet_device::chunked_remote_volume_size()
 {
    dpl_status_t status;
    ssize_t volumesize = 0;
@@ -846,7 +846,7 @@ bail_out:
    return volumesize;
 }
 
-boffset_t object_store_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t droplet_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 {
    switch (whence) {
    case SEEK_SET:
@@ -880,12 +880,12 @@ boffset_t object_store_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
    return m_offset;
 }
 
-bool object_store_device::d_truncate(DCR *dcr)
+bool droplet_device::d_truncate(DCR *dcr)
 {
    return truncate_chunked_volume(dcr);
 }
 
-object_store_device::~object_store_device()
+droplet_device::~droplet_device()
 {
    if (m_ctx) {
       if (m_object_bucketname && m_ctx->cur_bucket) {
@@ -908,7 +908,7 @@ object_store_device::~object_store_device()
    V(mutex);
 }
 
-object_store_device::object_store_device()
+droplet_device::droplet_device()
 {
    m_object_configstring = NULL;
    m_object_bucketname = NULL;
@@ -924,8 +924,8 @@ extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
    DEVICE *dev = NULL;
 
    switch (device_type) {
-   case B_OBJECT_STORE_DEV:
-      dev = New(object_store_device);
+   case B_DROPLET_DEV:
+      dev = New(droplet_device);
       break;
    default:
       Jmsg(jcr, M_FATAL, 0, _("Request for unknown devicetype: %d\n"), device_type);

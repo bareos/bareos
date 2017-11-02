@@ -1,7 +1,7 @@
 Device {
-  Name = ObjectStorage
-  Media Type = S3_File1
-  Archive Device = Object S3 Storage
+  Name = S3_ObjectStorage
+  Media Type = S3_Object1
+  Archive Device = S3 Object Storage
   #
   # Config options:
   #    profile= - Droplet profile to use either absolute PATH or logical name (e.g. ~/.droplet/<profile>.profile
@@ -14,13 +14,14 @@ Device {
   #    ioslots= - Number of IO-slots per IO-thread (default 10)
   #    mmap - Use mmap to allocate Chunk memory instead of malloc().
   #
-  Device Options = "profile=/etc/bareos/bareos-sd.d/.objectstorage/objectstorage.profile,bucket=bareos,iothreads=2"
-  Device Type = object
+  Device Options = "profile=/etc/bareos/bareos-sd.d/device/droplet/droplet.profile,bucket=bareos,iothreads=2"
+  Device Type = droplet
   LabelMedia = yes                    # lets Bareos label unlabeled media
   Random Access = yes
   AutomaticMount = yes                # when device opened, read it
   RemovableMedia = no
   AlwaysOpen = no
-  Description = "Object S3 device. A connecting Director must have the same Name and MediaType."
+  Description = "S3 Object device. A connecting Director must have the same Name and MediaType."
   Maximum File Size = 200000000       # 200 MB (Allows for seeking to small portions of the Volume)
 }
+

@@ -41,7 +41,7 @@ ELASTO_LOBJS = $(ELASTO_SRCS:.c=.lo)
 GFAPI_SRCS = gfapi_device.c
 GFAPI_LOBJS = $(GFAPI_SRCS:.c=.lo)
 
-OBJECT_SRCS = object_store_device.c
+OBJECT_SRCS = droplet_device.c
 OBJECT_LOBJS = $(OBJECT_SRCS:.c=.lo)
 
 RADOS_SRCS = rados_device.c
@@ -130,10 +130,10 @@ libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-gfapi-$(LIBBAREOSSD_LT_RELEASE).so $(GLUSTER_LIBS) -lbareos
 
-libbareossd-object.la: Makefile libbareossd-chunked.la $(OBJECT_LOBJS)
+libbareossd-droplet.la: Makefile libbareossd-chunked.la $(OBJECT_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(OBJECT_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-object-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) libbareossd-chunked.la -lbareos
+							   -soname libbareossd-droplet-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) libbareossd-chunked.la -lbareos
 
 libbareossd-rados.la: Makefile $(RADOS_LOBJS)
 	@echo "Making $@ ..."

@@ -322,8 +322,8 @@ Requires: bareos-tools
 %endif
 
 %if 0%{?objectstorage}
-%package    storage-object
-Summary:    Object Storage support for the Bareos Storage daemon
+%package    storage-droplet
+Summary:    Object Storage support (through libdroplet) for the Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
 Requires:   %{name}-common  = %{version}
 Requires:   %{name}-storage = %{version}
@@ -590,10 +590,10 @@ This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
 
 %if 0%{?objectstorage}
-%description storage-object
+%description storage-droplet
 %{dscr}
 
-This package contains the Storage backend for Object Storage.
+This package contains the Storage backend for Object Storage (through libdroplet).
 %endif
 
 %if 0%{?glusterfs}
@@ -1023,12 +1023,12 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
 
 %if 0%{?objectstorage}
-%files storage-object
+%files storage-droplet
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-chunked*.so
-%{backend_dir}/libbareossd-object*.so
-%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/Object.conf.example
-%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/ObjectStorage.conf.example
+%{backend_dir}/libbareossd-droplet*.so
+%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/S3_Object.conf.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/S3_ObjectStorage.conf.example
 %endif
 
 %if 0%{?glusterfs}
