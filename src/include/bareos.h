@@ -80,6 +80,8 @@
 
 #ifdef HAVE_HPUX_OS
 #undef HAVE_LCHMOD
+#undef HAVE_LCHOWN
+#undef HAVE_POSIX_FADVISE
 #endif
 
 #define _REENTRANT    1

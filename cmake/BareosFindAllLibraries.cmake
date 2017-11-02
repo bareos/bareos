@@ -67,7 +67,7 @@ INCLUDE(BareosFindLibrary)
 BareosFindLibrary("util")
 BareosFindLibrary("dl")
 BareosFindLibrary("acl")
-BareosFindLibrary("wrap")
+#BareosFindLibrary("wrap")
 BareosFindLibrary("gtest")
 BareosFindLibrary("gtest_main")
 

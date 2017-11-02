@@ -388,6 +388,21 @@ IF(NOT sqlite3)
    ENDIF()
 ENDIF()
 
+IF(NOT mysql)
+   set(MYSQL_INCLUDE_DIR "")
+endif()
+
+IF(NOT postgresql)
+ set(PostgreSQL_INCLUDE_DIR "")
+endif()
+
+if(NOT Readline_LIBRARY)
+ set(Readline_LIBRARY "")
+endif()
+
+if(NOT LIBZ_FOUND)
+  set(ZLIB_LIBRARY "")
+endif()
 
 set(db_backends "")
 

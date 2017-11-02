@@ -50,6 +50,7 @@ void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
 /**
  * For old systems that don't have lchown() use chown()
  */
+
 #ifndef HAVE_LCHOWN
 #define lchown chown
 #endif
