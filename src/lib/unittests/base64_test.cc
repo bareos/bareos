@@ -26,14 +26,11 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
 
+
+
+#include "gtest/gtest.h"
 #include "bareos.h"
 
 #ifdef HAVE_WIN32
@@ -51,14 +48,12 @@ static int errfunc(const char *epath, int eernoo)
 }
 
 
-void test_base64(void **state) {
-   (void) state; /* unused */
 
-
-/*
- * Test the base64 routines by encoding and decoding
- * lstat() packets.
- */
+TEST(base64, base64) {
+   /*
+    * Test the base64 routines by encoding and decoding
+    * lstat() packets.
+    */
 
    char where[500];
    int i;
@@ -71,7 +66,7 @@ void test_base64(void **state) {
    time_t t = 1028712799;
 
 
-   fname = BINARYNAME;
+   fname = (char*)BINARYNAME;
    base64_init();
    if (lstat(fname, &statp) < 0) {
       berrno be;
@@ -107,7 +102,8 @@ void test_base64(void **state) {
 
    decode_stat(where, &statn, sizeof(statn), &j);
 
-   assert_false(statp.st_dev != statn.st_dev ||
+   EXPECT_FALSE(
+         statp.st_dev != statn.st_dev ||
          statp.st_ino != statn.st_ino ||
          statp.st_mode != statn.st_mode ||
          statp.st_nlink != statn.st_nlink ||
@@ -119,56 +115,7 @@ void test_base64(void **state) {
          statp.st_blocks != statn.st_blocks ||
          statp.st_atime != statn.st_atime ||
          statp.st_mtime != statn.st_mtime ||
-         statp.st_ctime != statn.st_ctime);
-
-   /*
-      {  printf("%s: %s\n", fname, where);
-      encode_stat(where, &statn, sizeof(statn), 0, 0);
-      printf("%s: %s\n", fname, where);
-      printf("NOT EQAL\n");
-      }
-      */
-
-
-//printf("%d files examined\n", i);
-
-to_base64(UINT32_MAX, where);
-//printf("UINT32_MAX=%s\n", where);
-
-
-
-
-
-
-
-
-
-
-
-int xx = 0;
-int len;
-char buf[100];
-char junk[100];
-//   int i;
-
-#ifdef xxxx
-   for (i=0; i < 1000; i++) {
-      bin_to_base64(buf, sizeof(buf), (char *)&xx, 4, true);
-      printf("xx=%s\n", buf);
-      xx++;
-   }
-#endif
-   junk[0] = 0xFF;
-   for (i=1; i<100; i++) {
-      junk[i] = junk[i-1]-1;
-   }
-   len = bin_to_base64(buf, sizeof(buf), junk, 16, true);
-   //printf("len=%d junk=%s\n", len, buf);
-
-   strcpy(junk, "This is a sample string");
-   len = bin_to_base64(buf, sizeof(buf), junk, strlen(junk), true);
-   buf[len] = 0;
-   base64_to_bin(junk, sizeof(junk), buf, len);
-   //printf("buf=<%s>\n", junk);
-
+         statp.st_ctime != statn.st_ctime
+         );
+   to_base64(UINT32_MAX, where);
 }

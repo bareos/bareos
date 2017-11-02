@@ -26,14 +26,8 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 
 struct FILESET {
@@ -64,7 +58,7 @@ void alist_fill(alist *list, int max)
    /*
     * verify that max elements have been added
     */
-   assert_int_equal(list->size(), start + max);
+   EXPECT_EQ(list->size(), start + max);
 }
 
 /*
@@ -82,18 +76,18 @@ void test_foreach_alist(alist *list)
 
    foreach_alist(str, list) {
       sprintf(buf, "%d", i);
-      assert_string_equal(str, buf);
+      EXPECT_STREQ(str, buf);
       i++;
    }
 
    foreach_alist_index(i, str, list) {
       sprintf(buf, "%d", i);
-      assert_string_equal(str, buf);
+      EXPECT_STREQ(str, buf);
    }
 
    foreach_alist_rindex(i, str, list) {
       sprintf(buf, "%d", i);
-      assert_string_equal(str, buf);
+      EXPECT_STREQ(str, buf);
    }
 }
 
@@ -110,7 +104,7 @@ void test_alist_init_destroy()
 
    alist_fill(&(fileset->mylist), 20);
    for (int i=0; i< fileset->mylist.size(); i++) {
-      assert_int_equal(i, atoi((char *)fileset->mylist[i]));
+      EXPECT_EQ(i, atoi((char *)fileset->mylist[i]));
    }
    fileset->mylist.destroy();
    free(fileset);
@@ -123,14 +117,14 @@ void test_alist_dynamic() {
    char *buf;
 
    // NULL->size() will segfault
-   //assert_int_equal(list->size(), 0);
+   //EXPECT_EQ(list->size(), 0);
 
    // does foreach work for NULL?
    test_foreach_alist(list);
 
    // create empty list, which is prepared for a number of entires
    list = New(alist(10));
-   assert_int_equal(list->size(), 0);
+   EXPECT_EQ(list->size(), 0);
 
    // does foreach work for empty lists?
    test_foreach_alist(list);
@@ -140,21 +134,21 @@ void test_alist_dynamic() {
    test_foreach_alist(list);
 
    // verify and remove the latest entries
-   assert_int_equal(list->size(), 20);
+   EXPECT_EQ(list->size(), 20);
    buf = (char *)list->pop();
-   assert_string_equal(buf, "19");
+   EXPECT_STREQ(buf, "19");
    free(buf);
 
-   assert_int_equal(list->size(), 19);
+   EXPECT_EQ(list->size(), 19);
    buf = (char *)list->pop();
-   assert_string_equal(buf, "18");
+   EXPECT_STREQ(buf, "18");
    free(buf);
 
    // added more entires
    alist_fill(list, 20);
    test_foreach_alist(list);
 
-   assert_int_equal(list->size(), 38);
+   EXPECT_EQ(list->size(), 38);
 
    delete(list);
 }
@@ -163,9 +157,8 @@ void test_alist_dynamic() {
 /*
  * main entry point
  */
-void test_alist(void **state) {
-   (void) state; /* unused */
 
+TEST(alist, alist) {
    test_alist_init_destroy();
    test_alist_dynamic();
 

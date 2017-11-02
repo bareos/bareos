@@ -26,14 +26,8 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
@@ -53,9 +47,7 @@ static int rblist_compare(void *item1, void *item2)
    return comp;
 }
 
-void test_rblist(void **state) {
-   (void) state;
-
+TEST(rblist,rblist){
    char buf[30];
    rblist *jcr_chain;
    RBLISTJCR *jcr = NULL;

@@ -24,22 +24,15 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-
-extern "C" {
-#include <cmocka.h>
-}
+#include "gtest/gtest.h"
 #include "bareos.h"
 #define PASSWORDLEN 10
 
-void test_generate_crypto_passphrase(void **state) {
-   (void) state;
+TEST(passphrase,passphrase) {
    char *password;
    int pwlen;
    password = generate_crypto_passphrase(PASSWORDLEN);
    pwlen = strlen(password);
    free(password);
-   assert_int_equal(pwlen,PASSWORDLEN);
+   EXPECT_EQ(PASSWORDLEN, pwlen);
 }

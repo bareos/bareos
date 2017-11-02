@@ -26,14 +26,7 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
@@ -53,10 +46,7 @@ struct HTABLEJCR {
 #else
 #define NITEMS 5000
 #endif
-
-void test_htable(void **state) {
-   (void) state;
-
+TEST(htable, htable) {
    char mkey[30];
    htable *jcrtbl;
    HTABLEJCR *save_jcr = NULL, *item;
@@ -88,13 +78,13 @@ void test_htable(void **state) {
          save_jcr = jcr;
       }
    }
-   assert_non_null( item = (HTABLEJCR *)jcrtbl->lookup(save_jcr->key));
+   EXPECT_TRUE(item = (HTABLEJCR *)jcrtbl->lookup(save_jcr->key));
    foreach_htable (jcr, jcrtbl) {
       count++;
    }
 
    jcrtbl->destroy();
-   assert_int_equal(count, NITEMS);
+   EXPECT_EQ(count, NITEMS);
    free(jcrtbl);
 
    sm_dump(false);   /* unit test */
