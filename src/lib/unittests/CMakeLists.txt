@@ -20,22 +20,21 @@
 include_directories(.. ../.. ../../include/)
 
 set (TEST_SRC
-   alist_test.cc
-   base64_test.cc
-   bsnprintf_test.cc
-   devlock_test.cc
-   dlist_test.cc
-   edit_test.cc
-   htable_test.cc
-   #ini_test.cc
-   junction_test.cc
-   passphrase_test.cc
-   rblist_test.cc
-   rwlock_test.cc
-   scan_test.cc
-   sellist_test.cc
-   test_lib.cc
+    alist_test.cc
+    dlist_test.cc
+    base64_test.cc
+    bsnprintf_test.cc
+#   devlock_test.cc
+    edit_test.cc
+    htable_test.cc
+    junction_test.cc
+    passphrase_test.cc
+    scan_test.cc
+#   rwlock_test.cc
+#   sellist_test.cc
    #tree_test.cc
+   #rblist_test.cc
+   #ini_test.cc
    )
 
 
@@ -48,13 +47,17 @@ target_link_libraries(test_lib
    bareos
    ${JANSSON_LIBRARIES}
    ${CMOCKA_LIBRARIES}
+   ${GTEST_LIBRARIES}
+   ${GTEST_MAIN_LIBRARIES}
    )
 
 add_test(NAME test_lib
    COMMAND test_lib
    )
-set_property(TEST test_lib
-   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib")
 
+set_property(TEST test_lib
+   PROPERTY ENVIRONMENT "LD_LIBRARY_PATH=${CMAKE_BINARY_DIR}/src/lib"
+   PROPERTY ENVIRONMENT "GTEST_COLOR=yes"
+   )
 
 add_dependencies(check test_lib)

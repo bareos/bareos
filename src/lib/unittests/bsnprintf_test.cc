@@ -26,21 +26,13 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
 
 
-void test_bsnprintf(void **state) {
-   (void) state;
+TEST(bsnprintf, bsnprintf) {
 #define FP_OUTPUT
 #ifndef LONG_STRING
 #define LONG_STRING 1024
@@ -152,7 +144,7 @@ void test_bsnprintf(void **state) {
       for (y = 0; fp_nums[y] != 0; y++) {
          bsnprintf(buf1, sizeof(buf1), fp_fmt[x], fp_nums[y]);
          sprintf(buf2, fp_fmt[x], fp_nums[y]);
-         assert_string_equal ( buf1, buf2);
+         EXPECT_STREQ ( buf1, buf2);
       }
 #endif
    for (x = 0; int_fmt[x] != NULL; x++)
@@ -161,8 +153,8 @@ void test_bsnprintf(void **state) {
          bcount = bsnprintf(buf1, sizeof(buf1), int_fmt[x], int_nums[y]);
          pcount = sprintf(buf2, int_fmt[x], int_nums[y]);
 
-         assert_int_equal(bcount, pcount);
-         assert_string_equal(buf1, buf2);
+         EXPECT_EQ(bcount, pcount);
+         EXPECT_STREQ(buf1, buf2);
       }
 
    for (x = 0; ll_fmt[x] != NULL; x++) {
@@ -171,8 +163,8 @@ void test_bsnprintf(void **state) {
          bcount = bsnprintf(buf1, sizeof(buf1), ll_fmt[x], ll_nums[y]);
          pcount = sprintf(buf2, ll_fmt[x], ll_nums[y]);
 
-         assert_int_equal(bcount, pcount);
-         assert_string_equal(buf1, buf2);
+         EXPECT_EQ(bcount, pcount);
+         EXPECT_STREQ(buf1, buf2);
       }
    }
 
@@ -182,8 +174,8 @@ void test_bsnprintf(void **state) {
          bcount = bsnprintf(buf1, sizeof(buf1), s_fmt[x], s_nums[y]);
          pcount = sprintf(buf2, s_fmt[x], s_nums[y]);
 
-         assert_int_equal(bcount, pcount);
-         assert_string_equal(buf1, buf2);
+         EXPECT_EQ(bcount, pcount);
+         EXPECT_STREQ(buf1, buf2);
       }
    }
 
@@ -193,8 +185,8 @@ void test_bsnprintf(void **state) {
          bcount = bsnprintf(buf1, sizeof(buf1), ls_fmt[x], ls_nums[y]);
          pcount = sprintf(buf2, ls_fmt[x], ls_nums[y]);
 
-         assert_int_equal(bcount, pcount);
-         assert_string_equal(buf1, buf2);
+         EXPECT_EQ(bcount, pcount);
+         EXPECT_STREQ(buf1, buf2);
       }
    }
 }

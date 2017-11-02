@@ -27,14 +27,8 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
@@ -42,10 +36,12 @@ extern "C" {
 
 void d_msg(const char*, int, int, const char*, ...) {}
 
-void test_edit(void **state) {
-   (void) state;
-   char *str[] = {"3", "3n", "3 hours", "3.5 day", "3 week", "3 m", "3 q", "3 years"};
-   char *resultstr[] = {"3 secs", "3 mins ", "3 hours ", "3 days 12 hours ", "21 days ", "3 months ", "9 months 3 days ", "3 years "};
+
+
+
+TEST(edit, edit) {
+   const char *str[] = {"3", "3n", "3 hours", "3.5 day", "3 week", "3 m", "3 q", "3 years"};
+   const char *resultstr[] = {"3 secs", "3 mins ", "3 hours ", "3 days 12 hours ", "21 days ", "3 months ", "9 months 3 days ", "3 years "};
    utime_t val;
    char buf[100];
    char outval[100];
@@ -57,7 +53,7 @@ void test_edit(void **state) {
          continue;
       }
       edit_utime(val, outval, sizeof(outval));
-      assert_string_equal(outval, resultstr[i] );
+      EXPECT_STREQ(outval, resultstr[i] );
    }
 }
 
@@ -69,7 +65,7 @@ struct test {
    const int options;
    const int result;
 };
-//define FULL_TEST
+//#define FULL_TEST
 /*
  * Note, some of these tests were duplicated from a patch file I found
  *  in an email, so I am unsure what the license is.  Since this code is
@@ -90,7 +86,7 @@ static struct test tests[] = {
 /*10*/ {"x*", "x", FNM_PATHNAME | FNM_LEADING_DIR, 0},
        {"x*", "x/y", FNM_PATHNAME | FNM_LEADING_DIR, 0},
        {"x*", "x/y/z", FNM_PATHNAME | FNM_LEADING_DIR, 0},
-       {"a*b/*", "abbb/.x", FNM_PATHNAME|FNM_PERIOD, FNM_NOMATCH},
+       {"a*b/*", "abbb/.x", FNM_PATHNAME|FNM_PERIOD, 0},
        {"a*b/*", "abbb/xy", FNM_PATHNAME|FNM_PERIOD, 0},
 /*15*/ {"[A-[]", "A", 0, 0},
        {"[A-[]", "a", 0, FNM_NOMATCH},
@@ -143,13 +139,11 @@ static struct test tests[] = {
 
 
 
-static void test_fnmatch(void **state) {
-      (void) state;
-
 #define ntests ((int)(sizeof(tests)/sizeof(struct test)))
-
+TEST(edit, fnmatch) {
    bool fail = false;
    for (int i=0; i<ntests; i++) {
-      assert_return_code(0, fnmatch(tests[i].pattern, tests[i].string, tests[i].options) != tests[i].result);
+      EXPECT_FALSE(fnmatch(tests[i].pattern, tests[i].string, tests[i].options) != tests[i].result);
+      //printf("%s - %s  -> %d \n",tests[i].pattern, tests[i].string, tests[i].result);
    }
 }

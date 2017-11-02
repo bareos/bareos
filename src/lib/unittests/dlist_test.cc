@@ -26,14 +26,8 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
@@ -79,7 +73,7 @@ void test_foreach_dlist(dlist *list)
     */
    foreach_dlist(val, list) {
       sprintf(buf, "%d", i);
-      assert_string_equal(val->buf, buf);
+      EXPECT_STREQ(val->buf, buf);
       i++;
    }
 }
@@ -121,7 +115,7 @@ void free_dlist(dlist *list)
       free_item(val);
    }
 
-   assert_int_equal(list->size(), 0);
+   EXPECT_EQ(list->size(), 0);
 
    delete(list);
 }
@@ -131,49 +125,46 @@ void test_dlist_dynamic() {
    LIST_ITEM *item = NULL;
 
    // NULL->size() will segfault
-   //assert_int_equal(list->size(), 0);
+   //EXPECT_EQ(list->size(), 0);
 
    // does foreach work for NULL?
    test_foreach_dlist(list);
 
    // create empty list
    list = New(dlist());
-   assert_int_equal(list->size(), 0);
+   EXPECT_EQ(list->size(), 0);
 
    // does foreach work for empty lists?
    test_foreach_dlist(list);
 
    // fill the list
    dlist_fill(list, 20);
-   assert_int_equal(list->size(), 20);
+   EXPECT_EQ(list->size(), 20);
    test_foreach_dlist(list);
 
    // verify and remove the latest entries
-   assert_int_equal(list->size(), 20);
+   EXPECT_EQ(list->size(), 20);
    item = (LIST_ITEM *)list->last();
    list->remove(item);
-   assert_string_equal(item->buf, "19");
+   EXPECT_STREQ(item->buf, "19");
    free_item(item);
 
-   assert_int_equal(list->size(), 19);
+   EXPECT_EQ(list->size(), 19);
    item = (LIST_ITEM *)list->last();
    list->remove(item);
-   assert_string_equal(item->buf, "18");
+   EXPECT_STREQ(item->buf, "18");
    free_item(item);
 
    // added more entires
    dlist_fill(list, 20);
    test_foreach_dlist(list);
 
-   assert_int_equal(list->size(), 38);
+   EXPECT_EQ(list->size(), 38);
 
    free_dlist(list);
 }
 
-
-
-void test_dlist(void **state) {
-   (void) state;
+TEST(dlist, dlist) {
    char buf[30];
    dlist *jcr_chain;
    MYJCR *jcr = NULL;
@@ -197,7 +188,7 @@ void test_dlist(void **state) {
    }
 
    next_jcr = (MYJCR *)jcr_chain->next(save_jcr);
-   assert_int_equal(atoi(next_jcr->buf), 9);
+   EXPECT_EQ(atoi(next_jcr->buf), 9);
    jcr1 = (MYJCR *)malloc(sizeof(MYJCR));
    jcr1->buf = save_jcr->buf;
    jcr_chain->remove(save_jcr);
@@ -206,7 +197,7 @@ void test_dlist(void **state) {
 
    index = 19;
    foreach_dlist(jcr, jcr_chain) {
-      assert_int_equal(index, atoi(jcr->buf));
+      EXPECT_EQ(index, atoi(jcr->buf));
       index--;
       free(jcr->buf);
    }
@@ -229,7 +220,7 @@ void test_dlist(void **state) {
    }
 
    next_jcr = (MYJCR *)jcr_chain->next(save_jcr);
-   assert_int_equal(11, atoi(next_jcr->buf));
+   EXPECT_EQ(11, atoi(next_jcr->buf));
    jcr = (MYJCR *)malloc(sizeof(MYJCR));
    jcr->buf = save_jcr->buf;
    jcr_chain->remove(save_jcr);
@@ -238,7 +229,7 @@ void test_dlist(void **state) {
 
    index= 0;
    foreach_dlist (jcr, jcr_chain) {
-      assert_int_equal(index, atoi(jcr->buf));
+      EXPECT_EQ(index, atoi(jcr->buf));
       index ++;
       free(jcr->buf);
    }
@@ -258,7 +249,7 @@ void test_dlist(void **state) {
             jcr = (MYJCR *)malloc(sizeof(MYJCR));
             jcr->buf = bstrdup(buf);
             jcr1 = (MYJCR *)jcr_chain->binary_insert(jcr, my_compare);
-            assert_ptr_equal(jcr, jcr1);
+            EXPECT_EQ(jcr, jcr1);
             buf[1]--;
          }
          buf[1] = 'Z';
@@ -271,11 +262,11 @@ void test_dlist(void **state) {
    jcr = (MYJCR *)malloc(sizeof(MYJCR));
    strcpy(buf, "a");
    jcr->buf = bstrdup(buf);
-   assert_null(jcr_chain->binary_search(jcr, my_compare));
+   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, my_compare)));
    free(jcr->buf);
    strcpy(buf, "ZZZZZZZZZZZZZZZZ");
    jcr->buf = bstrdup(buf);
-   assert_null(jcr_chain->binary_search(jcr, my_compare));
+   ASSERT_EQ(NULL,(jcr_chain->binary_search(jcr, my_compare)));
    free(jcr->buf);
    free(jcr);
 

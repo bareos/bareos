@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2016      Bareos GmbH & Co. KG
+   Copyright (C) 2016-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -22,16 +22,9 @@
 /*
  * Philipp Storz, March 2016
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
-
-
-extern "C" {
-#include <cmocka.h>
-}
 
 #ifdef HAVE_WIN32
+#include "gtest/gtest.h"
 #include "bareos.h"
 #include "winapi.h"
 
@@ -49,9 +42,7 @@ bool CreateJunction(const char *szJunction, const char *szPath);
  */
 
 #define TESTSTRING "THIS_IS_A_JUNCTION_TEST"
-void test_junction(void **state) {
-
-   (void) state; /* unused */
+TEST(junction, junction) {
 
    FILE* f;
 
@@ -81,32 +72,32 @@ void test_junction(void **state) {
    }
 
    BOOL WINAPI retval = SetCurrentDirectoryW( (LPCWSTR)szTargetW );
-   assert_non_null(retval);
+   EXPECT_TRUE(retval);
 
    f = _wfopen( (LPCWSTR)szTestFileW, L"w" );
    if (!f) printf("fopen Failed:%s\n", errorString());
-   assert_non_null(f);
+   EXPECT_TRUE(f);
    fprintf(f, TESTSTRING);
    fclose(f);
 
    bool successful = CreateJunction(szJunction, szTarget);
 
    retval = SetCurrentDirectoryW( (LPCWSTR)szJunctionW );
-   assert_non_null(retval);
+   EXPECT_TRUE(retval);
 
    f = _wfopen( (LPCWSTR)szTestFileW, L"r" );
    if (!f) printf("fopen Failed:%s\n", errorString());
 
-   assert_non_null(f);
+   EXPECT_TRUE(f);
    fscanf( f, "%s", s);
-   assert_string_equal( TESTSTRING, s);
+   EXPECT_STREQ( TESTSTRING, s);
    fclose(f);
 
    int unlinkresult = _wunlink((LPCWSTR)szTestFileW);
-   assert_int_equal(unlinkresult,0);
+   EXPECT_EQ(unlinkresult,0);
 
    retval = SetCurrentDirectoryW( L"C:\\" );
-   assert_non_null(retval);
+   EXPECT_TRUE(retval);
 
    if (!RemoveDirectoryW((LPCWSTR)szJunctionW)) {
       printf("RemoveDirectory Junction Failed:%s\n", errorString());
@@ -115,6 +106,6 @@ void test_junction(void **state) {
       printf("RemoveDirectory Target Failed:%s\n", errorString());
    }
    sm_dump(false);
-   assert_true(successful);
+   EXPECT_TRUE(successful);
 }
 #endif

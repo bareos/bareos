@@ -26,19 +26,11 @@
  *
  * Philipp Storz, April 2015
  */
-#include <stdarg.h>
-#include <stddef.h>
-#include <setjmp.h>
 
-extern "C" {
-#include <cmocka.h>
-}
-
+#include "gtest/gtest.h"
 #include "bareos.h"
 
-
-void test_scan(void **state) {
-   (void) state; /* unused */
+TEST(scan,scan) {
 
    char assertbuf[500];
    char buf[100];
@@ -47,9 +39,9 @@ void test_scan(void **state) {
    uint32_t FirstIndex, LastIndex, StartFile, EndFile, StartBlock, EndBlock;
    char Job[200];
    int cnt;
-   char *helloreq= "Hello *UserAgent* calling\n";
-   char *hello = "Hello %127s calling\n";
-   char *catreq =
+   const char *helloreq= "Hello *UserAgent* calling\n";
+   const char *hello = "Hello %127s calling\n";
+   const char *catreq =
       "CatReq Job=NightlySave.2004-06-11_19.11.32 CreateJobMedia FirstIndex=1 LastIndex=114 StartFile=0 EndFile=0 StartBlock=208 EndBlock=2903248";
    static char Create_job_media[] = "CatReq Job=%127s CreateJobMedia "
       "FirstIndex=%u LastIndex=%u StartFile=%u EndFile=%u "
@@ -59,7 +51,7 @@ void test_scan(void **state) {
       " MaxVolBytes=%" lld " VolCapacityBytes=%" lld " VolStatus=%20s"
       " Slot=%d MaxVolJobs=%u MaxVolFiles=%u InChanger=%d"
       " VolReadTime=%" lld " VolWriteTime=%" lld;
-   char *media =
+   const char *media =
       "1000 OK VolName=TestVolume001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=1 VolMounts=0 VolErrors=0 VolWrites=0 MaxVolBytes=0 VolCapacityBytes=0 VolStatus=Append Slot=0 MaxVolJobs=0 MaxVolFiles=0 InChanger=1 VolReadTime=0 VolWriteTime=0";
 
    struct VOLUME_CAT_INFO {
@@ -92,7 +84,7 @@ void test_scan(void **state) {
    bsscanf("Hello_world 123 1234", "%120s %ld %lld", buf, &val32, &val64);
    //printf("%s %d %lld", buf, val32, val64);
    sprintf(assertbuf, "%s %d %lld", buf, val32, val64);
-   assert_string_equal("Hello_world 123 1234", assertbuf);
+   EXPECT_STREQ("Hello_world 123 1234", assertbuf);
 
 
    *Job=0;
@@ -101,12 +93,12 @@ void test_scan(void **state) {
          &StartBlock, &EndBlock);
    //printf("cnt=%d Job=%s\n", cnt, Job);
    sprintf(assertbuf,"cnt=%d Job=%s\n", cnt, Job);
-   assert_string_equal("cnt=7 Job=NightlySave.2004-06-11_19.11.32\n", assertbuf);
+   EXPECT_STREQ("cnt=7 Job=NightlySave.2004-06-11_19.11.32\n", assertbuf);
 
    cnt = bsscanf(helloreq, hello, &Job);
    //printf("cnt=%d Agent=%s\n", cnt, Job);
    sprintf(assertbuf, "cnt=%d Agent=%s", cnt, Job);
-   assert_string_equal("cnt=1 Agent=*UserAgent*", assertbuf);
+   EXPECT_STREQ("cnt=1 Agent=*UserAgent*", assertbuf);
 
    cnt = bsscanf(media, OK_media,
          vol.VolCatName,
@@ -120,7 +112,7 @@ void test_scan(void **state) {
          &vol.MaxBlocksize, &vol.MinBlocksize);
    //printf("cnt=%d Vol=%s\n", cnt, vol.VolCatName);
    sprintf(assertbuf, "cnt=%d Vol=%s", cnt, vol.VolCatName);
-   assert_string_equal("cnt=17 Vol=TestVolume001", assertbuf);
+   EXPECT_STREQ("cnt=17 Vol=TestVolume001", assertbuf);
 
 
    char pool_name[100];
@@ -129,11 +121,11 @@ void test_scan(void **state) {
    uint32_t index;
 
    static char Find_media[] = "CatReq Job=%127s FindMedia=%d pool_name=%127s media_type=%127s unwanted_volumes=%s\n";
-   char *catreq_findmedia = "CatReq Job=BackupCatalog.2016-12-23_10.52.45_23 FindMedia=1 pool_name=Full media_type=Full unwanted_volumes=\n";
+   const char *catreq_findmedia = "CatReq Job=BackupCatalog.2016-12-23_10.52.45_23 FindMedia=1 pool_name=Full media_type=Full unwanted_volumes=\n";
    cnt = bsscanf(catreq_findmedia, Find_media, &Job, &index, &pool_name, &MediaType, unwanted_volumes);
 
    sprintf(assertbuf,"cnt=%d Job=%s MediaType=%s\n", cnt, Job, MediaType);
-   assert_string_equal("cnt=5 Job=BackupCatalog.2016-12-23_10.52.45_23 MediaType=Full\n", assertbuf);
+   EXPECT_STREQ("cnt=5 Job=BackupCatalog.2016-12-23_10.52.45_23 MediaType=Full\n", assertbuf);
 
 
 

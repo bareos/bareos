@@ -23,7 +23,7 @@
  *
  * rblist is a binary tree with the links being in the data item.
  *
- * Developped in part from ideas obtained from several online University courses.
+ * Developed in part from ideas obtained from several online University courses.
  *
  * Kern Sibbald, November MMV
  */
