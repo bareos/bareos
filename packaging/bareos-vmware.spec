@@ -68,8 +68,6 @@ is currently supported to the origin VM.
 #PreReq:
 #Provides:
 
-%define plugin_dir     %{_libdir}/bareos/plugins
-
 # Note: __requires_exclude only works for dists with rpm version >= 4.9
 #       SLES12 has suse_version 1315, SLES11 has 1110
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 16 || 0%{?suse_version} >= 1110
@@ -109,8 +107,8 @@ make
 
 %files -n bareos-vmware-plugin
 %defattr(-,root,root)
-#%%{_libdir}/bareos/
-%{plugin_dir}/
+%dir %{_libdir}/bareos/
+%{_libdir}/bareos/plugins/
 %{_sbindir}/vmware_cbt_tool.py
 %doc AUTHORS LICENSE README.md
 
