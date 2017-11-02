@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -91,7 +91,7 @@ enum {
    B_FIFO_DEV,
    B_VTL_DEV,
    B_GFAPI_DEV,
-   B_OBJECT_STORE_DEV,
+   B_DROPLET_DEV,
    B_RADOS_DEV,
    B_CEPHFS_DEV,
    B_ELASTO_DEV
@@ -373,7 +373,7 @@ public:
    bool is_tape() const { return (dev_type == B_TAPE_DEV); }
    bool is_file() const { return (dev_type == B_FILE_DEV ||
                                   dev_type == B_GFAPI_DEV ||
-                                  dev_type == B_OBJECT_STORE_DEV ||
+                                  dev_type == B_DROPLET_DEV ||
                                   dev_type == B_RADOS_DEV ||
                                   dev_type == B_CEPHFS_DEV ||
                                   dev_type == B_ELASTO_DEV); }

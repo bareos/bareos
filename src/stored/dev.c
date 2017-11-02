@@ -79,7 +79,7 @@
 #endif
 #ifdef HAVE_OBJECTSTORE
 #include "backends/chunked_device.h"
-#include "backends/object_store_device.h"
+#include "backends/droplet_device.h"
 #endif
 #ifdef HAVE_RADOS
 #include "backends/rados_device.h"
@@ -183,8 +183,8 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       break;
 #endif
 #ifdef HAVE_OBJECTSTORE
-   case B_OBJECT_STORE_DEV:
-      dev = New(object_store_device);
+   case B_DROPLET_DEV:
+      dev = New(droplet_device);
       break;
 #endif
 #ifdef HAVE_RADOS

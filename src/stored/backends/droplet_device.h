@@ -31,7 +31,7 @@
 #include <droplet.h>
 #include <droplet/vfs.h>
 
-class object_store_device: public chunked_device {
+class droplet_device: public chunked_device {
 private:
    /*
     * Private Members
@@ -62,8 +62,8 @@ public:
    /*
     * Public Methods
     */
-   object_store_device();
-   ~object_store_device();
+   droplet_device();
+   ~droplet_device();
 
    /*
     * Interface from DEVICE
