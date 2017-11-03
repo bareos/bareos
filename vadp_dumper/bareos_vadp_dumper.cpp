@@ -50,7 +50,7 @@
 
 #include <vixDiskLib.h>
 
-#define VIXDISKLIB_VERSION_MAJOR 5
+#define VIXDISKLIB_VERSION_MAJOR 6
 #define VIXDISKLIB_VERSION_MINOR 5
 
 #define VSPHERE_DEFAULT_ADMIN_PORT 0
@@ -171,7 +171,7 @@ static uint64_t absolute_start_offset = 0;
 static char *vmdk_disk_name = NULL;
 static char *raw_disk_name = NULL;
 static int raw_disk_fd = -1;
-static char *vixdisklib_config = NULL;
+static char *force_transport = NULL;
 static char *disktype = NULL;
 static VixDiskLibConnectParams cnxParams;
 static VixDiskLibConnection connection = NULL;
@@ -443,8 +443,8 @@ static void cleanup(void)
       free(vmdk_disk_name);
    }
 
-   if (vixdisklib_config) {
-      free(vixdisklib_config);
+   if (force_transport) {
+      free(force_transport);
    }
 
    if (disktype) {
@@ -588,7 +588,7 @@ static inline void do_vixdisklib_connect(const char *key, json_t *connect_params
       }
    }
 
-   err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE, snapshot_moref, vixdisklib_config, &connection);
+   err = VixDiskLib_ConnectEx(&cnxParams, (readonly) ? TRUE : FALSE, snapshot_moref, force_transport, &connection);
    if (VIX_FAILED(err)) {
       char *error_txt;
 
@@ -1572,13 +1572,13 @@ static void signal_handler(int sig)
 
 void usage(const char *program_name)
 {
-   fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f <vixdisklib_config] [-s sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
+   fprintf(stderr, "Usage: %s [-d <vmdk_diskname>] [-f force_transport] [-s sectors_per_call] [-t disktype] [-CcDlMmRSv] dump <workfile> | restore <workfile> | show\n", program_name);
    fprintf(stderr, "Where:\n");
    fprintf(stderr, "   -C - Create local VMDK\n");
    fprintf(stderr, "   -c - Don't check size of VMDK\n");
    fprintf(stderr, "   -D - Cleanup on Disconnect\n");
    fprintf(stderr, "   -d - Specify local VMDK name\n");
-   fprintf(stderr, "   -f - Specify VDDK config file\n");
+   fprintf(stderr, "   -f - Specify forced transport method\n");
    fprintf(stderr, "   -h - This help text\n");
    fprintf(stderr, "   -l - Write to a local VMDK\n");
    fprintf(stderr, "   -M - Save metadata of VMDK on dump action\n");
@@ -1630,9 +1630,9 @@ int main(int argc, char **argv)
          }
          break;
       case 'f':
-         vixdisklib_config = strdup(optarg);
-         if (!vixdisklib_config) {
-            fprintf(stderr, "Failed to allocate memory to hold configfile location, exiting ...\n");
+         force_transport = strdup(optarg);
+         if (!force_transport) {
+            fprintf(stderr, "Failed to allocate memory to hold forced transport, exiting ...\n");
             exit(1);
          }
          break;
