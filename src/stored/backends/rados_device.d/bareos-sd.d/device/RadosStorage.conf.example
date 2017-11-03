@@ -15,6 +15,16 @@
 #    Archive Device = <text>
 #    Device Options = "conffile=/etc/ceph/ceph.conf,poolname=poolname"
 #
+# If Bareos is compiled with rados-striper support,
+# following additional "Device Options" are available:
+#    * striped
+#    * stripe_unit (default: 4194304)
+#    * object_size (default: 4194304, should be a multiple of stripe_unit)
+#    * stripe_count (default: 1. Larger vales can improve the performance)
+#
+# A reasonable setting with rados-striper is
+#   Device Options = "conffile=/etc/ceph/ceph.conf,poolname=poolname,striped,stripe_unit=4194304,stripe_count=1"
+#
 
 Device {
   Name = RadosStorage
