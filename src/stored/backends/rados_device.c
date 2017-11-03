@@ -45,6 +45,7 @@ enum device_option_type {
    argument_username,
    argument_striped,
    argument_stripe_unit,
+   argument_object_size,
    argument_stripe_count
 };
 
@@ -66,6 +67,7 @@ static device_option device_options[] = {
 #ifdef HAVE_RADOS_STRIPER
    { "striped", argument_striped, 7 },
    { "stripe_unit=", argument_stripe_unit, 12 },
+   { "object_size=", argument_object_size, 12 },
    { "stripe_count=", argument_stripe_count, 13 },
 #endif
    { NULL, argument_none }
@@ -137,6 +139,10 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
                   break;
                case argument_stripe_unit:
                   size_to_uint64(bp + device_options[i].compare_size, &m_stripe_unit);
+                  done = true;
+                  break;
+               case argument_object_size:
+                  size_to_uint64(bp + device_options[i].compare_size, &m_object_size);
                   done = true;
                   break;
                case argument_stripe_count:
@@ -256,6 +262,13 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
+
+         status = rados_striper_set_object_layout_object_size(m_striper, m_object_size);
+         if (status < 0) {
+            Mmsg3(errmsg, _("Unable to set RADOS striper object size to %d  for pool %s: ERR=%s\n"), m_object_size, m_rados_poolname, be.bstrerror(-status));
+             Emsg0(M_FATAL, 0, errmsg);
+             goto bail_out;
+         }
       }
 #endif
    }
@@ -316,7 +329,7 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
 
 bail_out:
    if (m_cluster_initialized) {
-      rados_shutdown(&m_cluster);
+      rados_shutdown(m_cluster);
       m_cluster_initialized = false;
    }
 
@@ -596,7 +609,7 @@ rados_device::~rados_device()
    }
 
    if (m_cluster_initialized) {
-      rados_shutdown(&m_cluster);
+      rados_shutdown(m_cluster);
       m_cluster_initialized = false;
    }
 
@@ -635,8 +648,9 @@ rados_device::rados_device()
    m_ctx = NULL;
 #ifdef HAVE_RADOS_STRIPER
    m_stripe_volume = false;
-   m_stripe_unit = 0;
-   m_stripe_count = 0;
+   m_stripe_unit = 4194304;
+   m_stripe_count = 1;
+   m_object_size = 4194304;
    m_striper = NULL;
 #endif
    m_virtual_filename = get_pool_memory(PM_FNAME);

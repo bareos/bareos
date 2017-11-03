@@ -63,6 +63,7 @@ private:
    bool m_stripe_volume;
    uint64_t m_stripe_unit;
    uint32_t m_stripe_count;
+   uint64_t m_object_size;
 #endif
    rados_t m_cluster;
    rados_ioctx_t m_ctx;
