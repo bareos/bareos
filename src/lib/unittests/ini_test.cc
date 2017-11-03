@@ -1,7 +1,7 @@
 /*
    Copyright (C) 2011-2011 Bacula Systems(R) SA
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can modify it under the terms of
    version three of the GNU Affero General Public License as published by the
@@ -19,9 +19,9 @@
 */
 /*
  * extracted the TEST_PROGRAM functionality from the files in ..
- * and adapted for unittest framework cmocka
+ * and adapted for gtest
  *
- * Philipp Storz, April 2015
+ * Philipp Storz, November 2017
  */
 #include <stdio.h>
 

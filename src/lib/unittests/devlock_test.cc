@@ -22,9 +22,9 @@
 /* originally was Kern Sibbald, January MMI */
 /*
  * extracted the TEST_PROGRAM functionality from the files in ..
- * and adapted for unittest framework cmocka
+ * and adapted for gtest
  *
- * Philipp Storz, April 2015
+ * Philipp Storz, November 2017
  */
 
 #include "bareos.h"

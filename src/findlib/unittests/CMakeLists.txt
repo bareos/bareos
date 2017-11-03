@@ -30,7 +30,6 @@ add_executable(test_findlib
 target_link_libraries(test_findlib
    bareosfind bareos
    ${JANSSON_LIBRARIES}
-   ${CMOCKA_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
    )

@@ -28,7 +28,7 @@ set (TEST_SRC
     edit_test.cc
     htable_test.cc
     junction_test.cc
-    passphrase_test.cc
+#    passphrase_test.cc
     scan_test.cc
 #   rwlock_test.cc
 #   sellist_test.cc
@@ -46,7 +46,6 @@ add_executable(test_lib
 target_link_libraries(test_lib
    bareos
    ${JANSSON_LIBRARIES}
-   ${CMOCKA_LIBRARIES}
    ${GTEST_LIBRARIES}
    ${GTEST_MAIN_LIBRARIES}
    )
