@@ -30,8 +30,8 @@
 
 
 
-#include "gtest/gtest.h"
 #include "bareos.h"
+#include "gtest/gtest.h"
 
 #ifdef HAVE_WIN32
 #define BINARYNAME "test_lib.exe"
