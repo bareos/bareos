@@ -51,12 +51,6 @@ BareosFindLibraryAndHeaders("pthread" "pthread.h")
 BareosFindLibraryAndHeaders("cap" "sys/capability.h")
 BareosFindLibraryAndHeaders("gfapi" "glusterfs/api/glfs.h")
 
-BareosFindLibraryAndHeaders("cmocka" "cmocka.h")
-if (${CMOCKA_FOUND})
-   SET(HAVE_CMOCKA 1)
-   SET(HAVE_CMOCKA_H 1)
-endif()
-
 BareosFindLibraryAndHeaders("lzo2" "lzo/lzoconf.h")
 if (${LZO2_FOUND})
    SET(HAVE_LZO 1)

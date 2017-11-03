@@ -580,7 +580,7 @@ MESSAGE("   ELASTO support:               ${have_elasto} ")
 MESSAGE("   Python support:               ${PYTHONLIBS_FOUND} ${PYTHONLIBS_VERSION_STRING} ${PYTHON_INCLUDE_PATH}")
 MESSAGE("   systemd support:              ${WITH_SYSTEMD} ${SYSTEMD_UNITDIR}")
 MESSAGE("   Batch insert enabled:         ${USE_BATCH_FILE_INSERT}")
-MESSAGE("   cmocka support:               ${CMOCKA_FOUND} ${CMOCKA_LIBRARIES} ${CMOCKA_INCLUDE_DIRS} ")
+MESSAGE("   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GTEST_MAIN_LIBRARIES} ")
 
 MESSAGE("   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} ")
 MESSAGE("   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ")

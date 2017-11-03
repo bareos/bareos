@@ -139,12 +139,6 @@
 /* Define to 1 if you have the `closefrom' function. */
 #cmakedefine HAVE_CLOSEFROM @HAVE_CLOSEFROM@
 
-/* Define to 1 if cmocka support should be enabled */
-#cmakedefine HAVE_CMOCKA @HAVE_CMOCKA@
-
-/* Define to 1 if you have the <cmocka.h> header file. */
-#cmakedefine HAVE_CMOCKA_H @HAVE_CMOCKA_H@
-
 /* Define to 1 if you have compressBound */
 #cmakedefine HAVE_COMPRESS_BOUND @HAVE_COMPRESS_BOUND@
 
