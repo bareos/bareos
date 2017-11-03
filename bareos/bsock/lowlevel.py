@@ -212,7 +212,6 @@ class LowLevel(object):
                             #return msg
         except socket.error as e:
             self._handleSocketError(e)
-        return msg
 
 
     def recv_submsg(self, length):
@@ -266,8 +265,16 @@ class LowLevel(object):
 
 
     def __get_header(self):
-        self.__check_socket_connection()
-        header = self.socket.recv(4)
+        header = b''
+        header_length = 4
+        while header_length > 0:
+            self.logger.debug("  remaining header len: {}".format(header_length))
+            self.__check_socket_connection()
+            # TODO
+            self.socket.settimeout(10)
+            submsg = self.socket.recv(header_length)
+            header_length -= len(submsg)
+            header += submsg
         if len(header) == 0:
             self.logger.debug("received empty header, assuming connection is closed")
             raise SocketEmptyHeader()
