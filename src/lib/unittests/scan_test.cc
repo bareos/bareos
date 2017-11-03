@@ -27,8 +27,8 @@
  * Philipp Storz, November 2017
  */
 
-#include "gtest/gtest.h"
 #include "bareos.h"
+#include "gtest/gtest.h"
 
 TEST(scan,scan) {
 

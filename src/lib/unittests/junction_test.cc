@@ -24,8 +24,8 @@
  */
 
 #ifdef HAVE_WIN32
-#include "gtest/gtest.h"
 #include "bareos.h"
+#include "gtest/gtest.h"
 #include "winapi.h"
 
 bool CreateJunction(const char *szJunction, const char *szPath);

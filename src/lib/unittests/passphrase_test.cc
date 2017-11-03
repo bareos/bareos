@@ -24,8 +24,8 @@
  *
  * Philipp Storz, November 2017
  */
-#include "gtest/gtest.h"
 #include "bareos.h"
+#include "gtest/gtest.h"
 #define PASSWORDLEN 10
 
 TEST(passphrase,passphrase) {

@@ -27,9 +27,9 @@
  * Philipp Storz, November 2017
  */
 
-#include "gtest/gtest.h"
 #include <stdio.h>
 #include "bareos.h"
+#include "gtest/gtest.h"
 #include "findlib/find.h"
 
 TEST(FstypeTest, RootFs) {
