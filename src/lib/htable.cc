@@ -40,6 +40,12 @@
  * Kern Sibbald, July MMIII
  */
 
+#include "hostconfig.h"
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(4)
+#endif
+
 #include "bareos.h"
 
 #define B_PAGE_SIZE 4096
