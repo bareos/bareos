@@ -68,8 +68,8 @@ BuildRequires:  %{mingw}-libfastlz
 BuildRequires:  %{mingw}-libfastlz-devel
 BuildRequires:  %{mingw}-libsqlite3-0
 BuildRequires:  %{mingw}-libsqlite-devel
-BuildRequires:  %{mingw}-cmocka
-BuildRequires:  %{mingw}-cmocka-devel
+BuildRequires:  %{mingw}-gtest-devel
+BuildRequires:  %{mingw}-libgtest0
 BuildRequires:  %{mingw}-libjansson
 BuildRequires:  %{mingw}-libjansson-devel
 #BuildRequires:  %%{mingw}-qt4-debug
