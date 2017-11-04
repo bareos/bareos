@@ -36,6 +36,9 @@ import tempfile
 import subprocess
 import shlex
 import signal
+import ssl
+import socket
+import hashlib
 
 # Job replace code as defined in src/include/baconfig.h like this:
 # #define REPLACE_ALWAYS   'a'
@@ -77,7 +80,7 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
         self.events.append(bEventType['bEventStartBackupJob'])
         self.events.append(bEventType['bEventStartRestoreJob'])
         bareosfd.RegisterEvents(context, self.events)
-        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass', 'vcthumbprint']
+        self.mandatory_options_default = ['vcserver', 'vcuser', 'vcpass']
         self.mandatory_options_vmname = ['dc', 'folder', 'vmname']
 
         self.vadp = BareosVADPWrapper()
@@ -137,6 +140,10 @@ class BareosFdPluginVMware(BareosFdPluginBaseclass.BareosFdPluginBaseclass):
                 context, 100, "Using Option %s=%s\n" %
                 (option, self.options[option]))
 
+        if 'vcthumbprint' not in self.options:
+            # if vcthumbprint is not given in options, retrieve it
+            if not self.vadp.retrieve_vcthumbprint(context):
+                return bRCs['bRC_Error']
         return bRCs['bRC_OK']
 
     def start_backup_job(self, context):
@@ -1204,8 +1211,11 @@ class BareosVADPWrapper(object):
         # -l: Write to a local VMDK
         # -C: Create local VMDK
         # -d: Specify local VMDK name
+        # -f: Specify forced transport method
         bareos_vadp_dumper_opts = {}
         bareos_vadp_dumper_opts['dump'] = '-S -D -M'
+        if 'transport' in self.options:
+            bareos_vadp_dumper_opts['dump'] += ' -f %s' % self.options['transport']
         if self.restore_vmdk_file:
             if os.path.exists(self.restore_vmdk_file):
                 # restore of diff/inc, local vmdk exists already,
@@ -1436,6 +1446,35 @@ class BareosVADPWrapper(object):
 
         return True
 
+    def retrieve_vcthumbprint(self, context):
+        """
+        Retrieve the SSL Cert thumbprint from VC Server
+        """
+        success = True
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        wrappedSocket = ssl.wrap_socket(sock)
+        bareosfd.DebugMessage(
+            context, 100,
+            "retrieve_vcthumbprint() Retrieving SSL ThumbPrint from %s\n" %
+            (self.options['vcserver']))
+        try:
+            wrappedSocket.connect((self.options['vcserver'], 443))
+        except:
+            bareosfd.JobMessage(
+                context, bJobMessageType['M_WARNING'],
+                "Could not retrieve SSL Cert from %s\n" %
+                (self.options['vcserver']))
+            success = False
+        else:
+            der_cert_bin = wrappedSocket.getpeercert(True)
+            pem_cert = ssl.DER_cert_to_PEM_cert(wrappedSocket.getpeercert(True))
+            thumb_sha1 = hashlib.sha1(der_cert_bin).hexdigest()
+            self.options['vcthumbprint'] = thumb_sha1.upper()
+
+        wrappedSocket.close()
+        return success
+
     # helper functions ############
 
     def mkdir(self, directory_name):
@@ -1448,4 +1487,4 @@ class BareosVADPWrapper(object):
         except OSError:
             os.makedirs(directory_name)
 
-# vim: ts=4 tabstop=4 expandtab shiftwidth=4 softtabstop=4
+# vim: tabstop=4 shiftwidth=4 softtabstop=4 expandtab

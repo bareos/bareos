@@ -95,12 +95,17 @@ def main():
     Python program for enabling/disabling/resetting CBT on a VMware VM
     """
 
-    # workaround needed on Debian 8/Python >= 2.7.9
+    # newer Python versions, eg. Debian 8/Python >= 2.7.9 and
+    # CentOS/RHEL since 7.4 by default do SSL cert verification,
+    # we then try to disable it here.
     # see https://github.com/vmware/pyvmomi/issues/212
     py_ver = sys.version_info[0:3]
-    if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 9:
+    if py_ver[0] == 2 and py_ver[1] == 7 and py_ver[2] >= 5:
         import ssl
-        ssl._create_default_https_context = ssl._create_unverified_context
+        try:
+            ssl._create_default_https_context = ssl._create_unverified_context
+        except AttributeError:
+            pass
 
     args = GetArgs()
     if args.password:
