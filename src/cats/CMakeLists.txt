@@ -27,11 +27,9 @@ set(LIBBAREOSSQL_SRCS
     bvfs.cc cats.cc sql.cc sql_create.cc sql_delete.cc sql_find.cc
     sql_get.cc sql_list.cc sql_pooling.cc sql_query.cc sql_update.cc
     )
-
-
-set(LIBBAREOSCATS_DYN_SRCS cats_backends.cc)
-
-
+ set(LIBBAREOSCATS_SRCS
+    cats_backends.cc
+    )
 
 set(SQLITE_SRCS sqlite.cc)
 
@@ -45,6 +43,7 @@ add_library(bareossql SHARED ${LIBBAREOSSQL_SRCS})
 set_target_properties(bareossql PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           )
+target_link_libraries (bareossql bareoscats bareos)
 
 
 # TODO: install default db backend
@@ -55,23 +54,16 @@ set_target_properties(bareossql PROPERTIES VERSION "${VERSION}"
 list(LENGTH db_backends nr_db_backends)
 
 
-#IF(${nr_db_backends} EQUAL 1)
-#   ADD_CUSTOM_COMMAND(
-#         OUTPUT ${bindir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX} ALL
-#         COMMENT "Only one db backend (${default_db_backend}) available, creating symlink"
-#         COMMAND ${CMAKE_COMMAND} -E create_symlink ${libdir}/libbareoscats${CMAKE_SHARED_LIBRARY_SUFFIX}
-#                                                    ${backenddir}/libbareoscats-${default_db_backend}${CMAKE_SHARED_LIBRARY_SUFFIX})
-#ELSE()
-   add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS} ${LIBBAREOSCATS_DYN_SRCS})
-   target_link_libraries (bareoscats bareossql bareos)
-   set_target_properties(bareoscats PROPERTIES
-      VERSION ${VERSION}
-      SOVERSION "${SOVERSION}"
-      )
-   INSTALL(TARGETS bareoscats
-                DESTINATION ${libdir})
 
-#ENDIF()
+add_library(bareoscats SHARED ${LIBBAREOSCATS_SRCS})
+target_link_libraries (bareoscats bareos)
+set_target_properties(bareoscats PROPERTIES
+   VERSION ${VERSION}
+   SOVERSION "${SOVERSION}"
+   )
+INSTALL(TARGETS bareoscats
+   DESTINATION ${libdir})
+
 
 IF (HAVE_SQLITE3)
 add_library(bareoscats-sqlite3 MODULE ${SQLITE_SRCS})

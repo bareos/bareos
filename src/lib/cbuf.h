@@ -29,8 +29,7 @@
 
 #define QSIZE 10              /**< # of pointers in the queue */
 
-class circbuf : public SMARTALLOC {
-private:
+class DLL_IMP_EXP circbuf : public SMARTALLOC {
    int m_size;
    int m_next_in;
    int m_next_out;

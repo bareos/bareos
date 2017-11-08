@@ -74,7 +74,7 @@ struct h_mem {
    char first[1];                     /* First byte */
 };
 
-class htable : public SMARTALLOC {
+class  DLL_IMP_EXP htable : public SMARTALLOC {
    hlink **table;                     /* Hash table */
    int loffset;                       /* Link offset in item */
    hlink *walkptr;                    /* Table walk pointer */

@@ -165,7 +165,7 @@ extern "C" {
 }
 
 void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
-void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
+DLL_IMP_EXP void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
 bool get_trace(void);
 const char *get_basename(const char *pathname);
 void set_log_timestamp_format(const char *format);

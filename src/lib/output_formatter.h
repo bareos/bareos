@@ -103,7 +103,7 @@ typedef struct of_filter_tuple {
 /**
  * Actual output formatter class.
  */
-class OUTPUT_FORMATTER : public SMARTALLOC {
+class DLL_IMP_EXP OUTPUT_FORMATTER : public SMARTALLOC {
 public:
    /*
     * Typedefs.

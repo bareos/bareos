@@ -35,6 +35,22 @@
 #define _STAT_H         /* don't pull in MinGW stat.h */
 #endif
 
+
+#if defined(BUILDING_DLL)
+#define DLL_IMP_EXP _declspec(dllexport)
+#define CATS_IMP_EXP _declspec(dllexport)
+#define SD_IMP_EXP _declspec(dllexport)
+#elif defined(USING_DLL)
+#define DLL_IMP_EXP _declspec(dllimport)
+#define CATS_IMP_EXP _declspec(dllimport)
+#define SD_IMP_EXP _declspec(dllimport)
+#else
+#define DLL_IMP_EXP
+#define CATS_IMP_EXP
+#define SD_IMP_EXP
+#endif
+
+
 #ifndef _STAT_DEFINED
 #define _STAT_DEFINED 1 /* don't pull in MinGW struct stat from wchar.h */
 #endif
@@ -239,7 +255,7 @@ typedef bool (*t_pVSSPathConvert)(const char *szFilePath, char *szShadowPath, in
 typedef bool (*t_pVSSPathConvertW)(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
 bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW);
 
-int lchown(const char *, uid_t uid, gid_t gid);
+DLL_IMP_EXP int lchown(const char *, uid_t uid, gid_t gid);
 int chown(const char *, uid_t uid, gid_t gid);
 #define O_NONBLOCK   04000
 #define F_GETFL      3
@@ -277,24 +293,24 @@ int utime(const char *filename, struct utimbuf *buf);
 #define HAVE_OLD_SOCKOPT
 
 struct timespec;
-int readdir(unsigned int fd, struct dirent *dirp, unsigned int count);
-int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
-long int random(void);
-void srandom(unsigned int seed);
-int lstat(const char *filename, struct stat *sb);
-int stat(const char *file, struct stat *sb);
-long pathconf(const char *path, int name);
-ssize_t readlink(const char *path, char *buf, size_t bufsiz);
-int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev);
-int link(const char *existing, const char *newfile);
+DLL_IMP_EXP int readdir(unsigned int fd, struct dirent *dirp, unsigned int count);
+DLL_IMP_EXP int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
+DLL_IMP_EXP long int random(void);
+DLL_IMP_EXP void srandom(unsigned int seed);
+DLL_IMP_EXP int lstat(const char *filename, struct stat *sb);
+DLL_IMP_EXP int stat(const char *file, struct stat *sb);
+DLL_IMP_EXP long pathconf(const char *path, int name);
+DLL_IMP_EXP ssize_t readlink(const char *path, char *buf, size_t bufsiz);
+DLL_IMP_EXP int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev);
+DLL_IMP_EXP int link(const char *existing, const char *newfile);
 
 #define _PC_PATH_MAX 1
 #define _PC_NAME_MAX 2
 
 int geteuid();
 
-DIR *opendir(const char *filename);
-int closedir(DIR *dir);
+DLL_IMP_EXP DIR *opendir(const char *filename);
+DLL_IMP_EXP int closedir(DIR *dir);
 
 struct passwd {
     char *foo;
@@ -344,12 +360,12 @@ extern "C" void *  __cdecl _alloca(size_t);
 #define getcwd win32_getcwd
 #define chdir win32_chdir
 #define fputs win32_fputs
-char *win32_getcwd(char *buf, int maxlen);
-int win32_chdir(const char *buf);
-int win32_mkdir(const char *buf);
-int win32_fputs(const char *string, FILE *stream);
-int win32_unlink(const char *filename);
-int win32_chmod(const char *, mode_t, _dev_t);
+DLL_IMP_EXP char *win32_getcwd(char *buf, int maxlen);
+DLL_IMP_EXP int win32_chdir(const char *buf);
+DLL_IMP_EXP int win32_mkdir(const char *buf);
+DLL_IMP_EXP int win32_fputs(const char *string, FILE *stream);
+DLL_IMP_EXP int win32_unlink(const char *filename);
+DLL_IMP_EXP int win32_chmod(const char *, mode_t, _dev_t);
 
 char* win32_cgets (char* buffer, int len);
 
@@ -405,9 +421,9 @@ inline unsigned long ffs(unsigned long word)
 #define  ffs   __builtin_ffs
 #endif
 
-bool win32_get_vmp_devicename(const char *filename, POOLMEM *&device);
+DLL_IMP_EXP bool win32_get_vmp_devicename(const char *filename, POOLMEM *&device);
 int win32_ftruncate(int fd, int64_t length);
-bool win32_restore_file_attributes(POOLMEM *ofname,
+DLL_IMP_EXP bool win32_restore_file_attributes(POOLMEM *ofname,
                                    HANDLE handle,
                                    WIN32_FILE_ATTRIBUTE_DATA *atts);
 

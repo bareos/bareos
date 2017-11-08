@@ -62,16 +62,16 @@ typedef struct s_rwsteal_tag {
 /**
  * read/write lock prototypes
  */
-extern int rwl_init(brwlock_t *rwl, int priority = 0);
-extern int rwl_destroy(brwlock_t *rwl);
-extern bool rwl_is_init(brwlock_t *rwl);
-extern int rwl_readlock(brwlock_t *rwl);
-extern int rwl_readtrylock(brwlock_t *rwl);
-extern int rwl_readunlock(brwlock_t *rwl);
-extern int rwl_writelock_p(brwlock_t *rwl,
+DLL_IMP_EXP extern int rwl_init(brwlock_t *rwl, int priority = 0);
+DLL_IMP_EXP extern int rwl_destroy(brwlock_t *rwl);
+DLL_IMP_EXP extern bool rwl_is_init(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_readlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_readtrylock(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_readunlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_writelock_p(brwlock_t *rwl,
                            const char *file = "*unknown*",
                            int line = 0);
-extern int rwl_writetrylock(brwlock_t *rwl);
-extern int rwl_writeunlock(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_writetrylock(brwlock_t *rwl);
+DLL_IMP_EXP extern int rwl_writeunlock(brwlock_t *rwl);
 
 #endif /* __RWLOCK_H */

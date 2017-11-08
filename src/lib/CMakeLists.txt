@@ -79,7 +79,7 @@ set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc )
 
 
 add_library(bareoscfg SHARED ${BAREOSCFG_SRCS})
-target_link_libraries(bareoscfg ${JANSSON_LIBRARIES})
+target_link_libraries(bareoscfg bareos ${JANSSON_LIBRARIES})
 
 set (BAREOS_STATIC_SRCS parse_conf.cc res.cc)
 add_library(bareosstatic STATIC ${BAREOS_STATIC_SRCS})
@@ -91,14 +91,14 @@ INSTALL(TARGETS bareoscfg DESTINATION ${libdir})
 set_target_properties(bareoscfg PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
+                                          LINK_FLAGS -Wl,--output-def,bareoscfg.def
                                           )
-                                       #LINK_FLAGS -Wl,--out-implib,bareoscfg.a
 
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
+                                          LINK_FLAGS -Wl,--output-def,bareos.def
                                           )
-                                       #LINK_FLAGS -Wl,--out-implib,bareos.a
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 

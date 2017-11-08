@@ -94,11 +94,11 @@ bool makepath(ATTR *attr, const char *path, mode_t mode,
               bool keep_dir_modes);
 
 /* fstype.c */
-bool fstype(const char *fname, char *fs, int fslen);
-bool fstype_equals(const char *fname, const char *fstypename);
+DLL_IMP_EXP bool fstype(const char *fname, char *fs, int fslen);
+DLL_IMP_EXP bool fstype_equals(const char *fname, const char *fstypename);
 
 /* drivetype.c */
-bool drivetype(const char *fname, char *fs, int fslen);
+DLL_IMP_EXP bool drivetype(const char *fname, char *fs, int fslen);
 
 /* shadowing.c */
 void check_include_list_shadowing(JCR *jcr, findFILESET *fileset);

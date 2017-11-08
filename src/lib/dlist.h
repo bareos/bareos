@@ -54,7 +54,7 @@ struct dlink {
    void *prev;
 };
 
-class dlist : public SMARTALLOC {
+class DLL_IMP_EXP dlist : public SMARTALLOC {
    void *head;
    void *tail;
    int16_t loffset;
@@ -199,5 +199,5 @@ private:
     */
 };
 
-extern dlistString *new_dlistString(const char *str, int len);
-extern dlistString *new_dlistString(const char *str);
+DLL_IMP_EXP extern dlistString *new_dlistString(const char *str, int len);
+DLL_IMP_EXP extern dlistString *new_dlistString(const char *str);
