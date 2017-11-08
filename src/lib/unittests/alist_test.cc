@@ -27,7 +27,8 @@
  * Philipp Storz, November 2017
  */
 
-#include "bareos.h"
+//#include "bareos.h"
+#include "windows.h"
 #include "gtest/gtest.h"
 
 struct FILESET {
