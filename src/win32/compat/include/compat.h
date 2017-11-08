@@ -29,7 +29,6 @@
  * Created On      : Fri Jan 30 13:00:51 2004
  */
 
-
 #if !defined(__COMPAT_H_)
 #define __COMPAT_H_
 #if !defined(_STAT_H)

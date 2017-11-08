@@ -20,7 +20,9 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos)
 
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(/usr/include)
+endif()
 
 set(CMAKE_MODULE_PATH
          ${CMAKE_MODULE_PATH}
@@ -73,6 +75,17 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
    link_libraries(dld intl)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+   add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600)
+#  add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600 -D_BDB_PRIV_INTERFACE_  -Wall -m64 -mwin32 -mthreads)
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/include ${CMAKE_SOURCE_DIR}/src/win32/compat/include)
+   set(HAVE_WIN32 1)
+   link_directories(/usr/x86_64-w64-mingw32/sys-root/mingw/lib)
+   set(WINDOWS_LIBRARIES ws2_32)
+else()
+   add_definitions("-D_FILE_OFFSET_BITS=64")
+endif()
+
 INCLUDE(BareosFindPrograms)
 
 INCLUDE(GNUInstallDirs)
@@ -99,7 +112,7 @@ mark_as_advanced(INSTALL_LIB_DIR)
 
 
 # RPATH settings (from https://cmake.org/Wiki/CMake_RPATH_handling)
-# use, i.e. don't skip the full RPATH for the build tree
+# use, i.e. don')t skip the full RPATH for the build tree
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
 # when building, don't use the install RPATH already
@@ -147,7 +160,6 @@ ELSE()
 ENDIF()
 
 
-add_definitions("-D_FILE_OFFSET_BITS=64")
 
 MESSAGE( STATUS "VERSION: " ${CMAKE_MATCH_1} )
 

@@ -52,30 +52,53 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc
    output_formatter.cc passphrase.cc path_list.cc plugins.cc poll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
-   scsi_tapealert.cc sellist.cc serial.cc sha1.cc signal.cc  smartall.cc
+   sellist.cc serial.cc sha1.cc signal.cc  smartall.cc
    tls_gnutls.cc tls_none.cc tls_nss.cc tls_openssl.cc  tree.cc util.cc var.cc
    watchdog.cc workq.cc)
 
+IF(${HAVE_WIN32})
+   LIST(APPEND BAREOS_SRCS
+      ../win32/compat/compat.cc
+      ../win32/compat/glob.cc
+      ../win32/compat/print.cc
+      ../win32/compat/winapi.cc
+      )
+ELSE()
+   LIST(APPEND BAREOS_SRCS
+     scsi_tapealert.cc)
+ENDIF()
+
 add_library(bareos SHARED ${BAREOS_SRCS})
+
 target_link_libraries(bareos
    ${OPENSSL_LIBRARIES} ${PTHREAD_LIBRARIES} ${FASTLZ_LIBRARIES} ${ZLIB_LIBRARIES}
-   ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES} ${CAM_LIBRARIES})
+   ${ACL_LIBRARIES} ${LZO2_LIBRARIES} ${CAP_LIBRARIES} ${WRAP_LIBRARIES} ${CAM_LIBRARIES}
+   ${WINDOWS_LIBRARIES} ${JANSSON_LIBRARIES})
 
-set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc parse_conf.cc res.cc)
+set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc )
+
 
 add_library(bareoscfg SHARED ${BAREOSCFG_SRCS})
 target_link_libraries(bareoscfg ${JANSSON_LIBRARIES})
+
+set (BAREOS_STATIC_SRCS parse_conf.cc res.cc)
+add_library(bareosstatic STATIC ${BAREOS_STATIC_SRCS})
+
 
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 INSTALL(TARGETS bareoscfg DESTINATION ${libdir})
 
 set_target_properties(bareoscfg PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
+                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
+                                       #LINK_FLAGS -Wl,--out-implib,bareoscfg.a
 
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
+                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
+                                       #LINK_FLAGS -Wl,--out-implib,bareos.a
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 

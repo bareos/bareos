@@ -21,15 +21,24 @@ include_directories(../include .. .)
 
 SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
       enable_priv.cc find_one.cc find.cc fstype.cc hardlink.cc match.cc
-      mkpath.cc savecwd.cc shadowing.cc xattr.cc)
+      mkpath.cc shadowing.cc xattr.cc)
+
+IF(${HAVE_WIN32})
+   LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
+ELSE()
+   LIST(APPEND BAREOSFIND_SRCS savecwd.cc)
+ENDIF()
+
 
 add_library(bareosfind SHARED ${BAREOSFIND_SRCS})
-target_link_libraries(bareosfind ${ACL_LIBS})
+
+target_link_libraries(bareosfind bareos ${ACL_LIBS})
 
 INSTALL(TARGETS bareosfind DESTINATION ${libdir})
 
 set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
+                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
 
 add_subdirectory(unittests)
