@@ -276,7 +276,7 @@ typedef void (JCR_free_HANDLER)(JCR *jcr);
 /**
  * Job Control Record (JCR)
  */
-class JCR {
+class DLL_IMP_EXP JCR {
 private:
    pthread_mutex_t mutex;                 /**< Jcr mutex */
    volatile int32_t _use_count;           /**< Use count */
