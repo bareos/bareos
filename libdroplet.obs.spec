@@ -9,11 +9,12 @@
 Summary: Scality Droplet library
 License: BSD
 Name: %{name}
-Version: 3.0.git.1390558635
+Version: 3.0
 Release: 0%{release}
 Source: %{name}-%{version}.tar.bz2
 Group: Development/Tools
-BuildRequires: libxml2-devel, libjson-devel
+BuildRequires: libxml2-devel
+BuildRequires: pkgconfig(json)
 BuildRequires: automake, autoconf, libtool, pkg-config, check-devel, openssl-devel, bison, attr-devel
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 
@@ -35,7 +36,7 @@ Header files needed to develop programs that link against the Droplet library.
 
 %prep
 %setup -q
-#%patch1 -p1
+#%%patch1 -p1
 
 aclocal -I m4
 autoreconf -i -f
