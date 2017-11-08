@@ -206,6 +206,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
       ua->send->object_key_value("MD5", row[BVFS_Md5], "%s\t");
       ua->send->object_key_value("VolumeName", row[BVFS_VolName], "%s\t");
       ua->send->object_key_value("VolumeInChanger", str_to_uint64(row[BVFS_VolInchanger]), "%lld\n");
+      bvfs_stat(ua, lstat, &LinkFI);
       ua->send->object_end();
    } else if (bvfs_is_file(row)) {
       ua->send->object_start();
