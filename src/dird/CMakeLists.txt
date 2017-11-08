@@ -46,15 +46,19 @@ add_executable(bareos-dir ${SVRSRCS})
 set(BAREOS_DIR_LIBRARIES
    bareos
    bareoscats
-   bareoscfg bareossql
+   bareoscfg
+   bareossql
    bareosfind
    ${LMDB_LIBS}
+   ${NDMP_LIBS}
    )
-IF(HAVE_LMDB)
-   LIST(APPEND BAREOS_DIR_LIBRARIES
-      bareosndmp
-      )
-ENDIF()
+
+#IF(${HAVE_NDMP})
+#   LIST(APPEND BAREOS_DIR_LIBRARIES
+#      bareosndmp
+#      )
+#ENDIF()
+
 target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 
 

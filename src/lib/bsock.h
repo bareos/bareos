@@ -44,7 +44,7 @@ btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
 
-class BSOCK : public SMARTALLOC {
+class DLL_IMP_EXP BSOCK : public SMARTALLOC {
 /**
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.

@@ -17,16 +17,21 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(../include ..)
 
 add_library(bareoslmdb SHARED mdb.c midl.c)
 
+# empty the include_directories
+set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
+
 add_definitions(-Wall -m64 -mwin32 -mthreads)
+
 
 set_target_properties(bareoslmdb PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )
-
+IF(${HAVE_WIN32})
+target_link_libraries(bareoslmdb -lntdll)
+ENDIF()
 
 INSTALL(TARGETS bareoslmdb DESTINATION ${libdir})
