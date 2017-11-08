@@ -1,5 +1,5 @@
 #undef  VERSION
-#define VERSION "17.4.1"
+#define VERSION "17.4.2"
 #define BDATE   "01 Oct 2017"
 #define LSMDATE "01Oct17"
 
@@ -34,13 +34,13 @@
 /* Shared object library versions */
 
 /* Uncomment to overwrite default value from VERSION */
-/* #define LIBBAREOS_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSCFG_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSSQL_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSCATS_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSNDMP_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSLMDB_LT_RELEASE "17.4.1" */
-/* #define LIBBAREOSSD_LT_RELEASE "17.4.1" */
+/* #define LIBBAREOS_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSCFG_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSSQL_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSCATS_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSNDMP_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSLMDB_LT_RELEASE "17.4.2" */
+/* #define LIBBAREOSSD_LT_RELEASE "17.4.2" */
 
 /* Debug flags */
 #undef  DEBUG
