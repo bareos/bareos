@@ -169,7 +169,7 @@ lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5)
 #define scan_warn6(lc, msg, a1, a2, a3, a4, a5, a6) \
 lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
-void scan_to_eol(LEX *lc);
-int scan_to_next_not_eol(LEX * lc);
+DLL_IMP_EXP void scan_to_eol(LEX *lc);
+DLL_IMP_EXP int scan_to_next_not_eol(LEX * lc);
 
 #endif /* _LEX_H */

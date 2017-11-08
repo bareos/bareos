@@ -391,8 +391,8 @@ endif()
 
 
 
-set(lmdb "${ndmp}" )
-set(ndmp "${lmdb}" )
+set(ndmp "${ndmp}" )
+set(lmdb "${lmdb}" )
 set(build_client_only "${client-only}" )
 set(build_dird "${build-dird}" )
 set(build_stored "${build-stored}" )
