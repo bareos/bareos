@@ -2,962 +2,891 @@
 
 const char *B_DB_POSTGRESQL::query_definitions[] = {
 /* 0001_get_restore_objects */
-SQL_QUERY(
-SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, ObjectCompression, FileIndex, ObjectName, RestoreObject, PluginName
-  FROM RestoreObject
- WHERE JobId IN (%s)
-   AND ObjectType = %d
- ORDER BY ObjectIndex ASC
-),
+"SELECT JobId, ObjectLength, ObjectFullLength, ObjectIndex, ObjectType, ObjectCompression, FileIndex, ObjectName, RestoreObject, PluginName "
+  "FROM RestoreObject "
+ "WHERE JobId IN (%s) "
+   "AND ObjectType = %d "
+ "ORDER BY ObjectIndex ASC "
+,
 
 /* 0002_cleanup_created_job */
-SQL_QUERY(
-UPDATE Job
-   SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime
- WHERE JobStatus = 'C'
-),
+"UPDATE Job "
+   "SET JobStatus = 'f', StartTime = SchedTime, EndTime = SchedTime "
+ "WHERE JobStatus = 'C' "
+,
 
 /* 0003_cleanup_running_job */
-SQL_QUERY(
-UPDATE Job
-   SET JobStatus = 'f', EndTime = StartTime
- WHERE JobStatus = 'R'
-),
+"UPDATE Job "
+   "SET JobStatus = 'f', EndTime = StartTime "
+ "WHERE JobStatus = 'R' "
+,
 
 /* 0004_fill_jobhisto */
-SQL_QUERY(
-INSERT INTO JobHisto (
-	       JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate,
-	       VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId,
-	       PriorJobId, PurgedFiles,
-	       HasBase, Reviewed, Comment
-       )
-SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId,
-       VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles,
-       HasBase,
-       Reviewed, Comment
-  FROM Job
- WHERE JobStatus IN ('T','W','f','A','E')
-   AND NOT EXISTS (
-		SELECT JobHisto.JobId
-		  FROM JobHisto
-		 WHERE JobHisto.Jobid = Job.JobId
-       )
-   AND JobTDate       < %s
-),
+"INSERT INTO JobHisto ( "
+	       "JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, "
+	       "VolSessionId, VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, "
+	       "PriorJobId, PurgedFiles, "
+	       "HasBase, Reviewed, Comment "
+       ") "
+"SELECT JobId, Job, Name, Type, Level, ClientId, JobStatus, SchedTime, StartTime, EndTime, RealEndTime, JobTDate, VolSessionId, "
+       "VolSessionTime, JobFiles, JobBytes, ReadBytes, JobErrors, JobMissingFiles, PoolId, FileSetId, PriorJobId, PurgedFiles, "
+       "HasBase, "
+       "Reviewed, Comment "
+  "FROM Job "
+ "WHERE JobStatus IN ('T','W','f','A','E') "
+   "AND NOT EXISTS ( "
+		"SELECT JobHisto.JobId "
+		  "FROM JobHisto "
+		 "WHERE JobHisto.Jobid = Job.JobId "
+       ") "
+   "AND JobTDate       < %s "
+,
 
 /* 0005_list_pool */
-SQL_QUERY(
-SELECT *
-  FROM Pool
- WHERE PoolId = %s
-),
+"SELECT * "
+  "FROM Pool "
+ "WHERE PoolId = %s "
+,
 
 /* 0006_list_jobs */
-SQL_QUERY(
-SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
-Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
-FROM Job
-LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-WHERE Job.JobId > 0
-%s
-ORDER BY StartTime%s;
-),
+"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
+"Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
+"FROM Job "
+"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+"WHERE Job.JobId > 0 "
+"%s "
+"ORDER BY StartTime%s; "
+,
 
 /* 0007_list_jobs_long */
-SQL_QUERY(
-SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level,
-Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
-Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
-Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
-Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
-FROM Job
-LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-WHERE Job.JobId > 0
-%s
-ORDER BY StartTime%s;
-),
+"SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
+"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
+"Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
+"Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
+"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
+"FROM Job "
+"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+"LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+"WHERE Job.JobId > 0 "
+"%s "
+"ORDER BY StartTime%s; "
+,
 
 /* 0008_list_jobs_count */
-SQL_QUERY(
-SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count
-FROM Job
-LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-WHERE Job.JobId > 0
-%s
-%s;
-),
+"SELECT DISTINCT COUNT(DISTINCT Job.JobId) as count "
+"FROM Job "
+"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+"WHERE Job.JobId > 0 "
+"%s "
+"%s; "
+,
 
 /* 0009_list_jobs_last */
-SQL_QUERY(
-SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client,
-Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus
-FROM Job
-LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-INNER JOIN (
-   SELECT MAX(Job.JobId) as MaxJobId
-   FROM Job
-   LEFT JOIN Client ON Client.ClientId=Job.ClientId
-   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
-   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-   WHERE Job.JobId > 0
-   %s
-   GROUP BY Job.Name
-) LastJob
-ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
-),
+"SELECT DISTINCT Job.JobId,Job.Name, Client.Name as Client, "
+"Job.StartTime,Job.Type,Job.Level,Job.JobFiles,Job.JobBytes,Job.JobStatus "
+"FROM Job "
+"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+"INNER JOIN ( "
+   "SELECT MAX(Job.JobId) as MaxJobId "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "GROUP BY Job.Name "
+") LastJob "
+"ON Job.JobId = LastJob.MaxJobId "
+"ORDER BY StartTime%s; "
+,
 
 /* 0010_list_jobs_long_last */
-SQL_QUERY(
-SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level,
-Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime,
-Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime,
-Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId,
-Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet
-FROM Job
-LEFT JOIN Client ON Client.ClientId=Job.ClientId
-LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
-LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-INNER JOIN (
-   SELECT MAX(Job.JobId) as MaxJobId
-   FROM Job
-   LEFT JOIN Client ON Client.ClientId=Job.ClientId
-   LEFT JOIN Pool ON Pool.PoolId=Job.PoolId
-   LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId
-   LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId
-   LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId
-   WHERE Job.JobId > 0
-   %s
-   GROUP BY Job.Name
-) LastJob
-ON Job.JobId = LastJob.MaxJobId
-ORDER BY StartTime%s;
-),
+"SELECT DISTINCT Job.JobId, Job.Job, Job.Name, Job.PurgedFiles, Job.Type, Job.Level, "
+"Job.ClientId, Client.Name as Client, Job.JobStatus, Job.SchedTime, Job.StartTime, "
+"Job.EndTime, Job.RealEndTime, Job.JobTDate, Job.VolSessionId, Job.VolSessionTime, "
+"Job.JobFiles, Job.JobBytes, Job.JobErrors, Job.JobMissingFiles, Job.PoolId, "
+"Pool.Name as PoolName, Job.PriorJobId, Job.FileSetId, FileSet.FileSet "
+"FROM Job "
+"LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+"LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+"LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+"LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+"LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+"INNER JOIN ( "
+   "SELECT MAX(Job.JobId) as MaxJobId "
+   "FROM Job "
+   "LEFT JOIN Client ON Client.ClientId=Job.ClientId "
+   "LEFT JOIN Pool ON Pool.PoolId=Job.PoolId "
+   "LEFT JOIN JobMedia ON JobMedia.JobId=Job.JobId "
+   "LEFT JOIN Media ON JobMedia.MediaId=Media.MediaId "
+   "LEFT JOIN FileSet ON FileSet.FileSetId=Job.FileSetId "
+   "WHERE Job.JobId > 0 "
+   "%s "
+   "GROUP BY Job.Name "
+") LastJob "
+"ON Job.JobId = LastJob.MaxJobId "
+"ORDER BY StartTime%s; "
+,
 
 /* 0011_sel_JobMedia */
-SQL_QUERY(
-SELECT DISTINCT JobMedia.JobId
-  FROM JobMedia, Job
- WHERE MediaId      = %s
-   AND Job.JobId    = JobMedia.JobId
-   AND Job.JobTDate < %s
-),
+"SELECT DISTINCT JobMedia.JobId "
+  "FROM JobMedia, Job "
+ "WHERE MediaId      = %s "
+   "AND Job.JobId    = JobMedia.JobId "
+   "AND Job.JobTDate < %s "
+,
 
 /* 0012_drop_deltabs.postgresql */
-SQL_QUERY(
-DROP TABLE IF EXISTS DelCandidates
-),
+"DROP TABLE IF EXISTS DelCandidates "
+,
 
 /* 0013_create_deltabs.postgresql */
-SQL_QUERY(
-CREATE TEMPORARY TABLE
-       DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1))
-),
+"CREATE TEMPORARY TABLE "
+       "DelCandidates ( JobId INTEGER NOT NULL, PurgedFiles SMALLINT, FileSetId INTEGER, JobFiles INTEGER, JobStatus char(1)) "
+,
 
 /* 0014_create_delindex */
-SQL_QUERY(
-CREATE INDEX DelInx1 ON DelCandidates (JobId)
-),
+"CREATE INDEX DelInx1 ON DelCandidates (JobId) "
+,
 
 /* 0015_uar_count_files */
-SQL_QUERY(
-SELECT JobFiles
-  FROM Job
- WHERE JobId = %s
-),
+"SELECT JobFiles "
+  "FROM Job "
+ "WHERE JobId = %s "
+,
 
 /* 0016_uar_list_jobs */
-SQL_QUERY(
-SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes
-  FROM Client, Job
- WHERE Client.ClientId = Job.ClientId
-   AND JobStatus IN ('T','W')
-   AND Type            = 'B'
- ORDER BY StartTime DESC LIMIT 20
-),
+"SELECT JobId, Client.Name as Client, StartTime, Level as JobLevel, JobFiles, JobBytes "
+  "FROM Client, Job "
+ "WHERE Client.ClientId = Job.ClientId "
+   "AND JobStatus IN ('T','W') "
+   "AND Type            = 'B' "
+ "ORDER BY StartTime DESC LIMIT 20 "
+,
 
 /* 0017_uar_print_jobs */
-SQL_QUERY(
-SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName
-  FROM Job
-  JOIN JobMedia
- USING (JobId)
-  JOIN Media
- USING (MediaId)
- WHERE JobId IN (%s)
- ORDER BY StartTime ASC
-),
+"SELECT DISTINCT JobId, Level, JobFiles, JobBytes, StartTime, VolumeName "
+  "FROM Job "
+  "JOIN JobMedia "
+ "USING (JobId) "
+  "JOIN Media "
+ "USING (MediaId) "
+ "WHERE JobId IN (%s) "
+ "ORDER BY StartTime ASC "
+,
 
 /* 0018_uar_del_temp */
-SQL_QUERY(
-DROP TABLE temp
-),
+"DROP TABLE temp "
+,
 
 /* 0019_uar_del_temp1 */
-SQL_QUERY(
-DROP TABLE temp1
-),
+"DROP TABLE temp1 "
+,
 
 /* 0020_uar_last_full */
-SQL_QUERY(
-INSERT INTO temp1
-SELECT Job.JobId, JobTdate
-  FROM Job, JobMedia, Media, FileSet
- WHERE Job.ClientId     = %s
-   AND Job.StartTime    < '%s'
-   AND Level            = 'F'
-   AND JobStatus IN ('T','W')
-   AND Type             = 'B'
-   AND JobMedia.JobId   = Job.JobId
-   AND Media.Enabled    = 1
-   AND JobMedia.MediaId = Media.MediaId
-   AND Job.FileSetId    = FileSet.FileSetId
-   AND FileSet.FileSet  = '%s' %s
- ORDER BY Job.JobTDate DESC LIMIT 1
-),
+"INSERT INTO temp1 "
+"SELECT Job.JobId, JobTdate "
+  "FROM Job, JobMedia, Media, FileSet "
+ "WHERE Job.ClientId     = %s "
+   "AND Job.StartTime    < '%s' "
+   "AND Level            = 'F' "
+   "AND JobStatus IN ('T','W') "
+   "AND Type             = 'B' "
+   "AND JobMedia.JobId   = Job.JobId "
+   "AND Media.Enabled    = 1 "
+   "AND JobMedia.MediaId = Media.MediaId "
+   "AND Job.FileSetId    = FileSet.FileSetId "
+   "AND FileSet.FileSet  = '%s' %s "
+ "ORDER BY Job.JobTDate DESC LIMIT 1 "
+,
 
 /* 0021_uar_last_full_no_pool */
-SQL_QUERY(
-INSERT INTO temp1
-SELECT Job.JobId, JobTdate
-  FROM Job, FileSet
- WHERE Job.ClientId    = %s
-   AND Job.StartTime   < '%s'
-   AND Level           = 'F'
-   AND JobStatus IN ('T','W')
-   AND Type            = 'B'
-   AND Job.FileSetId   = FileSet.FileSetId
-   AND FileSet.FileSet = '%s'
- ORDER BY Job.JobTDate DESC LIMIT 1
-),
+"INSERT INTO temp1 "
+"SELECT Job.JobId, JobTdate "
+  "FROM Job, FileSet "
+ "WHERE Job.ClientId    = %s "
+   "AND Job.StartTime   < '%s' "
+   "AND Level           = 'F' "
+   "AND JobStatus IN ('T','W') "
+   "AND Type            = 'B' "
+   "AND Job.FileSetId   = FileSet.FileSetId "
+   "AND FileSet.FileSet = '%s' "
+ "ORDER BY Job.JobTDate DESC LIMIT 1 "
+,
 
 /* 0022_uar_full */
-SQL_QUERY(
-INSERT INTO temp
-SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, StartTime, VolumeName, JobMedia.StartFile,
-       VolSessionId, VolSessionTime
-  FROM temp1, Job, JobMedia, Media
- WHERE temp1.JobId      = Job.JobId
-   AND Level            = 'F'
-   AND JobStatus IN ('T','W')
-   AND Type             = 'B'
-   AND Media.Enabled    = 1
-   AND JobMedia.JobId   = Job.JobId
-   AND JobMedia.MediaId = Media.MediaId
-),
+"INSERT INTO temp "
+"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, StartTime, VolumeName, JobMedia.StartFile, "
+       "VolSessionId, VolSessionTime "
+  "FROM temp1, Job, JobMedia, Media "
+ "WHERE temp1.JobId      = Job.JobId "
+   "AND Level            = 'F' "
+   "AND JobStatus IN ('T','W') "
+   "AND Type             = 'B' "
+   "AND Media.Enabled    = 1 "
+   "AND JobMedia.JobId   = Job.JobId "
+   "AND JobMedia.MediaId = Media.MediaId "
+,
 
 /* 0023_uar_dif */
-SQL_QUERY(
-INSERT INTO temp
-SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
-       JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
-  FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
-   AND Job.StartTime    < '%s'
-   AND Job.ClientId     = %s
-   AND JobMedia.JobId   = Job.JobId
-   AND Media.Enabled    = 1
-   AND JobMedia.MediaId = Media.MediaId
-   AND Job.Level        = 'D'
-   AND JobStatus IN ('T','W')
-   AND Type             = 'B'
-   AND Job.FileSetId    = FileSet.FileSetId
-   AND FileSet.FileSet  = '%s' %s
- ORDER BY Job.JobTDate DESC LIMIT 1
-),
+"INSERT INTO temp "
+"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName, "
+       "JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime "
+  "FROM Job, JobMedia, Media, FileSet "
+ "WHERE Job.JobTDate     > %s "
+   "AND Job.StartTime    < '%s' "
+   "AND Job.ClientId     = %s "
+   "AND JobMedia.JobId   = Job.JobId "
+   "AND Media.Enabled    = 1 "
+   "AND JobMedia.MediaId = Media.MediaId "
+   "AND Job.Level        = 'D' "
+   "AND JobStatus IN ('T','W') "
+   "AND Type             = 'B' "
+   "AND Job.FileSetId    = FileSet.FileSetId "
+   "AND FileSet.FileSet  = '%s' %s "
+ "ORDER BY Job.JobTDate DESC LIMIT 1 "
+,
 
 /* 0024_uar_inc */
-SQL_QUERY(
-INSERT INTO temp
-SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName,
-       JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime
-  FROM Job, JobMedia, Media, FileSet
- WHERE Job.JobTDate     > %s
-   AND Job.StartTime    < '%s'
-   AND Job.ClientId     = %s
-   AND Media.Enabled    = 1
-   AND JobMedia.JobId   = Job.JobId
-   AND JobMedia.MediaId = Media.MediaId
-   AND Job.Level        = 'I'
-   AND JobStatus IN ('T','W')
-   AND Type             = 'B'
-   AND Job.FileSetId    = FileSet.FileSetId
-   AND FileSet.FileSet  = '%s' %s
-),
+"INSERT INTO temp "
+"SELECT Job.JobId, Job.JobTDate, Job.ClientId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName, "
+       "JobMedia.StartFile, Job.VolSessionId, Job.VolSessionTime "
+  "FROM Job, JobMedia, Media, FileSet "
+ "WHERE Job.JobTDate     > %s "
+   "AND Job.StartTime    < '%s' "
+   "AND Job.ClientId     = %s "
+   "AND Media.Enabled    = 1 "
+   "AND JobMedia.JobId   = Job.JobId "
+   "AND JobMedia.MediaId = Media.MediaId "
+   "AND Job.Level        = 'I' "
+   "AND JobStatus IN ('T','W') "
+   "AND Type             = 'B' "
+   "AND Job.FileSetId    = FileSet.FileSetId "
+   "AND FileSet.FileSet  = '%s' %s "
+,
 
 /* 0025_uar_list_jobs_by_idlist */
-SQL_QUERY(
-SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName
-  FROM Job, JobMedia, Media
- WHERE Job.JobId IN (%s)
-   AND JobMedia.JobId   = Job.JobId
-   AND Media.Enabled    = 1
-   AND JobMedia.MediaId = Media.MediaId
- ORDER BY StartTime ASC
-),
+"SELECT DISTINCT Job.JobId, Job.Level, Job.JobFiles, Job.JobBytes, Job.StartTime, Media.VolumeName "
+  "FROM Job, JobMedia, Media "
+ "WHERE Job.JobId IN (%s) "
+   "AND JobMedia.JobId   = Job.JobId "
+   "AND Media.Enabled    = 1 "
+   "AND JobMedia.MediaId = Media.MediaId "
+ "ORDER BY StartTime ASC "
+,
 
 /* 0026_uar_sel_jobid_temp */
-SQL_QUERY(
-SELECT DISTINCT JobId, StartTime
-  FROM temp
- ORDER BY StartTime ASC
-),
+"SELECT DISTINCT JobId, StartTime "
+  "FROM temp "
+ "ORDER BY StartTime ASC "
+,
 
 /* 0027_uar_sel_all_temp1 */
-SQL_QUERY(
-SELECT *
-  FROM temp1
-),
+"SELECT * "
+  "FROM temp1 "
+,
 
 /* 0028_uar_sel_all_temp */
-SQL_QUERY(
-SELECT *
-  FROM temp
-),
+"SELECT * "
+  "FROM temp "
+,
 
 /* 0029_uar_sel_fileset */
-SQL_QUERY(
-SELECT DISTINCT FileSet.FileSet
-  FROM Job, Client, FileSet
- WHERE Job.FileSetId   = FileSet.FileSetId
-   AND Job.ClientId    = %s
-   AND Client.ClientId = %s
- ORDER BY FileSet.FileSet
-),
+"SELECT DISTINCT FileSet.FileSet "
+  "FROM Job, Client, FileSet "
+ "WHERE Job.FileSetId   = FileSet.FileSetId "
+   "AND Job.ClientId    = %s "
+   "AND Client.ClientId = %s "
+ "ORDER BY FileSet.FileSet "
+,
 
 /* 0030_uar_sel_filesetid */
-SQL_QUERY(
-SELECT MAX(FileSet.FileSetId)
-  FROM FileSet
-  JOIN Job
- USING (FileSetId)
- WHERE Job.ClientId = %s
- GROUP BY FileSet
-),
+"SELECT MAX(FileSet.FileSetId) "
+  "FROM FileSet "
+  "JOIN Job "
+ "USING (FileSetId) "
+ "WHERE Job.ClientId = %s "
+ "GROUP BY FileSet "
+,
 
 /* 0031_uar_jobid_fileindex */
-SQL_QUERY(
-SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
-WHERE Job.JobId=File.JobId
-  AND Job.StartTime<='%s'
-  AND Path.Path='%s'
-  AND File.Name='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.PathId
-  AND JobStatus IN ('T',
-                    'W')
-  AND TYPE='B'
-ORDER BY Job.StartTime DESC
-LIMIT 1
-),
+"SELECT Job.JobId, "
+       "File.FileIndex "
+"FROM Job, "
+     "File, "
+     "Path, "
+     "Client "
+"WHERE Job.JobId=File.JobId "
+  "AND Job.StartTime<='%s' "
+  "AND Path.Path='%s' "
+  "AND File.Name='%s' "
+  "AND Client.Name='%s' "
+  "AND Job.ClientId=Client.ClientId "
+  "AND Path.PathId=File.PathId "
+  "AND JobStatus IN ('T', "
+                    "'W') "
+  "AND TYPE='B' "
+"ORDER BY Job.StartTime DESC "
+"LIMIT 1 "
+,
 
 /* 0032_uar_jobids_fileindex */
-SQL_QUERY(
-SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
-WHERE Job.JobId IN (%s)
-  AND Job.JobId=File.JobId
-  AND Job.StartTime<='%s'
-  AND Path.Path='%s'
-  AND File.Name='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.PathId
-ORDER BY Job.StartTime DESC
-LIMIT 1
-),
+"SELECT Job.JobId, "
+       "File.FileIndex "
+"FROM Job, "
+     "File, "
+     "Path, "
+     "Client "
+"WHERE Job.JobId IN (%s) "
+  "AND Job.JobId=File.JobId "
+  "AND Job.StartTime<='%s' "
+  "AND Path.Path='%s' "
+  "AND File.Name='%s' "
+  "AND Client.Name='%s' "
+  "AND Job.ClientId=Client.ClientId "
+  "AND Path.PathId=File.PathId "
+"ORDER BY Job.StartTime DESC "
+"LIMIT 1 "
+,
 
 /* 0033_uar_jobid_fileindex_from_table */
-SQL_QUERY(
-SELECT JobId, FileIndex
-  FROM %s
- ORDER BY JobId, FileIndex ASC
-),
+"SELECT JobId, FileIndex "
+  "FROM %s "
+ "ORDER BY JobId, FileIndex ASC "
+,
 
 /* 0034_select_recent_version_with_basejob.postgresql */
-SQL_QUERY(
-SELECT DISTINCT ON (Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   FileName AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-     UNION ALL
-     SELECT File.FileId,
-            File.JobId,
-            PathId,
-            File.Name AS FileName,
-            File.FileIndex,
-            LStat,
-            MD5,
-            DeltaSeq,
-            Fhinfo,
-            Fhnode
-     FROM BaseFiles
-     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
-JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         JobTDate DESC
-),
+"SELECT DISTINCT ON (Name, "
+                    "PathId) JobTDate, "
+                   "JobId, "
+                   "FileId, "
+                   "FileIndex, "
+                   "PathId, "
+                   "FileName AS Name, "
+                   "LStat, "
+                   "MD5, "
+                   "DeltaSeq, "
+                   "Fhinfo, "
+                   "Fhnode "
+"FROM "
+  "(SELECT FileId, "
+          "JobId, "
+          "PathId, "
+          "Name AS FileName, "
+          "FileIndex, "
+          "LStat, "
+          "MD5, "
+          "DeltaSeq, "
+          "Fhinfo, "
+          "Fhnode "
+   "FROM File "
+   "WHERE JobId IN (%s) "
+     "UNION ALL "
+     "SELECT File.FileId, "
+            "File.JobId, "
+            "PathId, "
+            "File.Name AS FileName, "
+            "File.FileIndex, "
+            "LStat, "
+            "MD5, "
+            "DeltaSeq, "
+            "Fhinfo, "
+            "Fhnode "
+     "FROM BaseFiles "
+     "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T "
+"JOIN Job USING (JobId) "
+"ORDER BY Name, "
+         "PathId, "
+         "JobTDate DESC "
+,
 
 /* 0035_select_recent_version_with_basejob_and_delta.postgresql */
-SQL_QUERY(
-SELECT DISTINCT ON (Name,
-                    PathId,
-                    DeltaSeq) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   Filename AS Name,
-                   LStat,
-                   MD5,
-                   DeltaSeq,
-                   Fhinfo,
-                   Fhnode
-FROM
-  (SELECT FileId,
-          JobId,
-          PathId,
-          Name AS FileName,
-          FileIndex,
-          LStat,
-          MD5,
-          DeltaSeq,
-          Fhinfo,
-          Fhnode
-   FROM File
-   WHERE JobId IN (%s)
-     UNION ALL
-     SELECT File.FileId,
-            File.JobId,
-            PathId,
-            File.Name AS FileName,
-            File.FileIndex,
-            LStat,
-            MD5,
-            DeltaSeq,
-            Fhinfo,
-            Fhnode
-     FROM BaseFiles
-     JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T
-JOIN Job USING (JobId)
-ORDER BY Name,
-         PathId,
-         DeltaSeq,
-         JobTDate DESC
-),
+"SELECT DISTINCT ON (Name, "
+                    "PathId, "
+                    "DeltaSeq) JobTDate, "
+                   "JobId, "
+                   "FileId, "
+                   "FileIndex, "
+                   "PathId, "
+                   "Filename AS Name, "
+                   "LStat, "
+                   "MD5, "
+                   "DeltaSeq, "
+                   "Fhinfo, "
+                   "Fhnode "
+"FROM "
+  "(SELECT FileId, "
+          "JobId, "
+          "PathId, "
+          "Name AS FileName, "
+          "FileIndex, "
+          "LStat, "
+          "MD5, "
+          "DeltaSeq, "
+          "Fhinfo, "
+          "Fhnode "
+   "FROM File "
+   "WHERE JobId IN (%s) "
+     "UNION ALL "
+     "SELECT File.FileId, "
+            "File.JobId, "
+            "PathId, "
+            "File.Name AS FileName, "
+            "File.FileIndex, "
+            "LStat, "
+            "MD5, "
+            "DeltaSeq, "
+            "Fhinfo, "
+            "Fhnode "
+     "FROM BaseFiles "
+     "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) ) AS T "
+"JOIN Job USING (JobId) "
+"ORDER BY Name, "
+         "PathId, "
+         "DeltaSeq, "
+         "JobTDate DESC "
+,
 
 /* 0036_select_recent_version.postgresql */
-SQL_QUERY(
-SELECT DISTINCT ON (File.Name,
-                    PathId) JobTDate,
-                   JobId,
-                   FileId,
-                   FileIndex,
-                   PathId,
-                   File.Name,
-                   LStat,
-                   MD5,
-                   Fhinfo,
-                   Fhnode
-FROM File
-JOIN Job USING (JobId)
-WHERE JobId IN (%s)
-ORDER BY File.Name,
-         PathId,
-         JobTDate DESC
-),
+"SELECT DISTINCT ON (File.Name, "
+                    "PathId) JobTDate, "
+                   "JobId, "
+                   "FileId, "
+                   "FileIndex, "
+                   "PathId, "
+                   "File.Name, "
+                   "LStat, "
+                   "MD5, "
+                   "Fhinfo, "
+                   "Fhnode "
+"FROM File "
+"JOIN Job USING (JobId) "
+"WHERE JobId IN (%s) "
+"ORDER BY File.Name, "
+         "PathId, "
+         "JobTDate DESC "
+,
 
 /* 0037_create_temp_accurate_jobids */
-SQL_QUERY(
-CREATE TABLE btemp3%s AS
-SELECT JobId,
-       StartTime,
-       EndTime,
-       JobTDate,
-       PurgedFiles
-FROM Job
-JOIN FileSet USING (FileSetId)
-WHERE ClientId = %s
-  AND Level = 'F'
-  AND JobStatus IN ('T',
-                    'W')
-  AND Type = 'B'
-  AND StartTime < '%s'
-  AND FileSet.FileSetId = %s
-ORDER BY Job.JobId DESC,
-         Job.JobTDate DESC
-LIMIT 1
-),
+"CREATE TABLE btemp3%s AS "
+"SELECT JobId, "
+       "StartTime, "
+       "EndTime, "
+       "JobTDate, "
+       "PurgedFiles "
+"FROM Job "
+"JOIN FileSet USING (FileSetId) "
+"WHERE ClientId = %s "
+  "AND Level = 'F' "
+  "AND JobStatus IN ('T', "
+                    "'W') "
+  "AND Type = 'B' "
+  "AND StartTime < '%s' "
+  "AND FileSet.FileSetId = %s "
+"ORDER BY Job.JobId DESC, "
+         "Job.JobTDate DESC "
+"LIMIT 1 "
+,
 
 /* 0038_create_temp_basefile */
-SQL_QUERY(
-CREATE TEMPORARY TABLE basefile%lld ( Path TEXT, Name TEXT)
-),
+"CREATE TEMPORARY TABLE basefile%lld ( Path TEXT, Name TEXT) "
+,
 
 /* 0039_create_temp_new_basefile */
-SQL_QUERY(
-CREATE
-TEMPORARY TABLE new_basefile%lld AS
-SELECT Path.Path AS Path,
-       Temp.Name AS Name,
-       Temp.FileIndex AS FileIndex,
-       Temp.JobId AS JobId,
-       Temp.LStat AS LStat,
-       Temp.FileId AS FileId,
-       Temp.MD5 AS MD5,
-       Temp.Fhinfo AS Fhinfo,
-       Temp.Fhnode AS Fhnode
-FROM (%s) AS Temp
-JOIN Path ON (Path.PathId = Temp.PathId)
-WHERE Temp.FileIndex > 0
-),
+"CREATE "
+"TEMPORARY TABLE new_basefile%lld AS "
+"SELECT Path.Path AS Path, "
+       "Temp.Name AS Name, "
+       "Temp.FileIndex AS FileIndex, "
+       "Temp.JobId AS JobId, "
+       "Temp.LStat AS LStat, "
+       "Temp.FileId AS FileId, "
+       "Temp.MD5 AS MD5, "
+       "Temp.Fhinfo AS Fhinfo, "
+       "Temp.Fhnode AS Fhnode "
+"FROM (%s) AS Temp "
+"JOIN Path ON (Path.PathId = Temp.PathId) "
+"WHERE Temp.FileIndex > 0 "
+,
 
 /* 0040_uap_upgrade_copies_oldest_job */
-SQL_QUERY(
-CREATE TEMPORARY TABLE cpy_tmp AS
-SELECT MIN(JobId) AS JobId
-  FROM Job
- WHERE Type = '%c'
-   AND (
-          PriorJobId IN (%s)
-       OR PriorJobId IN (
-         SELECT PriorJobId
-           FROM Job
-          WHERE JobId IN (%s)
-            AND Type = 'B'
-          )
-       )
- GROUP BY PriorJobId
-),
+"CREATE TEMPORARY TABLE cpy_tmp AS "
+"SELECT MIN(JobId) AS JobId "
+  "FROM Job "
+ "WHERE Type = '%c' "
+   "AND ( "
+          "PriorJobId IN (%s) "
+       "OR PriorJobId IN ( "
+         "SELECT PriorJobId "
+           "FROM Job "
+          "WHERE JobId IN (%s) "
+            "AND Type = 'B' "
+          ") "
+       ") "
+ "GROUP BY PriorJobId "
+,
 
 /* 0041_uar_file */
-SQL_QUERY(
-SELECT Job.JobId AS JobId,
-       Path.Path||File.Name AS Name,
-       StartTime,
-       TYPE AS JobType,
-               JobStatus,
-               JobFiles,
-               JobBytes
-FROM Client,
-     Job,
-     File,
-     Path
-WHERE Client.Name='%s'
-  AND Client.ClientId=Job.ClientId
-  AND Job.JobId=File.JobId
-  AND File.FileIndex > 0
-  AND Path.PathId=File.PathId
-  AND File.Name='%s'
-ORDER BY StartTime DESC
-LIMIT 20
-),
+"SELECT Job.JobId AS JobId, "
+       "Path.Path||File.Name AS Name, "
+       "StartTime, "
+       "TYPE AS JobType, "
+               "JobStatus, "
+               "JobFiles, "
+               "JobBytes "
+"FROM Client, "
+     "Job, "
+     "File, "
+     "Path "
+"WHERE Client.Name='%s' "
+  "AND Client.ClientId=Job.ClientId "
+  "AND Job.JobId=File.JobId "
+  "AND File.FileIndex > 0 "
+  "AND Path.PathId=File.PathId "
+  "AND File.Name='%s' "
+"ORDER BY StartTime DESC "
+"LIMIT 20 "
+,
 
 /* 0042_uar_create_temp.postgresql */
-SQL_QUERY(
-CREATE TEMPORARY TABLE
-       temp (
-          JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime
-          TEXT, VolumeName TEXT, StartFile INTEGER, VolSessionId INTEGER, VolSessionTime INTEGER
-       )
-),
+"CREATE TEMPORARY TABLE "
+       "temp ( "
+          "JobId INTEGER NOT NULL, JobTDate BIGINT, ClientId INTEGER, Level CHAR, JobFiles INTEGER, JobBytes BIGINT, StartTime "
+          "TEXT, VolumeName TEXT, StartFile INTEGER, VolSessionId INTEGER, VolSessionTime INTEGER "
+       ") "
+,
 
 /* 0043_uar_create_temp1.postgresql */
-SQL_QUERY(
-CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT)
-),
+"CREATE TEMPORARY TABLE temp1 ( JobId INTEGER NOT NULL, JobTDate BIGINT) "
+,
 
 /* 0044_uar_jobid_fileindex_from_dir.postgresql */
-SQL_QUERY(
-SELECT Job.JobId,
-       File.FileIndex
-FROM Job,
-     File,
-     Path,
-     Client
-WHERE Job.JobId IN (%s)
-  AND Job.JobId=File.JobId
-  AND Path.Path='%s'
-  AND Client.Name='%s'
-  AND Job.ClientId=Client.ClientId
-  AND Path.PathId=File.Pathid
-),
+"SELECT Job.JobId, "
+       "File.FileIndex "
+"FROM Job, "
+     "File, "
+     "Path, "
+     "Client "
+"WHERE Job.JobId IN (%s) "
+  "AND Job.JobId=File.JobId "
+  "AND Path.Path='%s' "
+  "AND Client.Name='%s' "
+  "AND Job.ClientId=Client.ClientId "
+  "AND Path.PathId=File.Pathid "
+,
 
 /* 0045_sql_media_order_most_recently_written */
-SQL_QUERY(
-ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId
-),
+"ORDER BY LastWritten IS NULL,LastWritten DESC,MediaId "
+,
 
 /* 0046_sql_get_max_connections.postgresql */
-SQL_QUERY(
-SHOW max_connections
-),
+"SHOW max_connections "
+,
 
 /* 0047_bvfs_select.postgresql */
-SQL_QUERY(
-CREATE TABLE %s AS
-  (SELECT JobId,
-          FileIndex,
-          FileId
-   FROM
-     (SELECT DISTINCT ON (PathId,
-                          Name) JobId,
-                         FileIndex,
-                         FileId
-      FROM btemp%s
-      ORDER BY PathId,
-               Name,
-               JobTDate DESC) AS T
-   WHERE FileIndex > 0)
-),
+"CREATE TABLE %s AS "
+  "(SELECT JobId, "
+          "FileIndex, "
+          "FileId "
+   "FROM "
+     "(SELECT DISTINCT ON (PathId, "
+                          "Name) JobId, "
+                         "FileIndex, "
+                         "FileId "
+      "FROM btemp%s "
+      "ORDER BY PathId, "
+               "Name, "
+               "JobTDate DESC) AS T "
+   "WHERE FileIndex > 0) "
+,
 
 /* 0048_bvfs_list_files.postgresql */
-SQL_QUERY(
-SELECT TYPE,
-       PathId,
-       Name,
-       JobId,
-       LStat,
-       FileId
-FROM (
-   SELECT DISTINCT ON (Name) 'F' AS TYPE,
-                       PathId,
-                       FileName AS Name,
-                       JobId,
-                       LStat,
-                       FileId,
-                       FileIndex
-   FROM (
-      SELECT FileId,
-             JobId,
-             PathId,
-             Name AS FileName,
-             FileIndex,
-             LStat,
-             MD5
-      FROM File
-      WHERE JobId IN (%s)
-        AND PathId = %s
-        UNION ALL
-        SELECT File.FileId,
-               File.JobId,
-               PathId,
-               File.Name AS FileName,
-               File.FileIndex,
-               LStat,
-               MD5
-        FROM BaseFiles
-        JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s)
-        AND File.PathId = %s
-   ) AS T
-   JOIN Job USING (JobId)
-   WHERE
-      FileName != ''
-      %s
-   ORDER BY FileName,
-            StartTime DESC
-) AS A
-WHERE A.FileIndex > 0
-LIMIT %lld
-OFFSET %lld
-),
+"SELECT TYPE, "
+       "PathId, "
+       "Name, "
+       "JobId, "
+       "LStat, "
+       "FileId "
+"FROM ( "
+   "SELECT DISTINCT ON (Name) 'F' AS TYPE, "
+                       "PathId, "
+                       "FileName AS Name, "
+                       "JobId, "
+                       "LStat, "
+                       "FileId, "
+                       "FileIndex "
+   "FROM ( "
+      "SELECT FileId, "
+             "JobId, "
+             "PathId, "
+             "Name AS FileName, "
+             "FileIndex, "
+             "LStat, "
+             "MD5 "
+      "FROM File "
+      "WHERE JobId IN (%s) "
+        "AND PathId = %s "
+        "UNION ALL "
+        "SELECT File.FileId, "
+               "File.JobId, "
+               "PathId, "
+               "File.Name AS FileName, "
+               "File.FileIndex, "
+               "LStat, "
+               "MD5 "
+        "FROM BaseFiles "
+        "JOIN File USING (FileId) WHERE BaseFiles.JobId IN (%s) "
+        "AND File.PathId = %s "
+   ") AS T "
+   "JOIN Job USING (JobId) "
+   "WHERE "
+      "FileName != '' "
+      "%s "
+   "ORDER BY FileName, "
+            "StartTime DESC "
+") AS A "
+"WHERE A.FileIndex > 0 "
+"LIMIT %lld "
+"OFFSET %lld "
+,
 
 /* 0049_batch_lock_path_query.postgresql */
-SQL_QUERY(
-BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE
-),
+"BEGIN; LOCK TABLE Path IN SHARE ROW EXCLUSIVE MODE "
+,
 
 /* 0050_batch_lock_filename_query.postgresql */
-SQL_QUERY(
-BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE
-),
+"BEGIN; LOCK TABLE Filename IN SHARE ROW EXCLUSIVE MODE "
+,
 
 /* 0051_batch_unlock_tables_query */
-SQL_QUERY(
-COMMIT
-),
+"COMMIT "
+,
 
 /* 0052_batch_fill_path_query.postgresql */
-SQL_QUERY(
-INSERT INTO Path (Path)
-SELECT a.Path
-  FROM (
-      SELECT DISTINCT Path
-        FROM batch
-       ) AS a
- WHERE NOT EXISTS (
-      SELECT Path
-        FROM Path
-       WHERE Path = a.Path
-       )
-),
+"INSERT INTO Path (Path) "
+"SELECT a.Path "
+  "FROM ( "
+      "SELECT DISTINCT Path "
+        "FROM batch "
+       ") AS a "
+ "WHERE NOT EXISTS ( "
+      "SELECT Path "
+        "FROM Path "
+       "WHERE Path = a.Path "
+       ") "
+,
 
 /* 0053_batch_fill_filename_query.postgresql */
-SQL_QUERY(
-INSERT INTO Filename (Name)
-SELECT a.Name
-  FROM (
-      SELECT DISTINCT Name
-        FROM batch
-       ) as a
- WHERE NOT EXISTS (
-      SELECT Name
-        FROM Filename
-       WHERE Name = a.Name
-       )
-),
+"INSERT INTO Filename (Name) "
+"SELECT a.Name "
+  "FROM ( "
+      "SELECT DISTINCT Name "
+        "FROM batch "
+       ") as a "
+ "WHERE NOT EXISTS ( "
+      "SELECT Name "
+        "FROM Filename "
+       "WHERE Name = a.Name "
+       ") "
+,
 
 /* 0054_match_query.postgresql */
-SQL_QUERY(
- AND Path2.Path ~ '%s'
-),
+ "AND Path2.Path ~ '%s' "
+,
 
 /* 0055_match_query2.postgresql */
-SQL_QUERY(
- AND Filename.Name ~ '%s'
-),
+ "AND Filename.Name ~ '%s' "
+,
 
 /* 0056_insert_counter_values */
-SQL_QUERY(
-INSERT INTO Counters (Counter, MinValue, MaxValue, CurrentValue, WrapCounter)
-VALUES ('%s','%d','%d','%d','%s')
-),
+"INSERT INTO Counters (Counter, MinValue, MaxValue, CurrentValue, WrapCounter) "
+"VALUES ('%s','%d','%d','%d','%s') "
+,
 
 /* 0057_select_counter_values */
-SQL_QUERY(
-SELECT MinValue, MaxValue, CurrentValue, WrapCounter
-  FROM Counters
- WHERE Counter = '%s'
-),
+"SELECT MinValue, MaxValue, CurrentValue, WrapCounter "
+  "FROM Counters "
+ "WHERE Counter = '%s' "
+,
 
 /* 0058_update_counter_values */
-SQL_QUERY(
-UPDATE Counters
-   SET MinValue = %d, MaxValue = %d, CurrentValue = %d, WrapCounter = '%s'
- WHERE Counter  = '%s'
-),
+"UPDATE Counters "
+   "SET MinValue = %d, MaxValue = %d, CurrentValue = %d, WrapCounter = '%s' "
+ "WHERE Counter  = '%s' "
+,
 
 /* 0059_get_quota_jobbytes.postgresql */
-SQL_QUERY(
-SELECT SUM(JobBytes)
-  FROM Job
- WHERE ClientId  =  %s
-   AND JobId     != %s
-   AND SchedTime >  TIMESTAMP '%s'
-),
+"SELECT SUM(JobBytes) "
+  "FROM Job "
+ "WHERE ClientId  =  %s "
+   "AND JobId     != %s "
+   "AND SchedTime >  TIMESTAMP '%s' "
+,
 
 /* 0060_get_quota_jobbytes_nofailed.postgresql */
-SQL_QUERY(
-SELECT SUM(JobBytes)
-  FROM Job
- WHERE ClientId  =  %s
-   AND Job.JobId != %s
-   AND SchedTime >  TIMESTAMP '%s'
-   AND JobStatus NOT IN ('E','f','A')
-),
+"SELECT SUM(JobBytes) "
+  "FROM Job "
+ "WHERE ClientId  =  %s "
+   "AND Job.JobId != %s "
+   "AND SchedTime >  TIMESTAMP '%s' "
+   "AND JobStatus NOT IN ('E','f','A') "
+,
 
 /* 0061_uar_sel_jobid_copies */
-SQL_QUERY(
-SELECT DISTINCT JobId, StartTime
-  FROM Job
- WHERE Type = 'C'
-   AND (PriorJobId IN (%s))
- ORDER BY StartTime ASC
-),
+"SELECT DISTINCT JobId, StartTime "
+  "FROM Job "
+ "WHERE Type = 'C' "
+   "AND (PriorJobId IN (%s)) "
+ "ORDER BY StartTime ASC "
+,
 
 /* 0062_get_jobstatus_details */
-SQL_QUERY(
-SELECT DISTINCT JobStatus, JobStatusLong, Severity,
-       CASE
-       WHEN JobStatus in ('T') THEN '0'
-       WHEN JobStatus in ('W') THEN '1'
-       WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2'
-       END as ExitLevel,
-       CASE
-       WHEN JobStatus in ('T') THEN 'Ok'
-       WHEN JobStatus in ('W') THEN 'Warning'
-       WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error'
-       END as ExitStatus
-  FROM Status %s
- ORDER BY JobStatus
-),
+"SELECT DISTINCT JobStatus, JobStatusLong, Severity, "
+       "CASE "
+       "WHEN JobStatus in ('T') THEN '0' "
+       "WHEN JobStatus in ('W') THEN '1' "
+       "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN '2' "
+       "END as ExitLevel, "
+       "CASE "
+       "WHEN JobStatus in ('T') THEN 'Ok' "
+       "WHEN JobStatus in ('W') THEN 'Warning' "
+       "WHEN JobStatus in ('e', 'f', 'A', 'E') THEN 'Error' "
+       "END as ExitStatus "
+  "FROM Status %s "
+ "ORDER BY JobStatus "
+,
 
 /* 0063_bvfs_versions_6 */
-SQL_QUERY(
-SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger
-FROM File, Job, Client, JobMedia, Media
-WHERE File.Name = '%s'
-  AND File.PathId = %s
-  AND File.JobId = Job.JobId
-  AND Job.JobId = JobMedia.JobId
-  AND File.FileIndex >= JobMedia.FirstIndex
-  AND File.FileIndex <= JobMedia.LastIndex
-  AND JobMedia.MediaId = Media.MediaId
-  AND Job.ClientId = Client.ClientId
-  AND Client.Name = '%s'
-  %s
-ORDER BY File.FileId
-LIMIT %d
-OFFSET %d
-),
+"SELECT 'V', File.PathId, File.Name, File.JobId, File.LStat, File.FileId, File.Md5, Media.VolumeName, Media.InChanger "
+"FROM File, Job, Client, JobMedia, Media "
+"WHERE File.Name = '%s' "
+  "AND File.PathId = %s "
+  "AND File.JobId = Job.JobId "
+  "AND Job.JobId = JobMedia.JobId "
+  "AND File.FileIndex >= JobMedia.FirstIndex "
+  "AND File.FileIndex <= JobMedia.LastIndex "
+  "AND JobMedia.MediaId = Media.MediaId "
+  "AND Job.ClientId = Client.ClientId "
+  "AND Client.Name = '%s' "
+  "%s "
+"ORDER BY File.FileId "
+"LIMIT %d "
+"OFFSET %d "
+,
 
 /* 0064_bvfs_lsdirs_7 */
-SQL_QUERY(
-SELECT 'D', PathId, Path, JobId, LStat, FileId
-FROM (
-   SELECT
-      Path1.PathId AS PathId,
-      Path1.Path AS Path,
-      lower(Path1.Path) AS lpath,
-      listfile1.JobId AS JobId,
-      listfile1.LStat AS LStat,
-      listfile1.FileId AS FileId
-   FROM (
-      SELECT listpath1.PathId AS PathId
-      FROM (
-         SELECT DISTINCT PathHierarchy1.PathId AS PathId
-         FROM PathHierarchy AS PathHierarchy1
-         INNER JOIN Path AS Path2
-         ON (PathHierarchy1.PathId = Path2.PathId)
-         INNER JOIN PathVisibility AS PathVisibility1
-         ON (PathHierarchy1.PathId = PathVisibility1.PathId)
-         WHERE PathHierarchy1.PPathId = %s
-         AND PathVisibility1.JobId IN (%s)
-         %s
-         ) AS listpath1
-      LEFT JOIN (
-          SELECT PVD1.PathId AS PathId
-          FROM (
-             SELECT PV1.PathId AS PathId, MAX(JobId) AS MaxJobId
-             FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId
-             ) AS PVD1
-             INNER JOIN File AS F2
-             ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '')
-      ) AS listpath2
-      ON (listpath1.PathId = listpath2.PathId)
-      WHERE listpath2.PathId IS NULL
-   ) AS listpath3
-   INNER JOIN Path AS Path1 ON (listpath3.PathId = Path1.PathId)
-   LEFT JOIN (
-      SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId
-      FROM File AS File1
-      WHERE File1.Name = ''
-      AND File1.JobId IN (%s)
-   ) AS listfile1
-   ON (listpath3.PathId = listfile1.PathId)
-) AS A
-ORDER BY 2,3 DESC
-LIMIT %d
-OFFSET %d
-),
+"SELECT 'D', PathId, Path, JobId, LStat, FileId "
+"FROM ( "
+   "SELECT "
+      "Path1.PathId AS PathId, "
+      "Path1.Path AS Path, "
+      "lower(Path1.Path) AS lpath, "
+      "listfile1.JobId AS JobId, "
+      "listfile1.LStat AS LStat, "
+      "listfile1.FileId AS FileId "
+   "FROM ( "
+      "SELECT listpath1.PathId AS PathId "
+      "FROM ( "
+         "SELECT DISTINCT PathHierarchy1.PathId AS PathId "
+         "FROM PathHierarchy AS PathHierarchy1 "
+         "INNER JOIN Path AS Path2 "
+         "ON (PathHierarchy1.PathId = Path2.PathId) "
+         "INNER JOIN PathVisibility AS PathVisibility1 "
+         "ON (PathHierarchy1.PathId = PathVisibility1.PathId) "
+         "WHERE PathHierarchy1.PPathId = %s "
+         "AND PathVisibility1.JobId IN (%s) "
+         "%s "
+         ") AS listpath1 "
+      "LEFT JOIN ( "
+          "SELECT PVD1.PathId AS PathId "
+          "FROM ( "
+             "SELECT PV1.PathId AS PathId, MAX(JobId) AS MaxJobId "
+             "FROM PathVisibility AS PV1 WHERE JobId IN (%s) GROUP BY PathId "
+             ") AS PVD1 "
+             "INNER JOIN File AS F2 "
+             "ON (F2.PathId = PVD1.PathId AND F2.JobId = PVD1.MaxJobId AND F2.FileIndex = 0 AND F2.Name = '') "
+      ") AS listpath2 "
+      "ON (listpath1.PathId = listpath2.PathId) "
+      "WHERE listpath2.PathId IS NULL "
+   ") AS listpath3 "
+   "INNER JOIN Path AS Path1 ON (listpath3.PathId = Path1.PathId) "
+   "LEFT JOIN ( "
+      "SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId "
+      "FROM File AS File1 "
+      "WHERE File1.Name = '' "
+      "AND File1.JobId IN (%s) "
+   ") AS listfile1 "
+   "ON (listpath3.PathId = listfile1.PathId) "
+") AS A "
+"ORDER BY 2,3 DESC "
+"LIMIT %d "
+"OFFSET %d "
+,
 
 /* 0065_bvfs_clear_cache_0 */
-SQL_QUERY(
-BEGIN;
-   UPDATE Job SET HasCache=0;
-   TRUNCATE PathHierarchy;
-   TRUNCATE PathVisibility;
-COMMIT;
-),
+"BEGIN; "
+   "UPDATE Job SET HasCache=0; "
+   "TRUNCATE PathHierarchy; "
+   "TRUNCATE PathVisibility; "
+"COMMIT; "
+,
 
 /* 0066_bvfs_update_path_visibility_3 */
-SQL_QUERY(
-INSERT INTO PathVisibility (PathId, JobId)
-SELECT a.PathId,%s
-FROM (
-   SELECT DISTINCT h.PPathId AS PathId
-   FROM PathHierarchy AS h
-   JOIN PathVisibility AS p ON (h.PathId=p.PathId)
-   WHERE p.JobId=%s
-) AS a
-LEFT JOIN PathVisibility AS b
-ON (b.JobId=%s AND a.PathId = b.PathId)
-WHERE b.PathId IS NULL
-),
+"INSERT INTO PathVisibility (PathId, JobId) "
+"SELECT a.PathId,%s "
+"FROM ( "
+   "SELECT DISTINCT h.PPathId AS PathId "
+   "FROM PathHierarchy AS h "
+   "JOIN PathVisibility AS p ON (h.PathId=p.PathId) "
+   "WHERE p.JobId=%s "
+") AS a "
+"LEFT JOIN PathVisibility AS b "
+"ON (b.JobId=%s AND a.PathId = b.PathId) "
+"WHERE b.PathId IS NULL "
+,
 
 /* 0067_list_volumes_count_0 */
-SQL_QUERY(
-SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media;
-),
+"SELECT COUNT(DISTINCT Media.MediaId) as count FROM Media; "
+,
 
 /* 0068_list_volumes_by_name_count_1 */
-SQL_QUERY(
-SELECT COUNT(DISTINCT Media.MediaId) as count
-FROM Media
-WHERE VolumeName='%s'
-),
+"SELECT COUNT(DISTINCT Media.MediaId) as count "
+"FROM Media "
+"WHERE VolumeName='%s' "
+,
 
 /* 0069_list_volumes_by_poolid_count_1 */
-SQL_QUERY(
-SELECT COUNT(DISTINCT Media.MediaId) as count
-FROM Media
-WHERE Media.PoolId=%s
-),
+"SELECT COUNT(DISTINCT Media.MediaId) as count "
+"FROM Media "
+"WHERE Media.PoolId=%s "
+,
 
 /* 0070_list_joblog_2 */
-SQL_QUERY(
-SELECT Time, LogText FROM Log
-WHERE Log.JobId=%s
-ORDER BY Log.LogId
-%s
-),
+"SELECT Time, LogText FROM Log "
+"WHERE Log.JobId=%s "
+"ORDER BY Log.LogId "
+"%s "
+,
 
 /* 0071_list_joblog_count_1 */
-SQL_QUERY(
-SELECT COUNT(*) AS count
-FROM Log
-WHERE Log.JobId=%s
-),
+"SELECT COUNT(*) AS count "
+"FROM Log "
+"WHERE Log.JobId=%s "
+,
 
 NULL
 };

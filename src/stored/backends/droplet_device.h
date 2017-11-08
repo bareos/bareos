@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2014-2014 Planets Communications B.V.
+   Copyright (C) 2014-2017 Planets Communications B.V.
    Copyright (C) 2014-2014 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
@@ -31,23 +31,44 @@
 #include <droplet.h>
 #include <droplet/vfs.h>
 
-class object_store_device: public DEVICE {
+class droplet_device: public chunked_device {
 private:
+   /*
+    * Private Members
+    */
    char *m_object_configstring;
-   char *m_profile;
-   char *m_object_bucketname;
+   const char *m_profile;
+   const char *m_location;
+   const char *m_canned_acl;
+   const char *m_storage_class;
+   const char *m_object_bucketname;
    dpl_ctx_t *m_ctx;
-   dpl_vfile_t *m_vfd;
-   boffset_t m_offset;
+   dpl_sysmd_t m_sysmd;
+
+   /*
+    * Private Methods
+    */
+   bool initialize();
+
+   /*
+    * Interface from chunked_device
+    */
+   bool flush_remote_chunk(chunk_io_request *request);
+   bool read_remote_chunk(chunk_io_request *request);
+   ssize_t chunked_remote_volume_size();
+   bool truncate_remote_chunked_volume(DCR *dcr);
 
 public:
-   object_store_device();
-   ~object_store_device();
+   /*
+    * Public Methods
+    */
+   droplet_device();
+   ~droplet_device();
 
    /*
     * Interface from DEVICE
     */
-   int d_close(int);
+   int d_close(int fd);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
    boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);

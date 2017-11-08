@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -93,7 +93,7 @@ enum {
    B_FIFO_DEV,
    B_VTL_DEV,
    B_GFAPI_DEV,
-   B_OBJECT_STORE_DEV,
+   B_DROPLET_DEV,
    B_RADOS_DEV,
    B_CEPHFS_DEV,
    B_ELASTO_DEV
@@ -252,11 +252,21 @@ struct BLOCKSIZES {
    uint32_t min_block_size;
 };
 
-class DEVRES; /* Device resource defined in stored_conf.h */
+class DEVRES; /* Forward reference Device resource defined in stored_conf.h */
 class DCR; /* Forward reference */
 class VOLRES; /* Forward reference */
 
 /**
+ * Device specific status information either returned via DEVICE::device_status()
+ * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
+ */
+typedef struct DevStatTrigger {
+   DEVRES *device;
+   POOLMEM *status;
+   int status_length;
+} bsdDevStatTrig;
+
+/*
  * Device structure definition.
  *
  * There is one of these for each physical device. Everything here is "global" to
@@ -365,7 +375,7 @@ public:
    bool is_tape() const { return (dev_type == B_TAPE_DEV); }
    bool is_file() const { return (dev_type == B_FILE_DEV ||
                                   dev_type == B_GFAPI_DEV ||
-                                  dev_type == B_OBJECT_STORE_DEV ||
+                                  dev_type == B_DROPLET_DEV ||
                                   dev_type == B_RADOS_DEV ||
                                   dev_type == B_CEPHFS_DEV ||
                                   dev_type == B_ELASTO_DEV); }
@@ -506,6 +516,7 @@ public:
    virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
    virtual bool mount_backend(DCR *dcr, int timeout) { return true; };
    virtual bool unmount_backend(DCR *dcr, int timeout) { return true; };
+   virtual bool device_status(bsdDevStatTrig *dst) { return false; };
    boffset_t lseek(DCR *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
    bool truncate(DCR *dcr) { return d_truncate(dcr); };
 

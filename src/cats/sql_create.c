@@ -869,6 +869,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    }
 
    jcr->JobStatus = JobStatus;         /* reset entry status */
+   Jmsg0(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
    retval = true;
 
 

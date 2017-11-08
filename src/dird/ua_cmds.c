@@ -405,7 +405,7 @@ static struct ua_cmdstruct commands[] = {
          "\tjobid=<jobid> | job=<job-name> | ujobid=<complete_name>"), false, true },
    { NT_("update"), update_cmd, _("Update volume, pool, slots, job or statistics"),
      NT_("[volume=<volume-name> "
-         "[volstatus=<status>] [volretention=<time-def>] "
+         "[volstatus=<status>] [volretention=<time-def>] actiononpurge=<action>] "
          "[pool=<pool-name>] [recycle=<yes/no>] [slot=<number>] [inchanger=<yes/no>]] "
          "|\n"
          "[pool=<pool-name> "

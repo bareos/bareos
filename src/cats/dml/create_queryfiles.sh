@@ -78,17 +78,16 @@ for query in `ls ????_* | sed 's#\..*##g' | sort | uniq`; do
             queryfile="$query.$db"
         fi
         printf "/* %s */\n" "$queryfile" >> $queryincludefile
-        printf "SQL_QUERY(\n" >> $queryincludefile
-        # remove comments and empty lines
-        grep -v -e "^#" -e "^$" "$queryfile" >> $queryincludefile
-        printf "),\n\n" >> $queryincludefile
+        # remove comments and empty lines, add quotes on each line
+        cat "$queryfile" | sed -r -e "/^#/d" -e "/^$/d" -e 's/^(\s*)/\1"/' -e 's/\s*$/ "/' >> $queryincludefile
+        printf ',\n\n' >> $queryincludefile
     done
 done
 
 #
 # file footer
 #
-printf "NULL\n};" >> $QUERY_NAMES_FILE
+printf "NULL\n};\n" >> $QUERY_NAMES_FILE
 
 cat >> $QUERY_ENUM_FILE << EOF
       SQL_QUERY_NUMBER = $i
@@ -98,5 +97,5 @@ EOF
 
 for db in $DATABASES; do
     queryincludefile=`get_query_include_filename $db`
-    printf "NULL\n};" >> $queryincludefile
+    printf "NULL\n};\n" >> $queryincludefile
 done

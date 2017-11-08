@@ -1,4 +1,3 @@
-@scriptdir@/bconsole
 @configtemplatedir@/bconsole.conf
 /usr/bin/bconsole
 /usr/sbin/bconsole

@@ -29,10 +29,10 @@ CREATE TABLE File (
    PathId           INTEGER     NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
-   LStat            TEXT        NOT NULL,
-   Md5              TEXT        NOT NULL,
    Fhinfo           NUMERIC(20) NOT NULL  DEFAULT 0,
    Fhnode           NUMERIC(20) NOT NULL  DEFAULT 0,
+   LStat            TEXT        NOT NULL,
+   Md5              TEXT        NOT NULL,
    Name             TEXT        NOT NULL,
    PRIMARY KEY (FileId)
 );
@@ -43,7 +43,7 @@ CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
 -- from accurate jobs with delete directories, so that the
 -- impact on backups will be low. Nevertheless, it will
 -- improve the performance, even when not using accurate.
-CREATE INDEX file_jidpart_idx ON File(JobId) WHERE FileIndex = 0 AND Name = '';
+CREATE INDEX file_pjidpart_idx ON File(PathId,JobId) WHERE FileIndex = 0 AND Name = '';
 
 --
 -- Add this if you have a good number of job

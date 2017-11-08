@@ -28,9 +28,10 @@ first_rule: all
 dummy:
 
 AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
+			    chunked_device.c \
 			    elasto_device.c \
 			    gfapi_device.c \
-			    object_store_device.c \
+			    droplet_device.c \
 			    rados_device.c \
 			    generic_tape_device.c \
 			    unix_fifo_device.c \
@@ -147,7 +148,7 @@ gfapi_device.lo: gfapi_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
-object_storage_device.lo: object_storage_device.c
+droplet_device.lo: droplet_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(DROPLET_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 

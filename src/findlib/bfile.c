@@ -653,14 +653,14 @@ static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, m
        * Open existing for write
        */
       if (bfd->use_backup_api) {
-         dwaccess = GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
+         dwaccess = GENERIC_READ | GENERIC_WRITE | WRITE_OWNER | WRITE_DAC;
          if (flags & O_NOFOLLOW) {
             dwflags = FILE_FLAG_BACKUP_SEMANTICS;
          } else {
             dwflags = FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT;
          }
       } else {
-         dwaccess = GENERIC_WRITE;
+         dwaccess = GENERIC_READ | GENERIC_WRITE;
          dwflags = 0;
       }
 
@@ -760,7 +760,7 @@ static inline int bopen_nonencrypted(BFILE *bfd, const char *fname, int flags, m
 
 int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
 {
-   Dmsg4(100, "bopen: fname %s, flags %d, mode %d, rdev %u\n", fname, flags, mode, rdev);
+   Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %u\n", fname, flags, (mode & ~S_IFMT), rdev);
 
    /*
     * If the FILE_ATTRIBUTES_DEDUPED_ITEM bit is set this is a deduped file
@@ -1098,7 +1098,7 @@ bool is_restore_stream_supported(int stream)
 
 int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev)
 {
-   Dmsg4(100, "bopen: fname %s, flags %d, mode %d, rdev %u\n", fname, flags, mode, rdev);
+   Dmsg4(100, "bopen: fname %s, flags %08o, mode %04o, rdev %u\n", fname, flags, (mode & ~S_IFMT), rdev);
 
    if (bfd->cmd_plugin && plugin_bopen) {
       Dmsg1(400, "call plugin_bopen fname=%s\n", fname);

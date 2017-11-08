@@ -195,6 +195,16 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool
    db_lock(this);
    escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
 
+   /*
+    * There is one case where list_media_records() is called from select_media_dbr()
+    * with the range argument set to NULL. To avoid problems, we set the range to
+    * an empty string if range is set to NULL. Otherwise it would result in malformed
+    * SQL queries.
+    */
+   if (range == NULL) {
+      range = "";
+   }
+
    if (type == VERT_LIST) {
       if (mdbr->VolumeName[0] != 0) {
          Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"

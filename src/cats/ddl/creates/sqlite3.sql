@@ -21,18 +21,17 @@ CREATE TABLE File (
    FileIndex        INTEGER   UNSIGNED            DEFAULT 0,
    JobId            INTEGER   UNSIGNED  NOT NULL  REFERENCES Job,
    PathId           INTEGER   UNSIGNED  NOT NULL  REFERENCES Path,
-   Name             BLOB                NOT NULL,
    DeltaSeq         SMALLINT  UNSIGNED            DEFAULT 0,
    MarkId           INTEGER   UNSIGNED            DEFAULT 0,
-   LStat            TINYBLOB            NOT NULL,
-   MD5              TINYBLOB            NOT NULL,
    Fhinfo           TEXT                          DEFAULT 0,
    Fhnode           TEXT                          DEFAULT 0,
+   LStat            TINYBLOB            NOT NULL,
+   MD5              TINYBLOB            NOT NULL,
+   Name             BLOB                NOT NULL,
    PRIMARY KEY (FileId)
 );
-CREATE INDEX File_JobId ON File (JobId);
 CREATE INDEX File_JobId_PathId_Name ON File (JobId, PathId, Name);
-
+CREATE INDEX PathId_JobId_FileIndex ON File (PathId, JobId, FileIndex);
 
 CREATE TABLE RestoreObject (
    RestoreObjectId INTEGER,

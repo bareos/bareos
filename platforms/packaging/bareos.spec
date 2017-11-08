@@ -43,6 +43,7 @@ Vendor: 	The Bareos Team
 %define build_sqlite3 1
 %define check_cmocka 1
 %define glusterfs 0
+%define objectstorage 0
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
@@ -77,7 +78,14 @@ Vendor: 	The Bareos Team
 %endif
 
 # SLES 12
-%if 0%{?suse_version} == 1315 && 0%{?is_opensuse} == 0
+#%%if 0%{?suse_version} == 1315 && 0%%{?is_opensuse} == 0
+%if 0%{?sle_version} >= 120000
+%define objectstorage 1
+%endif
+
+# Ceph packages have changed with SLE_12_SP2,
+# therefore build it only for SLE_12 and SLE_12_SP1
+%if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
 %define ceph 1
 %endif
 
@@ -101,11 +109,15 @@ Vendor: 	The Bareos Team
 %define python_plugins 0
 %endif
 
-%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700 || 0%{?fedora_version} >= 19
-%define systemd_support 1
-%if 0%{?fedora_version} != 19
+%if 0%{?fedora_version} >= 20
 %define glusterfs 1
+%define systemd_support 1
 %endif
+
+%if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
+%define glusterfs 1
+%define objectstorage 1
+%define systemd_support 1
 %endif
 
 %if 0%{?rhel_version} >= 700
@@ -119,6 +131,10 @@ BuildRequires: systemd
 BuildRequires: systemd-rpm-macros
 %endif
 %{?systemd_requires}
+%endif
+
+%if 0%{?objectstorage}
+BuildRequires: libdroplet-devel
 %endif
 
 %if 0%{?glusterfs}
@@ -298,8 +314,19 @@ Requires:   %{name}-common = %{version}
 Provides:   %{name}-sd
 %if 0%{?suse_version}
 Requires(pre): pwdutils
+Recommends: bareos-tools
 %else
 Requires(pre): shadow-utils
+# Recommends would be enough, however only supported by Fedora >= 24.
+Requires: bareos-tools
+%endif
+
+%if 0%{?objectstorage}
+%package    storage-droplet
+Summary:    Object Storage support (through libdroplet) for the Bareos Storage daemon
+Group:      Productivity/Archiving/Backup
+Requires:   %{name}-common  = %{version}
+Requires:   %{name}-storage = %{version}
 %endif
 
 %if 0%{?glusterfs}
@@ -561,6 +588,13 @@ This package contains the Storage Daemon
 
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
+
+%if 0%{?objectstorage}
+%description storage-droplet
+%{dscr}
+
+This package contains the Storage backend for Object Storage (through libdroplet).
+%endif
 
 %if 0%{?glusterfs}
 %description storage-glusterfs
@@ -854,7 +888,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 # console package
 %defattr(-, root, root)
 %attr(0640, root, %{daemon_group}) %config(noreplace) %{_sysconfdir}/bareos/bconsole.conf
-%{script_dir}/bconsole
 %{_bindir}/bconsole
 %{_sbindir}/bconsole
 %{_mandir}/man1/bconsole.1.gz
@@ -988,6 +1021,15 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %{backend_dir}/libbareossd-fifo*.so
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/NULL.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
+
+%if 0%{?objectstorage}
+%files storage-droplet
+%defattr(-, root, root)
+%{backend_dir}/libbareossd-chunked*.so
+%{backend_dir}/libbareossd-droplet*.so
+%attr(0640, %{director_daemon_user},%{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/S3_Object.conf.example
+%attr(0640, %{storage_daemon_user},%{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/S3_ObjectStorage.conf.example
+%endif
 
 %if 0%{?glusterfs}
 %files storage-glusterfs

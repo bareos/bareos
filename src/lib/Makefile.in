@@ -44,11 +44,11 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 		bsock_tcp.h bsock_udt.h bsr.h btime.h btimers.h cbuf.h \
 		crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h \
 		guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h \
-		md5.h mem_pool.h message.h mntent_cache.h parse_conf.h \
-		plugins.h protos.h queue.h rblist.h runscript.h rwlock.h \
-		scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h \
-		serial.h sha1.h smartall.h status.h tls.h tree.h var.h \
-		watchdog.h workq.h
+		md5.h mem_pool.h message.h mntent_cache.h ordered_cbuf.h \
+		parse_conf.h plugins.h protos.h queue.h rblist.h \
+		runscript.h rwlock.h scsi_crypto.h scsi_lli.h \
+		scsi_tapealert.h sellist.h serial.h sha1.h smartall.h \
+		status.h tls.h tree.h var.h waitq.h watchdog.h workq.h
 
 #
 # libbareos
@@ -61,7 +61,7 @@ LIBBAREOS_SRCS = address_conf.c alist.c attr.c attribs.c base64.c \
 		 crypto_cache.c crypto_gnutls.c crypto_none.c crypto_nss.c \
 		 crypto_openssl.c crypto_wrap.c daemon.c devlock.c dlist.c \
 		 edit.c fnmatch.c guid_to_name.c hmac.c htable.c jcr.c json.c \
-		 lockmgr.c md5.c mem_pool.c message.c mntent_cache.c \
+		 lockmgr.c md5.c mem_pool.c message.c mntent_cache.c ordered_cbuf.c \
 		 output_formatter.c passphrase.c path_list.c plugins.c poll.c \
 		 priv.c queue.c rblist.c runscript.c rwlock.c scan.c scsi_crypto.c \
 		 scsi_lli.c scsi_tapealert.c sellist.c serial.c sha1.c signal.c \

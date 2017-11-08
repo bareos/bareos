@@ -28,6 +28,8 @@ CREATE TABLE TmpMergeFilenameIntoFileTable (
    PathId           INTEGER     NOT NULL,
    DeltaSeq         SMALLINT    NOT NULL  DEFAULT 0,
    MarkId           INTEGER     NOT NULL  DEFAULT 0,
+   Fhinfo           NUMERIC(20) NOT NULL  DEFAULT 0,
+   Fhnode           NUMERIC(20) NOT NULL  DEFAULT 0,
    LStat            TEXT        NOT NULL,
    Md5              TEXT        NOT NULL,
    Name             TEXT        NOT NULL,
@@ -51,9 +53,12 @@ CREATE INDEX file_jobid_idx ON File (JobId);
 ALTER SEQUENCE TmpMergeFilenameIntoFileTable_fileid_seq RENAME TO file_fileid_seq;
 SELECT setval('file_fileid_seq', (SELECT max(fileid) from file));
 CREATE INDEX file_jpfid_idx ON File (JobId, PathId, Name);
-CREATE INDEX file_jidpart_idx ON File(JobId) WHERE FileIndex = 0 AND Name = '';
+CREATE INDEX file_pjidpart_idx ON File(PathId,JobId) WHERE FileIndex = 0 AND Name = '';
 
-UPDATE Version SET VersionId = 2170;
+-- Add JobMedia JobBytes info, also used by NDMP DAR
+ALTER TABLE JobMedia ADD COLUMN JobBytes NUMERIC(20) DEFAULT 0;
+
+UPDATE Version SET VersionId = 2171;
 
 COMMIT;
 
