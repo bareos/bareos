@@ -41,6 +41,12 @@ which requires at least a \vSphere Essentials License.
 It is tested against \vSphere Storage APIs for Data Protection of \vmware 5.x.
 It does not work with standalone unlicensed \vmware ESXi\trademark.
 
+Since Bareos \sinceVersion{fd}{VMware Plugin}{17.2.4} the Plugin is using
+the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it
+should be compatible with vSphere 6.5 and the next major release (except new features)
+and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at
+\url{https://code.vmware.com/web/sdk/65/vddk} for details.
+
 \subsubsection{Installation}
 
 Install the package \package{bareos-vmware-plugin} including its requirments
@@ -114,6 +120,56 @@ FileSet {
 
 For VMs defined in the root-folder, \command{folder=/} must be specified
 in the Plugin definition.
+
+New since Bareos \sinceVersion{fd}{VMware Plugin}{17.2.4}: As the Plugin is using
+the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint
+of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate.
+The thumbprint can be retrieved like this:
+
+\begin{commands}{Example Retrieving vCenter SSL Certificate Thumbprint}
+echo -n | openssl s_client -connect vcenter.example.org:443 2>/dev/null | openssl x509 -noout -fingerprint -sha1
+\end{commands}
+
+The result would look like this:
+
+\begin{commands}{Example Result Thumbprint}
+SHA1 Fingerprint=CC:81:81:84:A3:CF:53:ED:63:B1:46:EF:97:13:4A:DF:A5:9F:37:89
+\end{commands}
+
+For additional security, there is a now plugin option \command{vcthumbprint}, that can optionally
+be added. It must be given without colons like in the following example:
+
+\begin{bconfig}{bareos-dir.conf: VMware Plugin Options with vcthumbprint}
+    ...
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
+    ...
+\end{bconfig}
+
+For ease of use (but less secure) when the \command{vcthumbprint} is not given, the plugin
+will retrieve the thumbprint.
+
+Also since \sinceVersion{fd}{VMware Plugin}{17.2.4} another optional plugin option has
+been added that can be used for trying to force a given transport method. Normally, when
+no transport method is given, VDDK will negotiate available transport methods and select
+the best one. For a description of transport methods, see
+
+\url{https://code.vmware.com/doc/preview?id=4076#/doc/vddkDataStruct.5.5.html}
+
+When the plugin runs in a VMware virtual machine which has access to datastore where the
+virtual disks to be backed up reside, VDDK will use the hotadd transport method.
+On a physical server without SAN access, it will use the NBD transport method, hotadd
+transport is not available in this case.
+
+To try forcing a given transport method, the plugin option \command{transport} can
+be used, for example
+
+\begin{bconfig}{bareos-dir.conf: VMware Plugin options with transport}
+    ...
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:transport=nbdssl"
+    ...
+\end{bconfig}
+
+Note that the backup will fail when specifying a transport method that is not available.
 
 \subsubsection{Backup}
 
