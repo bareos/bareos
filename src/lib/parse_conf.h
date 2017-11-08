@@ -382,7 +382,7 @@ typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool
 /*
  * New C++ configuration routines
  */
-class CONFIG {
+class DLL_IMP_EXP CONFIG {
 public:
    /*
     * Members
@@ -466,39 +466,39 @@ protected:
 
 CONFIG *new_config_parser();
 
-void prtmsg(void *sock, const char *fmt, ...);
+DLL_IMP_EXP void prtmsg(void *sock, const char *fmt, ...);
 
 /*
  * Data type routines
  */
-DATATYPE_NAME *get_datatype(int number);
-const char *datatype_to_str(int type);
-const char *datatype_to_description(int type);
+DLL_IMP_EXP DATATYPE_NAME *get_datatype(int number);
+DLL_IMP_EXP const char *datatype_to_str(int type);
+DLL_IMP_EXP const char *datatype_to_description(int type);
 
 /*
  * Resource routines
  */
-RES *GetResWithName(int rcode, const char *name, bool lock = true);
-RES *GetNextRes(int rcode, RES *res);
-void b_LockRes(const char *file, int line);
-void b_UnlockRes(const char *file, int line);
-void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
+DLL_IMP_EXP RES *GetResWithName(int rcode, const char *name, bool lock = true);
+DLL_IMP_EXP RES *GetNextRes(int rcode, RES *res);
+DLL_IMP_EXP void b_LockRes(const char *file, int line);
+DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
+DLL_IMP_EXP void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data = false, bool verbose = false);
-void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited = false);
-void free_resource(RES *res, int type);
-void init_resource(int type, RES_ITEM *item);
-bool save_resource(int type, RES_ITEM *item, int pass);
-bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
-const char *res_to_str(int rcode);
+DLL_IMP_EXP void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited = false);
+DLL_IMP_EXP void free_resource(RES *res, int type);
+DLL_IMP_EXP void init_resource(int type, RES_ITEM *item);
+DLL_IMP_EXP bool save_resource(int type, RES_ITEM *item, int pass);
+DLL_IMP_EXP bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
+DLL_IMP_EXP const char *res_to_str(int rcode);
 
 
 #ifdef HAVE_JANSSON
 /*
  * JSON output helper functions
  */
-json_t *json_item(s_kw *item);
-json_t *json_item(RES_ITEM *item);
-json_t *json_items(RES_ITEM items[]);
+DLL_IMP_EXP json_t *json_item(s_kw *item);
+DLL_IMP_EXP json_t *json_item(RES_ITEM *item);
+DLL_IMP_EXP json_t *json_items(RES_ITEM items[]);
 #endif
 
 /*

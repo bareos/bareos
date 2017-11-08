@@ -18,10 +18,14 @@
 #   02110-1301, USA.
 
 include_directories(../include ..)
+
 add_library(bareoslmdb SHARED mdb.c midl.c)
+
+add_definitions(-Wall -m64 -mwin32 -mthreads)
 
 set_target_properties(bareoslmdb PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
+                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
 
 

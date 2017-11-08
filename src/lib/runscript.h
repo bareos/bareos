@@ -65,7 +65,7 @@ enum {
 /**
  * Structure for RunScript ressource
  */
-class RUNSCRIPT {
+class DLL_IMP_EXP RUNSCRIPT {
 public:
    POOLMEM *command;            /* Command string */
    POOLMEM *target;             /* Host target */
@@ -92,20 +92,20 @@ public:
 };
 
 /* create new RUNSCRIPT (set all value to 0) */
-RUNSCRIPT *new_runscript();
+DLL_IMP_EXP RUNSCRIPT *new_runscript();
 
 /* create new RUNSCRIPT from another */
-RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
+DLL_IMP_EXP RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
 
 /* launch each script from runscripts*/
 int run_scripts(JCR *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
 /* free RUNSCRIPT (and all POOLMEM) */
-void free_runscript(RUNSCRIPT *script);
+DLL_IMP_EXP void free_runscript(RUNSCRIPT *script);
 
 /* foreach_alist free RUNSCRIPT */
-void free_runscripts(alist *runscripts); /* you have to free alist */
+DLL_IMP_EXP void free_runscripts(alist *runscripts); /* you have to free alist */
 
 extern DLL_IMP_EXP bool (*console_command)(JCR *jcr, const char *cmd);
 

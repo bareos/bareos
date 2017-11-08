@@ -27,7 +27,7 @@
  * address configuration
  */
 
-class IPADDR : public SMARTALLOC {
+class DLL_IMP_EXP IPADDR : public SMARTALLOC {
  public:
    typedef enum { R_SINGLE, R_SINGLE_PORT, R_SINGLE_ADDR, R_MULTIPLE,
                   R_DEFAULT, R_EMPTY
@@ -75,14 +75,14 @@ class IPADDR : public SMARTALLOC {
    dlink link;
 };
 
-void init_default_addresses(dlist ** addr, const char *port);
-void free_addresses(dlist * addrs);
+DLL_IMP_EXP void init_default_addresses(dlist ** addr, const char *port);
+DLL_IMP_EXP void free_addresses(dlist * addrs);
 
 const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
 int get_first_port_net_order(dlist * addrs);
 int get_first_port_host_order(dlist * addrs);
 
-int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
+DLL_IMP_EXP int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
 const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
 

@@ -68,11 +68,11 @@ void free_pool_memory(POOLMEM *buf);
  */
 #define free_and_null_pool_memory(a) do { if (a) { free_pool_memory(a); (a) = NULL;} } while (0)
 
-void garbage_collect_memory_pool();
-void close_memory_pool();
-void print_memory_pool_stats();
+DLL_IMP_EXP void garbage_collect_memory_pool();
+DLL_IMP_EXP void close_memory_pool();
+DLL_IMP_EXP void print_memory_pool_stats();
 
-void garbage_collect_memory();
+DLL_IMP_EXP void garbage_collect_memory();
 
 enum {
    PM_NOPOOL = 0,                     /* Nonpooled memory */

@@ -43,15 +43,24 @@ set(TSTFNDSRCS testfind.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_co
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 
 add_executable(bareos-dir ${SVRSRCS})
-target_link_libraries(bareos-dir bareos
+set(BAREOS_DIR_LIBRARIES
+   bareos
    bareoscats
    bareoscfg bareossql
-   bareosfind bareosndmp ${LMDB_LIBS})
+   bareosfind
+   ${LMDB_LIBS}
+   )
+IF(HAVE_LMDB)
+   LIST(APPEND BAREOS_DIR_LIBRARIES
+      bareosndmp
+      )
+ENDIF()
+target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 target_link_libraries(bareos-dbcheck
-   bareossql bareos bareosfind bareoscfg
+   bareossql bareos bareosfind bareoscfg bareosstatic
    bareoscats
    )
 

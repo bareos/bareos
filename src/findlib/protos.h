@@ -40,13 +40,13 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible);
 int create_file(JCR *jcr, ATTR *attr, BFILE *ofd, int replace);
 
 /* find.c */
-FF_PKT *init_find_files();
+DLL_IMP_EXP FF_PKT *init_find_files();
 void set_find_options(FF_PKT *ff, bool incremental, time_t mtime);
 void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff));
 int find_files(JCR *jcr, FF_PKT *ff, int file_sub(JCR *, FF_PKT *ff_pkt, bool),
                int plugin_sub(JCR *, FF_PKT *ff_pkt, bool));
-bool match_files(JCR *jcr, FF_PKT *ff, int sub(JCR *, FF_PKT *ff_pkt, bool));
-int term_find_files(FF_PKT *ff);
+DLL_IMP_EXP bool match_files(JCR *jcr, FF_PKT *ff, int sub(JCR *, FF_PKT *ff_pkt, bool));
+DLL_IMP_EXP int term_find_files(FF_PKT *ff);
 bool is_in_fileset(FF_PKT *ff);
 bool accept_file(FF_PKT *ff);
 findINCEXE *allocate_new_incexe(void);
@@ -58,15 +58,15 @@ findFOPTS *start_options(FF_PKT *ff);
 void new_options(FF_PKT *ff, findINCEXE *incexe);
 
 /* match.c */
-void init_include_exclude_files(FF_PKT *ff);
-void term_include_exclude_files(FF_PKT *ff);
-void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname);
-void add_fname_to_exclude_list(FF_PKT *ff, const char *fname);
+DLL_IMP_EXP void init_include_exclude_files(FF_PKT *ff);
+DLL_IMP_EXP void term_include_exclude_files(FF_PKT *ff);
+DLL_IMP_EXP void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname);
+DLL_IMP_EXP void add_fname_to_exclude_list(FF_PKT *ff, const char *fname);
 bool file_is_excluded(FF_PKT *ff, const char *file);
 bool file_is_included(FF_PKT *ff, const char *file);
 struct s_included_file *get_next_included_file(FF_PKT *ff,
                                                struct s_included_file *inc);
-bool parse_size_match(const char *size_match_pattern,
+DLL_IMP_EXP bool parse_size_match(const char *size_match_pattern,
                       struct s_sz_matching *size_matching);
 
 /* find_one.c */
