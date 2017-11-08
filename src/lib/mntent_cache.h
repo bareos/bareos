@@ -29,7 +29,7 @@
 #define _MNTENT_CACHE_H 1
 
 /*
- * Don't use the mountlist data when its older then this amount
+ * Don't use the mountlist data when its older than this amount
  * of seconds but perform a rescan of the mountlist.
  */
 #define MNTENT_RESCAN_INTERVAL		1800
@@ -59,6 +59,6 @@ struct mntent_cache_entry_t {
 
 mntent_cache_entry_t *find_mntent_mapping(uint32_t dev);
 void release_mntent_mapping(mntent_cache_entry_t *mce);
-void flush_mntent_cache(void);
+DLL_IMP_EXP void flush_mntent_cache(void);
 
 #endif /* _MNTENT_CACHE_H */

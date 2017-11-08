@@ -39,6 +39,7 @@ INSTALL(TARGETS bareosfind DESTINATION ${libdir})
 set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
+                                          LINK_FLAGS -Wl,--output-def,bareosfind.def -L bareos.def
                                           )
 
 add_subdirectory(unittests)

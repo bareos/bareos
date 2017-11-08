@@ -32,9 +32,9 @@
 #define RTLD_GLOBAL             0x00100         /* Export symbols to others */
 #define RTLD_LOCAL              0x00000         /* Symbols are only available to group members */
 
-void *dlopen(const char *file, int mode);
-void *dlsym(void *handle, const char *name);
-int dlclose(void *handle);
-char *dlerror(void);
+DLL_IMP_EXP void *dlopen(const char *file, int mode);
+DLL_IMP_EXP void *dlsym(void *handle, const char *name);
+DLL_IMP_EXP int dlclose(void *handle);
+DLL_IMP_EXP char *dlerror(void);
 
 #endif /* __DLFCN_H_ */

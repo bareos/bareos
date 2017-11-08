@@ -67,7 +67,7 @@ int UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF);
 int wchar_2_UTF8(char *pszUTF, const wchar_t *pszUCS, int cchChar);
 BSTR str_2_BSTR(const char *pSrc);
 char *BSTR_2_str(const BSTR pSrc);
-int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
+DLL_IMP_EXP int make_win32_path_UTF8_2_wchar(POOLMEM *&pszUCS, const char *pszUTF, BOOL* pBIsRawPath = NULL);
 
 // init with win9x, but maybe set to NT in InitWinAPI
 extern DWORD DLL_IMP_EXP g_platform_id;
@@ -211,7 +211,7 @@ extern t_GetLogicalDriveStringsW DLL_IMP_EXP p_GetLogicalDriveStringsW;
 
 extern t_AttachConsole DLL_IMP_EXP p_AttachConsole;
 
-void InitWinAPIWrapper();
+DLL_IMP_EXP void InitWinAPIWrapper();
 
 /*
  * In SHFOLDER.DLL on older systems, and now SHELL32.DLL

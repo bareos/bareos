@@ -30,14 +30,15 @@
 
 #include "cats.h"
 
+
 /* Database prototypes */
 
 /* cats_backends.c */
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
-void db_set_backend_dirs(alist *new_backend_dirs);
+DLL_IMP_EXP void db_set_backend_dirs(alist *new_backend_dirs);
 #endif
-void db_flush_backends(void);
-B_DB *db_init_database(JCR *jcr,
+DLL_IMP_EXP void db_flush_backends(void);
+DLL_IMP_EXP B_DB *db_init_database(JCR *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -52,14 +53,14 @@ B_DB *db_init_database(JCR *jcr,
                        bool need_private = false);
 
 /* sql.c */
-int db_int64_handler(void *ctx, int num_fields, char **row);
-int db_strtime_handler(void *ctx, int num_fields, char **row);
-int db_list_handler(void *ctx, int num_fields, char **row);
-void db_debug_print(JCR *jcr, FILE *fp);
-int db_int_handler(void *ctx, int num_fields, char **row);
+DLL_IMP_EXP int db_int64_handler(void *ctx, int num_fields, char **row);
+DLL_IMP_EXP int db_strtime_handler(void *ctx, int num_fields, char **row);
+DLL_IMP_EXP int db_list_handler(void *ctx, int num_fields, char **row);
+DLL_IMP_EXP void db_debug_print(JCR *jcr, FILE *fp);
+DLL_IMP_EXP int db_int_handler(void *ctx, int num_fields, char **row);
 
 /* sql_pooling.c */
-bool db_sql_pool_initialize(const char *db_drivername,
+DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
                             const char *db_name,
                             const char *db_user,
                             const char *db_password,
@@ -74,9 +75,9 @@ bool db_sql_pool_initialize(const char *db_drivername,
                             int increment_connections,
                             int idle_timeout,
                             int validate_timeout);
-void db_sql_pool_destroy(void);
-void db_sql_pool_flush(void);
-B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
+DLL_IMP_EXP void db_sql_pool_destroy(void);
+DLL_IMP_EXP void db_sql_pool_flush(void);
+DLL_IMP_EXP B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -89,7 +90,7 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        bool try_reconnect,
                                        bool exit_on_fatal,
                                        bool need_private = false);
-B_DB *db_sql_get_pooled_connection(JCR *jcr,
+DLL_IMP_EXP B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -102,7 +103,7 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    bool try_reconnect,
                                    bool exit_on_fatal,
                                    bool need_private = false);
-void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort = false);
+DLL_IMP_EXP void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort = false);
 
 /* sql_query.c */
 #endif /* __SQL_PROTOS_H */

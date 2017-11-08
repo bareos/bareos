@@ -45,14 +45,14 @@ struct crypto_cache_entry_t {
    utime_t added;
 };
 
-void read_crypto_cache(const char *dir, const char *progname, int port);
-void read_crypto_cache(const char *cache_file);
-void write_crypto_cache(const char *dir, const char *progname, int port);
-void write_crypto_cache(const char *cache_file);
-bool update_crypto_cache(const char *VolumeName, const char *EncryptionKey);
-char *lookup_crypto_cache_entry(const char *VolumeName);
-void dump_crypto_cache(int fd);
-void reset_crypto_cache(void);
-void flush_crypto_cache(void);
+DLL_IMP_EXP void read_crypto_cache(const char *dir, const char *progname, int port);
+DLL_IMP_EXP void read_crypto_cache(const char *cache_file);
+DLL_IMP_EXP void write_crypto_cache(const char *dir, const char *progname, int port);
+DLL_IMP_EXP void write_crypto_cache(const char *cache_file);
+DLL_IMP_EXP bool update_crypto_cache(const char *VolumeName, const char *EncryptionKey);
+DLL_IMP_EXP char *lookup_crypto_cache_entry(const char *VolumeName);
+DLL_IMP_EXP void dump_crypto_cache(int fd);
+DLL_IMP_EXP void reset_crypto_cache(void);
+DLL_IMP_EXP void flush_crypto_cache(void);
 
 #endif /* _CRYPTO_CACHE_H */

@@ -27,8 +27,8 @@
 /*
  * P and V op that don't use the lock manager (for memory allocation or on win32)
  */
-void lmgr_p(pthread_mutex_t *m);
-void lmgr_v(pthread_mutex_t *m);
+DLL_IMP_EXP void lmgr_p(pthread_mutex_t *m);
+DLL_IMP_EXP void lmgr_v(pthread_mutex_t *m);
 
 #ifdef _USE_LOCKMGR
 

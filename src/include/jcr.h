@@ -638,16 +638,16 @@ extern DLL_IMP_EXP dlist *last_jobs;
 /*
  * The following routines are found in lib/jcr.c
  */
-extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
-extern bool init_jcr_subsystem(int timeout);
-extern JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
-extern JCR *get_jcr_by_id(uint32_t JobId);
-extern JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
-extern JCR *get_jcr_by_partial_name(char *Job);
-extern JCR *get_jcr_by_full_name(char *Job);
-extern JCR *get_next_jcr(JCR *jcr);
-extern void set_jcr_job_status(JCR *jcr, int JobStatus);
-extern int DLL_IMP_EXP num_jobs_run;
+DLL_IMP_EXP extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
+DLL_IMP_EXP extern bool init_jcr_subsystem(int timeout);
+DLL_IMP_EXP extern JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
+DLL_IMP_EXP extern JCR *get_jcr_by_id(uint32_t JobId);
+DLL_IMP_EXP extern JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
+DLL_IMP_EXP extern JCR *get_jcr_by_partial_name(char *Job);
+DLL_IMP_EXP extern JCR *get_jcr_by_full_name(char *Job);
+DLL_IMP_EXP extern JCR *get_next_jcr(JCR *jcr);
+DLL_IMP_EXP extern void set_jcr_job_status(JCR *jcr, int JobStatus);
+DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;
 
 #ifdef DEBUG
 extern void b_free_jcr(const char *file, int line, JCR *jcr);

@@ -38,17 +38,17 @@ extern uint32_t DLL_IMP_EXP sm_buffers;
 #define SMARTALLOC SMARTALLOC
 
 
-extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
+DLL_IMP_EXP extern void *sm_malloc(const char *fname, int lineno, unsigned int nbytes),
             *sm_calloc(const char *fname, int lineno,
                 unsigned int nelem, unsigned int elsize),
             *sm_realloc(const char *fname, int lineno, void *ptr, unsigned int size),
             *actuallymalloc(unsigned int size),
             *actuallycalloc(unsigned int nelem, unsigned int elsize),
             *actuallyrealloc(void *ptr, unsigned int size);
-extern void sm_free(const char *fname, int lineno, void *fp);
-extern void actuallyfree(void *cp),
+DLL_IMP_EXP extern void sm_free(const char *fname, int lineno, void *fp);
+DLL_IMP_EXP extern void actuallyfree(void *cp),
             sm_dump(bool bufdump, bool in_use=false), sm_static(int mode);
-extern void sm_new_owner(const char *fname, int lineno, char *buf);
+DLL_IMP_EXP extern void sm_new_owner(const char *fname, int lineno, char *buf);
 
 #ifdef SMCHECK
 #define Dsm_check(lvl) if ((lvl)<=debug_level) sm_check(__FILE__, __LINE__, true)

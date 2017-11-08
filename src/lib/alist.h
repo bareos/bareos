@@ -83,7 +83,7 @@ enum {
  * Array list -- much like a simplified STL vector
  *               array of pointers to inserted items
  */
-class alist : public SMARTALLOC {
+class DLL_IMP_EXP alist : public SMARTALLOC {
    void **items;
    int num_items;
    int max_items;

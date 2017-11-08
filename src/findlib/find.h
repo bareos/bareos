@@ -66,7 +66,7 @@ struct utimbuf {
 #endif
 #ifdef USE_READDIR_R
 #ifndef HAVE_READDIR_R
-int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
+DLL_IMP_EXP int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 #endif
 #endif
 /**

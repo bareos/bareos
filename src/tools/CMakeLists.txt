@@ -35,20 +35,28 @@ target_link_libraries(bregex bareos bareosfind ${JANSSON_LIBRARIES})
 add_executable(bwild bwild.cc)
 target_link_libraries(bwild bareos ${JANSSON_LIBRARIES})
 
-add_executable(bpluginfo bpluginfo.cc)
-target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
-
 add_executable(bscrypto bscrypto.cc)
 target_link_libraries(bscrypto bareos ${JANSSON_LIBRARIES})
 
-add_executable(timelimit timelimit.cc)
+IF(NOT ${HAVE_WIN32})
+   add_executable(bpluginfo bpluginfo.cc)
+   target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
+
+   add_executable(timelimit timelimit.cc)
+ENDIF()
 
 set (TOOLS_BIN
-   bsmtp bwild bregex timelimit
+   bsmtp bwild bregex
    )
+
 set (TOOLS_SBIN
-   bpluginfo bscrypto bwild bregex timelimit
+   bscrypto bwild bregex
    )
+
+IF(NOT ${HAVE_WIN32})
+   LIST(APPEND TOOLS_BIN  timelimit)
+   LIST(APPEND TOOLS_SBIN bpluginfo timelimit)
+ENDIF()
 
 INSTALL(TARGETS ${TOOLS_BIN} DESTINATION "${bindir}")
 INSTALL(TARGETS ${TOOLS_SBIN} DESTINATION "${sbindir}")

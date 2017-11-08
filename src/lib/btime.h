@@ -23,21 +23,21 @@
 #define __btime_INCLUDED
 
 /* New btime definition -- use this */
-btime_t get_current_btime(void);
-time_t btime_to_unix(btime_t bt);   /* bareos time to epoch time */
-utime_t btime_to_utime(btime_t bt); /* bareos time to utime_t */
+DLL_IMP_EXP btime_t get_current_btime(void);
+DLL_IMP_EXP time_t btime_to_unix(btime_t bt);   /* bareos time to epoch time */
+DLL_IMP_EXP utime_t btime_to_utime(btime_t bt); /* bareos time to utime_t */
 
-int tm_wom(int mday, int wday);
-int tm_woy(time_t stime);
+DLL_IMP_EXP int tm_wom(int mday, int wday);
+DLL_IMP_EXP int tm_woy(time_t stime);
 
-void blocaltime(const time_t *time, struct tm *tm);
-char *bstrutime(char *dt, int maxlen, utime_t tim);
-char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
-char *bstrftimes(char *dt, int maxlen, utime_t tim);
-char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
-char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
-char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
-utime_t str_to_utime(const char *str);
+DLL_IMP_EXP void blocaltime(const time_t *time, struct tm *tm);
+DLL_IMP_EXP char *bstrutime(char *dt, int maxlen, utime_t tim);
+DLL_IMP_EXP char *bstrftime(char *dt, int maxlen, utime_t tim, const char *fmt = NULL);
+DLL_IMP_EXP char *bstrftimes(char *dt, int maxlen, utime_t tim);
+DLL_IMP_EXP char *bstrftime_ny(char *dt, int maxlen, utime_t tim);
+DLL_IMP_EXP char *bstrftime_nc(char *dt, int maxlen, utime_t tim);
+DLL_IMP_EXP char *bstrftime_wd(char *dt, int maxlen, utime_t tim);
+DLL_IMP_EXP utime_t str_to_utime(const char *str);
 
 
 /* =========================================================== */

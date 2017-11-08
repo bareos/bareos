@@ -559,18 +559,18 @@ m_msg(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11
 
 class POOL_MEM;
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
-int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
-int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
-int Mmsg(POOL_MEM *&msgbuf, const char *fmt, ...);
+DLL_IMP_EXP int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
+DLL_IMP_EXP int Mmsg(POOL_MEM &msgbuf, const char *fmt, ...);
+DLL_IMP_EXP int Mmsg(POOL_MEM *&msgbuf, const char *fmt, ...);
 
 class JCR;
-void d_msg(const char *file, int line, int level, const char *fmt, ...);
-void p_msg(const char *file, int line, int level, const char *fmt, ...);
-void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
-void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
-void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
-void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
-int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+DLL_IMP_EXP void d_msg(const char *file, int line, int level, const char *fmt, ...);
+DLL_IMP_EXP void p_msg(const char *file, int line, int level, const char *fmt, ...);
+DLL_IMP_EXP void p_msg_fb(const char *file, int line, int level, const char *fmt,...);
+DLL_IMP_EXP void e_msg(const char *file, int line, int type, int level, const char *fmt, ...);
+DLL_IMP_EXP void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
+DLL_IMP_EXP void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
+DLL_IMP_EXP int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
 
 /** Use our strdup with smartalloc */
 #undef strdup
