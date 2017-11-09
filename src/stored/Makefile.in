@@ -29,11 +29,11 @@ dummy:
 
 AVAILABLE_DEVICE_API_SRCS = cephfs_device.c \
 			    chunked_device.c \
-			    elasto_device.c \
-			    gfapi_device.c \
 			    droplet_device.c \
-			    rados_device.c \
+			    elasto_device.c \
 			    generic_tape_device.c \
+			    gfapi_device.c \
+			    rados_device.c \
 			    unix_fifo_device.c \
 			    unix_tape_device.c
 NEEDED_DEVICE_API_SRCS = unix_file_device.c @NEEDED_DEVICE_API_SRCS@
@@ -140,6 +140,10 @@ cephfs_device.lo: cephfs_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(CEPHFS_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
+droplet_device.lo: droplet_device.c
+	@echo "Compiling $<"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(DROPLET_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
+
 elasto_device.lo: elasto_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(ELASTO_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
@@ -147,10 +151,6 @@ elasto_device.lo: elasto_device.c
 gfapi_device.lo: gfapi_device.c
 	@echo "Compiling $<"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(GLUSTER_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
-
-droplet_device.lo: droplet_device.c
-	@echo "Compiling $<"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) $(DROPLET_INC) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 
 rados_device.lo: rados_device.c
 	@echo "Compiling $<"
