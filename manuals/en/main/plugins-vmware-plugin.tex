@@ -41,7 +41,7 @@ which requires at least a \vSphere Essentials License.
 It is tested against \vSphere Storage APIs for Data Protection of \vmware 5.x.
 It does not work with standalone unlicensed \vmware ESXi\trademark.
 
-Since Bareos \sinceVersion{fd}{VMware Plugin}{17.2.4} the Plugin is using
+Since Bareos \sinceVersion{fd}{VMware Plugin: VDDK 6.5.2}{17.2.4} the Plugin is using
 the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it
 should be compatible with vSphere 6.5 and the next major release (except new features)
 and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at
@@ -121,7 +121,7 @@ FileSet {
 For VMs defined in the root-folder, \command{folder=/} must be specified
 in the Plugin definition.
 
-New since Bareos \sinceVersion{fd}{VMware Plugin}{17.2.4}: As the Plugin is using
+New since Bareos \sinceVersion{fd}{VMware Plugin: vcthumbprint}{17.2.4}: As the Plugin is using
 the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint
 of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate.
 The thumbprint can be retrieved like this:
@@ -148,7 +148,7 @@ be added. It must be given without colons like in the following example:
 For ease of use (but less secure) when the \command{vcthumbprint} is not given, the plugin
 will retrieve the thumbprint.
 
-Also since \sinceVersion{fd}{VMware Plugin}{17.2.4} another optional plugin option has
+Also since \sinceVersion{fd}{VMware Plugin: transport=nbdssl}{17.2.4} another optional plugin option has
 been added that can be used for trying to force a given transport method. Normally, when
 no transport method is given, VDDK will negotiate available transport methods and select
 the best one. For a description of transport methods, see
