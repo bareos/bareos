@@ -135,7 +135,7 @@ void *ordered_circbuf::enqueue(void *data,
        * e.g. replace the old with the new data but don't allocate a new
        * item on the ordered circular list.
        */
-      update(item, new_item);
+      update(item->data, new_item->data);
 
       /*
        * Release the unused ocbuf_item.

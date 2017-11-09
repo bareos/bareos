@@ -338,10 +338,8 @@ static int compare_chunk_io_request(void *item1, void *item2)
  */
 static void update_chunk_io_request(void *item1, void *item2)
 {
-   ocbuf_item *ocbuf1 = (ocbuf_item *)item1;
-   ocbuf_item *ocbuf2 = (ocbuf_item *)item2;
-   chunk_io_request *chunk1 = (chunk_io_request *)ocbuf1->data;
-   chunk_io_request *chunk2 = (chunk_io_request *)ocbuf2->data;
+   chunk_io_request *chunk1 = (chunk_io_request *)item1;
+   chunk_io_request *chunk2 = (chunk_io_request *)item2;
 
    /*
     * See if the new chunk_io_request has more bytes then
