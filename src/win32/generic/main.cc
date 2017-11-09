@@ -61,7 +61,7 @@ bool have_service_api;
 DWORD service_thread_id = 0;
 char win_os[300];
 
-bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz);
+DLL_IMP_EXP bool GetWindowsVersionString(LPTSTR osbuf, int maxsiz);
 
 
 #define MAX_COMMAND_ARGS 100

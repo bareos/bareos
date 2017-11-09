@@ -17,15 +17,49 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(. .. ../include ../lmdb)
+
+IF(${HAVE_WIN32})
+   include_directories(
+      ${CMAKE_SOURCE_DIR}/src/win32/generic
+      ${CMAKE_SOURCE_DIR}/src/win32/filed
+      ${CMAKE_SOURCE_DIR}/src/win32/vss/include  ../include . .. ../lmdb/)
+ELSE()
+   include_directories(. .. ../include ../lmdb)
+ENDIF()
 
 set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc
     accurate_htable.cc backup.cc dir_cmd.cc filed.cc heartbeat.cc socket_server.cc verify_vol.cc
     accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
 
+IF(${HAVE_WIN32})
+   LIST(APPEND FDSRCS
+      ../win32/filed/vss.cc
+      ../win32/filed/vss_XP.cc
+      ../win32/filed/vss_W2K3.cc
+      ../win32/filed/vss_Vista.cc
+      ../win32/generic/service.cc
+      ../win32/generic/main.cc
+      )
+ENDIF()
+
 add_executable(bareos-fd ${FDSRCS})
-target_link_libraries(bareos-fd bareosfind bareoscfg bareos pthread
-         ${LMDB_LIBS})
+
+SET(BAREOS_FD_LIBRARIES
+         bareosfind bareoscfg bareos bareosstatic
+         pthread
+         ${LMDB_LIBS}
+         )
+IF(${HAVE_WIN32})
+   LIST(APPEND BAREOS_FD_LIBRARIES
+      comctl32
+      )
+ENDIF()
+
+target_link_libraries(bareos-fd
+   ${BAREOS_FD_LIBRARIES}
+         )
+
+target_compile_definitions(bareos-fd PRIVATE -DWIN32_VSS -DHAVE_VSS64)
 
 INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}")
 

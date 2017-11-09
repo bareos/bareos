@@ -170,7 +170,7 @@ DLL_IMP_EXP bool get_trace(void);
 DLL_IMP_EXP const char *get_basename(const char *pathname);
 DLL_IMP_EXP void set_log_timestamp_format(const char *format);
 
-DLL_IMP_EXP typedef bool (*db_log_insert_func)(JCR *jcr, utime_t mtime, char *msg);
+typedef bool (*db_log_insert_func)(JCR *jcr, utime_t mtime, char *msg);
 extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
 
 extern DLL_IMP_EXP int debug_level;

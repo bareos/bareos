@@ -20,7 +20,7 @@
 include_directories(. .. ../include )
 
 add_executable(bconsole console.cc console_conf.cc)
-target_link_libraries(bconsole bareos bareoscfg ${Readline_LIBRARY})
+target_link_libraries(bconsole bareos bareoscfg bareosstatic ${Readline_LIBRARY})
 
 INSTALL(TARGETS bconsole DESTINATION "${bindir}")
 INSTALL(TARGETS bconsole DESTINATION "${sbindir}")
