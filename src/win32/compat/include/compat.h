@@ -246,17 +246,17 @@ struct stat
 #define iscsym  __iscsym
 #endif
 
-bool initialize_com_security();
+DLL_IMP_EXP bool initialize_com_security();
 
 bool CreateJunction(const char *szJunction, const char *szPath);
 const char *errorString(void);
 
 typedef bool (*t_pVSSPathConvert)(const char *szFilePath, char *szShadowPath, int nBuflen);
 typedef bool (*t_pVSSPathConvertW)(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen);
-bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW);
+DLL_IMP_EXP bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathConvertW);
 
 DLL_IMP_EXP int lchown(const char *, uid_t uid, gid_t gid);
-int chown(const char *, uid_t uid, gid_t gid);
+DLL_IMP_EXP int chown(const char *, uid_t uid, gid_t gid);
 #define O_NONBLOCK   04000
 #define F_GETFL      3
 #define F_SETFL      4
@@ -265,14 +265,14 @@ int chown(const char *, uid_t uid, gid_t gid);
 #define open   _open
 #endif
 
-int fcntl(int fd, int cmd, long arg);
-int fstat(intptr_t fd, struct stat *sb);
+DLL_IMP_EXP int fcntl(int fd, int cmd, long arg);
+DLL_IMP_EXP int fstat(intptr_t fd, struct stat *sb);
 
-int inet_aton(const char *cp, struct in_addr *inp);
+DLL_IMP_EXP int inet_aton(const char *cp, struct in_addr *inp);
 DLL_IMP_EXP int kill(int pid, int signo);
-int pipe(int []);
-int fork();
-int waitpid(int, int *, int);
+DLL_IMP_EXP int pipe(int []);
+DLL_IMP_EXP int fork();
+DLL_IMP_EXP int waitpid(int, int *, int);
 
 #if !defined(HAVE_MINGW)
 #define strncasecmp strnicmp
@@ -367,22 +367,22 @@ DLL_IMP_EXP int win32_fputs(const char *string, FILE *stream);
 DLL_IMP_EXP int win32_unlink(const char *filename);
 DLL_IMP_EXP int win32_chmod(const char *, mode_t, _dev_t);
 
-char* win32_cgets (char* buffer, int len);
+DLL_IMP_EXP char* win32_cgets (char* buffer, int len);
 
 DLL_IMP_EXP int WSA_Init(void);
-void Win32TSDCleanup();
-void Win32ClearCompatible();
-void Win32SetCompatible();
-bool Win32IsCompatible();
+DLL_IMP_EXP void Win32TSDCleanup();
+DLL_IMP_EXP void Win32ClearCompatible();
+DLL_IMP_EXP void Win32SetCompatible();
+DLL_IMP_EXP bool Win32IsCompatible();
 
 #if defined(HAVE_MINGW)
-void closelog();
-void openlog(const char *ident, int option, int facility);
+DLL_IMP_EXP void closelog();
+DLL_IMP_EXP void openlog(const char *ident, int option, int facility);
 #endif //HAVE_MINGW
 
 /* Don't let OS go to sleep (usually a Laptop) while we are backing up */
-void prevent_os_suspensions();
-void allow_os_suspensions();
+DLL_IMP_EXP void prevent_os_suspensions();
+DLL_IMP_EXP void allow_os_suspensions();
 
 typedef DWORD EXECUTION_STATE;
 #ifndef ES_CONTINUOUS

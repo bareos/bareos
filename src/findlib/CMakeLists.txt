@@ -42,4 +42,4 @@ set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
                                           LINK_FLAGS -Wl,--output-def,bareosfind.def -L bareos.def
                                           )
 
-add_subdirectory(unittests)
+#add_subdirectory(unittests)

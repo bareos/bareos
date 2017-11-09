@@ -118,23 +118,23 @@ struct BFILE {
 
 #endif
 
-void binit(BFILE *bfd);
-bool is_bopen(BFILE *bfd);
-bool set_win32_backup(BFILE *bfd);
-bool set_portable_backup(BFILE *bfd);
-bool set_cmd_plugin(BFILE *bfd, JCR *jcr);
-bool have_win32_api();
-bool is_portable_backup(BFILE *bfd);
-bool is_restore_stream_supported(int stream);
-bool is_win32_stream(int stream);
-int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
-int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
-int bclose(BFILE *bfd);
-ssize_t bread(BFILE *bfd, void *buf, size_t count);
-ssize_t bwrite(BFILE *bfd, void *buf, size_t count);
-boffset_t blseek(BFILE *bfd, boffset_t offset, int whence);
+DLL_IMP_EXP void binit(BFILE *bfd);
+DLL_IMP_EXP bool is_bopen(BFILE *bfd);
+DLL_IMP_EXP bool set_win32_backup(BFILE *bfd);
+DLL_IMP_EXP bool set_portable_backup(BFILE *bfd);
+DLL_IMP_EXP bool set_cmd_plugin(BFILE *bfd, JCR *jcr);
+DLL_IMP_EXP bool have_win32_api();
+DLL_IMP_EXP bool is_portable_backup(BFILE *bfd);
+DLL_IMP_EXP bool is_restore_stream_supported(int stream);
+DLL_IMP_EXP bool is_win32_stream(int stream);
+DLL_IMP_EXP int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
+DLL_IMP_EXP int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
+DLL_IMP_EXP int bclose(BFILE *bfd);
+DLL_IMP_EXP ssize_t bread(BFILE *bfd, void *buf, size_t count);
+DLL_IMP_EXP ssize_t bwrite(BFILE *bfd, void *buf, size_t count);
+DLL_IMP_EXP boffset_t blseek(BFILE *bfd, boffset_t offset, int whence);
 DLL_IMP_EXP const char *stream_to_ascii(int stream);
 
-bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize);
+DLL_IMP_EXP bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize);
 
 #endif /* __BFILE_H */

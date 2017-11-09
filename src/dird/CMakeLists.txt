@@ -53,6 +53,7 @@ set(TSTFNDSRCS testfind.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_co
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 
 add_executable(bareos-dir ${SVRSRCS})
+
 set(BAREOS_DIR_LIBRARIES
    bareos
    bareoscats

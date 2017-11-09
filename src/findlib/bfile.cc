@@ -35,11 +35,11 @@
 
 const int dbglvl = 200;
 
-int (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode) = NULL;
-int (*plugin_bclose)(BFILE *bfd) = NULL;
-ssize_t (*plugin_bread)(BFILE *bfd, void *buf, size_t count) = NULL;
-ssize_t (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count) = NULL;
-boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int whence) = NULL;
+DLL_IMP_EXP int (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode) = NULL;
+DLL_IMP_EXP int (*plugin_bclose)(BFILE *bfd) = NULL;
+DLL_IMP_EXP ssize_t (*plugin_bread)(BFILE *bfd, void *buf, size_t count) = NULL;
+DLL_IMP_EXP ssize_t (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count) = NULL;
+DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int whence) = NULL;
 
 #ifdef HAVE_DARWIN_OS
 #include <sys/paths.h>

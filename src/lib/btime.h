@@ -86,8 +86,8 @@ extern void date_time_decode(struct date_time *dt,
 extern int date_time_compare(struct date_time *dt1, struct date_time *dt2);
 
 extern void tm_encode(struct date_time *dt, struct tm *tm);
-extern void tm_decode(struct date_time *dt, struct tm *tm);
-extern void get_current_time(struct date_time *dt);
+DLL_IMP_EXP extern void tm_decode(struct date_time *dt, struct tm *tm);
+DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
 
 
 #endif /* __btime_INCLUDED */

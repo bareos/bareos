@@ -17,16 +17,32 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(. .. ../lib ../include ../lmdb ../ndmp)
+IF(${HAVE_WIN32})
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends ../include .. .)
+ELSE()
+   include_directories(. .. ../lib ../include ../lmdb ../ndmp)
+ENDIF()
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 
    set (AVAILABLE_DEVICE_API_SRCS
-      backends/generic_tape_device.cc
-      backends/unix_fifo_device.cc
-      backends/unix_tape_device.cc
-      backends/object_store_device.cc
-      )
+         backends/generic_tape_device.cc
+       )
+
+   IF(${HAVE_WIN32})
+      LIST(APPEND AVAILABLE_DEVICE_API_SRCS
+         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
+         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
+         ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_tape_device.cc
+         )
+   ELSE()
+      LIST(APPEND AVAILABLE_DEVICE_API_SRCS
+         backends/unix_fifo_device.cc
+         backends/object_store_device.cc
+         backends/unix_tape_device.cc
+         backends/unix_file_device.cc
+         )
+   ENDIF()
 
    if(${HAVE_CEPHFS})
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
@@ -50,7 +66,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 
 ENDIF()
 
-set (REQUIRED_DEVICE_API_SRCS backends/unix_file_device.cc)
 
 
 set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
@@ -59,13 +74,20 @@ set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
 		   mount.cc read_record.cc record.cc reserve.cc scan.cc
 		   sd_backends.cc sd_plugins.cc sd_stats.cc spool.cc
 		   stored_conf.cc vol_mgr.cc wait.cc
-         ${REQUIRED_DEVICE_API_SRCS} ${AVAILABLE_DEVICE_API_SRCS}
+         ${AVAILABLE_DEVICE_API_SRCS}
     )
+
 
 set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
          socket_server.cc status.cc stored.cc
 )
+IF(${HAVE_WIN32})
+   LIST(APPEND SDSRCS
+      ../win32/generic/main.cc
+      ../win32/generic/service.cc
+      )
+ENDIF()
 
 set(BTAPESRCS btape.cc)
 set(BLSSRCS bls.cc)
@@ -91,13 +113,25 @@ MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
-   target_link_libraries(bareossd ${BACKEND_OBJECTS})
+   target_link_libraries(bareossd bareos bareosstatic ${BACKEND_OBJECTS})
 endif()
 
 add_executable(bareos-sd ${SDSRCS})
+
+SET(BAREOS_SD_LIBRARIES
+   bareos bareossd bareosfind bareoscfg
+   ${NDMP_LIBS}
+   )
+
+IF(${HAVE_WIN32})
+   LIST(APPEND BAREOS_SD_LIBRARIES
+      comctl32
+      )
+ENDIF()
+
 target_link_libraries(bareos-sd
-   bareos bareossd bareosfind bareoscfg bareosndmp
-    )
+   ${BAREOS_SD_LIBRARIES}
+   )
 
 add_executable(bls ${BLSSRCS})
 target_link_libraries(bls
@@ -120,6 +154,8 @@ target_link_libraries(btape
     )
 
 add_executable(bcopy ${BCOPYSRCS})
+
+
 target_link_libraries(bcopy
    bareossd bareos bareoscfg
     )
@@ -136,4 +172,6 @@ install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
 INSTALL(DIRECTORY DESTINATION "../${archivedir}")
 
+IF( ${HAVE_DYNAMIC_SD_BACKENDS})
 add_subdirectory(backends)
+ENDIF()
