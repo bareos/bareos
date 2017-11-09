@@ -55,6 +55,7 @@ enum device_option_type {
    argument_chunksize,
    argument_iothreads,
    argument_ioslots,
+   argument_retries,
    argument_mmap
 };
 
@@ -73,6 +74,7 @@ static device_option device_options[] = {
    { "chunksize=", argument_chunksize, 10 },
    { "iothreads=", argument_iothreads, 10 },
    { "ioslots=", argument_ioslots, 8 },
+   { "retries=", argument_retries, 8 },
    { "mmap", argument_mmap, 4 },
    { NULL, argument_none }
 };
@@ -612,6 +614,11 @@ bool object_store_device::initialize()
                   m_io_slots = value & 0xFF;
                   done = true;
                   break;
+               case argument_retries:
+                  size_to_uint64(bp + device_options[i].compare_size, &value);
+                  m_retries = value & 0xFF;
+                  done = true;
+                  break;
                case argument_mmap:
                   m_use_mmap = true;
                   done = true;
@@ -752,17 +759,11 @@ bail_out:
  */
 int object_store_device::d_open(const char *pathname, int flags, int mode)
 {
-   int retval = -1;
-
    if (!initialize()) {
-      goto bail_out;
+      return -1;
    }
 
-   setup_chunk(flags);
-   retval = 0;
-
-bail_out:
-   return retval;
+   return setup_chunk(pathname, flags, mode);
 }
 
 /*

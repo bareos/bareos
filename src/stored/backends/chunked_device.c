@@ -382,6 +382,7 @@ bool chunked_device::enqueue_chunk(chunk_io_request *request)
    new_request->chunk = request->chunk;
    new_request->buffer = request->buffer;
    new_request->wbuflen = request->wbuflen;
+   new_request->tries = 0;
    new_request->release = request->release;
 
    Dmsg2(100, "Allocated chunk io request of %d bytes at %p\n", sizeof(chunk_io_request), new_request);
@@ -459,6 +460,18 @@ bool chunked_device::dequeue_chunk()
       if (!flush_remote_chunk(new_request)) {
           chunk_io_request *enqueued_request;
 
+          /*
+           * See if we have a maximum number of retries to upload chunks to the backing store
+           * and if we have and execeeded those tries for this chunk set the device to read-only
+           * so any next write to the device will error out. This should prevent us from hanging
+           * the flushing to the backing store on misconfigured devices.
+           */
+          new_request->tries++;
+          if (m_retries > 0 && new_request->tries >= m_retries) {
+             m_readonly = true;
+             goto bail_out;
+          }
+
          /*
           * We failed to flush the chunk to the backing store
           * so enqueue it again using the reserved slot by dequeue()
@@ -502,6 +515,7 @@ bool chunked_device::dequeue_chunk()
          continue;
       }
 
+bail_out:
       /*
        * Unreserve the slot on the ordered circular buffer reserved by dequeue().
        */
@@ -610,8 +624,18 @@ bool chunked_device::read_chunk()
 /*
  * Setup a chunked volume for reading or writing.
  */
-void chunked_device::setup_chunk(int flags)
+int chunked_device::setup_chunk(const char *pathname, int flags, int mode)
 {
+   /*
+    * If device is (re)opened and we are put into readonly mode because
+    * of problems flushing chunks to the backing store we return EROFS
+    * to the upper layers.
+    */
+   if ((flags & O_RDWR) && m_readonly) {
+      dev_errno = EROFS;
+      return -1;
+   }
+
    if (!m_current_chunk) {
       m_current_chunk = (chunk_descriptor *)malloc(sizeof(chunk_descriptor));
       memset(m_current_chunk, 0, sizeof(chunk_descriptor));
@@ -668,6 +692,8 @@ void chunked_device::setup_chunk(int flags)
    }
 
    m_current_volname = bstrdup(getVolCatName());
+
+   return 0;
 }
 
 /*
@@ -810,6 +836,16 @@ bail_out:
 ssize_t chunked_device::write_chunked(int fd, const void *buffer, size_t count)
 {
    ssize_t retval = 0;
+
+   /*
+    * If we are put into readonly mode because of problems flushing chunks to the
+    * backing store we return EIO to the upper layers.
+    */
+   if (m_readonly) {
+      errno = EIO;
+      retval = -1;
+      goto bail_out;
+   }
 
    if (m_current_chunk->opened) {
       ssize_t wanted_offset;
@@ -1251,9 +1287,11 @@ chunked_device::chunked_device()
    m_current_chunk = NULL;
    m_io_threads = 0;
    m_io_slots = 0;
+   m_retries = 0;
    m_chunk_size = 0;
    m_io_threads_started = false;
    m_end_of_media = false;
+   m_readonly = false;
    m_cb = NULL;
    m_io_threads = 0;
    m_chunk_size = 0;
