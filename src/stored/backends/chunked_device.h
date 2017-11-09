@@ -46,6 +46,13 @@
  */
 #define MAX_CHUNKS 10000
 
+/*
+ * Busy wait retry for inflight chunks.
+ * Default 12 * 5 = 60 seconds.
+ */
+#define INFLIGHT_RETRIES 12
+#define INFLIGT_RETRY_TIME 5
+
 enum thread_wait_type {
    WAIT_CANCEL_THREAD,     /* Perform a pthread_cancel() on exit. */
    WAIT_JOIN_THREAD        /* Perform a pthread_join() on exit. */
@@ -116,6 +123,9 @@ protected:
    /*
     * Protected Methods
     */
+   bool set_inflight_chunk(chunk_io_request *request);
+   void clear_inflight_chunk(chunk_io_request *request);
+   bool is_inflight_chunk(chunk_io_request *request);
    void setup_chunk(int flags);
    ssize_t read_chunked(int fd, void *buffer, size_t count);
    ssize_t write_chunked(int fd, const void *buffer, size_t count);

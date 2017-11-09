@@ -342,6 +342,16 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
          item = (struct ocbuf_item *)m_data->next(item);
       }
       break;
+   case PEEK_CLONE:
+      item = (struct ocbuf_item *)m_data->first();
+      while (item) {
+         if (callback(item->data, data) == 0) {
+            retval = data;
+            break;
+         }
+         item = (struct ocbuf_item *)m_data->next(item);
+      }
+      break;
    default:
       goto bail_out;
    }

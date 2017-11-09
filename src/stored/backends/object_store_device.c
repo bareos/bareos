@@ -285,6 +285,13 @@ bool object_store_device::flush_remote_chunk(chunk_io_request *request)
    Mmsg(chunk_dir, "/%s", request->volname);
    Mmsg(chunk_name, "%s/%04d", chunk_dir.c_str(), request->chunk);
 
+   /*
+    * Set that we are uploading the chunk.
+    */
+   if (!set_inflight_chunk(request)) {
+      goto bail_out;
+   }
+
    Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
    /*
@@ -386,6 +393,11 @@ bool object_store_device::flush_remote_chunk(chunk_io_request *request)
    retval = true;
 
 bail_out:
+   /*
+    * Clear that we are uploading the chunk.
+    */
+   clear_inflight_chunk(request);
+
    if (sysmd) {
       dpl_sysmd_free(sysmd);
    }

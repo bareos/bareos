@@ -52,6 +52,9 @@
  *
  * The public interfaces exported from this device are:
  *
+ * set_inflight_chunk() - Set the inflight flag for a chunk.
+ * clear_inflight_chunk() - Clear the inflight flag for a chunk.
+ * is_inflight_chunk() - Is a chunk current inflight to the backing store.
  * setup_chunk() - Setup a chunked volume for reading or writing.
  * read_chunked() - Read a chunked volume.
  * write_chunked() - Write a chunked volume.
@@ -243,6 +246,64 @@ void chunked_device::stop_threads()
       delete m_thread_ids;
       m_thread_ids = NULL;
    }
+}
+
+/*
+ * Set the inflight flag for a chunk.
+ */
+bool chunked_device::set_inflight_chunk(chunk_io_request *request)
+{
+   int fd;
+   POOL_MEM inflight_file(PM_FNAME);
+
+   Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname, request->chunk);
+   pm_strcat(inflight_file, "%inflight");
+
+   Dmsg3(100, "Creating inflight file %s for volume %s, chunk %d\n",
+         inflight_file.c_str(), request->volname, request->chunk);
+
+   fd = ::open(inflight_file.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0640);
+   if (fd >= 0) {
+      ::close(fd);
+   } else {
+      return false;
+   }
+
+   return true;
+}
+
+/*
+ * Clear the inflight flag for a chunk.
+ */
+void chunked_device::clear_inflight_chunk(chunk_io_request *request)
+{
+   POOL_MEM inflight_file(PM_FNAME);
+
+   Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname, request->chunk);
+   pm_strcat(inflight_file, "%inflight");
+
+   Dmsg3(100, "Removing inflight file %s for volume %s, chunk %d\n",
+         inflight_file.c_str(), request->volname, request->chunk);
+
+   ::unlink(inflight_file.c_str());
+}
+
+/*
+ * Check if a certain chunk is inflight to the backing store.
+ */
+bool chunked_device::is_inflight_chunk(chunk_io_request *request)
+{
+   struct stat st;
+   POOL_MEM inflight_file(PM_FNAME);
+
+   Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname, request->chunk);
+   pm_strcat(inflight_file, "%inflight");
+
+   if (stat(inflight_file.c_str(), &st) == 0) {
+      return true;
+   }
+
+   return false;
 }
 
 /*
@@ -978,6 +1039,27 @@ ssize_t chunked_device::chunked_volume_size()
    return chunked_remote_volume_size();
 }
 
+static int clone_io_request(void *item1, void *item2)
+{
+   chunk_io_request *src = (chunk_io_request *)item1;
+   chunk_io_request *dst = (chunk_io_request *)item2;
+
+   if (bstrcmp(src->volname, dst->volname) && src->chunk == dst->chunk) {
+      memcpy(dst->buffer, src->buffer, src->wbuflen);
+      *dst->rbuflen = src->wbuflen;
+
+      /*
+       * Cloning succeeded.
+       */
+      return 0;
+   }
+
+   /*
+    * Not the right volname or chunk.
+    */
+   return -1;
+}
+
 /*
  * Make sure we have the right chunk in memory.
  */
@@ -1000,6 +1082,77 @@ bool chunked_device::load_chunk()
    if (start_offset != m_current_chunk->start_offset) {
       m_current_chunk->buflen = 0;
       m_current_chunk->start_offset = start_offset;
+
+      /*
+       * See if we are using io-threads or not and the ordered circbuf is created.
+       * We try to make sure that nothing of the volume being requested is still inflight as then
+       * the read_chunk() method will fail to read the data as its not stored on the backing
+       * store yet.
+       */
+      if (m_io_threads > 0 && m_cb) {
+         chunk_io_request request;
+
+         request.chunk = m_current_chunk->start_offset / m_current_chunk->chunk_size;
+         request.volname = m_current_volname;
+         request.buffer = m_current_chunk->buffer;
+         request.rbuflen = &m_current_chunk->buflen;
+
+         while (1) {
+            if (!m_cb->empty()) {
+               /*
+                * Peek on the ordered circular queue and clone the data which is infligt back to the
+                * current chunk buffer. When we are able to clone the data the peek will return the
+                * address of the request structure it used for the clone operation. When nothing could
+                * be cloned it will return NULL. If data is cloned we use that and skip the call to
+                * read the data from the backing store as that will not have the latest data anyway.
+                */
+               if (m_cb->peek(PEEK_CLONE, &request, clone_io_request) == &request) {
+                  goto bail_out;
+               }
+            }
+
+            /*
+             * Chunk doesn't seem to be on the ordered circular buffer.
+             * Make sure its also not inflight to the backing store.
+             */
+            if (is_inflight_chunk(&request)) {
+               uint8_t retries = INFLIGHT_RETRIES;
+
+               /*
+                * Chunk seems to be inflight busy wait until its no longer.
+                * It either gets uploaded and as such we can just read it from the backing store
+                * again or it gets put back onto the ordered circular list and then we can pick
+                * it up by retrying the PEEK_CLONE on the ordered circular list.
+                */
+               do {
+                  bmicrosleep(INFLIGT_RETRY_TIME, 0);
+               } while (is_inflight_chunk(&request) && --retries > 0);
+
+               /*
+                * If we ran out of retries we most likely encountered a stale inflight file.
+                */
+               if (!retries) {
+                  clear_inflight_chunk(&request);
+                  break;
+               }
+
+               /*
+                * Do a new try to clone the data from the ordered circular list.
+                */
+               continue;
+            } else {
+               /*
+                * Its not on the ordered circular list and not inflight so it must be on the
+                * backing store so we break the loop and try to read the chunk from the backing store.
+                */
+               break;
+            }
+         }
+      }
+
+      /*
+       * Read the chunk from the backing store.
+       */
       if (!read_chunk()) {
          switch (dev_errno) {
          case EIO:
@@ -1012,6 +1165,8 @@ bool chunked_device::load_chunk()
          }
       }
    }
+
+bail_out:
    m_current_chunk->chunk_setup = true;
 
    return true;

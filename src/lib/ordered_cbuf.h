@@ -31,7 +31,8 @@
 enum oc_peek_types {
    PEEK_FIRST = 0,
    PEEK_LAST,
-   PEEK_LIST
+   PEEK_LIST,
+   PEEK_CLONE
 };
 
 struct ocbuf_item {
