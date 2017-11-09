@@ -28,7 +28,7 @@
 #ifndef __CONNECTION_POOL_H_
 #define __CONNECTION_POOL_H_
 
-class CONNECTION : public SMARTALLOC {
+class DLL_IMP_EXP CONNECTION : public SMARTALLOC {
 public:
    CONNECTION(const char* name, int protocol_version, BSOCK* socket, bool authenticated = true);
    ~CONNECTION();
@@ -57,7 +57,7 @@ private:
    pthread_mutex_t m_mutex;
 };
 
-class CONNECTION_POOL : public SMARTALLOC {
+class DLL_IMP_EXP CONNECTION_POOL : public SMARTALLOC {
 public:
    CONNECTION_POOL();
    ~CONNECTION_POOL();

@@ -98,7 +98,7 @@ DLL_IMP_EXP RUNSCRIPT *new_runscript();
 DLL_IMP_EXP RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
 
 /* launch each script from runscripts*/
-int run_scripts(JCR *jcr, alist *runscripts, const char *name,
+DLL_IMP_EXP int run_scripts(JCR *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
 /* free RUNSCRIPT (and all POOLMEM) */

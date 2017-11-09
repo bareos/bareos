@@ -22,7 +22,7 @@
 #ifndef BRS_BSOCK_TCP_H
 #define BRS_BSOCK_TCP_H
 
-class BSOCK_TCP : public BSOCK {
+class DLL_IMP_EXP BSOCK_TCP : public BSOCK {
 private:
    /*
     * the header of a Bareos packet is 32 bit long.

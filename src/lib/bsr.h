@@ -169,7 +169,7 @@ struct BSR {
    ATTR *attr;                        /* scratch space for unpacking */
 };
 
-BSR *parse_bsr(JCR *jcr, char *lf);
-void dump_bsr(BSR *bsr, bool recurse);
-void free_bsr(BSR *bsr);
+DLL_IMP_EXP BSR *parse_bsr(JCR *jcr, char *lf);
+DLL_IMP_EXP void dump_bsr(BSR *bsr, bool recurse);
+DLL_IMP_EXP void free_bsr(BSR *bsr);
 #endif

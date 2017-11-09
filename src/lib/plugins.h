@@ -94,20 +94,20 @@ typedef struct gen_pluginInfo {
 } genpInfo;
 
 /* Functions */
-bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
+DLL_IMP_EXP bool load_plugins(void *binfo, void *bfuncs, alist *plugin_list,
                   const char *plugin_dir, alist *plugin_names,
                   const char *type, bool is_plugin_compatible(Plugin *plugin));
-void unload_plugins(alist *plugin_list);
-void unload_plugin(alist *plugin_list, Plugin *plugin, int index);
-int list_plugins(alist *plugin_list, POOL_MEM &msg);
+DLL_IMP_EXP void unload_plugins(alist *plugin_list);
+DLL_IMP_EXP void unload_plugin(alist *plugin_list, Plugin *plugin, int index);
+DLL_IMP_EXP int list_plugins(alist *plugin_list, POOL_MEM &msg);
 
 /* Each daemon can register a debug hook that will be called
  * after a fatal signal
  */
 typedef void (dbg_plugin_hook_t)(Plugin *plug, FILE *fp);
-void dbg_plugin_add_hook(dbg_plugin_hook_t *fct);
+DLL_IMP_EXP void dbg_plugin_add_hook(dbg_plugin_hook_t *fct);
 typedef void(dbg_print_plugin_hook_t)(FILE *fp);
-void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct);
-void dump_plugins(alist *plugin_list, FILE *fp);
+DLL_IMP_EXP void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct);
+DLL_IMP_EXP void dump_plugins(alist *plugin_list, FILE *fp);
 
 #endif /* __PLUGINS_H */

@@ -78,20 +78,20 @@ class DLL_IMP_EXP IPADDR : public SMARTALLOC {
 DLL_IMP_EXP void init_default_addresses(dlist ** addr, const char *port);
 DLL_IMP_EXP void free_addresses(dlist * addrs);
 
-const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
-int get_first_port_net_order(dlist * addrs);
-int get_first_port_host_order(dlist * addrs);
+DLL_IMP_EXP const char *get_first_address(dlist * addrs, char *outputbuf, int outlen);
+DLL_IMP_EXP int get_first_port_net_order(dlist * addrs);
+DLL_IMP_EXP int get_first_port_host_order(dlist * addrs);
 
 DLL_IMP_EXP int add_address(dlist **out, IPADDR::i_type type, unsigned short defaultport, int family,
                 const char *hostname_str, const char *port_str, char *buf, int buflen);
-const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
+DLL_IMP_EXP const char *build_addresses_str(dlist *addrs, char *buf, int blen, bool print_port=true);
 
-int sockaddr_get_port_net_order(const struct sockaddr *sa);
-int sockaddr_get_port(const struct sockaddr *sa);
-char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
+DLL_IMP_EXP int sockaddr_get_port_net_order(const struct sockaddr *sa);
+DLL_IMP_EXP int sockaddr_get_port(const struct sockaddr *sa);
+DLL_IMP_EXP char *sockaddr_to_ascii(const struct sockaddr *sa, char *buf, int len);
 #ifdef WIN32
 #undef HAVE_OLD_SOCKOPT
 #endif
 #ifdef HAVE_OLD_SOCKOPT
-int inet_aton(const char *cp, struct in_addr *inp);
+DLL_IMP_EXP int inet_aton(const char *cp, struct in_addr *inp);
 #endif

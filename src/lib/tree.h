@@ -131,17 +131,17 @@ typedef struct s_hl_entry HL_ENTRY;
 #define TN_FILE    5                  /* file entry */
 
 /* External interface */
-TREE_ROOT *new_tree(int count);
-TREE_NODE *insert_tree_node(char *path, char *fname, int type,
+DLL_IMP_EXP TREE_ROOT *new_tree(int count);
+DLL_IMP_EXP TREE_NODE *insert_tree_node(char *path, char *fname, int type,
                             TREE_ROOT *root, TREE_NODE *parent);
-TREE_NODE *make_tree_path(char *path, TREE_ROOT *root);
-TREE_NODE *tree_cwd(char *path, TREE_ROOT *root, TREE_NODE *node);
-TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node);
-void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
+DLL_IMP_EXP TREE_NODE *make_tree_path(char *path, TREE_ROOT *root);
+DLL_IMP_EXP TREE_NODE *tree_cwd(char *path, TREE_ROOT *root, TREE_NODE *node);
+DLL_IMP_EXP TREE_NODE *tree_relcwd(char *path, TREE_ROOT *root, TREE_NODE *node);
+DLL_IMP_EXP void tree_add_delta_part(TREE_ROOT *root, TREE_NODE *node,
                          JobId_t JobId, int32_t FileIndex);
-void free_tree(TREE_ROOT *root);
-POOLMEM *tree_getpath(TREE_NODE *node);
-void tree_remove_node(TREE_ROOT *root, TREE_NODE *node);
+DLL_IMP_EXP void free_tree(TREE_ROOT *root);
+DLL_IMP_EXP POOLMEM *tree_getpath(TREE_NODE *node);
+DLL_IMP_EXP void tree_remove_node(TREE_ROOT *root, TREE_NODE *node);
 
 /**
  * Use the following for traversing the whole tree. It will be

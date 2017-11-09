@@ -131,13 +131,13 @@ typedef var_rc_t (*var_cb_operation_t)(
 );
 
 
-var_rc_t  var_create    (var_t **var);
-var_rc_t  var_destroy   (var_t  *var);
-var_rc_t  var_config    (var_t  *var, var_config_t mode, ...);
-var_rc_t  var_unescape  (var_t  *var, const char *src_ptr, int src_len, char  *dst_ptr, int dst_len, int all);
-var_rc_t  var_expand    (var_t  *var, const char *src_ptr, int src_len, char **dst_ptr, int *dst_len, int force_expand);
-var_rc_t  var_formatv   (var_t  *var, char **dst_ptr, int force_expand, const char *fmt, va_list ap);
-var_rc_t  var_format    (var_t  *var, char **dst_ptr, int force_expand, const char *fmt, ...);
-const char *var_strerror  (var_t  *var, var_rc_t rc);
+DLL_IMP_EXP var_rc_t  var_create    (var_t **var);
+DLL_IMP_EXP var_rc_t  var_destroy   (var_t  *var);
+DLL_IMP_EXP var_rc_t  var_config    (var_t  *var, var_config_t mode, ...);
+DLL_IMP_EXP var_rc_t  var_unescape  (var_t  *var, const char *src_ptr, int src_len, char  *dst_ptr, int dst_len, int all);
+DLL_IMP_EXP var_rc_t  var_expand    (var_t  *var, const char *src_ptr, int src_len, char **dst_ptr, int *dst_len, int force_expand);
+DLL_IMP_EXP var_rc_t  var_formatv   (var_t  *var, char **dst_ptr, int force_expand, const char *fmt, va_list ap);
+DLL_IMP_EXP var_rc_t  var_format    (var_t  *var, char **dst_ptr, int force_expand, const char *fmt, ...);
+DLL_IMP_EXP const char *var_strerror  (var_t  *var, var_rc_t rc);
 
 #endif /* __VAR_H__ */
