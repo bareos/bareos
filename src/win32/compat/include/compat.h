@@ -108,7 +108,7 @@ typedef struct _REPARSE_DATA_BUFFER {
 #define INT64 long long int
 #endif
 
-void sleep(int);
+DLL_IMP_EXP void sleep(int);
 
 typedef UINT32 key_t;
 
@@ -155,7 +155,7 @@ struct timezone {
 #ifndef HAVE_MINGW
 int strcasecmp(const char*, const char *);
 #endif
-int gettimeofday(struct timeval *, struct timezone *);
+DLL_IMP_EXP int gettimeofday(struct timeval *, struct timezone *);
 
 #if !defined(EETXTBUSY)
 #define EETXTBUSY 26
@@ -269,7 +269,7 @@ int fcntl(int fd, int cmd, long arg);
 int fstat(intptr_t fd, struct stat *sb);
 
 int inet_aton(const char *cp, struct in_addr *inp);
-int kill(int pid, int signo);
+DLL_IMP_EXP int kill(int pid, int signo);
 int pipe(int []);
 int fork();
 int waitpid(int, int *, int);
@@ -307,7 +307,7 @@ DLL_IMP_EXP int link(const char *existing, const char *newfile);
 #define _PC_PATH_MAX 1
 #define _PC_NAME_MAX 2
 
-int geteuid();
+DLL_IMP_EXP int geteuid();
 
 DLL_IMP_EXP DIR *opendir(const char *filename);
 DLL_IMP_EXP int closedir(DIR *dir);
@@ -369,7 +369,7 @@ DLL_IMP_EXP int win32_chmod(const char *, mode_t, _dev_t);
 
 char* win32_cgets (char* buffer, int len);
 
-int WSA_Init(void);
+DLL_IMP_EXP int WSA_Init(void);
 void Win32TSDCleanup();
 void Win32ClearCompatible();
 void Win32SetCompatible();
@@ -422,7 +422,7 @@ inline unsigned long ffs(unsigned long word)
 #endif
 
 DLL_IMP_EXP bool win32_get_vmp_devicename(const char *filename, POOLMEM *&device);
-int win32_ftruncate(int fd, int64_t length);
+DLL_IMP_EXP int win32_ftruncate(int fd, int64_t length);
 DLL_IMP_EXP bool win32_restore_file_attributes(POOLMEM *ofname,
                                    HANDLE handle,
                                    WIN32_FILE_ATTRIBUTE_DATA *atts);

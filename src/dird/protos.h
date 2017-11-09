@@ -69,7 +69,7 @@ char* storage_address_to_contact(STORERES *rstore, STORERES *wstore);
 
 /* bsr.c */
 RBSR *new_bsr();
-void free_bsr(RBSR *bsr);
+DLL_IMP_EXP void free_bsr(RBSR *bsr);
 bool complete_bsr(UAContext *ua, RBSR *bsr);
 uint32_t write_bsr_file(UAContext *ua, RESTORE_CTX &rx);
 void display_bsr_info(UAContext *ua, RESTORE_CTX &rx);

@@ -162,7 +162,7 @@ void stop_ndmp_thread_server();
 /* parse_bsr.c */
 BSR *parse_bsr(JCR *jcr, char *lf);
 void dump_bsr(BSR *bsr, bool recurse);
-void free_bsr(BSR *bsr);
+DLL_IMP_EXP void free_bsr(BSR *bsr);
 void free_restore_volume_list(JCR *jcr);
 void create_restore_volume_list(JCR *jcr);
 
@@ -174,56 +174,56 @@ char *bareos_status(char *buf, int buf_len);
 #endif
 
 /* read.c */
-bool do_read_data(JCR *jcr);
+DLL_IMP_EXP bool do_read_data(JCR *jcr);
 
 /* read_record.c */
-READ_CTX *new_read_context(void);
-void free_read_context(READ_CTX *rctx);
-void read_context_set_record(DCR *dcr, READ_CTX *rctx);
-bool read_next_block_from_device(DCR *dcr,
+DLL_IMP_EXP READ_CTX *new_read_context(void);
+DLL_IMP_EXP void free_read_context(READ_CTX *rctx);
+DLL_IMP_EXP void read_context_set_record(DCR *dcr, READ_CTX *rctx);
+DLL_IMP_EXP bool read_next_block_from_device(DCR *dcr,
                                  SESSION_LABEL *sessrec,
                                  bool record_cb(DCR *dcr, DEV_RECORD *rec),
                                  bool mount_cb(DCR *dcr),
                                  bool *status);
-bool read_next_record_from_block(DCR *dcr,
+DLL_IMP_EXP bool read_next_record_from_block(DCR *dcr,
                                  READ_CTX *rctx,
                                  bool *done);
-bool read_records(DCR *dcr,
+DLL_IMP_EXP bool read_records(DCR *dcr,
                   bool record_cb(DCR *dcr, DEV_RECORD *rec),
                   bool mount_cb(DCR *dcr));
 
 /* record.c */
-const char *FI_to_ascii(char *buf, int fi);
-const char *stream_to_ascii(char *buf, int stream, int fi);
-const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec);
-void dump_record(const char *tag, const DEV_RECORD *rec);
-bool write_record_to_block(DCR *dcr, DEV_RECORD *rec);
-bool can_write_record_to_block(DEV_BLOCK *block, const DEV_RECORD *rec);
-bool read_record_from_block(DCR *dcr, DEV_RECORD *rec);
-DEV_RECORD *new_record(bool with_data = true);
-void empty_record(DEV_RECORD *rec);
-void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src);
-void free_record(DEV_RECORD *rec);
-uint64_t get_record_address(const DEV_RECORD *rec);
+DLL_IMP_EXP const char *FI_to_ascii(char *buf, int fi);
+DLL_IMP_EXP const char *stream_to_ascii(char *buf, int stream, int fi);
+DLL_IMP_EXP const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec);
+DLL_IMP_EXP void dump_record(const char *tag, const DEV_RECORD *rec);
+DLL_IMP_EXP bool write_record_to_block(DCR *dcr, DEV_RECORD *rec);
+DLL_IMP_EXP bool can_write_record_to_block(DEV_BLOCK *block, const DEV_RECORD *rec);
+DLL_IMP_EXP bool read_record_from_block(DCR *dcr, DEV_RECORD *rec);
+DLL_IMP_EXP DEV_RECORD *new_record(bool with_data = true);
+DLL_IMP_EXP void empty_record(DEV_RECORD *rec);
+DLL_IMP_EXP void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src);
+DLL_IMP_EXP void free_record(DEV_RECORD *rec);
+DLL_IMP_EXP uint64_t get_record_address(const DEV_RECORD *rec);
 
 /* reserve.c */
-void init_reservations_lock();
-void term_reservations_lock();
-void _lock_reservations(const char *file = "**Unknown**", int line = 0);
-void _unlock_reservations();
-void _lock_volumes(const char *file = "**Unknown**", int line = 0);
-void _unlock_volumes();
-void _lock_read_volumes(const char *file = "**Unknown**", int line = 0);
-void _unlock_read_volumes();
-void unreserve_device(DCR *dcr);
-bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx);
-int search_res_for_device(RCTX &rctx);
-void release_reserve_messages(JCR *jcr);
+DLL_IMP_EXP void init_reservations_lock();
+DLL_IMP_EXP void term_reservations_lock();
+DLL_IMP_EXP void _lock_reservations(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _unlock_reservations();
+DLL_IMP_EXP void _lock_volumes(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _unlock_volumes();
+DLL_IMP_EXP void _lock_read_volumes(const char *file = "**Unknown**", int line = 0);
+DLL_IMP_EXP void _unlock_read_volumes();
+DLL_IMP_EXP void unreserve_device(DCR *dcr);
+DLL_IMP_EXP bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx);
+DLL_IMP_EXP int search_res_for_device(RCTX &rctx);
+DLL_IMP_EXP void release_reserve_messages(JCR *jcr);
 
 #ifdef SD_DEBUG_LOCK
-extern int reservations_lock_count;
-extern int vol_list_lock_count;
-extern int read_vol_list_lock_count;
+DLL_IMP_EXP extern int reservations_lock_count;
+DLL_IMP_EXP extern int vol_list_lock_count;
+DLL_IMP_EXP extern int read_vol_list_lock_count;
 
 #define lock_reservations() \
          do { Dmsg3(sd_dbglvl, "lock_reservations at %s:%d precnt=%d\n", \

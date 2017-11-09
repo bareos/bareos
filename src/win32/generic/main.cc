@@ -79,7 +79,7 @@ const char usage[] = APP_NAME "[/debug] [/service] [/run] [/kill] [/install] [/r
  * We parse the command line and either calls the main App
  *   or starts up the service.
  */
-int WINAPI WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, PSTR CmdLine,
+DLL_IMP_EXP int WINAPI WinMain(HINSTANCE Instance, HINSTANCE /*PrevInstance*/, PSTR CmdLine,
                    int /*show*/)
 {
    char *cmdLine = CmdLine;

@@ -18,7 +18,6 @@
 #   02110-1301, USA.
 
 
-include_directories(. .. ../include ../lmdb ../ndmp)
 
 set(SVRSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dir_plugins.cc dird_conf.cc dird.cc expand.cc fd_cmds.cc
@@ -36,6 +35,17 @@ set(SVRSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc ca
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
    vbackup.cc verify.cc)
 
+IF(${HAVE_WIN32})
+   include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird ../include ..)
+   LIST(APPEND SVRSRCS
+      ../win32/generic/main.cc
+      ../win32/generic/service.cc
+      )
+ELSE()
+   include_directories(. .. ../include ../lmdb ../ndmp)
+ENDIF()
+
+
 set(DBCHKSRCS dbcheck.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 
 set(TSTFNDSRCS testfind.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
@@ -49,15 +59,16 @@ set(BAREOS_DIR_LIBRARIES
    bareoscfg
    bareossql
    bareosfind
+   bareosstatic
    ${LMDB_LIBS}
    ${NDMP_LIBS}
    )
 
-#IF(${HAVE_NDMP})
-#   LIST(APPEND BAREOS_DIR_LIBRARIES
-#      bareosndmp
-#      )
-#ENDIF()
+IF(${HAVE_WIN32})
+   LIST(APPEND BAREOS_DIR_LIBRARIES
+      comctl32
+      )
+ENDIF()
 
 target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 

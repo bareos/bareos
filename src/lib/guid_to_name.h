@@ -25,10 +25,10 @@
 /**
  * @file
  * Program to convert uid and gid into names, and cache the results
- * for preformance reasons.
+ * for performance reasons.
  */
 
-class guid_list {
+class DLL_IMP_EXP guid_list {
 public:
    dlist *uid_list;
    dlist *gid_list;
@@ -37,5 +37,5 @@ public:
    char *gid_to_name(gid_t gid, char *name, int maxlen);
 };
 
-guid_list *new_guid_list();
-void free_guid_list(guid_list *list);
+DLL_IMP_EXP guid_list *new_guid_list();
+DLL_IMP_EXP void free_guid_list(guid_list *list);
