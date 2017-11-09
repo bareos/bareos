@@ -85,7 +85,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /*
  * Generic log function that glues libdroplet with BAREOS.
  */
-static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void droplet_device_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
    switch (level) {
    case DPL_DEBUG:
@@ -526,7 +526,7 @@ bool droplet_device::initialize()
     */
    P(mutex);
    if (droplet_reference_count == 0) {
-      dpl_set_log_func(object_store_logfunc);
+      dpl_set_log_func(droplet_device_logfunc);
 
       status = dpl_init();
       switch (status) {
@@ -540,7 +540,7 @@ bool droplet_device::initialize()
    droplet_reference_count++;
    V(mutex);
 
-   if (!m_object_configstring) {
+   if (!m_configstring) {
       int len;
       bool done;
       uint64_t value;
@@ -552,9 +552,9 @@ bool droplet_device::initialize()
          return -1;
       }
 
-      m_object_configstring = bstrdup(dev_options);
+      m_configstring = bstrdup(dev_options);
 
-      bp = m_object_configstring;
+      bp = m_configstring;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -596,7 +596,7 @@ bool droplet_device::initialize()
                   done = true;
                   break;
                case argument_bucket:
-                  m_object_bucketname = bp + device_options[i].compare_size;
+                  m_bucketname = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_chunksize:
@@ -743,8 +743,8 @@ bool droplet_device::initialize()
       /*
        * If a bucketname was defined set it in the context.
        */
-      if (m_object_bucketname) {
-         m_ctx->cur_bucket = bstrdup(m_object_bucketname);
+      if (m_bucketname) {
+         m_ctx->cur_bucket = bstrdup(m_bucketname);
       }
    }
 
@@ -793,7 +793,7 @@ int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 }
 
 /*
- * Open a directory on the object store and find out size information for a volume.
+ * Open a directory on the backing store and find out size information for a volume.
  */
 ssize_t droplet_device::chunked_remote_volume_size()
 {
@@ -897,7 +897,7 @@ bool droplet_device::d_truncate(DCR *dcr)
 droplet_device::~droplet_device()
 {
    if (m_ctx) {
-      if (m_object_bucketname && m_ctx->cur_bucket) {
+      if (m_bucketname && m_ctx->cur_bucket) {
          free(m_ctx->cur_bucket);
          m_ctx->cur_bucket = NULL;
       }
@@ -905,8 +905,8 @@ droplet_device::~droplet_device()
       m_ctx = NULL;
    }
 
-   if (m_object_configstring) {
-      free(m_object_configstring);
+   if (m_configstring) {
+      free(m_configstring);
    }
 
    P(mutex);
@@ -919,8 +919,8 @@ droplet_device::~droplet_device()
 
 droplet_device::droplet_device()
 {
-   m_object_configstring = NULL;
-   m_object_bucketname = NULL;
+   m_configstring = NULL;
+   m_bucketname = NULL;
    m_location = NULL;
    m_canned_acl = NULL;
    m_storage_class = NULL;
