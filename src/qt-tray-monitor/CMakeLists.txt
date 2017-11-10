@@ -20,6 +20,13 @@
 cmake_minimum_required(VERSION 3.0)
 # (for AUTOUIC)
 
+
+
+IF(${HAVE_WIN32})
+  FILE(GLOB QTROOTS /usr/x86_64-w64-mingw32/bin/)
+  FIND_PROGRAM(QT_QMAKE_EXECUTABLE NAMES qmake PATHS ${QTROOTS})
+ENDIF()
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
@@ -28,7 +35,16 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt4 REQUIRED)
 
-include_directories(. .. ../include ../lib)
+IF(${HAVE_WIN32})
+   include_directories(
+      ${CMAKE_SOURCE_DIR}/src/win32/include
+      ${CMAKE_SOURCE_DIR}/src/win32/lib
+      ../include ..
+      )
+ELSE()
+   include_directories(. .. ../include ../lib)
+ENDIF()
+
 
 set(SOURCES
    tray-monitor.cpp authenticate.cpp tray_conf.cpp tray-monitor.cpp

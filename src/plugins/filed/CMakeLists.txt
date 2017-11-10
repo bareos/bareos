@@ -19,12 +19,19 @@
 
 IF(${HAVE_WIN32})
    include_directories(
-      ${CMAKE_SOURCE_DIR}/src/win32/generic
+      ${CMAKE_SOURCE_DIR}/src/win32
+      ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/filed
+      ${CMAKE_SOURCE_DIR}/src/win32/plugins/filed
+      ${CMAKE_SOURCE_DIR}/src/win32/compat/include
+      ${CMAKE_SOURCE_DIR}/src/win32/vdi/include
       ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
-      ../../include
-      ../../filed
-      ../..)
+      ${CMAKE_SOURCE_DIR}/src/include
+      ${CMAKE_SOURCE_DIR}/src
+      ${CMAKE_SOURCE_DIR}/src/filed
+      ${CMAKE_SOURCE_DIR}/src/plugins/filed
+      )
+
    link_directories(${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64)
    add_definitions(-DMS_WIN64)
 ELSE()
@@ -40,6 +47,18 @@ set_target_properties(bpipe-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir})
 IF(${HAVE_WIN32})
    target_link_libraries(bpipe-fd bareos)
+ENDIF()
+
+
+IF(${HAVE_WIN32})
+add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
+target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
+set_target_properties(mssqlvdi-fd PROPERTIES PREFIX ""
+                                  DEFINE_SYMBOL "BUILDING_DLL"
+   )
+
+INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir})
+target_link_libraries(mssqlvdi-fd bareos)
 ENDIF()
 
 
