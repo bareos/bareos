@@ -18,12 +18,28 @@
 #   02110-1301, USA.
 
 
-include_directories(../.. . ../../include ../../dird)
+IF(${HAVE_WIN32})
+   include_directories(
+      ${CMAKE_SOURCE_DIR}/src/win32/generic
+      ${CMAKE_SOURCE_DIR}/src/win32/dird
+      ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
+      ../../include
+      ../../dird
+      ../..)
+   link_directories(${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64)
+   add_definitions(-DMS_WIN64)
+ELSE()
+   include_directories(../.. . ../../include ../../dird)
+ENDIF()
 
 add_library(python-dir MODULE python-dir.cc)
 # do not prefix with "lib"
 set_target_properties(python-dir PROPERTIES PREFIX "")
 INSTALL(TARGETS python-dir DESTINATION ${plugindir})
+
+IF(${HAVE_WIN32})
+   target_link_libraries(python-dir python27 bareos)
+ENDIF()
 
 
 set (PYFILES bareos-dir.py.template

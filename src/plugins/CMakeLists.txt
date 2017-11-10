@@ -18,10 +18,8 @@
 #   02110-1301, USA.
 
 
-IF(NOT ${HAVE_WIN32})
 IF(NOT client-only)
    add_subdirectory(dird)
    add_subdirectory(stored)
 ENDIF()
 add_subdirectory(filed)
-ENDIF()

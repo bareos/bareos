@@ -17,44 +17,58 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
+IF(${HAVE_WIN32})
+   include_directories(
+      ${CMAKE_SOURCE_DIR}/src/win32/generic
+      ${CMAKE_SOURCE_DIR}/src/win32/filed
+      ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
+      ../../include
+      ../../filed
+      ../..)
+   link_directories(${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64)
+   add_definitions(-DMS_WIN64)
+ELSE()
+   include_directories(../.. . ../../include ../../filed /usr/include/python2.7)
+ENDIF()
 
-include_directories(../.. . ../../include ../../filed /usr/include/python2.7)
 
 
 #set(DLLIBS dl)
 
 add_library(bpipe-fd MODULE bpipe-fd.cc)
-# do not prefix with "lib"
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir})
+IF(${HAVE_WIN32})
+   target_link_libraries(bpipe-fd bareos)
+ENDIF()
 
 
 if(${HAVE_CEPHFS})
 add_library(cephfs-fd MODULE cephfs-fd.cc)
-# do not prefix with "lib"
 set_target_properties(cephfs-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir})
 endif()
 
 if(${HAVE_CEPH_RADOS})
 add_library(rados-fd MODULE rados-fd.cc)
-# do not prefix with "lib"
 set_target_properties(rados-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS rados-fd DESTINATION ${plugindir})
 endif()
 
-add_library(example-plugin-fd MODULE example-plugin-fd.cc)
-# do not prefix with "lib"
-set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
+IF(NOT ${HAVE_WIN32})
+   add_library(example-plugin-fd MODULE example-plugin-fd.cc)
+   set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
+ENDIF()
 
 add_library(python-fd MODULE python-fd.cc)
-# do not prefix with "lib"
 set_target_properties(python-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS python-fd DESTINATION ${plugindir})
+IF(${HAVE_WIN32})
+   target_link_libraries(python-fd python27 bareos)
+ENDIF()
 
 if(${HAVE_GLUSTERFS})
 add_library(gfapi-fd MODULE gfapi-fd.cc)
-# do not prefix with "lib"
 set_target_properties(gfapi-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir})
 endif()
