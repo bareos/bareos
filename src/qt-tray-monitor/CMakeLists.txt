@@ -20,11 +20,12 @@
 cmake_minimum_required(VERSION 3.0)
 # (for AUTOUIC)
 
-
-
 IF(${HAVE_WIN32})
-  FILE(GLOB QTROOTS /usr/x86_64-w64-mingw32/bin/)
-  FIND_PROGRAM(QT_QMAKE_EXECUTABLE NAMES qmake PATHS ${QTROOTS})
+  set(QT_QMAKE_EXECUTABLE /usr/x86_64-w64-mingw32/bin/qmake)
+  set(QT_MOC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/moc)
+  set(QT_RCC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/rcc)
+  set(QT_UIC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/uic)
+  add_definitions(-DNO_OLDNAMES)
 ENDIF()
 
 set(CMAKE_AUTOMOC ON)
