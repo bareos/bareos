@@ -18,21 +18,23 @@
 #   02110-1301, USA.
 
 IF(NOT client-only)
+   IF(NOT ${HAVE_WIN32})
 
-   MESSAGE( STATUS "UNITDIR: " ${UNITDIR} )
-   MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
-
-   set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
-
-   if (${DISTNAME} STREQUAL ubuntu)
-      add_subdirectory(debian)
-   elseif (${DISTNAME} STREQUAL hpux)
+      MESSAGE( STATUS "UNITDIR: " ${UNITDIR} )
       MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
-   else()
-      add_subdirectory(${DISTNAME})
-   endif()
 
-   if (${systemd})
-      add_subdirectory(systemd)
-   endif()
+      set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
+      if (${DISTNAME} STREQUAL ubuntu)
+         add_subdirectory(debian)
+      elseif (${DISTNAME} STREQUAL hpux)
+         MESSAGE( STATUS "DISTNAME: " ${DISTNAME} )
+      else()
+         add_subdirectory(${DISTNAME})
+      endif()
+
+      if (${systemd})
+         add_subdirectory(systemd)
+      endif()
+
+   ENDIF()
 ENDIF()
