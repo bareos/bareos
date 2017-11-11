@@ -21,11 +21,7 @@ cmake_minimum_required(VERSION 3.0)
 # (for AUTOUIC)
 
 IF(${HAVE_WIN32})
-  set(QT_QMAKE_EXECUTABLE /usr/x86_64-w64-mingw32/bin/qmake)
-  set(QT_MOC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/moc)
-  set(QT_RCC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/rcc)
-  set(QT_UIC_EXECUTABLE /usr/x86_64-w64-mingw32/bin/uic)
-  add_definitions(-DNO_OLDNAMES)
+  add_definitions(-D_STAT_DEFINED=1)
 ENDIF()
 
 set(CMAKE_AUTOMOC ON)
@@ -52,9 +48,16 @@ set(SOURCES
    traymenu.cpp systemtrayicon.cpp mainwindow.cpp monitoritem.cpp
    monitoritemthread.cpp
    )
+set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos bareoscfg)
+
+IF(${HAVE_WIN32})
+   LIST(APPEND TRAYMON_LIBRARIES
+      bareosstatic
+      )
+ENDIF()
 
 add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
-target_link_libraries(bareos-tray-monitor Qt4::QtGui bareos bareoscfg)
+target_link_libraries(${TRAYMON_LIBRARIES})
 
 INSTALL(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
