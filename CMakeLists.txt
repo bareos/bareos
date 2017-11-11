@@ -77,8 +77,6 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-   add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600 -m64 -mwin32 -mthreads)
-
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/compat/include
@@ -116,6 +114,9 @@ INCLUDE(BareosSetVariableDefaults)
 INCLUDE(BareosGetDistInfo)
 
 
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+   add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION} -m${WINDOWS_BITS} -mwin32 -mthreads)
+ENDIF()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically
 # Taken from  https://cmake.org/pipermail/cmake/2013-July/055374.html
@@ -624,3 +625,8 @@ message("   PGREP:                        ${PGREP}")
 message("   AWK:                          ${AWK}")
 message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
+
+IF(HAVE_WIN32)
+   message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")
+   message("   WINDOWS_BITS:                 ${WINDOWS_BITS}")
+ENDIF()
