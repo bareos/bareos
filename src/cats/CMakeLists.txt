@@ -91,7 +91,7 @@ ENDIF()
 
 IF (HAVE_POSTGRESQL)
 add_library(bareoscats-postgresql MODULE ${POSTGRESQL_SRCS})
-target_link_libraries(bareoscats-postgresql bareossql bareos ${PostgreSQL_LIBRARIES} )
+target_link_libraries(bareoscats-postgresql bareossql bareos ${PostgreSQL_LIBRARY} )
 INSTALL(TARGETS bareoscats-postgresql DESTINATION ${backenddir})
 
 INSTALL(DIRECTORY ddl

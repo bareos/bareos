@@ -50,6 +50,7 @@ execute_process(
 )
 
 INCLUDE(BareosExtractVersionInfo)
+
 INCLUDE(BareosFindAllLibraries)
 
 
@@ -76,13 +77,32 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
 endif()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-#  add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600)
    add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600 -m64 -mwin32 -mthreads)
-#  add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=0x600 -D_BDB_PRIV_INTERFACE_  -Wall -m64 -mwin32 -mthreads)
-   include_directories(${CMAKE_SOURCE_DIR}/src/win32/include ${CMAKE_SOURCE_DIR}/src/win32/compat/include)
+
+   include_directories(
+      ${CMAKE_SOURCE_DIR}/src/win32/include
+      ${CMAKE_SOURCE_DIR}/src/win32/compat/include
+      #${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include
+      #${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include
+      )
    set(HAVE_WIN32 1)
-   link_directories(/usr/x86_64-w64-mingw32/sys-root/mingw/lib)
+
+   link_directories(
+      #/usr/x86_64-w64-mingw32/sys-root/mingw/lib
+      #${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/64
+      #${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64
+      )
+
    set(WINDOWS_LIBRARIES ws2_32)
+
+   SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64/python27.dll )
+   SET(PYTHON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
+
+   SET(PostgreSQL_LIBRARY ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/64/libpq.dll)
+   SET(PostgreSQL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include)
+   SET(PostgreSQL_TYPE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
+
+
 else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
