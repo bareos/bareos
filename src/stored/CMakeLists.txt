@@ -63,7 +63,6 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
          backends/rados_device.cc)
    endif()
-
 ENDIF()
 
 
@@ -76,7 +75,6 @@ set (LIBBAREOSSD_SRCS acquire.cc ansi_label.cc askdir.cc autochanger.cc
 		   stored_conf.cc vol_mgr.cc wait.cc
          ${AVAILABLE_DEVICE_API_SRCS}
     )
-
 
 set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
@@ -108,7 +106,12 @@ endif()
 if(GFAPI_LIBRARIES)
    LIST(APPEND BACKEND_OBJECTS libbareossd-gfapi)
 endif()
+
 MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
+
+if(${HAVE_DYNAMIC_SD_BACKENDS})
+   LIST(APPEND LIBBAREOSSD_SRCS backends/unix_file_device.cc)
+ENDIF()
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
@@ -119,6 +122,7 @@ IF(${HAVE_WIN32})
       bareosstatic
       )
 ENDIF()
+
 
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
