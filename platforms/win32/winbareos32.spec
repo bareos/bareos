@@ -102,14 +102,8 @@ for i in `ls %addonsdir`; do
    tar xvf %addonsdir/$i
 done
 
-CONTENT=`ls`
-
 for flavor in %flavors; do
    mkdir $flavor
-   for content in $CONTENT; do
-      echo copying $content to $flavor
-      cp -a $content $flavor
-   done
 done
 
 
@@ -125,7 +119,7 @@ for flavor in %flavors; do
       -Dsqlite3=yes \
       -Dpostgresql=yes \
       -DWINDOWS_BITS=${WINDOWS_BITS} \
-      -DWINDOWS_VERSION=${WINDOWS_VERSION}
+      -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
 
    make %{?jobs:-j%jobs}
 
