@@ -23,8 +23,9 @@ add_library(bareoslmdb SHARED mdb.c midl.c)
 # empty the include_directories
 set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
 
-add_definitions(-Wall -m64 -mwin32 -mthreads)
-
+IF(${HAVE_WIN32})
+   add_definitions(-Wall -m64 -mwin32 -mthreads)
+ENDIF()
 
 set_target_properties(bareoslmdb PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
