@@ -122,6 +122,7 @@ for flavor in %flavors; do
    %{_mingw64_cmake_qt4} \
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
       -Dsqlite3=yes \
+      -Dpostgresql=yes \
       -DWINDOWS_BITS=${WINDOWS_BITS} \
       -DWINDOWS_VERSION=${WINDOWS_VERSION}
 
