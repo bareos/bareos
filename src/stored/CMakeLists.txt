@@ -112,8 +112,16 @@ MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 
 add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
+SET(LIBBAREOSSD_LIBRARIES bareos ${BACKEND_OBJECTS})
+
+IF(${HAVE_WIN32})
+   LIST(APPEND LIBBAREOSSD_LIBRARIES
+      bareosstatic
+      )
+ENDIF()
+
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
-   target_link_libraries(bareossd bareos bareosstatic ${BACKEND_OBJECTS})
+   target_link_libraries(bareossd ${LIBBAREOSSD_LIBRARIES})
 endif()
 
 add_executable(bareos-sd ${SDSRCS})
