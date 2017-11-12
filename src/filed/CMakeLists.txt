@@ -45,21 +45,21 @@ ENDIF()
 add_executable(bareos-fd ${FDSRCS})
 
 SET(BAREOS_FD_LIBRARIES
-         bareosfind bareoscfg bareos bareosstatic
+         bareosfind bareoscfg bareos
          pthread
          ${LMDB_LIBS}
          )
 IF(${HAVE_WIN32})
    LIST(APPEND BAREOS_FD_LIBRARIES
-      comctl32
+      comctl32 bareosstatic
       )
+   target_compile_definitions(bareos-fd PRIVATE -DWIN32_VSS -DHAVE_VSS64)
 ENDIF()
 
 target_link_libraries(bareos-fd
    ${BAREOS_FD_LIBRARIES}
          )
 
-target_compile_definitions(bareos-fd PRIVATE -DWIN32_VSS -DHAVE_VSS64)
 
 INSTALL(TARGETS bareos-fd DESTINATION "${sbindir}")
 

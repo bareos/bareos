@@ -78,13 +78,18 @@ target_link_libraries(bareos
 set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc )
 
 
-add_library(bareoscfg SHARED ${BAREOSCFG_SRCS})
-target_link_libraries(bareoscfg bareos ${JANSSON_LIBRARIES})
 
 set (BAREOS_STATIC_SRCS parse_conf.cc res.cc)
-add_library(bareosstatic STATIC ${BAREOS_STATIC_SRCS})
-target_link_libraries(bareosstatic bareoscfg)
 
+IF(${HAVE_WIN32})
+   add_library(bareosstatic STATIC ${BAREOS_STATIC_SRCS})
+   target_link_libraries(bareosstatic bareoscfg)
+ELSE()
+   LIST(APPEND BAREOSCFG_SRCS ${BAREOS_STATIC_SRCS})
+ENDIF()
+
+add_library(bareoscfg SHARED ${BAREOSCFG_SRCS})
+target_link_libraries(bareoscfg bareos ${JANSSON_LIBRARIES})
 
 INSTALL(TARGETS bareos DESTINATION ${libdir})
 INSTALL(TARGETS bareoscfg DESTINATION ${libdir})
@@ -100,7 +105,6 @@ set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           )
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
-
 
 
 #add_subdirectory(unittests)

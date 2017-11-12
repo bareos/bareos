@@ -60,13 +60,13 @@ set(BAREOS_DIR_LIBRARIES
    bareoscfg
    bareossql
    bareosfind
-   bareosstatic
    ${LMDB_LIBS}
    ${NDMP_LIBS}
    )
 
 IF(${HAVE_WIN32})
    LIST(APPEND BAREOS_DIR_LIBRARIES
+      bareosstatic
       comctl32
       )
 ENDIF()
@@ -75,9 +75,14 @@ target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 
 
 add_executable(bareos-dbcheck ${DBCHKSRCS})
+SET(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscfg bareoscats)
+
+IF(${HAVE_WIN32})
+   LIST(APPEND DBCHECK_LIBRARIES bareosstatic)
+ENDIF()
+
 target_link_libraries(bareos-dbcheck
-   bareossql bareos bareosfind bareoscfg bareosstatic
-   bareoscats
+   ${DBCHECK_LIBRARIES}
    )
 
 # is not built by default

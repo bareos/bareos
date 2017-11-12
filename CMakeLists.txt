@@ -455,11 +455,11 @@ endif()
 
 
 
-if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-if (${ndmp})
-   set(HAVE_NDMP 1)
-   set(NDMP_LIBS bareosndmp)
-endif()
+if (NOT ${HAVE_WIN32})
+   if (${ndmp})
+      set(HAVE_NDMP 1)
+      set(NDMP_LIBS bareosndmp)
+   endif()
 ENDIF()
 
 if (${lmdb})
