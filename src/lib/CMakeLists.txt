@@ -93,13 +93,11 @@ set_target_properties(bareoscfg PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )
-                                       #LINK_FLAGS -Wl,--output-def,bareoscfg.def
 
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )
-                                       #LINK_FLAGS -Wl,--output-def,bareos.def
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
