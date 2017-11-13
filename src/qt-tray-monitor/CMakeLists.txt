@@ -20,7 +20,7 @@
 cmake_minimum_required(VERSION 3.0)
 # (for AUTOUIC)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
   add_definitions(-D_STAT_DEFINED=1)
 ENDIF()
 
@@ -32,7 +32,7 @@ set(CMAKE_AUTORCC ON)
 
 find_package(Qt4 REQUIRED)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
       ${CMAKE_SOURCE_DIR}/src/win32/lib
@@ -50,7 +50,7 @@ set(SOURCES
    )
 set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos bareoscfg)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND TRAYMON_LIBRARIES
       bareosstatic
       )

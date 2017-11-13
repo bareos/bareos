@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/filed
@@ -31,7 +31,7 @@ set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmd
     accurate_htable.cc backup.cc dir_cmd.cc filed.cc heartbeat.cc socket_server.cc verify_vol.cc
     accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND FDSRCS
       ../win32/filed/vss.cc
       ../win32/filed/vss_XP.cc
@@ -49,7 +49,7 @@ SET(BAREOS_FD_LIBRARIES
          pthread
          ${LMDB_LIBS}
          )
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND BAREOS_FD_LIBRARIES
       comctl32 bareosstatic
       )

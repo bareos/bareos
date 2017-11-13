@@ -27,7 +27,7 @@ target_link_libraries(bregtest bareos ${JANSSON_LIBRARIES})
 add_executable(testls testls.cc)
 target_link_libraries(testls bareosfind bareos ${JANSSON_LIBRARIES})
 
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    add_executable(bbatch bbatch.cc)
    target_link_libraries(bbatch bareoscats bareos  ${JANSSON_LIBRARIES})
 ENDIF()
@@ -47,7 +47,7 @@ target_link_libraries(grow bareos ${JANSSON_LIBRARIES})
 set (TESTS_SBIN
    bregtest grow testls
    )
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    LIST(APPEND TESTS_SBIN bbatch)
 ENDIF()
 

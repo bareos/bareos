@@ -35,7 +35,7 @@ set(SVRSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc ca
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
    vbackup.cc verify.cc)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird ../include ..)
    LIST(APPEND SVRSRCS
       ../win32/generic/main.cc
@@ -64,7 +64,7 @@ set(BAREOS_DIR_LIBRARIES
    ${NDMP_LIBS}
    )
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND BAREOS_DIR_LIBRARIES
       bareosstatic
       comctl32
@@ -77,7 +77,7 @@ target_link_libraries(bareos-dir ${BAREOS_DIR_LIBRARIES})
 add_executable(bareos-dbcheck ${DBCHKSRCS})
 SET(DBCHECK_LIBRARIES bareossql bareos bareosfind bareoscfg bareoscats)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND DBCHECK_LIBRARIES bareosstatic)
 ENDIF()
 
