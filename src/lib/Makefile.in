@@ -37,8 +37,11 @@ dummy:
 # include files installed when using libtool
 #
 INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
-		../include/bc_types.h ../include/config.h \
-		../include/jcr.h ../include/version.h \
+		../include/bc_types.h \
+		../include/ch.h ../include/config.h \
+		../include/fileopts.h ../include/filetypes.h \
+		../include/host.h ../include/jcr.h  \
+		../include/streams.h ../include/version.h \
 		address_conf.h alist.h attr.h base64.h berrno.h \
 		bits.h bpipe.h breg.h bregex.h bsock.h bsock_sctp.h \
 		bsock_tcp.h bsock_udt.h bsr.h btime.h btimers.h cbuf.h \
@@ -48,7 +51,7 @@ INCLUDE_FILES = ../include/baconfig.h ../include/bareos.h \
 		parse_conf.h plugins.h protos.h queue.h rblist.h \
 		runscript.h rwlock.h scsi_crypto.h scsi_lli.h \
 		scsi_tapealert.h sellist.h serial.h sha1.h smartall.h \
-		status.h tls.h tree.h var.h waitq.h watchdog.h workq.h
+		status.h tls.h tree.h var.h watchdog.h workq.h
 
 #
 # libbareos
