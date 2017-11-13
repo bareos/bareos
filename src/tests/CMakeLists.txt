@@ -29,7 +29,7 @@ target_link_libraries(testls bareosfind bareos ${JANSSON_LIBRARIES})
 
 IF(NOT HAVE_WIN32)
    add_executable(bbatch bbatch.cc)
-   target_link_libraries(bbatch bareoscats bareos  ${JANSSON_LIBRARIES})
+   target_link_libraries(bbatch bareoscats bareos bareossql ${JANSSON_LIBRARIES})
 ENDIF()
 
 #add_executable(bvfs_test bvfs_test.cc)
