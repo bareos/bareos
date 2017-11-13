@@ -95,6 +95,7 @@ private:
    bool m_io_threads_started;
    bool m_end_of_media;
    bool m_readonly;
+   uint8_t m_inflight_chunks;
    char *m_current_volname;
    ordered_circbuf *m_cb;
    alist *m_thread_ids;
@@ -129,6 +130,7 @@ protected:
    bool set_inflight_chunk(chunk_io_request *request);
    void clear_inflight_chunk(chunk_io_request *request);
    bool is_inflight_chunk(chunk_io_request *request);
+   int nr_inflight_chunks();
    int setup_chunk(const char *pathname, int flags, int mode);
    ssize_t read_chunked(int fd, void *buffer, size_t count);
    ssize_t write_chunked(int fd, const void *buffer, size_t count);

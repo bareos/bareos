@@ -36,6 +36,8 @@
 #endif
 #endif
 
+static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * This implements a device abstraction that provides so called chunked
  * volumes. These chunks are kept in memory and flushed to the backing
@@ -55,6 +57,7 @@
  * set_inflight_chunk() - Set the inflight flag for a chunk.
  * clear_inflight_chunk() - Clear the inflight flag for a chunk.
  * is_inflight_chunk() - Is a chunk current inflight to the backing store.
+ * nr_inflight_chunks() - Number of chunks inflight to the backing store.
  * setup_chunk() - Setup a chunked volume for reading or writing.
  * read_chunked() - Read a chunked volume.
  * write_chunked() - Write a chunked volume.
@@ -264,6 +267,9 @@ bool chunked_device::set_inflight_chunk(chunk_io_request *request)
 
    fd = ::open(inflight_file.c_str(), O_CREAT | O_EXCL | O_WRONLY, 0640);
    if (fd >= 0) {
+      P(mutex);
+      m_inflight_chunks++;
+      V(mutex);
       ::close(fd);
    } else {
       return false;
@@ -277,15 +283,26 @@ bool chunked_device::set_inflight_chunk(chunk_io_request *request)
  */
 void chunked_device::clear_inflight_chunk(chunk_io_request *request)
 {
+   struct stat st;
    POOL_MEM inflight_file(PM_FNAME);
 
-   Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname, request->chunk);
-   pm_strcat(inflight_file, "%inflight");
+   if (request) {
+      Mmsg(inflight_file, "%s/%s@%04d", me->working_directory, request->volname, request->chunk);
+      pm_strcat(inflight_file, "%inflight");
 
-   Dmsg3(100, "Removing inflight file %s for volume %s, chunk %d\n",
-         inflight_file.c_str(), request->volname, request->chunk);
+      Dmsg3(100, "Removing inflight file %s for volume %s, chunk %d\n",
+            inflight_file.c_str(), request->volname, request->chunk);
 
-   ::unlink(inflight_file.c_str());
+      if (stat(inflight_file.c_str(), &st) != 0) {
+         return;
+      }
+
+      ::unlink(inflight_file.c_str());
+   }
+
+   P(mutex);
+   m_inflight_chunks++;
+   V(mutex);
 }
 
 /*
@@ -304,6 +321,20 @@ bool chunked_device::is_inflight_chunk(chunk_io_request *request)
    }
 
    return false;
+}
+
+/*
+ * Number of inflight chunks to the backing store.
+ */
+int chunked_device::nr_inflight_chunks()
+{
+   int retval = 0;
+
+   P(mutex);
+   retval = m_inflight_chunks;
+   V(mutex);
+
+   return retval;
 }
 
 /*
@@ -1035,38 +1066,82 @@ static int compare_volume_name(void *item1, void *item2)
 ssize_t chunked_device::chunked_volume_size()
 {
    /*
-    * See if we are using io-threads or not and the ordered circbuf is created and not empty.
+    * See if we are using io-threads or not and the ordered circbuf is created.
+    * We try to make sure that nothing of the volume being requested is still inflight as then
+    * the chunked_remote_volume_size() method will fail to determine the size of the data as
+    * its not fully stored on the backing store yet.
     */
-   if (m_io_threads > 0 && m_cb && !m_cb->empty()) {
-      char *volname;
-      chunk_io_request *request;
+   if (m_io_threads > 0 && m_cb) {
+      while (1) {
+         if (!m_cb->empty()) {
+            chunk_io_request *request;
 
-      volname = getVolCatName();
+            /*
+             * Peek on the ordered circular queue if there are any pending IO-requests
+             * for this volume. If there are use that as the indication of the size of
+             * the volume and don't contact the remote storage as there is still data
+             * inflight and as such we need to look at the last chunk that is still not
+             * uploaded of the volume.
+             */
+            request = (chunk_io_request *)m_cb->peek(PEEK_LAST, m_current_volname, compare_volume_name);
+            if (request) {
+               ssize_t retval;
 
-      /*
-       * Peek on the ordered circular queue if there are any pending IO-requests
-       * for this volume. If there are use that as the indication of the size of
-       * the volume and don't contact the remote storage as there is still data
-       * inflight and as such we need to look at the last chunk that is still not
-       * uploaded of the volume.
-       */
-      request = (chunk_io_request *)m_cb->peek(PEEK_LAST, volname, compare_volume_name);
-      if (request) {
-         ssize_t retval;
+               /*
+                * Calculate the size of the volume based on the last chunk inflight.
+                */
+               retval = (request->chunk * m_current_chunk->chunk_size) + request->wbuflen;
+
+               /*
+                * The peek method gives us a cloned chunk_io_request with pointers to
+                * the original chunk_io_request. We just need to free the structure not
+                * the content so we call free() here and not free_chunk_io_request() !
+                */
+               free(request);
+
+               return retval;
+            }
+         }
 
          /*
-          * Calculate the size of the volume based on the last chunk inflight .
+          * Chunk doesn't seem to be on the ordered circular buffer.
+          * Make sure there is also nothing inflight to the backing store anymore.
           */
-         retval = (request->chunk * m_current_chunk->chunk_size) + request->wbuflen;
+         if (nr_inflight_chunks() > 0) {
+            uint8_t retries = INFLIGHT_RETRIES;
 
-         /*
-          * The peek method gives us a cloned chunk_io_request with pointers to
-          * the original chunk_io_request. We just need to free the structure not
-          * the content so we call free() here and not free_chunk_io_request() !
-          */
-         free(request);
+            /*
+             * There seem to be inflight chunks to the backing store so busy wait until there
+             * is nothing inflight anymore. The chunks either get uploaded and as such we
+             * can just get the volume size from the backing store or it gets put back onto
+             * the ordered circular list and then we can pick it up by retrying the PEEK_LAST
+             * on the ordered circular list.
+             */
+            do {
+               bmicrosleep(INFLIGT_RETRY_TIME, 0);
+            } while (nr_inflight_chunks() > 0 && --retries > 0);
 
-         return retval;
+            /*
+             * If we ran out of retries we most likely encountered a stale inflight file.
+             */
+            if (!retries) {
+               clear_inflight_chunk(NULL);
+               break;
+            }
+
+            /*
+             * Do a new try on the ordered circular list to get the last pending IO-request
+             * for the volume we are trying to get the size of.
+             */
+            continue;
+         } else {
+            /*
+             * Its not on the ordered circular list and not inflight so it must be on the
+             * backing store so we break the loop and try to get the volume size from the
+             * chunks available on the backing store.
+             */
+            break;
+         }
       }
    }
 
@@ -1295,6 +1370,7 @@ chunked_device::chunked_device()
    m_io_threads_started = false;
    m_end_of_media = false;
    m_readonly = false;
+   m_inflight_chunks = 0;
    m_cb = NULL;
    m_io_threads = 0;
    m_chunk_size = 0;
