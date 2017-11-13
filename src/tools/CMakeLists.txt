@@ -38,7 +38,7 @@ target_link_libraries(bwild bareos ${JANSSON_LIBRARIES})
 add_executable(bscrypto bscrypto.cc)
 target_link_libraries(bscrypto bareos ${JANSSON_LIBRARIES})
 
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    add_executable(bpluginfo bpluginfo.cc)
    target_link_libraries(bpluginfo bareos ${DL_LIBRARIES} ${JANSSON_LIBRARIES})
 
@@ -53,7 +53,7 @@ set (TOOLS_SBIN
    bscrypto bwild bregex
    )
 
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    LIST(APPEND TOOLS_BIN  timelimit)
    LIST(APPEND TOOLS_SBIN bpluginfo timelimit)
 ENDIF()
