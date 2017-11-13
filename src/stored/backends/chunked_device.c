@@ -468,6 +468,9 @@ bool chunked_device::dequeue_chunk()
            */
           new_request->tries++;
           if (m_retries > 0 && new_request->tries >= m_retries) {
+             Mmsg4(errmsg, _("Unable to flush chunk %d of volume %s to backing store after %d tries, setting device %s readonly\n"),
+                   new_request->chunk, new_request->volname, new_request->tries, print_name());
+             Emsg0(M_ERROR, 0, errmsg);
              m_readonly = true;
              goto bail_out;
           }
