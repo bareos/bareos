@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/stored
@@ -38,7 +38,7 @@ set_target_properties(autoxflate-sd PROPERTIES PREFIX "")
 target_link_libraries(autoxflate-sd bareos)
 INSTALL(TARGETS autoxflate-sd DESTINATION ${plugindir})
 
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    add_library(scsicrypto-sd MODULE scsicrypto-sd.cc)
    set_target_properties(scsicrypto-sd PROPERTIES PREFIX "")
    #target_link_libraries(scsicrypto-sd bareos)
@@ -53,7 +53,7 @@ ENDIF()
 add_library(python-sd MODULE python-sd.cc)
 set_target_properties(python-sd PROPERTIES PREFIX "")
 INSTALL(TARGETS python-sd DESTINATION ${plugindir})
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    target_link_libraries(python-sd python27 bareos)
 ENDIF()
 
