@@ -23,7 +23,7 @@ SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
       enable_priv.cc find_one.cc find.cc fstype.cc hardlink.cc match.cc
       mkpath.cc shadowing.cc xattr.cc)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
 ELSE()
    LIST(APPEND BAREOSFIND_SRCS savecwd.cc)

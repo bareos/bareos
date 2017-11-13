@@ -56,7 +56,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    tls_gnutls.cc tls_none.cc tls_nss.cc tls_openssl.cc  tree.cc util.cc var.cc
    watchdog.cc workq.cc)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SRCS
       ../win32/compat/compat.cc
       ../win32/compat/glob.cc
@@ -81,7 +81,7 @@ set (BAREOSCFG_SRCS ini.cc lex.cc parse_bsr.cc )
 
 set (BAREOS_STATIC_SRCS parse_conf.cc res.cc)
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    add_library(bareosstatic STATIC ${BAREOS_STATIC_SRCS})
    target_link_libraries(bareosstatic bareoscfg)
 ELSE()

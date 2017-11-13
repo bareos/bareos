@@ -18,7 +18,7 @@
 #   02110-1301, USA.
 
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/generic
       ${CMAKE_SOURCE_DIR}/src/win32/dird
@@ -37,7 +37,7 @@ add_library(python-dir MODULE python-dir.cc)
 set_target_properties(python-dir PROPERTIES PREFIX "")
 INSTALL(TARGETS python-dir DESTINATION ${plugindir})
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    target_link_libraries(python-dir python27 bareos)
 ENDIF()
 

@@ -455,7 +455,7 @@ endif()
 
 
 
-if (NOT ${HAVE_WIN32})
+if (NOT HAVE_WIN32)
    if (${ndmp})
       set(HAVE_NDMP 1)
       set(NDMP_LIBS bareosndmp)

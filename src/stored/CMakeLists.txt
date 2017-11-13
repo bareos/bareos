@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/stored  ${CMAKE_SOURCE_DIR}/src/stored/backends ../include .. .)
 ELSE()
    include_directories(. .. ../lib ../include ../lmdb ../ndmp)
@@ -29,7 +29,7 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
          backends/generic_tape_device.cc
        )
 
-   IF(${HAVE_WIN32})
+   IF(HAVE_WIN32)
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
          ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_fifo_device.cc
          ${CMAKE_SOURCE_DIR}/src/win32/stored/backends/win32_file_device.cc
@@ -80,7 +80,7 @@ set(SDSRCS append.cc askdir.cc authenticate.cc dir_cmd.cc fd_cmds.cc
          job.cc mac.cc ndmp_tape.cc read.cc sd_cmds.cc sd_stats.cc
          socket_server.cc status.cc stored.cc
 )
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND SDSRCS
       ../win32/generic/main.cc
       ../win32/generic/service.cc
@@ -117,7 +117,7 @@ add_library(bareossd SHARED ${LIBBAREOSSD_SRCS})
 
 SET(LIBBAREOSSD_LIBRARIES bareos ${BACKEND_OBJECTS})
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND LIBBAREOSSD_LIBRARIES
       bareosstatic
       )
@@ -135,7 +135,7 @@ SET(BAREOS_SD_LIBRARIES
    ${NDMP_LIBS}
    )
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    LIST(APPEND BAREOS_SD_LIBRARIES
       comctl32
       )

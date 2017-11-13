@@ -17,7 +17,7 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32
       ${CMAKE_SOURCE_DIR}/src/win32/include
@@ -45,12 +45,12 @@ ENDIF()
 add_library(bpipe-fd MODULE bpipe-fd.cc)
 set_target_properties(bpipe-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS bpipe-fd DESTINATION ${plugindir})
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    target_link_libraries(bpipe-fd bareos)
 ENDIF()
 
 
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
 add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
 target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
 set_target_properties(mssqlvdi-fd PROPERTIES PREFIX ""
@@ -74,7 +74,7 @@ set_target_properties(rados-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS rados-fd DESTINATION ${plugindir})
 endif()
 
-IF(NOT ${HAVE_WIN32})
+IF(NOT HAVE_WIN32)
    add_library(example-plugin-fd MODULE example-plugin-fd.cc)
    set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
 ENDIF()
@@ -82,7 +82,7 @@ ENDIF()
 add_library(python-fd MODULE python-fd.cc)
 set_target_properties(python-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS python-fd DESTINATION ${plugindir})
-IF(${HAVE_WIN32})
+IF(HAVE_WIN32)
    target_link_libraries(python-fd python27 bareos)
 ENDIF()
 
