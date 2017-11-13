@@ -120,7 +120,7 @@ for flavor in %flavors; do
       -DWINDOWS_BITS=${WINDOWS_BITS} \
       -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
 
-   make %{?jobs:-j%jobs}
+   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/$flavor install
 
    popd
 
@@ -128,10 +128,11 @@ done
 
 
 %install
-for flavor in %flavors; do
-   pushd $flavor
-   make install
-done
+#for flavor in %flavors; do
+#   pushd $flavor
+#   make DESTDIR=%{buildroot} install
+#   popd
+#done
 
 %clean
 rm -rf $RPM_BUILD_ROOT
