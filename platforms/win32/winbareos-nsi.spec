@@ -149,36 +149,13 @@ for flavor in %{flavors}; do
 
    DESCRIPTION="Bareos - Backup Archiving Recovery Open Sourced"
 
-   for file in %{_mingw32_bindir}/$flavor/*.exe %{_mingw32_bindir}/$flavor/*.dll; do
-      basename=`basename $file`
-      dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
-      cp $file $dest
-      #osslsigncode  sign \
-      #              -pkcs12 %SIGNCERT \
-      #              -readpass %SIGNPWFILE \
-      #              -n "${DESCRIPTION}" \
-      #              -i http://www.bareos.com/ \
-      #              -t http://timestamp.comodoca.com/authenticode \
-      #              -in  $file \
-      #              -out $dest
-      #osslsigncode verify -in $dest
+   for BITS in 32 64; do
+      for file in   /$flavor-${BITS}/*.exe /$flavor-${BITS}/*.dll; do
+                                    basename=`basename $file`
+                                    dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
+                                    cp $file $dest
+      done
    done
-
-   for file in %{_mingw64_bindir}/$flavor/*.exe %{_mingw64_bindir}/$flavor/*.dll; do
-      basename=`basename $file`
-      dest=$RPM_BUILD_ROOT/$flavor/release64/$basename
-      cp $file $dest
-      #osslsigncode  sign \
-      #              -pkcs12 %SIGNCERT \
-      #              -readpass %SIGNPWFILE \
-      #              -n "${DESCRIPTION}" \
-      #              -i http://www.bareos.com/ \
-      #              -t http://timestamp.comodoca.com/authenticode \
-      #              -in  $file \
-      #              -out $dest
-      #osslsigncode verify -in $dest
-   done
-
    cp -av %{_mingw32_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release32/
    cp -av %{_mingw64_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release64/
 

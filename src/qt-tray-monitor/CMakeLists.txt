@@ -61,7 +61,11 @@ target_link_libraries(${TRAYMON_LIBRARIES})
 
 INSTALL(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
 
-install(CODE "set(SRC_DIR \"${CMAKE_SOURCE_DIR}\")")
+install(CODE "set(PLUGINS \"${PLUGINS}\")")
+install(CODE "set(BACKENDS \"${BACKENDS}\")")
+install(CODE "set(configtemplatedir \"${configtemplatedir}\")")
+install(CODE "set(SRC_DIR \"${PROJECT_SOURCE_DIR}\")")
+
 INSTALL(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-tray-monitor-configfiles.cmake)
 
 INSTALL(FILES bareos-tray-monitor.desktop DESTINATION ${datarootdir}/applications/)
