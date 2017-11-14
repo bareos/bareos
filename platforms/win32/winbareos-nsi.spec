@@ -186,9 +186,9 @@ for flavor in %{flavors}; do
 
    for BITS in 32 64; do
       if [  "${BITS}" eq "64" ]; then
-         MINGWDIR=i686-w64-mingw32
-         else
          MINGWDIR=x86_64-w64-mingw32
+         else
+         MINGWDIR=i686-w64-mingw32
       fi
 
       # run this in subshell in background
