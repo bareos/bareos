@@ -120,7 +120,7 @@ for flavor in %flavors; do
       -DWINDOWS_BITS=${WINDOWS_BITS} \
       -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
 
-   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/$flavor install
+   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-${WINDOWS_BITS} install
 
    popd
 
@@ -142,9 +142,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-/postvista
+/postvista-${WINDOWS_BITS}
 
 %files postvista-debug
-/postvista-debug
+/postvista-debug-${WINDOWS_BITS}
 
 %changelog
