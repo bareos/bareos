@@ -110,17 +110,17 @@ done
 
 for flavor in %flavors; do
 
-   WINDOWS_BITS=$(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
+   #WINDOWS_BITS=$(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
    WINDOWS_VERSION=$(echo $flavor | grep postvista >/dev/null && echo 0x600 || echo 0x500)
    pushd $flavor
    %{_mingw64_cmake_qt4} \
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
       -Dsqlite3=yes \
       -Dpostgresql=yes \
-      -DWINDOWS_BITS=${WINDOWS_BITS} \
+      -DWINDOWS_BITS=%WINDOWS_BITS \
       -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
 
-   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-${WINDOWS_BITS} install
+   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-%WINDOWS_BITS install
 
    popd
 
@@ -142,9 +142,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-/postvista-${WINDOWS_BITS}
+/postvista-%WINDOWS_BITS
 
 %files postvista-debug
-/postvista-debug-${WINDOWS_BITS}
+/postvista-debug-%WINDOWS_BITS
 
 %changelog

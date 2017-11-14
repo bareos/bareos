@@ -117,10 +117,10 @@ for flavor in %flavors; do
       -DCMAKE_INSTALL_BINDIR:PATH=%{_mingw64_bindir} \
       -Dsqlite3=yes \
       -Dpostgresql=yes \
-      -DWINDOWS_BITS=${WINDOWS_BITS} \
+      -DWINDOWS_BITS=%WINDOWS_BITS \
       -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
 
-   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-${WINDOWS_BITS} install
+   make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-%WINDOWS_BITS install
 
    popd
 
@@ -142,9 +142,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-/postvista-${WINDOWS_BITS}
+/postvista-%WINDOWS_BITS
 
 %files postvista-debug
-/postvista-debug-${WINDOWS_BITS}
+/postvista-debug-%WINDOWS_BITS
 
 %changelog
