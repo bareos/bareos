@@ -142,9 +142,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-%{buildroot}/postvista
+postvista
 
 %files postvista-debug
-%{buildroot}/postvista-debug
+postvista-debug
 
 %changelog
