@@ -85,18 +85,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
       )
    set(HAVE_WIN32 1)
 
-   link_directories(
-      #/usr/x86_64-w64-mingw32/sys-root/mingw/lib
-      #${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/64
-      #${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64
-      )
-
    set(WINDOWS_LIBRARIES ws2_32)
 
-   SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/64/python27.dll )
+   SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll )
    SET(PYTHON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
 
-   SET(PostgreSQL_LIBRARY ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/64/libpq.dll)
+   SET(PostgreSQL_LIBRARY ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll)
    SET(PostgreSQL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include)
    SET(PostgreSQL_TYPE_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
 
