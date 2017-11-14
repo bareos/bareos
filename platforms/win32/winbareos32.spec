@@ -1,4 +1,3 @@
-
 # Determine Windows BITS (32/64) from name (mingw32-.../ming64-...)
 %define WINDOWS_BITS %(echo %name | grep 64 >/dev/null 2>&1 && echo "64" || echo "32")
 
@@ -143,24 +142,9 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-/etc/postvista/%name/config/
-/etc/postvista/%name/ddl/
-/etc/postvista/%name/fillup.sed
-%dir %{bindir}/postvista
-%{bindir}/postvista/*.dll
-%{bindir}/postvista/*.exe
-%{bindir}/postvista/bareos-config-deploy.bat
-%{bindir}/postvista/Plugins/
+%{buildroot}/postvista
 
 %files postvista-debug
-%defattr(-,root,root)
-/etc/postvista-debug/%name/config/
-/etc/postvista-debug/%name/ddl/
-/etc/postvista-debug/%name/fillup.sed
-%dir %{bindir}/postvista-debug
-%{bindir}/postvista-debug/*.dll
-%{bindir}/postvista-debug/*.exe
-%{bindir}/postvista-debug/bareos-config-deploy.bat
-%{bindir}/postvista-debug/Plugins/
+%{buildroot}/postvista-debug
 
 %changelog
