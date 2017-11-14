@@ -52,11 +52,12 @@ plugtest: Makefile dir_plugins.c \
 install: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(CP) *.py *.py.template $(DESTDIR)$(plugindir)
-	@for plugin in $(BUILD_PLUGINS); do \
+	if test "x$(BUILD_PLUGINS)" != "x" ; then \
+	for plugin in $(BUILD_PLUGINS); do \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
 	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
-	done
-
+	done; \
+	fi
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) example-plugin-dir.la $(DESTDIR)$(plugindir)

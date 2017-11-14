@@ -96,6 +96,7 @@ install: all
 	$(MKDIR) ${DESTDIR}${confdir}/bareos-dir.d/
 	$(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) bpipe-fd.la $(DESTDIR)$(plugindir)
 	$(RMF) $(DESTDIR)$(plugindir)/bpipe-fd.la
+	if test "x$(BUILD_PLUGINS)" != "x" ; then  \
 	for plugin in $(BUILD_PLUGINS); do \
 	   $(LIBTOOL_INSTALL) $(INSTALL_PROGRAM) $$plugin $(DESTDIR)$(plugindir); \
 	   $(RMF) $(DESTDIR)$(plugindir)/$$plugin; \
@@ -113,7 +114,8 @@ install: all
 				$(INSTALL_CONFIG) python-ldap-conf.d/$$i ${DESTDIR}${confdir}/$$i; \
 			done; \
 		fi; \
-	done
+	done;\
+	fi
 
 install-test-plugin: all
 	$(MKDIR) $(DESTDIR)$(plugindir)
