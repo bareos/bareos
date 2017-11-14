@@ -592,7 +592,7 @@ SectionIn 1 2 3 4
   File "sed.exe"
 
   # install unittests
-  File "test_*.exe"
+#  File "test_*.exe"
   File "/oname=cmocka.dll" "libcmocka.dll"
 
   # install configuration as templates
@@ -2135,7 +2135,7 @@ ConfDeleteSkip:
   Delete "$INSTDIR\*template"
 
 # delete unittest bin
-  Delete  "$INSTDIR\test_*.exe"
+#  Delete  "$INSTDIR\test_*.exe"
   Delete  "$INSTDIR\cmocka.dll"
 
 # copied stuff from postgresql install
