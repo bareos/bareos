@@ -144,24 +144,18 @@ for flavor in %{flavors}; do
 
    for BITS in 32 64; do
       mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
-      pushd    $RPM_BUILD_ROOT/$flavor/release${BITS}
+      #pushd    $RPM_BUILD_ROOT/$flavor/release${BITS}
    done
 
    DESCRIPTION="Bareos - Backup Archiving Recovery Open Sourced"
 
    for BITS in 32 64; do
-      for file in   /$flavor-${BITS}/*.exe /$flavor-${BITS}/*.dll; do
-                                    basename=`basename $file`
-                                    dest=$RPM_BUILD_ROOT/$flavor/release32/$basename
-                                    cp $file $dest
-      done
+   for file in `find /$flavor-${BITS} -name '*.exe'` `find /$flavor-${BITS} -name '*.dll'` ; do
+      basename=`basename $file`
+      dest=$RPM_BUILD_ROOT/$flavor/release${BITS}/$basename
+      cp $file $dest
    done
-   cp -av %{_mingw32_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release32/
-   cp -av %{_mingw64_bindir}/$flavor/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release64/
-
-# copy python plugins into Plugin directory
-   cp -av %{_mingw32_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release32/
-   cp -av %{_mingw64_bindir}/$flavor/Plugins $RPM_BUILD_ROOT/$flavor/release64/
+   done
 
    for file in \
       libcrypto-*.dll \
@@ -191,6 +185,12 @@ for flavor in %{flavors}; do
 
 
    for BITS in 32 64; do
+      if [  "${BITS}" eq "64" ]; then
+         MINGWDIR=i686-w64-mingw32
+         else
+         MINGWDIR=x86_64-w64-mingw32
+      fi
+
       # run this in subshell in background
       (
       mkdir -p $RPM_BUILD_ROOT/$flavor/release${BITS}
@@ -238,14 +238,16 @@ for flavor in %{flavors}; do
       popd
 
       # copy the sql ddls over
-      cp -av /etc/$flavor/mingw${BITS}-winbareos/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
+      cp -av /$flavor-${BITS}/usr/${MINGWDIR}/sys-root/mingw/lib/bareos/scripts/ddl $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       # copy the sources over if we create debug package
       cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
 
-      cp -r /etc/$flavor/mingw${BITS}-winbareos/config/ $RPM_BUILD_ROOT/$flavor/release${BITS}
+      cp -r /$flavor-${BITS}/usr/${MINGWDIR}/sys-root/mingw/etc/bareos $RPM_BUILD_ROOT/$flavor/release${BITS}/config
+     # cp -r /etc/$flavor/mingw${BITS}-winbareos/config/ $RPM_BUILD_ROOT/$flavor/release${BITS}
 
-      cp /etc/$flavor/mingw${BITS}-winbareos/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
+      cp -rv /bareos*/platforms/win32/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
+      #cp /etc/$flavor/mingw${BITS}-winbareos/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
 
       cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 \
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
