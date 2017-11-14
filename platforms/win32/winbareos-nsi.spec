@@ -185,7 +185,7 @@ for flavor in %{flavors}; do
 
 
    for BITS in 32 64; do
-      if [  "${BITS}" eq "64" ]; then
+      if [  "${BITS}" = "64" ]; then
          MINGWDIR=x86_64-w64-mingw32
          else
          MINGWDIR=i686-w64-mingw32
@@ -256,7 +256,7 @@ for flavor in %{flavors}; do
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       makensis -DVERSION=%version -DPRODUCT_VERSION=%version-%release -DBIT_WIDTH=${BITS} \
-               -DWIN_DEBUG=${WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi | sed "s/^/${BITS}BIT-DEBUG-${WIN_DEBUG}: /g"
+               -DWIN_DEBUG=${WIN_DEBUG} $RPM_BUILD_ROOT/$flavor/release${BITS}/winbareos.nsi | sed "s/^/${flavor}-${BITS}BIT-DEBUG-${WIN_DEBUG}: /g"
       ) &
       #subshell end
    done
