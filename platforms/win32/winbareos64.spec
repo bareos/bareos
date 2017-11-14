@@ -142,7 +142,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %files postvista
 %defattr(-,root,root)
-%{bindir}/postvista/Plugins/
+%{buildroot}/postvista
 
 %files postvista-debug
 %{buildroot}/postvista-debug
