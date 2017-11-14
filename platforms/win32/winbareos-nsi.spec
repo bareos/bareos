@@ -244,10 +244,13 @@ for flavor in %{flavors}; do
       cp -av /bareos*  $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       cp -r /$flavor-${BITS}/usr/${MINGWDIR}/sys-root/mingw/etc/bareos $RPM_BUILD_ROOT/$flavor/release${BITS}/config
-     # cp -r /etc/$flavor/mingw${BITS}-winbareos/config/ $RPM_BUILD_ROOT/$flavor/release${BITS}
+
+      cp -rv /bareos*/platforms/win32/bareos-config-deploy.bat $RPM_BUILD_ROOT/$flavor/release${BITS}
 
       cp -rv /bareos*/platforms/win32/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
-      #cp /etc/$flavor/mingw${BITS}-winbareos/fillup.sed $RPM_BUILD_ROOT/$flavor/release${BITS}/config
+
+      mkdir $RPM_BUILD_ROOT/$flavor/release${BITS}/Plugins
+      cp -rv /bareos*/src/plugins/*/*.py $RPM_BUILD_ROOT/$flavor/release${BITS}/Plugins
 
       cp %SOURCE1 %SOURCE2 %SOURCE3 %SOURCE4 %SOURCE6 %SOURCE9 \
                %_sourcedir/LICENSE $RPM_BUILD_ROOT/$flavor/release${BITS}
