@@ -53,7 +53,14 @@ IF(HAVE_WIN32)
    LIST(APPEND BAREOS_FD_LIBRARIES
       comctl32 bareosstatic
       )
-   target_compile_definitions(bareos-fd PRIVATE -DWIN32_VSS -DHAVE_VSS64)
+
+   SET (FD_COMPILE_DEFINITIONS -DWIN32_VSS)
+
+   IF ("${WINDOWS_BITS}" STREQUAL "64")
+      LIST(APPEND FD_COMPILE_DEFINITIONS -DHAVE_VSS64)
+   ENDIF()
+
+   target_compile_definitions(bareos-fd PRIVATE ${FD_COMPILE_DEFINITIONS})
 ENDIF()
 
 target_link_libraries(bareos-fd
