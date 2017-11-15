@@ -1183,11 +1183,7 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#@DEFAULT_DB_TYPE@#$DbDriver#g$\r$\n"
   # FileWrite $R1 "s#@DISTVER@##g$\r$\n"
   # FileWrite $R1 "s#@TAPEDRIVE@##g$\r$\n"
-  FileWrite $R1 "s#@archivedir@#C:/bareos-storage#g$\r$\n"
-  FileWrite $R1 "s#@backenddir@#$BareosInstdir#g$\r$\n"
   FileWrite $R1 "s#@basename@#$HostName#g$\r$\n"
-  FileWrite $R1 "s#@bindir@#$BareosInstdir#g$\r$\n"
-  FileWrite $R1 "s#@confdir@#$BareosAppdata#g$\r$\n"
   # FileWrite $R1 "s#@db_name@##g$\r$\n"
   FileWrite $R1 "s#@db_password@#$DbPassword#g$\r$\n"
   FileWrite $R1 "s#@db_port@#$DbPort#g$\r$\n"
@@ -1196,16 +1192,46 @@ Section -ConfigureConfiguration
   FileWrite $R1 "s#@fd_password@#$ClientPassword#g$\r$\n"
   FileWrite $R1 "s#@hostname@#$HostName#g$\r$\n"
   # FileWrite $R1 "s#@job_email@##g$\r$\n"
-  FileWrite $R1 "s#@logdir@#$BareosAppdata/logs#g$\r$\n"
   FileWrite $R1 "s#@mon_dir_password@#$DirectorMonPassword#g$\r$\n"
   FileWrite $R1 "s#@mon_fd_password@#$ClientMonitorPassword#g$\r$\n"
   FileWrite $R1 "s#@mon_sd_password@#StorageMonitorPassword#g$\r$\n"
-  FileWrite $R1 "s#@plugindir@#$BareosInstdir/Plugins#g$\r$\n"
-  FileWrite $R1 "s#@sbindir@#$BareosInstdir#g$\r$\n"
-  FileWrite $R1 "s#@scriptdir@#$BareosAppdata/scripts#g$\r$\n"
   FileWrite $R1 "s#@sd_password@#$StoragePassword#g$\r$\n"
   # FileWrite $R1 "s#@smtp_host@#localhost#g$\r$\n"
-  FileWrite $R1 "s#@working_dir@#$BareosAppdata/working#g$\r$\n"
+
+
+
+#  Install system binaries:      /usr/x86_64-w64-mingw32/sys-root/mingw/sbin
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/sbin#$BareosInstdir#g$\r$\n"
+#  Install binaries:             /usr/x86_64-w64-mingw32/sys-root/mingw/bin
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/bin#$BareosInstdir#g$\r$\n"
+#  Archive directory:            /var/lib/bareos/storage
+  FileWrite $R1 "s#/var/lib/bareos/storage#C:/bareos-storage#g$\r$\n"
+
+  FileWrite $R1 "s#var/log/bareos/#$BareosAppdata/logs#g$\r$\n"
+
+#  Backend directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/backends
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/backends#$BareosInstdir#g$\r$\n"
+
+#  Install Bareos config dir:    /usr/x86_64-w64-mingw32/sys-root/mingw/etc/bareos
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/etc/bareos#$BareosAppdata#g$\r$\n"
+
+#  Plugin directory:             /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/plugins
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/plugins#$BareosInstdir/Plugins#g$\r$\n"
+
+#  Scripts directory:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos/scripts
+  FileWrite $R1 "s#/usr/.*mingw.*/sys-root/mingw/lib/bareos/scripts#$BareosAppdata/scripts#g$\r$\n"
+
+#  Working directory:            /var/lib/bareos
+  FileWrite $R1 "s#/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
+#
+#  Install libraries:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos
+#  Install system config files:  /usr/x86_64-w64-mingw32/sys-root/mingw/etc
+#  Install Bareos config files:  /usr/x86_64-w64-mingw32/sys-root/mingw/etc/bareos
+#  PID directory:                /var/lib/bareos
+#  Subsys directory:             /usr/x86_64-w64-mingw32/sys-root/mingw/var/lock/subsys
+#  Man directory:                /usr/x86_64-w64-mingw32/sys-root/mingw/share/man
+#  Data directory:               /usr/x86_64-w64-mingw32/sys-root/mingw/share
+
 
 
   FileClose $R1
