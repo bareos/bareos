@@ -119,7 +119,18 @@ for flavor in %flavors; do
       -Dpostgresql=yes \
       -Dtraymonitor=yes \
       -DWINDOWS_BITS=%WINDOWS_BITS \
-      -DWINDOWS_VERSION=${WINDOWS_VERSION} ..
+      -DWINDOWS_VERSION=${WINDOWS_VERSION} \
+      -Ddb_password=@db_password@ \
+      -Ddb_port=@db_port@ \
+      -Ddb_user=@db_user@ \
+      -Ddir_password=@dir_password@ \
+      -Dfd_password=@fd_password@ \
+      -Dsd_password=@sd_password@ \
+      -Dmon_dir_password=@mon_dir_password@ \
+      -Dmon_fd_password=@mon_fd_password@ \
+      -Dmon_sd_password=@mon_sd_password@ \
+      -Dsd_password=@sd_password@ \
+      ..
 
    make %{?jobs:-j%jobs} DESTDIR=%{buildroot}/${flavor}-%WINDOWS_BITS install
 
