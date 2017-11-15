@@ -1223,6 +1223,8 @@ Section -ConfigureConfiguration
 
 #  Working directory:            /var/lib/bareos
   FileWrite $R1 "s#/var/lib/bareos#$BareosAppdata/working#g$\r$\n"
+
+  FileWrite $R1 "s#dbpassword = .*#dbpassword = $DbPassword#g$\r$\n"
 #
 #  Install libraries:            /usr/x86_64-w64-mingw32/sys-root/mingw/lib/bareos
 #  Install system config files:  /usr/x86_64-w64-mingw32/sys-root/mingw/etc
