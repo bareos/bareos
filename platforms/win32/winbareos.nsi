@@ -577,6 +577,8 @@ SectionIn 1 2 3 4
   File "libbareos.dll"
   File "libbareosfind.dll"
   File "libbareoslmdb.dll"
+  File "libbareossql.dll"
+  File "libbareoscfg.dll"
   File "libcrypto-*.dll"
   File "libgcc_s_*-1.dll"
   File "libssl-*.dll"
@@ -2104,6 +2106,8 @@ ConfDeleteSkip:
   Delete "$INSTDIR\libbareossd.dll"
   Delete "$INSTDIR\libbareosfind.dll"
   Delete "$INSTDIR\libbareoslmdb.dll"
+  Delete "$INSTDIR\libbareoscfg.dll"
+  Delete "$INSTDIR\libbareossql.dll"
   Delete "$INSTDIR\libbareoscats.dll"
   Delete "$INSTDIR\libbareoscats-postgresql.dll"
 
