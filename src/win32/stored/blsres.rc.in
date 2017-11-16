@@ -9,11 +9,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "bls utility"
-      VALUE "FileVersion", @VERSION@
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "bls.exe"
       VALUE "OriginalFilename", "bls.exe"
       VALUE "ProductName", "Bareos Storage Daemon"
-      VALUE "ProductVersion", @VERSION@
+      VALUE "ProductVersion", "@VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2013-2013 Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."

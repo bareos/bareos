@@ -110,6 +110,9 @@ INCLUDE(BareosGetDistInfo)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION} -m${WINDOWS_BITS} -mwin32 -mthreads)
+   ENABLE_LANGUAGE(RC)
+   SET(CMAKE_RC_COMPILE_OBJECT
+    "<CMAKE_RC_COMPILER> -o <OBJECT> -O coff <SOURCE>")
 ENDIF()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically

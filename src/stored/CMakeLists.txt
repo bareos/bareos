@@ -84,13 +84,31 @@ IF(HAVE_WIN32)
    LIST(APPEND SDSRCS
       ../win32/generic/main.cc
       ../win32/generic/service.cc
+      ../win32/stored/storedres.rc
       )
 ENDIF()
 
 set(BTAPESRCS btape.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BTAPESRCS ../win32/stored/btaperes.rc)
+ENDIF()
+
 set(BLSSRCS bls.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BLSSRCS ../win32/stored/blsres.rc)
+ENDIF()
+
 set(BEXTRACTSRS bextract.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BEXTRACTSRS ../win32/stored/bextractres.rc)
+ENDIF()
+
+
 set(BSCANSRCS bscan.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BSCANSRCS ../win32/stored/bscanres.rc)
+ENDIF()
+
 set(BCOPYSRCS bcopy.cc)
 
 set(STORED_RESTYPES autochanger device director ndmp messages storage)

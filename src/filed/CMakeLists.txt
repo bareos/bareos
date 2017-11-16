@@ -42,6 +42,12 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
+IF(HAVE_WIN32)
+   LIST(APPEND FDSRCS ../win32/filed/filedres.rc)
+ENDIF()
+
+
+
 add_executable(bareos-fd ${FDSRCS})
 
 SET(BAREOS_FD_LIBRARIES

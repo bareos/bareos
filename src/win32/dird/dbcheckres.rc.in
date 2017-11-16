@@ -9,11 +9,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "Bareos Database Check"
-      VALUE "FileVersion", @VERSION@
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "bareos-dbcheck.exe"
       VALUE "OriginalFilename", "bareos-dbcheck.exe"
       VALUE "ProductName", "Bareos Database Check"
-      VALUE "ProductVersion", @VERSION@
+      VALUE "ProductVersion", "@VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2013-2014 Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."

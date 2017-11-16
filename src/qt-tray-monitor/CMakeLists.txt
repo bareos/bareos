@@ -48,6 +48,11 @@ set(SOURCES
    traymenu.cpp systemtrayicon.cpp mainwindow.cpp monitoritem.cpp
    monitoritemthread.cpp
    )
+
+IF(HAVE_WIN32)
+   LIST(APPEND SOURCES ../win32/qt-tray-monitor/traymon.rc)
+ENDIF()
+
 set(TRAYMON_LIBRARIES bareos-tray-monitor Qt4::QtGui bareos bareoscfg)
 
 IF(HAVE_WIN32)

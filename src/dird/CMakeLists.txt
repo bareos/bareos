@@ -19,7 +19,7 @@
 
 
 
-set(SVRSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
+set(DIRDSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc catreq.cc
    consolidate.cc dir_plugins.cc dird_conf.cc dird.cc expand.cc fd_cmds.cc
    getmsg.cc inc_conf.cc job.cc jobq.cc migrate.cc mountreq.cc msgchan.cc
    ndmp_dma_storage.cc
@@ -34,10 +34,13 @@ set(SVRSRCS admin.cc archive.cc authenticate.cc autoprune.cc backup.cc bsr.cc ca
    ua_label.cc ua_output.cc ua_prune.cc ua_purge.cc ua_query.cc ua_restore.cc
    ua_run.cc ua_select.cc ua_server.cc ua_status.cc ua_tree.cc ua_update.cc
    vbackup.cc verify.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND DIRDSRCS ../win32/dird/dirdres.rc)
+ENDIF()
 
 IF(HAVE_WIN32)
    include_directories(${CMAKE_SOURCE_DIR}/src/win32/generic ${CMAKE_SOURCE_DIR}/src/win32/dird ../include ..)
-   LIST(APPEND SVRSRCS
+   LIST(APPEND DIRDSRCS
       ../win32/generic/main.cc
       ../win32/generic/service.cc
       )
@@ -47,12 +50,15 @@ ENDIF()
 
 
 set(DBCHKSRCS dbcheck.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND DBCHKSRCS ../win32/dird/dbcheckres.rc)
+ENDIF()
 
 set(TSTFNDSRCS testfind.cc dird_conf.cc ua_acl.cc ua_audit.cc run_conf.cc inc_conf.cc)
 
 set(DIRD_RESTYPES catalog client console counter director fileset job jobdefs messages pool profile schedule storage)
 
-add_executable(bareos-dir ${SVRSRCS})
+add_executable(bareos-dir ${DIRDSRCS})
 
 set(BAREOS_DIR_LIBRARIES
    bareos

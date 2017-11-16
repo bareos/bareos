@@ -9,11 +9,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "Bareos Regular Expression Testprogram"
-      VALUE "FileVersion", @VERSION@
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "bregex.exe"
       VALUE "OriginalFilename", "bregex.exe"
       VALUE "ProductName", "Bareos Regular Expression Testprogram"
-      VALUE "ProductVersion", @VERSION@
+      VALUE "ProductVersion", "@VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2015-2015 Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."

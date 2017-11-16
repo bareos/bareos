@@ -20,7 +20,11 @@
 include_directories(../include .. ../dird ../filed ../stored)
 
 
-add_executable(bsmtp bsmtp.cc)
+SET(BSMTPSRCS bsmtp.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BSMTPSRCS ../win32/tools/bsmtpres.rc)
+ENDIF()
+add_executable(bsmtp ${BSMTPSRCS})
 target_link_libraries(bsmtp bareos ${JANSSON_LIBRARIES})
 
 add_executable(drivetype drivetype.cc)
@@ -29,10 +33,18 @@ target_link_libraries(drivetype bareos bareosfind ${JANSSON_LIBRARIES})
 add_executable(fstype fstype.cc)
 target_link_libraries(fstype bareos bareosfind ${JANSSON_LIBRARIES})
 
-add_executable(bregex bregex.cc)
+SET(BREGEXSRCS bregex.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BREGEXSRCS ../win32/tools/bregexres.rc)
+ENDIF()
+add_executable(bregex ${BREGEXSRCS})
 target_link_libraries(bregex bareos bareosfind ${JANSSON_LIBRARIES})
 
-add_executable(bwild bwild.cc)
+SET(BWILDSRCS bwild.cc)
+IF(HAVE_WIN32)
+   LIST(APPEND BWILDSRCS ../win32/tools/bwildres.rc)
+ENDIF()
+add_executable(bwild ${BWILDSRCS})
 target_link_libraries(bwild bareos ${JANSSON_LIBRARIES})
 
 add_executable(bscrypto bscrypto.cc)

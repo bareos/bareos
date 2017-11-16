@@ -9,11 +9,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "Bareos SMTP Client"
-      VALUE "FileVersion", @VERSION@
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "bsmtp.exe"
       VALUE "OriginalFilename", "bsmtp.exe"
       VALUE "ProductName", "Bareos SMTP Agent"
-      VALUE "ProductVersion", @VERSION@
+      VALUE "ProductVersion", "@VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2013-2014 Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."
