@@ -9,11 +9,11 @@ BEGIN
     BEGIN
       VALUE "CompanyName", "Bareos GmbH & Co. KG"
       VALUE "FileDescription", "Bareos Wildcard Testprogram"
-      VALUE "FileVersion", @VERSION@
+      VALUE "FileVersion", "@VERSION@"
       VALUE "InternalName", "bwild.exe"
       VALUE "OriginalFilename", "bwild.exe"
       VALUE "ProductName", "Bareos Wildcard Testprogram"
-      VALUE "ProductVersion", @VERSION@
+      VALUE "ProductVersion", "@VERSION@"
       VALUE "LegalCopyright", "Copyright 2000-2012 Free Software Foundation Europe e.V. "
                               "Copyright 2015-2015 Bareos GmbH & Co. KG "
       VALUE "LegalTrademarks", "Licensed under GNU AGPLv3."
