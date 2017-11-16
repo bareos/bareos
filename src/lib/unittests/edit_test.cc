@@ -33,7 +33,6 @@
 #include "../lib/protos.h"
 #include "protos.h"
 
-
 void d_msg(const char*, int, int, const char*, ...) {}
 
 

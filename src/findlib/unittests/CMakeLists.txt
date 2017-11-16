@@ -21,7 +21,7 @@ include_directories(.. ../.. ../../include/)
 
 set (TEST_SRC
 #   drivetype_test.cc
-   fstype_test.cc
+#   fstype_test.cc
    )
 
 add_executable(test_findlib
