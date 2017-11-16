@@ -27,10 +27,10 @@
  * Philipp Storz, November 2017
  */
 
-#include <stdio.h>
 #include "bareos.h"
 #include "gtest/gtest.h"
 #include "findlib/find.h"
+#include <stdio.h>
 
 TEST(FstypeTest, RootFs) {
   char fs[1000];

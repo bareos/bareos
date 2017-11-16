@@ -18,20 +18,21 @@
 #   02110-1301, USA.
 
 include_directories(.. ../.. ../../include/)
-
-link_libraries(kernel32 user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
-
+IF(HAVE_WIN32)
+   link_libraries(kernel32
+      user32 gdi32 winspool shell32 ole32 oleaut32 uuid comdlg32 advapi32)
+ENDIF()
 set (TEST_SRC
     alist_test.cc
     dlist_test.cc
-    base64_test.cc
-    bsnprintf_test.cc
+#    base64_test.cc
+#    bsnprintf_test.cc
 #   devlock_test.cc
-    edit_test.cc
+#    edit_test.cc
     htable_test.cc
-    junction_test.cc
+   #    junction_test.cc
 #    passphrase_test.cc
-    scan_test.cc
+#    scan_test.cc
 #   rwlock_test.cc
 #   sellist_test.cc
    #tree_test.cc

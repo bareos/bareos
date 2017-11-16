@@ -27,7 +27,7 @@
  * Generic accurate payload is the same for any storage class.
  *
  * We store the lstat field as a character field as it makes storing of the
- * data much more efficient then storing it in a normal stat structure.
+ * data much more efficient than storing it in a normal stat structure.
  * Nowadays most of these structures are 64 bits and they will use 136
  * bytes (32 bits) and 128 bytes (64 bits) on Solaris. The ASCII encoding
  * of the lstat field most of the time is between 43 and 75 bytes with an

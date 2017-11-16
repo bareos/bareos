@@ -26,8 +26,8 @@
  *
  * Philipp Storz, November 2017
  */
-#include "bareos.h"
 #include "gtest/gtest.h"
+#include "bareos.h"
 #include "../lib/protos.h"
 #include "protos.h"
 
