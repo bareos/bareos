@@ -441,6 +441,7 @@ bool DCR::write_block_to_dev()
       return true;
    }
    if (job_canceled(jcr)) {
+      Dmsg0(100, "return write_block_to_dev, job is canceled\n");
       return false;
    }
 

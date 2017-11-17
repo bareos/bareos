@@ -2981,12 +2981,15 @@ do_tape_cmds()
       Dsm_check(200);
       found = false;
       parse_args(cmd, args, &argc, argk, argv, MAX_CMD_ARGS);
-      for (i=0; i<comsize; i++)       /* search for command */
+      /* search for command */
+      for (i=0; i<comsize; i++) {
          if (argc > 0 && fstrsch(argk[0],  commands[i].key)) {
-            (*commands[i].func)();    /* go execute command */
+            /* execute command */
+            (*commands[i].func)();
             found = true;
             break;
          }
+      }
       if (*cmd && !found) {
          Pmsg1(0, _("\"%s\" is an invalid command\n"), cmd);
       }

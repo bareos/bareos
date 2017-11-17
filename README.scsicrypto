@@ -1,5 +1,4 @@
-LTO4 and LTO5 drives and other modern tape drives
-support hardware encryption.
+Modern tape drives, e.g. LTO >= 4, support hardware encryption.
 
 There are several ways of using encryption with these drives
 The following three types of key management are available for
@@ -191,7 +190,7 @@ The initial setup of SCSI crypto looks something like this:
        If bareos-sd does not have the appropriate capabilities, all
        other tape operations may still work correctly, but you will
        get "Unable to perform SG_IO ioctl" errors.
-       
+
        On older kernels it can be you need CAP_SYS_ADMIN try
        CAP_SYS_RAWIO first and if that doesn't work try CAP_SYS_ADMIN
 
