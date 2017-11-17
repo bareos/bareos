@@ -40,6 +40,13 @@
  * disadvantage that we need to keep a filenr to index the bitmap which
  * also cost some bytes.
  */
+
+#include "hostconfig.h"
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(4)
+#endif
+
 struct accurate_payload {
    int64_t filenr;
    int32_t delta_seq;
