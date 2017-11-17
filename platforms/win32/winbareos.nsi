@@ -992,8 +992,8 @@ skip_vc_redist_check:
    FileClose $R1
 
    ExecWait '$INSTDIR\nssm.exe install bareos-webui $INSTDIR\bareos-webui\php\php.exe'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
-   ExecWait '$INSTDIR\nssm.exe set bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui AppDirectory \"$INSTDIR\bareos-webui\"'
+   ExecWait '$INSTDIR\nssm.exe set     bareos-webui Application  $INSTDIR\bareos-webui\php\php.exe'
    # nssm.exe wants """ """ around parameters with spaces, the executable itself without quotes
    # see https://nssm.cc/usage -> quoting issues
    ExecWait '$INSTDIR\nssm.exe set bareos-webui AppParameters \
@@ -2024,6 +2024,11 @@ Section Uninstall
 
   SetShellVarContext all
 
+  # kill tray monitor
+  KillProcWMI::KillProc "bareos-tray-monitor.exe"
+  # kill bconsole if running
+  KillProcWMI::KillProc "bconsole.exe"
+
   # uninstall service
   nsExec::ExecToLog '"$INSTDIR\bareos-fd.exe" /kill'
   sleep 3000
@@ -2039,11 +2044,6 @@ Section Uninstall
 
   ExecWait '$INSTDIR\nssm.exe stop bareos-webui'
   ExecWait '$INSTDIR\nssm.exe remove bareos-webui confirm'
-
-  # kill tray monitor
-  KillProcWMI::KillProc "bareos-tray-monitor.exe"
-  # kill bconsole if running
-  KillProcWMI::KillProc "bconsole.exe"
 
   # be sure and also kill the other daemons
   KillProcWMI::KillProc "bareos-fd.exe"
@@ -2157,13 +2157,13 @@ ConfDeleteSkip:
   # batch scripts and sql files
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.bat"
   Delete "$APPDATA\${PRODUCT_NAME}\scripts\*.sql"
-  RMDir "$APPDATA\${PRODUCT_NAME}\scripts"
+  RMDir  "$APPDATA\${PRODUCT_NAME}\scripts"
 
   RMDir /r "$APPDATA\${PRODUCT_NAME}\logs"
   RMDir /r "$APPDATA\${PRODUCT_NAME}\working"
 
   # removed only if empty, to keep configs
-  RMDir "$APPDATA\${PRODUCT_NAME}"
+  RMDir  "$APPDATA\${PRODUCT_NAME}"
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
@@ -2184,9 +2184,9 @@ ConfDeleteSkip:
 
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Website.lnk"
   Delete "$SMPROGRAMS\${PRODUCT_NAME}\Uninstall.lnk"
-  RMDir "$SMPROGRAMS\${PRODUCT_NAME}"
-  RMDir "$INSTDIR\Plugins"
-  RMDir "$INSTDIR"
+  RMDir  "$SMPROGRAMS\${PRODUCT_NAME}"
+  RMDir  "$INSTDIR\Plugins"
+  RMDir  "$INSTDIR"
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
   SetAutoClose true
