@@ -107,6 +107,6 @@ set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
 
-IF(NOT HAVE_WIN32)
+IF(NOT HAVE_WIN32 AND GTEST_FOUND)
    add_subdirectory(unittests)
 ENDIF()
