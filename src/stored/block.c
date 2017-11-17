@@ -479,12 +479,14 @@ bool DCR::write_block_to_dev()
     * and on devices with CAP_ADJWRITESIZE set, apply min and fixed blocking.
     */
    if (wlen != block->buf_len) {
-      uint32_t blen;                  /* current buffer length */
+      uint32_t blen = wlen;                  /* current buffer length */
 
       Dmsg2(250, "binbuf=%d buf_len=%d\n", block->binbuf, block->buf_len);
-      blen = wlen;
 
-      if (dev->has_cap(CAP_ADJWRITESIZE)) {
+      if (!dev->has_cap(CAP_ADJWRITESIZE)) {
+         Dmsg1(400, "%s: block write size is not adjustable", dev->print_name());
+      } else {
+         /* (dev->has_cap(CAP_ADJWRITESIZE)) */
          if (dev->min_block_size == dev->max_block_size) {
             /*
              * Fixed block size
@@ -501,18 +503,16 @@ bool DCR::write_block_to_dev()
              */
             wlen = ((wlen + TAPE_BSIZE - 1) / TAPE_BSIZE) * TAPE_BSIZE;
          }
+
+         if (wlen - blen > 0) {
+            memset(block->bufp, 0, wlen - blen); /* clear garbage */
+         }
       }
 
-      Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
-            wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
-
-      if (wlen - blen > 0) {
-         memset(block->bufp, 0, wlen - blen); /* clear garbage */
-      }
    }
 
-   Dmsg4(400, "writing block of size %d to dev=%s with max_block_size %d and min_block_size %d\n",
-         wlen, dev->print_name(), dev->max_block_size, dev->min_block_size);
+   Dmsg5(400, "dev=%s: writing %d bytes as block of %d bytes. Block sizes: min=%d, max=%d\n",
+         dev->print_name(), block->binbuf, wlen, dev->min_block_size, dev->max_block_size);
 
    checksum = ser_block_header(block, dev->do_checksum());
 

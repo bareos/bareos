@@ -76,7 +76,7 @@
 /*
  * Clone all set bits from var1 to var2
  */
-#define clone_bits(l, var1, var2) { \
+#define copy_set_bits(l, var1, var2) { \
    int bit; \
    for (bit = 0; bit <= (l); bit++)  \
       if (bit_is_set(bit, (var1))) \
