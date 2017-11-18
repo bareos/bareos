@@ -44,7 +44,7 @@
 #include "hostconfig.h"
 
 #ifdef HAVE_HPUX_OS
-#pragma pack(4)
+#pragma pack(push,4)
 #endif
 
 struct accurate_payload {
@@ -53,6 +53,7 @@ struct accurate_payload {
    char *lstat;
    char *chksum;
 };
+
 
 /*
  * Accurate payload storage abstraction classes.
@@ -95,6 +96,10 @@ struct CurFile {
    char *fname;
    accurate_payload payload;
 };
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(pop)
+#endif
 
 class B_ACCURATE_HTABLE: public B_ACCURATE {
 protected:

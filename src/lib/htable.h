@@ -45,6 +45,13 @@
             (*((void **)&(var))=(void *)((tbl)->next())))
 #endif
 
+
+#include "hostconfig.h"
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(push,4)
+#endif
+
 typedef enum {
    KEY_TYPE_CHAR = 1,
    KEY_TYPE_UINT32 = 2,
@@ -73,6 +80,10 @@ struct h_mem {
    char *mem;                         /* Memory pointer */
    char first[1];                     /* First byte */
 };
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(pop)
+#endif
 
 class htable : public SMARTALLOC {
    hlink **table;                     /* Hash table */

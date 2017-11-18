@@ -26,6 +26,12 @@
 
 #include "htable.h"
 
+#include "hostconfig.h"
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(push,4)
+#endif
+
 struct s_mem {
    struct s_mem *next;                /* next buffer */
    int rem;                           /* remaining bytes */
@@ -117,6 +123,10 @@ struct s_hl_entry {
    TREE_NODE *node;
 };
 typedef struct s_hl_entry HL_ENTRY;
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(pop)
+#endif
 
 /* type values */
 #define TN_ROOT    1                  /* root node */
