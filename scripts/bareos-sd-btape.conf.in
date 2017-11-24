@@ -46,7 +46,7 @@ Device {
   AlwaysOpen = yes;
   Autochanger = yes;
   RemovableMedia = yes;
-  @@sbindir@/tape_options
+  @@confdir@/tape_options
   Maximum Block Size = 64512
   Minimum Block Size = 64512
   Maximum File Size = 5G

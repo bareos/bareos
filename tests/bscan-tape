@@ -92,11 +92,9 @@ echo "Backup 4 done"
 #
 # now drop and recreate the database
 #
-cd bin
-./drop_bareos_tables >/dev/null 2>&1
-./make_bareos_tables >/dev/null 2>&1
-./grant_bareos_privileges 2>&1 >/dev/null
-cd ..
+${scripts}/drop_bareos_tables >/dev/null 2>&1
+${scripts}/make_bareos_tables >/dev/null 2>&1
+${scripts}/grant_bareos_privileges >/dev/null 2>&1
 
 echo "volume=TestVolume001" >tmp/bscan.bsr
 
@@ -109,13 +107,14 @@ else
   PASSWD="-P ${db_password}"
 fi
 
-if test "$debug" -eq 1 ; then
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr tape
-else
-  $bin/bscan -w working $BSCANLIBDBI -u ${db_user} -n ${db_name} $PASSWD -m -s -v -b tmp/bscan.bsr tape >/dev/null 2>&1
+BSCAN_OUT="write_stdin_to_file ${tmp}/log-bscan.out"
+if is_debug; then
+   BSCAN_OUT="tee ${tmp}/log-bscan.out"
 fi
 
-echo $BSCANLIBDBI
+$bin/bscan -c ${conf} $BSCANLIBDBI -B ${DBTYPE} -n ${db_name} -u ${db_user} $PASSWD -m -s -v -b $tmp/bscan.bsr tape 2>&1 | $BSCAN_OUT
+
+
 
 cat <<END_OF_DATA >tmp/bconcmds
 @$out /dev/null

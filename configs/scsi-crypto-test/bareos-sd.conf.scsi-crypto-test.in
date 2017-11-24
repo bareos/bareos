@@ -10,10 +10,10 @@
 
 Storage {
   Name = @hostname@-sd
-  SDPort = 8103
+  SDPort = @sdport@
   WorkingDirectory = "@working_dir@"
   Pid Directory = "@piddir@"
-  Plugin Directory = "@sbindir@/plugins"
+  Plugin Directory = "@plugindir@"
   Maximum Concurrent Jobs = 100
 }
 
@@ -40,7 +40,7 @@ Device {
   RemovableMedia = yes
   Drive Crypto Enabled = Yes
   Query Crypto Status = Yes
-  @@sbindir@/tape_options
+  @@confdir@/tape_options
 # Maximum File Size = 1000000
 # MaximumVolumeSize = 400M
 }

@@ -1,8 +1,13 @@
 #!/bin/sh
 #
-# Run a simple backup  using the compressed option
+# Run a simple backup using the compressed option
 #   then backup four times, each with incremental then finally restore.
 #   It should require at least 4 different bsrs.
+#
+# bscrypto requires to run as root or with addtional capabilities.
+# On Linux these can be set via
+#   setcap cap_sys_rawio=ep $bin/bscrypto
+#   setcap cap_sys_rawio=ep $bin/bareos-sd
 #
 TestName="scsi-crypto-test"
 JobName=scsicryptotest
@@ -21,8 +26,8 @@ rm -f  ${CRYPTO_CACHE}
 KEY_ENCRYPTION_KEY=`${bin}/bscrypto -g -`
 echo "Key Encryption Key = \"$KEY_ENCRYPTION_KEY\"" > ${conf}/scsicrypto-dir.conf
 
-/bin/cp -f  ${rconfigs}/${TestName}/bareos-dir.conf.${TestName}  ${conf}/bareos-dir.conf
-/bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf.${TestName} ${conf}/bareos-sd.conf
+/bin/cp -f ${rconfigs}/${TestName}/bareos-dir.conf.${TestName} ${conf}/bareos-dir.conf
+/bin/cp -f ${rconfigs}/${TestName}/bareos-sd.conf.${TestName}  ${conf}/bareos-sd.conf
 
 change_jobname $JobName
 
@@ -158,7 +163,7 @@ check_restore_diff
 
 echo "Content of cryptocache file:"
 echo
-bin/bscrypto -D ${CRYPTO_CACHE}
+${bin}/bscrypto -D ${CRYPTO_CACHE}
 echo
 echo "---------------------"
 
@@ -169,3 +174,4 @@ echo
 echo "---------------------"
 
 end_test
+

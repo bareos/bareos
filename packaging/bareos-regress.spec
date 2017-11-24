@@ -22,6 +22,7 @@ Requires:   bareos
 Requires:   bareos-database-sqlite3
 Requires:   bareos-regress-config
 Requires:   bareos-storage-fifo
+Requires:   bareos-storage-tape
 Requires:   bareos-tools
 Requires:   make
 Requires:   sed
