@@ -21,6 +21,7 @@ rm -f dumps/*
 ./run tests/ansi-label-tape
 ./run tests/backup-bareos-tape
 ./run tests/bscan-tape
+./run tests/block-size-tape
 ./run tests/fixed-block-size-tape
 ./run tests/four-concurrent-jobs-tape
 ./run tests/four-jobs-tape

@@ -50,7 +50,11 @@ check_encoding()
 
 cleanup()
 {
-    ${rscripts}/cleanup
+    if has_tape_drive; then
+        ${rscripts}/cleanup-tape
+    else
+        ${rscripts}/cleanup
+    fi
 }
 
 #
@@ -135,9 +139,15 @@ if [ $MUID != 0 ] ; then
 fi
 }
 
+has_tape_drive()
+{
+    [ "${TAPE_DRIVE}" ] && [ "${TAPE_DRIVE}" != "/dev/null" ]
+    return $?
+}
+
 require_tape_drive()
 {
-if test x${TAPE_DRIVE} = x/dev/null ; then
+if ! has_tape_drive; then
    echo "This test $TestName needs a tape drive, but has none."
    exit 1
 fi

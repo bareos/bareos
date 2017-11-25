@@ -40,6 +40,8 @@ Device {
   @@confdir@/tape_options
 # Maximum File Size = 1000000
 # MaximumVolumeSize = 400M
+# Minimum Block Size = 64512
+# Maximum Block Size = 64512
 }
 
 #
