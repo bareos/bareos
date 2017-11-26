@@ -36,8 +36,8 @@ messages
 @# Run a second job on TestVolume002
 @#########################################################
 @$out $tmp/log3.out
-label storage=File volume=TestVolume002
 update volume=TestVolume001 volstatus=Used
+label storage=File volume=TestVolume002
 messages
 show pool
 @$out $tmp/log1.out
@@ -67,16 +67,25 @@ messages
 run level=full job=$JobName yes
 wait
 messages
-list volume
+@#########################################################
+@# Run a 5th job
+@#########################################################
 @$out $tmp/log1.out
 update volume=TestVolume004 volstatus=Used
 label storage=File volume=TestVolume005
 run level=full job=$JobName yes
 wait
 messages
+list volume
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+
+cat >tmp/bconcmds <<END_OF_DATA
 @$out $tmp/log6.out
 @#########################################################
-@# tests
+@# purge media 1-4, without action.
 @#########################################################
 update volume=TestVolume002 actiononpurge=none
 purge volume=TestVolume001
@@ -90,20 +99,23 @@ select VolumeName, VolStatus, ActionOnPurge FROM Media;
 setdebug level=100 director
 quit
 END_OF_DATA
+run_bconsole
 
-run_bareos
-check_for_zombie_jobs storage=File
-
-print_debug "Check all media"
+print_debug "Check if all media contain data"
 perl -Mscripts::functions -e 'foreach $i (1..5){check_min_volume_size(4096,"TestVolume00$i")}'
 
 if [ $? != 0 ]; then
     print_debug "`ls -l $tmp`"
-    print_debug "Initialization problem"
-    estat=2
+    set_error "not all volumes contain data"
 fi
 
-echo "purge volume=TestVolume001 action storage=File" > $tmp/bconcmds
+cat >tmp/bconcmds <<END_OF_DATA
+@#########################################################
+@# purge volume 1 and perform action.
+@#########################################################
+purge volume=TestVolume001 action storage=File
+END_OF_DATA
+
 run_bconsole
 
 perl -Mscripts::functions -e '
@@ -111,12 +123,23 @@ check_min_volume_size(4096, "TestVolume002","TestVolume003","TestVolume004","Tes
 check_max_volume_size(4096, "TestVolume001")'
 
 if [ $? != 0 ]; then
-    print_debug "`ls -l $tmp`"
-    ls -l $tmp
-    estat=2
+    print_debug "`ls -l $tmp/TestVolume*`"
+    set_error "purging volume 1 did fail"
 fi
 
-echo "purge volume action storage=File" > $tmp/bconcmds
+# V1: already truncated
+# V2: action=None, no action should be performed
+# V3: truncate
+# V4: truncate
+# V5: not purged. Purge is only performed if a specific volume is given.
+#     However, truncate is performed non the less (on a purged volume).
+cat >tmp/bconcmds <<END_OF_DATA
+@#########################################################
+@# purge all volumes (1-5) and perform action.
+@# This should affect volume 3 and 4.
+@#########################################################
+purge volume action storage=File
+END_OF_DATA
 run_bconsole
 
 sleep 1;
@@ -126,9 +149,8 @@ check_min_volume_size(4096, "TestVolume002", "TestVolume005");
 check_max_volume_size(4096, "TestVolume001", "TestVolume003", "TestVolume004")'
 
 if [ $? != 0 ]; then
-    print_debug "`ls -l $tmp`"
-    ls -l $tmp
-    estat=2
+    print_debug "`ls -l $tmp/TestVolume*`"
+    set_error "purging all volumes did not succeed."
 fi
 
 
