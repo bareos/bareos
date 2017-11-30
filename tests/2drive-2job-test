@@ -8,11 +8,11 @@
 TestName="2drive-2job"
 JobName="2drive2job"
 
+. scripts/functions
+
 # Directory to backup.
 # This directory will be created by setup_data().
 BackupDirectory="${tmp}/data"
-
-. scripts/functions
 
 scripts/cleanup
 
