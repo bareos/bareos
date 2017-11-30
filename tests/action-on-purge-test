@@ -150,7 +150,7 @@ check_max_volume_size(4096, "TestVolume001", "TestVolume003", "TestVolume004")'
 
 if [ $? != 0 ]; then
     print_debug "`ls -l $tmp/TestVolume*`"
-    set_error "purging all volumes did not succeed."
+    set_error "purging all volumes did fail."
 fi
 
 
