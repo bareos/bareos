@@ -9,16 +9,16 @@
 \section{Catalog Database}
 
 Bareos stores its catalog in a database.
-Different database backends are supported:
+Different database backends are offered:
 \begin{itemize}
-    \item PostgreSQL
+    \item PostgreSQL (recommended)
     \item MariaDB/MySQL (see \nameref{sec:MysqlSupport})
     \item Sqlite (only for testing)
 \end{itemize}
 
 What database will be used, can be configured in the \bareosDir configuration, see the \nameref{DirectorResourceCatalog}.
 
-The database often runs on the same server as the Bareos Director.
+The database often runs on the same server as the \bareosDir.
 However, it is also possible to run it on a different system.
 This might require some more manual configuration.
 
@@ -261,7 +261,9 @@ The owner of the database may vary. The Bareos database maintance scripts don't 
 By default, using PostgreSQL ident, a Unix user can access a database of the same name.
 Therefore the user \user{bareos} can access the database \path|bareos|.
 
-\begin{commands}{Verify Bareos database on PostgreSQL as Unix user bareos}
+
+
+\begin{commands}{Verify Bareos database on PostgreSQL as Unix user bareos (bareos-13.2.3)}
 root@linux:~# <input>su - bareos -s /bin/sh</input>
 bareos@linux:~# <input>psql</input>
 Welcome to psql 8.3.23, the PostgreSQL interactive terminal.
@@ -379,7 +381,7 @@ Catalog {
 
 After this, run the Bareos database preparation scripts.
 For Bareos $<=$ 13.2.2, the database password must be specified as environment variable \variable{db_password}.
-From \sinceVersion{dir}{MySQL password from configuration file}{13.2.3} 
+From \sinceVersion{dir}{MySQL password from configuration file}{13.2.3}
 the database password is read from the configuration, if no environment variable is given.
 
 \begin{commands}{Setup Bareos catalog database}
@@ -444,6 +446,40 @@ mysql> <input>show tables;</input>
 +--------------------+
 30 rows in set (0.00 sec)
 
+mysql> <input>describe Job;</input>
++-----------------+---------------------+------+-----+---------+----------------+
+| Field           | Type                | Null | Key | Default | Extra          |
++-----------------+---------------------+------+-----+---------+----------------+
+| JobId           | int(10) unsigned    | NO   | PRI | NULL    | auto_increment |
+| Job             | tinyblob            | NO   |     | NULL    |                |
+| Name            | tinyblob            | NO   | MUL | NULL    |                |
+| Type            | binary(1)           | NO   |     | NULL    |                |
+| Level           | binary(1)           | NO   |     | NULL    |                |
+| ClientId        | int(11)             | YES  |     | 0       |                |
+| JobStatus       | binary(1)           | NO   |     | NULL    |                |
+| SchedTime       | datetime            | YES  |     | NULL    |                |
+| StartTime       | datetime            | YES  |     | NULL    |                |
+| EndTime         | datetime            | YES  |     | NULL    |                |
+| RealEndTime     | datetime            | YES  |     | NULL    |                |
+| JobTDate        | bigint(20) unsigned | YES  |     | 0       |                |
+| VolSessionId    | int(10) unsigned    | YES  |     | 0       |                |
+| VolSessionTime  | int(10) unsigned    | YES  |     | 0       |                |
+| JobFiles        | int(10) unsigned    | YES  |     | 0       |                |
+| JobBytes        | bigint(20) unsigned | YES  |     | 0       |                |
+| ReadBytes       | bigint(20) unsigned | YES  |     | 0       |                |
+| JobErrors       | int(10) unsigned    | YES  |     | 0       |                |
+| JobMissingFiles | int(10) unsigned    | YES  |     | 0       |                |
+| PoolId          | int(10) unsigned    | YES  |     | 0       |                |
+| FileSetId       | int(10) unsigned    | YES  |     | 0       |                |
+| PriorJobId      | int(10) unsigned    | YES  |     | 0       |                |
+| PurgedFiles     | tinyint(4)          | YES  |     | 0       |                |
+| HasBase         | tinyint(4)          | YES  |     | 0       |                |
+| HasCache        | tinyint(4)          | YES  |     | 0       |                |
+| Reviewed        | tinyint(4)          | YES  |     | 0       |                |
+| Comment         | blob                | YES  |     | NULL    |                |
++-----------------+---------------------+------+-----+---------+----------------+
+27 rows in set (0,00 sec)
+
 mysql> <input>select * from Version;</input>
 +-----------+
 | VersionId |
@@ -487,6 +523,11 @@ export db_password=<input>MyNewSecretPassword</input>
 /usr/lib/bareos/scripts/grant_bareos_privileges
 \end{commands}
 
+
+\hide{
+% table and commands have changed in MySQL 5.7.6.
+% As things now get more complicated (different command for different version)
+% we skip this topic here.
 ... or modify the database users directly:
 
 \begin{commands}{Show Bareos database users}
@@ -520,7 +561,7 @@ mysql> <input>SELECT user,host,password FROM mysql.user WHERE user='bareos';</in
 
 mysql>
 \end{commands}
-
+}
 
 
 \subsubsection{Sqlite}
@@ -537,7 +578,7 @@ Bareos creates this file at \file{/var/lib/bareos/bareos.db}.
 Sqlite does not offer access permissions. The only permissions that do apply are the Unix file permissions.
 
 The database is accessable by following command:
-\begin{commands}{Verify Bareos database on Sqlite3}
+\begin{commands}{Verify Bareos database on Sqlite3 (bareos-13.2.3)}
 <command>sqlite3</command><input> /var/lib/bareos/bareos.db</input>
 SQLite version 3.7.6.3
 Enter ".help" for instructions
@@ -971,8 +1012,8 @@ in the BackupCatalog job.
 The same considerations apply as for \nameref{RepairingMySQL}.
 Consult the PostgreSQL documents for how to repair the database.
 
-For Bareos specific problems, 
-consider using \nameref{bareos-dbcheck} program .
+For Bareos specific problems,
+consider using \nameref{bareos-dbcheck} program.
 
 
 
@@ -989,10 +1030,13 @@ consider using \nameref{bareos-dbcheck} program .
 As MariaDB is a fork of MySQL, we use MySQL as synonym for MariaDB and fully support it.
 We test our packages against the preferred MySQL fork that a distribution provides.
 
+\hide{
+supporting MySQL >= 5.7 since bareos-17.2.4
 \limitation{MySQL}{MySQL $\geq$ 5.7 not supported}{%
 MySQL 5.7 did change it behavior in some respects. The result is, that the Bareos database creation scripts do not work any more.
 For the time being, we advise to use MariaDB instead, which is also the default on most Linux distributions.
 See \ticket{705}.
+}
 }
 
 \subsection{Compacting Your MySQL Database}
@@ -1022,6 +1066,7 @@ See
 \elink{http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html}
 {http://dev.mysql.com/doc/refman/5.5/en/innodb-multiple-tablespaces.html} for details.
 
+\hide{
 \footnotesize
 \begin{verbatim}
 mysqldump -f --opt bareos > bareos.sql
@@ -1032,6 +1077,7 @@ rm -f bareos.sql
 
 Depending on the size of your database, this will take more or less time and a
 fair amount of disk space.
+}
 
 \subsection{Repairing Your MySQL Database}
 \index[general]{Database!Repairing Your MySQL}
@@ -1042,7 +1088,7 @@ If you find that you are getting errors writing to your MySQL database, or
 Bareos hangs each time it tries to access the database, you should consider
 running MySQL's database check and repair routines.
 
-This can be done by running the {\bf mysqlcheck } command:
+This can be done by running the \command{mysqlcheck} command:
 \footnotesize
 \begin{verbatim}
 mysqlcheck --all-databases
@@ -1203,7 +1249,7 @@ maintenance\_work\_mem = 256000 seem to be reasonable values.  Make
 sure your checkpoint\_segments is set to at least 8.
 }
 
-
+\hide{
 \section{Performance Issues Indexes}
 \index[general]{Database Performance Issues Indexes}
 \index[general]{Performance!Database}
@@ -1315,7 +1361,7 @@ sqlite <path>/bareos.db
 CREATE INDEX file_jobid_idx on File (JobId);
 \end{verbatim}
 \normalsize
-
+}
 
 
 \section{Backing Up Your Bareos Database}

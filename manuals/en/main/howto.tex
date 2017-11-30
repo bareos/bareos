@@ -759,12 +759,11 @@ in the Git repository \url{https://github.com/bareos/bareos-contrib/tree/master/
 \paragraph{Configuration}
 % \newline
 
-Activate your plugin directory in the fd resource conf on the client. See \nameref{fdPlugins} for more about plugins in general.
+Activate your plugin directory in the \bareosFd configuration. See \nameref{fdPlugins} for more about plugins in general.
 
-\begin{bareosConfigResource}{bareos-fd}{client}{mysql-fd}
+\begin{bareosConfigResource}{bareos-fd}{client}{myself}
 Client {
-  Name = mysql-fd
-  #...
+  ...
   Plugin Directory = /usr/lib64/bareos/plugins
   Plugin Names = "python"
 }
@@ -849,9 +848,8 @@ Following settings must be done on the Bareos client (\bareosFd):
   \item disable bacula compatibility (default for Bareos $>=$ 15.2)
 \end{itemize}
 
-\begin{bareosConfigResource}{bareos-fd}{client}{mysql-fd}
+\begin{bareosConfigResource}{bareos-fd}{client}{myself}
 Client {
-  Name = mysql-fd
   ...
   Plugin Directory = /usr/lib64/bareos/plugins
   Plugin Names = "python"

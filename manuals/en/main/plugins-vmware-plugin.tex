@@ -41,7 +41,7 @@ which requires at least a \vSphere Essentials License.
 It is tested against \vSphere Storage APIs for Data Protection of \vmware 5.x.
 It does not work with standalone unlicensed \vmware ESXi\trademark.
 
-Since Bareos \sinceVersion{fd}{VMware Plugin: VDDK 6.5.2}{17.2.4} the Plugin is using
+Since Bareos \sinceVersion{fd}{VMware Plugin: VDDK 6.5.2}{17.2.4} the plugin is using
 the Virtual Disk Development Kit (VDDK) 6.5.2, as of the VDDK 6.5 release notes, it
 should be compatible with vSphere 6.5 and the next major release (except new features)
 and backward compatible with vSphere 5.5 and 6.0, see VDDK release notes at
@@ -77,22 +77,21 @@ For more details regarding users and permissions in vSphere see
     \item \url{http://pubs.vmware.com/vsphere-55/topic/com.vmware.vsphere.security.doc/GUID-5372F580-5C23-4E9C-8A4E-EF1B4DD9033E.html}
 \end{itemize}
 
-Make sure to add or enable the following settings in \file{/etc/bareos/bareos-fd.conf}:
+Make sure to add or enable the following settings in your \bareosFd configuration:
 
-\begin{bconfig}{bareos-fd.conf: Plugin Settings}
-...
-FileDaemon {
-...
+\begin{bareosConfigResource}{bareos-fd}{client}{myself}
+Client {
+  ...
   Plugin Directory = /usr/lib/bareos/plugins
   Plugin Names = python
-...
+  ...
 }
-\end{bconfig}
+\end{bareosConfigResource}
 
 Note: Depending on Platform, the Plugin Directory may also be \path|/usr/lib64/bareos/plugins|
 
 To define the backup of a VM in Bareos, a job definition and a fileset
-resource must be added to the Bareos director confguration.
+resource must be added to the Bareos director configuration.
 In vCenter, VMs are usually organized in datacenters and folders.
 The following example shows how to configure the backup of the VM
 named \textit{websrv1} in the datacenter \textit{mydc1}
@@ -113,7 +112,7 @@ FileSet {
          signature = MD5
          Compression = GZIP
     }
-    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234"
   }
 }
 \end{bconfig}
@@ -121,7 +120,23 @@ FileSet {
 For VMs defined in the root-folder, \command{folder=/} must be specified
 in the Plugin definition.
 
-New since Bareos \sinceVersion{fd}{VMware Plugin: vcthumbprint}{17.2.4}: As the Plugin is using
+Since Bareos \sinceVersion{dir}{bareos-vmware-plugin: module\_path without vmware\_plugin subdirectory}{17.2.4}
+the \argument{module\_path} is without \directory{vmware_plugin} directory.
+On upgrades you either adapt your configuration from
+
+\begin{bconfig}{python:module\_path for Bareos $<$ 17.2.0}
+Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:...
+\end{bconfig}
+
+to
+
+\begin{bconfig}{python:module\_path for Bareos $\geq$ 17.2.0}
+Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:...
+\end{bconfig}
+
+or install the \package{bareos-vmware-plugin-compat} package which includes compatibility symbolic links.
+
+Since \sinceVersion{fd}{VMware Plugin: vcthumbprint}{17.2.4}: as the Plugin is using
 the Virtual Disk Development Kit (VDDK) 6.5, it is required to pass the thumbprint
 of the vCenter SSL Certificate, which is the SHA1 checksum of the SSL Certificate.
 The thumbprint can be retrieved like this:
@@ -141,7 +156,7 @@ be added. It must be given without colons like in the following example:
 
 \begin{bconfig}{bareos-dir.conf: VMware Plugin Options with vcthumbprint}
     ...
-    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:vcthumbprint=56F597FE60521773D073A2ED47CE07282CE6FE9C"
     ...
 \end{bconfig}
 
@@ -165,7 +180,7 @@ be used, for example
 
 \begin{bconfig}{bareos-dir.conf: VMware Plugin options with transport}
     ...
-    Plugin = "python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:transport=nbdssl"
+    Plugin = "python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=mydc1:folder=/webservers:vmname=websrv1:vcserver=vcenter.example.org:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:transport=nbdssl"
     ...
 \end{bconfig}
 
@@ -338,7 +353,7 @@ Storage:         File
 When:            2016-02-25 15:06:48
 Catalog:         MyCatalog
 Priority:        10
-Plugin Options:  python: module_path=/usr/lib64/bareos/plugins/vmware_plugin: module_name=bareos-fd-vmware: dc=dass5:folder=/: vmname=stephand-test02: vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local: vcpass=Bak.Adm-1234: localvmdk=yes
+Plugin Options:  python: module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware: dc=dass5:folder=/: vmname=stephand-test02: vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local: vcpass=Bak.Adm-1234: localvmdk=yes
 OK to run? (yes/mod/no): <input>yes</input>
 Job queued. JobId=639
 \end{commands}
@@ -348,7 +363,7 @@ Note: Since Bareos \sinceVersion{fd}{Add additional python plugin options}{15.2.
 \argument{python:localvmdk=yes}
 
 Before, all Python plugin must be repeated and the additional be added, like:
-\path|python:module_path=/usr/lib64/bareos/plugins/vmware_plugin:module_name=bareos-fd-vmware:dc=dass5:folder=/:vmname=stephand-test02:vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:localvmdk=yes|
+\path|python:module_path=/usr/lib64/bareos/plugins:module_name=bareos-fd-vmware:dc=dass5:folder=/:vmname=stephand-test02:vcserver=virtualcenter5.dass-it:vcuser=bakadm@vsphere.local:vcpass=Bak.Adm-1234:localvmdk=yes|
 
 
 After the restore process has finished, the restored VMDK files can be found

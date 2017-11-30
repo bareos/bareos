@@ -8,7 +8,7 @@ The version of the File Daemon may differ, see chapter about \ilink{backward com
 When updating Bareos through the distribution packaging mechanism,
 the existing configuration kept as they are.
 
-If you don't want to modify the bahaviour,
+If you don't want to modify the behavior,
 there is normally no need to modify the configuration.
 
 However, in some rare cases, configuration changes are required.
@@ -32,6 +32,9 @@ Sometimes improvements in Bareos make it necessary to update the database scheme
 Detailed information can then be found in the log file \logfileUnix.
 
 Take a look into the \ilink{Release Notes}{releasenotes} to see which Bareos updates do require a database scheme update.
+
+\warning{Especially the upgrade to Bareos $\geq$ 17.2.0 restructures the \dbtable{File} database table. In larger installations this is very time consuming and temporarily doubles the amount of required database disk space.}
+
 
 
 \subsection{Debian based Linux Distributions}

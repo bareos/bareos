@@ -16,10 +16,10 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-17.2}
 
-\releasenoteUnstable{17.2.4-rc}{
+\releasenote{17.2.4}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
-Code Release      & \\
+Code Release      & 2017-12-14\\
 Database Version  & 2171\\
 Release Ticket    & \ticket{861}\\
 Url               & \releaseUrlDownloadBareosOrg{17.2} \\
@@ -28,13 +28,46 @@ Url               & \releaseUrlDownloadBareosOrg{17.2} \\
 
 This release contains several enhancements. Excerpt:
 \begin{itemize}
+  \item Bareos Distribution (packages)
+  \begin{itemize}
+    \item \package{python-bareos} is included in the core distribution.
+    \item \package{bareos-storage-droplet} is a storage backend for the droplet library.
+        Most notably it allows backup and restores to a S3 environment.
+        \betaSince{sd}{bareos-storage-droplet}{17.2.4}.
+    \item \package{bat} has been removed, see section \nameref{bat}.
+    \item platforms:
+    \begin{itemize}
+        \item Windows Clients are still supported since Windows Vista.
+        \item MacOS: added to build chain.
+        \item \bareosFd is ready for HP-UX 11.31 (ia64).
+        \item Linux Distribution: Bareos tries to provide packages for all current platforms. For details, refer to \nameref{sec:packages}.
+    \end{itemize}
+    \item Linux RPM packages: allow read access to /etc/bareos/ for all users (however, relevant files are still only readable for the user \user{bareos}).
+        This allows other programs associated with Bareos to also use this directory.
+  \end{itemize}
+
   \item Denormalization of the \dbtable{File} database table
   \begin{itemize}
-    \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions).
+    \item The denormalization of the \dbtable{File} database table leads to enormous performance improvements in installation, which covering a  lot of file (millions and more).
     \item For the denormalization the database schema must be modified.
           \warning{Updating the database to schema version $\geq$ 2170 will increase the required disk space.
                 Especially it will require around twice the amount of the current database disk space during the migration.}
+    \item The \dbtable{Filename} does no longer exists. Therefore the \bcommand{.bvfs_*}{} commands do no longer output the \dbcolumn{FilenameId} column.
   \end{itemize}
+
+  \item NDMP\_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see \nameref{sec:NdmpNative}.
+  \item Updated the package \package{bareos-vmware-plugin} to utilize the Virtual Disk Development Kit (VDDK) 6.5.x. This includes support for \vSphere 6.5 and the next major release (except new features) and backward compatible with \vSphere 5.5 and 6.0. For details see \nameref{VMwarePlugin}.
+  \item Soft Quota: automatic quota grace period reset if a job does not exceed the quota.
+  \item \command{bareos-dbcheck}: disable all interactive questions in batch mode.
+  \item \bcommand{list}{files}: also show deleted files (accurate mode).
+  \item \bcommand{list}{jobstatastics}: added.
+  \item \bcommand{purge}{}: added confirmation.
+  \item \bcommand{list}{volumes}: fix limit and offset handling.
+  \item \ticket{629} Windows: restore directory attributes.
+  \item \ticket{639} tape: fix block size handling, AWS VTL iSCSI devices
+  \item \ticket{705} support for MySQL 5.7
+  \item \ticket{719} allow long JSON messages (has been increased from 100KB to 2GB).
+  \item \ticket{793} Virtual Backups: skip jobs with no files.
 \end{itemize}
 
 }
