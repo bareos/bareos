@@ -1123,8 +1123,7 @@ The most useful commands are:
    not be able to compress the data, and thus it is a good test of
    the real physical capacity of your tapes.
 \item readlabel -- read and dump the label on a Bareos tape.
-\item cap -- list the device capabilities as defined in the  configuration
-   file and as perceived by the Storage daemon.
+\item cap -- list the device capabilities and status.
 \end{itemize}
 
 The {\bf readlabel} command can be used to display the details of a Bareos
@@ -1143,17 +1142,14 @@ To determine the best configuration of your tape drive, you can run the new
 
 This command can have the following arguments:
 \begin{itemize}
-\item[\texttt{file\_size=n}] Specify the Maximum File Size for this test
-  (between 1 and 5GB). This counter is in GB.
+\item[\texttt{file\_size=n}] Specify the \linkResourceDirective{Sd}{Device}{Maximum File Size}
+  for this test. This counter is in GB.
 \item[\texttt{nb\_file=n}] Specify the number of file to be written. The amount
   of data should be greater than your memory ($file\_size*nb\_file$).
-\item[\texttt{skip\_zero}] This flag permits to skip tests with constant
-  data.
-\item[\texttt{skip\_random}] This flag permits to skip tests with random
-  data.
+\item[\texttt{skip\_zero}] This flag permits to skip tests with constant data.
+\item[\texttt{skip\_random}] This flag permits to skip tests with random data.
 \item[\texttt{skip\_raw}] This flag permits to skip tests with raw access.
-\item[\texttt{skip\_block}] This flag permits to skip tests with Bareos block
-  access.
+\item[\texttt{skip\_block}] This flag permits to skip tests with Bareos block access.
 \end{itemize}
 
 \begin{bconsole}{btape speed}
@@ -1232,7 +1228,7 @@ be used on Windows machines.
 
 It is called:
 \begin{commands}{bsmtp}
-Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...t
+Usage: bsmtp [-f from] [-h mailhost] [-s subject] [-c copy] [recipient ...]
        -4          forces bsmtp to use IPv4 addresses only.
        -6          forces bsmtp to use IPv6 addresses only.
        -8          set charset to UTF-8
