@@ -1,4 +1,4 @@
--- update db schema from 2004 to 2170
+-- update db schema from 2004 to 2171
 
 -- table UnsavedFiles is not used, therefore dropped.
 DROP TABLE IF EXISTS UnsavedFiles;
