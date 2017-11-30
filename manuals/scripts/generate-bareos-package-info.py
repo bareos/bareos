@@ -9,7 +9,7 @@ Use obs-project-binary-packages-to-json.py to create the json files.
 """
 
 __author__ = "Joerg Steffens"
-__copyright__ = "2015-2016"
+__copyright__ = "2015-2017"
 __license__ = "AGPL"
 __version__ = "0.2"
 __email__ = "joerg.steffens@bareos.com"
@@ -114,7 +114,7 @@ class PackageDistReleaseData:
         self.excluded_packages = set()
         
         self.dist_exclude_pattern = re.compile("win_cross|windows")
-        self.package_exclude_pattern = re.compile("php-ZendFramework2-.*|mhvtl.*|mingw.*|.*-dbg|.*-debug.*|.*-doc|.*-devel|.*-dev")
+        self.package_exclude_pattern = re.compile("php5-zendframework2|php-ZendFramework2.*|mhvtl.*|mingw.*|.*-dbg|.*-debug.*|.*-doc|.*-devel|.*-dev")
 
 
     def generate(self, inputdata):
@@ -249,6 +249,7 @@ if __name__ == '__main__':
     filenametemplate = dest + '-table-{0}.tex'
     create_file(filenametemplate.format('redhat'), data, 'CentOS.*|RHEL.*')
     create_file(filenametemplate.format('fedora'), data, 'Fedora_2.')
-    create_file(filenametemplate.format('suse'), data, 'openSUSE_13..|openSUSE_Leap_.*|SLE_10_SP4|SLE_11_SP4|SLE_12_SP1')
+    create_file(filenametemplate.format('opensuse'), data, 'openSUSE_13..|openSUSE_Leap_.*')
+    create_file(filenametemplate.format('suse'), data, 'SLE_10_SP4|SLE_11_SP4|SLE_12_.*')
     create_file(filenametemplate.format('debian'), data, 'Debian.*|Univention_4.*')
     create_file(filenametemplate.format('ubuntu'), data, 'xUbuntu.*')
