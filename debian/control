@@ -31,11 +31,17 @@ Description: vStorage APIs for Data Protection Dumper program
 #Architecture: any
 #Section: libs
 #Depends: ${shlibs:Depends}, ${misc:Depends}
-#Description: VMware vix disklib distributable libraries 
+#Description: VMware vix disklib distributable libraries
 # The Virtual Disk Development Kit (VDDK) is a collection of C/C++ libraries,
 # code samples, utilities, and documentation to help you create and access
 # VMware virtual disk storage. The VDDK is useful in conjunction with the
 # vSphere API for writing backup and recovery software, or similar applications.
 # This package only contains the distributable code to comply with
 # https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
+
+Package: bareos-vmware-plugin-compat
+Architecture: any
+Depends:  bareos-vmware-plugin
+Description: Bareos VMware plugin compatibility
+ Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
 

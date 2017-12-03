@@ -1,2 +1,3 @@
-vmware_plugin/*.py /usr/lib/bareos/plugins/vmware_plugin
-vmware_cbt_tool/vmware_cbt_tool.py /usr/sbin
+/usr/lib/bareos/plugins/BareosFdPluginVMware.py
+/usr/lib/bareos/plugins/bareos-fd-vmware.py
+/usr/sbin/vmware_cbt_tool.py

@@ -63,6 +63,13 @@ is currently supported to the origin VM.
 #This package only contains the distributable code to comply with
 #https://communities.vmware.com/viewwebdoc.jspa?documentID=DOC-10141
 
+%package -n     bareos-vmware-plugin-compat
+Summary:        Bareos VMware plugin compatibility
+Group:          Productivity/Archiving/Backup
+Requires:       bareos-vmware-plugin
+%description -n bareos-vmware-plugin-compat
+Keeps bareos/plugins/vmware_plugin subdirectory, which have been used in Bareos <= 16.2.
+
 
 
 #PreReq:
@@ -93,7 +100,7 @@ chmod +x %{our_find_requires}
 %setup -q -n %{sourcename}
 
 %build
-cmake -DCMAKE_INSTALL_PREFIX=/
+cmake -DCMAKE_INSTALL_PREFIX:PATH=/usr
 make
 
 %install
@@ -115,7 +122,9 @@ make
 #%%files -n bareos-vmware-vix-disklib
 #/usr/lib/vmware-vix-disklib/lib64
 
-
+%files -n bareos-vmware-plugin-compat
+%defattr(-,root,root)
+%{_libdir}/bareos/plugins/vmware_plugin/
 
 %changelog
 

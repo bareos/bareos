@@ -1,6 +1,5 @@
-
-
-#   BAREOS�� - Backup Archiving REcovery Open Sourced
+#
+#   BAREOS - Backup Archiving REcovery Open Sourced
 #
 #   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
 #
@@ -30,17 +29,18 @@ add_subdirectory(vmware_plugin)
 #add_subdirectory(vmware-vix-disklib)
 
 
+#
+# commented, as it has not been used for inherited directories.
+#
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically
 # Taken from  https://cmake.org/pipermail/cmake/2013-July/055374.html
 
-get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
-if ("${LIB64}" STREQUAL "TRUE")
-        set(LIBSUFFIX 64)
-else()
-        set(LIBSUFFIX "")
-endif()
-set(INSTALL_LIB_DIR  "usr/lib${LIBSUFFIX}" CACHE PATH "Installation directory for libraries")
-mark_as_advanced(INSTALL_LIB_DIR)
-
-
+#get_property(LIB64 GLOBAL PROPERTY FIND_LIBRARY_USE_LIB64_PATHS)
+#if ("${LIB64}" STREQUAL "TRUE")
+#        set(LIBSUFFIX 64)
+#else()
+#        set(LIBSUFFIX "")
+#endif()
+#set(INSTALL_LIB_DIR  "lib${LIBSUFFIX}" CACHE PATH "Installation directory for libraries")
+#mark_as_advanced(INSTALL_LIB_DIR)
 
