@@ -139,7 +139,7 @@ class LowLevel(object):
         return result
 
 
-    def send_command(self, commamd):
+    def send_command(self, command):
         return self.call(command)
 
 
