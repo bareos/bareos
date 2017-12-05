@@ -118,49 +118,35 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
 #endif
 
    /*
-    * If label and not for us, discard it
+    * If label, discard it as we create our SOS and EOS Labels
     */
-   if (rec->FileIndex < 0 && rec->match_stat <= 0) {
+   if (rec->FileIndex < 0) {
       retval = true;
       goto bail_out;
    }
 
    /*
-    * We want to write SOS_LABEL and EOS_LABEL discard all others
+    * For normal migration jobs, FileIndex values are sequential because
+    *  we are dealing with one job.  However, for Vbackup (consolidation),
+    *  we will be getting records from multiple jobs and writing them back
+    *  out, so we need to ensure that the output FileIndex is sequential.
+    *  We do so by detecting a FileIndex change and incrementing the
+    *  JobFiles, which we then use as the output FileIndex.
     */
-   switch (rec->FileIndex) {
-   case PRE_LABEL:
-   case VOL_LABEL:
-   case EOT_LABEL:
-   case EOM_LABEL:
-      retval = true;                    /* don't write vol labels */
-      goto bail_out;
-   }
-
-//   if (jcr->is_JobType(JT_BACKUP)) {
+   if (rec->FileIndex >= 0) {
       /*
-       * For normal migration jobs, FileIndex values are sequential because
-       *  we are dealing with one job.  However, for Vbackup (consolidation),
-       *  we will be getting records from multiple jobs and writing them back
-       *  out, so we need to ensure that the output FileIndex is sequential.
-       *  We do so by detecting a FileIndex change and incrementing the
-       *  JobFiles, which we then use as the output FileIndex.
+       * If something changed, increment FileIndex
        */
-      if (rec->FileIndex >= 0) {
-         /*
-          * If something changed, increment FileIndex
-          */
-         if (rec->VolSessionId != rec->last_VolSessionId ||
-             rec->VolSessionTime != rec->last_VolSessionTime ||
-             rec->FileIndex != rec->last_FileIndex) {
-            jcr->JobFiles++;
-            rec->last_VolSessionId = rec->VolSessionId;
-            rec->last_VolSessionTime = rec->VolSessionTime;
-            rec->last_FileIndex = rec->FileIndex;
-         }
-         rec->FileIndex = jcr->JobFiles;     /* set sequential output FileIndex */
+      if (rec->VolSessionId != rec->last_VolSessionId ||
+            rec->VolSessionTime != rec->last_VolSessionTime ||
+            rec->FileIndex != rec->last_FileIndex) {
+         jcr->JobFiles++;
+         rec->last_VolSessionId = rec->VolSessionId;
+         rec->last_VolSessionTime = rec->VolSessionTime;
+         rec->last_FileIndex = rec->FileIndex;
       }
-//   }
+      rec->FileIndex = jcr->JobFiles;     /* set sequential output FileIndex */
+   }
 
    /*
     * Modify record SessionId and SessionTime to correspond to output.
@@ -210,6 +196,7 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
     */
    jcr->dcr->after_rec->VolSessionId = jcr->dcr->after_rec->last_VolSessionId;
    jcr->dcr->after_rec->VolSessionTime = jcr->dcr->after_rec->last_VolSessionTime;
+
    if (jcr->dcr->after_rec->FileIndex < 0) {
       retval = true;                    /* don't send LABELs to Dir */
       goto bail_out;
@@ -366,7 +353,7 @@ static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
    jcr->JobBytes += sd->msglen;
    sd->msg = msgsave;
 
-   Dmsg5(500, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
+   Dmsg5(200, "wrote_record JobId=%d FI=%s SessId=%d Strm=%s len=%d\n",
          jcr->JobId, FI_to_ascii(buf1, rec->FileIndex), rec->VolSessionId,
          stream_to_ascii(buf2, rec->Stream, rec->FileIndex), rec->data_len);
 
@@ -643,6 +630,16 @@ bool do_mac_run(JCR *jcr)
       jcr->JobFiles = 0;
 
       /*
+       * Write Begin Of Session Label
+       */
+      if (!write_session_label(jcr->dcr, SOS_LABEL)) {
+         Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
+               dev->bstrerror());
+         jcr->setJobStatus(JS_ErrorTerminated);
+         ok = false;
+      }
+
+      /*
        * Read all data and make a local clone of it.
        */
       ok = read_records(jcr->read_dcr, clone_record_internally, mount_next_read_volume);
@@ -662,7 +659,35 @@ bail_out:
 
       dev = jcr->dcr->dev;
       Dmsg1(100, "ok=%d\n", ok);
+
       if (ok || dev->can_write()) {
+
+         /*
+            memorize current JobStatus and set to
+            JS_Terminated to write into EOS_LABEL
+          */
+         char currentJobStatus = jcr->JobStatus;
+         jcr->setJobStatus(JS_Terminated);
+
+         /*
+          * Write End Of Session Label
+          */
+         DCR *dcr = jcr->dcr;
+         if (!write_session_label(dcr, EOS_LABEL)) {
+            /*
+             * Print only if ok and not cancelled to avoid spurious messages
+             */
+
+            if (ok && !jcr->is_job_canceled()) {
+               Jmsg1(jcr, M_FATAL, 0, _("Error writing end session label. ERR=%s\n"),
+                     dev->bstrerror());
+            }
+            jcr->setJobStatus(JS_ErrorTerminated);
+            ok = false;
+         } else {
+            /* restore JobStatus */
+            jcr->setJobStatus(currentJobStatus);
+         }
          /*
           * Flush out final partial block of this session
           */
@@ -673,7 +698,9 @@ bail_out:
             ok = false;
          }
          Dmsg2(200, "Flush block to device pos %u:%u\n", dev->file, dev->block_num);
+
       }
+
 
       if (!ok) {
          discard_data_spool(jcr->dcr);
