@@ -115,5 +115,85 @@ for file in 1 2 3 4 5 6 7 ; do
    grep $file ${tmp}/bareos-restores/${BackupDirectory}/file$file || set_error "file $file was not recovered"
 done
 
+
+
+# Now purge volumes from the database and check if we can bscan and recover everything
+
+# remove restored data as we want to restore it again after bscan run
+rm -Rvf ${cwd}/tmp/bareos-restores
+
+# purge and remove volumes
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log3.out
+
+purge volume=AI-Full-0001
+purge volume=AI-Incremental-0002
+purge volume=AI-Full-0003
+
+delete volume=AI-Full-0001 yes
+delete volume=AI-Incremental-0002 yes
+delete volume=AI-Full-0003 yes
+
+messages
+list jobs
+quit
+END_OF_DATA
+
+run_bareos
+stop_bareos
+
+# prepare BSR file
+
+echo "volume=AI-Full-0001" >tmp/bscan.bsr
+echo "volume=AI-Incremental-0002" >>tmp/bscan.bsr
+echo "volume=AI-Full-0003" >>tmp/bscan.bsr
+# If the database has a password pass it to bscan
+if test "x${db_password}" = "x"; then
+  PASSWD=
+else
+  PASSWD="-P ${db_password}"
+fi
+
+
+
+BSCAN_OUT="write_stdin_to_file ${tmp}/log-bscan.out"
+if is_debug; then
+   BSCAN_OUT="tee ${tmp}/log-bscan.out"
+fi
+$bin/bscan -c ${conf} $BSCANLIBDBI -B ${DBTYPE} -n ${db_name} -u ${db_user} $PASSWD -m -s -v -b $tmp/bscan.bsr File1 2>&1 | $BSCAN_OUT
+
+
+# do a restore of the bscan-ed content
+cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+@$out /dev/null
+messages
+@$out ${cwd}/tmp/log4.out
+@#setdebug level=100 storage=File
+@#
+@# now do a restore of the consolidated Full
+@#
+restore where=${cwd}/tmp/bareos-restores select storage=File1
+unmark *
+mark *
+done
+yes
+wait
+list volumes
+list jobs
+messages
+quit
+END_OF_DATA
+
+
+
+run_bareos
+check_for_zombie_jobs storage=File1
+stop_bareos
+
+
+
+
 # end tests and check for error codes
 end_test
