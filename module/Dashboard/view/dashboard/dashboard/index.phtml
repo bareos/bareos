@@ -73,7 +73,9 @@ $this->headTitle($title);
       $.ajax({
          url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobspast24h'; ?>',
          dataType: 'json',
-         timeout: 10000,
+         timeout: function() {
+            console.log('jobpast24h: timeout');
+         },
          success: function(data) {
             $('.waiting-jobs-field').empty();
             $('.waiting-jobs-field').append(
@@ -91,6 +93,12 @@ $this->headTitle($title);
             $('.failed-jobs-field').append(
                data.failed
             );
+         },
+         error: function() {
+            console.log('jobspast24h: error');
+         },
+         parseerror: function() {
+            console.log('jobspast24h: parse error');
          }
       });
    }
@@ -114,7 +122,18 @@ $this->headTitle($title);
                   return formatBytes(value);
                }
             }
-         ]
+         ],
+         ajaxOptions: {
+            timeout: function() {
+               console.log('jobtotals: timeout');
+            },
+            error: function() {
+               console.log('jobtotals: error');
+            },
+            parseerror: function() {
+               console.log('jobtotals: parse error');
+            }
+         }
       });
    }
 
@@ -188,7 +207,18 @@ $this->headTitle($title);
                   return formatBytes(value);
                }
             },
-         ]
+         ],
+         ajaxOptions: {
+            timeout: function() {
+               console.log('joblaststatus: timeout');
+            },
+            error: function() {
+               console.log('jobslaststatus: error');
+            },
+            parseerror: function() {
+               console.log('jobslaststatus: parse error');
+            }
+         }
       });
    }
 
@@ -237,7 +267,7 @@ $this->headTitle($title);
          },
          parsererror: function() {
             $('.running-jobs-container').empty();
-            $('.running-jobs-container').append('Parsererror');
+            $('.running-jobs-container').append('Error parsing data.');
          }
       });
    }

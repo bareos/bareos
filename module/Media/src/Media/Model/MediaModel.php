@@ -49,6 +49,9 @@ class MediaModel
                return $error['result']['error'];
             } else {
                $volumes = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($volumes['result']) ) {
+                  return false; // No matching records found
+               }
                if ( empty($volumes['result']['volumes']) && $volumes['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {

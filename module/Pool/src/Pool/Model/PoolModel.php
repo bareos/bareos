@@ -117,6 +117,9 @@ class PoolModel
                return $error['result']['error'];
             } else {
                $media = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($media['result']) ) {
+                  return false; // No matching records found
+               }
                if ( empty($media['result']['volumes']) && $media['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {

@@ -56,6 +56,10 @@ class RestoreModel
             $result = $bsock->send_command($cmd_1, 2, $jobid);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
+            if ( empty($directories['result']) ) {
+               return $retval;
+            }
+
             if(empty($directories['result']['directories'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
                $result = $bsock->send_command($cmd_2, 2, $jobid);
@@ -125,6 +129,10 @@ class RestoreModel
             $result = $bsock->send_command($cmd_1, 2, $jobid);
             $files = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
+            if ( empty($files['result']) ) {
+               return $retval;
+            }
+
             if(empty($files['result']['files'])) {
                $cmd_2 = '.bvfs_lsfiles jobid='.$jobid.' path=@ limit='.$limit.' offset='.$offset;
                $result = $bsock->send_command($cmd_2, 2, $jobid);
@@ -173,8 +181,8 @@ class RestoreModel
          }
          $result = $bsock->send_command($cmd, 2, null);
          $jobids = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+         $result = "";
          if(!empty($jobids['result'])) {
-            $result = "";
             $i = count($jobids['result']['jobids']);
             foreach($jobids['result']['jobids'] as $jobid) {
                $result .= $jobid['id'];

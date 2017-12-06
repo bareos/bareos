@@ -62,6 +62,9 @@ class JobModel
                return $error['result']['error'];
             } else {
                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($jobs['result']) ) {
+                  return false; // No matching records found
+               }
                if ( empty($jobs['result']['jobs']) && $jobs['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
@@ -144,7 +147,11 @@ class JobModel
          $cmd = 'llist jobid='.$id.'';
          $result = $bsock->send_command($cmd, 2, null);
          $job = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-         return $job['result']['jobs'];
+         if ( empty($job['result']) ) {
+            return false; // No matching records found
+         } else {
+            return $job['result']['jobs'];
+         }
       }
       else {
          throw new \Exception('Missing argument.');
@@ -174,6 +181,9 @@ class JobModel
             }
             else {
                $log = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if ( empty($log['result']) ) {
+                  return false; // No matching records found
+               }
                if ( empty($log['result']['joblog']) && $log['result']['meta']['range']['filtered'] === 0 ) {
                   return $retval;
                } else {
