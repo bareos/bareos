@@ -399,12 +399,7 @@ Example of a JSON-RPC Error Response (<http://www.jsonrpc.org/specification#erro
 Bvfs API {#sec:bvfs}
 --------
 
-The BVFS commands are do provide a API browsing the catalog, which is required for restoring.
-
-Bat has now a bRestore panel that uses Bvfs to display files and
-directories.
-
-![image](\idir bat-brestore) [fig:batbrestore]
+The BVFS (Bareos Virtual File System) do provide a API for browsing the backuped files in the catalog and select files for restoring.
 
 The Bvfs module works correctly with BaseJobs, Copy and Migration jobs.
 
@@ -412,18 +407,21 @@ The initial version in Bacula have be founded by Bacula Systems.
 
 ### General notes {#general-notes .unnumbered}
 
--   All fields are separated by a tab (api mode 0 and 1)
+-   All fields are separated by a tab (api mode 0 and 1). (api mode 2: JSON format).
+
+- The output format for api mode 0 and 1 have changed for bareos >= 17.2. In earlier versions the second column of the `bvfs_lsdirs`, `bvfs_lsfiles` and `bvfs_versions` command have  been the `FilenameId`. As bareos >= 17.2 internally don't use the `FilenameId` any longer, this column have been removed.
 
 -   You can specify `limit=` and `offset=` to list smoothly records in
-    very big directories
+    very big directories. By default, limit=2000.
 
--   All operations (except cache creation) are designed to run instantly
+-   All operations (except cache creation) are designed to run instantly.
 
 -   The cache creation is dependent of the number of directories. As
-    Bvfs shares information accross jobs, the first creation can be slow
+    Bvfs shares information across jobs, the first creation can be slow.
 
--   Due to potential encoding problem, it’s advised to allways use
-    pathid in queries.
+-   Due to potential encoding problem, it’s advised to use
+    `pathid` instead of `path` in queries.
+
 
 ### Get dependent jobs from a given JobId {#get-dependent-jobs-from-a-given-jobid .unnumbered}
 
@@ -470,54 +468,37 @@ Example:
 You can run the cache update process in a RunScript after the catalog
 backup.
 
-### Get all versions of a specific file {#get-all-versions-of-a-specific-file .unnumbered}
-
-Bvfs allows you to find all versions of a specific file for a given
-Client with the `.bvfs_version` command. To avoid problems with
-encoding, this function uses only PathId and FilenameId. The jobid
-argument is mandatory but unused.
-
-```
-*.bvfs_versions client=filedaemon pathid=num filenameid=num jobid=1
-PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
-PathId FilenameId FileId JobId LStat Md5 VolName Inchanger
-...
-```
-
-
-Example:
-
-```
-*.bvfs_versions client=localhost-fd pathid=1 fnid=47 jobid=1
-1  47  52  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
-```
-
-
 ### List directories {#list-directories .unnumbered}
 
 Bvfs allows you to list directories in a specific path.
 
     *.bvfs_lsdirs pathid=num path=/apath jobid=numlist limit=num offset=num
-    PathId  FilenameId  FileId  JobId  LStat  Path
-    PathId  FilenameId  FileId  JobId  LStat  Path
-    PathId  FilenameId  FileId  JobId  LStat  Path
+    PathId  FileId  JobId  LStat  Path
+    PathId  FileId  JobId  LStat  Path
+    PathId  FileId  JobId  LStat  Path
     ...
 
+In bareos < 17.2 the output has been:
+
+    PathId  FilenameId  FileId  JobId  LStat  Path
+
+
 You need to `pathid` or `path`. Using `path=` will list “/” on Unix and
-all drives on Windows. If FilenameId is 0, the record listed is a
-directory.
+all drives on Windows.
+
+FilenameId is 0 for all directories.
 
     *.bvfs_lsdirs pathid=4 jobid=1,11,12
-    4       0       0       0       A A A A A A A A A A A A A A     .
-    5       0       0       0       A A A A A A A A A A A A A A     ..
-    3       0       0       0       A A A A A A A A A A A A A A     regress/
+    4       0       0       A A A A A A A A A A A A A A     .
+    5       0       0       A A A A A A A A A A A A A A     ..
+    3       0       0       A A A A A A A A A A A A A A     regress/
 
 In this example, to list directories present in `regress/`, you can use
 
     *.bvfs_lsdirs pathid=3 jobid=1,11,12
-    3       0       0       0       A A A A A A A A A A A A A A     .
-    4       0       0       0       A A A A A A A A A A A A A A     ..
-    2       0       0       0       A A A A A A A A A A A A A A     tmp/
+    3       0       0       A A A A A A A A A A A A A A     .
+    4       0       0       A A A A A A A A A A A A A A     ..
+    2       0       0       A A A A A A A A A A A A A A     tmp/
 
 ### List files {#list-files .unnumbered}
 
@@ -526,28 +507,33 @@ In this example, to list directories present in `regress/`, you can use
 Bvfs allows you to list files in a specific path.
 
     .bvfs_lsfiles pathid=num path=/apath jobid=numlist limit=num offset=num
-    PathId  FilenameId  FileId  JobId  LStat  Path
-    PathId  FilenameId  FileId  JobId  LStat  Path
-    PathId  FilenameId  FileId  JobId  LStat  Path
+    PathId  FileId  JobId  LStat  Filename
+    PathId  FileId  JobId  LStat  Filename
+    PathId  FileId  JobId  LStat  Filename
     ...
+
+In bareos < 17.2 the output has been:
+
+    PathId  FilenameId  FileId  JobId  LStat  Filename
+
 
 You need to `pathid` or `path`. Using `path=` will list “/” on Unix and
 all drives on Windows. If FilenameId is 0, the record listed is a
 directory.
 
-    *.bvfs_lsfiles pathid=4 jobid=1,11,12
-    4       0       0       0       A A A A A A A A A A A A A A     .
-    5       0       0       0       A A A A A A A A A A A A A A     ..
-    1       0       0       0       A A A A A A A A A A A A A A     regress/
+    *.bvfs_lsdir pathid=4 jobid=1,11,12
+    4       0       0       A A A A A A A A A A A A A A     .
+    5       0       0       A A A A A A A A A A A A A A     ..
+    1       0       0       A A A A A A A A A A A A A A     regress/
 
 In this example, to list files present in `regress/`, you can use
 
     *.bvfs_lsfiles pathid=1 jobid=1,11,12
-    1   47   52   12    gD HRid IGk BAA I BMqcPH BMqcPE BMqe+t A     titi
-    1   49   53   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     toto
-    1   48   54   12    gD HRie IGk BAA I BMqcPH BMqcPE BMqe+3 A     tutu
-    1   45   55   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     ficheriro1.txt
-    1   46   56   12    gD HRie IGk BAA I BMqe/K BMqcPE BMqe+3 D     ficheriro2.txt
+    1   52   12    gD HRid IGk BAA I BMqcPH BMqcPE BMqe+t A     titi
+    1   53   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     toto
+    1   54   12    gD HRie IGk BAA I BMqcPH BMqcPE BMqe+3 A     tutu
+    1   55   12    gD HRid IGk BAA I BMqe/K BMqcPE BMqe+t B     ficheriro1.txt
+    1   56   12    gD HRie IGk BAA I BMqe/K BMqcPE BMqe+3 D     ficheriro2.txt
 
 
 #### API mode 1
@@ -555,8 +541,8 @@ In this example, to list files present in `regress/`, you can use
 ```
 *.api 1
 *.bvfs_lsfiles jobid=1 pathid=1
-1   11  7   1   gD OEE4 IHo B GHH GHH A G9S BAA 4 BVjBQG BVjBQG BVjBQG A A C    bpluginfo
-1   12  4   1   gD OEE3 KH/ B GHH GHH A W BAA A BVjBQ7 BVjBQG BVjBQG A A C  bregex
+1   7   1   gD OEE4 IHo B GHH GHH A G9S BAA 4 BVjBQG BVjBQG BVjBQG A A C    bpluginfo
+1   4   1   gD OEE3 KH/ B GHH GHH A W BAA A BVjBQ7 BVjBQG BVjBQG A A C  bregex
 ...
 ```
 
@@ -589,7 +575,6 @@ In this example, to list files present in `regress/`, you can use
           "size": 28498,
           "mtime": 1435243526
         },
-        "filenameid": 11,
         "name": "bpluginfo",
         "linkfileindex": 0
       },
@@ -612,7 +597,6 @@ In this example, to list files present in `regress/`, you can use
           "size": 22,
           "mtime": 1435243526
         },
-        "filenameid": 12,
         "name": "bregex",
         "linkfileindex": 0
       },
@@ -623,6 +607,32 @@ In this example, to list files present in `regress/`, you can use
 ```
 
 API mode JSON contains all information also available in the other API modes, but displays them more verbose.
+
+
+
+### Get all versions of a specific file {#get-all-versions-of-a-specific-file .unnumbered}
+
+Bvfs allows you to find all versions of a specific file for a given
+Client with the `.bvfs_version` command. To avoid problems with
+encoding, this function uses only PathId and FilenameId.
+
+The jobid argument is mandatory but unused.
+
+```
+*.bvfs_versions jobid=0 client=filedaemon pathid=num fname=filename [copies] [versions]
+PathId FileId JobId LStat Md5 VolName InChanger
+PathId FileId JobId LStat Md5 VolName InChanger
+...
+```
+
+
+Example:
+
+```
+*.bvfs_versions jobid=0 client=localhost-fd pathid=1 fnane=toto
+1  49  12  gD HRid IGk D Po Po A P BAA I A   /uPgWaxMgKZlnMti7LChyA  Vol1  1
+```
+
 
 ### Restore set of files {#restore-set-of-files .unnumbered}
 
@@ -663,3 +673,46 @@ To clear the BVFS cache, you can use the `.bvfs_clear_cache` command.
 
     *.bvfs_clear_cache yes
     OK
+
+
+### Example for directory browsing using bvfs
+
+    # update the bvfs cache for all jobs
+    *.bvfs_update
+    Automatically selected Catalog: MyCatalog
+    Using Catalog "MyCatalog
+
+    # get root directory of job 123
+    *.bvfs_lsdir jobid=123 path=
+    134	0	0	A A A A A A A A A A A A A A	.
+    133	0	0	A A A A A A A A A A A A A A	/
+
+    # path=/ (pathid=133) is the root directory.
+    # Check the root directory for subdirectories.
+    .bvfs_lsdir jobid=123 pathid=133
+    133	0	0	A A A A A A A A A A A A A A	.
+    130	0	0	A A A A A A A A A A A A A A	..
+    1	23	123	z GiuU EH9 C GHH GHH A BAA BAA I BWA5Px BaIDUN BaIDUN A A C	sbin/
+
+    # the first really backuped path is /sbin/ (pathid=1)
+    # as it has values other than 0 for FileId, JobId and LStat.
+    # Now we check, if it has futher subdirectories.
+    *.bvfs_lsdir jobid=1 pathid=1
+    1	23	123	z GiuU EH9 C GHH GHH A BAA BAA I BWA5Px BaIDUN BaIDUN A A C	.
+    129	0	0	A A A A A A A A A A A A A A	..
+
+    # pathid=1 has no further subdirectories.
+    # Now we list the files in pathid=1 (/sbin/)
+    .bvfs_lsfiles jobid=123 pathid=1
+    1	18	123	z Gli+ IHo B GHH GHH A NVkY BAA BrA BaIDUJ BaIDUJ BaIDUJ A A C	bareos-dir
+    1	21	123	z GkuS IHo B GHH GHH A C1bw BAA XA BaIDUG BaIDUG BaIDUG A A C	bareos-fd
+    1	19	123	z Glju IHo B GHH GHH A CeNg BAA UI BaIDUJ BaIDUJ BaIDUJ A A C	bareos-sd
+    ...
+
+    # there are a number of files in /sbin/.
+    # We check, if there are different versions of the file bareos-dir.
+    *.bvfs_versions jobid=0 client=bareos-fd pathid=1 fname=bareos-dir
+    1	18	123	z Gli+ IHo B GHH GHH A NVkY BAA BrA BaIDUJ BaIDUJ BaIDUJ A A C	928EB+EJGFtWD7wQ8bVjew	Full-0001	0
+    1	1067	127	z Glnc IHo B GHH GHH A NVkY BAA BrA BaKDT2 BaKDT2 BaKDT2 A A C	928EB+EJGFtWD7wQ8bVjew	Incremental-0007	0
+
+    # multiple versions of the file bareos-dir have been backuped.
