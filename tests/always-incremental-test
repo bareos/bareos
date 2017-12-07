@@ -193,6 +193,10 @@ check_for_zombie_jobs storage=File1
 stop_bareos
 
 
+# check if all files were restored
+for file in 1 2 3 4 5 6 7 ; do
+   grep $file ${tmp}/bareos-restores/${BackupDirectory}/file$file || set_error "file $file was not recovered"
+done
 
 
 # end tests and check for error codes
