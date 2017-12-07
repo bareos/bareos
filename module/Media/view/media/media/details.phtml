@@ -212,7 +212,7 @@ $this->headTitle($title);
                field: 'name',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
                }
             },
             {
