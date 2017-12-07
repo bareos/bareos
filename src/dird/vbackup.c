@@ -253,14 +253,13 @@ bool do_native_vbackup(JCR *jcr)
    }
 
    if (!create_bootstrap_file(jcr, jobids)) {
-      Jmsg(jcr, M_FATAL, 0, _("Could not get or create the FileSet record.\n"));
+      Jmsg(jcr, M_FATAL, 0, _("Could not create bootstrap file\n"));
       goto bail_out;
    }
 
    /*
     * Open a message channel connection with the Storage
-    * daemon. This is to let him know that our client
-    * will be contacting him for a backup  session.
+    * daemon.
     */
    Dmsg0(110, "Open connection with storage daemon\n");
    jcr->setJobStatus(JS_WaitSD);
