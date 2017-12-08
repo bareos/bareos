@@ -199,7 +199,7 @@ class LowLevel(object):
                         # check for regex in new submsg
                         # and last line in old message,
                         # which might have been incomplete without new submsg.
-                        lastlineindex = self.receive_buffer.rfind('\n') + 1
+                        lastlineindex = self.receive_buffer.rfind(b'\n') + 1
                         self.receive_buffer += submsg
                         match = re.search(regex, self.receive_buffer[lastlineindex:], re.MULTILINE)
                         # Bareos indicates end of command result by line starting with 4 digits
