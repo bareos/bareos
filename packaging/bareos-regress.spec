@@ -64,6 +64,6 @@ rm -rf $RPM_BUILD_ROOT
 if ! [ -e /var/lib/bareos/bareos-regress/config ]; then
   ln -s /etc/bareos/bareos-regress.conf /var/lib/bareos/bareos-regress/config
 fi
-su - bareos -s /bin/sh -c "cd /var/lib/bareos/bareos-regress; make sed" || true
+su - bareos -s /bin/sh -c "touch /var/lib/bareos/CLEANUPMARKER; cd /var/lib/bareos/bareos-regress; make sed" || true
 
 %changelog
