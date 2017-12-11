@@ -30,9 +30,9 @@ case "$1" in
         if ! [ -e /var/lib/bareos/bareos-regress/config ]; then
             ln -s /etc/bareos/bareos-regress.conf /var/lib/bareos/bareos-regress/config
         fi
+        permissions
         # make sure, regression get initialized on first run.
         su - bareos -s /bin/sh -c "touch /var/lib/bareos/CLEANUPMARKER; cd /var/lib/bareos/bareos-regress; make sed" || true
-        permissions
         ;;
     abort-upgrade|abort-remove|abort-deconfigure)
         ;;
