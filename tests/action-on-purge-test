@@ -1,18 +1,32 @@
 #!/bin/sh
 #
 #
-TestName="action-on-purge-test"
-JobName=FIFOTest
+
 . scripts/functions
 
-cwd=`pwd`
+TestName="action-on-purge-test"
+JobName=FIFOTest
+
+# Directory to backup.
+# This directory will be created by setup_data().
+# If set, $BackupDirectory will be used
+# as base directory by check_restore_diff().
+# Don't use a "/" at the end of the directory path,
+# as it might cause problems
+# (filenames given as parameter to restore must match 100%. "//" are not identical with "/").
+BackupDirectory="${tmp}/data"
+
+
 scripts/cleanup
 scripts/copy-test-confs
 
-echo $src > $tmp/file-list
-
 sed 's/Pool Type = Backup/Pool Type = Backup; ActionOnPurge = Truncate/' $conf/bareos-dir.conf > $tmp/1
 cp $tmp/1 $conf/bareos-dir.conf
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data".
+setup_data data/small.tgz
+
 
 start_test
 
