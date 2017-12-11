@@ -32,8 +32,8 @@ rm -rf ${conf}/tls/
 
 
 # bin directory does not always exist
-if [ -d ${scripts} ] ; then
-  if [ -f ${scripts}/bareos ] ; then
+if [ -d ${scripts} ]; then
+  if [ -f ${scripts}/bareos ]; then
      ${scripts}/bareos stop 2>&1 >/dev/null
   fi
   ${scripts}/drop_bareos_tables ${DBTYPE} >/dev/null 2>&1

@@ -36,10 +36,10 @@ start_test
 #              Pool Full    uses Storage=DiskChanger
 
 # Write out bconsole commands
-cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
-@$out ${cwd}/tmp/log1.out
+@$out ${tmp}/log1.out
 @#setdebug level=100 storage=File
 label storage=File volume=FileVolume001 Pool=Default
 label storage=DiskChanger volume=ChangerVolume001 slot=1 Pool=Full drive=0
@@ -71,7 +71,7 @@ list volumes
 @# now do a normal restore of normal backups
 @#
 setdebug level=10 dir
-restore where=${cwd}/tmp/bareos-restores select
+restore where=${tmp}/bareos-restores select
 unmark *
 mark *
 done
@@ -88,7 +88,7 @@ list jobs
 @#
 @# now do a restore of the consolidated Full
 @#
-restore where=${cwd}/tmp/bareos-restores select storage=DiskChanger
+restore where=${tmp}/bareos-restores select storage=DiskChanger
 unmark *
 mark *
 done
@@ -109,18 +109,18 @@ stop_bareos
 # We only used one log so copy it to the second log
 #  so that any restore errors will be picked up
 #
-cp -f ${cwd}/tmp/log1.out ${cwd}/tmp/log2.out
+cp -f ${tmp}/log1.out ${tmp}/log2.out
 check_two_logs
 check_restore_diff
 
 # remove restored data as we want to restore it again after bscan run
-rm -Rvf ${cwd}/tmp/bareos-restores
+rm -Rf ${tmp}/bareos-restores
 
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
-@$out ${cwd}/tmp/log3.out
+@$out ${tmp}/log3.out
 mount storage=DiskChanger volume=ChangerVolume002
 
 purge volume=FileVolume001
@@ -141,7 +141,7 @@ stop_bareos
 # prepare BSR file
 
 #echo "volume=ChangerVolume001" >tmp/bscan.bsr
-echo "volume=ChangerVolume002" >>tmp/bscan.bsr
+echo "volume=ChangerVolume002" >>${tmp}/bscan.bsr
 # If the database has a password pass it to bscan
 if test "x${db_password}" = "x"; then
   PASSWD=
@@ -155,19 +155,19 @@ BSCAN_OUT="write_stdin_to_file ${tmp}/log-bscan.out"
 if is_debug; then
    BSCAN_OUT="tee ${tmp}/log-bscan.out"
 fi
-$bin/bscan -c ${conf} $BSCANLIBDBI -B ${DBTYPE} -n ${db_name} -u ${db_user} $PASSWD -m -s -v -b $tmp/bscan.bsr Drive-0 2>&1 | $BSCAN_OUT
+$bin/bscan -c ${conf} $BSCANLIBDBI -B ${DBTYPE} -n ${db_name} -u ${db_user} $PASSWD -m -s -v -b ${tmp}/bscan.bsr Drive-0 2>&1 | $BSCAN_OUT
 
 
 # do a restore of the bscan-ed content
-cat <<END_OF_DATA >${cwd}/tmp/bconcmds
+cat <<END_OF_DATA >${tmp}/bconcmds
 @$out /dev/null
 messages
-@$out ${cwd}/tmp/log4.out
+@$out ${tmp}/log4.out
 @#setdebug level=100 storage=File
 @#
 @# now do a restore of the consolidated Full
 @#
-restore where=${cwd}/tmp/bareos-restores select storage=DiskChanger
+restore where=${tmp}/bareos-restores select storage=DiskChanger
 unmark *
 mark *
 done
@@ -188,9 +188,9 @@ stop_bareos
 # We only used one log so copy it to the second log
 #  so that any restore errors will be picked up
 #
-cp -f ${cwd}/tmp/log1.out ${cwd}/tmp/log2.out
+cp -f ${tmp}/log1.out ${tmp}/log2.out
 check_two_logs
 check_restore_diff
 
-
 end_test
+

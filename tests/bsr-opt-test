@@ -27,7 +27,7 @@ start_test
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
 @$out /dev/null
 messages
-@$out ${cwd}/tmp/log1.out
+@$out ${tmp}/log1.out
 label storage=File1 volume=TestVolume001
 label storage=File1 volume=TestVolume002
 update Volume=TestVolume001 MaxVolBytes=10000
@@ -37,9 +37,9 @@ messages
 @#
 @# now do a restore
 @#
-@$out ${cwd}/tmp/log2.out
+@$out ${tmp}/log2.out
 setdebug level=150 storage=File1
-restore bootstrap=${cwd}/working/restore.bsr where=${cwd}/tmp/bareos-restores select storage=File1
+restore bootstrap=${working}/restore.bsr where=${tmp}/bareos-restores select storage=File1
 unmark *
 cd ${BackupDirectory}
 mark *
@@ -59,7 +59,7 @@ stop_bareos
 #   to select files on only one Volume, then insure here
 #   that only one Volume is chosen.
 #
-grep TestVolume002 working/restore.bsr 2>&1 >/dev/null
+grep TestVolume002 ${working}/restore.bsr 2>&1 >/dev/null
 bsrstat=$?
 if [ $bsrstat != 0 ]; then
    echo "  !!!!! Volume selection error         !!!!! "
@@ -72,3 +72,4 @@ check_restore_diff
 
 # end tests and check for error codes
 end_test
+
