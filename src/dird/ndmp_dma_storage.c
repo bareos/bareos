@@ -688,14 +688,16 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
 /**
  * Lookup the name of a drive in a NDMP autochanger.
  */
-char *lookup_ndmp_drive(STORERES *store, drive_number_t drive)
+char *lookup_ndmp_drive(STORERES *store, drive_number_t drivenumber)
 {
    int cnt = 0;
    char *tapedevice;
+   RES *tapedeviceres;
 
    if (store->device) {
-      foreach_alist(tapedevice, store->device) {
-         if (cnt == drive) {
+      foreach_alist(tapedeviceres, store->device) {
+         if (cnt == drivenumber) {
+            tapedevice = tapedeviceres->name;
             return tapedevice;
          }
          cnt++;

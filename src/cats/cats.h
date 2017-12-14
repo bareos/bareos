@@ -710,6 +710,7 @@ public:
    int get_pool_ids(JCR *jcr, int *num_ids, DBId_t **ids);
    bool get_client_ids(JCR *jcr, int *num_ids, DBId_t **ids);
    int get_storage_ids(JCR *jcr, int *num_ids, DBId_t **ids);
+   bool prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes);
    bool get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t **ids);
    int get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolParams);
    bool get_client_record(JCR *jcr, CLIENT_DBR *cdbr);

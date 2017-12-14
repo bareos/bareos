@@ -4,7 +4,9 @@
 # on Linux use "lsscsi --generic"
 # to get a list of your SCSI devices.
 # However, normaly you should access your devices by-id
-# (eg. /dev/tape/by-id/scsi-350011d00018a5f03-nst),
+# (eg. /dev/tape/by-id/scsi-350011d00018a5f03-nst)
+# or by-path
+# (eg. /dev/tape/by-path/pci-0000:0d:08.0-sas-phy4-0x500110a0015ec9e0-lun-0-nst),
 # because the short device names like /dev/nst1
 # might change on reboot.
 #

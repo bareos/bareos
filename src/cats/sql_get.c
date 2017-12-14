@@ -915,25 +915,12 @@ int B_DB::get_num_media_records(JCR *jcr)
    return retval;
 }
 
-/**
- * This function creates a sql query string at cmd to return a list of all the Media records for
- * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
- * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
- * over VolumeName. The caller must free ids if non-NULL.
- */
-bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t *ids[])
+bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes)
 {
    bool ok = true;
    char ed1[50];
    char esc[MAX_NAME_LENGTH * 2 + 1];
    POOL_MEM buf(PM_MESSAGE);
-   bool have_volumes = false;
-   db_lock(this);
-   *ids = NULL;
-
-   if (*volumes.c_str()) {
-      have_volumes = true;
-   }
 
    Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ", mr->Recycle, mr->Enabled);
 
@@ -964,7 +951,12 @@ bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_id
       pm_strcat(cmd, buf.c_str());
    }
 
-   if (*mr->VolumeName && !have_volumes) {
+   if (volumes.strlen() > 0) {
+      /* extra list of volumes given */
+      Mmsg(buf, "AND VolumeName IN (%s) ", volumes.c_str());
+      pm_strcat(cmd, buf.c_str());
+   } else if (*mr->VolumeName) {
+      /* single volume given in media record */
       escape_string(jcr, esc, mr->VolumeName, strlen(mr->VolumeName));
       Mmsg(buf, "AND VolumeName = '%s' ", esc);
       pm_strcat(cmd, buf.c_str());
@@ -972,6 +964,49 @@ bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_id
 
    Dmsg1(100, "query=%s\n", cmd);
 
+   return ok;
+}
+
+/**
+ * This function creates a sql query string at cmd to return a list of all the Media records for
+ * the current Pool, the correct Media Type, Recyle, Enabled, StorageId, VolBytes and
+ * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
+ * over VolumeName. The caller must free ids if non-NULL.
+ */
+bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t *ids[])
+{
+   bool ok = false;
+   SQL_ROW row;
+   int i = 0;
+   DBId_t *id;
+
+   db_lock(this);
+   *ids = NULL;
+
+   if (!prepare_media_sql_query(jcr, mr, volumes)) {
+      Mmsg(errmsg, _("Media id select failed: invalid parameter"));
+      Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+      goto bail_out;
+   }
+
+   if (!QUERY_DB(jcr, cmd)) {
+      Mmsg(errmsg, _("Media id select failed: ERR=%s\n"), sql_strerror());
+      Jmsg(jcr, M_ERROR, 0, "%s", errmsg);
+      goto bail_out;
+   }
+
+   *num_ids = sql_num_rows();
+   if (*num_ids > 0) {
+      id = (DBId_t *)malloc(*num_ids * sizeof(DBId_t));
+      while ((row = sql_fetch_row()) != NULL) {
+         id[i++] = str_to_uint64(row[0]);
+      }
+      *ids = id;
+   }
+   sql_free_result();
+   ok = true;
+bail_out:
+   db_unlock(this);
    return ok;
 }
 
@@ -1267,6 +1302,7 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
    "FROM Job JOIN FileSet USING (FileSetId) "
   "WHERE ClientId = %s "
+    "AND JobFiles > 0 "
     "AND Level='D' AND JobStatus IN ('T','W') AND Type='B' "
     "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC LIMIT 1) "
     "AND StartTime < '%s' "
@@ -1294,6 +1330,7 @@ bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
  "SELECT JobId, StartTime, EndTime, JobTDate, PurgedFiles "
    "FROM Job JOIN FileSet USING (FileSetId) "
   "WHERE ClientId = %s "
+    "AND JobFiles > 0 "
     "AND Level='I' AND JobStatus IN ('T','W') AND Type='B' "
     "AND StartTime > (SELECT EndTime FROM btemp3%s ORDER BY EndTime DESC LIMIT 1) "
     "AND StartTime < '%s' "

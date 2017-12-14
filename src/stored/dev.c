@@ -259,7 +259,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
     */
    Mmsg(dev->prt_name, "\"%s\" (%s)", device->name(), device->device_name);
    Dmsg1(400, "Allocate dev=%s\n", dev->print_name());
-   copy_bits(CAP_MAX, device->cap_bits, dev->capabilities);
+   copy_set_bits(CAP_MAX, device->cap_bits, dev->capabilities);
 
    /*
     * current block sizes
@@ -587,7 +587,7 @@ bool DEVICE::open(DCR *dcr, int omode)
    /*
     * Reset any important state info
     */
-   clone_bits(ST_MAX, preserve, state);
+   copy_set_bits(ST_MAX, preserve, state);
 
    Dmsg2(100, "preserve=%08o fd=%d\n", preserve, m_fd);
 

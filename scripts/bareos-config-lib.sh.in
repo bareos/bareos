@@ -1,21 +1,20 @@
 #!/bin/sh
 
 CONFIG_LIB=@scriptdir@/bareos-config-lib.sh
-DIR_CFG=@confdir@
-CFG_DIR=${DIR_CFG}/bareos-dir.conf
+DIR_CFG=${BAREOS_CONFIG_DIR:-@confdir@}
 DIR_SCRIPTS=@scriptdir@
-DBCHECK="@sbindir@/bareos-dbcheck -B"
+DBCHECK="@sbindir@/bareos-dbcheck -c ${DIR_CFG} -B"
 AWK="@AWK@"
 
 SEC_GROUPS="tape disk"
 
 WORKING_DIR="@working_dir@"
-FILE_DAEMON_USER="@fd_user@"
-FILE_DAEMON_GROUP="@fd_group@"
-STORAGE_DAEMON_USER="@sd_user@"
-STORAGE_DAEMON_GROUP="@sd_group@"
-DIRECTOR_DAEMON_USER="@dir_user@"
-DIRECTOR_DAEMON_GROUP="@dir_group@"
+FILE_DAEMON_USER="${BAREOS_FD_GROUP:-@fd_user@}"
+FILE_DAEMON_GROUP="${BAREOS_FD_GROUP:-@fd_group@}"
+STORAGE_DAEMON_USER="${BAREOS_SD_USER:-@sd_user@}"
+STORAGE_DAEMON_GROUP="${BAREOS_SD_GROUP:-@sd_group@}"
+DIRECTOR_DAEMON_USER="${BAREOS_DIR_USER:-@dir_user@}"
+DIRECTOR_DAEMON_GROUP="${BAREOS_DIR_GROUP:-@dir_group@}"
 DAEMON_USER="$DIRECTOR_DAEMON_USER"
 DAEMON_GROUP="$DIRECTOR_DAEMON_GROUP"
 

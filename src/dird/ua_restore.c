@@ -664,7 +664,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         ua->db->list_sql_query(ua->jcr, "uar_list_jobs", ua->send, HORZ_LIST, true);
+         ua->db->list_sql_query(ua->jcr, B_DB::SQL_QUERY_uar_list_jobs, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
