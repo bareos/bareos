@@ -64,6 +64,12 @@ static char replicate_data[] =
 static char end_replicate[] =
    "end replicate\n";
 
+
+/* get information from first original SOS label for our job */
+static bool found_first_sos_label = false;
+
+
+
 /**
  * Get response from Storage daemon to a command we sent.
  * Check that the response is OK.
@@ -119,10 +125,67 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
 
    /*
     * If label, discard it as we create our SOS and EOS Labels
+    * However, we still want the first Start Of Session label as that contains
+    * the timestamps from the first original Job.
+    *
+    * We need to put this info in our own SOS and EOS Labels so that
+    * bscan-ing of virtual and always incremental consolidated jobs
+    * works.
     */
+
    if (rec->FileIndex < 0) {
-      retval = true;
-      goto bail_out;
+      if (rec->FileIndex == SOS_LABEL) {
+         if (!found_first_sos_label) {
+            Dmsg0(200, "Found first SOS_LABEL and adopting job info\n");
+            found_first_sos_label = true;
+
+            static SESSION_LABEL the_label;
+            static SESSION_LABEL* label= &the_label;
+
+            struct date_time dt;
+            struct tm tm;
+
+            unser_session_label(label, rec);
+
+            /*
+             * set job info from first SOS label
+             */
+            jcr->JobId = label->JobId;
+            jcr->setJobType(label->JobType);
+            jcr->setJobLevel(label->JobLevel);
+            Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
+            bstrncpy(jcr->Job, label->Job, sizeof(jcr->Job));
+
+            if (label->VerNum >= 11) {
+               jcr->sched_time = btime_to_unix(label->write_btime);
+
+            } else {
+               dt.julian_day_number = label->write_date;
+               dt.julian_day_fraction = label->write_time;
+               tm_decode(&dt, &tm);
+               jcr->sched_time = mktime(&tm);
+            }
+            jcr->start_time = jcr->sched_time;
+
+            /* write the SOS Label with the existing timestamp infos */
+            if (!write_session_label(jcr->dcr, SOS_LABEL)) {
+               Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
+                     dev->bstrerror());
+               jcr->setJobStatus(JS_ErrorTerminated);
+               retval = false;
+               goto bail_out;
+            }
+         } else {
+            Dmsg0(200, "Found additional SOS_LABEL, ignoring! \n");
+            retval = true;
+            goto bail_out;
+         }
+
+      } else  {
+         /* Other label than SOS -> skip */
+         retval = true;
+         goto bail_out;
+      }
    }
 
    /*
@@ -586,6 +649,7 @@ bool do_mac_run(JCR *jcr)
       /* Inform Storage daemon that we are done */
       sd->signal(BNET_TERMINATE);
    } else {
+
       if (!jcr->read_dcr || !jcr->dcr) {
          Jmsg(jcr, M_FATAL, 0, _("Read and write devices not properly initialized.\n"));
          goto bail_out;
@@ -628,17 +692,6 @@ bool do_mac_run(JCR *jcr)
       jcr->run_time = time(NULL);
       set_start_vol_position(jcr->dcr);
       jcr->JobFiles = 0;
-
-
-      /*
-       * Write Begin Of Session Label
-       */
-      if (!write_session_label(jcr->dcr, SOS_LABEL)) {
-         Jmsg1(jcr, M_FATAL, 0, _("Write session label failed. ERR=%s\n"),
-               dev->bstrerror());
-         jcr->setJobStatus(JS_ErrorTerminated);
-         ok = false;
-      }
 
       /*
        * Read all data and make a local clone of it.
