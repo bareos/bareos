@@ -100,17 +100,23 @@ On RHEL 7 it is available through the RHEL Server Optional channel. On CentOS 7 
 
 DIST=RHEL_7
 # or
-# DIST=Fedora_24
 # DIST=CentOS_7
+# DIST=Fedora_26
+# DIST=Fedora_25
+
+RELEASE=release/17.2/
+# or
+# RELEASE=release/latest/
+# RELEASE=experimental/nightly/
 
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/latest/$DIST
+URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
 yum install bareos bareos-database-postgresql
 \end{commands}
-%\hide{$}
+\hide{$}
 
 \subsubsection{RHEL 6, CentOS 6}
 \index[general]{Platform!RHEL!6}
@@ -133,14 +139,19 @@ rpm -Uhv https://dl.fedoraproject.org/pub/epel/epel-release-latest-6.noarch.rpm
 DIST=RHEL_6
 # DIST=CentOS_6
 
+RELEASE=release/17.2/
+# or
+# RELEASE=release/latest/
+# RELEASE=experimental/nightly/
+
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/latest/$DIST
+URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
 yum install bareos bareos-database-postgresql
 \end{commands}
-%\hide{$}
+\hide{$}
 
 
 \subsubsection{RHEL 5}
@@ -156,15 +167,20 @@ yum in RHEL 5/CentOS 5 has slightly different behaviour as far as dependency res
 
 DIST=RHEL_5
 
+RELEASE=release/17.2/
+# or
+# RELEASE=release/latest/
+# RELEASE=experimental/nightly/
+
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/latest/$DIST
+URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
 yum install bareos-database-postgresql
 yum install bareos
 \end{commands}
-%\hide{$}
+\hide{$}
 
 \subsection{Install on SUSE based Linux Distributions}
 
@@ -185,14 +201,19 @@ DIST=SLE_12_SP3
 # DIST=openSUSE_Leap_42.3
 # DIST=openSUSE_Leap_42.2
 
+RELEASE=release/17.2/
+# or
+# RELEASE=release/latest/
+# RELEASE=experimental/nightly/
+
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/latest/$DIST
+URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
 zypper addrepo --refresh $URL/bareos.repo
 
 # install Bareos packages
 zypper install bareos bareos-database-postgresql
 \end{commands}
-%\hide{$}
+\hide{$}
 
 
 
@@ -219,7 +240,12 @@ DIST=Debian_9.0
 # DIST=xUbuntu_14.04
 # DIST=xUbuntu_12.04
 
-URL=http://download.bareos.org/bareos/release/latest/$DIST/
+RELEASE=release/17.2/
+# or
+# RELEASE=release/latest/
+# RELEASE=experimental/nightly/
+
+URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
 
 # add the Bareos repository
 printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list
@@ -231,7 +257,7 @@ wget -q $URL/Release.key -O- | apt-key add -
 apt-get update
 apt-get install bareos bareos-database-postgresql
 \end{commands}
-\hide{$}
+%\hide{$}
 
 If you prefer using the versions of Bareos directly integrated into the distributions, 
 please note that there are some differences, see \nameref{sec:DebianOrgLimitations}.
