@@ -7,4 +7,5 @@ sed -e "s/^.*:.*:\s//" -e "s/\s([^)]*)//g" /tmp/dpkg-builddeps > /tmp/build_depe
 echo "additional packages required for building:"; cat /tmp/build_depends
 sudo xargs --arg-file /tmp/build_depends apt-get -q --assume-yes install fakeroot
 dpkg -l
+true
 
