@@ -888,9 +888,10 @@ AC_HEADER_DIRENT
 AC_CHECK_HEADER(glob.h, [AC_DEFINE(HAVE_GLOB_H, 1, [Define to 1 if you have the <glob.h> header file.])] , )
 AC_CHECK_HEADER(poll.h, [AC_DEFINE(HAVE_POLL_H, 1, [Define to 1 if you have the <poll.h> header file.])] , )
 AC_CHECK_HEADER(sys/poll.h, [AC_DEFINE(HAVE_SYS_POLL_H, 1, [Define to 1 if you have the <sys/poll.h> header file.])] , )
+AC_CHECK_HEADER(sys/mman.h, [AC_DEFINE(HAVE_SYS_MMAN_H, 1, [Define to 1 if you have the <sys/mman.h> header file.])] , )
 AC_CHECK_FUNCS(glob strcasecmp select poll setenv putenv tcgetattr)
 AC_CHECK_FUNCS(lstat lchown lchmod utimes lutimes futimes futimens fchmod fchown)
-AC_CHECK_FUNCS(nanosleep nl_langinfo)
+AC_CHECK_FUNCS(mmap nanosleep nl_langinfo)
 AC_CHECK_HEADERS(varargs.h)
 
 
@@ -4502,6 +4503,20 @@ DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=/dev/null
 
 dnl build a list of plugins we need to build.
 if test x$use_libtool != xno; then
+   if test X"$have_zlib" = "Xyes" -o \
+           X"$have_lzo" = "Xyes" -o \
+           X"$have_fastlz" = "Xyes" ; then
+      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
+   fi
+
+   if test X"$have_cephfs" = "Xyes" ; then
+      BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} cephfs-fd.la"
+   fi
+
+   if test X"$have_glusterfs" = "Xyes" ; then
+      BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} gfapi-fd.la"
+   fi
+
    if test X"$support_python" = "Xyes" ; then
       BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} python-fd.la"
       BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} python-sd.la"
@@ -4511,27 +4526,13 @@ if test x$use_libtool != xno; then
       DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN=./debian/control.bareos-director-python-plugin
    fi
 
+   if test X"$have_ceph_rados" = "Xyes" ; then
+      BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} rados-fd.la"
+   fi
+
    if test X"$have_scsi_crypto" = "Xyes" ; then
       BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} scsicrypto-sd.la scsitapealert-sd.la"
    fi
-
-   if test X"$have_zlib" = "Xyes" -o \
-           X"$have_lzo" = "Xyes" -o \
-           X"$have_fastlz" = "Xyes" ; then
-      BUILD_SD_PLUGINS="${BUILD_SD_PLUGINS} autoxflate-sd.la"
-   fi
-fi
-
-if test X"$have_ceph_rados" = "Xyes" ; then
-   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} rados-fd.la"
-fi
-
-if test X"$have_glusterfs" = "Xyes" ; then
-   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} gfapi-fd.la"
-fi
-
-if test X"$have_cephfs" = "Xyes" ; then
-   BUILD_FD_PLUGINS="${BUILD_FD_PLUGINS} cephfs-fd.la"
 fi
 
 AC_SUBST(BUILD_FD_PLUGINS)
@@ -4542,34 +4543,32 @@ AC_SUBST_FILE(DEBIAN_CONTROL_STORAGE_PYTHON_PLUGIN)
 AC_SUBST_FILE(DEBIAN_CONTROL_DIRECTOR_PYTHON_PLUGIN)
 
 dnl build a list of storage backends we need to build.
+BUILD_SD_BACKENDS=""
 if test x$use_libtool != xno; then
-   BUILD_SD_BACKENDS="libbareossd-fifo.la libbareossd-gentape.la libbareossd-tape.la"
-
-   if test X"$have_glusterfs" = "Xyes" ; then
-      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gfapi.la"
+   if test X"$have_cephfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
    fi
 
    if test X"$have_droplet" = "Xyes" ; then
-      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-object.la"
-   fi
-
-   if test X"$have_ceph_rados" = "Xyes" ; then
-      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-rados.la"
-   fi
-
-   if test X"$have_cephfs" = "Xyes" ; then
-      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-cephfs.la"
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-chunked.la"
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-droplet.la"
    fi
 
    if test X"$have_elasto" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-elasto.la"
    fi
-else
-   BUILD_SD_BACKENDS=""
+
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-fifo.la"
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gentape.la"
+
+   if test X"$have_ceph_rados" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-rados.la"
+   fi
+
+   BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-tape.la"
 fi
 
 AC_SUBST(BUILD_SD_BACKENDS)
-
 
 dnl Insanity check
 if test "x${subsysdir}" = "x${sbindir}" ; then

@@ -3330,10 +3330,10 @@ static PyObject *PyStatPacket_repr(PyStatPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "StatPacket(dev=%ld, ino=%lld, mode=%d, nlink=%d, "
+   Mmsg(buf, "StatPacket(dev=%ld, ino=%lld, mode=%04o, nlink=%d, "
              "uid=%ld, gid=%ld, rdev=%ld, size=%lld, "
              "atime=%ld, mtime=%ld, ctime=%ld, blksize=%ld, blocks=%lld)",
-        self->dev, self->ino, self->mode, self->nlink,
+        self->dev, self->ino, (self->mode & ~S_IFMT), self->nlink,
         self->uid, self->gid, self->rdev, self->size,
         self->atime, self->mtime, self->ctime, self->blksize, self->blocks);
 
@@ -3658,10 +3658,10 @@ static PyObject *PyIoPacket_repr(PyIoPacket *self)
    PyObject *s;
    POOL_MEM buf(PM_MESSAGE);
 
-   Mmsg(buf, "IoPacket(func=%d, count=%ld, flags=%ld, mode=%ld, "
+   Mmsg(buf, "IoPacket(func=%d, count=%ld, flags=%ld, mode=%04o, "
              "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
              "whence=%ld, offset=%lld, win32=%d)",
-        self->func, self->count, self->flags, self->mode,
+        self->func, self->count, self->flags, (self->mode & ~S_IFMT),
         PyGetByteArrayValue(self->buf), self->fname, self->status,
         self->io_errno, self->lerror,
         self->whence, self->offset, self->win32);

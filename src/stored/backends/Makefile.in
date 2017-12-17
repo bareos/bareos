@@ -32,23 +32,26 @@ RADOS_LIBS = @RADOS_STRIPER_LIBS@ @RADOS_LIBS@
 CHEPHFS_SRCS = cephfs_device.c
 CHEPHFS_LOBJS = $(CHEPHFS_SRCS:.c=.lo)
 
+CHUNKED_SRCS = chunked_device.c
+CHUNKED_LOBJS = $(CHUNKED_SRCS:.c=.lo)
+
+DROPLET_SRCS = droplet_device.c
+DROPLET_LOBJS = $(DROPLET_SRCS:.c=.lo)
+
 ELASTO_SRCS = elasto_device.c
 ELASTO_LOBJS = $(ELASTO_SRCS:.c=.lo)
-
-GFAPI_SRCS = gfapi_device.c
-GFAPI_LOBJS = $(GFAPI_SRCS:.c=.lo)
-
-OBJECT_SRCS = object_store_device.c
-OBJECT_LOBJS = $(OBJECT_SRCS:.c=.lo)
-
-RADOS_SRCS = rados_device.c
-RADOS_LOBJS = $(RADOS_SRCS:.c=.lo)
 
 FIFO_SRCS = unix_fifo_device.c
 FIFO_LOBJS = $(FIFO_SRCS:.c=.lo)
 
 GEN_TAPE_SRCS = generic_tape_device.c
 GEN_TAPE_LOBJS = $(GEN_TAPE_SRCS:.c=.lo)
+
+GFAPI_SRCS = gfapi_device.c
+GFAPI_LOBJS = $(GFAPI_SRCS:.c=.lo)
+
+RADOS_SRCS = rados_device.c
+RADOS_LOBJS = $(RADOS_SRCS:.c=.lo)
 
 TAPE_SRCS = unix_tape_device.c
 TAPE_LOBJS = $(TAPE_SRCS:.c=.lo)
@@ -77,23 +80,25 @@ STORED_RESTYPES = autochanger device director ndmp messages storage
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DINCLUDE) $(CXXFLAGS) $<
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
-$(ELASTO_LOBJS):
-	@echo "Compiling $(@:.lo=.c)"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(ELASTO_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
-
 $(CHEPHFS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(CEPHFS_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+
+$(DROPLET_LOBJS):
+	@echo "Compiling $(@:.lo=.c)"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DROPLET_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
+	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
+
+$(ELASTO_LOBJS):
+	@echo "Compiling $(@:.lo=.c)"
+	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(ELASTO_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
 
 $(GFAPI_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
 	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(GLUSTER_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 	if [ -d "$(@:.lo=.d)" ]; then $(MKDIR) $(CONF_EXTRA_DIR); $(CP) -r $(@:.lo=.d)/. $(CONF_EXTRA_DIR)/.; fi
-
-$(OBJECT_LOBJS):
-	@echo "Compiling $(@:.lo=.c)"
-	$(NO_ECHO)$(LIBTOOL_COMPILE) $(CXX) $(DEFS) $(DEBUG) -c $(WCFLAGS) $(CPPFLAGS) $(INCLUDES) $(DROPLET_INC) $(DINCLUDE) $(CXXFLAGS) $(@:.lo=.c)
 
 $(RADOS_LOBJS):
 	@echo "Compiling $(@:.lo=.c)"
@@ -110,25 +115,20 @@ libbareossd-cephfs.la: Makefile $(CHEPHFS_LOBJS)
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(CHEPHFS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-cephfs-$(LIBBAREOSSD_LT_RELEASE).so $(CEPHFS_LIBS) -lbareos
 
+libbareossd-chunked.la: Makefile $(CHUNKED_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(CHUNKED_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
+							   -soname libbareossd-chunked-$(LIBBAREOSSD_LT_RELEASE).so -lbareos
+
+libbareossd-droplet.la: Makefile libbareossd-chunked.la $(DROPLET_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(DROPLET_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
+							   -soname libbareossd-droplet-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) libbareossd-chunked.la -lbareos
+
 libbareossd-elasto.la: Makefile $(ELASTO_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(ELASTO_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-elasto-$(LIBBAREOSSD_LT_RELEASE).so $(ELASTO_LIBS) -lbareos
-
-libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
-	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-gfapi-$(LIBBAREOSSD_LT_RELEASE).so $(GLUSTER_LIBS) -lbareos
-
-libbareossd-object.la: Makefile $(OBJECT_LOBJS)
-	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(OBJECT_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-object-$(LIBBAREOSSD_LT_RELEASE).so $(DROPLET_LIBS) -lbareos
-
-libbareossd-rados.la: Makefile $(RADOS_LOBJS)
-	@echo "Making $@ ..."
-	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(RADOS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
-							   -soname libbareossd-rados-$(LIBBAREOSSD_LT_RELEASE).so $(RADOS_LIBS) -lbareos
 
 libbareossd-fifo.la: Makefile $(FIFO_LOBJS)
 	@echo "Making $@ ..."
@@ -139,6 +139,16 @@ libbareossd-gentape.la: Makefile $(GEN_TAPE_LOBJS)
 	@echo "Making $@ ..."
 	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(GEN_TAPE_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
 							   -soname libbareossd-gentape-$(LIBBAREOSSD_LT_RELEASE).so -lbareos
+
+libbareossd-gfapi.la: Makefile $(GFAPI_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(GFAPI_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
+							   -soname libbareossd-gfapi-$(LIBBAREOSSD_LT_RELEASE).so $(GLUSTER_LIBS) -lbareos
+
+libbareossd-rados.la: Makefile $(RADOS_LOBJS)
+	@echo "Making $@ ..."
+	$(LIBTOOL_LINK) $(CXX) $(DEFS) $(DEBUG) $(LDFLAGS) -L../../lib -o $@ $(RADOS_LOBJS) -export-dynamic -rpath $(backenddir) -release $(LIBBAREOSSD_LT_RELEASE) \
+							   -soname libbareossd-rados-$(LIBBAREOSSD_LT_RELEASE).so $(RADOS_LIBS) -lbareos
 
 libbareossd-tape.la: Makefile libbareossd-gentape.la $(TAPE_LOBJS)
 	@echo "Making $@ ..."

@@ -1296,7 +1296,7 @@ void dbg_jcr_add_hook(dbg_jcr_hook_t *hook)
  */
 void dbg_print_jcr(FILE *fp)
 {
-   char buf1[128], buf2[128], buf3[128], buf4[128];
+   char ed1[50], buf1[128], buf2[128], buf3[128], buf4[128];
    if (!jcrs) {
       return;
    }
@@ -1304,23 +1304,12 @@ void dbg_print_jcr(FILE *fp)
    fprintf(fp, "Attempt to dump current JCRs. njcrs=%d\n", jcrs->size());
 
    for (JCR *jcr = (JCR *)jcrs->first(); jcr ; jcr = (JCR *)jcrs->next(jcr)) {
-#ifdef HAVE_WIN32
-      fprintf(fp, "threadid=%p JobId=%d JobStatus=%c jcr=%p name=%s\n",
-              (void *)&jcr->my_thread_id, (int)jcr->JobId,
-              jcr->JobStatus, jcr, jcr->Job);
-      fprintf(fp, "threadid=%p killable=%d JobId=%d JobStatus=%c "
-                  "jcr=%p name=%s\n",
-              (void *)&jcr->my_thread_id, jcr->is_killable(),
+      fprintf(fp, "threadid=%s JobId=%d JobStatus=%c jcr=%p name=%s\n",
+              edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
               (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
-#else
-      fprintf(fp, "threadid=%p JobId=%d JobStatus=%c jcr=%p name=%s\n",
-              (void *)jcr->my_thread_id, (int)jcr->JobId,
-              jcr->JobStatus, jcr, jcr->Job);
-      fprintf(fp, "threadid=%p killable=%d JobId=%d JobStatus=%c "
-                  "jcr=%p name=%s\n",
-              (void *)jcr->my_thread_id, jcr->is_killable(),
-              (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
-#endif
+      fprintf(fp, "threadid=%s killable=%d JobId=%d JobStatus=%c jcr=%p name=%s\n",
+              edit_pthread(jcr->my_thread_id, ed1, sizeof(ed1)),
+              jcr->is_killable(), (int)jcr->JobId, jcr->JobStatus, jcr, jcr->Job);
       fprintf(fp, "\tuse_count=%i\n", jcr->use_count());
       fprintf(fp, "\tJobType=%c JobLevel=%c\n",
               jcr->getJobType(), jcr->getJobLevel());

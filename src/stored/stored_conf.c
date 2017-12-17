@@ -259,7 +259,9 @@ static s_kw dev_types[] = {
    { "fifo", B_FIFO_DEV },
    { "vtl", B_VTL_DEV },
    { "gfapi", B_GFAPI_DEV },
-   { "object", B_OBJECT_STORE_DEV },
+   /* compatibility: object have been renamed to droplet */
+   { "object", B_DROPLET_DEV },
+   { "droplet", B_DROPLET_DEV },
    { "rados", B_RADOS_DEV },
    { "cephfs", B_CEPHFS_DEV },
    { "elasto", B_ELASTO_DEV },
