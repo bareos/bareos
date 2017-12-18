@@ -863,7 +863,6 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
    ndmp_job.tape_device = lookup_ndmp_drive(store, drive);
    if (!ndmp_job.tape_device) {
       actuallyfree(ndmp_job.robot_target);
-
    }
 
    /*
@@ -875,7 +874,6 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
       slot_mapping = lookup_storage_mapping(store, slot_type_normal, LOGICAL_TO_PHYSICAL, slot);
       if (slot_mapping == -1) {
          ua->error_msg("No slot mapping for slot %hd\n", slot);
-         actuallyfree(ndmp_job.robot_target);
          return retval;
       }
       media = ndma_store_media(&ndmp_job.media_tab, slot_mapping);

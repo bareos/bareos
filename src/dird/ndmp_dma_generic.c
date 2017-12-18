@@ -454,8 +454,10 @@ bool ndmp_build_client_and_storage_job(JCR *jcr,
     * setup storage job
     * i.e. setup tape_agent and robot_agent
     */
-   ndmp_build_storage_job(jcr, store, init_tape, init_robot,
-                            operation, job);
+   if ( !ndmp_build_storage_job(jcr, store, init_tape, init_robot,
+            operation, job) ) {
+      goto bail_out;
+   }
 
    /*
     * now configure client job

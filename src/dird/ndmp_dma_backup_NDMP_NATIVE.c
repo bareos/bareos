@@ -112,19 +112,26 @@ int ndmp_load_next(struct ndm_session *sess) {
 
       media->slot_addr = mr.Slot;
 
-
-      if (!ndmp_update_storage_mappings(jcr, store )){
+      if ( !ndmp_update_storage_mappings(jcr, store) ){
          Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_update_storage_mappings\n"));
          goto bail_out;
       }
-
-      media->slot_addr = lookup_storage_mapping(store, slot_type_normal, LOGICAL_TO_PHYSICAL, mr.Slot);
 
       if ( media->slot_addr < 0 ) {
          Jmsg(jcr, M_FATAL, 0, _("lookup_storage_mapping failed\n"));
          goto bail_out;
       }
 
+      slot_number_t slotnumber = lookup_storage_mapping(store, slot_type_normal, LOGICAL_TO_PHYSICAL, mr.Slot);
+      /*
+       * check if lookup_storage_mapping was successful
+       */
+      if ( slotnumber < 0 ) {
+         Jmsg(jcr, M_FATAL, 0, _("lookup_storage_mapping failed\n"));
+         goto bail_out;
+      }
+
+      media->slot_addr = slotnumber;
       media->valid_slot = NDMP9_VALIDITY_VALID;
 
       ndmca_media_calculate_offsets(sess);
