@@ -1,0 +1,80 @@
+Using droplet S3 as a backingstore for backups.
+
+The droplet S3 storage backend writes chunks of data in an S3 bucket.
+
+For this you need to install the libdroplet-devel and the storage-droplet packages which contains
+the libbareossd-chunked*.so  and  libbareossd-droplet*.so shared objects and the droplet storage backend which implements a dynamic loaded
+storage backend.
+
+In the following example all the backup data is placed in the "bareos-backup" bucket on the defined S3 storage.
+A Volume is a sub-directory in the defined bucket, and every chunk is placed in the Volume directory withe the filename 0000-9999 and a size
+that is defined in the chunksize.
+
+The droplet S3 can only be used with virtual-hosted-style buckets like http://<bucket>.<s3_server>/object
+Path-style buckets are not supported when using the droplet S3.
+
+On the Storage Daemon the following configuration is needed.
+Example bareos-sd.d/device file:
+
+Device {
+  Name = "S3_1-00"
+  Media Type = "S3_File_1"
+  Archive Device = Object S3 Storage
+  #
+  # Config options:
+  #    profile= - Droplet profile to use either absolute PATH or logical name (e.g. ~/.droplet/<profile>.profile
+  #    location= - AWS location (e.g. us-east etc.)
+  #    acl= - Canned ACL
+  #    storageclass - Storage Class to use.
+  #    bucket= - Bucket to store objects in.
+  #    chunksize= - Size of Volume Chunks (default = 10 Mb)
+  #    iothreads= - Number of IO-threads to use for upload (use blocking uploads if not defined.)
+  #    ioslots= - Number of IO-slots per IO-thread (default 10)
+  #    mmap - Use mmap to allocate Chunk memory instead of malloc().
+  #
+  Device Options = "profile=/etc/bareos/bareos-sd.d/.droplet/droplet.profile,bucket=backup-bareos,iothreads=3,ioslots=3,chunksize=100M"
+  Device Type = droplet
+  LabelMedia = yes                    # lets Bareos label unlabeled media
+  Random Access = yes
+  AutomaticMount = yes                # when device opened, read it
+  RemovableMedia = no
+  AlwaysOpen = no
+  Description = "Object S3 device. A connecting Director must have the same Name and MediaType."
+  Maximum File Size = 500M       # 500 MB (Allows for seeking to small portions of the Volume)
+  Maximum Concurrent Jobs = 1
+  Maximum Spool Size = 15000M
+}
+
+
+The droplet.profile file holds the credentials for S3 storage
+Example /etc/bareos/bareos-sd.d/.droplet/droplet.profile file:
+
+Make sure the file is only readable for bareos, credentials for S3 are listed here.
+
+Config options profile:
+
+use_https = True
+host = <FQDN for S3>
+access_key = <S3 access key>
+secret_key = <S3 secret key>
+pricing_dir = ""
+backend = s3
+aws_auth_sign_version = 2
+
+If the pricing_dir is not empty, it will create an <dir>/droplet.csv file wich
+will record all S3 operations.
+See the 'libdroplet/src/pricing.c' code for an explanation.
+
+The parameter "aws_auth_sign_version = 2" is for the connection to a CEPH AWS connection.
+For use with AWS S3 the aws_auth_sign_version, must be set to "4".
+
+On the Director you connect to the Storage Device with the following configuration
+Example bareos-dir.d/storage file:
+
+Storage {
+  Name = S3_1-00
+  Address  = "Replace this by the Bareos Storage Daemon FQDN or IP address"
+  Password = "Replace this by the Bareos Storage Daemon director password"
+  Device = S3_ObjectStorage
+  Media Type = S3_File_1
+}
