@@ -10,9 +10,22 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
-- Fix to bugreport #827
 
 ### Removed
+
+## [17.2.4]
+
+### Changed
+- Some minor bugfixes
+
+## [17.2.4-rc2]
+
+### Changed
+- Fix to bugreport #827
+- Localization NL_BE updated
+- Miscalculated volume retention fixed
+- Minor improvements to run jobs
+- Minor adjustments to backup/restore the filebrowser
 
 ## [17.2.4-rc1]
 
