@@ -6,7 +6,7 @@ Client {
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all storage plugins (*-fd.so) from the "Plugin Directory".
   #
-  # Plugin Directory = @plugindir@
+  # Plugin Directory = "@plugindir@"
   # Plugin Names = ""
 
   # if compatible is set to yes, we are compatible with bacula

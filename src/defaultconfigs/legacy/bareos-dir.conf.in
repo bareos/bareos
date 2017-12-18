@@ -20,7 +20,7 @@ Director {                            # define myself
   Messages = Daemon
 
   # remove comment in next line to load plugins from specified directory
-  # Plugin Directory = @plugindir@
+  # Plugin Directory = "@plugindir@"
 }
 
 JobDefs {

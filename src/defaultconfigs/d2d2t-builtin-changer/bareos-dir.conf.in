@@ -62,7 +62,7 @@ Director {                            # define myself
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
   # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
   #
-  # Plugin Directory = @plugindir@
+  # Plugin Directory = "@plugindir@"
   # Plugin Names = ""
 }
 
