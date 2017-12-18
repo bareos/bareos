@@ -429,12 +429,12 @@ static inline void check_auto_xflation(JCR *jcr)
  */
 bool do_mac_run(JCR *jcr)
 {
-   DEVICE *dev;
    utime_t now;
    char ec1[50];
    const char *Type;
    bool ok = true;
    BSOCK *dir = jcr->dir_bsock;
+   DEVICE *dev = jcr->dcr->dev;
 
    switch(jcr->getJobType()) {
    case JT_MIGRATE:
@@ -629,6 +629,7 @@ bool do_mac_run(JCR *jcr)
       set_start_vol_position(jcr->dcr);
       jcr->JobFiles = 0;
 
+
       /*
        * Write Begin Of Session Label
        */
@@ -657,7 +658,6 @@ bail_out:
        */
       int32_t job_elapsed;
 
-      dev = jcr->dcr->dev;
       Dmsg1(100, "ok=%d\n", ok);
 
       if (ok || dev->can_write()) {
