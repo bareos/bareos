@@ -4561,6 +4561,10 @@ if test x$use_libtool != xno; then
    BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-fifo.la"
    BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gentape.la"
 
+   if test X"$have_glusterfs" = "Xyes" ; then
+      BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-gfapi.la"
+   fi
+
    if test X"$have_ceph_rados" = "Xyes" ; then
       BUILD_SD_BACKENDS="${BUILD_SD_BACKENDS} libbareossd-rados.la"
    fi
