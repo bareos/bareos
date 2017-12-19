@@ -29,7 +29,6 @@ INSTALL(FILES
 
 INSTALL(FILES
          bareos
-         bconsole
          btraceback.gdb
          btraceback.dbx
          btraceback.mdb
