@@ -485,7 +485,9 @@ endif()
 if(${HAVE_GLUSTERFS})
 LIST(APPEND BACKENDS gfapi_device.d)
 endif()
-
+if(${HAVE_DROPLET})
+LIST(APPEND BACKENDS droplet_device.d)
+endif()
 
 
 
