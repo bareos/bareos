@@ -136,7 +136,7 @@ BuildRequires: systemd-rpm-macros
 %{?systemd_requires}
 %endif
 
-%if 0%{?objectstorage}
+%if 0%{droplet}
 BuildRequires: libdroplet-devel
 %endif
 
@@ -324,7 +324,7 @@ Requires(pre): shadow-utils
 Requires: bareos-tools
 %endif
 
-%if 0%{?objectstorage}
+%if 0%{droplet}
 %package    storage-droplet
 Summary:    Object Storage support (through libdroplet) for the Bareos Storage daemon
 Group:      Productivity/Archiving/Backup
@@ -592,7 +592,7 @@ This package contains the Storage Daemon
 This package contains the Storage Daemon tape support
 (Bareos service to read and write data from/to tape media)
 
-%if 0%{?objectstorage}
+%if 0%{droplet}
 %description storage-droplet
 %{dscr}
 
@@ -775,6 +775,9 @@ cmake  .. \
   -Dhostname="XXX_REPLACE_WITH_LOCAL_HOSTNAME_XXX" \
 %if 0%{?systemd_support}
   -Dsystemd=yes \
+%endif
+%if 0%{droplet}
+  -Ddroplet=yes \
 %endif
   -Dincludes=yes
 
@@ -1049,7 +1052,7 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %attr(0640, %{director_daemon_user}, %{daemon_group}) %{_sysconfdir}/bareos/bareos-dir.d/storage/NULL.conf.example
 %attr(0640, %{storage_daemon_user}, %{daemon_group})  %{_sysconfdir}/bareos/bareos-sd.d/device/NULL.conf.example
 
-%if 0%{?objectstorage}
+%if 0%{droplet}
 %files storage-droplet
 %defattr(-, root, root)
 %{backend_dir}/libbareossd-chunked*.so
