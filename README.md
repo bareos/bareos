@@ -6,9 +6,34 @@ policy at https://www.bareos.org/en/howto-contribute.html
 This source code has the following changes (highlevel) compared with
 Bacula 5.2.13 (original version forked.):
 
-This is a special branch with denormalized filename table
-
 [![Build Status](https://travis-ci.org/bareos/bareos.png?branch=master)](https://travis-ci.org/bareos/bareos/branches)
+
+Release 17.2.x
+==============
+
+[![Build Status](https://travis-ci.org/bareos/bareos.png?branch=bareos-17.2)](https://travis-ci.org/bareos/bareos/branches)
+
+* Performance improvements through denormalization of the ```File``` database table
+  * The denormalization of the File database table leads to enormous performance improvements in installation, which covering a lot of ﬁle (millions and more).
+  * For the denormalization the database schema must be modiﬁed. Please note! Updating the database to schema version >= 2170 will increase the required disk space. Especially it will require around twice the amount of the current database disk space during the migration.
+  * The ```Filename``` database table does no longer exists. Therefore the ```.bvfs_*``` commands do no longer output the ```FilenameId``` column.
+* ```NDMP_NATIVE``` support has been added. This include the NDMP features DAR and DDAR.
+* Added Bareos Storage Daemon backend droplet. Most notably it allows backup and restores to a S3 environment. Included as beta. Don’t use in productive environment!
+* Soft Quota: automatic quota grace period reset if a job does not exceed the quota.
+* bareos-dbcheck: disable all interactive questions in batch mode.
+* list files: also show deleted ﬁles (accurate mode).
+* list jobstatastics: added.
+* purge : added conﬁrmation.
+* list volumes: fix limit and offset handling.
+* [Windows: restore directory attributes](https://bugs.bareos.org/view.php?id=629)
+* [Tape: ﬁx block size handling, AWS VTL iSCSI devices](https://bugs.bareos.org/view.php?id=639)
+* [Support for MySQL 5.7](https://bugs.bareos.org/view.php?id=705)
+* [Allow long JSON messages (has been increased from 100KB to 2GB)](https://bugs.bareos.org/view.php?id=719)
+* [Virtual Backups: skip jobs with no ﬁles](https://bugs.bareos.org/view.php?id=793)
+* BAT has been removed. Please use [bareos-webui](https://github.com/bareos/bareos-webui/) instead.
+* Bareos File Daemon now also is ready for
+  * MacOS
+  * HP-UX 11.31 (ia64)
 
 Release 16.2.x
 ==============

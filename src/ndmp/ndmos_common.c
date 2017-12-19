@@ -63,7 +63,7 @@ void
 ndmos_sync_config_info (struct ndm_session *sess)
 {
 	static struct utsname	unam;
-	static char		osbuf[100];
+	static char		osbuf[150];
 	static char		idbuf[30];
 	static char		revbuf[100];
 	char			obuf[5];

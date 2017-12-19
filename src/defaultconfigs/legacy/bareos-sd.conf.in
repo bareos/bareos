@@ -15,7 +15,7 @@ Storage {                             # definition of myself
   Maximum Concurrent Jobs = 20
 
   # remove comment in next line to load plugins from specified directory
-  # Plugin Directory = @plugindir@
+  # Plugin Directory = "@plugindir@"
 }
 
 #

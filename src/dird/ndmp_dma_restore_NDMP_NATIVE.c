@@ -50,13 +50,11 @@ static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
    FILESETRES *fileset;
    char *restore_pathname,
         *ndmp_filesystem,
-        *restore_prefix,
-        *level;
+        *restore_prefix;
    POOL_MEM tape_device;
    POOL_MEM destination_path;
    ndmp_backup_format_option *nbf_options;
 
-   level = NULL;
    ndmp_filesystem = NULL;
 
    /*
@@ -107,15 +105,6 @@ static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
       pv.name = ndmp_env_keywords[NDMP_ENV_KW_TYPE];
       pv.value = job->bu_type;
       ndma_store_env_list(&job->env_tab, &pv);
-
-      /*
-       * Tell the data agent that this is a NDMP backup which uses a level indicator.
-       */
-      if (level) {
-         pv.name = ndmp_env_keywords[NDMP_ENV_KW_LEVEL];
-         pv.value = level;
-         ndma_store_env_list(&job->env_tab, &pv);
-      }
 
       /*
        * Tell the data engine what was backuped.
@@ -181,10 +170,12 @@ static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
    pv.value = ndmp_filesystem;
    ndma_store_env_list(&job->env_tab, &pv);
 
-      if (set_files_to_restore_ndmp_native(jcr, job, current_fi,
-                               destination_path.c_str(), ndmp_filesystem) == 0) {
-      }
-   return true;
+   if (ndmp_filesystem &&
+         set_files_to_restore_ndmp_native(jcr, job, current_fi,
+            destination_path.c_str(), ndmp_filesystem) == 0) {
+      return true;
+   }
+   return false;
 }
 
 /*
@@ -229,7 +220,8 @@ int set_files_to_restore_ndmp_native(JCR *jcr, struct ndm_job_param *job, int32_
              * See if we need to strip the prefix from the filename.
              */
             len = 0;
-            if (bstrncmp(restore_pathname.c_str(), ndmp_filesystem, strlen(ndmp_filesystem))) {
+            if (ndmp_filesystem &&
+                  bstrncmp(restore_pathname.c_str(), ndmp_filesystem, strlen(ndmp_filesystem))) {
                len = strlen(ndmp_filesystem);
             }
 
@@ -353,7 +345,7 @@ static bool do_ndmp_native_restore(JCR *jcr)
          Jmsg(jcr, M_ERROR, 0, _("ERROR in ndmp_update_storage_mappings\n"));
       }
       /*
-       * convert slot from database to ndmps slot
+       * convert slot from database to ndmp slot
        */
       Jmsg(jcr, M_INFO, 0, _("Logical slot for volume %s is %d\n"), media->label, media->slot_addr);
 
@@ -474,9 +466,7 @@ cleanup_ndmp:
    }
 
 cleanup:
-   if (nis) {
-      free(nis);
-   }
+   free(nis);
 
 bail_out:
    free_tree(jcr->restore_tree_root);
