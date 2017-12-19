@@ -45,11 +45,7 @@ INSTALL(TARGETS libbareossd-gfapi DESTINATION ${backenddir})
 target_link_libraries(libbareossd-gfapi ${GFAPI_LIBRARIES})
 endif()
 
-add_library(libbareossd-elasto MODULE elasto_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-elasto PROPERTIES PREFIX "")
-#INSTALL(TARGETS libbareossd-elasto DESTINATION ${backenddir})
-
+if(${HAVE_DROPLET})
 add_library(libbareossd-droplet MODULE droplet_device.cc)
 # do not prefix with "lib"
 set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
@@ -59,6 +55,12 @@ add_library(libbareossd-chunked MODULE chunked_device.cc)
 # do not prefix with "lib"
 set_target_properties(libbareossd-chunked PROPERTIES PREFIX "")
 #INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
+endif()
+
+add_library(libbareossd-elasto MODULE elasto_device.cc)
+# do not prefix with "lib"
+set_target_properties(libbareossd-elasto PROPERTIES PREFIX "")
+#INSTALL(TARGETS libbareossd-elasto DESTINATION ${backenddir})
 
 add_library(libbareossd-fifo MODULE unix_fifo_device.cc)
 # do not prefix with "lib"
