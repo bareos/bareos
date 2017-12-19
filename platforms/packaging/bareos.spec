@@ -776,9 +776,6 @@ cmake  .. \
 %if 0%{?systemd_support}
   -Dsystemd=yes \
 %endif
-%if 0%{droplet}
-  -Ddroplet=yes \
-%endif
   -Dincludes=yes
 
 make  DESTDIR=%{buildroot}
