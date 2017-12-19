@@ -50,13 +50,13 @@ add_library(libbareossd-droplet MODULE droplet_device.cc)
 # do not prefix with "lib"
 set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
 target_link_libraries(libbareossd-droplet ${DROPLET_LIBRARIES})
-#INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
+INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
 
 add_library(libbareossd-chunked MODULE chunked_device.cc)
 # do not prefix with "lib"
 set_target_properties(libbareossd-chunked PROPERTIES PREFIX "")
 target_link_libraries(libbareossd-chunked ${DROPLET_LIBRARIES})
-#INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
+INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
 endif()
 
 add_library(libbareossd-elasto MODULE elasto_device.cc)
