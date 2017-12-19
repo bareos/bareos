@@ -156,6 +156,7 @@ bool B_DB_MYSQL::open_database(JCR *jcr)
 {
    bool retval = false;
    int errstat;
+   my_bool reconnect = 1;
 
    P(mutex);
    if (m_connected) {
@@ -200,7 +201,7 @@ bool B_DB_MYSQL::open_database(JCR *jcr)
       bmicrosleep(5,0);
    }
 
-   m_instance.reconnect = 1;             /* so connection does not timeout */
+   mysql_options(&m_instance, MYSQL_OPT_RECONNECT, &reconnect);    /* so connection does not timeout */
    Dmsg0(50, "mysql_real_connect done\n");
    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", m_db_user, m_db_name,
         (m_db_password == NULL) ? "(NULL)" : m_db_password);
