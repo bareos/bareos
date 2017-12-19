@@ -55,6 +55,7 @@ BareosFindLibraryAndHeaders("cephfs" "cephfs/libcephfs.h")
 BareosFindLibraryAndHeaders("pthread" "pthread.h")
 BareosFindLibraryAndHeaders("cap" "sys/capability.h")
 BareosFindLibraryAndHeaders("gfapi" "glusterfs/api/glfs.h")
+BareosFindLibraryAndHeaders("droplet" "droplet.h")
 
 BareosFindLibraryAndHeaders("lzo2" "lzo/lzoconf.h")
 if (${LZO2_FOUND})
