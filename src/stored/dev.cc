@@ -79,7 +79,7 @@
 #ifdef HAVE_GFAPI
 #include "backends/gfapi_device.h"
 #endif
-#ifdef HAVE_OBJECTSTORE
+#ifdef HAVE_DROPLET
 #include "backends/chunked_device.h"
 #include "backends/droplet_device.h"
 #endif
@@ -184,7 +184,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
       dev = New(gfapi_device);
       break;
 #endif
-#ifdef HAVE_OBJECTSTORE
+#ifdef HAVE_DROPLET
    case B_DROPLET_DEV:
       dev = New(droplet_device);
       break;

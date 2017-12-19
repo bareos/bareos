@@ -615,7 +615,7 @@
 #cmakedefine HAVE_NVLIST_NEXT_NVPAIR @HAVE_NVLIST_NEXT_NVPAIR@
 
 /* Define to 1 if you have libdroplet lib */
-#cmakedefine HAVE_OBJECTSTORE @HAVE_OBJECTSTORE@
+#cmakedefine HAVE_DROPLET @HAVE_DROPLET@
 
 /* Define to 1 to use the old sockopt option */
 #cmakedefine HAVE_OLD_SOCKOPT @HAVE_OLD_SOCKOPT@
