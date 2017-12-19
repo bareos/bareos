@@ -43,7 +43,7 @@ Vendor: 	The Bareos Team
 %define build_sqlite3 1
 %define check_cmocka 1
 %define glusterfs 0
-%define objectstorage 0
+%define droplet 0
 %define have_git 1
 %define ceph 0
 %define install_suse_fw 0
@@ -83,7 +83,7 @@ Vendor: 	The Bareos Team
 # SLES 12
 #%%if 0%{?suse_version} == 1315 && 0%%{?is_opensuse} == 0
 %if 0%{?sle_version} >= 120000
-%define objectstorage 1
+%define droplet 1
 %endif
 
 # Ceph packages have changed with SLE_12_SP2,
@@ -119,7 +119,7 @@ Vendor: 	The Bareos Team
 
 %if 0%{?rhel_version} >= 700 || 0%{?centos_version} >= 700
 %define glusterfs 1
-%define objectstorage 1
+%define droplet 1
 %define systemd_support 1
 %endif
 
