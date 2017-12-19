@@ -63,6 +63,14 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
          backends/rados_device.cc)
    endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND AVAILABLE_DEVICE_API_SRCS
+         backends/droplet_device.cc)
+   endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND AVAILABLE_DEVICE_API_SRCS
+         backends/chunked_device.cc)
+   endif()
 ENDIF()
 
 
@@ -123,6 +131,12 @@ if(CEPHFS_LIBRARIES)
 endif()
 if(GFAPI_LIBRARIES)
    LIST(APPEND BACKEND_OBJECTS libbareossd-gfapi)
+endif()
+if(${HAVE_DROPLET})
+   LIST(APPEND BACKEND_OBJECTS libbareossd-droplet)
+endif()
+if(${HAVE_DROPLET})
+   LIST(APPEND BACKEND_OBJECTS libbareossd-chunked)
 endif()
 
 MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
