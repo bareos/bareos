@@ -50,11 +50,15 @@ add_library(libbareossd-elasto MODULE elasto_device.cc)
 set_target_properties(libbareossd-elasto PROPERTIES PREFIX "")
 #INSTALL(TARGETS libbareossd-elasto DESTINATION ${backenddir})
 
-add_library(libbareossd-object MODULE object_store_device.cc)
+add_library(libbareossd-droplet MODULE droplet_device.cc)
 # do not prefix with "lib"
-set_target_properties(libbareossd-object PROPERTIES PREFIX "")
-#INSTALL(TARGETS libbareossd-object DESTINATION ${backenddir})
+set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
+#INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
 
+add_library(libbareossd-chunked MODULE chunked_device.cc)
+# do not prefix with "lib"
+set_target_properties(libbareossd-chunked PROPERTIES PREFIX "")
+#INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
 
 add_library(libbareossd-fifo MODULE unix_fifo_device.cc)
 # do not prefix with "lib"
