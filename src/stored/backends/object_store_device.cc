@@ -29,7 +29,7 @@
 
 #include "bareos.h"
 
-#ifdef HAVE_OBJECTSTORE
+#ifdef HAVE_DROPLET
 #include "stored.h"
 #include "object_store_device.h"
 
@@ -570,4 +570,4 @@ extern "C" void SD_IMP_EXP flush_backend(void)
 {
 }
 #endif
-#endif /* HAVE_OBJECTSTORE */
+#endif /* HAVE_DROPLET */

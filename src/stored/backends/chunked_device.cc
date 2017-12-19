@@ -26,7 +26,7 @@
 
 #include "bareos.h"
 
-#if defined(HAVE_OBJECTSTORE)
+#if defined(HAVE_DROPLET)
 #include "stored.h"
 #include "chunked_device.h"
 
@@ -1092,4 +1092,4 @@ chunked_device::chunked_device()
    m_offset = 0;
    m_use_mmap = false;
 }
-#endif /* HAVE_OBJECTSTORE */
+#endif /* HAVE_DROPLET */
