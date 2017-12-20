@@ -457,7 +457,7 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
                     vol->is_in_use(), vol->get_jobid());
          sendit(msg.c_str(), len, sp);
       } else {
-         len = Mmsg(msg, "Volume: %s no device. volinuse= %d\n",
+         len = Mmsg(msg, "Read Volume: %s no device. volinuse= %d\n",
                     vol->vol_name, vol->is_in_use());
          sendit(msg.c_str(), len, sp);
       }

@@ -177,7 +177,7 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
       free_read_vol_item(nvol);
       Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
    } else {
-      Dmsg2(dbglvl, "add read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
+      Dmsg2(dbglvl, "add_read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
    }
    unlock_read_volumes();
 }

@@ -150,7 +150,6 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
             /*
              * set job info from first SOS label
              */
-            jcr->JobId = label->JobId;
             jcr->setJobType(label->JobType);
             jcr->setJobLevel(label->JobLevel);
             Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
@@ -163,6 +162,7 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
                dt.julian_day_number = label->write_date;
                dt.julian_day_fraction = label->write_time;
                tm_decode(&dt, &tm);
+               tm.tm_isdst = 0;
                jcr->sched_time = mktime(&tm);
             }
             jcr->start_time = jcr->sched_time;
@@ -650,8 +650,8 @@ bool do_mac_run(JCR *jcr)
       sd->signal(BNET_TERMINATE);
    } else {
 
-      if (!jcr->read_dcr || !jcr->dcr) {
-         Jmsg(jcr, M_FATAL, 0, _("Read and write devices not properly initialized.\n"));
+      if (!jcr->read_dcr) {
+         Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
          goto bail_out;
       }
 
