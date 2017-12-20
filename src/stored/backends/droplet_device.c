@@ -788,7 +788,6 @@ int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
  */
 ssize_t droplet_device::chunked_remote_volume_size()
 {
-   dpl_status_t status;
    ssize_t volumesize = 0;
    dpl_sysmd_t *sysmd = NULL;
    POOL_MEM chunk_dir(PM_FNAME);
@@ -804,6 +803,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
     */
 
 #if 0
+   dpl_status_t status;
    /*
     * First make sure that the chunkdir exists otherwise it makes little sense to scan it.
     */
