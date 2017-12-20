@@ -150,7 +150,6 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
             /*
              * set job info from first SOS label
              */
-            jcr->JobId = label->JobId;
             jcr->setJobType(label->JobType);
             jcr->setJobLevel(label->JobLevel);
             Dmsg1(200, "joblevel from SOS_LABEL is now %c\n", label->JobLevel);
