@@ -884,6 +884,7 @@ export BAREOS_FD_PORT=$fdport
 export BAREOS_SD_PORT=$sdport
 
 export PERLLIB="$cwd"
+export PERL5LIB="$cwd"
 bperl="perl -Mscripts::functions"
 export bperl
 
