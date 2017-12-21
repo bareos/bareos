@@ -44,12 +44,12 @@
 
 #define foreach_alist_index(inx, var, list) \
         for ( (inx) = 0; \
-              list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; \
+              list ? ((var) = (typeof((var)))(list)->get((inx))) : false; \
               (inx)++ )
 
 #define foreach_alist_rindex(inx, var, list) \
         for ( list ? (inx) = ((list)->size() - 1) : 0; \
-              list ? ((var) = (typeof((var)))(list)->get((inx))) : NULL; \
+              list ? ((var) = (typeof((var)))(list)->get((inx))) : false; \
               (inx)--)
 
 #else
@@ -61,12 +61,12 @@
 
 #define foreach_alist_index(inx, var, list) \
         for ( (inx) = 0; \
-              list ? ((*((void **)&(var)) = (void*)((list)->get((inx))))) : NULL; \
+              list ? ((*((void **)&(var)) = (void*)((list)->get((inx))))) : false; \
               (inx)++ )
 
 #define foreach_alist_rindex(inx, var, list) \
         for ( list ? (inx) = ((list)->size() - 1) : 0; \
-              list ? ((*((void **)&(var)) = (void*)((list)->get((inx))))) : NULL; \
+              list ? ((*((void **)&(var)) = (void*)((list)->get((inx))))) : false; \
               (inx)-- )
 
 #endif
