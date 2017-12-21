@@ -6,7 +6,7 @@
 #
 #  !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 #
-CONFIG += qt
+CONFIG += qt no_keywords
 CONFIG -= debug_and_release
 CONFIG( debug, debug|release )  {
    CONFIG -= release
@@ -14,6 +14,8 @@ CONFIG( debug, debug|release )  {
    CONFIG -= debug
    CONFIG += release
 }
+
+QT += widgets
 
 QMAKE_LIBDIR += ../lib
 QMAKE_CXXFLAGS += @JANSSON_INC@

@@ -36,10 +36,10 @@ struct cl_opts
    bool export_config;
    bool export_config_schema;
    cl_opts () {
-      configfile = (char*)0;
-      test_config_only = false;
-      export_config = false;
-      export_config_schema = false;
+	  configfile = static_cast<char*>(0);
+	  test_config_only = false;
+	  export_config = false;
+	  export_config_schema = false;
    }
 };
 

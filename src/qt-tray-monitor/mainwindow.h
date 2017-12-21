@@ -22,13 +22,9 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
-#include <QMainWindow>
-#include <QApplication>
-#include <QMessageBox>
-#include <QSystemTrayIcon>
-#include <QMap>
-#include <QString>
-#include <QStringList>
+#include <QtCore>
+#include <QtGui>
+#include <QtWidgets>
 
 namespace Ui {
 class MainWindow;
@@ -50,8 +46,8 @@ public:
    void addTabs(QStringList tabRefs);
 
 private:
-   explicit MainWindow(QWidget *parent = 0);
-   Q_DISABLE_COPY(MainWindow);
+   explicit MainWindow(QWidget *parent = Q_NULLPTR);
+   Q_DISABLE_COPY(MainWindow)
    ~MainWindow();
 
    QPlainTextEdit* getTextEdit(const QString& tabRef);
@@ -66,10 +62,7 @@ private:
    int nTabs;
    bool *bRefs;
 
-public slots:
-   /* auto-connected slots to the UI                */
-   void on_pushButton_Close_clicked();
-   /* ********************************************* */
+public Q_SLOTS:
 
    /* auto-connected slots to the TrayMenu Actions */
    void on_TrayMenu_About_triggered();
@@ -87,7 +80,7 @@ public slots:
    void onStatusChanged(const QString& tabRef, int state);
    void onFdJobIsRunning(bool running);
 
-signals:
+Q_SIGNALS:
    void refreshItems();
 };
 
