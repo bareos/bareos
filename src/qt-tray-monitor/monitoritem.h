@@ -22,9 +22,7 @@
 #ifndef MONITORITEM_H_INCLUDED
 #define MONITORITEM_H_INCLUDED
 
-#include <QString>
-#include <QStringList>
-#include <QObject>
+#include <QtCore>
 
 #include "bareos.h"
 #include "tray_conf.h"
@@ -41,41 +39,41 @@ public:
 
    enum StateEnum
    {
-      Idle = 0,
-      Running = 1,
-      Warn = 2,
-      Error = 3
+	  Idle = 0,
+	  Running = 1,
+	  Warn = 2,
+	  Error = 3
    };
 
    class JobDefaults
    {
    public:
-      QString job_name;
-      QString pool_name;
-      QString messages_name;
-      QString client_name;
-      QString store_name;
-      QString where;
-      QString level;
-      QString type;
-      QString fileset_name;
-      QString catalog_name;
-      bool enabled;
+	  QString job_name;
+	  QString pool_name;
+	  QString messages_name;
+	  QString client_name;
+	  QString store_name;
+	  QString where;
+	  QString level;
+	  QString type;
+	  QString fileset_name;
+	  QString catalog_name;
+	  bool enabled;
    };
 
    class Resources {
    public:
-      QStringList job_list;
-      QStringList pool_list;
-      QStringList client_list;
-      QStringList storage_list;
-      QStringList levels;
-      QStringList fileset_list;
-      QStringList messages_list;
+	  QStringList job_list;
+	  QStringList pool_list;
+	  QStringList client_list;
+	  QStringList storage_list;
+	  QStringList levels;
+	  QStringList fileset_list;
+	  QStringList messages_list;
    };
 
 public:
-   MonitorItem(QObject* parent = 0);
+   MonitorItem(QObject* parent = Q_NULLPTR);
    ~MonitorItem();
 
    char *get_name() const;
@@ -101,11 +99,10 @@ public:
    void setConnectTimeout(int timeout);
 
 private:
-   Q_DISABLE_COPY(MonitorItem);
+   Q_DISABLE_COPY(MonitorItem)
    MonitorItemPrivate* d;
 
-public slots:
-signals:
+Q_SIGNALS:
    void showStatusbarMessage(const QString& message);
    void appendText(const QString& tabRef, const QString& message);
    void clearText(const QString& tabRef);
@@ -118,12 +115,12 @@ class MonitorItemPrivate
    friend class MonitorItem;
 
    MonitorItemPrivate()
-      : type(R_UNKNOWN)
-      , resource(NULL)
-      , DSock(NULL)
-      , connectTimeout(0)
-      , state(MonitorItem::Idle)
-      { }
+	  : type(R_UNKNOWN)
+	  , resource(NULL)
+	  , DSock(NULL)
+	  , connectTimeout(0)
+	  , state(MonitorItem::Idle)
+	  { }
 
    Rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */
    void* resource; /* DIRRES*, CLIENTRES* or STORERES* */

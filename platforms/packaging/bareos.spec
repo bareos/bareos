@@ -120,6 +120,13 @@ Vendor: 	The Bareos Team
 %define systemd_support 1
 %endif
 
+# Qt5 comes only with RHEL 7
+%if 0%{?rhel} || 0%{?centos}
+%if 0%{?rhel_version} < 700 || 0%{?centos_version} < 700
+%define build_qt_monitor 0
+%endif
+%endif
+
 %if 0%{?rhel_version} >= 700
 %define ceph 1
 %endif
@@ -182,7 +189,7 @@ BuildRequires: libcap-devel
 BuildRequires: mtx
 
 %if 0%{?build_qt_monitor}
-BuildRequires: libqt4-devel
+BuildRequires: pkgconfig(Qt5Widgets)
 %endif
 
 %if 0%{?check_cmocka}
@@ -689,7 +696,7 @@ if [ "%{?buildroot}" -a "%{?buildroot}" != "/" ]; then
     rm -rf "%{?buildroot}"
 fi
 %if !0%{?suse_version}
-export PATH=$PATH:/usr/lib64/qt4/bin:/usr/lib/qt4/bin
+export PATH=$PATH:/usr/lib64/qt5/bin:/usr/lib/qt5/bin
 %endif
 export MTX=/usr/sbin/mtx
 # Notice keep the upstream order of ./configure --help
@@ -767,6 +774,11 @@ export MTX=/usr/sbin/mtx
 %__make CFLAGS="$RPM_OPT_FLAGS" CXXFLAGS="$RPM_OPT_FLAGS" %{?_smp_mflags} check;
 
 %install
+#The binary will not installed without it
+%if 0%{?build_qt_monitor}
+mv src/qt-tray-monitor/.libs/bareos-tray-monitor src/qt-tray-monitor/
+%endif
+
 %if 0%{?suse_version}
     %makeinstall DESTDIR=%{buildroot} install
 %else

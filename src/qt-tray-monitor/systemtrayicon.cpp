@@ -21,10 +21,8 @@
 
 #include "systemtrayicon.h"
 #include "traymenu.h"
-#include <QObject>
-#include <QMainWindow>
-#include <QTimer>
-#include <QDebug>
+
+#include <QtWidgets>
 
 SystemTrayIcon::SystemTrayIcon(QMainWindow* mainWindow)
    : QSystemTrayIcon(mainWindow)
@@ -65,16 +63,16 @@ void  SystemTrayIcon::setIconInternal()
 void SystemTrayIcon::animateIcon(bool on)
 {
    if (on) {
-      if (!timer->isActive()) {
-         timer->start();
-      }
+	  if (!timer->isActive()) {
+		 timer->start();
+	  }
    } else { //off
-      if (timer->isActive()) {
-         timer->stop();
-      }
-      if(iconIdx != 2){  // blink if there's no error
-         iconIdx = 0;
-         setIconInternal();
-      }
+	  if (timer->isActive()) {
+		 timer->stop();
+	  }
+	  if(iconIdx != 2){  // blink if there's no error
+		 iconIdx = 0;
+		 setIconInternal();
+	  }
    }
 }

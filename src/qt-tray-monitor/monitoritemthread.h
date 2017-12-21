@@ -48,8 +48,8 @@ protected:
    void dotest();
 
 private:
-   MonitorItemThread(QObject* parent = 0);
-   Q_DISABLE_COPY(MonitorItemThread);
+   MonitorItemThread(QObject* parent = Q_NULLPTR);
+   Q_DISABLE_COPY(MonitorItemThread)
    virtual ~MonitorItemThread();
 
    static MonitorItemThread* monitorItemThreadSingleton;
@@ -61,14 +61,14 @@ private:
    QTimer* refreshTimer;
    bool isRefreshing;
 
-public slots:
+public Q_SLOTS:
    /* auto-connected slots to the Refresh Timer     */
    void on_RefreshTimer_timeout();
    /* ********************************************* */
 
    void onRefreshItems();
 
-signals:
+Q_SIGNALS:
    void refreshItemsReady();
 };
 
