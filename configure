@@ -22681,7 +22681,7 @@ fi
 TRAY_MONITOR_DIR=
 DEBIAN_CONTROL_TRAYMONITOR=/dev/null
 if test x$support_traymonitor = xyes; then
-   abc=`$PKGCONFIG --atleast-version=5.6 Qt5Gui`
+   abc=`$PKGCONFIG --atleast-version=5.2 Qt5Gui`
    pkg=$?
    if test $pkg = 0; then
       TRAY_MONITOR_DIR=src/qt-tray-monitor
