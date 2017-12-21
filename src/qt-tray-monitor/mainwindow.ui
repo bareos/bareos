@@ -11,29 +11,20 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Bareos Tray Monitor</string>
+  </property>
+  <property name="windowIcon">
+   <iconset resource="main.qrc">
+    <normaloff>:/images/bareos_1.png</normaloff>:/images/bareos_1.png</iconset>
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout" columnstretch="0">
     <item row="1" column="0">
      <layout class="QHBoxLayout" name="horizontalLayout">
       <item>
-       <spacer name="horizontalSpacer">
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="sizeHint" stdset="0">
-         <size>
-          <width>40</width>
-          <height>20</height>
-         </size>
-        </property>
-       </spacer>
-      </item>
-      <item>
-       <widget class="QPushButton" name="pushButton_Close">
-        <property name="text">
-         <string>Close</string>
+       <widget class="QDialogButtonBox" name="bx_main">
+        <property name="standardButtons">
+         <set>QDialogButtonBox::Close</set>
         </property>
        </widget>
       </item>
@@ -57,6 +48,25 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
- <resources/>
- <connections/>
+ <resources>
+  <include location="main.qrc"/>
+ </resources>
+ <connections>
+  <connection>
+   <sender>bx_main</sender>
+   <signal>rejected()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>hide()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>712</x>
+     <y>489</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>131</x>
+     <y>515</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

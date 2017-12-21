@@ -38,7 +38,7 @@ public:
    void animateIcon(bool on);
 
 private:
-   Q_DISABLE_COPY(SystemTrayIcon);
+   Q_DISABLE_COPY(SystemTrayIcon)
    SystemTrayIcon();
    QStringList icons;
 
@@ -47,7 +47,7 @@ private:
 
 protected:
 
-public slots:
+public Q_SLOTS:
    void setNewIcon(int icon);
    void setIconInternal();
 };

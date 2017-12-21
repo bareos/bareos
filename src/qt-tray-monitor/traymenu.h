@@ -22,8 +22,8 @@
 #ifndef TRAYMONITOR_TRAYMENU_H
 #define TRAYMONITOR_TRAYMENU_H
 
+#include <QtGui>
 #include <QMenu>
-#include <QWidget>
 
 class QAction;
 
@@ -32,14 +32,11 @@ class TrayMenu : public QMenu
    Q_OBJECT
 
 public:
-   TrayMenu(QWidget* trayMonitor = 0);
+   TrayMenu(QWidget* trayMonitor = Q_NULLPTR);
    virtual ~TrayMenu();
 
 private:
    void createAction(QString objName, QString text, QWidget* trayMonitor);
-
-public slots:
-signals:
 };
 
 #endif // TRAYMONITOR_TRAYMENU_H

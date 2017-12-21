@@ -22,12 +22,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include "systemtrayicon.h"
-
-#include <QDebug>
-#include <QPlainTextEdit>
-#include <QTimer>
-#include <QThread>
-
 #include "tray-monitor.h"
 #include "monitoritemthread.h"
 #include "monitoritem.h"
@@ -43,24 +37,21 @@ MainWindow::MainWindow(QWidget *parent)
    , systemTrayIcon(new SystemTrayIcon(this))
 {
    /* Init the SystemTrayIcon first to have all its signals
-    * configured to be auto-connected via connectSlotsByName(MainWindow)
-    * during ui->setupUi(this). */
+	* configured to be auto-connected via connectSlotsByName(MainWindow)
+	* during ui->setupUi(this). */
    Q_ASSERT(systemTrayIcon->objectName() == "SystemTrayIcon");
 
    // This will setup the tab-window and auto-connect signals and slots.
    ui->setupUi(this);
-   setWindowTitle(tr("Bareos Tray Monitor"));
-   setWindowIcon(QIcon(":images/bareos_1.png"));
-   ui->pushButton_Close->setIcon(QIcon(":images/f.png"));
 
    // Prepare the tabWidget
    while (ui->tabWidget->count()) {
-      ui->tabWidget->removeTab(0);
+	  ui->tabWidget->removeTab(0);
    }
 
    bRefs = new bool[nTabs];
    for(int i=0; i<nTabs; i++)
-      bRefs[i] = true;
+	  bRefs[i] = true;
 
 
    // Now show the tray icon, but leave the MainWindow hidden.
@@ -81,7 +72,7 @@ MainWindow* MainWindow::instance()
    Q_ASSERT(!already_destroyed);
 
    if (!mainWindowSingleton) {
-      mainWindowSingleton = new MainWindow;
+	  mainWindowSingleton = new MainWindow;
    }
 
    return mainWindowSingleton;
@@ -90,8 +81,8 @@ MainWindow* MainWindow::instance()
 void MainWindow::destruct()
 {
    if (mainWindowSingleton) {
-      delete mainWindowSingleton;
-      mainWindowSingleton = NULL;
+	  delete mainWindowSingleton;
+	  mainWindowSingleton = NULL;
    }
 }
 
@@ -101,21 +92,21 @@ void MainWindow::addTabs(QStringList tabRefs)
    nTabs = tabRefs.size();
 
    for (int i = 0; i < tabRefs.count(); i++) {
-      MonitorTab* tab = new MonitorTab(tabRefs[i], this);
-      monitorTabMap->insert(tabRefs[i], tab); //tabRefs[i] used as reference
-      ui->tabWidget->addTab(tab->getTabWidget(), tabRefs[i]);
+	  MonitorTab* tab = new MonitorTab(tabRefs[i], this);
+	  monitorTabMap->insert(tabRefs[i], tab); //tabRefs[i] used as reference
+	  ui->tabWidget->addTab(tab->getTabWidget(), tabRefs[i]);
    }
 }
 
 void MainWindow::on_TrayMenu_About_triggered()
 {
-   QString fmt = QString("<br><h2>Bareos Tray Monitor %1</h2>"
-                         "<p>For more information, see: www.bareos.com"
-                         "<p>Copyright &copy; 2004-2011 Free Software Foundation Europe e.V."
-                         "<p>Copyright &copy; 2011-2012 Planets Communications B.V."
-                         "<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
-                         "<p>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
-                         "<p>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR);
+   QString fmt = tr("<br><h2>Bareos Tray Monitor %1</h2>"
+					"<p>For more information, see: www.bareos.com"
+					"<p>Copyright &copy; 2004-2011 Free Software Foundation Europe e.V."
+					"<p>Copyright &copy; 2011-2012 Planets Communications B.V."
+					"<p>Copyright &copy; 2013-%2 Bareos GmbH & Co. KG"
+					"<p>BAREOS &reg; is a registered trademark of Bareos GmbH & Co. KG"
+					"<p>Licensed under GNU AGPLv3.").arg(VERSION).arg(BYEAR);
 
    QMessageBox::about(this, tr("About Bareos Tray Monitor"), fmt);
 }
@@ -128,24 +119,19 @@ void MainWindow::on_TrayMenu_Quit_triggered()
 void MainWindow::on_TrayMenu_Display_triggered()
 {
    if (isVisible()) {
-      hide();
+	  hide();
    } else {
-      show();
-      raise();
-      emit refreshItems();
+	  show();
+	  raise();
+	  Q_EMIT refreshItems();
    }
 }
 
 void MainWindow::on_SystemTrayIcon_activated(QSystemTrayIcon::ActivationReason r)
 {
    if (r == QSystemTrayIcon::Trigger) {
-      on_TrayMenu_Display_triggered();
+	  on_TrayMenu_Display_triggered();
    }
-}
-
-void MainWindow::on_pushButton_Close_clicked()
-{
-   hide();
 }
 
 QPlainTextEdit* MainWindow::getTextEdit(const QString& tabRef)
@@ -160,7 +146,7 @@ void MainWindow::onClearText(const QString& tabRef)
    QPlainTextEdit *w = getTextEdit(tabRef);
 
    if (w) {
-      w->clear();
+	  w->clear();
    }
 }
 
@@ -169,7 +155,7 @@ void MainWindow::onAppendText(QString tabRef, QString line)
    QPlainTextEdit *w = getTextEdit(tabRef);
 
    if (w) {
-      w->appendPlainText(line);
+	  w->appendPlainText(line);
    }
 }
 
@@ -185,33 +171,33 @@ void MainWindow::onStatusChanged(const QString &tabRef, int state)
    MonitorTab* tab = monitorTabMap->value(tabRef);
 
    if (tab) {
-      int idx = ui->tabWidget->indexOf(tab->getTabWidget());
-      if (idx < 0) {
-         return;
-      }
+	  int idx = ui->tabWidget->indexOf(tab->getTabWidget());
+	  if (idx < 0) {
+		 return;
+	  }
 
-      switch(state) {
+	  switch(state) {
 
-      case MonitorItem::Error:
+	  case MonitorItem::Error:
 
-         bRefs[n] = false;
+		 bRefs[n] = false;
 
-         systemTrayIcon->setNewIcon(2); // red Icon on Error
-         ui->tabWidget->setTabIcon(idx, QIcon(":images/W.png"));
-         break;
+		 systemTrayIcon->setNewIcon(2); // red Icon on Error
+		 ui->tabWidget->setTabIcon(idx, QIcon(":images/W.png"));
+		 break;
 
-      case MonitorItem::Running:
+	  case MonitorItem::Running:
 
-         bRefs[n] = true;
-         if( bRefs[(n+1)%nTabs] && bRefs[(n+2)%nTabs]) // if all Tabs OK
-            systemTrayIcon->setNewIcon(0);             // shows blue Icon
+		 bRefs[n] = true;
+		 if( bRefs[(n+1)%nTabs] && bRefs[(n+2)%nTabs]) // if all Tabs OK
+			systemTrayIcon->setNewIcon(0);             // shows blue Icon
 
-         ui->tabWidget->setTabIcon(idx, QIcon());
-         break;
+		 ui->tabWidget->setTabIcon(idx, QIcon());
+		 break;
 
-      default:
-         break;
-      } /* switch(state) */
+	  default:
+		 break;
+	  } /* switch(state) */
    } /* if (tab) */
 }
 

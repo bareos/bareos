@@ -18,6 +18,7 @@ DH_VERBOSE = 1
 DH_OPTIONS = -v
 
 export DEB_BUILD_MAINT_OPTIONS=hardening=+all
+export QT_SELECT=qt5
 
 DAEMON_USER = bareos
 DAEMON_GROUP = bareos

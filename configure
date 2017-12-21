@@ -22681,13 +22681,13 @@ fi
 TRAY_MONITOR_DIR=
 DEBIAN_CONTROL_TRAYMONITOR=/dev/null
 if test x$support_traymonitor = xyes; then
-   abc=`$PKGCONFIG --atleast-version=4.6 QtGui`
+   abc=`$PKGCONFIG --atleast-version=5.2 Qt5Gui`
    pkg=$?
    if test $pkg = 0; then
       TRAY_MONITOR_DIR=src/qt-tray-monitor
       DEBIAN_CONTROL_TRAYMONITOR=./debian/control.bareos-traymonitor
    else
-      as_fn_error $? "Unable to find suitable Qt4 installation needed by tray-monitor" "$LINENO" 5
+      as_fn_error $? "Unable to find suitable Qt5 installation needed by tray-monitor" "$LINENO" 5
    fi
 fi
 
