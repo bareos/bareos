@@ -1181,7 +1181,7 @@ bool do_migration_init(JCR *jcr)
       set_jcr_defaults(mig_jcr, prev_job);
 
       /*
-       * Don't let WatchDog checks Max*Time value on this Job
+       * Don't let Watchdog checks Max*Time value on this Job
        */
       mig_jcr->no_maxtime = true;
 
@@ -1196,13 +1196,14 @@ bool do_migration_init(JCR *jcr)
       mig_jcr->spool_data = jcr->spool_data;
       mig_jcr->spool_size = jcr->spool_size;
 
+
       if (!setup_job(mig_jcr, true)) {
          Jmsg(jcr, M_FATAL, 0, _("setup job failed.\n"));
          return false;
       }
 
       /*
-       * Keep track that the mig_jcr has a controling JCR.
+       * Keep track that the mig_jcr has a controlling JCR.
        */
       mig_jcr->cjcr = jcr;
 
@@ -1216,10 +1217,6 @@ bool do_migration_init(JCR *jcr)
        */
       mig_jcr->jr.PoolId = jcr->jr.PoolId;
       mig_jcr->jr.JobId = mig_jcr->JobId;
-
-      Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
-            mig_jcr->jr.Name, (int)mig_jcr->jr.JobId, mig_jcr->jr.JobType,
-            mig_jcr->jr.JobLevel);
 
       if (set_migration_next_pool(jcr, &pool)) {
          /*
@@ -1248,6 +1245,17 @@ bool do_migration_init(JCR *jcr)
        * one to the writing SD.
        */
       jcr->remote_replicate = !is_same_storage_daemon(jcr->res.rstore, jcr->res.wstore);
+
+      /*
+       * set the JobLevel to what the original job was
+       */
+      mig_jcr->setJobLevel(mig_jcr->previous_jr.JobLevel);
+
+
+      Dmsg4(dbglevel, "mig_jcr: Name=%s JobId=%d Type=%c Level=%c\n",
+            mig_jcr->jr.Name, (int)mig_jcr->jr.JobId, mig_jcr->jr.JobType,
+            mig_jcr->jr.JobLevel);
+
    }
 
    return true;
@@ -1330,38 +1338,14 @@ static inline bool do_actual_migration(JCR *jcr)
          ((STORERES *)jcr->res.rstorage->first())->name(),
          ((STORERES *)jcr->res.wstorage->first())->name());
 
-   if (!jcr->remote_replicate) {
-      /*
-       * Open a message channel connection with the Storage daemon.
-       */
-      Dmsg0(110, "Open connection with storage daemon\n");
-      jcr->setJobStatus(JS_WaitSD);
-      mig_jcr->setJobStatus(JS_WaitSD);
+   if (jcr->remote_replicate) {
 
-      /*
-       * Start conversation with Storage daemon
-       */
-      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
-         free_paired_storage(jcr);
-         return false;
-      }
-
-      /*
-       * Now start a job with the Storage daemon
-       */
-      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
-         free_paired_storage(jcr);
-         return false;
-      }
-
-      Dmsg0(150, "Storage daemon connection OK\n");
-   } else {
       alist *wstorage;
 
       /*
        * See if we need to apply any bandwidth limiting.
        * We search the bandwidth limiting in the following way:
-       * - Job bandwith limiting
+       * - Job bandwidth limiting
        * - Writing Storage Daemon bandwidth limiting
        * - Reading Storage Daemon bandwidth limiting
        */
@@ -1426,11 +1410,39 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * Now start a job with the Writing Storage daemon
        */
+
       if (!start_storage_daemon_job(mig_jcr, NULL, mig_jcr->res.wstorage, /* send_bsr */ false)) {
          goto bail_out;
       }
 
       Dmsg0(150, "Writing Storage daemon connection OK\n");
+
+   } else { /* local replicate */
+
+      /*
+       * Open a message channel connection with the Storage daemon.
+       */
+      Dmsg0(110, "Open connection with storage daemon\n");
+      jcr->setJobStatus(JS_WaitSD);
+      mig_jcr->setJobStatus(JS_WaitSD);
+
+      /*
+       * Start conversation with Storage daemon
+       */
+      if (!connect_to_storage_daemon(jcr, 10, me->SDConnectTimeout, true)) {
+         free_paired_storage(jcr);
+         return false;
+      }
+
+      /*
+       * Now start a job with the Storage daemon
+       */
+      if (!start_storage_daemon_job(jcr, jcr->res.rstorage, jcr->res.wstorage, /* send_bsr */ true)) {
+         free_paired_storage(jcr);
+         return false;
+      }
+
+      Dmsg0(150, "Storage daemon connection OK\n");
    }
 
    /*
