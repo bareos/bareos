@@ -1,7 +1,7 @@
 SourceDirectory: @srcdir@
 BuildDirectory: @regressdir@
-Site: @os@-@gitbranch@
-BuildName: @bversion@-@bdate@-@db_type@-@gitrev@
+Site: @os@ regress/@regress_gitbranch@@@regress_gitrev@
+BuildName:  @bversion@-@bdate@-@db_type@ @gitbranch@@@gitrev@
 DropMethod: http
 DropSite: regress.bareos.org
 DropLocation: /submit.php?project=bareos

@@ -39,6 +39,9 @@ if git --version >/dev/null; then
    gitbranch=`git rev-parse --abbrev-ref HEAD`
    gitrev=`git rev-parse --short HEAD`
    popd
+   pwd
+   regress_gitbranch=`git rev-parse --abbrev-ref HEAD`
+   regress_gitrev=`git rev-parse --short HEAD`
 fi
 
 builddir="${src}"
@@ -103,4 +106,6 @@ echo "s%@confdir@%${confdir}%g" >>${out}
 echo "s%@uncomment_dbi@%#%g" >>${out}
 echo "s%@gitbranch@%${gitbranch}%g" >>${out}
 echo "s%@gitrev@%${gitrev}%g" >>${out}
+echo "s%@regress_gitbranch@%${regress_gitbranch}%g" >>${out}
+echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
 
