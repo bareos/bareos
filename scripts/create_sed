@@ -33,6 +33,14 @@ if [ -r ${srcdir}/src/include/version.h ]; then
   bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
   bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 fi
+
+if git --version >/dev/null; then
+   pushd  ${srcdir}
+   gitbranch=`git rev-parse --abbrev-ref HEAD`
+   gitrev=`git rev-parse --short HEAD`
+   popd
+fi
+
 builddir="${src}"
 hostname="${hostname:-$HOST}"
 
@@ -93,3 +101,6 @@ echo "s%@builddir@%${builddir}%g" >>${out}
 echo "s%@BUILD_DIR@%${builddir}%g" >>${out}
 echo "s%@confdir@%${confdir}%g" >>${out}
 echo "s%@uncomment_dbi@%#%g" >>${out}
+echo "s%@gitbranch@%${gitbranch}%g" >>${out}
+echo "s%@gitrev@%${gitrev}%g" >>${out}
+
