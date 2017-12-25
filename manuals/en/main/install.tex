@@ -12,10 +12,10 @@ Additional information can be found in the chapter \ilink{Operating Systems}{Sup
 %please refer to the \ilink{Building chapter}{compile}.}
 
 If Bareos is available as a package, 
-only 5 steps are required to get to a running Bareos System:
+only 4 steps are required to get to a running Bareos system:
 \begin{enumerate}
     \item \nameref{sec:AddSoftwareRepository}
-    \item \nameref{sec:ChooseDatabaseBackend}
+    %\item \nameref{sec:ChooseDatabaseBackend}
     \item \nameref{sec:InstallBareosPackages}
     \item \nameref{sec:CreateDatabase}
     \item \nameref{sec:StartDaemons}
@@ -43,7 +43,6 @@ Section \nameref{sec:InstallBareosPackages} describes how to add the software re
 \section{Decide about the Database Backend}
     \label{sec:ChooseDatabaseBackend}
 
-Next you have to decide, what database backend you want to use.
 Bareos offers the following database backends:
 \begin{itemize}
     \item PostgreSQL by package \package{bareos-database-postgresql}. This is the recommended backend.
@@ -110,7 +109,7 @@ RELEASE=release/17.2/
 # RELEASE=experimental/nightly/
 
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
+URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
@@ -145,7 +144,7 @@ RELEASE=release/17.2/
 # RELEASE=experimental/nightly/
 
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
+URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
@@ -173,7 +172,7 @@ RELEASE=release/17.2/
 # RELEASE=experimental/nightly/
 
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
+URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 wget -O /etc/yum.repos.d/bareos.repo $URL/bareos.repo
 
 # install Bareos packages
@@ -207,7 +206,7 @@ RELEASE=release/17.2/
 # RELEASE=experimental/nightly/
 
 # add the Bareos repository
-URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
+URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 zypper addrepo --refresh $URL/bareos.repo
 
 # install Bareos packages
@@ -245,7 +244,7 @@ RELEASE=release/17.2/
 # RELEASE=release/latest/
 # RELEASE=experimental/nightly/
 
-URL=http://download.bareos.org/bareos/release/$RELEASE/$DIST
+URL=http://download.bareos.org/bareos/$RELEASE/$DIST
 
 # add the Bareos repository
 printf "deb $URL /\n" > /etc/apt/sources.list.d/bareos.list

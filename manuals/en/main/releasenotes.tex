@@ -33,7 +33,7 @@ This release contains several enhancements. Excerpt:
     \item \package{python-bareos} is included in the core distribution.
     \item \package{bareos-storage-droplet} is a storage backend for the droplet library.
         Most notably it allows backup and restores to a S3 environment.
-        \betaSince{sd}{bareos-storage-droplet}{17.2.4}.
+        \betaSince{sd}{bareos-storage-droplet}{17.2.4}
     \item \package{bat} has been removed, see section \nameref{bat}.
     \item platforms:
     \begin{itemize}
@@ -52,7 +52,7 @@ This release contains several enhancements. Excerpt:
     \item For the denormalization the database schema must be modified.
           \warning{Updating the database to schema version $\geq$ 2170 will increase the required disk space.
                 Especially it will require around twice the amount of the current database disk space during the migration.}
-    \item The \dbtable{Filename} does no longer exists. Therefore the \bcommand{.bvfs_*}{} commands do no longer output the \dbcolumn{FilenameId} column.
+    \item The \dbtable{Filename} database table does no longer exists. Therefore the \bcommand{.bvfs_*}{} commands do no longer output the \dbcolumn{FilenameId} column.
   \end{itemize}
 
   \item NDMP\_NATIVE support has been added. This include the NDMP features DAR and DDAR. For details see \nameref{sec:NdmpNative}.
