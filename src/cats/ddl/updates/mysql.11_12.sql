@@ -33,8 +33,6 @@ CREATE TABLE PathVisibility
       Files int4 DEFAULT 0,
       CONSTRAINT pathvisibility_pkey PRIMARY KEY (JobId, PathId)
 );
-CREATE INDEX pathvisibility_jobid
-	     ON PathVisibility (JobId);
 
 CREATE INDEX basefiles_jobid_idx ON BaseFiles ( JobId );
 
