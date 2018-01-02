@@ -36,7 +36,7 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 		bsock_tcp.h bsock_udt.h bsr.h btime.h btimers.h cbuf.h
 		crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
 		guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
-		md5.h mem_pool.h message.h mntent_cache.h parse_conf.h
+		md5.h mem_pool.h message.h mntent_cache.h ordered_cbuf.h parse_conf.h
 		plugins.h protos.h queue.h rblist.h runscript.h rwlock.h
 		scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h
 		serial.h sha1.h smartall.h status.h tls.h tree.h var.h
@@ -50,7 +50,7 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
    jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc
-   output_formatter.cc passphrase.cc path_list.cc plugins.cc poll.cc  priv.cc
+   output_formatter.cc ordered_cbuf.cc passphrase.cc path_list.cc plugins.cc poll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc
    tls_gnutls.cc tls_none.cc tls_nss.cc tls_openssl.cc  tree.cc util.cc var.cc

@@ -38,7 +38,7 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    ELSE()
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
          backends/unix_fifo_device.cc
-         backends/droplet_device.cc
+         #         backends/droplet_device.cc
          backends/unix_tape_device.cc
          backends/unix_file_device.cc
          )
@@ -123,22 +123,28 @@ set(STORED_RESTYPES autochanger device director ndmp messages storage)
 
 SET(BACKEND_OBJECTS "")   # backend shared objects
 
-if(RADOS_LIBRARIES)
-   LIST(APPEND BACKEND_OBJECTS libbareossd-rados)
-endif()
-if(CEPHFS_LIBRARIES)
-   LIST(APPEND BACKEND_OBJECTS libbareossd-cephfs)
-endif()
-if(GFAPI_LIBRARIES)
-   LIST(APPEND BACKEND_OBJECTS libbareossd-gfapi)
-endif()
-if(${HAVE_DROPLET})
-   LIST(APPEND BACKEND_OBJECTS libbareossd-droplet)
-endif()
-if(${HAVE_DROPLET})
-   LIST(APPEND BACKEND_OBJECTS libbareossd-chunked)
-endif()
+if(${HAVE_DYNAMIC_SD_BACKENDS})
+   if(RADOS_LIBRARIES)
+      LIST(APPEND BACKEND_OBJECTS libbareossd-rados)
+   endif()
+   if(CEPHFS_LIBRARIES)
+      LIST(APPEND BACKEND_OBJECTS libbareossd-cephfs)
+   endif()
+   if(GFAPI_LIBRARIES)
+      LIST(APPEND BACKEND_OBJECTS libbareossd-gfapi)
+   endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND BACKEND_OBJECTS libbareossd-droplet)
+   endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND BACKEND_OBJECTS libbareossd-chunked)
+   endif()
+ELSE()
+   if(${HAVE_DROPLET})
+      LIST(APPEND BACKEND_OBJECTS ${DROPLET_LIBRARIES})
+   endif()
 
+ENDIF()
 MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 
 if(${HAVE_DYNAMIC_SD_BACKENDS})
