@@ -128,7 +128,7 @@ IMPLEMENT_ASN1_FUNCTIONS(RecipientInfo)
 IMPLEMENT_ASN1_FUNCTIONS(SignatureData)
 IMPLEMENT_ASN1_FUNCTIONS(CryptoData)
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
 /* Openssl Version < 1.1 */
 
 #define OBJ_get0_data(o) ((o)->data)
@@ -233,7 +233,7 @@ struct Digest {
    JCR *jcr;
    crypto_digest_t type;
 
-#if OPENSSL_VERSION_NUMBER < 0x10100000L
+#if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
    /* Openssl Version < 1.1 */
    private:
       EVP_MD_CTX ctx;
