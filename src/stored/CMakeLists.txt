@@ -38,7 +38,7 @@ if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
    ELSE()
       LIST(APPEND AVAILABLE_DEVICE_API_SRCS
          backends/unix_fifo_device.cc
-         backends/object_store_device.cc
+         backends/droplet_device.cc
          backends/unix_tape_device.cc
          backends/unix_file_device.cc
          )
