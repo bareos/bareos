@@ -87,7 +87,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Generic log function that glues libdroplet with BAREOS.
  */
-static void object_store_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void droplet_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
    switch (level) {
    case DPL_DEBUG:
@@ -516,7 +516,7 @@ bool droplet_device::initialize()
     */
    P(mutex);
    if (droplet_reference_count == 0) {
-      dpl_set_log_func(object_store_logfunc);
+      dpl_set_log_func(droplet_logfunc);
 
       status = dpl_init();
       switch (status) {
