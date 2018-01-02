@@ -268,7 +268,7 @@ class LowLevel(object):
         header = b''
         header_length = 4
         while header_length > 0:
-            self.logger.debug("  remaining header len: {}".format(header_length))
+            self.logger.debug("  remaining header len: {0}".format(header_length))
             self.__check_socket_connection()
             # TODO
             self.socket.settimeout(10)
