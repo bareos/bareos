@@ -1259,7 +1259,6 @@ echo "This is a meta package to install a full bareos system" > %{buildroot}%{_d
 %files devel
 %defattr(-, root, root)
 /usr/include/%{name}
-%{library_dir}/*.la
 
 %if 0%{?python_plugins}
 %files filedaemon-python-plugin
