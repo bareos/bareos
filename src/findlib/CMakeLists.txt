@@ -25,8 +25,6 @@ SET(BAREOSFIND_SRCS acl.cc attribs.cc bfile.cc create_file.cc drivetype.cc
 
 IF(HAVE_WIN32)
    LIST(APPEND BAREOSFIND_SRCS ../win32/findlib/win32.cc)
-ELSE()
-   LIST(APPEND BAREOSFIND_SRCS savecwd.cc)
 ENDIF()
 
 
