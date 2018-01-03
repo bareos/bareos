@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2014 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2017 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -64,7 +64,7 @@ static struct backend_interface_mapping_t {
    { B_FIFO_DEV, "fifo" },
    { B_TAPE_DEV, "tape" },
    { B_GFAPI_DEV, "gfapi" },
-   { B_OBJECT_STORE_DEV, "object" },
+   { B_DROPLET_DEV, "droplet" },
    { B_RADOS_DEV, "rados" },
    { B_CEPHFS_DEV, "cephfs" },
    { B_ELASTO_DEV, "elasto" },

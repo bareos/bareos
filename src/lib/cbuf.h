@@ -29,6 +29,7 @@
 #define QSIZE 10              /* # of pointers in the queue */
 
 class circbuf : public SMARTALLOC {
+private:
    int m_size;
    int m_next_in;
    int m_next_out;
@@ -37,12 +38,12 @@ class circbuf : public SMARTALLOC {
    pthread_mutex_t m_lock;    /* Lock the structure */
    pthread_cond_t m_notfull;  /* Full -> not full condition */
    pthread_cond_t m_notempty; /* Empty -> not empty condition */
-   void *m_data[QSIZE];       /* Circular buffer of pointers */
+   void **m_data;             /* Circular buffer of pointers */
 
 public:
-   circbuf();
+   circbuf(int capacity = QSIZE);
    ~circbuf();
-   int init();
+   int init(int capacity);
    void destroy();
    int enqueue(void *data);
    void *dequeue();
@@ -50,15 +51,17 @@ public:
    int flush();
    bool full() { return m_size == m_capacity; };
    bool empty() { return m_size == 0; };
+   bool is_flushing() { return m_flush; };
    int capacity() const { return m_capacity; };
 };
 
 /*
  * Constructor
  */
-inline circbuf::circbuf()
+inline circbuf::circbuf(int capacity)
 {
-   init();
+   m_data = NULL;
+   init(capacity);
 }
 
 /*

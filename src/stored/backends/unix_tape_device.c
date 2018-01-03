@@ -23,6 +23,16 @@
 /*
  * UNIX Tape API device abstraction.
  *
+ * Stacking is the following:
+ *
+ *   unix_tape_device::
+ *         |
+ *         v
+ * generic_tape_device::
+ *         |
+ *         v
+ *      DEVICE::
+ *
  * Marco van Wieringen, December 2013
  */
 

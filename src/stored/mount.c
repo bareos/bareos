@@ -109,6 +109,7 @@ mount_next_vol:
    if (dev->must_unload()) {
       ask = true;                     /* ask operator to mount tape */
    }
+
    do_unload();
    do_swapping(true /*is_writing*/);
    do_load(true /*is_writing*/);
@@ -134,6 +135,18 @@ mount_next_vol:
     * and move the tape to the end of data.
     */
    dcr->setVolCatInfo(false);   /* out of date when Vols unlocked */
+
+   /*
+    * See if this is a retry of the mounting of the next volume.
+    * If the device is already open close it first as otherwise we could
+    * potentially write to an already open device a new volume label.
+    * This is only interesting for non tape devices.
+    */
+   if (!dev->is_tape()) {
+      if (retry && dev->is_open()) {
+         dev->close(dcr);
+      }
+   }
 
    switch (autoload_device(dcr, true /* writing */, NULL)) {
    case -2:
