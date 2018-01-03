@@ -716,8 +716,7 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          }
 
          if (sp.type == 0) {
-            Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
-               cmd);
+            Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"), cmd);
             goto bail_out;
          }
 
@@ -943,8 +942,7 @@ int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
          }
 
          if (sp.type == 0) {
-            Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"),
-               cmd);
+            Jmsg1(jcr, M_FATAL, 0, _("Command plugin \"%s\": no type in startBackupFile packet.\n"), cmd);
             goto bail_out;
          }
 
