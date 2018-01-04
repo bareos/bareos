@@ -23,6 +23,7 @@ find_program(GAWK gawk)
 find_program(PIDOF pidof)
 find_program(PGREP pgrep)
 find_program(RPCGEN rpcgen)
+find_program(MTX mtx)
 
 find_program(GCORE gcore)
 find_program(GDB gdb)

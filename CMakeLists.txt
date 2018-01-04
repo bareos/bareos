@@ -624,6 +624,7 @@ message("   PGREP:                        ${PGREP}")
 message("   AWK:                          ${AWK}")
 message("   GAWK:                         ${GAWK}")
 message("   RPCGEN:                       ${RPCGEN}")
+message("   MTX:                          ${MTX}")
 
 IF(HAVE_WIN32)
    message("   WINDOWS_VERSION:              ${WINDOWS_VERSION}")
