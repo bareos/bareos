@@ -72,5 +72,7 @@ const char *B_DB::query_names[] = {
 "list_volumes_by_poolid_count_1",
 "list_joblog_2",
 "list_joblog_count_1",
+"get_orphaned_paths_0",
+"get_bad_paths_0",
 NULL
 };

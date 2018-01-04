@@ -888,5 +888,19 @@ const char *B_DB_POSTGRESQL::query_definitions[] = {
 "WHERE Log.JobId=%s "
 ,
 
+/* 0072_get_orphaned_paths_0 */
+"SELECT DISTINCT ParentPath.PathId,File.PathId,ParentPath.Path "
+"FROM Path AS ParentPath LEFT OUTER JOIN File USING(PathId) "
+"WHERE File.PathId IS NULL "
+  "AND NOT EXISTS (SELECT 1 FROM Path WHERE Path LIKE ParentPath.Path || '_%%') "
+"LIMIT 300000 "
+,
+
+/* 0073_get_bad_paths_0 */
+"SELECT PathId, Path FROM Path "
+"WHERE  Path != '' "
+  "AND  Path NOT LIKE '%%/' "
+,
+
 NULL
 };

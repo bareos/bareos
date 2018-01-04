@@ -74,6 +74,8 @@ public:
       SQL_QUERY_list_volumes_by_poolid_count_1 = 68,
       SQL_QUERY_list_joblog_2 = 69,
       SQL_QUERY_list_joblog_count_1 = 70,
-      SQL_QUERY_NUMBER = 71
+      SQL_QUERY_get_orphaned_paths_0 = 71,
+      SQL_QUERY_get_bad_paths_0 = 72,
+      SQL_QUERY_NUMBER = 73
    } SQL_QUERY_ENUM;
 };
