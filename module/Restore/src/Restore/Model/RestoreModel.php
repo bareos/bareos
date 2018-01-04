@@ -64,7 +64,7 @@ class RestoreModel
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
                $result = $bsock->send_command($cmd_2, 2, $jobid);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
-               if(count($directories['result']['directories']) == 2) {
+               if(count($directories['result']['directories']) <= 2) {
                   $retval = array_merge($retval, $directories['result']['directories']);
                   // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
                   foreach($retval as $key => $value) {
@@ -78,7 +78,7 @@ class RestoreModel
                }
             }
             // no more results?
-            elseif (count($directories['result']['directories']) == 2) {
+            elseif (count($directories['result']['directories']) <= 2) {
                $retval = array_merge($retval, $directories['result']['directories']);
                // as . and .. are always returned, filter possible duplicates of . and .. (current and parent dir)
                foreach($retval as $key => $value) {
