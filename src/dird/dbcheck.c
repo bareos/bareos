@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,8 +99,8 @@ static struct dbcheck_cmdstruct commands[] = {
    { set_quit, "Quit", false },
    { toggle_modify, "Toggle modify database flag", false },
    { toggle_verbose, "Toggle verbose flag", false },
-   { repair_bad_paths, "Check for bad Filename records", true },
-   { repair_bad_filenames, "Check for bad Path records", true },
+   { repair_bad_filenames, "Check for bad Filename records", true },
+   { repair_bad_paths, "Check for bad Path records", true },
    { eliminate_duplicate_paths, "Check for duplicate Path records", true },
    { eliminate_orphaned_jobmedia_records, "Check for orphaned Jobmedia records", true },
    { eliminate_orphaned_file_records, "Check for orphaned File records", true },
@@ -713,7 +713,7 @@ static void eliminate_orphaned_path_records()
 
    lctx.count = 0;
    db->sql_query("SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", db_int64_handler, &lctx);
-   if (lctx.count == 1) {
+   if (lctx.count > 0) {
       printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
       fflush(stdout);
       return;
