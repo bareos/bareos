@@ -57,6 +57,7 @@ cmake  . \
     ${OPENSSL} \
     ${TCPWRAPPERS} \
     ${SCSICRYPTO} \
+    ${TESTPLUGIN} \
     ${WHICHDB} \
     -Dbaseport=${BASEPORT}
 
