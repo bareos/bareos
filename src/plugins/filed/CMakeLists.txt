@@ -92,6 +92,13 @@ set_target_properties(gfapi-fd PROPERTIES PREFIX "")
 INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir})
 endif()
 
+if (${HAVE_TEST_PLUGIN})
+   add_library(test-plugin-fd MODULE test-plugin-fd.cc)
+   # do not prefix with "lib"
+   set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
+   INSTALL(TARGETS test-plugin-fd DESTINATION ${plugindir})
+endif()
+
 set (PYFILES
     bareos-fd.py.template
     bareos-fd-local-fileset.py
@@ -107,7 +114,3 @@ set (PYFILES
 INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
 
 
-#add_library(test-plugin-fd MODULE test-plugin-fd.cc)
-## do not prefix with "lib"
-#set_target_properties(test-plugin-fd PROPERTIES PREFIX "")
-#INSTALL(TARGETS test-plugin-fd DESTINATION ${plugindir})

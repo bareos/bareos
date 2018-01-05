@@ -484,6 +484,10 @@ IF(DEFINED traymonitor)
    SET(HAVE_TRAYMONITOR 1)
 ENDIF()
 
+IF(DEFINED test-plugin)
+   SET(HAVE_TEST_PLUGIN 1)
+ENDIF()
+
 # do not destroy bareos-config-lib.sh
 SET(DB_NAME "@DB_NAME@")
 SET(DB_USER "@DB_USER@")
