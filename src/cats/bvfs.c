@@ -37,7 +37,6 @@
 
 /*
  * Working Object to store PathId already seen (avoid database queries),
- * equivalent to %cache_ppathid in perl
  */
 #define NITEMS 50000
 class pathid_cache {
@@ -122,12 +121,18 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
    bstrncpy(pathid, org_pathid, sizeof(pathid));
 
    /*
-    * Does the ppathid exist for this ? we use a memory cache...  In order to
-    * avoid the full loop, we consider that if a dir is already in the
+    * Does the ppathid exist for this? use a memory cache ...
+    * In order to avoid the full loop, we consider that if a dir is already in the
     * PathHierarchy table, then there is no need to calculate all the hierarchy
     */
    while (path && *path) {
-      if (!ppathid_cache.lookup(pathid)) {
+      if (ppathid_cache.lookup(pathid)) {
+         /*
+          * It's already in the cache.  We can leave, no time to waste here,
+          * all the parent dirs have already been done
+          */
+         goto bail_out;
+      } else {
          Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %s", pathid);
 
          if (!QUERY_DB(jcr, cmd)) {
@@ -164,12 +169,6 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
             edit_uint64(parent.PathId, pathid);
             new_path = path;   /* already done */
          }
-      } else {
-         /*
-          * It's already in the cache.  We can leave, no time to waste here,
-          * all the parent dirs have already been done
-          */
-         goto bail_out;
       }
    }
 
@@ -239,12 +238,13 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
 
    /*
     * Now we have to do the directory recursion stuff to determine missing
-    * visibility We try to avoid recursion, to be as fast as possible We also
-    * only work on not allready hierarchised directories...
+    * visibility.
+    * We try to avoid recursion, to be as fast as possible.
+    * We also only work on not already hierarchised directories ...
     */
    Mmsg(cmd, "SELECT PathVisibility.PathId, Path "
              "FROM PathVisibility "
-             "JOIN Path ON( PathVisibility.PathId = Path.PathId) "
+             "JOIN Path ON (PathVisibility.PathId = Path.PathId) "
              "LEFT JOIN PathHierarchy "
              "ON (PathVisibility.PathId = PathHierarchy.PathId) "
              "WHERE PathVisibility.JobId = %s "
