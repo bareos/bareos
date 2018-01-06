@@ -35,11 +35,10 @@ if [ -r ${srcdir}/src/include/version.h ]; then
 fi
 
 if git --version >/dev/null; then
-   pushd  ${srcdir}
+   cd  ${srcdir}
    gitbranch=`git rev-parse --abbrev-ref HEAD`
    gitrev=`git rev-parse --short HEAD`
-   popd
-   pwd
+   cd -
    regress_gitbranch=`git rev-parse --abbrev-ref HEAD`
    regress_gitrev=`git rev-parse --short HEAD`
 fi
@@ -51,13 +50,13 @@ hostname="${hostname:-$HOST}"
 regress_gitrev=""
 bareos_gitrev=""
 
-pushd $cwd
+cd $cwd
 regress_gitrev=`git show -s --format=%h HEAD`
-popd
+cd -
 
-pushd ${BAREOS_SOURCE}
+cd ${BAREOS_SOURCE}
 bareos_gitrev=`git show -s --format=%h HEAD`
-popd
+cd -
 
 
 # Create sed command script
