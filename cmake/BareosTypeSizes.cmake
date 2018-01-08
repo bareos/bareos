@@ -41,11 +41,15 @@ CHECK_TYPE_SIZE(intptr_t INTPTR_T)
 CHECK_TYPE_SIZE(uintptr_t UINTPTR_T)
 CHECK_TYPE_SIZE(u_int HAVE_U_INT)
 
+CHECK_TYPE_SIZE(major_t HAVE_MAJOR_T)
+CHECK_TYPE_SIZE(minor_t HAVE_MINOR_T)
 
-
-
-set(major_t int)
-set(minor_t int)
+IF (${HAVE_MAJOR_T})
+   set(major_t int)
+ENDIF()
+IF (${HAVE_MINOR_T})
+   set(minor_t int)
+ENDIF()
 
 # config.h requires  1 instead of TRUE
 IF(${HAVE_U_INT})
