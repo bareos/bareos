@@ -59,6 +59,11 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    set(HAVE_LINUX_OS 1)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+   set(HAVE_SUN_OS 1)
+   link_libraries(nsl socket curses)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
    set(HAVE_FREEBSD_OS 1)
    include_directories(/usr/local/include)
