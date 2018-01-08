@@ -79,7 +79,7 @@ static inline void authenticate_failed(JCR *jcr, POOL_MEM &message)
 }
 
 /**
- * Inititiate the communications with the Director.
+ * Initiate the communications with the Director.
  * He has made a connection to our server.
  *
  * Basic tasks done here:
