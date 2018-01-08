@@ -44,10 +44,10 @@ CHECK_TYPE_SIZE(u_int HAVE_U_INT)
 CHECK_TYPE_SIZE(major_t MAJOR_T)
 CHECK_TYPE_SIZE(minor_t MINOR_T)
 
-IF (${HAVE_MAJOR_T})
+IF (NOT ${MAJOR_T})
    set(major_t int)
 ENDIF()
-IF (${HAVE_MINOR_T})
+IF (NOT ${MINOR_T})
    set(minor_t int)
 ENDIF()
 
