@@ -125,7 +125,7 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
     * In order to avoid the full loop, we consider that if a dir is already in the
     * PathHierarchy table, then there is no need to calculate all the hierarchy
     */
-   while (path && *path) {
+   while (new_path && *new_path) {
       if (ppathid_cache.lookup(pathid)) {
          /*
           * It's already in the cache.  We can leave, no time to waste here,
@@ -145,7 +145,7 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
          if (sql_num_rows() > 0) {
             ppathid_cache.insert(pathid);
             /* This dir was in the db ...
-             * It means we can leave, the tree has allready been built for
+             * It means we can leave, the tree has already been built for
              * this dir
              */
             goto bail_out;
@@ -167,7 +167,8 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
             }
 
             edit_uint64(parent.PathId, pathid);
-            new_path = path;   /* already done */
+            /* continue with parent directory */
+            new_path = path;
          }
       }
    }
