@@ -1700,8 +1700,8 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
    if (p_ctx->VDIDevice) {
       hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT , &cmd);
       if (hr != VD_E_CLOSE) {
-         Jmsg(ctx, M_ERROR, "Abnormal termination, VDIDevice not closed.");
-         Dmsg(ctx, dbglvl, "Abnormal termination, VDIDevice not closed.");
+         Jmsg(ctx, M_ERROR, "Abnormal termination, VDIDevice not closed.\n");
+         Dmsg(ctx, dbglvl, "Abnormal termination, VDIDevice not closed.\n");
          goto bail_out;
       }
    }
