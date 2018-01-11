@@ -84,7 +84,8 @@ public:
    /* Get the root point */
    DBId_t get_root();
 
-   /* It's much better to access Path though their PathId, it
+   /*
+    * It's much better to access Path though their PathId, it
     * avoids mistakes with string encoding
     */
    void ch_dir(DBId_t pathid) {
@@ -99,7 +100,6 @@ public:
 
    bool ls_files();             /* Returns true if we have more files to read */
    bool ls_dirs();              /* Returns true if we have more dir to read */
-   void ls_special_dirs();      /* get . and .. */
    void get_all_file_versions(const char *path, const char *fname, const char *client);
    void get_all_file_versions(DBId_t pathid, const char *fname, const char *client);
 

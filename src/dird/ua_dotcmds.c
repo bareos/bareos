@@ -528,19 +528,21 @@ bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
 
    Bvfs fs(ua->jcr, ua->db);
    fs.set_jobids(filtered_jobids.c_str());
-   fs.set_limit(limit);
-   fs.set_handler(bvfs_result_handler, ua);
 
    if (pathid) {
       fs.ch_dir(pathid);
    } else {
-      fs.ch_dir(path);
+      if (!fs.ch_dir(path)) {
+         /* path could not be found. Giving up. */
+         return false;
+      }
    }
 
+   fs.set_handler(bvfs_result_handler, ua);
    fs.set_offset(offset);
+   fs.set_limit(limit);
 
    ua->send->array_start("directories");
-   fs.ls_special_dirs();
    fs.ls_dirs();
    ua->send->array_end("directories");
 

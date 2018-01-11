@@ -62,15 +62,6 @@ bbatch: Makefile bbatch.o \
 	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -o $@ bbatch.o \
 	  -lbareoscats -lbareossql -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
 
-bvfs_test: Makefile bvfs_test.o \
-	   ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
-	   ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
-	   ../cats/libbareossql$(DEFAULT_ARCHIVE_TYPE) \
-	   ../cats/libbareoscats$(DEFAULT_ARCHIVE_TYPE)
-	@echo "Linking $@ ..."
-	$(LIBTOOL_LINK) $(CXX) -g $(LDFLAGS) -L../cats -L. -L../lib -L../findlib -o $@ bvfs_test.o  \
-	  -lbareoscats -lbareossql -lbareosfind -lbareos -lm $(DB_LIBS) $(LIBS) $(GETTEXT_LIBS)
-
 ing_test: Makefile ing_test.o \
 	  ../findlib/libbareosfind$(DEFAULT_ARCHIVE_TYPE) \
 	  ../lib/libbareos$(DEFAULT_ARCHIVE_TYPE) \
