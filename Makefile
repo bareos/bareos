@@ -44,7 +44,7 @@ full_test:
 root_test:
 	./all-root-tests
 
-DEST := $(DESTDIR)/var/lib/bareos/bareos-regress
+DEST = $(DESTDIR)/var/lib/bareos/bareos-regress
 install:
 	mkdir -p $(DEST)
 	# directories
