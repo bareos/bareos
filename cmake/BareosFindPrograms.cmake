@@ -20,6 +20,10 @@
 # find programs
 find_program(AWK awk)
 find_program(GAWK gawk)
+IF(HAVE_SUN_OS)
+   SET(AWK ${GAWK})
+ENDIF()
+
 find_program(PIDOF pidof)
 IF(NOT ${PIDOF})
    SET(PIDOF "")
