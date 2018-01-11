@@ -21,6 +21,10 @@
 find_program(AWK awk)
 find_program(GAWK gawk)
 find_program(PIDOF pidof)
+IF(NOT ${PIDOF})
+   SET(PIDOF "")
+ENDIF()
+
 find_program(PS ps)
 find_program(PGREP pgrep)
 find_program(RPCGEN rpcgen)
