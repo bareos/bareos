@@ -3,6 +3,7 @@
 #  Test if daemons start
 #
 
+exit 0
 TestName="pretest"
 JobName=backup
 error=0
