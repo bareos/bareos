@@ -131,7 +131,7 @@ ENDIF()
 
 # subsysdir
 IF(NOT DEFINED subsysdir)
-   set(subsysdir "${CMAKE_INSTALL_PREFIX}/var/lock/subsys")
+   set(subsysdir "${workingdir}")
 ENDIF()
 
 # db_name
