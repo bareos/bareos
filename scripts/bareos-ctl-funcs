@@ -151,9 +151,9 @@ status() {
       fi
    fi
 
-   pid=`${PSCMD} | ${AWK} 'BEGIN { prog=ARGV[1]; ARGC=1 }
-   { if ((prog == $2) || (("(" prog ")") == $2) ||
-      (("[" prog "]") == $2) ||
+   pid=`${PSCMD} | ${AWK} 'BEGIN { prog=ARGV[1]; ARGC=1 } \
+   { if ((prog == $2) || (("(" prog ")") == $2) ||        \
+      (("[" prog "]") == $2) ||                           \
       ((prog ":") == $2)) { print $1 ; exit 0 } }' $1`
    if [ "$pid" != "" ] ; then
       echo "$base (pid $pid) is running..."
