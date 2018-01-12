@@ -7,5 +7,5 @@ Job {
   Storage = File1
   Pool = Default
   Messages = Standard
-  Where = /tmp/bareos-restores
+  Where = @tmpdir@/bareos-restores
 }

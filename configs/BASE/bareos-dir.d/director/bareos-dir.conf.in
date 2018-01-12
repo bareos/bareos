@@ -16,11 +16,8 @@ Director {                            # define myself
   # remove comment in next line to load dynamic backends from specified directory
   # Backend Directory = @backenddir@
 
-  # remove comment from "Plugin Directory" to load plugins from specified directory.
-  # if "Plugin Names" is defined, only the specified plugins will be loaded,
-  # otherwise all director plugins (*-dir.so) from the "Plugin Directory".
-  #
-  # Plugin Directory = @plugindir@
-  # Plugin Names = ""
+  # If plugins should get used, call
+  # enable_plugin PLUGINNAME
+  Plugin Directory = @plugindirtmp@
 }
 

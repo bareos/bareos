@@ -42,7 +42,10 @@ echo "s%@archivedir@%${tmp}%g" >>${out}
 echo "s%@bindir@%${bin}%g" >>${out}
 echo "s%@sbindir@%${bin}%g" >>${out}
 echo "s%@scriptdir@%${scripts}%g" >>${out}
+echo "s%@scripts@%${scripts}%g" >>${out}
+echo "s%@rscripts@%${rscripts}%g" >>${out}
 echo "s%@plugindir@%${plugindir}%g" >>${out}
+echo "s%@plugindirtmp@%${plugindirtmp}%g" >>${out}
 echo "s%@working_dir@%${working}%g" >>${out}
 echo "s%@piddir@%${working}%g" >>${out}
 echo "s%@job_email@%${EMAIL}%g" >>${out}
@@ -60,8 +63,8 @@ echo "s%@hostname@%${hostname}%g" >>${out}
 echo "s%@hostname1@%${hostname1}%g" >>${out}
 echo "s%@hostname2@%${hostname2}%g" >>${out}
 echo "s%@hostname3@%${hostname3}%g" >>${out}
-echo "s%@hostname1_files@%${hostname1_files}%g" >>${out}
 echo "s%@hostname_files@%${hostname_files}%g" >>${out}
+echo "s%@hostname1_files@%${hostname1_files}%g" >>${out}
 echo "s%@hostname2_files@%${hostname2_files}%g" >>${out}
 echo "s%@hostname3_files@%${hostname3_files}%g" >>${out}
 echo "s%@hostname1_password@%${hostname1_password}%g" >>${out}

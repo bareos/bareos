@@ -52,6 +52,9 @@ copy_configs
 # start the test
 start_test
 
+# activate plugin, e.g. bpipe-fd
+#activate_plugin bpipe-fd
+
 # ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
 cat <<END_OF_DATA >${tmp}/bconcmds
 messages

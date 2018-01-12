@@ -41,6 +41,9 @@ setup_data data/small.tgz
 # start the test
 start_test
 
+# activate bpipe-fd plugin
+enable_plugin bpipe-fd
+
 echo "Test Content 1" > ${BackupFileExtra}
 
 # ${tmp}/bconcmds lists the bconsole commands executed by "run_bareos"
@@ -48,7 +51,7 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 messages
 @$out ${tmp}/log-backup1.out w
 label storage=File1 pool=Default volume=TestVolume001
-run job=$JobName storage=File1 yes
+run job=$JobName fileset=bpipe-fileset storage=File1 yes
 wait
 messages
 quit
@@ -66,7 +69,7 @@ echo "Test Content 2" >> ${BackupFileExtra}
 
 cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${tmp}/log-backup2.out w
-run job=$JobName storage=File1 yes
+run job=$JobName fileset=bpipe-fileset storage=File1 yes
 wait
 messages
 quit
@@ -88,6 +91,9 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @$out ${tmp}/log-bvfs-get-root-path.out w
 .bvfs_lsdir jobid=${BackupJobIds} path=
 
+@$out ${tmp}/log-bvfs-get-root-path-offset.out w
+.bvfs_lsdir jobid=${BackupJobIds} path= offset=1000 limit=1000
+
 @$out ${tmp}/log-bvfs-lsdir-root.out w
 .bvfs_lsdir jobid=${BackupJobIds} path=/
 
@@ -98,8 +104,14 @@ cat <<END_OF_DATA >${tmp}/bconcmds
 @#.bvfs_lsfiles jobid=${BackupJobIds} pathid=1
 .bvfs_lsfiles jobid=${BackupJobIds} path=${BackupDirectory}/
 
+@$out ${tmp}/log-bvfs-lsfiles-BackupDirectory-limit1.out w
+.bvfs_lsfiles jobid=${BackupJobIds} path=${BackupDirectory}/ offset 0 limit 1
+
 @$out ${tmp}/log-bvfs-versions-extrafile.out w
 .bvfs_versions jobid=0 client=${Client} path=${BackupDirectory}/ fname=extrafile.txt
+
+@$out ${tmp}/log-bvfs-lsfiles-bpipe-directory.out w
+.bvfs_lsfiles jobid=${BackupJobIds} path=@bpipe@/
 END_OF_DATA
 
 run_bconsole
@@ -171,11 +183,25 @@ fi
 LOG=${tmp}/log-bvfs-get-root-path.out
 check_log ${LOG}
 # expect:
-# 10    0   0   0   A A A A A A A A A A A A A A .
-# 9   0   0   0   A A A A A A A A A A A A A A /
+# 10    0   0   A A A A A A A A A A A A A A .
+# 9   0   0   A A A A A A A A A A A A A A /
+# 8   0   0   A A A A A A A A A A A A A A @bpipe@/
 if ! grep -q "\W/$" ${LOG}; then
     set_error "root directory not found (using '.bvfs_lsdir path=')."
 fi
+
+if ! grep -q "\W@bpipe@/$" ${LOG}; then
+    set_error "@bpipe@ plugin directory not found (using '.bvfs_lsdir path=')."
+fi
+
+LOG=${tmp}/log-bvfs-get-root-path-offset.out
+check_log ${LOG}
+# expect: empty file, as offset larger than number of dirs
+dirs=`grep "^[0-9]\+\W" ${LOG} | wc -l`
+if [ "$dirs" -gt 0 ]; then
+    set_error "result should be empty (using '.bvfs_lsdir path= offset=1000')."
+fi
+
 
 LOG=${tmp}/log-bvfs-lsdir-root.out
 check_log ${LOG}
@@ -203,11 +229,24 @@ if ! grep -q "\Wextrafile.txt" ${LOG}; then
    set_error "file not found using .bvfs_lsfiles."
 fi
 
+LOG=${tmp}/log-bvfs-lsfiles-BackupDirectory-limit1.out
+check_log ${LOG}
+files=`grep "^[0-9]\+\W" ${LOG} | wc -l`
+if [ "$files" !=  "1" ]; then
+   set_error "expected 1 file, found ${files}."
+fi
+
 LOG=${tmp}/log-bvfs-versions-extrafile.out
 check_log ${LOG}
 versions=`grep "^[0-9]\+\W" ${LOG} | wc -l`
 if [ "$versions" !=  "2" ]; then
    set_error "expected 2 versions of file ${BackupFileExtra}, found ${versions}."
+fi
+
+LOG=${tmp}/log-bvfs-lsfiles-bpipe-directory.out
+check_log ${LOG}
+if ! grep -q "\Wbpipe-dir-as-root-test.txt" ${LOG}; then
+   set_error "bpipe plugin result file not found using .bvfs_lsfiles."
 fi
 
 LOG=${tmp}/log-bvfs-restore.out

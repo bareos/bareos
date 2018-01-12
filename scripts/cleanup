@@ -19,6 +19,7 @@ rm -rf ${working}/*.bsr ${working}/log*.sd
 rm -rf ${working}/*.trace ${working}/*.traceback ${working}/*.bactrace
 rm -rf ${working}/*.state
 rm -rf ${working}/CLEANUPMARKER
+rm -rf ${working}/plugins/*
 find . -name "gigaslam.gif" -exec rm -f {} \;
 # cleanup old config files
 # don't delete mtx-changer.conf (and other files?)

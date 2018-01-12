@@ -10,9 +10,8 @@ scripts/cleanup
 scripts/copy-plugin-confs
 
 # enable test-plugin
-mv -f ${cwd}/bin/plugins/test-plugin-fd.sox ${cwd}/bin/plugins/test-plugin-fd.so
-
-mv -f ${cwd}/bin/plugins/bpipe-fd.sox ${cwd}/bin/plugins/bpipe-fd.so
+enable_plugin bpipe-fd
+enable_plugin test-plugin-fd
 
 file=encrypt-bug.jpg
 echo "${cwd}/README" >${cwd}/tmp/file-list
@@ -67,12 +66,9 @@ stop_bareos
 #
 # Remove plugin so we can try the restore without the plugin
 #
-mv -f ${cwd}/bin/plugins/bpipe-fd.so ${cwd}/bin/plugins/bpipe-fd.sox
+disable_plugin bpipe-fd
 
 cat <<END_OF_DATA >${cwd}/tmp/bconcmds
-@$out ${cwd}/tmp/log2.out
-@# remove plugin
-@exec "sh -c 'rm -f ${cwd}/bin/plugins/bpipe-fd.so'"
 @#
 @# now do a restore without the plugin
 @#
@@ -110,7 +106,7 @@ stop_bareos
 #
 # Restore plugin
 #
-mv -f ${cwd}/bin/plugins/bpipe-fd.sox ${cwd}/bin/plugins/bpipe-fd.so
+enable_plugin bpipe-fd
 
 check_two_logs
 #
@@ -159,7 +155,5 @@ perl -ne '
 
 estat=$?
 
-# disable test-plugin
-mv -f ${cwd}/bin/plugins/test-plugin-fd.so ${cwd}/bin/plugins/test-plugin-fd.sox
-
 end_test
+

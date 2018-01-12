@@ -39,6 +39,53 @@ copy_configs()
     done
 }
 
+#
+# activates a plugin by copying to $plugindirtmp.
+# For this, daemons must have following setting:
+# Plugin Directory = @plugindirtmp@
+#
+enable_plugin()
+{
+   RC=0
+   PLUGIN="$1"
+
+   if [ -z "$PLUGIN" ]; then
+      set_error "enable_plugin: no plugin name given."
+      exit 1
+   fi
+
+   if ! cp $plugindir/${PLUGIN}.* $plugindirtmp/; then
+      set_error "enable_plugin: failed to enable ${PLUGIN} plugin."
+      RC=1
+      exit 1
+   fi
+
+   print_debug "plugin ${PLUGIN} enabled"
+
+   return $RC
+}
+
+disable_plugin()
+{
+   RC=0
+   PLUGIN="$1"
+
+   if [ -z "$PLUGIN" ]; then
+      set_error "enable_plugin: no plugin name given."
+      exit 1
+   fi
+
+   if ! rm $plugindirtmp/${PLUGIN}.*; then
+      set_error "disable_plugin: failed to disable ${PLUGIN} plugin."
+      RC=1
+      exit 1
+   fi
+
+   print_debug "plugin ${PLUGIN} disabled"
+
+   return $RC
+}
+
 check_encoding()
 {
    ${bin}/bareos-dir -d50 -t 2>&1 | grep 'Wanted SQL_ASCII, got UTF8' >/dev/null
@@ -363,7 +410,7 @@ run_bareos()
    if [ $DAEMON_STATUS -ne 0 ]; then
       exit 1
    fi
- 
+
    run_bconsole
    return $?
 }
@@ -835,12 +882,16 @@ db_password=${db_password:-""}
 working=${working:-"$cwd/working"}
 dumps=${dumps:-"$cwd/dumps"}
 bin=${bin:-"$cwd/bin"}
+tmp=${tmp:-"$cwd/tmp"}
 
 # Bareos scripts
 scripts=${scripts:-"$cwd/bin"}
 
 # Bareos Plugin Directory
 plugindir=${plugindir:-"$cwd/bin/plugins"}
+# some tests (BASE) load only the plugins copied to plugindirtmp,
+# to avoid that all plugins get loaded.
+plugindirtmp=${plugindirtmp:-"$working/plugins"}
 
 # Bareos conf files
 conf=${conf:-"$cwd/bin"}
@@ -854,7 +905,6 @@ rscripts=${rscripts:-"$cwd/scripts"}
 # Regress configs
 rconfigs=${rconfigs:-"$cwd/configs"}
 
-tmp=${tmp:-"$cwd/tmp"}
 
 # Bareos source directory when copied here
 #  also build directory
@@ -868,13 +918,15 @@ export bin
 export conf
 export confdir
 export configs
-export working
 export dumps
-export scripts
+export plugindir
+export plugindirtmp
 export rscripts
-export tmp
+export scripts
 export src
+export tmp
 export tmpsrc
+export working
 
 export dirport=$BASEPORT
 export fdport=$(($BASEPORT + 1))
@@ -889,6 +941,7 @@ export bperl
 
 mkdir -p ${working}
 mkdir -p ${tmp}
+mkdir -p ${plugindirtmp}
 touch ${tmp}/dir.out ${tmp}/fd.out ${tmp}/sd.out
 
 CLIENT=${HOST}-fd
