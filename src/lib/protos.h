@@ -140,6 +140,8 @@ bool path_exists(const char *path);
 bool path_exists(POOL_MEM &path);
 bool path_is_directory(const char *path);
 bool path_is_directory(POOL_MEM &path);
+bool path_contains_directory(const char *path);
+bool path_contains_directory(POOL_MEM &path);
 bool path_is_absolute(const char *path);
 bool path_is_absolute(POOL_MEM &path);
 bool path_get_directory(POOL_MEM &directory, POOL_MEM &path);

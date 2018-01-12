@@ -987,6 +987,32 @@ bool path_is_absolute(POOL_MEM &path)
    return path_is_absolute(path.c_str());
 }
 
+bool path_contains_directory(const char *path)
+{
+   int i;
+
+   if (!path) {
+      return false;
+   }
+
+   i = strlen(path) - 1;
+
+   while (i >= 0) {
+      if (IsPathSeparator(path[i])) {
+         return true;
+      }
+      i--;
+   }
+
+   return false;
+}
+
+bool path_contains_directory(POOL_MEM &path)
+{
+   return path_contains_directory(path.c_str());
+}
+
+
 /*
  * Get directory from path.
  */

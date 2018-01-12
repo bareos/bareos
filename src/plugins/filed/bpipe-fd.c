@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2015 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -725,8 +725,8 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
          /*
           * Parsing something fishy ? e.g. partly with known keywords.
           */
-         Jmsg(ctx, M_FATAL, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
-         Dmsg(ctx, dbglvl, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition\n", plugin_definition);
+         Jmsg(ctx, M_FATAL, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition (%s)\n", plugin_definition);
+         Dmsg(ctx, dbglvl, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition (%s)\n", plugin_definition);
          goto bail_out;
       }
 
@@ -828,6 +828,15 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
 
                switch (plugin_arguments[i].type) {
                case argument_file:
+                  if (!path_contains_directory(argument_value)){
+                     Jmsg(ctx, M_FATAL, 
+                           "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
+                           argument_value);
+                     Dmsg(ctx, dbglvl,
+                           "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
+                           argument_value);
+                     goto bail_out;
+                  }
                   str_destination = &p_ctx->fname;
                   break;
                case argument_reader:
