@@ -11,7 +11,8 @@ else
 fi
 
 if [ -z "${CFLAGS}" ]; then
-   CFLAGS="-g -O2 -Wall"
+   #CFLAGS="-g -O2 -Wall"
+   CFLAGS="-g -Wall"
    export CFLAGS
 fi
 
