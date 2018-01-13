@@ -215,7 +215,8 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
    Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
    UPDATE_DB(jcr, cmd);
 
-   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
+   /*
+    * need to COMMIT here to ensure that other concurrent .bvfs_update runs
     * see the current HasCache value. A new transaction must only be started
     * after having finished PathHierarchy processing, otherwise prevention
     * from duplicate key violations in build_path_hierarchy() will not work.
@@ -456,10 +457,25 @@ void Bvfs::set_jobids(char *ids)
    pm_strcpy(jobids, ids);
 }
 
-/* Return the parent_dir with the trailing /  (update the given string)
+/*
+ * Return the parent_dir with the trailing "/".
+ * It updates the given string.
+ *
+ * Unix:
  * dir=/tmp/toto/
  * dir=/tmp/
  * dir=/
+ * dir=
+ *
+ * Windows:
+ * dir=c:/Programs/Bareos/
+ * dir=c:/Programs/
+ * dir=c:/
+ * dir=
+ *
+ * Plugins:
+ * dir=@bpipe@/data.dat
+ * dir=@bpipe@/
  * dir=
  */
 char *bvfs_parent_dir(char *path)
@@ -476,7 +492,8 @@ char *bvfs_parent_dir(char *path)
       path[0] = '\0';
    }
 
-   if (len >= 0 && path[len] == '/') {      /* if directory, skip last / */
+   /* if path is a directory, remove last / */
+   if ((len >= 0) && (path[len] == '/')) {
       path[len] = '\0';
    }
 
@@ -485,8 +502,22 @@ char *bvfs_parent_dir(char *path)
       while (p > path && !IsPathSeparator(*p)) {
          p--;
       }
-      p[1] = '\0';
+      if (IsPathSeparator(*p) and (len >= 1)) {
+         /*
+          * Terminate the string after the "/".
+          * Do this instead of overwritting the "/"
+          * to keep the root directory "/" as a separate path.
+          */
+         p[1] = '\0';
+      } else {
+         /*
+          * path did not start with a "/".
+          * This can be the case for plugin results.
+          */
+         p[0] = '\0';
+      }
    }
+
    return path;
 }
 
