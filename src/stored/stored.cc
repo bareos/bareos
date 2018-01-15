@@ -541,7 +541,10 @@ static int check_resources()
 static void cleanup_old_files()
 {
    DIR* dp;
-   struct dirent *entry, *result;
+   struct dirent *result;
+#ifdef USE_READDIR_R
+   struct dirent *entry;
+#endif
    int rc, name_max;
    int my_name_len = strlen(my_name);
    int len = strlen(me->working_directory);
@@ -581,11 +584,18 @@ static void cleanup_old_files()
       goto get_out1;
    }
 
+#ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
    while (1) {
       if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+   while (1) {
+      result = readdir(dp);
+      if (result == NULL) {
+#endif
          break;
       }
+
       /* Exclude any name with ., .., not my_name or containing a space */
       if (strcmp(result->d_name, ".") == 0 || strcmp(result->d_name, "..") == 0 ||
           strncmp(result->d_name, my_name, my_name_len) != 0) {
@@ -601,7 +611,9 @@ static void cleanup_old_files()
          secure_erase(NULL, cleanup);
       }
    }
+#ifdef USE_READDIR_R
    free(entry);
+#endif
    closedir(dp);
 
 get_out1:
