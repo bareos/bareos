@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -96,15 +96,14 @@ bool authenticate_director(JCR *jcr)
    if (dir->msglen < 25 || dir->msglen > 500) {
       char addr[64];
       char *who = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-      errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"),
-                           who, dir->msglen);
+      errormsg.bsprintf(_("Bad Hello command from Director at %s. Len=%d.\n"), who, dir->msglen);
       authenticate_failed(jcr, errormsg);
       return false;
    }
 
    if (sscanf(dir->msg, "Hello Director %s calling", dirname.check_size(dir->msglen)) != 1) {
       char addr[64];
-      char *who = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
+      char *who     = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
       dir->msg[100] = 0;
       errormsg.bsprintf(_("Bad Hello command from Director at %s: %s\n"), who, dir->msg);
       authenticate_failed(jcr, errormsg);
@@ -117,7 +116,8 @@ bool authenticate_director(JCR *jcr)
    if (!director) {
       char addr[64];
       char *who = bnet_get_peer(dir, addr, sizeof(addr)) ? dir->who() : addr;
-      errormsg.bsprintf(_("Connection from unknown Director %s at %s rejected.\n"), dirname.c_str(), who);
+      errormsg.bsprintf(
+          _("Connection from unknown Director %s at %s rejected.\n"), dirname.c_str(), who);
       authenticate_failed(jcr, errormsg);
       return false;
    }
@@ -128,9 +128,10 @@ bool authenticate_director(JCR *jcr)
       return false;
    }
 
-   if (!dir->authenticate_inbound_connection(jcr, "Director",
-                                             dirname.c_str(),
-                                             director->password, director->tls)) {
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
+
+   if (!dir->authenticate_inbound_connection(
+           jcr, "Director", dirname.c_str(), director->password, tls_resources)) {
       dir->fsend("%s", Dir_sorry);
       errormsg.bsprintf(_("Unable to authenticate Director %s.\n"), dirname.c_str());
       authenticate_failed(jcr, errormsg);
@@ -145,13 +146,10 @@ bool authenticate_director(JCR *jcr)
 /**
  * Authenticate with a remote director.
  */
-bool authenticate_with_director(JCR *jcr, DIRRES *dir_res)
-{
-   BSOCK *dir = jcr->dir_bsock;
-
-   return dir->authenticate_outbound_connection(jcr, "Director",
-                                                dir_res->name(), dir_res->password,
-                                                dir_res->tls);
+bool authenticate_with_director(JCR *jcr, DIRRES *director) {
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
+   return jcr->dir_bsock->authenticate_outbound_connection(
+      jcr, "Director", me->name(), director->password, tls_resources);
 }
 
 /**
@@ -165,8 +163,8 @@ bool authenticate_storagedaemon(JCR *jcr)
 
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
-
-   result = sd->authenticate_inbound_connection(jcr, "Storage daemon", "", password, me->tls);
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_cert};
+   result = sd->authenticate_inbound_connection(jcr, "Storage daemon", jcr->client_name, password, tls_resources);
 
    /*
     * Destroy session key
@@ -189,9 +187,10 @@ bool authenticate_with_storagedaemon(JCR *jcr)
    s_password password;
 
    password.encoding = p_encoding_md5;
-   password.value = jcr->sd_auth_key;
-
-   result = sd->authenticate_outbound_connection(jcr, "Storage daemon", "", password, me->tls);
+   password.value    = jcr->sd_auth_key;
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
+   result = sd->authenticate_outbound_connection(
+      jcr, "Storage daemon", (char *) jcr->client_name, password, tls_resources);
 
    /*
     * Destroy session key

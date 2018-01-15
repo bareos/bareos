@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -220,9 +220,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
 
 
       if (!jcr->passive_client) {
-
-
-         int tls_need = BNET_TLS_NONE;
+         uint32_t tls_need = 0;
 
          /*
           * When the client is not in passive mode we can put the SD in
@@ -253,13 +251,8 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-         if (store->tls.enable) {
-            if (store->tls.require) {
-               tls_need = BNET_TLS_REQUIRED;
-            } else {
-               tls_need = BNET_TLS_OK;
-            }
-         }
+         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{store->tls_cert, store->tls_psk};
+            tls_need = MergePolicies(tls_resources);
 
          connection_target_address = storage_address_to_contact(client, store);
 
@@ -272,10 +265,8 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
             goto bail_out;
          }
       } else {
-
-
-         int tls_need = BNET_TLS_NONE;
-         /*
+          uint32_t tls_need = 0;
+            /*
           * In passive mode we tell the FD what authorization key to use
           * and the ask the SD to initiate the connection.
           */
@@ -290,14 +281,8 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-         tls_need = BNET_TLS_NONE;
-         if (client->tls.enable) {
-            if (client->tls.require) {
-               tls_need = BNET_TLS_REQUIRED;
-            } else {
-               tls_need = BNET_TLS_OK;
-            }
-         }
+         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{client->tls_cert, client->tls_psk};
+            tls_need = MergePolicies(tls_resources);
 
          connection_target_address = client_address_to_contact(client, store);
          /*
@@ -400,36 +385,6 @@ bail_out:
    return false;
 }
 
-static inline bool validate_client(JCR *jcr)
-{
-   switch (jcr->res.client->Protocol) {
-   case APT_NATIVE:
-      return true;
-   default:
-      Jmsg(jcr, M_FATAL, 0, _("Client %s has illegal backup protocol %s for Native restore\n"),
-           jcr->res.client->name(), auth_protocol_to_str(jcr->res.client->Protocol));
-      return false;
-   }
-}
-
-static inline bool validate_storage(JCR *jcr)
-{
-   STORERES *store;
-
-   foreach_alist(store, jcr->res.rstorage) {
-      switch (store->Protocol) {
-      case APT_NATIVE:
-         continue;
-      default:
-         Jmsg(jcr, M_FATAL, 0, _("Storage %s has illegal backup protocol %s for Native restore\n"),
-              store->name(), auth_protocol_to_str(store->Protocol));
-         return false;
-      }
-   }
-
-   return true;
-}
-
 /**
  * Do a restore initialization.
  *
@@ -439,13 +394,6 @@ static inline bool validate_storage(JCR *jcr)
 bool do_native_restore_init(JCR *jcr)
 {
    free_wstorage(jcr);                /* we don't write */
-
-   /*
-    * Validate that we have a native client and storage(s).
-    */
-   if (!validate_client(jcr) || !validate_storage(jcr)) {
-      return false;
-   }
 
    return true;
 }

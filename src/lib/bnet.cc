@@ -114,18 +114,18 @@ bool bnet_send(BSOCK *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
+bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock, alist *verify_list)
 {
-   TLS_CONNECTION *tls_conn;
+   TLS_CONNECTION *tls_conn = nullptr;
    JCR *jcr = bsock->jcr();
 
-   tls_conn = new_tls_connection(ctx, bsock->m_fd, true);
+   tls_conn = new_tls_connection(tls_ctx, bsock->m_fd, true);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->tls_conn = tls_conn;
+   bsock->SetTlsConnection(tls_conn);
 
    /*
     * Initiate TLS Negotiation
@@ -148,8 +148,7 @@ bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock, alist *verify_list)
    return true;
 
 err:
-   free_tls_connection(tls_conn);
-   bsock->tls_conn = NULL;
+   bsock->free_tls();
    return false;
 }
 
@@ -158,23 +157,24 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
+bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
 {
    TLS_CONNECTION *tls_conn;
    JCR *jcr = bsock->jcr();
 
-   tls_conn  = new_tls_connection(ctx, bsock->m_fd, false);
+   tls_conn  = new_tls_connection(tls_ctx, bsock->m_fd, false);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
    }
 
-   bsock->tls_conn = tls_conn;
+   bsock->SetTlsConnection(tls_conn);
 
    /*
     * Initiate TLS Negotiation
     */
-   if (!tls_bsock_connect(bsock)) {
+
+    if (!tls_bsock_connect(bsock)) {
       goto err;
    }
 
@@ -203,20 +203,19 @@ bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *ve
    return true;
 
 err:
-   free_tls_connection(tls_conn);
-   bsock->tls_conn = NULL;
+   bsock->free_tls();
    return false;
 }
 #else
-bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK * bsock, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
+bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
 {
-   Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enable but not configured.\n"));
+   Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 #endif /* HAVE_TLS */

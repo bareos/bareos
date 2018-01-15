@@ -181,6 +181,14 @@ extern "C" {
 /**
  * Local Bareos includes. Be sure to put all the system includes before these.
  */
+
+#define _GLIBCXX_GTHREAD_USE_WEAK 0
+#include <list>
+#include <vector>
+#include <map>
+#include <string>
+#include <memory>
+
 #include "version.h"
 #include "bc_types.h"
 #if defined(HAVE_WIN32)

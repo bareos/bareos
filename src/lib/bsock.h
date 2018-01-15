@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,14 +38,21 @@
 #ifndef BRS_BSOCK_H
 #define BRS_BSOCK_H
 
+#include <bareos.h>
+
 struct btimer_t;                      /* forward reference */
 class BSOCK;
 btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
+uint32_t MergePolicies(std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls);
 
-class DLL_IMP_EXP BSOCK : public SMARTALLOC {
-/**
+
+tls_base_t *SelectTlsFromPolicy(
+  std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls, uint32_t remote_policy);
+
+class BSOCK : public SMARTALLOC {
+/*
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.
  */
@@ -55,7 +62,6 @@ public:
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
    int m_spool_fd;                    /* Spooling file */
-   TLS_CONNECTION *tls_conn;          /* Associated tls connection */
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
    uint32_t out_msg_no;               /* Output message number */
@@ -68,6 +74,18 @@ public:
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
+   void SetTlsConnection(TLS_CONNECTION *tls_connection) {
+      tls_conn = tls_connection;
+   } /* Associated tls connection */
+   TLS_CONNECTION *GetTlsConnection() {
+      return tls_conn;
+   } /* Associated tls connection */
+  //  void SetTlsConnection(std::shared_ptr<TLS_CONNECTION> tls_connection) {
+  //     tls_conn = tls_connection;
+  //  } /* Associated tls connection */
+  //  std::shared_ptr<TLS_CONNECTION> GetTlsConnection() {
+  //     return tls_conn;
+  //  } /* Associated tls connection */
 
 protected:
    JCR *m_jcr;                        /* JCR or NULL for error msgs */
@@ -95,16 +113,21 @@ protected:
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 private:
-   bool two_way_authenticate(JCR *jcr, const char *what,
-                             const char *name, s_password &password,
-                             tls_t &tls, bool initiated_by_remote);
+  TLS_CONNECTION *tls_conn;          /* Associated tls connection */
+  // std::shared_ptr<TLS_CONNECTION> tls_conn;          /* Associated tls connection */
+  bool two_way_authenticate(JCR *jcr,
+                            const char *what,
+                            const char *identity,
+                            s_password &password,
+                            std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls,
+                            bool initiated_by_remote);
 
 public:
    BSOCK();
    virtual ~BSOCK();
 
    /* Methods -- in bsock.c */
-   void free_bsock();
+  //  void free_bsock();
    void free_tls();
    virtual BSOCK *clone() = 0;
    virtual bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
@@ -132,24 +155,28 @@ public:
    const char *bstrerror();           /* last error on socket */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
    bool authenticate_with_director(JCR *jcr,
-                                   const char *name, s_password &password, tls_t &tls,
-                                   char *response, int response_len);
+                                   const char *name,
+                                   s_password &password,
+                                   char *response,
+                                   int response_len,
+                                   std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);
    void control_bwlimit(int bytes);   /* in bsock.c */
 
-   /* Inline functions */
-   bool authenticate_outbound_connection(JCR *jcr, const char *what,
-                                         const char *name, s_password &password,
-                                         tls_t &tls) {
-      return two_way_authenticate(jcr, what, name, password, tls, false);
-   }
-   bool authenticate_inbound_connection(JCR *jcr, const char *what,
-                                        const char *name, s_password &password,
-                                        tls_t &tls) {
-      return two_way_authenticate(jcr, what, name, password, tls, true);
-   }
+   bool authenticate_outbound_connection(JCR *jcr,
+                                         const char *what,
+                                         const char *identity,
+                                         s_password &password,
+                                         std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
+
+   bool authenticate_inbound_connection(JCR *jcr,
+                                        const char *what,
+                                        const char *name,
+                                        s_password &password,
+                                        std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
+
    void set_jcr(JCR *jcr) { m_jcr = jcr; };
    void set_who(char *who) { m_who = who; };
    void set_host(char *host) { m_host = host; };
@@ -235,16 +262,6 @@ enum {
    BNET_SIGNAL         = -1,
    BNET_HARDEOF        = -2,
    BNET_ERROR          = -3
-};
-
-/**
- * TLS enabling values. Value is important for comparison, ie:
- * if (tls_remote_need < BNET_TLS_REQUIRED) { ... }
- */
-enum {
-   BNET_TLS_NONE        = 0,          /* cannot do TLS */
-   BNET_TLS_OK          = 1,          /* can do, but not required on my end */
-   BNET_TLS_REQUIRED    = 2           /* TLS is required */
 };
 
 #endif /* BRS_BSOCK_H */

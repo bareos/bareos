@@ -23,6 +23,12 @@
 /*
  * Kern Sibbald, January MM
  */
+#pragma once
+
+#include "bareos.h"
+#include "bc_types.h"
+
+#include <functional>
 
 struct RES_ITEM;                        /* Declare forward referenced structure */
 class RES;                              /* Declare forward referenced structure */
@@ -80,60 +86,206 @@ struct s_password {
  * store all TLS specific settings
  * and backend specific context.
  */
-struct tls_t {
-   bool authenticate;             /* Authenticate with TLS */
-   bool enable;                   /* Enable TLS */
-   bool require;                  /* Require TLS */
-   bool verify_peer;              /* TLS Verify Peer Certificate */
-   char *ca_certfile;             /* TLS CA Certificate File */
-   char *ca_certdir;              /* TLS CA Certificate Directory */
-   char *crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *certfile;                /* TLS Client Certificate File */
-   char *keyfile;                 /* TLS Client Key File */
-   char *cipherlist;              /* TLS Cipher List */
-   char *dhfile;                  /* TLS Diffie-Hellman File */
-   alist *allowed_cns;            /* TLS Allowed Certificate Common Names (Clients) */
-   TLS_CONTEXT *ctx;              /* Shared TLS Context */
-};
+
+class PskCredentials {
+      std::string m_identity;
+      std::string m_psk;
+
+     public:
+       PskCredentials(std::string &identity, std::string &psk) : m_identity(identity), m_psk(psk) {
+          Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+       }
+       PskCredentials(const char *identity, const char *psk)
+           : m_identity(std::string(identity)), m_psk(std::string(psk)) {
+          Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+       }
+
+       std::string &get_identity() { return m_identity; }
+       std::string &get_psk() { return m_psk; }
+
+       ~PskCredentials() {
+          Dmsg2(100, "Destruct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+      }
+   };
 
 /*
- * free the tls_t structure.
- */
-void free_tls_t(tls_t &tls);
+ * TLS enabling values. Value is important for comparison, ie:
+ * if (tls_remote_policy < BNET_TLS_CERTIFICATE_REQUIRED) { ... }
 
-/*
- * All configuration resources using TLS have the same directives,
- * therefore define it once and use it in every resource.
+ cert allowed    cert required    psk allowed    psk-required        illegal    combination name
+0    0    0    0            none
+0    0    0    1        x
+0    0    1    0            psk allowed
+0    0    1    1            psk required
+0    1    0    0        x
+0    1    0    1        x
+0    1    1    0        x
+0    1    1    1        x
+1    0    0    0            cert allowed
+1    0    0    1        x
+1    0    1    0            both allowed
+1    0    1    1        x
+1    1    0    0            cert required
+1    1    0    1        x
+1    1    1    0        x
+1    1    1    1        x
+
+ * This bitfield has following valid combinations:
+                        none         cert allowed    cert required    both allowed    psk allowed     psk required
+    none               plain           plain         no connection     plain           plain          no connection
+    cert allowed       plain           cert             cert           cert          no connection    no connection
+    cert required   no connection      cert             cert           cert          no connection    no connection
+    both allowed       plain           cert             cert           cert            psk               psk
+    psk allowed        plain        no connection    no connection     psk             psk               psk
+    psk required    no connection   no connection    no connection     psk             psk               psk
  */
-#define TLS_CONFIG(res) \
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   class tls_base_t {
+    public:
+      bool enable;  /*!< Enable TLS */
+      bool require; /*!< Require TLS */
+
+      /**
+       * Abstract Methods
+       */
+      virtual uint32_t GetPolicy() const = 0;
+
+      virtual std::shared_ptr<TLS_CONTEXT> CreateClientContext(
+          std::shared_ptr<PskCredentials> credentials) const = 0;
+
+      virtual std::shared_ptr<TLS_CONTEXT> CreateServerContext(
+          std::shared_ptr<PskCredentials> credentials) const = 0;
+
+      virtual bool GetAuthenticate() const { return false; }
+      virtual bool GetVerifyPeer() const { return false; }
+      virtual alist *GetVerifyList() const { return nullptr; }
+
+    protected:
+      typedef enum {
+         BNET_TLS_NONE     = 0,      /*!< cannot do TLS */
+         BNET_TLS_ALLOWED  = 1 << 0, /*!< TLS with certificates is allowed but not required on my end */
+         BNET_TLS_REQUIRED = 1 << 1, /*!< TLS with certificates is required */
+      } Policy_e;
+
+      virtual ~tls_base_t() {}
+      tls_base_t() : enable(false), require(false) {}
+   };
+
+   class tls_cert_t : public tls_base_t {
+    public:
+      bool authenticate;       /* Authenticate with TLS */
+      bool verify_peer;        /* TLS Verify Peer Certificate */
+      std::string *ca_certfile; /* TLS CA Certificate File */
+      std::string *ca_certdir;  /* TLS CA Certificate Directory */
+      std::string *crlfile;     /* TLS CA Certificate Revocation List File */
+      std::string *certfile;    /* TLS Client Certificate File */
+      std::string *keyfile;     /* TLS Client Key File */
+      std::string *cipherlist;  /* TLS Cipher List */
+      std::string *dhfile;      /* TLS Diffie-Hellman File */
+      alist *allowed_cns;      /* TLS Allowed Certificate Common Names (Clients) */
+                               //   TLS_CONTEXT *ctx;   /* Shared TLS Context */
+      std::string *pem_message;
+      tls_cert_t()
+          : tls_base_t(), authenticate(false), verify_peer(0),
+            ca_certfile(nullptr), ca_certdir(nullptr), crlfile(nullptr), certfile(nullptr),
+            keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), allowed_cns(nullptr),
+            pem_message(nullptr) {}
+      ~tls_cert_t();
+
+      virtual uint32_t GetPolicy() const override;
+
+      int (*tls_pem_callback)(char *buf, int size, const void *userdata);
+
+      bool GetVerifyPeer() const override { return verify_peer; }
+      alist *GetVerifyList() const override { return allowed_cns; }
+      bool GetAuthenticate() const override { return authenticate; }
+
+      /**
+       * Implementation can be found in appropriate tls-implementation line tls_openssl.c
+       */
+      std::shared_ptr<TLS_CONTEXT> CreateClientContext(
+          std::shared_ptr<PskCredentials> credentials) const override;
+
+      /**
+       * Implementation can be found in appropriate tls-implementation line tls_openssl.c
+       */
+      std::shared_ptr<TLS_CONTEXT> CreateServerContext(
+          std::shared_ptr<PskCredentials> credentials) const override;
+   };
+
+   class tls_psk_t : public tls_base_t {
+    public:
+      char *cipherlist; /* TLS Cipher List */
+
+      tls_psk_t() : tls_base_t(), cipherlist(nullptr) {}
+      ~tls_psk_t();
+
+      virtual uint32_t GetPolicy() const override;
+
+      /**
+       * Implementation can be found in appropriate tls-implementation line tls_openssl.c
+       */
+      std::shared_ptr<TLS_CONTEXT> CreateClientContext(
+          std::shared_ptr<PskCredentials> credentials) const override;
+
+      /**
+       * Implementation can be found in appropriate tls-implementation line tls_openssl.c
+       */
+      std::shared_ptr<TLS_CONTEXT> CreateServerContext(
+          std::shared_ptr<PskCredentials> credentials) const override;
+   };
+
+   /*
+    * free the tls_base_t structure.
+    */
+   void free_tls_base_t(tls_base_t &tls);
+
+   /**
+    * Common TLS-Settings for both (Certificate and PSK).
+   */
+#define TLS_COMMON_CONFIG(res) \
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
-         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
-         "Enabling this implicietly sets \"TLS Enable = yes\"." }, \
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls.verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, \
-         "If disabled, all certificates signed by a known CA will be accepted. " \
-         "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res.tls.ca_certfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded TLS CA certificate(s) file." }, \
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res.tls.ca_certdir), 0, 0, NULL, NULL, \
-         "Path of a TLS CA certificate directory." }, \
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res.tls.crlfile), 0, 0, NULL, NULL, \
-         "Path of a Certificate Revocation List file." }, \
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res.tls.certfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded TLS certificate." }, \
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res.tls.keyfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
+         "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
          "List of valid TLS Ciphers." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls.allowed_cns), 0, 0, NULL, NULL, \
-         "\"Common Name\"s (CNs) of the allowed peer certificates."  }, \
-   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res.tls.dhfile), 0, 0, NULL, NULL, \
+   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.dhfile), 0, 0, NULL, NULL, \
          "Path to PEM encoded Diffie-Hellman parameter file. " \
          "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
-         "allowing for forward secrecy of communications." },
+         "allowing for forward secrecy of communications." }
+
+ /*
+  * TLS Settings for Certificate only
+  */
+ #define TLS_CERT_CONFIG(res) \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.verify_peer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "If disabled, all certificates signed by a known CA will be accepted. " \
+         "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
+   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS CA certificate(s) file." }, \
+   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certdir), 0, 0, NULL, NULL, \
+         "Path of a TLS CA certificate directory." }, \
+   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
+         "Path of a Certificate Revocation List file." }, \
+   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS certificate." }, \
+   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_cns), 0, 0, NULL, NULL, \
+         "\"Common Name\"s (CNs) of the allowed peer certificates."  }
+
+ /*
+  * TLS Settings for PSK only
+  */
+ #define TLS_PSK_CONFIG(res) \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Enable TLS-PSK support." }, \
+   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
+         "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
 
 /*
  * This is the structure that defines the record types (items) permitted within each
@@ -144,6 +296,7 @@ struct RES_ITEM {
    const int type;
    union {
       char **value;                     /* Where to store the item */
+      std::string **strValue;
       uint16_t *ui16value;
       uint32_t *ui32value;
       int16_t *i16value;
@@ -198,16 +351,18 @@ public:
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this daemon.
  */
-struct RES_TABLE {
-   const char *name;                    /* Resource name */
-   RES_ITEM *items;                     /* List of resource keywords */
-   uint32_t rcode;                      /* Code if needed */
-   uint32_t size;                       /* Size of resource */
-};
+ struct RES_TABLE {
+   const char *name;        /* Resource name */
+   RES_ITEM *items;         /* List of resource keywords */
+   uint32_t rcode;          /* Code if needed */
+   uint32_t size;           /* Size of resource */
 
-/*
- * Common Resource definitions
- */
+   std::function<void *(void *res)> initres; /* this shoud call the new replacement*/
+ };
+
+ /*
+  * Common Resource definitions
+  */
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH - 1 /* maximum resource name length */
 
 /*
@@ -258,6 +413,8 @@ enum {
    CFG_TYPE_ADDRESSES_ADDRESS = 27,     /* Ip address */
    CFG_TYPE_ADDRESSES_PORT = 28,        /* Ip port */
    CFG_TYPE_PLUGIN_NAMES = 29,          /* Plugin Name(s) */
+   CFG_TYPE_STDSTR = 30,                /* String as std::string*/
+   CFG_TYPE_STDSTRDIR = 31,             /* Directory as std::string*/
 
    /*
     * Director resource types. handlers in dird_conf.
@@ -295,7 +452,7 @@ enum {
    CFG_TYPE_BASE = 86,                  /* Basejob Expression */
    CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
    CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
-   CFG_TYPE_FSTYPE = 89,                /* FileSystem match criterium (UNIX)*/
+   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
    CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
    CFG_TYPE_META = 91,                  /* Meta tag */
 
@@ -328,17 +485,21 @@ public:
    RES hdr;
 
    /* Methods */
-   char *name() const;
+   inline char *name() const { return this->hdr.name; };
    bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
     */
-   bool validate();
+   // virtual inline bool validate() { return true; };
 };
 
-inline char *BRSRES::name() const { return this->hdr.name; }
-inline bool BRSRES::validate() { return true; }
+class TLSRES : public BRSRES {
+ public:
+   s_password password; /* UA server password */
+   tls_cert_t tls_cert; /* TLS structure */
+   tls_psk_t tls_psk;   /* TLS-PSK structure */
+};
 
 /*
  * Message Resource
@@ -432,7 +593,7 @@ public:
    void free_resources();
    RES **save_resources();
    RES **new_res_head();
-   void init_resource(int type, RES_ITEM *items, int pass);
+   void init_resource(int type, RES_ITEM *items, int pass, std::function<void *(void *res)> initres);
    bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);

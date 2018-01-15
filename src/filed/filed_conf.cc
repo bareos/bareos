@@ -123,7 +123,9 @@ static RES_ITEM cli_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_client.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_client.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
-   TLS_CONFIG(res_client)
+   TLS_COMMON_CONFIG(res_client),
+   TLS_CERT_CONFIG(res_client),
+   TLS_PSK_CONFIG(res_client),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -146,7 +148,9 @@ static RES_ITEM dir_items[] = {
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
    { "AllowedScriptDir", CFG_TYPE_ALIST_DIR, ITEM(res_dir.allowed_script_dirs), 0, 0, NULL, NULL, NULL },
    { "AllowedJobCommand", CFG_TYPE_ALIST_STR, ITEM(res_dir.allowed_job_cmds), 0, 0, NULL, NULL, NULL },
-   TLS_CONFIG(res_dir)
+   TLS_COMMON_CONFIG(res_client),
+   TLS_CERT_CONFIG(res_client),
+   TLS_PSK_CONFIG(res_client),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -160,9 +164,9 @@ static RES_ITEM dir_items[] = {
  * It must have one item for each of the resources.
  */
 static RES_TABLE resources[] = {
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "FileDaemon", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES) }, /* alias for filedaemon */
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
+   { "FileDaemon", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } }, /* alias for filedaemon */
    { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { NULL, NULL, 0}
 };
@@ -247,7 +251,40 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.allowed_job_cmds) {
          delete res->res_dir.allowed_job_cmds;
       }
-      free_tls_t(res->res_dir.tls);
+      if (res->res_dir.tls_cert.allowed_cns) {
+         res->res_dir.tls_cert.allowed_cns->destroy();
+         free(res->res_dir.tls_cert.allowed_cns);
+      }
+      if (res->res_dir.tls_cert.ca_certfile) {
+         delete res->res_dir.tls_cert.ca_certfile;
+      }
+      if (res->res_dir.tls_cert.ca_certdir) {
+         delete res->res_dir.tls_cert.ca_certdir;
+      }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
+      if (res->res_dir.tls_cert.certfile) {
+         delete res->res_dir.tls_cert.certfile;
+      }
+      if (res->res_dir.tls_cert.keyfile) {
+         delete res->res_dir.tls_cert.keyfile;
+      }
+      if (res->res_dir.tls_cert.cipherlist) {
+         delete res->res_dir.tls_cert.cipherlist;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.pem_message) {
+         delete res->res_dir.tls_cert.pem_message;
+      }
       break;
    case R_CLIENT:
       if (res->res_client.working_directory) {
@@ -315,7 +352,40 @@ void free_resource(RES *sres, int type)
       if (res->res_client.log_timestamp_format) {
          free(res->res_client.log_timestamp_format);
       }
-      free_tls_t(res->res_client.tls);
+      if (res->res_client.tls_cert.allowed_cns) {
+         res->res_client.tls_cert.allowed_cns->destroy();
+         free(res->res_client.tls_cert.allowed_cns);
+      }
+      if (res->res_client.tls_cert.ca_certfile) {
+         delete res->res_client.tls_cert.ca_certfile;
+      }
+      if (res->res_client.tls_cert.ca_certdir) {
+         delete res->res_client.tls_cert.ca_certdir;
+      }
+      if (res->res_client.tls_cert.crlfile) {
+         delete res->res_client.tls_cert.crlfile;
+      }
+      if (res->res_client.tls_cert.certfile) {
+         delete res->res_client.tls_cert.certfile;
+      }
+      if (res->res_client.tls_cert.keyfile) {
+         delete res->res_client.tls_cert.keyfile;
+      }
+      if (res->res_client.tls_cert.cipherlist) {
+         delete res->res_client.tls_cert.cipherlist;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.pem_message) {
+         delete res->res_client.tls_cert.pem_message;
+      }
       break;
    case R_MSGS:
       if (res->res_msgs.mail_cmd) {
@@ -387,7 +457,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
+               res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
                res->res_dir.allowed_script_dirs = res_all.res_dir.allowed_script_dirs;
                res->res_dir.allowed_job_cmds = res_all.res_dir.allowed_job_cmds;
             }
@@ -402,7 +472,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
                res->res_client.pki_signers = res_all.res_client.pki_signers;
                res->res_client.pki_recipients = res_all.res_client.pki_recipients;
                res->res_client.messages = res_all.res_client.messages;
-               res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
+               res->res_client.tls_cert.allowed_cns = res_all.res_client.tls_cert.allowed_cns;
                res->res_client.allowed_script_dirs = res_all.res_client.allowed_script_dirs;
                res->res_client.allowed_job_cmds = res_all.res_client.allowed_job_cmds;
             }

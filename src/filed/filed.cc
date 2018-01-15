@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -379,50 +379,6 @@ static bool check_resources()
              OK = false;
          }
       }
-      /* tls_require implies tls_enable */
-      if (me->tls.require) {
-#ifndef HAVE_TLS
-         Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
-         OK = false;
-#else
-         me->tls.enable = true;
-#endif
-      }
-      need_tls = me->tls.enable || me->tls.authenticate;
-
-      if ((!me->tls.ca_certfile && !me->tls.ca_certdir) && need_tls) {
-         Emsg1(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-            " or \"TLS CA Certificate Dir\" are defined for File daemon in %s.\n"),
-                            configfile);
-        OK = false;
-      }
-
-      /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || me->tls.require)) {
-         /* Initialize TLS context:
-          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         me->tls.ctx = new_tls_context(me->tls.ca_certfile,
-                                       me->tls.ca_certdir,
-                                       me->tls.crlfile,
-                                       me->tls.certfile,
-                                       me->tls.keyfile,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       me->tls.cipherlist,
-                                       me->tls.verify_peer);
-
-         if (!me->tls.ctx) {
-            Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for File daemon \"%s\" in %s.\n"),
-                                me->name(), configfile);
-            OK = false;
-         }
-
-         set_tls_enable(me->tls.ctx, need_tls);
-         set_tls_require(me->tls.ctx, me->tls.require);
-      }
-
       if (me->pki_encrypt || me->pki_sign) {
 #ifndef HAVE_CRYPTO
          Jmsg(NULL, M_FATAL, 0, _("PKI encryption/signing enabled but not compiled into Bareos.\n"));
@@ -545,67 +501,6 @@ static bool check_resources()
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),
             configfile);
       OK = false;
-   }
-
-   foreach_res(director, R_DIRECTOR) {
-      /* tls_require implies tls_enable */
-      if (director->tls.require) {
-#ifndef HAVE_TLS
-         Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
-         OK = false;
-         continue;
-#else
-         director->tls.enable = true;
-#endif
-      }
-      need_tls = director->tls.enable || director->tls.authenticate;
-
-      if (!director->tls.certfile && need_tls) {
-         Emsg2(M_FATAL, 0, _("\"TLS Certificate\" file not defined for Director \"%s\" in %s.\n"),
-               director->name(), configfile);
-         OK = false;
-      }
-
-      if (!director->tls.keyfile && need_tls) {
-         Emsg2(M_FATAL, 0, _("\"TLS Key\" file not defined for Director \"%s\" in %s.\n"),
-               director->name(), configfile);
-         OK = false;
-      }
-
-      if ((!director->tls.ca_certfile && !director->tls.ca_certdir) && need_tls && director->tls.verify_peer) {
-         Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-                             " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
-                             " At least one CA certificate store is required"
-                             " when using \"TLS Verify Peer\".\n"),
-                             director->name(), configfile);
-         OK = false;
-      }
-
-      /* If everything is well, attempt to initialize our per-resource TLS context */
-      if (OK && (need_tls || director->tls.require)) {
-         /* Initialize TLS context:
-          * Args: CA certfile, CA certdir, Certfile, Keyfile,
-          * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-         director->tls.ctx = new_tls_context(director->tls.ca_certfile,
-                                             director->tls.ca_certdir,
-                                             director->tls.crlfile,
-                                             director->tls.certfile,
-                                             director->tls.keyfile,
-                                             NULL,
-                                             NULL,
-                                             director->tls.dhfile,
-                                             director->tls.cipherlist,
-                                             director->tls.verify_peer);
-
-         if (!director->tls.ctx) {
-            Emsg2(M_FATAL, 0, _("Failed to initialize TLS context for Director \"%s\" in %s.\n"),
-                                director->name(), configfile);
-            OK = false;
-         }
-
-         set_tls_enable(director->tls.ctx, need_tls);
-         set_tls_require(director->tls.ctx, director->tls.require);
-      }
    }
 
    UnlockRes();

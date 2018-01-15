@@ -229,7 +229,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
                items = res_table->items;
                state = p_resource;
                res_type = res_table->rcode;
-               init_resource(res_type, items, pass);
+               init_resource(res_type, items, pass, res_table->initres);
             }
             if (state == p_none) {
                scan_err1(lc, _("expected resource name, got: %s"), lc->str);
@@ -638,13 +638,18 @@ RES **CONFIG::new_res_head()
 /*
  * Initialize the static structure to zeros, then apply all the default values.
  */
-void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
-{
+void CONFIG::init_resource(int type,
+                           RES_ITEM *items,
+                           int pass,
+                           std::function<void *(void *res)> initres) {
    URES *res_all;
 
    memset(m_res_all, 0, m_res_all_size);
    res_all = ((URES *)m_res_all);
-   res_all->hdr.rcode = type;
+   if (initres != nullptr) {
+      initres(res_all);
+   }
+   res_all->hdr.rcode  = type;
    res_all->hdr.refcnt = 1;
 
    /*
@@ -719,6 +724,9 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
             case CFG_TYPE_STR:
                *(items[i].value) = bstrdup(items[i].default_value);
                break;
+            case CFG_TYPE_STDSTR:
+               *(items[i].strValue) = new std::string(items[i].default_value);
+               break;
             case CFG_TYPE_DIR: {
                POOL_MEM pathname(PM_FNAME);
 
@@ -734,6 +742,23 @@ void CONFIG::init_resource(int type, RES_ITEM *items, int pass)
                   do_shell_expansion(pathname.c_str(), pathname.size());
                }
                *items[i].value = bstrdup(pathname.c_str());
+               break;
+            }
+            case CFG_TYPE_STDSTRDIR: {
+               POOL_MEM pathname(PM_FNAME);
+
+               pm_strcpy(pathname, items[i].default_value);
+               if (*pathname.c_str() != '|') {
+                  int size;
+
+                  /*
+                   * Make sure we have enough room
+                   */
+                  size = pathname.size() + 1024;
+                  pathname.check_size(size);
+                  do_shell_expansion(pathname.c_str(), pathname.size());
+               }
+               *(items[i].strValue) = new std::string(pathname.c_str());
                break;
             }
             case CFG_TYPE_ADDRESSES:
@@ -974,33 +999,46 @@ bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const 
    return true;
 }
 
-void free_tls_t(tls_t &tls)
-{
-   if (tls.ctx) {
-      free_tls_context(tls.ctx);
+/**
+ * tls configuration
+ */
+typedef enum {
+   BNET_TLS_NONE     = 0,      /*!< cannot do TLS */
+   BNET_TLS_ALLOWED  = 1 << 0, /*!< TLS with certificates is allowed but not required on my end */
+   BNET_TLS_REQUIRED = 1 << 1, /*!< TLS with certificates is required */
+} Policy_e;
+
+tls_cert_t::~tls_cert_t() {
+   if (allowed_cns) {
+      delete allowed_cns;
+      allowed_cns = nullptr;
    }
-   if (tls.ca_certfile) {
-      free(tls.ca_certfile);
+}
+
+uint32_t tls_cert_t::GetPolicy() const {
+   uint32_t result = Policy_e::BNET_TLS_NONE;
+   if (enable) {
+      result = BNET_TLS_ALLOWED;
    }
-   if (tls.ca_certdir) {
-      free(tls.ca_certdir);
+   if (require) {
+      result = BNET_TLS_REQUIRED;
    }
-   if (tls.crlfile) {
-      free(tls.crlfile);
+   return result;
+}
+
+tls_psk_t::~tls_psk_t() {
+   if (cipherlist != nullptr) {
+      free(cipherlist);
    }
-   if (tls.certfile) {
-      free(tls.certfile);
+}
+
+uint32_t tls_psk_t::GetPolicy() const {
+   uint32_t result = BNET_TLS_NONE;
+   if (enable) {
+      result = BNET_TLS_ALLOWED;
+   } else if (require) {
+      result = BNET_TLS_REQUIRED;
    }
-   if (tls.keyfile) {
-      free(tls.keyfile);
-   }
-   if (tls.dhfile) {
-      free(tls.dhfile);
-   }
-   if (tls.cipherlist) {
-      free(tls.cipherlist);
-   }
-   if (tls.allowed_cns) {
-      delete tls.allowed_cns;
-   }
+
+   return result << 2;
 }

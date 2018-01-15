@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,6 +33,8 @@
  */
 #ifndef __JCR_H_
 #define __JCR_H_ 1
+
+#include <bareos.h>
 
 /**
  * Backup/Verify level code. These are stored in the DB
@@ -285,6 +287,14 @@ private:
    int32_t m_Protocol;                    /**< Backup Protocol */
    bool my_thread_killable;               /**< Can we kill the thread? */
 public:
+      JCR() {
+            Dmsg0(100, "Contruct JCR\n");
+      }
+
+      ~JCR() {
+            Dmsg0(100, "Destruct JCR\n");
+      }
+
    void lock() {P(mutex); };
    void unlock() {V(mutex); };
    void inc_use_count(void) {lock(); _use_count++; unlock(); };
@@ -336,7 +346,7 @@ public:
    BSOCK *store_bsock;                    /**< Storage connection socket */
    BSOCK *file_bsock;                     /**< File daemon connection socket */
    JCR_free_HANDLER *daemon_free_jcr;     /**< Local free routine */
-   dlist *msg_queue;                      /**< Queued messages */
+   std::shared_ptr<dlist> msg_queue;      /* Queued messages */
    pthread_mutex_t msg_queue_mutex;       /**< message queue mutex */
    bool dequeuing_msgs;                   /**< Set when dequeuing messages */
    alist job_end_callbacks;               /**< callbacks called at Job end */
@@ -395,6 +405,9 @@ public:
    JCR *cjcr;                             /**< Controlling JCR when this is a slave JCR being
                                            * controlled by another JCR used for sending
                                            * normal and fatal errors.
+                                           */
+   std::shared_ptr<TLS_CONTEXT> tls_ctx;  /* JOB specific TLS-PSK-Context --
+                                           *  Certificate are handled via me-Resource
                                            */
 
    int32_t buf_size;                      /**< Length of buffer */
@@ -522,8 +535,8 @@ public:
    uint32_t EndBlock;
    pthread_t heartbeat_id;                /**< Id of heartbeat thread */
    volatile bool hb_started;              /**< Heartbeat running */
-   BSOCK *hb_bsock;                       /**< Duped SD socket */
-   BSOCK *hb_dir_bsock;                   /**< Duped DIR socket */
+   std::shared_ptr<BSOCK> hb_bsock;       /**< Duped SD socket */
+   std::shared_ptr<BSOCK> hb_dir_bsock;   /**< Duped DIR socket */
    alist *RunScripts;                     /**< Commands to run before and after job */
    CRYPTO_CTX crypto;                     /**< Crypto ctx */
    DIRRES *director;                      /**< Director resource */

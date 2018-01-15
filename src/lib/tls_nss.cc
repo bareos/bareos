@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -37,6 +37,8 @@ struct TLS_Context {
 
 struct TLS_Connection {
 };
+
+TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
 
 /*
  * Create a new TLS_CONTEXT instance.

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -1082,6 +1082,49 @@ try_again:
 }
 
 /**
+ * Callback calling director console connection
+*/
+static int dir_psk_client_callback(char *identity,
+                                   unsigned int max_identity_len,
+                                   unsigned char *psk,
+                                   unsigned int max_psk_len) {
+
+   Dmsg0(100, "dir_psk_client_callback");
+
+   int result = 0;
+
+   if (NULL != dir && NULL != dir->password.value) {
+      if (p_encoding_clear == dir->password.encoding) {
+         /* plain password */
+      } else if (p_encoding_md5 == dir->password.encoding) {
+         /* md5 string */
+         /* convert the PSK key to binary */
+         result = hex2bin(dir->password.value, psk, max_psk_len);
+      } else {
+         /* hex password encoding? */
+      }
+   } else {
+      Dmsg0(100, "Passowrd not set in Director Config\n");
+      result = 0;
+   }
+
+   if (result == 0 || result > (int)max_psk_len) {
+      Dmsg1(100, "Error, Could not convert PSK key '%s' to binary key\n", dir->password.value);
+      result = 0;
+   } else {
+      static char *psk_identity = (char *)"Nasenbaer";
+
+      unsigned int ret = snprintf(identity, max_identity_len, "%s", psk_identity);
+      if (ret < 0 || (unsigned int)ret > max_identity_len) {
+         Dmsg0(100, "Error, psk_identify too long\n");
+         result = 0;
+      }
+   }
+
+   return result;
+}
+
+/*
  * Main Bareos Console -- User Interface Program
  */
 int main(int argc, char *argv[])
@@ -1098,7 +1141,6 @@ int main(int argc, char *argv[])
    bool export_config = false;
    bool export_config_schema = false;
    JCR jcr;
-   tls_t *tls = NULL;
    POOL_MEM history_file;
    utime_t heart_beat;
 
@@ -1257,75 +1299,6 @@ int main(int argc, char *argv[])
 
    senditf(_("Connecting to Director %s:%d\n"), dir->address,dir->DIRport);
 
-   /*
-    * Initialize Console TLS context
-    */
-   if (cons && (cons->tls.enable || cons->tls.require)) {
-      /*
-       * Generate passphrase prompt
-       */
-      bsnprintf(errmsg, errmsg_len, "Passphrase for Console \"%s\" TLS private key: ", cons->name());
-
-      /*
-       * Initialize TLS context:
-       * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer
-       */
-      cons->tls.ctx = new_tls_context(cons->tls.ca_certfile,
-                                      cons->tls.ca_certdir,
-                                      cons->tls.crlfile,
-                                      cons->tls.certfile,
-                                      cons->tls.keyfile,
-                                      tls_pem_callback,
-                                      &errmsg,
-                                      NULL,
-                                      cons->tls.cipherlist,
-                                      cons->tls.verify_peer);
-
-      if (!cons->tls.ctx) {
-         senditf(_("Failed to initialize TLS context for Console \"%s\".\n"), cons->name());
-         terminate_console(0);
-         return 1;
-      }
-
-      set_tls_enable(cons->tls.ctx, cons->tls.enable);
-      set_tls_require(cons->tls.ctx, cons->tls.require);
-   }
-
-   /*
-    * Initialize Director TLS context
-    */
-   if (dir->tls.enable || dir->tls.require) {
-      /*
-       * Generate passphrase prompt
-       */
-      bsnprintf(errmsg, errmsg_len, "Passphrase for Director \"%s\" TLS private key: ", dir->name());
-
-      /*
-       * Initialize TLS context:
-       * Args: CA certfile, CA certdir, Certfile, Keyfile,
-       * Keyfile PEM Callback, Keyfile CB Userdata, DHfile, Verify Peer */
-      dir->tls.ctx = new_tls_context(dir->tls.ca_certfile,
-                                     dir->tls.ca_certdir,
-                                     dir->tls.crlfile,
-                                     dir->tls.certfile,
-                                     dir->tls.keyfile,
-                                     tls_pem_callback,
-                                     &errmsg,
-                                     NULL,
-                                     dir->tls.cipherlist,
-                                     dir->tls.verify_peer);
-
-      if (!dir->tls.ctx) {
-         senditf(_("Failed to initialize TLS context for Director \"%s\".\n"), dir->name());
-         terminate_console(0);
-         return 1;
-      }
-
-      set_tls_enable(dir->tls.ctx, dir->tls.enable);
-      set_tls_require(dir->tls.ctx, dir->tls.require);
-   }
-
    if (dir->heartbeat_interval) {
       heart_beat = dir->heartbeat_interval;
    } else if (cons) {
@@ -1349,15 +1322,14 @@ int main(int argc, char *argv[])
       name = cons->name();
       ASSERT(cons->password.encoding == p_encoding_md5);
       password = &cons->password;
-      tls = &cons->tls;
    } else {
       name = "*UserAgent*";
       ASSERT(dir->password.encoding == p_encoding_md5);
       password = &dir->password;
-      tls = &dir->tls;
    }
 
-   if (!UA_sock->authenticate_with_director(&jcr, name, *password, *tls, errmsg, errmsg_len)) {
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{dir->tls_cert, dir->tls_psk};
+   if (!UA_sock->authenticate_with_director(&jcr, name, *password, errmsg, errmsg_len, tls_resources)) {
       sendit(errmsg);
       terminate_console(0);
       return 1;
@@ -1469,28 +1441,6 @@ static int check_resources()
    numdir = 0;
    foreach_res(director, R_DIRECTOR) {
       numdir++;
-
-      /*
-       * tls_require implies tls_enable
-       */
-      if (director->tls.require) {
-         if (have_tls) {
-            director->tls.enable = true;
-         } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
-            OK = false;
-            continue;
-         }
-      }
-      tls_needed = director->tls.enable || director->tls.authenticate;
-
-      if ((!director->tls.ca_certfile && !director->tls.ca_certdir) && tls_needed) {
-         Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-                             " or \"TLS CA Certificate Dir\" are defined for Director \"%s\" in %s."
-                             " At least one CA certificate store is required.\n"),
-                             director->name(), my_config->get_base_config_path());
-         OK = false;
-      }
    }
 
    if (numdir == 0) {
@@ -1500,31 +1450,6 @@ static int check_resources()
    }
 
    CONRES *cons;
-   /*
-    * Loop over Consoles
-    */
-   foreach_res(cons, R_CONSOLE) {
-      /*
-       * tls_require implies tls_enable
-       */
-      if (cons->tls.require) {
-         if (have_tls) {
-            cons->tls.enable = true;
-         } else {
-            Jmsg(NULL, M_FATAL, 0, _("TLS required but not configured in Bareos.\n"));
-            OK = false;
-            continue;
-         }
-      }
-      tls_needed = cons->tls.enable || cons->tls.authenticate;
-      if ((!cons->tls.ca_certfile && !cons->tls.ca_certdir) && tls_needed) {
-         Emsg2(M_FATAL, 0, _("Neither \"TLS CA Certificate\""
-                             " or \"TLS CA Certificate Dir\" are defined for Console \"%s\" in %s.\n"),
-                             cons->name(), my_config->get_base_config_path());
-         OK = false;
-      }
-   }
-
    me = (CONRES *)GetNextRes(R_CONSOLE, NULL);
 
    UnlockRes();

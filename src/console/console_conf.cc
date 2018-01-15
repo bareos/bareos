@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -81,7 +81,9 @@ static RES_ITEM cons_items[] = {
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_cons.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Director", CFG_TYPE_STR, ITEM(res_cons.director), 0, 0, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_cons.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   TLS_CONFIG(res_cons)
+   TLS_COMMON_CONFIG(res_dir),
+   TLS_CERT_CONFIG(res_dir),
+   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -93,7 +95,9 @@ static RES_ITEM dir_items[] = {
    { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "HeartbeatInterval", CFG_TYPE_TIME, ITEM(res_dir.heartbeat_interval), 0, CFG_ITEM_DEFAULT, "0", NULL, NULL },
-   TLS_CONFIG(res_dir)
+   TLS_COMMON_CONFIG(res_dir),
+   TLS_CERT_CONFIG(res_dir),
+   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -102,8 +106,8 @@ static RES_ITEM dir_items[] = {
  * It must have one item for each of the resources.
  */
 static RES_TABLE resources[] = {
-   { "Console", cons_items, R_CONSOLE, sizeof(CONRES) },
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "Console", cons_items, R_CONSOLE, sizeof(CONRES), [] (void *res){ return new((CONRES *) res) CONRES(); } },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
    { NULL, NULL, 0 }
 };
 
@@ -173,13 +177,79 @@ void free_resource(RES *sres, int type)
       if (res->res_cons.history_file) {
          free(res->res_cons.history_file);
       }
-      free_tls_t(res->res_cons.tls);
+      if (res->res_cons.tls_cert.allowed_cns) {
+         res->res_cons.tls_cert.allowed_cns->destroy();
+         free(res->res_cons.tls_cert.allowed_cns);
+      }
+      if (res->res_cons.tls_cert.ca_certfile) {
+         delete res->res_cons.tls_cert.ca_certfile;
+      }
+      if (res->res_cons.tls_cert.ca_certdir) {
+         delete res->res_cons.tls_cert.ca_certdir;
+      }
+      if (res->res_cons.tls_cert.crlfile) {
+         delete res->res_cons.tls_cert.crlfile;
+      }
+      if (res->res_cons.tls_cert.certfile) {
+         delete res->res_cons.tls_cert.certfile;
+      }
+      if (res->res_cons.tls_cert.keyfile) {
+         delete res->res_cons.tls_cert.keyfile;
+      }
+      if (res->res_cons.tls_cert.cipherlist) {
+         delete res->res_cons.tls_cert.cipherlist;
+      }
+      if (res->res_cons.tls_cert.dhfile) {
+         delete res->res_cons.tls_cert.dhfile;
+      }
+      if (res->res_cons.tls_cert.dhfile) {
+         delete res->res_cons.tls_cert.dhfile;
+      }
+      if (res->res_cons.tls_cert.dhfile) {
+         delete res->res_cons.tls_cert.dhfile;
+      }
+      if (res->res_cons.tls_cert.pem_message) {
+         delete res->res_cons.tls_cert.pem_message;
+      }
       break;
    case R_DIRECTOR:
       if (res->res_dir.address) {
          free(res->res_dir.address);
       }
-      free_tls_t(res->res_dir.tls);
+      if (res->res_dir.tls_cert.allowed_cns) {
+         res->res_dir.tls_cert.allowed_cns->destroy();
+         free(res->res_dir.tls_cert.allowed_cns);
+      }
+      if (res->res_dir.tls_cert.ca_certfile) {
+         delete res->res_dir.tls_cert.ca_certfile;
+      }
+      if (res->res_dir.tls_cert.ca_certdir) {
+         delete res->res_dir.tls_cert.ca_certdir;
+      }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
+      if (res->res_dir.tls_cert.certfile) {
+         delete res->res_dir.tls_cert.certfile;
+      }
+      if (res->res_dir.tls_cert.keyfile) {
+         delete res->res_dir.tls_cert.keyfile;
+      }
+      if (res->res_dir.tls_cert.cipherlist) {
+         delete res->res_dir.tls_cert.cipherlist;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.pem_message) {
+         delete res->res_dir.tls_cert.pem_message;
+      }
       break;
    default:
       printf(_("Unknown resource type %d\n"), type);
@@ -227,14 +297,14 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
-               res->res_cons.tls.allowed_cns = res_all.res_cons.tls.allowed_cns;
+               res->res_cons.tls_cert.allowed_cns = res_all.res_cons.tls_cert.allowed_cns;
             }
             break;
          case R_DIRECTOR:
             if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
-               res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
+               res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
             }
             break;
          default:

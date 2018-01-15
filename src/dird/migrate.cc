@@ -1499,7 +1499,7 @@ static inline bool do_actual_migration(JCR *jcr)
       STORERES *wstore = mig_jcr->res.wstore;
       STORERES *rstore = jcr->res.rstore;
       POOL_MEM command(PM_MESSAGE);
-      int tls_need = BNET_TLS_NONE;
+      uint32_t tls_need = 0;
 
       if (jcr->max_bandwidth > 0) {
          send_bwlimit_to_sd(jcr, jcr->Job);
@@ -1528,13 +1528,8 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (wstore->tls.enable) {
-         if (wstore->tls.require) {
-            tls_need = BNET_TLS_REQUIRED;
-         } else {
-            tls_need = BNET_TLS_OK;
-         }
-      }
+      std::vector<std::reference_wrapper<tls_base_t > > tls_resources{wstore->tls_cert, wstore->tls_psk};
+      tls_need = MergePolicies(tls_resources);
 
       char *connection_target_address = storage_address_to_contact(rstore, wstore);
 

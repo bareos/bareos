@@ -55,25 +55,24 @@ enum {
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
-class CONRES : public BRSRES {
-public:
-   char *rc_file;                     /**< startup file */
-   char *history_file;                /**< command history file */
-   s_password password;               /**< UA server password */
-   uint32_t history_length;           /**< readline history length */
-   char *director;                    /**< bind to director */
-   utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-   tls_t tls;                         /**< TLS structure */
+class CONRES : public TLSRES {
+   public:
+      char *rc_file;                     /**< startup file */
+      char *history_file;                /**< command history file */
+      s_password password;               /**< UA server password */
+      uint32_t history_length;           /**< readline history length */
+      char *director;                    /**< bind to director */
+      utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+      CONRES() : TLSRES() {}
 };
 
 /* Director */
-class DIRRES : public BRSRES {
-public:
-   uint32_t DIRport;                  /**< UA server port */
-   char *address;                     /**< UA server address */
-   s_password password;               /**< UA server password */
-   utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-   tls_t tls;                         /**< TLS structure */
+class DIRRES : public TLSRES {
+   public:
+      uint32_t DIRport;                  /**< UA server port */
+      char *address;                     /**< UA server address */
+      utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
+      DIRRES() : TLSRES() {}
 };
 
 /* Define the Union of all the above
@@ -83,6 +82,9 @@ union URES {
    DIRRES res_dir;
    CONRES res_cons;
    RES hdr;
+
+   URES() {new(&hdr) RES();}
+   ~URES() {}
 };
 
 extern CONRES *me;                    /* "Global" Client resource */

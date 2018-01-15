@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -323,7 +323,7 @@ bool do_verify(JCR *jcr)
       }
 
       if (!jcr->passive_client) {
-         int tls_need = BNET_TLS_NONE;
+         uint32_t tls_need = 0;
          STORERES *store = jcr->res.rstore;
 
          /*
@@ -336,32 +336,23 @@ bool do_verify(JCR *jcr)
          /*
           * TLS Requirement
           */
-         if (store->tls.enable) {
-            if (store->tls.require) {
-               tls_need = BNET_TLS_REQUIRED;
-            } else {
-               tls_need = BNET_TLS_OK;
-            }
-         }
+
+         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{store->tls_cert, store->tls_psk};
+            tls_need = MergePolicies(tls_resources);
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
             goto bail_out;
          }
       } else {
-         int tls_need = BNET_TLS_NONE;
+         uint32_t tls_need = 0;
          CLIENTRES *client = jcr->res.client;
 
          /*
           * TLS Requirement
           */
-         if (client->tls.enable) {
-            if (client->tls.require) {
-               tls_need = BNET_TLS_REQUIRED;
-            } else {
-               tls_need = BNET_TLS_OK;
-            }
-         }
+         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{client->tls_cert, client->tls_psk};
+            tls_need = MergePolicies(tls_resources);
 
          /*
           * Tell the SD to connect to the FD.

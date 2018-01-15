@@ -400,8 +400,9 @@ JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
 
    jcr = (JCR *)malloc(size);
    memset(jcr, 0, size);
+   jcr = new(jcr) JCR();
 
-   jcr->msg_queue = New(dlist(item, &item->link));
+   jcr->msg_queue = std::make_shared<dlist>(item, &item->link);
    if ((status = pthread_mutex_init(&jcr->msg_queue_mutex, NULL)) != 0) {
       berrno be;
       Jmsg(NULL, M_ABORT, 0, _("Could not init msg_queue mutex. ERR=%s\n"), be.bstrerror(status));
@@ -474,6 +475,8 @@ static void remove_jcr(JCR *jcr)
  */
 static void free_common_jcr(JCR *jcr)
 {
+   Dmsg0(100, "free_common_jcr\n");
+
    /*
     * Uses jcr lock/unlock
     */
@@ -483,10 +486,10 @@ static void free_common_jcr(JCR *jcr)
    jcr->destroy_mutex();
 
    if (jcr->msg_queue) {
-      delete jcr->msg_queue;
-      jcr->msg_queue = NULL;
       pthread_mutex_destroy(&jcr->msg_queue_mutex);
    }
+
+   jcr->msg_queue.reset();
 
    if (jcr->client_name) {
       free_pool_memory(jcr->client_name);
@@ -551,7 +554,7 @@ static void free_common_jcr(JCR *jcr)
       jcr->comment = NULL;
    }
 
-   free(jcr);
+   delete jcr;
 }
 
 /*

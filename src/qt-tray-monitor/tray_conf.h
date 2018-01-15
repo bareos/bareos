@@ -67,6 +67,8 @@ public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
+
+   DIRRES() : BRSRES() {}
 };
 
 /*
@@ -81,6 +83,8 @@ public:
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t DIRConnectTimeout;         /* timeout in seconds */
+
+   MONITORRES() : TLSRES() {}
 };
 
 /*
@@ -92,6 +96,8 @@ public:
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
+
+   CLIENTRES() : TLSRES() {}
 };
 
 /*
@@ -103,6 +109,8 @@ public:
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
+
+   STORERES() : TLSRES() {}
 };
 
 class CONFONTRES : public BRSRES {

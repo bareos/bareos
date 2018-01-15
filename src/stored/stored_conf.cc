@@ -102,7 +102,9 @@ static RES_ITEM store_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_store.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_store.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
-   TLS_CONFIG(res_store)
+   TLS_COMMON_CONFIG(res_store),
+   TLS_CERT_CONFIG(res_store),
+   TLS_PSK_CONFIG(res_store),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -116,7 +118,9 @@ static RES_ITEM dir_items[] = {
    { "Monitor", CFG_TYPE_BOOL, ITEM(res_dir.monitor), 0, 0, NULL, NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_dir.max_bandwidth_per_job), 0, 0, NULL, NULL, NULL },
    { "KeyEncryptionKey", CFG_TYPE_AUTOPASSWORD, ITEM(res_dir.keyencrkey), 1, 0, NULL, NULL, NULL },
-   TLS_CONFIG(res_dir)
+   TLS_COMMON_CONFIG(res_dir),
+   TLS_CERT_CONFIG(res_dir),
+   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -231,9 +235,9 @@ static RES_ITEM changer_items[] = {
  * This is the master resource definition
  */
 static RES_TABLE resources[] = {
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
    { "Ndmp", ndmp_items, R_NDMP, sizeof(NDMPRES) },
-   { "Storage", store_items, R_STORAGE, sizeof(STORES) },
+   { "Storage", store_items, R_STORAGE, sizeof(STORES), [] (void *res){ return new((STORES *) res) STORES(); } },
    { "Device", dev_items, R_DEVICE, sizeof(DEVRES) },
    { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
    { "Autochanger", changer_items, R_AUTOCHANGER, sizeof(AUTOCHANGERRES)  },
@@ -508,7 +512,40 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.keyencrkey.value) {
          free(res->res_dir.keyencrkey.value);
       }
-      free_tls_t(res->res_dir.tls);
+      if (res->res_dir.tls_cert.allowed_cns) {
+         res->res_dir.tls_cert.allowed_cns->destroy();
+         free(res->res_dir.tls_cert.allowed_cns);
+      }
+      if (res->res_dir.tls_cert.ca_certfile) {
+         delete res->res_dir.tls_cert.ca_certfile;
+      }
+      if (res->res_dir.tls_cert.ca_certdir) {
+         delete res->res_dir.tls_cert.ca_certdir;
+      }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
+      if (res->res_dir.tls_cert.certfile) {
+         delete res->res_dir.tls_cert.certfile;
+      }
+      if (res->res_dir.tls_cert.keyfile) {
+         delete res->res_dir.tls_cert.keyfile;
+      }
+      if (res->res_dir.tls_cert.cipherlist) {
+         delete res->res_dir.tls_cert.cipherlist;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.pem_message) {
+         delete res->res_dir.tls_cert.pem_message;
+      }
       break;
    case R_NDMP:
       if (res->res_ndmp.username) {
@@ -570,7 +607,40 @@ void free_resource(RES *sres, int type)
       if (res->res_store.log_timestamp_format) {
          free(res->res_store.log_timestamp_format);
       }
-      free_tls_t(res->res_store.tls);
+      if (res->res_store.tls_cert.allowed_cns) {
+         res->res_store.tls_cert.allowed_cns->destroy();
+         free(res->res_store.tls_cert.allowed_cns);
+      }
+      if (res->res_store.tls_cert.ca_certfile) {
+         delete res->res_store.tls_cert.ca_certfile;
+      }
+      if (res->res_store.tls_cert.ca_certdir) {
+         delete res->res_store.tls_cert.ca_certdir;
+      }
+      if (res->res_store.tls_cert.crlfile) {
+         delete res->res_store.tls_cert.crlfile;
+      }
+      if (res->res_store.tls_cert.certfile) {
+         delete res->res_store.tls_cert.certfile;
+      }
+      if (res->res_store.tls_cert.keyfile) {
+         delete res->res_store.tls_cert.keyfile;
+      }
+      if (res->res_store.tls_cert.cipherlist) {
+         delete res->res_store.tls_cert.cipherlist;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.pem_message) {
+         delete res->res_store.tls_cert.pem_message;
+      }
       break;
    case R_DEVICE:
       if (res->res_dev.media_type) {
@@ -697,7 +767,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
          if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
-            res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
+            res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
          }
          break;
       case R_STORAGE:
@@ -707,7 +777,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             res->res_store.plugin_names = res_all.res_store.plugin_names;
             res->res_store.messages = res_all.res_store.messages;
             res->res_store.backend_directories = res_all.res_store.backend_directories;
-            res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
+            res->res_store.tls_cert.allowed_cns = res_all.res_store.tls_cert.allowed_cns;
          }
          break;
       case R_AUTOCHANGER:

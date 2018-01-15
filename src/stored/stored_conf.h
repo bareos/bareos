@@ -50,14 +50,13 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-class DIRRES : public BRSRES {
+class DIRRES : public TLSRES {
 public:
-   s_password password;               /**< Director password */
    char *address;                     /**< Director IP address or zero */
    bool monitor;                      /**< Have only access to status and .status functions */
    uint64_t max_bandwidth_per_job;    /**< Bandwidth limitation (per director) */
    s_password keyencrkey;             /**< Key Encryption Key */
-   tls_t tls;                         /**< TLS structure */
+   DIRRES() : TLSRES() {}
 };
 
 class NDMPRES {
@@ -71,7 +70,7 @@ public:
 };
 
 /* Storage daemon "global" definitions */
-class STORES : public BRSRES {
+class STORES : public TLSRES {
 public:
    dlist *SDaddrs;
    dlist *SDsrc_addr;                 /**< Address to source connections from */
@@ -108,7 +107,8 @@ public:
    char *secure_erase_cmdline;        /**< Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /**< Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /**< Bandwidth limitation (global) */
-   tls_t tls;                         /**< TLS structure */
+
+   STORES() : TLSRES() {}
 };
 
 class AUTOCHANGERRES : public BRSRES {
@@ -117,6 +117,8 @@ public:
    char *changer_name;                /**< Changer device name */
    char *changer_command;             /**< Changer command  -- external program */
    brwlock_t changer_lock;            /**< One changer operation at a time */
+
+   AUTOCHANGERRES() : BRSRES() {}
 };
 
 /* Device specific definitions */
@@ -173,8 +175,10 @@ public:
    /*
     * The following are set at runtime
     */
-   DEVICE *dev;                       /**< Pointer to phyical dev -- set at runtime */
-   AUTOCHANGERRES *changer_res;       /**< Pointer to changer res if any */
+   DEVICE *dev;                       /* Pointer to physical dev -- set at runtime */
+   AUTOCHANGERRES *changer_res;       /* Pointer to changer res if any */
+
+   DEVRES() : BRSRES() {}
 };
 
 union URES {
@@ -185,6 +189,9 @@ union URES {
    MSGSRES res_msgs;
    AUTOCHANGERRES res_changer;
    RES hdr;
+
+   URES() {new(&hdr) RES();}
+   ~URES() {}
 };
 
 void init_sd_config(CONFIG *config, const char *configfile, int exit_code);

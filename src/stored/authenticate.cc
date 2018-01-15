@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -94,9 +94,10 @@ bool authenticate_director(JCR *jcr)
       return false;
    }
 
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
    if (!dir->authenticate_inbound_connection(jcr, "Director",
                                              director->name(), director->password,
-                                             director->tls)) {
+                                             tls_resources)) {
       dir->fsend("%s", Dir_sorry);
       Dmsg2(dbglvl, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
@@ -120,13 +121,19 @@ bool authenticate_storagedaemon(JCR *jcr)
    s_password password;
 
    password.encoding = p_encoding_md5;
-   password.value = jcr->sd_auth_key;
+   password.value    = jcr->sd_auth_key;
+   const char *identity =
+       "* replicate *";
 
-   if (!sd->authenticate_inbound_connection(jcr, "Storage daemon",
-                                            "", password, me->tls)) {
-      Jmsg1(jcr, M_FATAL, 0,
-            _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
-            sd->who());
+   Dmsg2(dbglvl, "authenticate_storagedaemon %s %s\n", identity, (unsigned char *)password.value);
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
+   if (!sd->authenticate_inbound_connection(jcr, "Storage daemon", identity, password, tls_resources)) {
+      Jmsg1(
+          jcr,
+          M_FATAL,
+          0,
+          _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
+          sd->who());
       return false;
    }
 
@@ -143,14 +150,20 @@ bool authenticate_with_storagedaemon(JCR *jcr)
    BSOCK *sd = jcr->store_bsock;
    s_password password;
 
+   const char *identity =
+       "* replicate *";
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!sd->authenticate_outbound_connection(jcr, "Storage daemon",
-                                             "", password, me->tls)) {
-      Jmsg1(jcr, M_FATAL, 0,
-            _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
-            sd->who());
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
+   if (!sd->authenticate_outbound_connection(
+           jcr, "Storage daemon", identity, password, tls_resources)) {
+      Jmsg1(
+          jcr,
+          M_FATAL,
+          0,
+          _("Authorization problem: Two way security handshake failed with Storage daemon at %s\n"),
+          sd->who());
       return false;
    }
 
@@ -170,9 +183,11 @@ bool authenticate_filedaemon(JCR *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!fd->authenticate_inbound_connection(jcr, "File daemon",
-                                                     "", password, me->tls)) {
-      Jmsg1(jcr, M_FATAL, 0,
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
+   if (!fd->authenticate_inbound_connection(jcr, "File daemon", jcr->client_name, password, tls_resources)) {
+      Jmsg1(jcr,
+            M_FATAL,
+            0,
             _("Authorization problem: Two way security handshake failed with File daemon at %s\n"),
             fd->who());
       return false;
@@ -194,9 +209,12 @@ bool authenticate_with_filedaemon(JCR *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   if (!fd->authenticate_outbound_connection(jcr, "File daemon",
-                                             "", password, me->tls)) {
-      Jmsg1(jcr, M_FATAL, 0,
+   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
+   if (!fd->authenticate_outbound_connection(
+           jcr, "File daemon", jcr->client_name, password, tls_resources)) {
+      Jmsg1(jcr,
+            M_FATAL,
+            0,
             _("Authorization problem: Two way security handshake failed with File daemon at %s\n"),
             fd->who());
       return false;
