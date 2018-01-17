@@ -1528,7 +1528,7 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * TLS Requirement
        */
-      tls_need = MergePolicies(wstore);
+      tls_need = GetNeedFromConfiguration(wstore);
 
       char *connection_target_address = storage_address_to_contact(rstore, wstore);
 

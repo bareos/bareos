@@ -1018,12 +1018,12 @@ tls_cert_t::~tls_cert_t() {
 uint32_t tls_cert_t::GetPolicy() const {
    uint32_t result = Policy_e::BNET_TLS_NONE;
    if (enable) {
-      result = BNET_TLS_ALLOWED;
+      result = BNET_TLS_ENABLED;
    }
    if (require) {
       result = BNET_TLS_REQUIRED;
    }
-   return result;
+   return result << tls_cert_t::policy_offset;
 }
 
 tls_psk_t::~tls_psk_t() {
@@ -1035,10 +1035,10 @@ tls_psk_t::~tls_psk_t() {
 uint32_t tls_psk_t::GetPolicy() const {
    uint32_t result = BNET_TLS_NONE;
    if (enable) {
-      result = BNET_TLS_ALLOWED;
+      result = BNET_TLS_ENABLED;
    } else if (require) {
       result = BNET_TLS_REQUIRED;
    }
 
-   return result << 2;
+   return result << tls_psk_t::policy_offset;
 }

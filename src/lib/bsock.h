@@ -45,7 +45,7 @@ class BSOCK;
 btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
-uint32_t MergePolicies(TLSRES *tls_configuration);
+uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration);
 
 
 tls_base_t *SelectTlsFromPolicy(TLSRES *tls_configuration, uint32_t remote_policy);

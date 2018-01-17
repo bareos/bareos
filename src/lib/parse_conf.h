@@ -162,7 +162,7 @@ class PskCredentials {
     protected:
       typedef enum {
          BNET_TLS_NONE     = 0,      /*!< cannot do TLS */
-         BNET_TLS_ALLOWED  = 1 << 0, /*!< TLS with certificates is allowed but not required on my end */
+         BNET_TLS_ENABLED  = 1 << 0, /*!< TLS with certificates is allowed but not required on my end */
          BNET_TLS_REQUIRED = 1 << 1, /*!< TLS with certificates is required */
       } Policy_e;
 
@@ -171,6 +171,7 @@ class PskCredentials {
    };
 
    class tls_cert_t : public tls_base_t {
+      static u_int32_t const policy_offset = 0;
     public:
       bool authenticate;       /* Authenticate with TLS */
       bool verify_peer;        /* TLS Verify Peer Certificate */
@@ -210,9 +211,25 @@ class PskCredentials {
        */
       std::shared_ptr<TLS_CONTEXT> CreateServerContext(
           std::shared_ptr<PskCredentials> credentials) const override;
+
+      /**
+       * Checks whether the given @param policy matches the configured value
+       * @param policy
+       * @return true if policy means enabled
+       */
+      static bool enabled(u_int32_t policy);
+
+      /**
+       * Checks whether the given @param policy matches the configured value
+       * @param policy
+       * @return true if policy means required
+       */
+      static bool required(u_int32_t policy);
    };
 
    class tls_psk_t : public tls_base_t {
+      static u_int32_t const policy_offset = 2;
+
     public:
       char *cipherlist; /* TLS Cipher List */
 
@@ -232,6 +249,20 @@ class PskCredentials {
        */
       std::shared_ptr<TLS_CONTEXT> CreateServerContext(
           std::shared_ptr<PskCredentials> credentials) const override;
+
+/**
+       * Checks whether the given @param policy matches the configured value
+       * @param policy
+       * @return true if policy means enabled
+       */
+      static bool enabled(u_int32_t policy);
+
+      /**
+       * Checks whether the given @param policy matches the configured value
+       * @param policy
+       * @return true if policy means required
+       */
+      static bool required(u_int32_t policy);
    };
 
    /*

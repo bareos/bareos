@@ -337,7 +337,7 @@ bool do_verify(JCR *jcr)
           * TLS Requirement
           */
 
-         tls_need = MergePolicies(store);
+         tls_need = GetNeedFromConfiguration(store);
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -350,7 +350,7 @@ bool do_verify(JCR *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = MergePolicies(client);
+            tls_need = GetNeedFromConfiguration(client);
 
          /*
           * Tell the SD to connect to the FD.

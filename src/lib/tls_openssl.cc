@@ -838,6 +838,22 @@ std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateServerContext(
                           verify_peer);
 }
 
+bool tls_cert_t::enabled(u_int32_t policy) {
+   return (policy >> tls_cert_t::policy_offset) & BNET_TLS_ENABLED == BNET_TLS_ENABLED;
+}
+
+bool tls_cert_t::required(u_int32_t policy) {
+   return (policy >> tls_cert_t::policy_offset) & BNET_TLS_REQUIRED == BNET_TLS_REQUIRED;
+}
+
+bool tls_psk_t::enabled(u_int32_t policy) {
+   return (policy >> tls_psk_t::policy_offset) & BNET_TLS_ENABLED == BNET_TLS_ENABLED;
+}
+
+bool tls_psk_t::required(u_int32_t policy) {
+   return (policy >> tls_psk_t::policy_offset) & BNET_TLS_REQUIRED == BNET_TLS_REQUIRED;
+}
+
 std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateClientContext(
     std::shared_ptr<PskCredentials> credentials) const {
    return new_tls_psk_client_context(cipherlist, credentials);

@@ -541,7 +541,7 @@ bool do_native_backup(JCR *jcr)
        * TLS Requirement
        */
 
-      tls_need = MergePolicies(client);
+      tls_need = GetNeedFromConfiguration(client);
 
       connection_target_address = storage_address_to_contact(client, store);
 
@@ -555,7 +555,7 @@ bool do_native_backup(JCR *jcr)
        * TLS Requirement
        */
 
-      tls_need = MergePolicies(me);
+      tls_need = GetNeedFromConfiguration(me);
 
       connection_target_address = client_address_to_contact(client, store);
 

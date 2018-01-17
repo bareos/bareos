@@ -29,29 +29,41 @@
 #include "bareos.h"
 #include "jcr.h"
 
-uint32_t MergePolicies(TLSRES *tls_configuration) {
+uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
    uint32_t merged_policy = 0;
 
-#error implement MergePolicies
-//   for (tls_base_t &configured_tls : tls_configuration) {
-//      Dmsg1(100, "MergePolicies: %u\n", configured_tls.GetPolicy());
-//      merged_policy |= configured_tls.GetPolicy();
-//   }
+   merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
+   Dmsg1(100, "GetNeedFromConfiguration: %u\n", merged_policy);
    return merged_policy;
 }
 
 tls_base_t *SelectTlsFromPolicy(
    TLSRES *tls_configuration, uint32_t remote_policy) {
 
-#error implement SelectTlsFromPolicy
+   if ((tls_configuration->tls_cert.require && tls_cert_t::enabled(remote_policy))
+      || (tls_configuration->tls_cert.enable && tls_cert_t::required(remote_policy))) {
 
-//   for (tls_base_t &configured_tls : tls_configuration) {
-//      // fixme: this is NO check for "tls-required".
-//      if ((remote_policy & configured_tls.GetPolicy()) > 0) {
-//         return &configured_tls;
-//      }
-//   }
+      // one requires the other accepts cert
+      return &(tls_configuration->tls_cert);
+   }
+   if ((tls_configuration->tls_psk.require && tls_psk_t::enabled(remote_policy))
+      || (tls_configuration->tls_psk.enable && tls_psk_t::required(remote_policy))) {
 
+      // one requires the other accepts psk
+      return &(tls_configuration->tls_psk);
+   }
+   if (tls_configuration->tls_cert.enable && tls_cert_t::enabled(remote_policy)) {
+
+      // both accept cert
+      return &(tls_configuration->tls_cert);
+   }
+   if (tls_configuration->tls_psk.enable && tls_psk_t::enabled(remote_policy)) {
+
+      // both accept psk
+      return &(tls_configuration->tls_psk);
+   }
+
+   // fallback to cleartext
    return nullptr;
 }
 
@@ -69,14 +81,6 @@ BSOCK::~BSOCK() {
    Dmsg0(100, "Destruct BSOCK\n");
    // free_tls();
 }
-
-///*
-// * This is our "class destructor" that ensures that we use
-// * smartalloc rather than the system free().
-// */
-//void BSOCK::free_bsock()
-//{
-//}
 
 void BSOCK::free_tls()
 {
@@ -347,7 +351,7 @@ bool BSOCK::two_way_authenticate(JCR *jcr,
    const int dbglvl    = 50;
    bool compatible     = true;
    bool auth_success   = false;
-   uint32_t local_tls_policy = MergePolicies(tls_configuration);
+   uint32_t local_tls_policy = GetNeedFromConfiguration(tls_configuration);
    uint32_t remote_tls_policy = 0;
    alist *verify_list = NULL;
    tls_base_t * selected_local_tls = nullptr;

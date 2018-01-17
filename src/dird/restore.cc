@@ -251,7 +251,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = MergePolicies(store);
+            tls_need = GetNeedFromConfiguration(store);
 
          connection_target_address = storage_address_to_contact(client, store);
 
@@ -280,7 +280,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-            tls_need = MergePolicies(client);
+            tls_need = GetNeedFromConfiguration(client);
 
          connection_target_address = client_address_to_contact(client, store);
          /*
