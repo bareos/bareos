@@ -1328,8 +1328,7 @@ int main(int argc, char *argv[])
       password = &dir->password;
    }
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{dir->tls_cert, dir->tls_psk};
-   if (!UA_sock->authenticate_with_director(&jcr, name, *password, errmsg, errmsg_len, tls_resources)) {
+   if (!UA_sock->authenticate_with_director(&jcr, name, *password, errmsg, errmsg_len, dir)) {
       sendit(errmsg);
       terminate_console(0);
       return 1;

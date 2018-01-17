@@ -45,11 +45,10 @@ class BSOCK;
 btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
-uint32_t MergePolicies(std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls);
+uint32_t MergePolicies(TLSRES *tls_configuration);
 
 
-tls_base_t *SelectTlsFromPolicy(
-  std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls, uint32_t remote_policy);
+tls_base_t *SelectTlsFromPolicy(TLSRES *tls_configuration, uint32_t remote_policy);
 
 class BSOCK : public SMARTALLOC {
 /*
@@ -119,7 +118,7 @@ private:
                             const char *what,
                             const char *identity,
                             s_password &password,
-                            std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls,
+                            TLSRES *tls_configuration,
                             bool initiated_by_remote);
 
 public:
@@ -159,7 +158,7 @@ public:
                                    s_password &password,
                                    char *response,
                                    int response_len,
-                                   std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
+                                   TLSRES *tls_configuration);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);
@@ -169,13 +168,13 @@ public:
                                          const char *what,
                                          const char *identity,
                                          s_password &password,
-                                         std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
+                                         TLSRES *tls_configuration);
 
    bool authenticate_inbound_connection(JCR *jcr,
                                         const char *what,
                                         const char *name,
                                         s_password &password,
-                                        std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls);
+                                        TLSRES *tls_configuration);
 
    void set_jcr(JCR *jcr) { m_jcr = jcr; };
    void set_who(char *who) { m_who = who; };

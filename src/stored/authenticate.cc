@@ -94,10 +94,9 @@ bool authenticate_director(JCR *jcr)
       return false;
    }
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
    if (!dir->authenticate_inbound_connection(jcr, "Director",
                                              director->name(), director->password,
-                                             tls_resources)) {
+                                             director)) {
       dir->fsend("%s", Dir_sorry);
       Dmsg2(dbglvl, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
@@ -126,8 +125,7 @@ bool authenticate_storagedaemon(JCR *jcr)
        "* replicate *";
 
    Dmsg2(dbglvl, "authenticate_storagedaemon %s %s\n", identity, (unsigned char *)password.value);
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
-   if (!sd->authenticate_inbound_connection(jcr, "Storage daemon", identity, password, tls_resources)) {
+   if (!sd->authenticate_inbound_connection(jcr, "Storage daemon", identity, password, me)) {
       Jmsg1(
           jcr,
           M_FATAL,
@@ -155,9 +153,8 @@ bool authenticate_with_storagedaemon(JCR *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
    if (!sd->authenticate_outbound_connection(
-           jcr, "Storage daemon", identity, password, tls_resources)) {
+           jcr, "Storage daemon", identity, password, me)) {
       Jmsg1(
           jcr,
           M_FATAL,
@@ -183,8 +180,7 @@ bool authenticate_filedaemon(JCR *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
-   if (!fd->authenticate_inbound_connection(jcr, "File daemon", jcr->client_name, password, tls_resources)) {
+   if (!fd->authenticate_inbound_connection(jcr, "File daemon", jcr->client_name, password, me)) {
       Jmsg1(jcr,
             M_FATAL,
             0,
@@ -209,9 +205,8 @@ bool authenticate_with_filedaemon(JCR *jcr)
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
    if (!fd->authenticate_outbound_connection(
-           jcr, "File daemon", jcr->client_name, password, tls_resources)) {
+           jcr, "File daemon", jcr->client_name, password, me)) {
       Jmsg1(jcr,
             M_FATAL,
             0,

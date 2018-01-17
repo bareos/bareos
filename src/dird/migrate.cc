@@ -1528,8 +1528,7 @@ static inline bool do_actual_migration(JCR *jcr)
       /*
        * TLS Requirement
        */
-      std::vector<std::reference_wrapper<tls_base_t > > tls_resources{wstore->tls_cert, wstore->tls_psk};
-      tls_need = MergePolicies(tls_resources);
+      tls_need = MergePolicies(wstore);
 
       char *connection_target_address = storage_address_to_contact(rstore, wstore);
 

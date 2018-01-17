@@ -29,26 +29,30 @@
 #include "bareos.h"
 #include "jcr.h"
 
-uint32_t MergePolicies(std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls) {
+uint32_t MergePolicies(TLSRES *tls_configuration) {
    uint32_t merged_policy = 0;
-   for (tls_base_t &configured_tls : all_configured_tls) {
-      Dmsg1(100, "MergePolicies: %u\n", configured_tls.GetPolicy());
-      merged_policy |= configured_tls.GetPolicy();
-   }
+
+#error implement MergePolicies
+//   for (tls_base_t &configured_tls : tls_configuration) {
+//      Dmsg1(100, "MergePolicies: %u\n", configured_tls.GetPolicy());
+//      merged_policy |= configured_tls.GetPolicy();
+//   }
    return merged_policy;
 }
 
-
 tls_base_t *SelectTlsFromPolicy(
-  std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls, uint32_t remote_policy) {
- for (tls_base_t &configured_tls : all_configured_tls) {
-    // fixme: this is NO check for "tls-required".
-    if ((remote_policy & configured_tls.GetPolicy()) > 0) {
-       return &configured_tls;
-    }
- }
+   TLSRES *tls_configuration, uint32_t remote_policy) {
 
- return nullptr;
+#error implement SelectTlsFromPolicy
+
+//   for (tls_base_t &configured_tls : tls_configuration) {
+//      // fixme: this is NO check for "tls-required".
+//      if ((remote_policy & configured_tls.GetPolicy()) > 0) {
+//         return &configured_tls;
+//      }
+//   }
+
+   return nullptr;
 }
 
 BSOCK::BSOCK() : tls_conn(nullptr) {
@@ -270,7 +274,7 @@ bool BSOCK::authenticate_with_director(JCR *jcr,
                                        s_password &password,
                                        char *response,
                                        int response_len,
-                                       std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls) {
+                                       TLSRES *tls_configuration) {
    char bashed_name[MAX_NAME_LENGTH];
    BSOCK *dir = this;        /* for readability */
 
@@ -288,7 +292,7 @@ bool BSOCK::authenticate_with_director(JCR *jcr,
    dir->start_timer(60 * 5);
    dir->fsend(hello, bashed_name);
 
-   if (!authenticate_outbound_connection(jcr, "Director", identity, password, all_configured_tls)) {
+   if (!authenticate_outbound_connection(jcr, "Director", identity, password, tls_configuration)) {
       goto bail_out;
    }
 
@@ -336,14 +340,14 @@ bool BSOCK::two_way_authenticate(JCR *jcr,
                                  const char *what,
                                  const char *identity,
                                  s_password &password,
-                                 std::vector<std::reference_wrapper<tls_base_t > > &all_configured_tls,
+                                 TLSRES *tls_configuration,
                                  bool initiated_by_remote) {
 
                                   btimer_t *tid       = NULL;
    const int dbglvl    = 50;
    bool compatible     = true;
    bool auth_success   = false;
-   uint32_t local_tls_policy = MergePolicies(all_configured_tls);
+   uint32_t local_tls_policy = MergePolicies(tls_configuration);
    uint32_t remote_tls_policy = 0;
    alist *verify_list = NULL;
    tls_base_t * selected_local_tls = nullptr;
@@ -427,7 +431,7 @@ bool BSOCK::two_way_authenticate(JCR *jcr,
    /*
     * Verify that the remote host is willing to meet our TLS requirements
     */
-   selected_local_tls = SelectTlsFromPolicy(all_configured_tls, remote_tls_policy);
+   selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
    if (selected_local_tls != nullptr) {
       if (selected_local_tls->GetVerifyPeer()) {
          verify_list = selected_local_tls->GetVerifyList();
@@ -492,8 +496,8 @@ bool BSOCK::authenticate_outbound_connection(
    const char *what,
    const char *identity,
    s_password &password,
-   std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls) {
-   return two_way_authenticate(jcr, what, identity, password, all_configured_tls, false);
+   TLSRES *tls_configuration) {
+   return two_way_authenticate(jcr, what, identity, password, tls_configuration, false);
 }
 
 bool BSOCK::authenticate_inbound_connection(
@@ -501,8 +505,8 @@ bool BSOCK::authenticate_inbound_connection(
    const char *what,
    const char *identity,
    s_password &password,
-   std::vector<std::reference_wrapper<tls_base_t>> &all_configured_tls) {
-   return two_way_authenticate(jcr, what, identity, password, all_configured_tls, true);
+   TLSRES *tls_configuration) {
+   return two_way_authenticate(jcr, what, identity, password, tls_configuration, true);
 }
 
 

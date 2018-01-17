@@ -128,10 +128,8 @@ bool authenticate_director(JCR *jcr)
       return false;
    }
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
-
    if (!dir->authenticate_inbound_connection(
-           jcr, "Director", dirname.c_str(), director->password, tls_resources)) {
+           jcr, "Director", dirname.c_str(), director->password, director)) {
       dir->fsend("%s", Dir_sorry);
       errormsg.bsprintf(_("Unable to authenticate Director %s.\n"), dirname.c_str());
       authenticate_failed(jcr, errormsg);
@@ -147,9 +145,8 @@ bool authenticate_director(JCR *jcr)
  * Authenticate with a remote director.
  */
 bool authenticate_with_director(JCR *jcr, DIRRES *director) {
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{director->tls_cert, director->tls_psk};
    return jcr->dir_bsock->authenticate_outbound_connection(
-      jcr, "Director", me->name(), director->password, tls_resources);
+      jcr, "Director", me->name(), director->password, director);
 }
 
 /**
@@ -163,8 +160,7 @@ bool authenticate_storagedaemon(JCR *jcr)
 
    password.encoding = p_encoding_md5;
    password.value = jcr->sd_auth_key;
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_cert};
-   result = sd->authenticate_inbound_connection(jcr, "Storage daemon", jcr->client_name, password, tls_resources);
+   result = sd->authenticate_inbound_connection(jcr, "Storage daemon", jcr->client_name, password, me);
 
    /*
     * Destroy session key
@@ -188,9 +184,8 @@ bool authenticate_with_storagedaemon(JCR *jcr)
 
    password.encoding = p_encoding_md5;
    password.value    = jcr->sd_auth_key;
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{me->tls_cert, me->tls_psk};
    result = sd->authenticate_outbound_connection(
-      jcr, "Storage daemon", (char *) jcr->client_name, password, tls_resources);
+      jcr, "Storage daemon", (char *) jcr->client_name, password, me);
 
    /*
     * Destroy session key

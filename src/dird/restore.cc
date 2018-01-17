@@ -251,8 +251,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{store->tls_cert, store->tls_psk};
-            tls_need = MergePolicies(tls_resources);
+            tls_need = MergePolicies(store);
 
          connection_target_address = storage_address_to_contact(client, store);
 
@@ -281,8 +280,7 @@ static inline bool do_native_restore_bootstrap(JCR *jcr)
          /*
           * TLS Requirement
           */
-         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{client->tls_cert, client->tls_psk};
-            tls_need = MergePolicies(tls_resources);
+            tls_need = MergePolicies(client);
 
          connection_target_address = client_address_to_contact(client, store);
          /*

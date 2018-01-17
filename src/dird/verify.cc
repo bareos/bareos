@@ -337,8 +337,7 @@ bool do_verify(JCR *jcr)
           * TLS Requirement
           */
 
-         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{store->tls_cert, store->tls_psk};
-            tls_need = MergePolicies(tls_resources);
+         tls_need = MergePolicies(store);
 
          fd->fsend(storaddrcmd, store->address, store->SDDport, tls_need, jcr->sd_auth_key);
          if (!response(jcr, fd, OKstore, "Storage", DISPLAY_ERROR)) {
@@ -351,8 +350,7 @@ bool do_verify(JCR *jcr)
          /*
           * TLS Requirement
           */
-         std::vector<std::reference_wrapper<tls_base_t > > tls_resources{client->tls_cert, client->tls_psk};
-            tls_need = MergePolicies(tls_resources);
+            tls_need = MergePolicies(client);
 
          /*
           * Tell the SD to connect to the FD.

@@ -78,9 +78,8 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
       return false;
    }
 
-   std::vector<std::reference_wrapper<tls_base_t>> tls_resources{store->tls_cert, store->tls_psk};
    auth_success = sd->authenticate_outbound_connection(
-       jcr, "Storage daemon", dirname, store->password, tls_resources);
+       jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
       Dmsg2(dbglvl,
             "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
@@ -145,9 +144,8 @@ bool authenticate_with_file_daemon(JCR *jcr)
    }
    Dmsg1(dbglvl, "Sent: %s", fd->msg);
 
-std::vector<std::reference_wrapper<tls_base_t>> tls_resources{client->tls_cert, client->tls_psk};
 auth_success =
-    fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, tls_resources);
+    fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
 
 if (!auth_success) {
    Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
@@ -200,9 +198,8 @@ bool authenticate_file_daemon(BSOCK *fd, char *client_name)
    client = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
    if (client) {
       if (is_connect_from_client_allowed(client)) {
-      std::vector<std::reference_wrapper<tls_base_t > > tls_resources{client->tls_cert, client->tls_psk};
          auth_success = fd->authenticate_inbound_connection(
-             NULL, "File Daemon", client_name, client->password, tls_resources);
+             NULL, "File Daemon", client_name, client->password, client);
       }
    }
 
@@ -264,16 +261,14 @@ bool authenticate_user_agent(UAContext *uac)
    }
 
    if (bstrcmp(name, "*UserAgent*")) { /* default console */
-      std::vector<std::reference_wrapper<tls_base_t > > tls_resources{me->tls_cert, me->tls_psk};
       auth_success = ua->authenticate_inbound_connection(
-          NULL, "Console", "*UserAgent*", me->password, tls_resources);
+          NULL, "Console", "*UserAgent*", me->password, me);
    } else {
       unbash_spaces(name);
       cons = (CONRES *)GetResWithName(R_CONSOLE, name);
       if (cons) {
-            std::vector<std::reference_wrapper<tls_base_t > > tls_resources{cons->tls_cert, cons->tls_psk};
          auth_success =
-             ua->authenticate_inbound_connection(NULL, "Console", name, cons->password, tls_resources);
+             ua->authenticate_inbound_connection(NULL, "Console", name, cons->password, cons);
 
          if (auth_success) {
             uac->cons = cons; /* save console resource pointer */
