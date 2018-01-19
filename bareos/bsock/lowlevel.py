@@ -205,7 +205,7 @@ class LowLevel(object):
                         # Bareos indicates end of command result by line starting with 4 digits
                         if match:
                             self.logger.debug("msg \"{0}\" matches regex \"{1}\"".format(self.receive_buffer.strip(), regex))
-                            result = self.receive_buffer[0:lastlineindex] + self.receive_buffer[lastlineindex:lastlineindex+match.end()]
+                            result = self.receive_buffer[0:lastlineindex+match.end()]
                             self.receive_buffer = self.receive_buffer[lastlineindex+match.end()+1:]
                             return result
                         #elif re.search("^\d\d\d\d .*$", msg, re.MULTILINE):
@@ -260,8 +260,9 @@ class LowLevel(object):
         #print(msg.decode('utf-8'))
         sys.stdout.write(msg.decode('utf-8'))
         # add a linefeed, if there isn't one already
-        if msg[-2] != ord(b'\n'):
-            sys.stdout.write(b'\n')
+        if len(msg) >= 2:
+            if msg[-2] != ord(b'\n'):
+                sys.stdout.write(b'\n')
 
 
     def __get_header(self):

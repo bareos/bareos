@@ -3,7 +3,7 @@ python-bareos
 
 Python module to access a http://www.bareos.org backup system.
 
-* prebuild packages available at http://download.bareos.org/bareos/contrib/
+`python-bareos` packages are included in the Bareos core distribution since bareos >= 17.2.
 
 
 calling bareos-director user agent commands
@@ -42,4 +42,3 @@ Requires: bareos >= 15.2
   directorconsole=bareos.bsock.DirectorConsoleJson(address="localhost", port=9101, password=password)
   directorconsole.call("list pools")
   ...
-
