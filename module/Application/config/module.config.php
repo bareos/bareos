@@ -123,10 +123,12 @@ return array(
       'default' => array(
          array(
             'label' => _('Dashboard'),
+            'id' => 'topnavbar-dashboard',
             'route' => 'dashboard',
          ),
          array(
             'label' => _('Jobs'),
+            'id' => 'topnavbar-job',
             'route' => 'job',
             'pages' => array(
                array(
@@ -143,18 +145,22 @@ return array(
          ),
          array(
             'label' => _('Restore'),
+            'id' => 'topnavbar-restore',
             'route' => 'restore',
          ),
          array(
             'label' => _('Clients'),
+            'id' => 'topnavbar-client',
             'route' => 'client',
          ),
          array(
             'label' => _('Schedules'),
+            'id' => 'topnavbar-schedule',
             'route' => 'schedule',
          ),
          array(
             'label' => _('Storages'),
+            'id' => 'topnavbar-storage',
             'route' => 'storage',
             'pages' => array(
                array(
@@ -181,6 +187,7 @@ return array(
          ),
          array(
             'label' => _('Director'),
+            'id' => 'topnavbar-director',
             'route' => 'director',
          ),
       ),
