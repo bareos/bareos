@@ -42,6 +42,7 @@ tls_base_t *SelectTlsFromPolicy(
 
    if ((tls_configuration->tls_cert.require && tls_cert_t::enabled(remote_policy))
       || (tls_configuration->tls_cert.enable && tls_cert_t::required(remote_policy))) {
+      Dmsg0(100, "SelectTlsFromPolicy: take required cert\n");
 
       // one requires the other accepts cert
       return &(tls_configuration->tls_cert);
@@ -49,20 +50,24 @@ tls_base_t *SelectTlsFromPolicy(
    if ((tls_configuration->tls_psk.require && tls_psk_t::enabled(remote_policy))
       || (tls_configuration->tls_psk.enable && tls_psk_t::required(remote_policy))) {
 
+      Dmsg0(100, "SelectTlsFromPolicy: take required  psk\n");
       // one requires the other accepts psk
       return &(tls_configuration->tls_psk);
    }
    if (tls_configuration->tls_cert.enable && tls_cert_t::enabled(remote_policy)) {
 
+      Dmsg0(100, "SelectTlsFromPolicy: take cert\n");
       // both accept cert
       return &(tls_configuration->tls_cert);
    }
    if (tls_configuration->tls_psk.enable && tls_psk_t::enabled(remote_policy)) {
 
+      Dmsg0(100, "SelectTlsFromPolicy: take psk\n");
       // both accept psk
       return &(tls_configuration->tls_psk);
    }
 
+   Dmsg0(100, "SelectTlsFromPolicy: take cleartext\n");
    // fallback to cleartext
    return nullptr;
 }

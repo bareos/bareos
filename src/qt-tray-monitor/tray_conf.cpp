@@ -82,6 +82,9 @@ static RES_ITEM mon_items[] = {
    { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
    { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
    { "DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
+   TLS_COMMON_CONFIG(res_monitor),
+   TLS_CERT_CONFIG(res_monitor),
+   TLS_PSK_CONFIG(res_monitor),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
