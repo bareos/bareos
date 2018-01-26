@@ -43,6 +43,7 @@
 #include "lex.h"
 #include "output_formatter.h"
 #include "tls.h"
+#include "tls_conf.h"
 #include "parse_conf.h"
 #include "address_conf.h"
 #include "bsock.h"
