@@ -74,7 +74,7 @@ public:
 /*
  * Tray Monitor Resource
  */
-class MONITORRES : public BRSRES {
+class MONITORRES : public TLSRES {
 public:
    bool require_ssl;                  /* Require SSL for all connections */
    MSGSRES *messages;                 /* Daemon message handler */
@@ -90,7 +90,7 @@ public:
 /*
  * Client Resource
  */
-class CLIENTRES : public BRSRES {
+class CLIENTRES : public TLSRES {
 public:
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
@@ -103,7 +103,7 @@ public:
 /*
  * Store Resource
  */
-class STORERES : public BRSRES {
+class STORERES : public TLSRES {
 public:
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
@@ -128,6 +128,13 @@ union URES {
    STORERES res_store;
    CONFONTRES con_font;
    RES hdr;
+
+   URES() {
+      new(&hdr) RES();
+      Dmsg1(900, "hdr:        %p \n", &hdr);
+      Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
+   }
+   ~URES() {}
 };
 
 void init_tmon_config(CONFIG *config, const char *configfile, int exit_code);

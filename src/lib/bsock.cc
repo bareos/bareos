@@ -271,7 +271,7 @@ static char OKhello[] =
    "1000 OK:";
 
 /**
- * Authenticate Director
+ * Authenticate with Director
  */
 bool BSOCK::authenticate_with_director(JCR *jcr,
                                        const char *identity,
@@ -332,7 +332,6 @@ bail_out:
 
    return false;
 }
-
 
 /**
  * Depending on the initiate parameter perform one of the following:

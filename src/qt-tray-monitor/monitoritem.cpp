@@ -181,7 +181,7 @@ bool MonitorItem::doconnect()
      return false;
   }
 
-  if (!authenticate_daemon(this, &jcr)) {
+  if (!authenticate_with_daemon(this, &jcr)) {
 
      d->state = MonitorItem::Error;
      emit statusChanged(name, d->state);
