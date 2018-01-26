@@ -25,7 +25,7 @@ IF(HAVE_SUN_OS)
 ENDIF()
 
 find_program(PIDOF pidof)
-IF(NOT ${PIDOF})
+IF(NOT PIDOF)
    SET(PIDOF "")
 ENDIF()
 
