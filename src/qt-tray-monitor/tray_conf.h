@@ -62,13 +62,13 @@ enum {
 /*
  * Director Resource
  */
-class DIRRES : public BRSRES {
+class DIRRES : public TLSRES {
 public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
 
-   DIRRES() : BRSRES() {}
+   DIRRES() : TLSRES() {}
 };
 
 /*
