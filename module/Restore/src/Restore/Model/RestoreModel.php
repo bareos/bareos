@@ -56,11 +56,7 @@ class RestoreModel
             $result = $bsock->send_command($cmd_1, 2, $jobid);
             $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
 
-            if ( empty($directories['result']) ) {
-               return $retval;
-            }
-
-            if(empty($directories['result']['directories'])) {
+            if(empty($directories['result'])) {
                $cmd_2 = '.bvfs_lsdirs jobid='.$jobid.' path=@ limit='.$limit;
                $result = $bsock->send_command($cmd_2, 2, $jobid);
                $directories = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
