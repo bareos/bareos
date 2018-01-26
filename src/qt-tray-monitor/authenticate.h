@@ -5,6 +5,6 @@ class MONITORRES;
 class MonitorItem;
 class JCR;
 
-bool authenticate_daemon(MonitorItem *item, JCR *jcr);
+bool authenticate_with_daemon(MonitorItem *item, JCR *jcr);
 
 #endif // AUTHENTICATE_H_INCLUDED

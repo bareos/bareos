@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -999,46 +999,3 @@ bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const 
    return true;
 }
 
-/**
- * tls configuration
- */
-typedef enum {
-   BNET_TLS_NONE     = 0,      /*!< cannot do TLS */
-   BNET_TLS_ALLOWED  = 1 << 0, /*!< TLS with certificates is allowed but not required on my end */
-   BNET_TLS_REQUIRED = 1 << 1, /*!< TLS with certificates is required */
-} Policy_e;
-
-tls_cert_t::~tls_cert_t() {
-   if (allowed_cns) {
-      delete allowed_cns;
-      allowed_cns = nullptr;
-   }
-}
-
-uint32_t tls_cert_t::GetPolicy() const {
-   uint32_t result = Policy_e::BNET_TLS_NONE;
-   if (enable) {
-      result = BNET_TLS_ENABLED;
-   }
-   if (require) {
-      result = BNET_TLS_REQUIRED;
-   }
-   return result << tls_cert_t::policy_offset;
-}
-
-tls_psk_t::~tls_psk_t() {
-   if (cipherlist != nullptr) {
-      free(cipherlist);
-   }
-}
-
-uint32_t tls_psk_t::GetPolicy() const {
-   uint32_t result = BNET_TLS_NONE;
-   if (enable) {
-      result = BNET_TLS_ENABLED;
-   } else if (require) {
-      result = BNET_TLS_REQUIRED;
-   }
-
-   return result << tls_psk_t::policy_offset;
-}
