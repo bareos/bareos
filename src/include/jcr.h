@@ -346,7 +346,7 @@ public:
    BSOCK *store_bsock;                    /**< Storage connection socket */
    BSOCK *file_bsock;                     /**< File daemon connection socket */
    JCR_free_HANDLER *daemon_free_jcr;     /**< Local free routine */
-   std::shared_ptr<dlist> msg_queue;      /* Queued messages */
+   dlist *msg_queue;                      /**< Queued messages */
    pthread_mutex_t msg_queue_mutex;       /**< message queue mutex */
    bool dequeuing_msgs;                   /**< Set when dequeuing messages */
    alist job_end_callbacks;               /**< callbacks called at Job end */
