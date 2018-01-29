@@ -89,7 +89,7 @@ CONFIGURE_COMMON       += -Dscsi-crypto=no -Dndmp=no
 endif
 
 CONFIGURE_CLIENT_ONLY = $(CONFIGURE_COMMON) -Dclient-only=yes
-CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dbat=yes -Dtraymonitor=yes
+CONFIGURE_FULL        = $(CONFIGURE_COMMON) -Dpython=yes -Dbat=yes -Dtraymonitor=yes -Ddynamic-debian-package-list=yes
 
 override_dh_auto_configure:
 	@if [ "`lsb_release --short  --id`" = "Ubuntu" ] && [ "`lsb_release --short  --release`" = "8.04" ]; then \

@@ -116,6 +116,7 @@ INCLUDE(BareosSetVariableDefaults)
 
 INCLUDE(BareosGetDistInfo)
 
+INCLUDE(BareosGenerateDebianInfo)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION})
@@ -133,8 +134,6 @@ else()
 endif()
 set(INSTALL_LIB_DIR  "usr/lib${LIBSUFFIX}" CACHE PATH "Installation directory for libraries")
 mark_as_advanced(INSTALL_LIB_DIR)
-
-
 
 
 # RPATH settings (from https://cmake.org/Wiki/CMake_RPATH_handling)
@@ -539,7 +538,7 @@ MESSAGE("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
 MESSAGE("   Bareos version:               ${BAREOS} ${VERSION} (${DATE}) ")
 MESSAGE("   Distribution:                 ${DISTNAME} OBS PROJECT:${OBS_PROJECT} OBS DIST:${OBS_DISTRIBUTION} OBS ARCH:${OBS_ARCH}")
 MESSAGE("   Source code location:         ${srcdir} ")
-MESSAGE("   Modify package list:          ${DEBIAN_CONTROL} ")
+MESSAGE("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
 MESSAGE("   Install binaries:             ${bindir} ")
 MESSAGE("   Install system binaries:      ${sbindir} ")
 MESSAGE("   Install libraries:            ${libdir} ")
