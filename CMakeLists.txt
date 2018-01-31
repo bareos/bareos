@@ -85,6 +85,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
    link_libraries(dld intl)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+   set(HAVE_AIX_OS 1)
+   set(lmdb 0FF)
+   link_libraries(intl)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
@@ -113,6 +119,10 @@ INCLUDE(BareosFindPrograms)
 INCLUDE(GNUInstallDirs)
 
 INCLUDE(BareosSetVariableDefaults)
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+   SET(ENABLE_NLS 0)
+endif()
 
 INCLUDE(BareosGetDistInfo)
 
@@ -485,18 +495,22 @@ LIST(APPEND PLUGINS gfapi-conf.d)
 endif()
 
 ##### BACKENDS  ####
-SET(BACKENDS unix_tape_device.d)
-LIST(APPEND BACKENDS unix_fifo_device.d)
-if(${HAVE_CEPHFS})
-LIST(APPEND BACKENDS rados_device.d)
-endif()
-if(${HAVE_GLUSTERFS})
-LIST(APPEND BACKENDS gfapi_device.d)
-endif()
-if(${HAVE_DROPLET})
-LIST(APPEND BACKENDS droplet_device.d)
-endif()
 
+IF(build_client_only)
+   SET(BACKENDS "")
+ELSE()
+   SET(BACKENDS unix_tape_device.d)
+   LIST(APPEND BACKENDS unix_fifo_device.d)
+   if(${HAVE_CEPHFS})
+      LIST(APPEND BACKENDS rados_device.d)
+   endif()
+   if(${HAVE_GLUSTERFS})
+      LIST(APPEND BACKENDS gfapi_device.d)
+   endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND BACKENDS droplet_device.d)
+   endif()
+ENDIF()
 
 
 
