@@ -33,11 +33,36 @@ if [ -r ${srcdir}/src/include/version.h ]; then
   bversion=`sed -n -e 's/^.*VERSION.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
   bdate=`sed -n -e 's/^.*LSMDATE.*"\(.*\)"$/\1/p' ${srcdir}/src/include/version.h`
 fi
+
+if git --version >/dev/null; then
+   cd  ${srcdir}
+   gitbranch=`git rev-parse --abbrev-ref HEAD`
+   gitrev=`git rev-parse --short HEAD`
+   cd -
+   regress_gitbranch=`git rev-parse --abbrev-ref HEAD`
+   regress_gitrev=`git rev-parse --short HEAD`
+fi
+
 builddir="${src}"
 hostname="${hostname:-$HOST}"
 
+# get git info
+regress_gitrev=""
+bareos_gitrev=""
+
+cd $cwd
+regress_gitrev=`git show -s --format=%h HEAD`
+cd -
+
+cd ${BAREOS_SOURCE}
+bareos_gitrev=`git show -s --format=%h HEAD`
+cd -
+
+
 # Create sed command script
 >${out}
+echo "s%@bareos_gitrev@%${bareos_gitrev}%g" >>${out}
+echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
 echo "s%@archivedir@%${tmp}%g" >>${out}
 echo "s%@bindir@%${bin}%g" >>${out}
 echo "s%@sbindir@%${bin}%g" >>${out}
@@ -96,3 +121,8 @@ echo "s%@builddir@%${builddir}%g" >>${out}
 echo "s%@BUILD_DIR@%${builddir}%g" >>${out}
 echo "s%@confdir@%${confdir}%g" >>${out}
 echo "s%@uncomment_dbi@%#%g" >>${out}
+echo "s%@gitbranch@%${gitbranch}%g" >>${out}
+echo "s%@gitrev@%${gitrev}%g" >>${out}
+echo "s%@regress_gitbranch@%${regress_gitbranch}%g" >>${out}
+echo "s%@regress_gitrev@%${regress_gitrev}%g" >>${out}
+
