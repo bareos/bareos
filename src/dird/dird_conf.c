@@ -1933,6 +1933,11 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
    Mmsg(temp, "Name = \"%s\"\n", this->name());
    indent_config_item(cfg_str, 1, temp.c_str());
 
+   if (this->hdr.desc != NULL ) {
+      Mmsg(temp, "Description = \"%s\"\n", this->hdr.desc);
+      indent_config_item(cfg_str, 1, temp.c_str());
+   }
+
    if (num_includes) {
       /*
        * Loop over all exclude blocks.
