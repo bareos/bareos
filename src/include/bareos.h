@@ -42,6 +42,10 @@
 
 #include "hostconfig.h"
 
+#if HAVE_AIX_OS
+#define _LINUX_SOURCE_COMPAT 1
+#endif
+
 #ifdef HAVE_HPUX_OS
 #undef HAVE_LCHMOD
 #undef HAVE_POSIX_FADVISE
