@@ -1,0 +1,39 @@
+#! /bin/sh
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos File daemon.
+#
+# chkconfig: 2345 90 9
+# description: Backup Archiving REcovery Open Sourced.
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+case "$1" in
+    'start')
+       echo "Starting the Bareos File daemon: "
+       if test -x @sbindir@/bareos-fd; then
+          exec  @sbindir@/bareos-fd $2
+       fi
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-fd
+       ;;
+    'stop')
+       echo "Stopping the Bareos File daemon: "
+       kill  `ps -ef | grep @sbindir@/bareos-fd | grep -v grep | awk {'print $2'}`
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-fd
+       ;;
+    'restart')
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart}"
+       exit 1
+       ;;
+esac
+exit 0
