@@ -488,6 +488,13 @@ IF(DEFINED test-plugin)
    SET(HAVE_TEST_PLUGIN 1)
 ENDIF()
 
+IF(DEFINED dynamic-debian-package-list)
+   SET(GENERATE_DEBIAN_CONTROL ON)
+ELSE()
+   SET(GENERATE_DEBIAN_CONTROL OFF)
+ENDIF()
+
+
 # do not destroy bareos-config-lib.sh
 SET(DB_NAME "@DB_NAME@")
 SET(DB_USER "@DB_USER@")
@@ -498,6 +505,9 @@ SET(DB_VERSION "@DB_VERSION@")
 IF (${CMAKE_COMPILER_IS_GNUCC})
    SET(HAVE_GCC 1)
 ENDIF()
+
+
+
 
 set(lld "\"lld\"")
 set(llu "\"llu\"")

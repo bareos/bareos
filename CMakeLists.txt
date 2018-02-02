@@ -85,6 +85,12 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "HP-UX")
    link_libraries(dld intl)
 endif()
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+   set(HAVE_AIX_OS 1)
+   set(lmdb 0FF)
+   link_libraries(intl)
+endif()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    include_directories(
       ${CMAKE_SOURCE_DIR}/src/win32/include
@@ -114,8 +120,13 @@ INCLUDE(GNUInstallDirs)
 
 INCLUDE(BareosSetVariableDefaults)
 
+if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
+   SET(ENABLE_NLS 0)
+endif()
+
 INCLUDE(BareosGetDistInfo)
 
+INCLUDE(BareosGenerateDebianInfo)
 
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION})
@@ -133,8 +144,6 @@ else()
 endif()
 set(INSTALL_LIB_DIR  "usr/lib${LIBSUFFIX}" CACHE PATH "Installation directory for libraries")
 mark_as_advanced(INSTALL_LIB_DIR)
-
-
 
 
 # RPATH settings (from https://cmake.org/Wiki/CMake_RPATH_handling)
@@ -486,18 +495,22 @@ LIST(APPEND PLUGINS gfapi-conf.d)
 endif()
 
 ##### BACKENDS  ####
-SET(BACKENDS unix_tape_device.d)
-LIST(APPEND BACKENDS unix_fifo_device.d)
-if(${HAVE_CEPHFS})
-LIST(APPEND BACKENDS rados_device.d)
-endif()
-if(${HAVE_GLUSTERFS})
-LIST(APPEND BACKENDS gfapi_device.d)
-endif()
-if(${HAVE_DROPLET})
-LIST(APPEND BACKENDS droplet_device.d)
-endif()
 
+IF(build_client_only)
+   SET(BACKENDS "")
+ELSE()
+   SET(BACKENDS unix_tape_device.d)
+   LIST(APPEND BACKENDS unix_fifo_device.d)
+   if(${HAVE_CEPHFS})
+      LIST(APPEND BACKENDS rados_device.d)
+   endif()
+   if(${HAVE_GLUSTERFS})
+      LIST(APPEND BACKENDS gfapi_device.d)
+   endif()
+   if(${HAVE_DROPLET})
+      LIST(APPEND BACKENDS droplet_device.d)
+   endif()
+ENDIF()
 
 
 
@@ -539,7 +552,7 @@ MESSAGE("   Host:                         ${host} -- ${DISTNAME} ${DISTVER} ")
 MESSAGE("   Bareos version:               ${BAREOS} ${VERSION} (${DATE}) ")
 MESSAGE("   Distribution:                 ${DISTNAME} OBS PROJECT:${OBS_PROJECT} OBS DIST:${OBS_DISTRIBUTION} OBS ARCH:${OBS_ARCH}")
 MESSAGE("   Source code location:         ${srcdir} ")
-MESSAGE("   Modify package list:          ${DEBIAN_CONTROL} ")
+MESSAGE("   Modify Debian Control file:   ${GENERATE_DEBIAN_CONTROL} ")
 MESSAGE("   Install binaries:             ${bindir} ")
 MESSAGE("   Install system binaries:      ${sbindir} ")
 MESSAGE("   Install libraries:            ${libdir} ")

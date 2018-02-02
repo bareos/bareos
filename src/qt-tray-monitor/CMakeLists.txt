@@ -44,9 +44,9 @@ ENDIF()
 
 
 set(SOURCES
-   tray-monitor.cpp authenticate.cpp tray_conf.cpp tray-monitor.cpp
-   traymenu.cpp systemtrayicon.cpp mainwindow.cpp monitoritem.cpp
-   monitoritemthread.cpp
+   tray-monitor.cc authenticate.cc tray_conf.cc tray-monitor.cc
+   traymenu.cc systemtrayicon.cc mainwindow.cc monitoritem.cc
+   monitoritemthread.cc
    )
 
 IF(HAVE_WIN32)
