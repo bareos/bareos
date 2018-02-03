@@ -40,12 +40,20 @@
  * disadvantage that we need to keep a filenr to index the bitmap which
  * also cost some bytes.
  */
+
+#include "hostconfig.h"
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(push,4)
+#endif
+
 struct accurate_payload {
    int64_t filenr;
    int32_t delta_seq;
    char *lstat;
    char *chksum;
 };
+
 
 /*
  * Accurate payload storage abstraction classes.
@@ -88,6 +96,10 @@ struct CurFile {
    char *fname;
    accurate_payload payload;
 };
+
+#ifdef HAVE_HPUX_OS
+#pragma pack(pop)
+#endif
 
 class B_ACCURATE_HTABLE: public B_ACCURATE {
 protected:

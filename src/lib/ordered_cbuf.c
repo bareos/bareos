@@ -135,7 +135,7 @@ void *ordered_circbuf::enqueue(void *data,
        * e.g. replace the old with the new data but don't allocate a new
        * item on the ordered circular list.
        */
-      update(item, new_item);
+      update(item->data, new_item->data);
 
       /*
        * Release the unused ocbuf_item.
@@ -339,6 +339,16 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
       item = (struct ocbuf_item *)m_data->first();
       while (item) {
          callback(item->data, data);
+         item = (struct ocbuf_item *)m_data->next(item);
+      }
+      break;
+   case PEEK_CLONE:
+      item = (struct ocbuf_item *)m_data->first();
+      while (item) {
+         if (callback(item->data, data) == 0) {
+            retval = data;
+            break;
+         }
          item = (struct ocbuf_item *)m_data->next(item);
       }
       break;

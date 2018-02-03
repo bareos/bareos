@@ -228,7 +228,7 @@ static RES_ITEM cli_items[] = {
    { "FdPassword", CFG_TYPE_AUTOPASSWORD, ITEM(res_client.password), 0, CFG_ITEM_ALIAS, NULL, NULL, NULL },
    { "Catalog", CFG_TYPE_RES, ITEM(res_client.catalog), R_CATALOG, 0, NULL, NULL, NULL },
    { "Passive", CFG_TYPE_BOOL, ITEM(res_client.passive), 0, CFG_ITEM_DEFAULT, "false", "13.2.0-",
-     "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the netowrk connection to the Storage Daemon." },
+     "If enabled, the Storage Daemon will initiate the network connection to the Client. If disabled, the Client will initiate the network connection to the Storage Daemon." },
    { "ConnectionFromDirectorToClient", CFG_TYPE_BOOL, ITEM(res_client.conn_from_dir_to_fd), 0, CFG_ITEM_DEFAULT, "true", "16.2.2",
      "Let the Director initiate the network connection to the Client." },
    { "AllowClientConnect", CFG_TYPE_BOOL, ITEM(res_client.conn_from_fd_to_dir), 0, CFG_ITEM_DEPRECATED | CFG_ITEM_ALIAS, NULL, NULL,
@@ -249,7 +249,7 @@ static RES_ITEM cli_items[] = {
    { "MaximumConcurrentJobs", CFG_TYPE_PINT32, ITEM(res_client.MaxConcurrentJobs), 0, CFG_ITEM_DEFAULT, "1", NULL, NULL },
    { "MaximumBandwidthPerJob", CFG_TYPE_SPEED, ITEM(res_client.max_bandwidth), 0, 0, NULL, NULL, NULL },
    { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
-   { "NdmpBlockSize", CFG_TYPE_PINT32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512", NULL, NULL },
+   { "NdmpBlockSize", CFG_TYPE_SIZE32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512", NULL, NULL },
    { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.ndmp_use_lmdb), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
    TLS_CONFIG(res_client)
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
@@ -520,8 +520,8 @@ static RES_ITEM pool_items[] = {
    { "Catalog", CFG_TYPE_RES, ITEM(res_pool.catalog), R_CATALOG, 0, NULL, NULL, NULL },
    { "FileRetention", CFG_TYPE_TIME, ITEM(res_pool.FileRetention), 0, 0, NULL, NULL, NULL },
    { "JobRetention", CFG_TYPE_TIME, ITEM(res_pool.JobRetention), 0, 0, NULL, NULL, NULL },
-   { "MinimumBlockSize", CFG_TYPE_PINT32, ITEM(res_pool.MinBlocksize), 0, 0, NULL, NULL, NULL },
-   { "MaximumBlockSize", CFG_TYPE_PINT32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL, "14.2.0-", NULL },
+   { "MinimumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool.MinBlocksize), 0, 0, NULL, NULL, NULL },
+   { "MaximumBlockSize", CFG_TYPE_SIZE32, ITEM(res_pool.MaxBlocksize), 0, 0, NULL, "14.2.0-", NULL },
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 

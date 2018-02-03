@@ -36,12 +36,12 @@ private:
    /*
     * Private Members
     */
-   char *m_object_configstring;
+   char *m_configstring;
    const char *m_profile;
    const char *m_location;
    const char *m_canned_acl;
    const char *m_storage_class;
-   const char *m_object_bucketname;
+   const char *m_bucketname;
    dpl_ctx_t *m_ctx;
    dpl_sysmd_t m_sysmd;
 

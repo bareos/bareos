@@ -87,6 +87,7 @@ Vendor: 	The Bareos Team
 # therefore build it only for SLE_12 and SLE_12_SP1
 %if 0%{?sle_version} >= 120000 && 0%{?sle_version} <= 120100
 %define ceph 1
+%define objectstorage 1
 %endif
 
 #
