@@ -173,9 +173,10 @@ static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
    if (ndmp_filesystem &&
          set_files_to_restore_ndmp_native(jcr, job, current_fi,
             destination_path.c_str(), ndmp_filesystem) == 0) {
-      return true;
+            Jmsg(jcr, M_INFO, 0, _("No files selected for restore\n"));
+      return false;
    }
-   return false;
+   return true;
 }
 
 /*

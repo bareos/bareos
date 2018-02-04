@@ -148,6 +148,8 @@ DLL_IMP_EXP bool path_append(POOL_MEM &path, const char *extra);
 DLL_IMP_EXP bool path_append(POOL_MEM &path, POOL_MEM &extra);
 DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
 DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
+DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
+DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
 
 /* compression.c */
 DLL_IMP_EXP const char *cmprs_algo_to_text(uint32_t compression_algorithm);

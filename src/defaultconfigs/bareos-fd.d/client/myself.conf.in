@@ -4,7 +4,7 @@ Client {
 
   # remove comment from "Plugin Directory" to load plugins from specified directory.
   # if "Plugin Names" is defined, only the specified plugins will be loaded,
-  # otherwise all storage plugins (*-fd.so) from the "Plugin Directory".
+  # otherwise all filedaemon plugins (*-fd.so) from the "Plugin Directory".
   #
   # Plugin Directory = "@plugindir@"
   # Plugin Names = ""

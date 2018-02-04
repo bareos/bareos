@@ -23,6 +23,10 @@ After=nss-lookup.target network.target remote-fs.target time-sync.target postgre
 ConditionPathIsDirectory=@working_dir@
 # Before=
 # Conflicts=
+#
+# allow unlimited restarts,
+# required for automatic restarting on Univention Corporate Servers (UCS)
+StartLimitIntervalSec=0
 
 [Service]
 Type=forking

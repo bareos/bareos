@@ -1,0 +1,13 @@
+#
+# dbcheck: eliminate_orphaned_path_records
+#
+# get all Paths not used by Files
+# and are not substrings to others Paths.
+#
+# LIKE: _% wildcard, but at least one character
+#
+SELECT DISTINCT ParentPath.PathId,File.PathId,ParentPath.Path
+FROM Path AS ParentPath LEFT OUTER JOIN File USING(PathId)
+WHERE File.PathId IS NULL
+  AND NOT EXISTS (SELECT 1 FROM Path WHERE Path LIKE ParentPath.Path || '_%%')
+LIMIT 300000

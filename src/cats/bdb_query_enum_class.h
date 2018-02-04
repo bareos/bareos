@@ -66,7 +66,7 @@ public:
       SQL_QUERY_uar_sel_jobid_copies = 60,
       SQL_QUERY_get_jobstatus_details = 61,
       SQL_QUERY_bvfs_versions_6 = 62,
-      SQL_QUERY_bvfs_lsdirs_7 = 63,
+      SQL_QUERY_bvfs_lsdirs_4 = 63,
       SQL_QUERY_bvfs_clear_cache_0 = 64,
       SQL_QUERY_bvfs_update_path_visibility_3 = 65,
       SQL_QUERY_list_volumes_count_0 = 66,
@@ -74,6 +74,10 @@ public:
       SQL_QUERY_list_volumes_by_poolid_count_1 = 68,
       SQL_QUERY_list_joblog_2 = 69,
       SQL_QUERY_list_joblog_count_1 = 70,
-      SQL_QUERY_NUMBER = 71
+      SQL_QUERY_get_orphaned_paths_0 = 71,
+      SQL_QUERY_get_bad_paths_0 = 72,
+      SQL_QUERY_bvfs_ls_special_dirs_3 = 73,
+      SQL_QUERY_bvfs_ls_sub_dirs_5 = 74,
+      SQL_QUERY_NUMBER = 75
    } SQL_QUERY_ENUM;
 };

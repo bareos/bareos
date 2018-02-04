@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -99,8 +99,8 @@ static struct dbcheck_cmdstruct commands[] = {
    { set_quit, "Quit", false },
    { toggle_modify, "Toggle modify database flag", false },
    { toggle_verbose, "Toggle verbose flag", false },
-   { repair_bad_paths, "Check for bad Filename records", true },
-   { repair_bad_filenames, "Check for bad Path records", true },
+   { repair_bad_filenames, "Check for bad Filename records", true },
+   { repair_bad_paths, "Check for bad Path records", true },
    { eliminate_duplicate_paths, "Check for duplicate Path records", true },
    { eliminate_orphaned_jobmedia_records, "Check for orphaned Jobmedia records", true },
    { eliminate_orphaned_file_records, "Check for orphaned File records", true },
@@ -710,15 +710,9 @@ static void eliminate_orphaned_file_records()
 static void eliminate_orphaned_path_records()
 {
    db_int64_ctx lctx;
+   POOL_MEM query(PM_MESSAGE);
 
    lctx.count = 0;
-   db->sql_query("SELECT 1 FROM Job WHERE HasCache=1 LIMIT 1", db_int64_handler, &lctx);
-   if (lctx.count == 1) {
-      printf(_("Pruning orphaned Path entries isn't possible when using BVFS.\n"));
-      fflush(stdout);
-      return;
-   }
-
    idx_tmp_name = NULL;
    /*
     * Check the existence of the required "one column" index
@@ -732,16 +726,14 @@ static void eliminate_orphaned_path_records()
       }
    }
 
-   const char *query = "SELECT DISTINCT Path.PathId,File.PathId FROM Path "
-               "LEFT OUTER JOIN File USING(PathId) "
-               "WHERE File.PathId IS NULL LIMIT 300000";
+   db->fill_query(query, B_DB::SQL_QUERY_get_orphaned_paths_0);
 
    printf(_("Checking for orphaned Path entries. This may take some time!\n"));
    if (verbose > 1) {
-      printf("%s\n", query);
+      printf("%s\n", query.c_str());
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!make_id_list(query.c_str(), &id_list)) {
       exit(1);
    }
    /*
@@ -769,7 +761,7 @@ static void eliminate_orphaned_path_records()
       } else {
          break;                       /* get out if not updating db */
       }
-      if (!make_id_list(query, &id_list)) {
+      if (!make_id_list(query.c_str(), &id_list)) {
          exit(1);
       }
    }
@@ -1059,17 +1051,16 @@ static void repair_bad_filenames()
 
 static void repair_bad_paths()
 {
-   const char *query;
+   POOL_MEM query(PM_MESSAGE);
    int i;
 
    printf(_("Checking for Paths without a trailing slash\n"));
-   query = "SELECT PathId,Path from Path "
-           "WHERE Path NOT LIKE '%/'";
+   db->fill_query(query, B_DB::SQL_QUERY_get_bad_paths_0);
    if (verbose > 1) {
-      printf("%s\n", query);
+      printf("%s\n", query.c_str());
    }
    fflush(stdout);
-   if (!make_id_list(query, &id_list)) {
+   if (!make_id_list(query.c_str(), &id_list)) {
       exit(1);
    }
    printf(_("Found %d bad Path records.\n"), id_list.num_ids);

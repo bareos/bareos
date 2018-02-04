@@ -1,0 +1,7 @@
+#
+# dbcheck: repair_bad_paths
+#
+SELECT PathId, Path FROM Path
+WHERE  Path != ''
+  AND  Path NOT LIKE '%%/'
+

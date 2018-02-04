@@ -37,7 +37,6 @@
 
 /*
  * Working Object to store PathId already seen (avoid database queries),
- * equivalent to %cache_ppathid in perl
  */
 #define NITEMS 50000
 class pathid_cache {
@@ -122,12 +121,18 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
    bstrncpy(pathid, org_pathid, sizeof(pathid));
 
    /*
-    * Does the ppathid exist for this ? we use a memory cache...  In order to
-    * avoid the full loop, we consider that if a dir is already in the
+    * Does the ppathid exist for this? use a memory cache ...
+    * In order to avoid the full loop, we consider that if a dir is already in the
     * PathHierarchy table, then there is no need to calculate all the hierarchy
     */
-   while (path && *path) {
-      if (!ppathid_cache.lookup(pathid)) {
+   while (new_path && *new_path) {
+      if (ppathid_cache.lookup(pathid)) {
+         /*
+          * It's already in the cache.  We can leave, no time to waste here,
+          * all the parent dirs have already been done
+          */
+         goto bail_out;
+      } else {
          Mmsg(cmd, "SELECT PPathId FROM PathHierarchy WHERE PathId = %s", pathid);
 
          if (!QUERY_DB(jcr, cmd)) {
@@ -140,7 +145,7 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
          if (sql_num_rows() > 0) {
             ppathid_cache.insert(pathid);
             /* This dir was in the db ...
-             * It means we can leave, the tree has allready been built for
+             * It means we can leave, the tree has already been built for
              * this dir
              */
             goto bail_out;
@@ -162,14 +167,9 @@ void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
             }
 
             edit_uint64(parent.PathId, pathid);
-            new_path = path;   /* already done */
+            /* continue with parent directory */
+            new_path = path;
          }
-      } else {
-         /*
-          * It's already in the cache.  We can leave, no time to waste here,
-          * all the parent dirs have already been done
-          */
-         goto bail_out;
       }
    }
 
@@ -215,7 +215,8 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
    Mmsg(cmd, "UPDATE Job SET HasCache=-1 WHERE JobId=%s", jobid);
    UPDATE_DB(jcr, cmd);
 
-   /* need to COMMIT here to ensure that other concurrent .bvfs_update runs
+   /*
+    * need to COMMIT here to ensure that other concurrent .bvfs_update runs
     * see the current HasCache value. A new transaction must only be started
     * after having finished PathHierarchy processing, otherwise prevention
     * from duplicate key violations in build_path_hierarchy() will not work.
@@ -239,12 +240,13 @@ bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, Jo
 
    /*
     * Now we have to do the directory recursion stuff to determine missing
-    * visibility We try to avoid recursion, to be as fast as possible We also
-    * only work on not allready hierarchised directories...
+    * visibility.
+    * We try to avoid recursion, to be as fast as possible.
+    * We also only work on not already hierarchised directories ...
     */
    Mmsg(cmd, "SELECT PathVisibility.PathId, Path "
              "FROM PathVisibility "
-             "JOIN Path ON( PathVisibility.PathId = Path.PathId) "
+             "JOIN Path ON (PathVisibility.PathId = Path.PathId) "
              "LEFT JOIN PathHierarchy "
              "ON (PathVisibility.PathId = PathHierarchy.PathId) "
              "WHERE PathVisibility.JobId = %s "
@@ -364,14 +366,15 @@ bail_out:
 
 int B_DB::bvfs_ls_dirs(POOL_MEM &query, void *ctx)
 {
-   int nb_record;
+   int nb_record = 0;
 
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
    db_lock(this);
 
    sql_query(query.c_str(), path_handler, ctx);
-   nb_record = sql_num_rows();
+   // FIXME: sql_num_rows() is always 0 after sql_query.
+   //nb_record = sql_num_rows();
 
    db_unlock(this);
 
@@ -380,13 +383,14 @@ int B_DB::bvfs_ls_dirs(POOL_MEM &query, void *ctx)
 
 int B_DB::bvfs_build_ls_file_query(POOL_MEM &query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   int nb_record;
+   int nb_record = 0;
 
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());
 
    db_lock(this);
    sql_query(query.c_str(), result_handler, ctx);
-   nb_record = sql_num_rows();
+   // FIXME: sql_num_rows() is always 0 after sql_query.
+   //nb_record = sql_num_rows();
    db_unlock(this);
 
    return nb_record;
@@ -453,10 +457,25 @@ void Bvfs::set_jobids(char *ids)
    pm_strcpy(jobids, ids);
 }
 
-/* Return the parent_dir with the trailing /  (update the given string)
+/*
+ * Return the parent_dir with the trailing "/".
+ * It updates the given string.
+ *
+ * Unix:
  * dir=/tmp/toto/
  * dir=/tmp/
  * dir=/
+ * dir=
+ *
+ * Windows:
+ * dir=c:/Programs/Bareos/
+ * dir=c:/Programs/
+ * dir=c:/
+ * dir=
+ *
+ * Plugins:
+ * dir=@bpipe@/data.dat
+ * dir=@bpipe@/
  * dir=
  */
 char *bvfs_parent_dir(char *path)
@@ -473,7 +492,8 @@ char *bvfs_parent_dir(char *path)
       path[0] = '\0';
    }
 
-   if (len >= 0 && path[len] == '/') {      /* if directory, skip last / */
+   /* if path is a directory, remove last / */
+   if ((len >= 0) && (path[len] == '/')) {
       path[len] = '\0';
    }
 
@@ -482,8 +502,22 @@ char *bvfs_parent_dir(char *path)
       while (p > path && !IsPathSeparator(*p)) {
          p--;
       }
-      p[1] = '\0';
+      if (IsPathSeparator(*p) and (len >= 1)) {
+         /*
+          * Terminate the string after the "/".
+          * Do this instead of overwritting the "/"
+          * to keep the root directory "/" as a separate path.
+          */
+         p[1] = '\0';
+      } else {
+         /*
+          * path did not start with a "/".
+          * This can be the case for plugin results.
+          */
+         p[0] = '\0';
+      }
    }
+
    return path;
 }
 
@@ -596,54 +630,14 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
    return 0;
 }
 
-/**
- * Retrieve . and .. information
- */
-void Bvfs::ls_special_dirs()
-{
-   char ed1[50];
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM query2(PM_MESSAGE);
-
-   Dmsg1(dbglevel, "ls_special_dirs(%lld)\n", (uint64_t)pwd_id);
-
-   if (*jobids == 0) {
-      return;
-   }
-
-   /* Will fetch directories  */
-   *prev_dir = 0;
-
-   Mmsg(query,
-"(SELECT PPathId AS PathId, '..' AS Path "
-    "FROM  PathHierarchy "
-   "WHERE  PathId = %s "
-"UNION "
- "SELECT %s AS PathId, '.' AS Path)",
-        edit_uint64(pwd_id, ed1), ed1);
-
-   Mmsg(query2,
-//       0   1           2         3      4      5
-"SELECT 'D', tmp.PathId, tmp.Path, JobId, LStat, FileId "
-  "FROM %s AS tmp  LEFT JOIN ( " // get attributes if any
-       "SELECT File1.PathId AS PathId, File1.JobId AS JobId, "
-              "File1.LStat AS LStat, File1.FileId AS FileId FROM File AS File1 "
-       "WHERE File1.Name = '' "
-       "AND File1.JobId IN (%s)) AS listfile1 "
-  "ON (tmp.PathId = listfile1.PathId) "
-  "ORDER BY tmp.Path, JobId DESC ",
-        query.c_str(), jobids);
-
-   Dmsg1(dbglevel_sql, "q=%s\n", query2.c_str());
-   db->sql_query(query2.c_str(), path_handler, this);
-}
-
 /* Returns true if we have dirs to read */
 bool Bvfs::ls_dirs()
 {
-   char ed1[50];
+   char pathid[50];
+   POOL_MEM special_dirs_query(PM_MESSAGE);
    POOL_MEM filter(PM_MESSAGE);
-   POOL_MEM query(PM_MESSAGE);
+   POOL_MEM sub_dirs_query(PM_MESSAGE);
+   POOL_MEM union_query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_dirs(%lld)\n", (uint64_t)pwd_id);
 
@@ -651,19 +645,27 @@ bool Bvfs::ls_dirs()
       return false;
    }
 
-   if (*pattern) {
-      db->fill_query(filter, B_DB::SQL_QUERY_match_query, pattern);
-   }
+   /* convert pathid to string */
+   edit_uint64(pwd_id, pathid);
 
    /*
     * The sql query displays same directory multiple time, take the first one
     */
    *prev_dir = 0;
 
-   db->fill_query(query, B_DB::SQL_QUERY_bvfs_lsdirs_7, edit_uint64(pwd_id, ed1), jobids, filter.c_str(), jobids, jobids, limit, offset);
-   nb_record = db->bvfs_ls_dirs(query, this);
+   db->fill_query(special_dirs_query, B_DB::SQL_QUERY_bvfs_ls_special_dirs_3, pathid, pathid, jobids);
 
-   return nb_record == limit;
+   if (*pattern) {
+      db->fill_query(filter, B_DB::SQL_QUERY_match_query, pattern);
+   }
+   db->fill_query(sub_dirs_query, B_DB::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid, jobids, filter.c_str(), jobids, jobids);
+
+   db->fill_query(union_query, B_DB::SQL_QUERY_bvfs_lsdirs_4, special_dirs_query.c_str(), sub_dirs_query.c_str(), limit, offset);
+
+   /* FIXME: bvfs_ls_dirs does not return number of results */
+   nb_record = db->bvfs_ls_dirs(union_query, this);
+
+   return true;
 }
 
 static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,

@@ -2,10 +2,10 @@
 #
 # Let's retrieve the list of the visible dirs in this dir ...
 #
-# First, I need the empty filename to locate efficiently
+# First, the empty filename to locate efficiently
 # the dirs in the file table.
 #
-# Then we get all the dir entries from File ...
+# Then get all the dir entries from File ...
 #
 # parameter:
 #   %s PathId
@@ -13,8 +13,6 @@
 #   %s extra filter
 #   %s JobIds ("1,2,...")
 #   %s JobIds ("1,2,...")
-#   %d limit
-#   %d offset
 #
 # row  0    1       2     3      4      5
 SELECT 'D', PathId, Path, JobId, LStat, FileId
@@ -56,10 +54,7 @@ FROM (
       SELECT File1.PathId AS PathId, File1.JobId AS JobId, File1.LStat AS LStat, File1.FileId AS FileId
       FROM File AS File1
       WHERE File1.Name = ''
-      AND File1.JobId IN (%s)
+        AND File1.JobId IN (%s)
    ) AS listfile1
    ON (listpath3.PathId = listfile1.PathId)
 ) AS A
-ORDER BY 2,3 DESC
-LIMIT %d
-OFFSET %d

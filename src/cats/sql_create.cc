@@ -806,9 +806,7 @@ bail_out:
  *
  * To sum up :
  *  - bulk load a temp table
- *  - insert missing filenames into filename with a single query (lock filenames
- *  - table before that to avoid possible duplicate inserts with concurrent update)
- *  - insert missing paths into path with another single query
+ *  - insert missing paths into path with another single query (lock Path table to avoid duplicates).
  *  - then insert the join between the temp, filename and path tables into file.
  *
  * Returns: false on failure
@@ -831,6 +829,8 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    Dmsg1(50,"db_create_file_record changes=%u\n", changes);
 
    jcr->JobStatus = JS_AttrInserting;
+   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table with %u entries start\n", jcr->db_batch->changes);
+
    if (!jcr->db_batch->sql_batch_end(jcr, NULL)) {
       Jmsg1(jcr, M_FATAL, 0, "Batch end %s\n", errmsg);
       goto bail_out;
@@ -869,7 +869,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    }
 
    jcr->JobStatus = JobStatus;         /* reset entry status */
-   Jmsg0(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
+   Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table done\n");
    retval = true;
 
 
@@ -933,9 +933,9 @@ bool B_DB::create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
  *
  * In order to reduce database size, we store the File attributes,
  * the FileName, and the Path separately.  In principle, there
- * is a single FileName record and a single Path record, no matter
- * how many times it occurs.  This is this subroutine, we separate
- * the file and the path and create three database records.
+ * is a single Path record, no matter how many times it occurs.
+ * This is this subroutine, we separate
+ * the file name and the path and create two database records.
  *
  * Returns: false on failure
  *          true on success

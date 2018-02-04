@@ -9,6 +9,8 @@ The .inc files only need to be updated when the queries
 are altered or new ones are added.
 
 NOTE:
+  * Naming: Number_Description_NumberOfArguments
+  * As % are used for replace variables, % in SQL LIKE statements must be escaped (% => %%).
   * each query must consist of a single SQL statement,
     as more statement, separated by columns (";") need special result handling for MySQL.
 
