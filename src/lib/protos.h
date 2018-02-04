@@ -140,14 +140,14 @@ DLL_IMP_EXP bool path_exists(const char *path);
 DLL_IMP_EXP bool path_exists(POOL_MEM &path);
 DLL_IMP_EXP bool path_is_directory(const char *path);
 DLL_IMP_EXP bool path_is_directory(POOL_MEM &path);
+DLL_IMP_EXP bool path_contains_directory(const char *path);
+DLL_IMP_EXP bool path_contains_directory(POOL_MEM &path);
 DLL_IMP_EXP bool path_is_absolute(const char *path);
 DLL_IMP_EXP bool path_is_absolute(POOL_MEM &path);
 DLL_IMP_EXP bool path_get_directory(POOL_MEM &directory, POOL_MEM &path);
 DLL_IMP_EXP bool path_append(char *path, const char *extra, unsigned int max_path);
 DLL_IMP_EXP bool path_append(POOL_MEM &path, const char *extra);
 DLL_IMP_EXP bool path_append(POOL_MEM &path, POOL_MEM &extra);
-DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
-DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
 DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
 DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
 
