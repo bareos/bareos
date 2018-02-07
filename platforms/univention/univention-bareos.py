@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 #
-# Univention SSL
 """Bareos Client Configuration Listener Module."""
-#
+
 
 __package__ = ''        # workaround for PEP 366
 from listener import configRegistry, setuid, unsetuid
@@ -80,6 +79,7 @@ def postrun():
         return
 
 
+
 def processClient(client_name,entry,delete=False):
         if client_name==None:
                 return
@@ -99,6 +99,8 @@ def processClient(client_name,entry,delete=False):
 
         addClient(client_name,client_type)
 
+
+
 def addClient(client_name,client_type):
     createClientJob(client_name,client_type)
     addClientInclude(client_name)
@@ -110,8 +112,21 @@ def removeClient(client_name,client_type):
         disableClientJob(client_name,client_type)
         addClientInclude(client_name)
 
+
+
 def getClientSecret(client_name):
-        return createClientSecret(client_name)
+    path=getClientSecretPath(client_name)
+    password=None
+
+    try:
+        f=open(path,'r')
+        password=f.read().strip()
+    except:
+        password=createClientSecret(client_name)
+
+    return password
+
+
 
 def exportBareosFdDirectorResource(client_name, client_type):
     # send commands via pipe to bconsole
@@ -120,10 +135,21 @@ def exportBareosFdDirectorResource(client_name, client_type):
     out = process.communicate(b'reload\nconfigure export client="{client_name}-fd"\n'.format(client_name=client_name))[0]
     ud.debug(ud.LISTENER, ud.INFO, "bareos export output:\n" + str(out))
 
+
+
 def createClientSecret(client_name):
+    path=getClientSecretPath(client_name)
+
     char_set = string.ascii_uppercase + string.digits + string.ascii_lowercase
     password=''.join(random.sample(char_set*40,40))
+    os.umask(077)
+    with open(path,'w') as f:
+        f.write(password)
+    os.chown(path,-1,0)
+
     return password
+
+
 
 def removeClientJob(client_name):
         path=JOBS_PATH+'/'+client_name+'.include'
@@ -149,6 +175,9 @@ def disableClientJob(client_name,client_type):
 def getClientIncludePath(client_name):
         return '@'+JOBS_PATH+'/'+client_name+'.include'
 
+def getClientSecretPath(client_name):
+    return JOBS_PATH+'/'+client_name+'.secret'
+
 def addClientInclude(client_name):
         # is the client already in the include list?
         if isClientIncluded(client_name):
@@ -170,4 +199,3 @@ def isClientIncluded(client_name):
                         if want in l:
                                 return True
         return False
-
