@@ -54,6 +54,11 @@ INCLUDE(BareosExtractVersionInfo)
 INCLUDE(BareosFindAllLibraries)
 
 
+IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
+   INCLUDE(CodeCoverage)
+   APPEND_COVERAGE_COMPILER_FLAGS()
+ENDIF()
+
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    set(HAVE_LINUX_OS 1)
