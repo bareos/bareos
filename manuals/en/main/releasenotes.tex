@@ -16,6 +16,34 @@ This chapter concentrates on things to do when updating an existing Bareos insta
 
 \releasenoteSection{Bareos-17.2}
 
+\releasenote{17.2.5}{
+
+\begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
+Code Release      & 2018-02-14\\
+Database Version  & 2171 (unchanged)\\
+Release Ticket    & \ticket{910}\\
+Url               & \releaseUrlDownloadBareosCom{17.2} \\
+\end{tabular}
+
+This release contains several bugfixes and enhancements. Excerpt:
+\begin{itemize}
+    \item \bareosFd is ready for \os{AIX}{7.1.0.0}.
+    \item \nameref{VMwarePlugin} is also provided for \os{Debian}{9}.
+    \item NDMP fixes
+    \item Virtual Backup fixes
+    \item \package{bareos-storage-droplet}: improvements
+    \item \command{bareos-dbcheck} improvements and fixes: with older versions it could happen, that it destroys structures required by \bcommand{.bvfs_*}{}.
+    \item \ticket{850} fixes a bug on \os{Univention Corporate Linux}{}: fixes a problem of regenerating passwords when resyncing settings.
+    \item \ticket{890} \bcommand{.bvfs_update}{} fix. Before there have been cases where it did not update the cache.
+    \item \bcommand{.bvfs_lsdirs}{} make limit- and offset-option work correctly.
+    \item \bcommand{.bvfs_lsdirs}{} show special directory (like \path|@bpipe@/|) on the same level as \path|/|.
+    \item \ticket{895} added description to the output of \bcommand{show}{filesets}.
+    \item \linkResourceDirective{Dir}{Client}{NDMP Block Size} changed type from \dt{Pint32} to \dt{Size32}. This should not affect any configuration, but is more consistent with other block size configuration directives.
+\end{itemize}
+
+}
+
+
 \releasenote{17.2.4}{
 
 \begin{tabular}{p{0.2\textwidth} p{0.8\textwidth}}
@@ -23,7 +51,7 @@ Code Release      & 2017-12-14\\
 Database Version  & 2171\\
 Release Ticket    & \ticket{861}\\
 Url               & \releaseUrlDownloadBareosOrg{17.2} \\
-%                  & \hide{\releaseUrlDownloadBareosCom{17.2}} \\
+                  & \releaseUrlDownloadBareosCom{17.2} \\
 \end{tabular}
 
 This release contains several enhancements. Excerpt:

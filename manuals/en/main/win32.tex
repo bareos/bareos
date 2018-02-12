@@ -53,13 +53,14 @@ Typically, you only want to install the Bareos Client (\bareosFd) and optionally
 Normally, we recommend to let the server components run on a Linux or other Unix system.
 However, it is possible, to run the \bareosDir, \bareosSd and \bareosWebui on a Windows systems.
 You should be aware about following limitations:
-\limitation*{Windows}{Windows \bareosDir does not support MySQL database backend}{
+
+\limitation{Windows}{\bareosDir does not support MySQL database backend}{
 When running the \bareosDir on Windows, only PostgreSQL (and SQLite) database backends are supported.
 SQLite is best suited for test environments.
 }
-\limitation*{Windows}{\bareosSd only support backup to disk, not to tape}{
+\limitation{Windows}{\bareosSd only support backup to disk, not to tape}{
 }
-\limitation*{Windows}{The default installation of \bareosWebui is only suitable for local access}{%
+\limitation{Windows}{The default installation of \bareosWebui is only suitable for local access}{%
 Normally the \bareosWebui is running on a Apache server on Linux.
 While it is possible, to run the \bareosWebui under Apache or another Webserver which supports PHP under Windows,
 the configuration shipped the the \package{winbareos} package uses the PHP internal webserver.
