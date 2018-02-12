@@ -38,7 +38,7 @@ ways that Bareos is designed to facilitate this:
     Jobs, list of all Clients, list of all Pools, list of all Storage,
     ... Thus the GUI interface can get to virtually all information that
     the Director has in a deterministic way. See
-    <https://github.com/bareos/bareos/blob/master/src/dird/ua_dotcmds.c>
+    <https://github.com/bareos/bareos/blob/bareos-17.2/src/dird/ua_dotcmds.c>
     for more details on this.
 
 -   Most console commands allow all the arguments to be specified on the
@@ -682,14 +682,21 @@ To clear the BVFS cache, you can use the `.bvfs_clear_cache` command.
     Automatically selected Catalog: MyCatalog
     Using Catalog "MyCatalog
 
-    # get root directory of job 123
-    *.bvfs_lsdir jobid=123 path=
+    # Get jobids required to reconstruct a current full backup.
+    # This is optional. Only required if you care about a full backup.
+    # If you are only interessed in a single (differential or incremental) backup job,
+    # just use the single jobid.
+    *.bvfs_get_jobids jobid=123
+    117,118,123
+
+    # get root directory of the combined jobs 117,118,123
+    *.bvfs_lsdir jobid=117,118,123 path=
     134	0	0	A A A A A A A A A A A A A A	.
     133	0	0	A A A A A A A A A A A A A A	/
 
     # path=/ (pathid=133) is the root directory.
     # Check the root directory for subdirectories.
-    .bvfs_lsdir jobid=123 pathid=133
+    .bvfs_lsdir jobid=117,118,123 pathid=133
     133	0	0	A A A A A A A A A A A A A A	.
     130	0	0	A A A A A A A A A A A A A A	..
     1	23	123	z GiuU EH9 C GHH GHH A BAA BAA I BWA5Px BaIDUN BaIDUN A A C	sbin/
@@ -703,7 +710,7 @@ To clear the BVFS cache, you can use the `.bvfs_clear_cache` command.
 
     # pathid=1 has no further subdirectories.
     # Now we list the files in pathid=1 (/sbin/)
-    .bvfs_lsfiles jobid=123 pathid=1
+    .bvfs_lsfiles jobid=117,118,123 pathid=1
     1	18	123	z Gli+ IHo B GHH GHH A NVkY BAA BrA BaIDUJ BaIDUJ BaIDUJ A A C	bareos-dir
     1	21	123	z GkuS IHo B GHH GHH A C1bw BAA XA BaIDUG BaIDUG BaIDUG A A C	bareos-fd
     1	19	123	z Glju IHo B GHH GHH A CeNg BAA UI BaIDUJ BaIDUJ BaIDUJ A A C	bareos-sd
