@@ -163,35 +163,145 @@ In the further text, these version will be named \name{Bareos (Debian.org)}
 \index[general]{Platform!Mac!OS X}
 \label{sec:macosx}
 
-The Bareos installer package for Mac OS X contains the \bareosFd for Mac OS X 10.4 or later built as an universal binary for PPC and Intel processors.
+Bareos for MacOS X is available either
 
-\subsubsection{Requirements}
+\begin{itemize}
+  \item via the \elink{Homebrew project}{https://brew.sh/} (\url{http://formulae.brew.sh/formula/bareos-client}) or
+  \item as pkg file from \url{http://download.bareos.org/bareos/release/latest/MacOS/}.
+\end{itemize}
 
-The \bareosFd is only the client component of the backup system. For proper operation the file daemon needs to have access to a \bareosDir and \bareosSd.
 
-\subsubsection{Installation}
+However, you have to choose upfront, which client you want to use. Otherwise conflicts do occur.
+
+Both packages contain the \bareosFd and \command{bconsole}.
+
+% \subsubsection{Requirements}
+%
+% The \bareosFd is only the client component of the backup system.
+% For proper operation the \bareosFd needs to have access to a \bareosDir and \bareosSd,
+% typically installed on a (Linux) server machine in the local network.
+
+\subsubsection{Installing the Bareos Client as PKG}
 \index[general]{Installation!MacOS}
 
-Download the \bareosFd installer package from \url{http://download.bareos.org/bareos/release/latest/MacOS/},
-open it and follow the directions given to you.
+The Bareos installer package for Mac OS X contains the \bareosFd for Mac OS X 10.5 or later.
+
+On your local Mac, you must be an admin user. The main user is an admin user.
+
+Download the \file{bareos-client*.pkg} installer package from \url{http://download.bareos.org/bareos/release/latest/MacOS/}.
+
+Find the .pkg you just downloaded.
+Install the .pkg by holding the CTRL key, left-clicking the installer and choosing \bquote{open}.
+
+Follow the directions given to you and finish the installation.
 
 \subsubsection{Configuration}
 
-After the installation is complete you have to adapt the configuration file to your needs. The file is located at \file{/usr/local/etc/bareos/bareos-fd.conf}.
+To make use of your \bareosFd on your system, it is required to configure the \bareosDir and the local \bareosFd.
 
-\warning{The configuration file contains passwords and therefore must not be accessible for any users except root. Use the following command line to edit the file as root-user:}
-\begin{commands}{Adapt the bareos-fd configuration file}
-sudo /Applications/TextEdit.app/Contents/MacOS/TextEdit /usr/local/etc/bareos/bareos-fd.conf
+Configure the server-side by follow the instructions at \nameref{sec:AddAClient}.
+
+After configuring the server-side you can either
+transfer the necessary configuration file using following command
+or configure the client locally.
+
+
+\subsubsubsection{Option 1: Copy the director resource from the Bareos Director to the Client}
+
+Assuming your client has the DNS entry
+\host{client2.example.com} and has been added to \bareosDir as \resourcename{bareos-dir}{client}{client2-fd}:
+
+\begin{commands}{}
+scp /etc/bareos/bareos-dir-export/client/client2-fd/bareos-fd.d/director/bareos-dir.conf root@client2.example.com:/usr/local/etc/bareos/bareos-fd.d/director/
 \end{commands}
 
-\subsubsection{Operating the File Daemon}
+This differs in so far, as on Linux the configuration files are located under
+\path|/etc/bareos/|,
+while on MacOS they are located at
+\path|/usr/local/etc/bareos/|.
 
-Use \command{launchctl} to enable and disable the bareos file daemon.
 
-\begin{commands}{Load (start) the \bareosFd}
-sudo launchctl load -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+
+\subsubsubsection{Option 2: Edit the director resource on the Client}
+
+Alternatively, you can edit the file \path|/usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf|.
+
+This can be done by right-clicking the finder icon in your task bar, select \bquote{Go to folder ...} and paste \path|/usr/local/etc/bareos/bareos-fd.d/director/|.
+
+Select the \path|bareos-dir.conf| file and open it.
+
+Alternatively you can also call following command on the command console:
+\begin{commands}{}
+open -t /usr/local/etc/bareos/bareos-fd.d/director/bareos-dir.conf
 \end{commands}
 
-\begin{commands}{Unload (stop) the \bareosFd}
-sudo launchctl unload -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+The file should look similar to this:
+
+\begin{bareosConfigResource}{bareos-fd}{director}{bareos-dir}
+Director {
+  Name = bareos-dir
+  Password = "SOME_RANDOM_PASSWORD"
+  Description = "Allow the configured Director to access this file daemon."
+}
+\end{bareosConfigResource}
+
+Set this client-side password to the same value as given on the server-side.
+
+\warning{The configuration file contains passwords and therefore must not be accessible for any users except admin users.}
+
+\subsubsection{Restart bareos-fd after changing the configuration}
+
+The bareos-fd must be restarted to reread its configuration:
+
+\begin{commands}{Restart the \bareosFd}
+sudo launchctl stop  org.bareos.bareos-fd
+sudo launchctl start org.bareos.bareos-fd
+\end{commands}
+
+% Use \command{launchctl} to enable and disable the bareos file daemon.
+% 
+% \begin{commands}{Load (start) the \bareosFd}
+% sudo launchctl load -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+% \end{commands}
+% 
+% \begin{commands}{Unload (stop) the \bareosFd}
+% sudo launchctl unload -w /Library/LaunchDaemons/org.bareos.bareos-fd.plist
+% \end{commands}
+
+% Following command can be used to check its status:
+% 
+% \begin{commands}{Check the status of the \bareosFd}
+% sudo launchctl list org.bareos.bareos-fd
+% \end{commands}
+
+
+\subsubsection{Verify that the Bareos File Daemon is working}
+
+Open the \command{bconsole} on your \bareosDir and check the status of the client with
+
+\begin{bconfig}{}
+*<input>status client=client2-fd</input>
+\end{bconfig}
+
+In case, the client does not react, following command are useful the check the status:
+
+
+\begin{commands}{Verify the status of \bareosFd}
+# check if bareos-fd is started by system:
+sudo launchctl list org.bareos.bareos-fd
+
+# get process id (PID) of bareos-fd
+pgrep bareos-fd
+
+# show files opened by bareos-fd
+sudo lsof -p `pgrep bareos-fd`
+
+# check what process is listening on the \bareosFd port
+sudo lsof -n -iTCP:9102 | grep LISTEN
+\end{commands}
+
+You can also manually start bareos-fd in debug mode by:
+
+\begin{commands}{Start \bareosFd in debug mode}
+sudo /usr/local/sbin/bareos-fd -f -d 100
 \end{commands}
