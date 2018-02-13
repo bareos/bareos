@@ -58,6 +58,7 @@ MainWindow::MainWindow(QWidget *parent)
       ui->tabWidget->removeTab(0);
    }
 
+   nTabs = 100;
    bRefs = new bool[nTabs];
    for(int i=0; i<nTabs; i++)
       bRefs[i] = true;
