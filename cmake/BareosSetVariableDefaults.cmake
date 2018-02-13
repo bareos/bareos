@@ -494,6 +494,9 @@ ELSE()
    SET(GENERATE_DEBIAN_CONTROL OFF)
 ENDIF()
 
+IF(NOT DEFINED coverage)
+   set (coverage OFF)
+ENDIF()
 
 # do not destroy bareos-config-lib.sh
 SET(DB_NAME "@DB_NAME@")
