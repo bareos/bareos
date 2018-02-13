@@ -38,6 +38,11 @@ This release contains several bugfixes and enhancements. Excerpt:
     \item \bcommand{.bvfs_lsdirs}{} make limit- and offset-option work correctly.
     \item \bcommand{.bvfs_lsdirs}{} show special directory (like \path|@bpipe@/|) on the same level as \path|/|.
     \item \ticket{895} added description to the output of \bcommand{show}{filesets}.
+    \item \bareosWebui: Restore Browser fixes
+    \begin{itemize}
+        \item There was the possibility of an endless loop if the BVFS API delivers unexpected results. This has been fixed. See bugreports \ticket{887} and \ticket{893} for details.
+        \item \ticket{905} fixes a problem with file names containing quotes.
+    \end{itemize}
     \item \linkResourceDirective{Dir}{Client}{NDMP Block Size} changed type from \dt{Pint32} to \dt{Size32}. This should not affect any configuration, but is more consistent with other block size configuration directives.
 \end{itemize}
 
