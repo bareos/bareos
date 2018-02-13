@@ -55,7 +55,7 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-static bool authenticate_with_director(JCR *jcr) {
+static bool authenticate_with_director(JCR *jcr, DIRRES *dir_res) {
    MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
 
    BSOCK *dir = jcr->dir_bsock;
@@ -208,7 +208,7 @@ bool authenticate_with_daemon(MonitorItem* item, JCR *jcr)
 {
    switch (item->type()) {
    case R_DIRECTOR:
-      return authenticate_with_director(jcr);
+      return authenticate_with_director(jcr, (DIRRES*)item->resource());
    case R_CLIENT:
       return authenticate_with_file_daemon(jcr, (CLIENTRES*)item->resource());
    case R_STORAGE:

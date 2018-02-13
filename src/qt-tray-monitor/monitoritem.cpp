@@ -217,10 +217,6 @@ bool MonitorItem::doconnect()
      return false;
   }
 
-  if (d->type == R_DIRECTOR) { /* Read connection messages... */
-     docmd(""); /* Usually invalid, but no matter */
-  }
-
   d->state = Running;
   emit statusChanged(name, d->state);
 

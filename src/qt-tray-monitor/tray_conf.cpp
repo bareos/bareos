@@ -165,10 +165,10 @@ static RES_ITEM con_font_items[] = {
  *  name items rcode res_head
  */
 static RES_TABLE resources[] = {
-   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "Storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES), [] (void *res){ return new((MONITORRES *) res) MONITORRES(); } },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } },
+   { "Storage", store_items, R_STORAGE, sizeof(STORERES), [] (void *res){ return new((STORERES *) res) STORERES(); } },
    { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
    { NULL, NULL, 0, 0 }
 };
