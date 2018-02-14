@@ -124,7 +124,7 @@ struct s_password {
   * TLS Settings for PSK only
   */
  #define TLS_PSK_CONFIG(res) \
-   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "true", NULL, \
          "Enable TLS-PSK support." }, \
    { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
