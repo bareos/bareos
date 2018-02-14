@@ -1,7 +1,7 @@
 #undef  VERSION
-#define VERSION "18.1.1"
-#define BDATE   "01 Jan 2018"
-#define LSMDATE "01Jan18"
+#define VERSION "18.1.2"
+#define BDATE   "01 Feb 2018"
+#define LSMDATE "01Feb18"
 
 #define PROG_COPYRIGHT "Copyright (C) 2013-2018 Bareos GmbH & Co. KG\n" \
                        "Copyright (C) %d-2012 Free Software Foundation Europe e.V.\n" \
@@ -13,7 +13,7 @@
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
    Copyright (C) 2010-2017 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
