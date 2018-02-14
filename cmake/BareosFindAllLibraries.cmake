@@ -40,6 +40,7 @@ endif()
 INCLUDE(CMakeUserFindMySQL)
 
 INCLUDE(FindOpenSSL)
+
 if (${OPENSSL_FOUND})
    SET(HAVE_OPENSSL 1)
 endif()

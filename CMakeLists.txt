@@ -402,11 +402,14 @@ set(CCVERSION ${CMAKE_CXX_COMPILER_VERSION})
 set(CXX ${CMAKE_CXX_COMPILER})
 set(CXXVERSION ${CMAKE_CXX_COMPILER_VERSION})
 
-
 IF( "${HAVE_OPENSSL}" OR "${HAVE_GNUTLS}")
    set(HAVE_TLS "1")
 ENDIF()
 
+IF(NOT openssl)
+   unset(HAVE_OPENSSL)
+   unset(HAVE_TLS)
+ENDIF()
 
 set(largefile_support "" )
 set(got_conio "" )
