@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -50,7 +50,7 @@
 #define socketClose(fd)           ::close(fd)
 #endif
 
-BSOCK_TCP::BSOCK_TCP()
+BSOCK_TCP::BSOCK_TCP() : BSOCK()
 {
 }
 
@@ -74,6 +74,8 @@ BSOCK *BSOCK_TCP::clone()
    memcpy((void *)clone, (void *)this, sizeof(BSOCK_TCP));
    clone->msg = o_msg;
    clone->errmsg = o_errmsg;
+
+   clone->SetTlsConnection(BSOCK::GetTlsConnection());
 
    if (m_who) {
       clone->set_who(bstrdup(m_who));
@@ -913,10 +915,9 @@ void BSOCK_TCP::close()
       /*
        * Shutdown tls cleanly.
        */
-      if (tls_conn) {
+      if (GetTlsConnection()) {
          tls_bsock_shutdown(this);
-         free_tls_connection(tls_conn);
-         tls_conn = NULL;
+         free_tls();
       }
       if (is_timed_out()) {
          shutdown(m_fd, SHUT_RDWR);   /* discard any pending I/O */
@@ -964,7 +965,7 @@ int32_t BSOCK_TCP::read_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nread;
 
 #ifdef HAVE_TLS
-   if (tls_conn) {
+   if (GetTlsConnection()) {
       /*
        * TLS enabled
        */
@@ -1043,7 +1044,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
    }
 
 #ifdef HAVE_TLS
-   if (tls_conn) {
+   if (GetTlsConnection()) {
       /* TLS enabled */
       return (tls_bsock_writen(this, ptr, nbytes));
    }

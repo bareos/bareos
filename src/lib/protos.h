@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,7 +30,7 @@
 
 class JCR;
 
-/* attr.c */
+/* attr.cc */
 DLL_IMP_EXP ATTR *new_attr(JCR *jcr);
 DLL_IMP_EXP void free_attr(ATTR *attr);
 DLL_IMP_EXP int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ATTR *attr);
@@ -38,30 +38,30 @@ DLL_IMP_EXP void build_attr_output_fnames(JCR *jcr, ATTR *attr);
 DLL_IMP_EXP const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr);
 DLL_IMP_EXP void print_ls_output(JCR *jcr, ATTR *attr);
 
-/* attribs.c */
+/* attribs.cc */
 DLL_IMP_EXP void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
 DLL_IMP_EXP int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 DLL_IMP_EXP int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size);
 
-/* base64.c */
+/* base64.cc */
 DLL_IMP_EXP void base64_init(void);
 DLL_IMP_EXP int to_base64(int64_t value, char *where);
 DLL_IMP_EXP int from_base64(int64_t *value, char *where);
 DLL_IMP_EXP int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible);
 DLL_IMP_EXP int base64_to_bin(char *dest, int destlen, char *src, int srclen);
 
-/* bget_msg.c */
+/* bget_msg.cc */
 DLL_IMP_EXP int bget_msg(BSOCK *sock);
 
-/* bnet.c */
+/* bnet.cc */
 DLL_IMP_EXP int32_t bnet_recv(BSOCK *bsock);
 DLL_IMP_EXP bool bnet_send(BSOCK *bsock);
 DLL_IMP_EXP bool bnet_fsend(BSOCK *bs, const char *fmt, ...);
 DLL_IMP_EXP bool bnet_set_buffer_size(BSOCK *bs, uint32_t size, int rw);
 DLL_IMP_EXP bool bnet_sig(BSOCK *bs, int sig);
-DLL_IMP_EXP bool bnet_tls_server(TLS_CONTEXT *ctx, BSOCK *bsock,
+bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock,
                      alist *verify_list);
-DLL_IMP_EXP bool bnet_tls_client(TLS_CONTEXT *ctx, BSOCK *bsock,
+bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock,
                      bool verify_peer, alist *verify_list);
 DLL_IMP_EXP int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen);
 DLL_IMP_EXP BSOCK *dup_bsock(BSOCK *bsock);
@@ -80,7 +80,7 @@ DLL_IMP_EXP int net_connect(int port);
 DLL_IMP_EXP BSOCK *bnet_bind(int port);
 DLL_IMP_EXP BSOCK *bnet_accept(BSOCK *bsock, char *who);
 
-/* bnet_server_tcp.c */
+/* bnet_server_tcp.cc */
 DLL_IMP_EXP void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
 DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
                             int max_clients,
@@ -90,13 +90,13 @@ DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
                             void *handle_client_request(void *bsock));
 DLL_IMP_EXP void bnet_stop_thread_server_tcp(pthread_t tid);
 
-/* bpipe.c */
+/* bpipe.cc */
 DLL_IMP_EXP BPIPE *open_bpipe(char *prog, int wait, const char *mode,
                   bool dup_stderr = true);
 DLL_IMP_EXP int close_wpipe(BPIPE *bpipe);
 DLL_IMP_EXP int close_bpipe(BPIPE *bpipe);
 
-/* bsys.c */
+/* bsys.cc */
 DLL_IMP_EXP char *bstrinlinecpy(char *dest, const char *src);
 DLL_IMP_EXP char *bstrncpy(char *dest, const char *src, int maxlen);
 DLL_IMP_EXP char *bstrncpy(char *dest, POOL_MEM &src, int maxlen);
@@ -151,7 +151,7 @@ DLL_IMP_EXP bool path_append(POOL_MEM &path, POOL_MEM &extra);
 DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
 DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
 
-/* compression.c */
+/* compression.cc */
 DLL_IMP_EXP const char *cmprs_algo_to_text(uint32_t compression_algorithm);
 DLL_IMP_EXP bool setup_compression_buffers(JCR *jcr, bool compatible,
                                uint32_t compression_algorithm,
@@ -164,12 +164,12 @@ DLL_IMP_EXP bool decompress_data(JCR *jcr, const char *last_fname, int32_t strea
                      char **data, uint32_t *length, bool want_data_stream);
 DLL_IMP_EXP void cleanup_compression(JCR *jcr);
 
-/* cram-md5.c */
-DLL_IMP_EXP bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible);
-DLL_IMP_EXP bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, bool compatible);
+/* cram-md5.cc */
+DLL_IMP_EXP bool cram_md5_respond(BSOCK *bs, const char *password, uint32_t *remote_tls_policy, bool *compatible);
+DLL_IMP_EXP bool cram_md5_challenge(BSOCK *bs, const char *password, uint32_t local_tls_policy, bool compatible);
 DLL_IMP_EXP void hmac_md5(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *hmac);
 
-/* crypto.c */
+/* crypto.cc */
 DLL_IMP_EXP int init_crypto(void);
 DLL_IMP_EXP int cleanup_crypto(void);
 DLL_IMP_EXP DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type);
@@ -205,7 +205,7 @@ DLL_IMP_EXP const char *crypto_digest_name(DIGEST *digest);
 DLL_IMP_EXP crypto_digest_t crypto_digest_stream_type(int stream);
 DLL_IMP_EXP const char *crypto_strerror(crypto_error_t error);
 
-/* crypto_openssl.c */
+/* crypto_openssl.cc */
 #ifdef HAVE_OPENSSL
 DLL_IMP_EXP void openssl_post_errors(int code, const char *errstring);
 DLL_IMP_EXP void openssl_post_errors(JCR *jcr, int code, const char *errstring);
@@ -215,14 +215,14 @@ DLL_IMP_EXP int openssl_seed_prng(void);
 DLL_IMP_EXP int openssl_save_prng(void);
 #endif /* HAVE_OPENSSL */
 
-/* crypto_wrap.c */
+/* crypto_wrap.cc */
 DLL_IMP_EXP void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher);
 DLL_IMP_EXP int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain);
 
-/* daemon.c */
+/* daemon.cc */
 DLL_IMP_EXP void daemon_start();
 
-/* edit.c */
+/* edit.cc */
 DLL_IMP_EXP uint64_t str_to_uint64(const char *str);
 DLL_IMP_EXP int64_t str_to_int64(const char *str);
 #define str_to_int16(str)((int16_t)str_to_int64(str))
@@ -244,7 +244,7 @@ DLL_IMP_EXP bool is_an_integer(const char *n);
 DLL_IMP_EXP bool is_name_valid(const char *name, POOLMEM *&msg);
 DLL_IMP_EXP bool is_name_valid(const char *name);
 
-/* jcr.c (most definitions are in src/jcr.h) */
+/* jcr.cc (most definitions are in src/jcr.h) */
 DLL_IMP_EXP void init_last_jobs_list();
 DLL_IMP_EXP void term_last_jobs_list();
 DLL_IMP_EXP void lock_last_jobs_list();
@@ -265,10 +265,10 @@ DLL_IMP_EXP void remove_jcr_from_tsd(JCR *jcr);
 DLL_IMP_EXP uint32_t get_jobid_from_tsd();
 DLL_IMP_EXP uint32_t get_jobid_from_tid(pthread_t tid);
 
-/* json.c */
+/* json.cc */
 DLL_IMP_EXP void initialize_json();
 
-/* lex.c */
+/* lex.cc */
 DLL_IMP_EXP LEX *lex_close_file(LEX *lf);
 DLL_IMP_EXP LEX *lex_open_file(LEX *lf,
                    const char *fname,
@@ -285,7 +285,7 @@ DLL_IMP_EXP void lex_set_default_error_handler(LEX *lf);
 DLL_IMP_EXP void lex_set_default_warning_handler(LEX *lf);
 DLL_IMP_EXP void lex_set_error_handler_error_type(LEX *lf, int err_type);
 
-/* message.c */
+/* message.cc */
 DLL_IMP_EXP void my_name_is(int argc, char *argv[], const char *name);
 DLL_IMP_EXP void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback = NULL);
 DLL_IMP_EXP void term_msg(void);
@@ -307,23 +307,23 @@ DLL_IMP_EXP bool get_timestamp(void);
 DLL_IMP_EXP void set_db_type(const char *name);
 DLL_IMP_EXP void register_message_callback(void msg_callback(int type, char *msg));
 
-/* passphrase.c */
+/* passphrase.cc */
 DLL_IMP_EXP char *generate_crypto_passphrase(uint16_t length);
 
-/* path_list.c */
+/* path_list.cc */
 DLL_IMP_EXP htable *path_list_init();
 DLL_IMP_EXP bool path_list_lookup(htable *path_list, const char *fname);
 DLL_IMP_EXP bool path_list_add(htable *path_list, uint32_t len, const char *fname);
 DLL_IMP_EXP void free_path_list(htable *path_list);
 
-/* poll.c */
+/* poll.cc */
 DLL_IMP_EXP int wait_for_readable_fd(int fd, int sec, bool ignore_interupts);
 DLL_IMP_EXP int wait_for_writable_fd(int fd, int sec, bool ignore_interupts);
 
-/* pythonlib.c */
+/* pythonlib.cc */
 DLL_IMP_EXP int generate_daemon_event(JCR *jcr, const char *event);
 
-/* scan.c */
+/* scan.cc */
 DLL_IMP_EXP void strip_leading_space(char *str);
 DLL_IMP_EXP void strip_trailing_junk(char *str);
 DLL_IMP_EXP void strip_trailing_newline(char *str);
@@ -340,7 +340,7 @@ DLL_IMP_EXP void split_path_and_filename(const char *fname, POOLMEM *&path,
                              int *pnl, POOLMEM *&file, int *fnl);
 DLL_IMP_EXP int bsscanf(const char *buf, const char *fmt, ...);
 
-/* scsi_crypto.c */
+/* scsi_crypto.cc */
 DLL_IMP_EXP bool clear_scsi_encryption_key(int fd, const char *device);
 DLL_IMP_EXP bool set_scsi_encryption_key(int fd, const char *device, char *encryption_key);
 DLL_IMP_EXP int get_scsi_drive_encryption_status(int fd, const char *device_name,
@@ -350,7 +350,7 @@ DLL_IMP_EXP int get_scsi_volume_encryption_status(int fd, const char *device_nam
 DLL_IMP_EXP bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status);
 DLL_IMP_EXP bool is_scsi_encryption_enabled(int fd, const char *device_name);
 
-/* scsi_lli.c */
+/* scsi_lli.cc */
 DLL_IMP_EXP bool recv_scsi_cmd_page(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len);
@@ -359,14 +359,14 @@ DLL_IMP_EXP bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cmd_page, unsigned int cmd_page_len);
 DLL_IMP_EXP bool check_scsi_at_eod(int fd);
 
-/* scsi_tapealert.c */
+/* scsi_tapealert.cc */
 DLL_IMP_EXP bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags);
 
-/* signal.c */
+/* signal.cc */
 DLL_IMP_EXP void init_signals(void terminate(int sig));
 DLL_IMP_EXP void init_stack_dump(void);
 
-/* timers.c */
+/* timers.cc */
 DLL_IMP_EXP btimer_t *start_child_timer(JCR *jcr, pid_t pid, uint32_t wait);
 DLL_IMP_EXP void stop_child_timer(btimer_t *wid);
 DLL_IMP_EXP btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait);
@@ -374,24 +374,20 @@ DLL_IMP_EXP void stop_thread_timer(btimer_t *wid);
 DLL_IMP_EXP btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
 DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
 
-/* tls.c */
-DLL_IMP_EXP TLS_CONTEXT *new_tls_context(const char *ca_certfile,
-                             const char *ca_certdir,
-                             const char *crlfile,
-                             const char *certfile,
-                             const char *keyfile,
-                             CRYPTO_PEM_PASSWD_CB *pem_callback,
-                             const void *pem_userdata,
-                             const char *dhfile,
-                             const char *cipherlist,
-                             bool verify_peer);
-DLL_IMP_EXP void free_tls_context(TLS_CONTEXT *ctx);
+/* tls_openssl.cc */
+
+DLL_IMP_EXP using sharedPskCredentials = std::shared_ptr<PskCredentials>;
+
+DLL_IMP_EXP int hex2bin(char *str, unsigned char *out, unsigned int max_out_len);
+DLL_IMP_EXP void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx);
+
 #ifdef HAVE_TLS
 DLL_IMP_EXP bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn,
                                  const char *host);
 DLL_IMP_EXP bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn,
                                alist *verify_list);
-DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server);
+DLL_IMP_EXP void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
+DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(std::shared_ptr<TLS_Context> ctx, int fd, bool server);
 DLL_IMP_EXP bool tls_bsock_accept(BSOCK *bsock);
 DLL_IMP_EXP int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes);
 DLL_IMP_EXP int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);
@@ -405,7 +401,7 @@ DLL_IMP_EXP bool get_tls_enable(TLS_CONTEXT *ctx);
 DLL_IMP_EXP void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool get_tls_verify_peer(TLS_CONTEXT *ctx);
 
-/* util.c */
+/* util.cc */
 DLL_IMP_EXP void escape_string(POOL_MEM &snew, char *old, int len);
 DLL_IMP_EXP bool is_buf_zero(char *buf, int len);
 DLL_IMP_EXP void lcase(char *str);
@@ -434,7 +430,7 @@ DLL_IMP_EXP POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char
 DLL_IMP_EXP void set_working_directory(char *wd);
 DLL_IMP_EXP const char *last_path_separator(const char *str);
 
-/* watchdog.c */
+/* watchdog.cc */
 DLL_IMP_EXP int start_watchdog(void);
 DLL_IMP_EXP int stop_watchdog(void);
 DLL_IMP_EXP watchdog_t *new_watchdog(void);

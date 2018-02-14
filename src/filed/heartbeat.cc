@@ -48,7 +48,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
 {
    int32_t n;
    JCR *jcr = (JCR *)arg;
-   BSOCK *sd, *dir;
+   std::shared_ptr<BSOCK> sd, dir;
    time_t last_heartbeat = time(NULL);
    time_t now;
 
@@ -57,8 +57,8 @@ extern "C" void *sd_heartbeat_thread(void *arg)
    /*
     * Get our own local copy
     */
-   sd = jcr->store_bsock->clone();
-   dir = jcr->dir_bsock->clone();
+   sd.reset(jcr->store_bsock->clone());
+   dir.reset(jcr->dir_bsock->clone());
 
    jcr->hb_bsock = sd;
    jcr->hb_started = true;
@@ -72,7 +72,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
     * Director.
     */
    while (!sd->is_stop()) {
-      n = bnet_wait_data_intr(sd, WAIT_INTERVAL);
+      n = bnet_wait_data_intr(sd.get(), WAIT_INTERVAL);
       if (n < 0 || sd->is_stop()) {
          break;
       }
@@ -97,14 +97,12 @@ extern "C" void *sd_heartbeat_thread(void *arg)
             Dmsg2(100, "Got %d bytes from SD. MSG=%s\n", sd->msglen, sd->msg);
          }
       }
-      Dmsg2(200, "wait_intr=%d stop=%d\n", n, is_bnet_stop(sd));
+      Dmsg2(200, "wait_intr=%d stop=%d\n", n, is_bnet_stop(sd.get()));
    }
 
    sd->close();
    dir->close();
-   delete sd;
-   delete dir;
-   jcr->hb_bsock = NULL;
+   jcr->hb_bsock.reset();
    jcr->hb_started = false;
    jcr->hb_dir_bsock = NULL;
 
@@ -165,13 +163,13 @@ void stop_heartbeat_monitor(JCR *jcr)
    }
 
    if (jcr->hb_bsock) {
-      delete jcr->hb_bsock;
-      jcr->hb_bsock = NULL;
+      // delete jcr->hb_bsock;
+      jcr->hb_bsock.reset();
    }
 
    if (jcr->hb_dir_bsock) {
-      delete jcr->hb_dir_bsock;
-      jcr->hb_dir_bsock = NULL;
+      // delete jcr->hb_dir_bsock;
+      jcr->hb_dir_bsock.reset();
    }
 }
 
@@ -193,7 +191,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
     */
    dir = jcr->dir_bsock->clone();
 
-   jcr->hb_bsock = dir;
+   jcr->hb_bsock.reset(dir);
    jcr->hb_started = true;
    dir->m_suppress_error_msgs = true;
 
@@ -212,8 +210,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
       bmicrosleep(next, 0);
    }
    dir->close();
-   delete dir;
-   jcr->hb_bsock = NULL;
+   jcr->hb_bsock.reset();
    jcr->hb_started = false;
    return NULL;
 }

@@ -37,7 +37,10 @@ static bool is_volume_name_legal(char *name);
 bool DEVICE::scan_dir_for_volume(DCR *dcr)
 {
    DIR* dp;
-   struct dirent *entry, *result;
+   struct dirent *result;
+#ifdef USE_READDIR_R
+   struct dirent *entry;
+#endif
    int name_max;
    char *mount_point;
    VOLUME_CAT_INFO dcrVolCatInfo, devVolCatInfo;
@@ -75,9 +78,16 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
    if (len > 0) {
       need_slash = !IsPathSeparator(mount_point[len - 1]);
    }
+         
+#ifdef USE_READDIR_R
    entry = (struct dirent *)malloc(sizeof(struct dirent) + name_max + 1000);
-   for ( ;; ) {
+   while (1) {
       if ((readdir_r(dp, entry, &result) != 0) || (result == NULL)) {
+#else
+   while (1) {
+      result = readdir(dp);
+      if (result == NULL) {
+#endif
          dev_errno = EIO;
          Dmsg2(129, "scan_dir_for_vol: failed to find suitable file in dir %s (dev=%s)\n",
                mount_point, print_name());
@@ -119,7 +129,9 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
       found = true;
       break;                /* got a Volume */
    }
+#ifdef USE_READDIR_R
    free(entry);
+#endif
    closedir(dp);
 
 get_out:

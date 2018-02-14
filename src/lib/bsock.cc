@@ -3,7 +3,7 @@
 
    Copyright (C) 2007-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -20,7 +20,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
+/**
  * Network Utility Routines
  *
  * Kern Sibbald
@@ -29,36 +29,73 @@
 #include "bareos.h"
 #include "jcr.h"
 
-BSOCK::BSOCK()
-{
-   m_fd = -1;
-   m_spool_fd = -1;
-   msg = get_pool_memory(PM_BSOCK);
-   errmsg = get_pool_memory(PM_MESSAGE);
-   m_blocking = true;
+uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
+   uint32_t merged_policy = 0;
+
+   merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
+   Dmsg1(100, "GetNeedFromConfiguration: %u\n", merged_policy);
+   return merged_policy;
+}
+
+tls_base_t *SelectTlsFromPolicy(
+   TLSRES *tls_configuration, uint32_t remote_policy) {
+
+   if ((tls_configuration->tls_cert.require && tls_cert_t::enabled(remote_policy))
+      || (tls_configuration->tls_cert.enable && tls_cert_t::required(remote_policy))) {
+      Dmsg0(100, "SelectTlsFromPolicy: take required cert\n");
+
+      // one requires the other accepts cert
+      return &(tls_configuration->tls_cert);
+   }
+   if ((tls_configuration->tls_psk.require && tls_psk_t::enabled(remote_policy))
+      || (tls_configuration->tls_psk.enable && tls_psk_t::required(remote_policy))) {
+
+      Dmsg0(100, "SelectTlsFromPolicy: take required  psk\n");
+      // one requires the other accepts psk
+      return &(tls_configuration->tls_psk);
+   }
+   if (tls_configuration->tls_cert.enable && tls_cert_t::enabled(remote_policy)) {
+
+      Dmsg0(100, "SelectTlsFromPolicy: take cert\n");
+      // both accept cert
+      return &(tls_configuration->tls_cert);
+   }
+   if (tls_configuration->tls_psk.enable && tls_psk_t::enabled(remote_policy)) {
+
+      Dmsg0(100, "SelectTlsFromPolicy: take psk\n");
+      // both accept psk
+      return &(tls_configuration->tls_psk);
+   }
+
+   Dmsg0(100, "SelectTlsFromPolicy: take cleartext\n");
+   // fallback to cleartext
+   return nullptr;
+}
+
+BSOCK::BSOCK() : tls_conn(nullptr) {
+   Dmsg0(100, "Contruct BSOCK\n");
+   m_fd            = -1;
+   m_spool_fd      = -1;
+   msg             = get_pool_memory(PM_BSOCK);
+   errmsg          = get_pool_memory(PM_MESSAGE);
+   m_blocking      = true;
    m_use_keepalive = true;
 }
 
-BSOCK::~BSOCK()
-{
-}
-
-/*
- * This is our "class destructor" that ensures that we use
- * smartalloc rather than the system free().
- */
-void BSOCK::free_bsock()
-{
-   destroy();
+BSOCK::~BSOCK() {
+   Dmsg0(100, "Destruct BSOCK\n");
+   // free_tls();
 }
 
 void BSOCK::free_tls()
 {
-   free_tls_connection(this->tls_conn);
-   this->tls_conn = NULL;
+   if (tls_conn != nullptr) {
+      free_tls_connection(tls_conn);
+      tls_conn = nullptr;
+   }
 }
 
-/*
+/**
  * Copy the address from the configuration dlist that gets passed in
  */
 void BSOCK::set_source_address(dlist *src_addr_list)
@@ -83,7 +120,7 @@ void BSOCK::set_source_address(dlist *src_addr_list)
    }
 }
 
-/*
+/**
  * Force read/write to use locking
  */
 bool BSOCK::set_locking()
@@ -112,7 +149,7 @@ void BSOCK::clear_locking()
    return;
 }
 
-/*
+/**
  * Send a signal
  */
 bool BSOCK::signal(int signal)
@@ -124,7 +161,7 @@ bool BSOCK::signal(int signal)
    return send();
 }
 
-/*
+/**
  * Despool spooled attributes
  */
 bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
@@ -178,7 +215,7 @@ bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
    return true;
 }
 
-/*
+/**
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
@@ -192,7 +229,7 @@ const char *BSOCK::bstrerror()
    return errmsg;
 }
 
-/*
+/**
  * Format and send a message
  * Returns: false on error
  *          true  on success
@@ -230,21 +267,23 @@ void BSOCK::set_killable(bool killable)
    }
 }
 
-/* Commands sent to Director */
+/** Commands sent to Director */
 static char hello[] =
    "Hello %s calling\n";
 
-/* Response from Director */
+/** Response from Director */
 static char OKhello[] =
    "1000 OK:";
 
-/*
- * Authenticate Director
+/**
+ * Authenticate with Director
  */
 bool BSOCK::authenticate_with_director(JCR *jcr,
-                                       const char *name, s_password &password, tls_t &tls,
-                                       char *response, int response_len)
-{
+                                       const char *identity,
+                                       s_password &password,
+                                       char *response,
+                                       int response_len,
+                                       TLSRES *tls_configuration) {
    char bashed_name[MAX_NAME_LENGTH];
    BSOCK *dir = this;        /* for readability */
 
@@ -253,7 +292,7 @@ bool BSOCK::authenticate_with_director(JCR *jcr,
    /*
     * Send my name to the Director then do authentication
     */
-   bstrncpy(bashed_name, name, sizeof(bashed_name));
+   bstrncpy(bashed_name, identity, sizeof(bashed_name));
    bash_spaces(bashed_name);
 
    /*
@@ -262,7 +301,7 @@ bool BSOCK::authenticate_with_director(JCR *jcr,
    dir->start_timer(60 * 5);
    dir->fsend(hello, bashed_name);
 
-   if (!authenticate_outbound_connection(jcr, "Director", name, password, tls)) {
+   if (!authenticate_outbound_connection(jcr, "Director", identity, password, tls_configuration)) {
       goto bail_out;
    }
 
@@ -299,40 +338,43 @@ bail_out:
    return false;
 }
 
-/*
+/**
  * Depending on the initiate parameter perform one of the following:
  *
  * - First make him prove his identity and then prove our identity to the Remote.
  * - First prove our identity to the Remote and then make him prove his identity.
  */
-bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
-                                 const char *name, s_password &password,
-                                 tls_t &tls, bool initiated_by_remote)
-{
-   btimer_t *tid = NULL;
-   const int dbglvl = 50;
-   bool compatible = true;
-   bool auth_success = false;
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
+bool BSOCK::two_way_authenticate(JCR *jcr,
+                                 const char *what,
+                                 const char *identity,
+                                 s_password &password,
+                                 TLSRES *tls_configuration,
+                                 bool initiated_by_remote) {
 
-   if(password.encoding != p_encoding_md5) {
-      Jmsg(jcr, M_FATAL, 0, _("Password encoding is not MD5. You are probably restoring a NDMP Backup with a restore job not configured for NDMP protocol.\n"));
-      goto auth_fatal;
-   }
-
-   /*
-    * TLS Requirement
-    */
-   if (get_tls_enable(tls.ctx)) {
-      tls_local_need = get_tls_require(tls.ctx) ? BNET_TLS_REQUIRED : BNET_TLS_OK;
-   }
+                                  btimer_t *tid       = NULL;
+   const int dbglvl    = 50;
+   bool compatible     = true;
+   bool auth_success   = false;
+   uint32_t local_tls_policy = GetNeedFromConfiguration(tls_configuration);
+   uint32_t remote_tls_policy = 0;
+   alist *verify_list = NULL;
+   tls_base_t * selected_local_tls = nullptr;
 
    if (jcr && job_canceled(jcr)) {
       Dmsg0(dbglvl, "Failed, because job is canceled.\n");
-      auth_success = false;     /* force quick exit */
+      auth_success = false; /* force quick exit */
       goto auth_fatal;
    }
+
+   if (password.encoding != p_encoding_md5) {
+      Jmsg(jcr, M_FATAL, 0, _("Password encoding is not MD5. You are probably restoring a NDMP Backup "
+                              "with a restore job not configured for NDMP protocol.\n"));
+      goto auth_fatal;
+   }
+
+  /*
+   * get local tls need
+   */
 
    /*
     * Timeout Hello after 10 min
@@ -346,15 +388,15 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
       /*
        * Challenge Remote.
        */
-      auth_success = cram_md5_challenge(this, password.value, tls_local_need, compatible);
+      auth_success = cram_md5_challenge(this, password.value, local_tls_policy, compatible);
       if (auth_success) {
-          /*
-           * Respond to remote challenge
-           */
-          auth_success = cram_md5_respond(this, password.value, &tls_remote_need, &compatible);
-          if (!auth_success) {
-             Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", who());
-          }
+         /*
+          * Respond to remote challenge
+          */
+         auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
+         if (!auth_success) {
+            Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", who());
+         }
       } else {
          Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", who());
       }
@@ -362,14 +404,14 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
       /*
        * Respond to remote challenge
        */
-      auth_success = cram_md5_respond(this, password.value, &tls_remote_need, &compatible);
+      auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
       if (!auth_success) {
          Dmsg1(dbglvl, "cram_respond failed for %s\n", who());
       } else {
          /*
           * Challenge Remote.
           */
-         auth_success = cram_md5_challenge(this, password.value, tls_local_need, compatible);
+         auth_success = cram_md5_challenge(this, password.value, local_tls_policy, compatible);
          if (!auth_success) {
             Dmsg1(dbglvl, "cram_challenge failed for %s\n", who());
          }
@@ -377,58 +419,57 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
    }
 
    if (!auth_success) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization key rejected by %s %s.\n"
-                              "Please see %s for help.\n"),
-                              what, name, MANUAL_AUTH_URL);
+      Jmsg(jcr,
+           M_FATAL,
+           0,
+           _("Authorization key rejected by %s %s.\n"
+             "Please see %s for help.\n"),
+           what,
+           identity,
+           MANUAL_AUTH_URL);
       goto auth_fatal;
    }
 
    if (jcr && job_canceled(jcr)) {
-         Dmsg0(dbglvl, "Failed, because job is canceled.\n");
-         auth_success = false;     /* force quick exit */
-         goto auth_fatal;
+      Dmsg0(dbglvl, "Failed, because job is canceled.\n");
+      auth_success = false; /* force quick exit */
+      goto auth_fatal;
    }
 
    /*
     * Verify that the remote host is willing to meet our TLS requirements
     */
-   if (tls_remote_need < tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server did not"
-                              " advertize required TLS support.\n"));
-      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
-      auth_success = false;
-      goto auth_fatal;
-   }
-
-   /*
-    * Verify that we are willing to meet the remote host's requirements
-    */
-   if (tls_remote_need > tls_local_need && tls_local_need != BNET_TLS_OK && tls_remote_need != BNET_TLS_OK) {
-      Jmsg(jcr, M_FATAL, 0, _("Authorization problem: Remote server requires TLS.\n"));
-      Dmsg2(dbglvl, "remote_need=%d local_need=%d\n", tls_remote_need, tls_local_need);
-      auth_success = false;
-      goto auth_fatal;
-   }
-
-   if (tls_local_need >= BNET_TLS_OK && tls_remote_need >= BNET_TLS_OK) {
-      alist *verify_list = NULL;
-
-      if (tls.verify_peer) {
-         verify_list = tls.allowed_cns;
+   selected_local_tls = SelectTlsFromPolicy(tls_configuration, remote_tls_policy);
+   if (selected_local_tls != nullptr) {
+      if (selected_local_tls->GetVerifyPeer()) {
+         verify_list = selected_local_tls->GetVerifyList();
       }
 
       /*
        * See if we are handshaking a passive client connection.
        */
       if (initiated_by_remote) {
-         if (!bnet_tls_server(tls.ctx, this, verify_list)) {
+         std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateServerContext(
+             std::make_shared<PskCredentials>(identity, password.value));
+         if (jcr) {
+            jcr->tls_ctx = tls_ctx;
+         }
+         if (!bnet_tls_server(tls_ctx, this, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
             Dmsg0(dbglvl, "TLS negotiation failed.\n");
             auth_success = false;
             goto auth_fatal;
          }
       } else {
-         if (!bnet_tls_client(tls.ctx, this, tls.verify_peer, verify_list)) {
+         std::shared_ptr<TLS_CONTEXT> tls_ctx = selected_local_tls->CreateClientContext(
+             std::make_shared<PskCredentials>(identity, password.value));
+         if (jcr) {
+            jcr->tls_ctx = tls_ctx;
+         }
+         if (!bnet_tls_client(tls_ctx,
+                              this,
+                              selected_local_tls->GetVerifyPeer(),
+                              selected_local_tls->GetVerifyList())) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
             Dmsg0(dbglvl, "TLS negotiation failed.\n");
             auth_success = false;
@@ -436,9 +477,13 @@ bool BSOCK::two_way_authenticate(JCR *jcr, const char *what,
          }
       }
 
-      if (tls.authenticate) {           /* tls authentication only? */
-         free_tls();                    /* yes, shutdown tls */
+      if (selected_local_tls->GetAuthenticate()) { /* tls authentication only? */
+         free_tls();          /* yes, shutdown tls */
       }
+   }
+
+   if (!initiated_by_remote) {
+      tls_log_conninfo(jcr, GetTlsConnection(), host(), port(), who());
    }
 
 auth_fatal:
@@ -454,9 +499,26 @@ auth_fatal:
    return auth_success;
 }
 
+bool BSOCK::authenticate_outbound_connection(
+   JCR *jcr,
+   const char *what,
+   const char *identity,
+   s_password &password,
+   TLSRES *tls_configuration) {
+   return two_way_authenticate(jcr, what, identity, password, tls_configuration, false);
+}
+
+bool BSOCK::authenticate_inbound_connection(
+   JCR *jcr,
+   const char *what,
+   const char *identity,
+   s_password &password,
+   TLSRES *tls_configuration) {
+   return two_way_authenticate(jcr, what, identity, password, tls_configuration, true);
+}
 
 
-/*
+/**
  * Try to limit the bandwidth of a network connection
  */
 void BSOCK::control_bwlimit(int bytes)

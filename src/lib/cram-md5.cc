@@ -2,6 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2001-2011 Free Software Foundation Europe e.V.
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -33,13 +34,13 @@ const int dbglvl = 50;
  * Codes that tls_local_need and tls_remote_need can take:
  *
  *   BNET_TLS_NONE     I cannot do tls
- *   BNET_TLS_OK       I can do tls, but it is not required on my end
- *   BNET_TLS_REQUIRED  tls is required on my end
+ *   BNET_TLS_CERTIFICATE_ALLOWED       I can do tls, but it is not required on my end
+ *   BNET_TLS_CERTIFICATE_REQUIRED  tls is required on my end
  *
  *   Returns: false if authentication failed
  *            true if OK
  */
-bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, bool compatible)
+bool cram_md5_challenge(BSOCK *bs, const char *password, uint32_t tls_local_need, bool compatible)
 {
    struct timeval t1;
    struct timeval t2;
@@ -64,19 +65,10 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, boo
    /* Send challenge -- no hashing yet */
    Mmsg(chal, "<%u.%u@%s>", (uint32_t)random(), (uint32_t)time(NULL), host.c_str());
 
-   if (compatible) {
-      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need);
-      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need)) {
-         Dmsg1(dbglvl, "Bnet send challenge comm error. ERR=%s\n", bs->bstrerror());
-         return false;
-      }
-   } else {
-      /* Old non-compatible system */
-      Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need);
-      if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need)) {
-         Dmsg1(dbglvl, "Bnet send challenge comm error. ERR=%s\n", bs->bstrerror());
-         return false;
-      }
+   Dmsg2(dbglvl, "send: auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need);
+   if (!bs->fsend("auth cram-md5 %s ssl=%d\n", chal.c_str(), tls_local_need)) {
+      Dmsg1(dbglvl, "Bnet send challenge comm error. ERR=%s\n", bs->bstrerror());
+      return false;
    }
 
    /* Read hashed response to challenge */
@@ -109,7 +101,7 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, int tls_local_need, boo
 }
 
 /* Respond to challenge from other end */
-bool cram_md5_respond(BSOCK *bs, const char *password, int *tls_remote_need, bool *compatible)
+bool cram_md5_respond(BSOCK *bs, const char *password, uint32_t *tls_remote_need, bool *compatible)
 {
    POOL_MEM chal(PM_NAME);
    uint8_t hmac[20];

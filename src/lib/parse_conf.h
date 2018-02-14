@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -23,6 +23,12 @@
 /*
  * Kern Sibbald, January MM
  */
+#pragma once
+
+#include "bareos.h"
+#include "bc_types.h"
+
+#include <functional>
 
 struct RES_ITEM;                        /* Declare forward referenced structure */
 class RES;                              /* Declare forward referenced structure */
@@ -76,64 +82,53 @@ struct s_password {
    char *value;
 };
 
-/*
- * store all TLS specific settings
- * and backend specific context.
- */
-struct tls_t {
-   bool authenticate;             /* Authenticate with TLS */
-   bool enable;                   /* Enable TLS */
-   bool require;                  /* Require TLS */
-   bool verify_peer;              /* TLS Verify Peer Certificate */
-   char *ca_certfile;             /* TLS CA Certificate File */
-   char *ca_certdir;              /* TLS CA Certificate Directory */
-   char *crlfile;                 /* TLS CA Certificate Revocation List File */
-   char *certfile;                /* TLS Client Certificate File */
-   char *keyfile;                 /* TLS Client Key File */
-   char *cipherlist;              /* TLS Cipher List */
-   char *dhfile;                  /* TLS Diffie-Hellman File */
-   alist *allowed_cns;            /* TLS Allowed Certificate Common Names (Clients) */
-   TLS_CONTEXT *ctx;              /* Shared TLS Context */
-};
-
-/*
- * free the tls_t structure.
- */
-void free_tls_t(tls_t &tls);
-
-/*
- * All configuration resources using TLS have the same directives,
- * therefore define it once and use it in every resource.
- */
-#define TLS_CONFIG(res) \
-   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+/**
+ * Common TLS-Settings for both (Certificate and PSK).
+*/
+#define TLS_COMMON_CONFIG(res) \
+   { "TlsAuthenticate", CFG_TYPE_BOOL, ITEM(res.tls_cert.authenticate), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Use TLS only to authenticate, not for encryption." }, \
-   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+   { "TlsEnable", CFG_TYPE_BOOL, ITEM(res.tls_cert.enable), 0, CFG_ITEM_DEFAULT, "false", NULL, \
          "Enable TLS support." }, \
-   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
-         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
-         "Enabling this implicietly sets \"TLS Enable = yes\"." }, \
-   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls.verify_peer), 0, CFG_ITEM_DEFAULT, "true", NULL, \
-         "If disabled, all certificates signed by a known CA will be accepted. " \
-         "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
-   { "TlsCaCertificateFile", CFG_TYPE_DIR, ITEM(res.tls.ca_certfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded TLS CA certificate(s) file." }, \
-   { "TlsCaCertificateDir", CFG_TYPE_DIR, ITEM(res.tls.ca_certdir), 0, 0, NULL, NULL, \
-         "Path of a TLS CA certificate directory." }, \
-   { "TlsCertificateRevocationList", CFG_TYPE_DIR, ITEM(res.tls.crlfile), 0, 0, NULL, NULL, \
-         "Path of a Certificate Revocation List file." }, \
-   { "TlsCertificate", CFG_TYPE_DIR, ITEM(res.tls.certfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded TLS certificate." }, \
-   { "TlsKey", CFG_TYPE_DIR, ITEM(res.tls.keyfile), 0, 0, NULL, NULL, \
-         "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
-   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
+   { "TlsRequire", CFG_TYPE_BOOL, ITEM(res.tls_cert.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Without setting this to yes, Bareos can fall back to use unencrypted connections. " \
+         "Enabling this implicitly sets \"TLS Enable = yes\"." }, \
+   { "TlsCipherList", CFG_TYPE_STR, ITEM(res.tls_cert.cipherlist), 0, CFG_ITEM_PLATFORM_SPECIFIC, NULL, NULL, \
          "List of valid TLS Ciphers." }, \
-   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls.allowed_cns), 0, 0, NULL, NULL, \
-         "\"Common Name\"s (CNs) of the allowed peer certificates."  }, \
-   { "TlsDhFile", CFG_TYPE_DIR, ITEM(res.tls.dhfile), 0, 0, NULL, NULL, \
+   { "TlsDhFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.dhfile), 0, 0, NULL, NULL, \
          "Path to PEM encoded Diffie-Hellman parameter file. " \
          "If this directive is specified, DH key exchange will be used for the ephemeral keying, " \
-         "allowing for forward secrecy of communications." },
+         "allowing for forward secrecy of communications." }
+
+ /*
+  * TLS Settings for Certificate only
+  */
+ #define TLS_CERT_CONFIG(res) \
+   { "TlsVerifyPeer", CFG_TYPE_BOOL, ITEM(res.tls_cert.verify_peer), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "If disabled, all certificates signed by a known CA will be accepted. " \
+         "If enabled, the CN of a certificate must the Address or in the \"TLS Allowed CN\" list." }, \
+   { "TlsCaCertificateFile", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS CA certificate(s) file." }, \
+   { "TlsCaCertificateDir", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.ca_certdir), 0, 0, NULL, NULL, \
+         "Path of a TLS CA certificate directory." }, \
+   { "TlsCertificateRevocationList", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.crlfile), 0, 0, NULL, NULL, \
+         "Path of a Certificate Revocation List file." }, \
+   { "TlsCertificate", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.certfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded TLS certificate." }, \
+   { "TlsKey", CFG_TYPE_STDSTRDIR, ITEM(res.tls_cert.keyfile), 0, 0, NULL, NULL, \
+         "Path of a PEM encoded private key. It must correspond to the specified \"TLS Certificate\"." }, \
+   { "TlsAllowedCn", CFG_TYPE_ALIST_STR, ITEM(res.tls_cert.allowed_cns), 0, 0, NULL, NULL, \
+         "\"Common Name\"s (CNs) of the allowed peer certificates."  }
+
+ /*
+  * TLS Settings for PSK only
+  */
+ #define TLS_PSK_CONFIG(res) \
+   { "TlsPskEnable", CFG_TYPE_BOOL, ITEM(res.tls_psk.enable), 0, CFG_ITEM_DEFAULT, "true", NULL, \
+         "Enable TLS-PSK support." }, \
+   { "TlsPskRequire", CFG_TYPE_BOOL, ITEM(res.tls_psk.require), 0, CFG_ITEM_DEFAULT, "false", NULL, \
+         "Without setting this to yes, Bareos can fall back to use unencryption connections. " \
+         "Enabling this implicitly sets \"TLS-PSK Enable = yes\"." }
 
 /*
  * This is the structure that defines the record types (items) permitted within each
@@ -144,6 +139,7 @@ struct RES_ITEM {
    const int type;
    union {
       char **value;                     /* Where to store the item */
+      std::string **strValue;
       uint16_t *ui16value;
       uint32_t *ui32value;
       int16_t *i16value;
@@ -198,16 +194,18 @@ public:
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this daemon.
  */
-struct RES_TABLE {
-   const char *name;                    /* Resource name */
-   RES_ITEM *items;                     /* List of resource keywords */
-   uint32_t rcode;                      /* Code if needed */
-   uint32_t size;                       /* Size of resource */
-};
+ struct RES_TABLE {
+   const char *name;        /* Resource name */
+   RES_ITEM *items;         /* List of resource keywords */
+   uint32_t rcode;          /* Code if needed */
+   uint32_t size;           /* Size of resource */
 
-/*
- * Common Resource definitions
- */
+   std::function<void *(void *res)> initres; /* this shoud call the new replacement*/
+ };
+
+ /*
+  * Common Resource definitions
+  */
 #define MAX_RES_NAME_LENGTH MAX_NAME_LENGTH - 1 /* maximum resource name length */
 
 /*
@@ -258,6 +256,8 @@ enum {
    CFG_TYPE_ADDRESSES_ADDRESS = 27,     /* Ip address */
    CFG_TYPE_ADDRESSES_PORT = 28,        /* Ip port */
    CFG_TYPE_PLUGIN_NAMES = 29,          /* Plugin Name(s) */
+   CFG_TYPE_STDSTR = 30,                /* String as std::string*/
+   CFG_TYPE_STDSTRDIR = 31,             /* Directory as std::string*/
 
    /*
     * Director resource types. handlers in dird_conf.
@@ -295,7 +295,7 @@ enum {
    CFG_TYPE_BASE = 86,                  /* Basejob Expression */
    CFG_TYPE_WILD = 87,                  /* Wildcard Expression */
    CFG_TYPE_PLUGIN = 88,                /* Plugin definition */
-   CFG_TYPE_FSTYPE = 89,                /* FileSystem match criterium (UNIX)*/
+   CFG_TYPE_FSTYPE = 89,                /* FileSytem match criterium (UNIX)*/
    CFG_TYPE_DRIVETYPE = 90,             /* DriveType match criterium (Windows) */
    CFG_TYPE_META = 91,                  /* Meta tag */
 
@@ -328,17 +328,21 @@ public:
    RES hdr;
 
    /* Methods */
-   char *name() const;
+   inline char *name() const { return this->hdr.name; };
    bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
     */
-   bool validate();
+   // virtual inline bool validate() { return true; };
 };
 
-inline char *BRSRES::name() const { return this->hdr.name; }
-inline bool BRSRES::validate() { return true; }
+class TLSRES : public BRSRES {
+ public:
+   s_password password; /* UA server password */
+   tls_cert_t tls_cert; /* TLS structure */
+   tls_psk_t tls_psk;   /* TLS-PSK structure */
+};
 
 /*
  * Message Resource
@@ -432,7 +436,7 @@ public:
    void free_resources();
    RES **save_resources();
    RES **new_res_head();
-   void init_resource(int type, RES_ITEM *items, int pass);
+   void init_resource(int type, RES_ITEM *items, int pass, std::function<void *(void *res)> initres);
    bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);

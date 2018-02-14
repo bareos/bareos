@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -78,12 +78,13 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
       return false;
    }
 
-   auth_success = sd->authenticate_outbound_connection(jcr, "Storage daemon",
-                                                       store->name(), store->password,
-                                                       store->tls);
+   auth_success = sd->authenticate_outbound_connection(
+       jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
-      Dmsg2(dbglvl, "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
-            sd->host(), sd->port());
+      Dmsg2(dbglvl,
+            "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
+            sd->host(),
+            sd->port());
       Jmsg(jcr, M_FATAL, 0,
            _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
              "Passwords or names not the same or\n"
@@ -143,20 +144,24 @@ bool authenticate_with_file_daemon(JCR *jcr)
    }
    Dmsg1(dbglvl, "Sent: %s", fd->msg);
 
-   auth_success = fd->authenticate_outbound_connection(jcr, "File Daemon",
-                                                       client->name(), client->password,
-                                                       client->tls);
-   if (!auth_success) {
-      Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
-      Jmsg(jcr, M_FATAL, 0,
-            _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
-              "Passwords or names not the same or\n"
-              "TLS negotiation failed or\n"
-              "Maximum Concurrent Jobs exceeded on the FD or\n"
-              "FD networking messed up (restart daemon).\n"
-              "Please see %s for help.\n"),
-            fd->host(), fd->port(), MANUAL_AUTH_URL);
-      return false;
+auth_success =
+    fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
+
+if (!auth_success) {
+   Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
+   Jmsg(jcr,
+        M_FATAL,
+        0,
+        _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
+          "Passwords or names not the same or\n"
+          "TLS negotiation failed or\n"
+          "Maximum Concurrent Jobs exceeded on the FD or\n"
+          "FD networking messed up (restart daemon).\n"
+          "Please see %s for help.\n"),
+        fd->host(),
+        fd->port(),
+        MANUAL_AUTH_URL);
+   return false;
    }
 
    Dmsg1(116, ">filed: %s", fd->msg);
@@ -193,9 +198,8 @@ bool authenticate_file_daemon(BSOCK *fd, char *client_name)
    client = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
    if (client) {
       if (is_connect_from_client_allowed(client)) {
-         auth_success = fd->authenticate_inbound_connection(NULL, "File Daemon",
-                                                            client_name, client->password,
-                                                            client->tls);
+         auth_success = fd->authenticate_inbound_connection(
+             NULL, "File Daemon", client_name, client->password, client);
       }
    }
 
@@ -256,20 +260,18 @@ bool authenticate_user_agent(UAContext *uac)
       return false;
    }
 
-   if (bstrcmp(name, "*UserAgent*")) {  /* default console */
-      auth_success = ua->authenticate_inbound_connection(NULL, "Console",
-                                                         "*UserAgent*", me->password,
-                                                         me->tls);
+   if (bstrcmp(name, "*UserAgent*")) { /* default console */
+      auth_success = ua->authenticate_inbound_connection(
+          NULL, "Console", "*UserAgent*", me->password, me);
    } else {
       unbash_spaces(name);
       cons = (CONRES *)GetResWithName(R_CONSOLE, name);
       if (cons) {
-         auth_success = ua->authenticate_inbound_connection(NULL, "Console",
-                                                            name, cons->password,
-                                                            cons->tls);
+         auth_success =
+             ua->authenticate_inbound_connection(NULL, "Console", name, cons->password, cons);
 
          if (auth_success) {
-            uac->cons = cons;           /* save console resource pointer */
+            uac->cons = cons; /* save console resource pointer */
          }
       }
    }

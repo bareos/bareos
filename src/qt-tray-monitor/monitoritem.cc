@@ -181,7 +181,7 @@ bool MonitorItem::doconnect()
      return false;
   }
 
-  if (!authenticate_daemon(this, &jcr)) {
+  if (!authenticate_with_daemon(this, &jcr)) {
 
      d->state = MonitorItem::Error;
      emit statusChanged(name, d->state);
@@ -215,10 +215,6 @@ bool MonitorItem::doconnect()
      d->state = Error;
      emit statusChanged(name, d->state);
      return false;
-  }
-
-  if (d->type == R_DIRECTOR) { /* Read connection messages... */
-     docmd(""); /* Usually invalid, but no matter */
   }
 
   d->state = Running;

@@ -50,21 +50,21 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-class DIRRES : public BRSRES {
+class DIRRES : public TLSRES {
 public:
-   s_password password;               /* Director password */
    char *address;                     /* Director address or zero */
    uint32_t port;                     /* Director port */
    bool conn_from_dir_to_fd;          /* Allow incoming connections */
    bool conn_from_fd_to_dir;          /* Connect to director */
    bool monitor;                      /* Have only access to status and .status functions */
-   tls_t tls;                         /* TLS structure */
    alist *allowed_script_dirs;        /* Only allow to run scripts in this directories */
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
+
+   DIRRES() : TLSRES() {}
 };
 
-class CLIENTRES : public BRSRES {
+class CLIENTRES : public TLSRES {
 public:
    dlist *FDaddrs;
    dlist *FDsrc_addr;                 /* Address to source connections from */
@@ -89,7 +89,6 @@ public:
    alist *pki_signing_key_files;      /* PKI Signing Key Files */
    alist *pki_master_key_files;       /* PKI Master Key Files */
    crypto_cipher_t pki_cipher;        /* PKI Cipher to use */
-   tls_t tls;                         /* TLS structure */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
    bool always_use_lmdb;              /* Use LMDB for accurate data */
    uint32_t lmdb_threshold;           /* Switch to using LDMD when number of accurate entries exceeds treshold. */
@@ -102,6 +101,8 @@ public:
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
+
+   CLIENTRES() : TLSRES() {};
 };
 
 /* Define the Union of all the above
@@ -112,6 +113,9 @@ union URES {
    CLIENTRES res_client;
    MSGSRES res_msgs;
    RES hdr;
+
+   URES() {new(&hdr) RES();}
+   ~URES() {}
 };
 
 void init_fd_config(CONFIG *config, const char *configfile, int exit_code);

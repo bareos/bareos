@@ -62,17 +62,19 @@ enum {
 /*
  * Director Resource
  */
-class DIRRES : public BRSRES {
+class DIRRES : public TLSRES {
 public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
+
+   DIRRES() : TLSRES() {}
 };
 
 /*
  * Tray Monitor Resource
  */
-class MONITORRES : public BRSRES {
+class MONITORRES : public TLSRES {
 public:
    bool require_ssl;                  /* Require SSL for all connections */
    MSGSRES *messages;                 /* Daemon message handler */
@@ -81,28 +83,34 @@ public:
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t DIRConnectTimeout;         /* timeout in seconds */
+
+   MONITORRES() : TLSRES() {}
 };
 
 /*
  * Client Resource
  */
-class CLIENTRES : public BRSRES {
+class CLIENTRES : public TLSRES {
 public:
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
+
+   CLIENTRES() : TLSRES() {}
 };
 
 /*
  * Store Resource
  */
-class STORERES : public BRSRES {
+class STORERES : public TLSRES {
 public:
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
+
+   STORERES() : TLSRES() {}
 };
 
 class CONFONTRES : public BRSRES {
@@ -120,6 +128,13 @@ union URES {
    STORERES res_store;
    CONFONTRES con_font;
    RES hdr;
+
+   URES() {
+      new(&hdr) RES();
+      Dmsg1(900, "hdr:        %p \n", &hdr);
+      Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
+   }
+   ~URES() {}
 };
 
 void init_tmon_config(CONFIG *config, const char *configfile, int exit_code);

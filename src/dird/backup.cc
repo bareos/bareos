@@ -389,7 +389,7 @@ bool send_accurate_current_files(JCR *jcr)
 bool do_native_backup(JCR *jcr)
 {
    int status;
-   int tls_need = BNET_TLS_NONE;
+   uint32_t tls_need = 0;
    BSOCK *fd = NULL;
    BSOCK *sd = NULL;
    STORERES *store = NULL;
@@ -540,13 +540,8 @@ bool do_native_backup(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (store->tls.enable) {
-         if (store->tls.require) {
-            tls_need = BNET_TLS_REQUIRED;
-         } else {
-            tls_need = BNET_TLS_OK;
-         }
-      }
+
+      tls_need = GetNeedFromConfiguration(client);
 
       connection_target_address = storage_address_to_contact(client, store);
 
@@ -559,13 +554,8 @@ bool do_native_backup(JCR *jcr)
       /*
        * TLS Requirement
        */
-      if (client->tls.enable) {
-         if (client->tls.require) {
-            tls_need = BNET_TLS_REQUIRED;
-         } else {
-            tls_need = BNET_TLS_OK;
-         }
-      }
+
+      tls_need = GetNeedFromConfiguration(me);
 
       connection_target_address = client_address_to_contact(client, store);
 

@@ -82,6 +82,9 @@ static RES_ITEM mon_items[] = {
    { "FdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.FDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
    { "SdConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.SDConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
    { "DirConnectTimeout", CFG_TYPE_TIME, ITEM(res_monitor.DIRConnectTimeout), 0, CFG_ITEM_DEFAULT, "10", NULL, NULL },
+   TLS_COMMON_CONFIG(res_monitor),
+   TLS_CERT_CONFIG(res_monitor),
+   TLS_PSK_CONFIG(res_monitor),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -96,6 +99,9 @@ static RES_ITEM dir_items[] = {
    { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_dir.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_dir.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   TLS_COMMON_CONFIG(res_dir),
+   TLS_CERT_CONFIG(res_dir),
+   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -111,6 +117,9 @@ static RES_ITEM cli_items[] = {
    { "FdPort", CFG_TYPE_PINT32, ITEM(res_client.FDport), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_client.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_client.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   TLS_COMMON_CONFIG(res_client),
+   TLS_CERT_CONFIG(res_client),
+   TLS_PSK_CONFIG(res_client),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -128,6 +137,9 @@ static RES_ITEM store_items[] = {
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "SdPassword", CFG_TYPE_MD5PASSWORD, ITEM(res_store.password), 0, 0, NULL, NULL, NULL },
    { "EnableSsl", CFG_TYPE_BOOL, ITEM(res_store.enable_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
+   TLS_COMMON_CONFIG(res_store),
+   TLS_CERT_CONFIG(res_store),
+   TLS_PSK_CONFIG(res_store),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -153,10 +165,10 @@ static RES_ITEM con_font_items[] = {
  *  name items rcode res_head
  */
 static RES_TABLE resources[] = {
-   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES) },
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "Storage", store_items, R_STORAGE, sizeof(STORERES) },
+   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES), [] (void *res){ return new((MONITORRES *) res) MONITORRES(); } },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } },
+   { "Storage", store_items, R_STORAGE, sizeof(STORERES), [] (void *res){ return new((STORERES *) res) STORERES(); } },
    { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
    { NULL, NULL, 0, 0 }
 };

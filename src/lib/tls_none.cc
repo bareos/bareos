@@ -30,6 +30,11 @@
 #ifndef HAVE_TLS
 
 /* Dummy routines */
+TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB)
+{
+   return NULL;
+}
+
 TLS_CONTEXT *new_tls_context(const char *ca_certfile,
                              const char *ca_certdir,
                              const char *crlfile,

@@ -424,6 +424,28 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 }
 
 /*
+ * Store a string at specified address
+ */
+static void store_stdstr(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      /*
+       * If a default was set free it first.
+       */
+      if (*(item->strValue)) {
+         free(*(item->strValue));
+      }
+      *(item->strValue) = new std::string(lc->str);
+}
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
+}
+
+/*
  * Store a directory name at specified address. Note, we do
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
@@ -444,6 +466,28 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
          do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
       }
       *(item->value) = bstrdup(lc->str);
+   }
+   scan_to_eol(lc);
+   set_bit(index, res_all->hdr.item_present);
+   clear_bit(index, res_all->hdr.inherit_content);
+}
+
+static void store_stdstrdir(LEX *lc, RES_ITEM *item, int index, int pass)
+{
+   URES *res_all = (URES *)my_config->m_res_all;
+
+   lex_get_token(lc, T_STRING);
+   if (pass == 1) {
+      /*
+       * If a default was set free it first.
+       */
+      if (*(item->strValue)) {
+         delete (*(item->value));
+      }
+      if (lc->str[0] != '|') {
+         do_shell_expansion(lc->str, sizeof_pool_memory(lc->str));
+      }
+      *(item->strValue) = new std::string(lc->str);
    }
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -1235,6 +1279,12 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    case CFG_TYPE_DIR:
       store_dir(lc, item, index, pass);
       break;
+   case CFG_TYPE_STDSTR:
+      store_stdstr(lc, item, index, pass);
+      break;
+   case CFG_TYPE_STDSTRDIR:
+      store_stdstrdir(lc, item, index, pass);
+      break;
    case CFG_TYPE_MD5PASSWORD:
       store_md5password(lc, item, index, pass);
       break;
@@ -1528,6 +1578,10 @@ static inline bool has_default_value(RES_ITEM *item)
             case CFG_TYPE_STRNAME:
                is_default = bstrcmp(*(item->value), item->default_value);
                break;
+            case CFG_TYPE_STDSTR:
+            case CFG_TYPE_STDSTRDIR:
+               is_default = bstrcmp((*item->strValue)->c_str(), item->default_value);
+               break;
             case CFG_TYPE_INT16:
                is_default = (*(item->i16value) == (int16_t)str_to_int32(item->default_value));
                break;
@@ -1572,6 +1626,10 @@ static inline bool has_default_value(RES_ITEM *item)
             case CFG_TYPE_NAME:
             case CFG_TYPE_STRNAME:
                is_default = (*(item->value) == NULL);
+               break;
+            case CFG_TYPE_STDSTR:
+            case CFG_TYPE_STDSTRDIR:
+               is_default = (*(item->strValue)) == nullptr || (*(item->strValue))->empty();
                break;
             case CFG_TYPE_INT16:
                is_default = (*(item->i16value) == 0);
@@ -1692,6 +1750,15 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
             indent_config_item(cfg_str, 1, temp.c_str(), inherited);
          }
          break;
+      case CFG_TYPE_STDSTR:
+      case CFG_TYPE_STDSTRDIR:
+         if (print_item && *(items[i].value) != NULL) {
+            Dmsg2(200, "%s = \"%s\"\n", items[i].name, (*items[i].strValue)->c_str());
+            Mmsg(temp, "%s = \"%s\"\n", items[i].name, (*items[i].strValue)->c_str());
+            indent_config_item(cfg_str, 1, temp.c_str(), inherited);
+         }
+         break;
+
       case CFG_TYPE_MD5PASSWORD:
       case CFG_TYPE_CLEARPASSWORD:
       case CFG_TYPE_AUTOPASSWORD:
@@ -2004,6 +2071,8 @@ static DATATYPE_NAME datatype_names[] = {
     */
    { CFG_TYPE_STR, "STRING", "String" },
    { CFG_TYPE_DIR, "DIRECTORY", "directory" },
+   { CFG_TYPE_STDSTR, "STDSTRING", "String" },
+   { CFG_TYPE_STDSTRDIR, "STDDIRECTORY", "directory" },
    { CFG_TYPE_MD5PASSWORD, "MD5PASSWORD", "Password in MD5 format" },
    { CFG_TYPE_CLEARPASSWORD, "CLEARPASSWORD", "Password as cleartext" },
    { CFG_TYPE_AUTOPASSWORD, "AUTOPASSWORD", "Password stored in clear when needed otherwise hashed" },

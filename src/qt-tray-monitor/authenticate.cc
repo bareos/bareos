@@ -31,6 +31,9 @@
 #include "jcr.h"
 #include "monitoritemthread.h"
 
+#include "tls_conf.h"
+
+const int dbglvl = 50;
 
 /* Commands sent to Director */
 static char DIRhello[]    = "Hello %s calling\n";
@@ -52,51 +55,22 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-static bool authenticate_director(JCR *jcr)
-{
-   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+static bool authenticate_with_director(JCR *jcr, DIRRES *dir_res) {
+   MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
 
    BSOCK *dir = jcr->dir_bsock;
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   bool compatible = true;
    char bashed_name[MAX_NAME_LENGTH];
+   char errmsg[1024];
+   int32_t errmsg_len = sizeof(errmsg);
 
    bstrncpy(bashed_name, monitor->name(), sizeof(bashed_name));
    bash_spaces(bashed_name);
 
-   /*
-    * Timeout Hello after 5 mins
-    */
-   btimer_t *tid = start_bsock_timer(dir, 60 * 5);
-   dir->fsend(DIRhello, bashed_name);
-
-   ASSERT(monitor->password.encoding == p_encoding_md5);
-
-   if (!cram_md5_respond(dir, monitor->password.value, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(dir, monitor->password.value, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
+   if (!dir->authenticate_with_director(jcr, bashed_name,(s_password &) monitor->password, errmsg, errmsg_len, monitor)) {
       Jmsg(jcr, M_FATAL, 0, _("Director authorization problem.\n"
-                              "Most likely the passwords do not agree.\n"
-                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
+                                 "Most likely the passwords do not agree.\n"
+                                 "Please see %s for help.\n"), MANUAL_AUTH_URL);
       return false;
-   }
-
-   Dmsg1(6, ">dird: %s", dir->msg);
-   if (dir->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg1(jcr, M_FATAL, 0, _("Bad response to Hello command: ERR=%s\n"),
-         dir->bstrerror());
-      return false;
-   }
-
-   Dmsg1(10, "<dird: %s", dir->msg);
-   stop_bsock_timer(tid);
-   if (strncmp(dir->msg, DIROKhello, sizeof(DIROKhello)-1) != 0) {
-      Jmsg0(jcr, M_FATAL, 0, _("Director rejected Hello command\n"));
-      return false;
-   } else {
-      Jmsg0(jcr, M_INFO, 0, dir->msg);
    }
 
    return true;
@@ -105,54 +79,56 @@ static bool authenticate_director(JCR *jcr)
 /*
  * Authenticate Storage daemon connection
  */
-static bool authenticate_storage_daemon(JCR *jcr, STORERES* store)
+static bool authenticate_with_storage_daemon(JCR *jcr, STORERES* store)
 {
    const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
 
    BSOCK *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   bool compatible = true;
+   bool auth_success = false;
 
-   /*
+   /**
     * Send my name to the Storage daemon then do authentication
     */
-   bstrncpy(dirname, monitor->name(), sizeof(dirname));
+   bstrncpy(dirname, monitor->hdr.name, sizeof(dirname));
    bash_spaces(dirname);
 
-   /*
-    * Timeout Hello after 5 mins
-    */
-   btimer_t *tid = start_bsock_timer(sd, 60 * 5);
    if (!sd->fsend(SDFDhello, dirname)) {
-      stop_bsock_timer(tid);
+      Dmsg1(dbglvl, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
       return false;
    }
 
-   ASSERT(store->password.encoding == p_encoding_md5);
-
-   if (!cram_md5_respond(sd, store->password.value, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(sd, store->password.value, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
-      Jmsg0(jcr, M_FATAL, 0, _("Director and Storage daemon passwords or names not the same.\n"
-       "Please see " MANUAL_AUTH_URL " for help.\n"));
+   auth_success = sd->authenticate_outbound_connection(
+      jcr, "Storage daemon", dirname, store->password, store);
+   if (!auth_success) {
+      Dmsg2(dbglvl,
+            "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
+            sd->host(),
+            sd->port());
+      Jmsg(jcr, M_FATAL, 0,
+           _("Director unable to authenticate with Storage daemon at \"%s:%d\". Possible causes:\n"
+                "Passwords or names not the same or\n"
+                "TLS negotiation problem or\n"
+                "Maximum Concurrent Jobs exceeded on the SD or\n"
+                "SD networking messed up (restart daemon).\n"
+                "Please see %s for help.\n"),
+           sd->host(), sd->port(), MANUAL_AUTH_URL);
       return false;
    }
 
    Dmsg1(116, ">stored: %s", sd->msg);
    if (sd->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg1(jcr, M_FATAL, 0, _("bdird<stored: bad response to Hello command: ERR=%s\n"),
-         sd->bstrerror());
+      Jmsg3(jcr, M_FATAL, 0, _("dir<stored: \"%s:%s\" bad response to Hello command: ERR=%s\n"),
+            sd->who(), sd->host(), sd->bstrerror());
       return false;
    }
 
    Dmsg1(110, "<stored: %s", sd->msg);
-   stop_bsock_timer(tid);
-   if (strncmp(sd->msg, SDOKhello, sizeof(SDOKhello)) != 0) {
-      Jmsg0(jcr, M_FATAL, 0, _("Storage daemon rejected Hello command\n"));
+   if (!bstrncmp(sd->msg, SDOKhello, sizeof(SDOKhello))) {
+      Dmsg0(dbglvl, _("Storage daemon rejected Hello command\n"));
+      Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"),
+            sd->host(), sd->port());
       return false;
    }
 
@@ -162,52 +138,64 @@ static bool authenticate_storage_daemon(JCR *jcr, STORERES* store)
 /*
  * Authenticate File daemon connection
  */
-static bool authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
+static bool authenticate_with_file_daemon(JCR *jcr, CLIENTRES* client)
 {
    const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
 
    BSOCK *fd = jcr->file_bsock;
    char dirname[MAX_NAME_LENGTH];
-   int tls_local_need = BNET_TLS_NONE;
-   int tls_remote_need = BNET_TLS_NONE;
-   bool compatible = true;
+   bool auth_success = false;
 
-   /*
+   if (jcr->authenticated) {
+      /*
+       * already authenticated
+       */
+      return true;
+   }
+
+   /**
     * Send my name to the File daemon then do authentication
     */
    bstrncpy(dirname, monitor->name(), sizeof(dirname));
    bash_spaces(dirname);
 
-   /*
-    * Timeout Hello after 5 mins
-    */
-   btimer_t *tid = start_bsock_timer(fd, 60 * 5);
    if (!fd->fsend(SDFDhello, dirname)) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon. ERR=%s\n"), bnet_strerror(fd));
+      Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to File daemon at \"%s:%d\". ERR=%s\n"),
+           fd->host(), fd->port(), fd->bstrerror());
       return false;
    }
+   Dmsg1(dbglvl, "Sent: %s", fd->msg);
 
-   ASSERT(client->password.encoding == p_encoding_md5);
+   auth_success =
+      fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
 
-   if (!cram_md5_respond(fd, client->password.value, &tls_remote_need, &compatible) ||
-       !cram_md5_challenge(fd, client->password.value, tls_local_need, compatible)) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Director and File daemon passwords or names not the same.\n"
-                              "Please see %s for help.\n"), MANUAL_AUTH_URL);
+   if (!auth_success) {
+      Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
+      Jmsg(jcr,
+           M_FATAL,
+           0,
+           _("Unable to authenticate with File daemon at \"%s:%d\". Possible causes:\n"
+                "Passwords or names not the same or\n"
+                "TLS negotiation failed or\n"
+                "Maximum Concurrent Jobs exceeded on the FD or\n"
+                "FD networking messed up (restart daemon).\n"
+                "Please see %s for help.\n"),
+           fd->host(),
+           fd->port(),
+           MANUAL_AUTH_URL);
       return false;
    }
 
    Dmsg1(116, ">filed: %s", fd->msg);
    if (fd->recv() <= 0) {
-      stop_bsock_timer(tid);
-      Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon to Hello command: ERR=%s\n"),
-           fd->bstrerror());
+      Dmsg1(dbglvl, _("Bad response from File daemon to Hello command: ERR=%s\n"),
+            bnet_strerror(fd));
+      Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon at \"%s:%d\" to Hello command: ERR=%s\n"),
+           fd->host(), fd->port(), fd->bstrerror());
       return false;
    }
 
-   Dmsg1(110, "<stored: %s", fd->msg);
-   stop_bsock_timer(tid);
+   Dmsg1(110, "<filed: %s", fd->msg);
    if (strncmp(fd->msg, FDOKhello, sizeof(FDOKhello)-1) != 0) {
       Jmsg(jcr, M_FATAL, 0, _("File daemon rejected Hello command\n"));
       return false;
@@ -216,15 +204,15 @@ static bool authenticate_file_daemon(JCR *jcr, CLIENTRES* client)
    return true;
 }
 
-bool authenticate_daemon(MonitorItem* item, JCR *jcr)
+bool authenticate_with_daemon(MonitorItem* item, JCR *jcr)
 {
    switch (item->type()) {
    case R_DIRECTOR:
-      return authenticate_director(jcr);
+      return authenticate_with_director(jcr, (DIRRES*)item->resource());
    case R_CLIENT:
-      return authenticate_file_daemon(jcr, (CLIENTRES*)item->resource());
+      return authenticate_with_file_daemon(jcr, (CLIENTRES*)item->resource());
    case R_STORAGE:
-      return authenticate_storage_daemon(jcr, (STORERES*)item->resource());
+      return authenticate_with_storage_daemon(jcr, (STORERES*)item->resource());
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
       return false;

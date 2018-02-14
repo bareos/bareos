@@ -142,7 +142,9 @@ static RES_ITEM dir_items[] = {
    { "SecureEraseCommand", CFG_TYPE_STR, ITEM(res_dir.secure_erase_cmdline), 0, 0, NULL, "15.2.1-",
      "Specify command that will be called when bareos unlinks files." },
    { "LogTimestampFormat", CFG_TYPE_STR, ITEM(res_dir.log_timestamp_format), 0, 0, NULL, "15.2.3-", NULL },
-   TLS_CONFIG(res_dir)
+   TLS_COMMON_CONFIG(res_dir),
+   TLS_CERT_CONFIG(res_dir),
+   TLS_PSK_CONFIG(res_dir),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -202,7 +204,9 @@ static RES_ITEM con_items[] = {
    { "Profile", CFG_TYPE_ALIST_RES, ITEM(res_con.profiles), R_PROFILE, 0, NULL, "14.2.3-",
      "Profiles can be assigned to a Console. ACL are checked until either a deny ACL is found or an allow ACL. "
      "First the console ACL is checked then any profile the console is linked to." },
-   TLS_CONFIG(res_con)
+   TLS_COMMON_CONFIG(res_con),
+   TLS_CERT_CONFIG(res_con),
+   TLS_PSK_CONFIG(res_con),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -251,7 +255,9 @@ static RES_ITEM cli_items[] = {
    { "NdmpLogLevel", CFG_TYPE_PINT32, ITEM(res_client.ndmp_loglevel), 0, CFG_ITEM_DEFAULT, "4", NULL, NULL },
    { "NdmpBlockSize", CFG_TYPE_PINT32, ITEM(res_client.ndmp_blocksize), 0, CFG_ITEM_DEFAULT, "64512", NULL, NULL },
    { "NdmpUseLmdb", CFG_TYPE_BOOL, ITEM(res_client.ndmp_use_lmdb), 0, CFG_ITEM_DEFAULT, "true", NULL, NULL },
-   TLS_CONFIG(res_client)
+   TLS_COMMON_CONFIG(res_client),
+   TLS_CERT_CONFIG(res_client),
+   TLS_PSK_CONFIG(res_client),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -294,7 +300,9 @@ static RES_ITEM store_items[] = {
    // Instead of TapeDevice, the required Devices should be configured using the Device directive.
    //{ "TapeDevice", CFG_TYPE_ALIST_STR, ITEM(res_store.tape_devices), 0, CFG_ITEM_ALIAS | CFG_ITEM_DEPRECATED, NULL, "16.2.4-17.2.2",
    //  "Allows direct control of Storage Daemon Tape devices by the Director. Only used in NDMP_NATIVE environments." },
-   TLS_CONFIG(res_store)
+   TLS_COMMON_CONFIG(res_store),
+   TLS_CERT_CONFIG(res_store),
+   TLS_PSK_CONFIG(res_store),
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
@@ -556,21 +564,21 @@ static RES_ITEM counter_items[] = {
  * name handler value code flags default_value
  */
 static RES_TABLE resources[] = {
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES) },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES) },
-   { "JobDefs", job_items, R_JOBDEFS, sizeof(JOBRES) },
-   { "Job", job_items, R_JOB, sizeof(JOBRES) },
-   { "Storage", store_items, R_STORAGE, sizeof(STORERES) },
-   { "Catalog", cat_items, R_CATALOG, sizeof(CATRES) },
-   { "Schedule", sch_items, R_SCHEDULE, sizeof(SCHEDRES) },
-   { "FileSet", fs_items, R_FILESET, sizeof(FILESETRES) },
-   { "Pool", pool_items, R_POOL, sizeof(POOLRES) },
-   { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
-   { "Counter", counter_items, R_COUNTER, sizeof(COUNTERRES) },
-   { "Profile", profile_items, R_PROFILE, sizeof(PROFILERES) },
-   { "Console", con_items, R_CONSOLE, sizeof(CONRES) },
-   { "Device", NULL, R_DEVICE, sizeof(DEVICERES) }, /* info obtained from SD */
-   { NULL, NULL, 0, 0 }
+   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES*) res) CLIENTRES(); }  },
+   { "JobDefs", job_items, R_JOBDEFS, sizeof(JOBRES)},
+   { "Job", job_items, R_JOB, sizeof(JOBRES)  },
+   { "Storage", store_items, R_STORAGE, sizeof(STORERES), [] (void *res){ return new((STORERES *) res) STORERES(); }   },
+   { "Catalog", cat_items, R_CATALOG, sizeof(CATRES)   },
+   { "Schedule", sch_items, R_SCHEDULE, sizeof(SCHEDRES)   },
+   { "FileSet", fs_items, R_FILESET, sizeof(FILESETRES)   },
+   { "Pool", pool_items, R_POOL, sizeof(POOLRES)   },
+   { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES)   },
+   { "Counter", counter_items, R_COUNTER, sizeof(COUNTERRES)   },
+   { "Profile", profile_items, R_PROFILE, sizeof(PROFILERES)   },
+   { "Console", con_items, R_CONSOLE, sizeof(CONRES), [] (void *res){ return new((CONRES *) res) CONRES(); }   },
+   { "Device", NULL, R_DEVICE, sizeof(DEVICERES)   }, /* info obtained from SD */
+   { NULL, NULL, 0, 0, nullptr }
 };
 
 /**
@@ -865,7 +873,7 @@ json_t *json_datatype(const int type, RES_ITEM items[])
    return json;
 }
 
-/***
+/**
  * Print configuration file schema in json format
  */
 bool print_config_schema_json(POOL_MEM &buffer)
@@ -1022,7 +1030,7 @@ static inline bool cmdline_items(POOL_MEM *buffer, RES_ITEM items[])
    return true;
 }
 
-/***
+/**
  * Get the usage string for the console "configure" command.
  *
  * This will be all available resource directives.
@@ -1074,7 +1082,7 @@ void destroy_configure_usage_string()
    }
 }
 
-/***
+/**
  * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
  */
 static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
@@ -1278,7 +1286,7 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
 }
 
 
-/***
+/**
  * Ensure that all required items are present
  */
 bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
@@ -2340,7 +2348,7 @@ const char *level_to_str(int level)
    return str;
 }
 
-/***
+/**
  * Dump contents of resource
  */
 void dump_resource(int type, RES *ures,
@@ -2431,7 +2439,7 @@ bail_out:
    }
 }
 
-/***
+/**
  * Free all the members of an INCEXE structure
  */
 static void free_incexe(INCEXE *incexe)
@@ -2546,7 +2554,40 @@ void free_resource(RES *sres, int type)
       if (res->res_dir.log_timestamp_format) {
          free(res->res_dir.log_timestamp_format);
       }
-      free_tls_t(res->res_dir.tls);
+      if (res->res_dir.tls_cert.allowed_cns) {
+         res->res_dir.tls_cert.allowed_cns->destroy();
+         free(res->res_dir.tls_cert.allowed_cns);
+      }
+      if (res->res_dir.tls_cert.ca_certfile) {
+         delete res->res_dir.tls_cert.ca_certfile;
+      }
+      if (res->res_dir.tls_cert.ca_certdir) {
+         delete res->res_dir.tls_cert.ca_certdir;
+      }
+      if (res->res_dir.tls_cert.crlfile) {
+         delete res->res_dir.tls_cert.crlfile;
+      }
+      if (res->res_dir.tls_cert.certfile) {
+         delete res->res_dir.tls_cert.certfile;
+      }
+      if (res->res_dir.tls_cert.keyfile) {
+         delete res->res_dir.tls_cert.keyfile;
+      }
+      if (res->res_dir.tls_cert.cipherlist) {
+         delete res->res_dir.tls_cert.cipherlist;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.dhfile) {
+         delete res->res_dir.tls_cert.dhfile;
+      }
+      if (res->res_dir.tls_cert.pem_message) {
+         delete res->res_dir.tls_cert.pem_message;
+      }
       break;
    case R_DEVICE:
    case R_COUNTER:
@@ -2572,7 +2613,40 @@ void free_resource(RES *sres, int type)
             res->res_con.ACL_lists[i] = NULL;
          }
       }
-      free_tls_t(res->res_con.tls);
+      if (res->res_con.tls_cert.allowed_cns) {
+         res->res_con.tls_cert.allowed_cns->destroy();
+         free(res->res_con.tls_cert.allowed_cns);
+      }
+      if (res->res_con.tls_cert.ca_certfile) {
+         delete res->res_con.tls_cert.ca_certfile;
+      }
+      if (res->res_con.tls_cert.ca_certdir) {
+         delete res->res_con.tls_cert.ca_certdir;
+      }
+      if (res->res_con.tls_cert.crlfile) {
+         delete res->res_con.tls_cert.crlfile;
+      }
+      if (res->res_con.tls_cert.certfile) {
+         delete res->res_con.tls_cert.certfile;
+      }
+      if (res->res_con.tls_cert.keyfile) {
+         delete res->res_con.tls_cert.keyfile;
+      }
+      if (res->res_con.tls_cert.cipherlist) {
+         delete res->res_con.tls_cert.cipherlist;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.dhfile) {
+         delete res->res_con.tls_cert.dhfile;
+      }
+      if (res->res_con.tls_cert.pem_message) {
+         delete res->res_con.tls_cert.pem_message;
+      }
       break;
    case R_CLIENT:
       if (res->res_client.address) {
@@ -2590,7 +2664,40 @@ void free_resource(RES *sres, int type)
       if (res->res_client.rcs) {
          free(res->res_client.rcs);
       }
-      free_tls_t(res->res_client.tls);
+      if (res->res_client.tls_cert.allowed_cns) {
+         res->res_client.tls_cert.allowed_cns->destroy();
+         free(res->res_client.tls_cert.allowed_cns);
+      }
+      if (res->res_client.tls_cert.ca_certfile) {
+         delete res->res_client.tls_cert.ca_certfile;
+      }
+      if (res->res_client.tls_cert.ca_certdir) {
+         delete res->res_client.tls_cert.ca_certdir;
+      }
+      if (res->res_client.tls_cert.crlfile) {
+         delete res->res_client.tls_cert.crlfile;
+      }
+      if (res->res_client.tls_cert.certfile) {
+         delete res->res_client.tls_cert.certfile;
+      }
+      if (res->res_client.tls_cert.keyfile) {
+         delete res->res_client.tls_cert.keyfile;
+      }
+      if (res->res_client.tls_cert.cipherlist) {
+         delete res->res_client.tls_cert.cipherlist;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.dhfile) {
+         delete res->res_client.tls_cert.dhfile;
+      }
+      if (res->res_client.tls_cert.pem_message) {
+         delete res->res_client.tls_cert.pem_message;
+      }
       break;
    case R_STORAGE:
       if (res->res_store.address) {
@@ -2635,7 +2742,40 @@ void free_resource(RES *sres, int type)
          pthread_mutex_destroy(&res->res_store.rss->changer_lock);
          free(res->res_store.rss);
       }
-      free_tls_t(res->res_store.tls);
+      if (res->res_store.tls_cert.allowed_cns) {
+         res->res_store.tls_cert.allowed_cns->destroy();
+         free(res->res_store.tls_cert.allowed_cns);
+      }
+      if (res->res_store.tls_cert.ca_certfile) {
+         delete res->res_store.tls_cert.ca_certfile;
+      }
+      if (res->res_store.tls_cert.ca_certdir) {
+         delete res->res_store.tls_cert.ca_certdir;
+      }
+      if (res->res_store.tls_cert.crlfile) {
+         delete res->res_store.tls_cert.crlfile;
+      }
+      if (res->res_store.tls_cert.certfile) {
+         delete res->res_store.tls_cert.certfile;
+      }
+      if (res->res_store.tls_cert.keyfile) {
+         delete res->res_store.tls_cert.keyfile;
+      }
+      if (res->res_store.tls_cert.cipherlist) {
+         delete res->res_store.tls_cert.cipherlist;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.dhfile) {
+         delete res->res_store.tls_cert.dhfile;
+      }
+      if (res->res_store.tls_cert.pem_message) {
+         delete res->res_store.tls_cert.pem_message;
+      }
       break;
    case R_CATALOG:
       if (res->res_cat.db_address) {
@@ -2829,7 +2969,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
-         res->res_con.tls.allowed_cns = res_all.res_con.tls.allowed_cns;
+         res->res_con.tls_cert.allowed_cns = res_all.res_con.tls_cert.allowed_cns;
          res->res_con.profiles = res_all.res_con.profiles;
       }
       break;
@@ -2841,7 +2981,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
          res->res_dir.plugin_names = res_all.res_dir.plugin_names;
          res->res_dir.messages = res_all.res_dir.messages;
          res->res_dir.backend_directories = res_all.res_dir.backend_directories;
-         res->res_dir.tls.allowed_cns = res_all.res_dir.tls.allowed_cns;
+         res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
       }
       break;
    case R_STORAGE:
@@ -2852,7 +2992,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
          int status;
 
          res->res_store.paired_storage = res_all.res_store.paired_storage;
-         res->res_store.tls.allowed_cns = res_all.res_store.tls.allowed_cns;
+         res->res_store.tls_cert.allowed_cns = res_all.res_store.tls_cert.allowed_cns;
 
          /*
           * We must explicitly copy the device alist pointer
@@ -2951,7 +3091,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
              */
             res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
          }
-         res->res_client.tls.allowed_cns = res_all.res_client.tls.allowed_cns;
+         res->res_client.tls_cert.allowed_cns = res_all.res_client.tls_cert.allowed_cns;
 
          res->res_client.rcs = (runtime_client_status_t *)malloc(sizeof(runtime_client_status_t));
          memset(res->res_client.rcs, 0, sizeof(runtime_client_status_t));
@@ -2994,7 +3134,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
    return result;
 }
 
-/***
+/**
  * Save the new resource by chaining it into the head list for
  * the resource. If this is pass 2, we update any resource
  * pointers because they may not have been defined until
@@ -3033,7 +3173,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
 
    /*
     * During pass 2 in each "store" routine, we looked up pointers
-    * to all the resources referrenced in the current resource, now we
+    * to all the resources referenced in the current resource, now we
     * must copy their addresses from the static record to the allocated
     * record.
     */
@@ -3120,7 +3260,7 @@ bool propagate_jobdefs(int res_type, JOBRES *res)
    return true;
 }
 
-/***
+/**
  * Populate Job Defaults (e.g. JobDefs)
  */
 static inline bool populate_jobdefs()
@@ -3217,7 +3357,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/***
+/**
  * Store Device. Note, the resource is created upon the
  * first reference. The details of the resource are obtained
  * later from the SD.
@@ -3266,7 +3406,7 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
    }
 }
 
-/***
+/**
  * Store Migration/Copy type
  */
 static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3294,7 +3434,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/***
+/**
  * Store JobType (backup, verify, restore)
  */
 static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
@@ -3322,7 +3462,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-/***
+/**
  * Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
  */
 static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)

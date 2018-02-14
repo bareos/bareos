@@ -49,6 +49,17 @@ typedef struct Cipher_Context CIPHER_CONTEXT;
 /* PEM Decryption Passphrase Callback */
 typedef int (CRYPTO_PEM_PASSWD_CB) (char *buf, int size, const void *userdata);
 
+/** Server TLS-PSK callback */
+typedef int(CRYPTO_TLS_PSK_SERVER_CB)(const char *identity,
+                                      unsigned char *psk,
+                                      unsigned int max_psk_len);
+
+/** Client TLS-PSK callback */
+typedef int(CRYPTO_TLS_PSK_CLIENT_CB)(char *identity,
+                                      unsigned int max_identity_len,
+                                      unsigned char *psk,
+                                      unsigned int max_psk_len);
+
 /* Digest Types */
 typedef enum {
    /* These are stored on disk and MUST NOT change */

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -102,11 +102,10 @@ bool print_config_schema_json(POOL_MEM &buff);
 /*
  *   Director Resource
  */
-class DIRRES: public BRSRES {
+class DIRRES: public TLSRES {
 public:
    dlist *DIRaddrs;
    dlist *DIRsrc_addr;                /* Address to source connections from */
-   s_password password;               /* Password for UA access */
    char *query_file;                  /* SQL query file */
    char *working_directory;           /* WorkingDirectory */
    char *scripts_directory;           /* ScriptsDirectory */
@@ -123,7 +122,6 @@ public:
    utime_t SDConnectTimeout;          /* Timeout for connect in seconds */
    utime_t heartbeat_interval;        /* Interval to send heartbeats */
    utime_t stats_retention;           /* Statistics retention period in seconds */
-   tls_t tls;                         /* TLS structure */
    bool optimize_for_size;            /* Optimize daemon for minimum memory size */
    bool optimize_for_speed;           /* Optimize daemon for speed which may need more memory */
    bool nokeepalive;                  /* Don't use SO_KEEPALIVE on sockets */
@@ -140,6 +138,8 @@ public:
    char *secure_erase_cmdline;        /* Cmdline to execute to perform secure erase of file */
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
+
+   DIRRES() : TLSRES() {}
 };
 
 /*
@@ -169,6 +169,8 @@ public:
    char ChangerName[MAX_NAME_LENGTH];
    char VolumeName[MAX_NAME_LENGTH];
    char MediaType[MAX_NAME_LENGTH];
+
+   DEVICERES() : BRSRES() {}
 };
 
 /**
@@ -200,12 +202,10 @@ public:
 /**
  * Console Resource
  */
-class CONRES : public BRSRES {
+class CONRES : public TLSRES {
 public:
-   s_password password;               /**< UA server password */
    alist *ACL_lists[Num_ACL];         /**< Pointers to ACLs */
    alist *profiles;                   /**< Pointers to profile resources */
-   tls_t tls;                         /**< TLS structure */
 };
 
 /**
@@ -232,6 +232,7 @@ public:
 
    /**< Methods */
    char *display(POOLMEM *dst);       /**< Get catalog information */
+   CATRES() : BRSRES() { }
 };
 
 /**
@@ -244,7 +245,7 @@ struct runtime_job_status_t;
 /**
  * Client Resource
  */
-class CLIENTRES: public BRSRES {
+class CLIENTRES: public TLSRES {
 public:
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -262,26 +263,25 @@ public:
    char *address;                     /* Hostname for remote access to Client */
    char *lanaddress;                  /* Hostname for remote access to Client if behind NAT in LAN */
    char *username;                    /* Username to use for authentication if protocol supports it */
-   s_password password;
-   CATRES *catalog;                   /**< Catalog resource */
-   int32_t MaxConcurrentJobs;         /**< Maximum concurrent jobs */
-   bool passive;                      /**< Passive Client */
-   bool conn_from_dir_to_fd;          /**< Connect to Client */
-   bool conn_from_fd_to_dir;          /**< Allow incoming connections */
-   bool enabled;                      /**< Set if client is enabled */
-   bool AutoPrune;                    /**< Do automatic pruning? */
-   bool StrictQuotas;                 /**< Enable strict quotas? */
-   bool QuotaIncludeFailedJobs;       /**< Ignore failed jobs when calculating quota */
-   bool ndmp_use_lmdb;                /**< NDMP Protocol specific use LMDB for the FHDB or not */
-   int64_t max_bandwidth;             /**< Limit speed on this client */
-   runtime_client_status_t *rcs;      /**< Runtime Client Status */
-   tls_t tls;                         /**< TLS structure */
+   CATRES *catalog;                   /* Catalog resource */
+   int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
+   bool passive;                      /* Passive Client */
+   bool conn_from_dir_to_fd;          /* Connect to Client */
+   bool conn_from_fd_to_dir;          /* Allow incoming connections */
+   bool enabled;                      /* Set if client is enabled */
+   bool AutoPrune;                    /* Do automatic pruning? */
+   bool StrictQuotas;                 /* Enable strict quotas? */
+   bool QuotaIncludeFailedJobs;       /* Ignore failed jobs when calculating quota */
+   bool ndmp_use_lmdb;                /* NDMP Protocol specific use LMDB for the FHDB or not */
+   int64_t max_bandwidth;             /* Limit speed on this client */
+   runtime_client_status_t *rcs;      /* Runtime Client Status */
+   CLIENTRES() : TLSRES() {}
 };
 
 /**
  * Store Resource
  */
-class STORERES : public BRSRES {
+class STORERES : public TLSRES {
 public:
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -290,7 +290,6 @@ public:
    char *address;                     /* Hostname for remote access to Storage */
    char *lanaddress;                  /* Hostname for remote access to Storage if behind NAT in LAN */
    char *username;                    /* Username to use for authentication if protocol supports it */
-   s_password password;
    char *media_type;                  /**< Media Type provided by this Storage */
    char *ndmp_changer_device;         /**< If DIR controls storage directly (NDMP_NATIVE) changer device used */
    alist *device;                     /**< Alternate devices for this Storage */
@@ -306,10 +305,11 @@ public:
    utime_t cache_status_interval;     /**< Interval to cache the vol_list in the rss */
    runtime_storage_status_t *rss;     /**< Runtime Storage Status */
    STORERES *paired_storage;          /**< Paired storage configuration item for protocols like NDMP */
-   tls_t tls;                         /**< TLS structure */
 
    /* Methods */
    char *dev_name() const;
+
+   STORERES() : TLSRES() {}
 };
 
 inline char *STORERES::dev_name() const
@@ -448,6 +448,8 @@ public:
 
    /* Methods */
    bool validate();
+
+   JOBRES() : BRSRES() {}
 };
 
 #undef  MAX_FOPTS
@@ -504,6 +506,8 @@ public:
 
    /* Methods */
    bool print_config(POOL_MEM& buf, bool hide_sensitive_data = false, bool verbose = false);
+
+   FILESETRES() : BRSRES() {}
 };
 
 /**
@@ -512,7 +516,9 @@ public:
 class SCHEDRES: public BRSRES {
 public:
    RUNRES *run;
-   bool enabled;                      /**< Set if schedule is enabled */
+   bool enabled;                      /* Set if schedule is enabled */
+
+   SCHEDRES() : BRSRES() {}
 };
 
 /**
@@ -520,12 +526,14 @@ public:
  */
 class COUNTERRES: public BRSRES {
 public:
-   int32_t MinValue;                  /**< Minimum value */
-   int32_t MaxValue;                  /**< Maximum value */
-   int32_t CurrentValue ;             /**< Current value */
-   COUNTERRES *WrapCounter;           /**< Wrap counter name */
-   CATRES *Catalog;                   /**< Where to store */
-   bool created;                      /**< Created in DB */
+   int32_t MinValue;                  /* Minimum value */
+   int32_t MaxValue;                  /* Maximum value */
+   int32_t CurrentValue ;             /* Current value */
+   COUNTERRES *WrapCounter;           /* Wrap counter name */
+   CATRES *Catalog;                   /* Where to store */
+   bool created;                      /* Created in DB */
+
+   COUNTERRES() : BRSRES() {}
 };
 
 /**
@@ -533,37 +541,39 @@ public:
  */
 class POOLRES: public BRSRES {
 public:
-   char *pool_type;                   /**< Pool type */
-   char *label_format;                /**< Label format string */
-   char *cleaning_prefix;             /**< Cleaning label prefix */
-   int32_t LabelType;                 /**< Bareos/ANSI/IBM label type */
-   uint32_t max_volumes;              /**< Max number of volumes */
-   utime_t VolRetention;              /**< Volume retention period in seconds */
-   utime_t VolUseDuration;            /**< Duration volume can be used */
-   uint32_t MaxVolJobs;               /**< Maximum jobs on the Volume */
-   uint32_t MaxVolFiles;              /**< Maximum files on the Volume */
-   uint64_t MaxVolBytes;              /**< Maximum bytes on the Volume */
-   utime_t MigrationTime;             /**< Time to migrate to next pool */
-   uint64_t MigrationHighBytes;       /**< When migration starts */
-   uint64_t MigrationLowBytes;        /**< When migration stops */
-   POOLRES *NextPool;                 /**< Next pool for migration */
-   alist *storage;                    /**< Where is device -- list of Storage to be used */
-   bool use_catalog;                  /**< Maintain catalog for media */
-   bool catalog_files;                /**< Maintain file entries in catalog */
-   bool use_volume_once;              /**< Write on volume only once */
-   bool purge_oldest_volume;          /**< Purge oldest volume */
-   bool recycle_oldest_volume;        /**< Attempt to recycle oldest volume */
-   bool recycle_current_volume;       /**< Attempt recycle of current volume */
-   bool AutoPrune;                    /**< Default for pool auto prune */
-   bool Recycle;                      /**< Default for media recycle yes/no */
-   uint32_t action_on_purge;          /**< Action on purge, e.g. truncate the disk volume */
-   POOLRES *RecyclePool;              /**< RecyclePool destination when media is purged */
-   POOLRES *ScratchPool;              /**< ScratchPool source when requesting media */
-   CATRES *catalog;                   /**< Catalog to be used */
-   utime_t FileRetention;             /**< File retention period in seconds */
-   utime_t JobRetention;              /**< Job retention period in seconds */
-   uint32_t MinBlocksize;             /**< Minimum Blocksize */
-   uint32_t MaxBlocksize;             /**< Maximum Blocksize */
+   char *pool_type;                   /* Pool type */
+   char *label_format;                /* Label format string */
+   char *cleaning_prefix;             /* Cleaning label prefix */
+   int32_t LabelType;                 /* Bareos/ANSI/IBM label type */
+   uint32_t max_volumes;              /* Max number of volumes */
+   utime_t VolRetention;              /* Volume retention period in seconds */
+   utime_t VolUseDuration;            /* Duration volume can be used */
+   uint32_t MaxVolJobs;               /* Maximum jobs on the Volume */
+   uint32_t MaxVolFiles;              /* Maximum files on the Volume */
+   uint64_t MaxVolBytes;              /* Maximum bytes on the Volume */
+   utime_t MigrationTime;             /* Time to migrate to next pool */
+   uint64_t MigrationHighBytes;       /* When migration starts */
+   uint64_t MigrationLowBytes;        /* When migration stops */
+   POOLRES *NextPool;                 /* Next pool for migration */
+   alist *storage;                    /* Where is device -- list of Storage to be used */
+   bool use_catalog;                  /* Maintain catalog for media */
+   bool catalog_files;                /* Maintain file entries in catalog */
+   bool use_volume_once;              /* Write on volume only once */
+   bool purge_oldest_volume;          /* Purge oldest volume */
+   bool recycle_oldest_volume;        /* Attempt to recycle oldest volume */
+   bool recycle_current_volume;       /* Attempt recycle of current volume */
+   bool AutoPrune;                    /* Default for pool auto prune */
+   bool Recycle;                      /* Default for media recycle yes/no */
+   uint32_t action_on_purge;          /* Action on purge, e.g. truncate the disk volume */
+   POOLRES *RecyclePool;              /* RecyclePool destination when media is purged */
+   POOLRES *ScratchPool;              /* ScratchPool source when requesting media */
+   CATRES *catalog;                   /* Catalog to be used */
+   utime_t FileRetention;             /* File retention period in seconds */
+   utime_t JobRetention;              /* Job retention period in seconds */
+   uint32_t MinBlocksize;             /* Minimum Blocksize */
+   uint32_t MaxBlocksize;             /* Maximum Blocksize */
+
+   POOLRES() : BRSRES() {}
 };
 
 /**
@@ -592,16 +602,18 @@ public:
    MSGSRES *msgs;                     /**< Messages override */
    char *since;
    uint32_t level_no;
-   uint32_t minute;                   /**< minute to run job */
-   time_t last_run;                   /**< last time run */
-   time_t next_run;                   /**< next time to run */
-   char hour[nbytes_for_bits(24 + 1)];  /**< bit set for each hour */
-   char mday[nbytes_for_bits(31 + 1)];  /**< bit set for each day of month */
-   char month[nbytes_for_bits(12 + 1)]; /**< bit set for each month */
-   char wday[nbytes_for_bits(7 + 1)];   /**< bit set for each day of the week */
-   char wom[nbytes_for_bits(5 + 1)];    /**< week of month */
-   char woy[nbytes_for_bits(54 + 1)];   /**< week of year */
-   bool last_set;                       /**< last week of month */
+   uint32_t minute;                   /* minute to run job */
+   time_t last_run;                   /* last time run */
+   time_t next_run;                   /* next time to run */
+   char hour[nbytes_for_bits(24 + 1)];  /* bit set for each hour */
+   char mday[nbytes_for_bits(31 + 1)];  /* bit set for each day of month */
+   char month[nbytes_for_bits(12 + 1)]; /* bit set for each month */
+   char wday[nbytes_for_bits(7 + 1)];   /* bit set for each day of the week */
+   char wom[nbytes_for_bits(5 + 1)];    /* week of month */
+   char woy[nbytes_for_bits(54 + 1)];   /* week of year */
+   bool last_set;                       /* last week of month */
+
+   RUNRES() : BRSRES() {}
 };
 
 /**
@@ -623,6 +635,14 @@ union URES {
    COUNTERRES res_counter;
    DEVICERES res_dev;
    RES hdr;
+
+   URES() {
+      new (&hdr) RES();
+      Dmsg1(900, "hdr:        %p \n", &hdr);
+      Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
+      Dmsg1(900, "res_con.hdr %p\n", &res_con.hdr);
+   }
+   ~URES() {}
 };
 
 void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
