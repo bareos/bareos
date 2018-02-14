@@ -386,12 +386,12 @@ DLL_IMP_EXP bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn,
                                  const char *host);
 DLL_IMP_EXP bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn,
                                alist *verify_list);
-DLL_IMP_EXP void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
 DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(std::shared_ptr<TLS_Context> ctx, int fd, bool server);
 DLL_IMP_EXP bool tls_bsock_accept(BSOCK *bsock);
 DLL_IMP_EXP int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes);
 DLL_IMP_EXP int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);
 #endif /* HAVE_TLS */
+DLL_IMP_EXP void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
 DLL_IMP_EXP bool tls_bsock_connect(BSOCK *bsock);
 DLL_IMP_EXP void tls_bsock_shutdown(BSOCK *bsock);
 DLL_IMP_EXP void free_tls_connection(TLS_CONNECTION *tls_conn);

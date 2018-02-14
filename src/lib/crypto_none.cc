@@ -26,7 +26,7 @@
 
 #include "bareos.h"
 
-#if !defined(HAVE_CRYPTO)
+#if !defined(HAVE_OPENSSL)
 
 #include "jcr.h"
 #include <assert.h>

@@ -32,8 +32,12 @@
 uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
    uint32_t merged_policy = 0;
 
+#if defined(HAVE_TLS)
    merged_policy = tls_configuration->tls_cert.GetPolicy() | tls_configuration->tls_psk.GetPolicy();
    Dmsg1(100, "GetNeedFromConfiguration: %u\n", merged_policy);
+#else
+   Dmsg1(100, "Ignore configuration no tls compiled in: %u\n", merged_policy);
+#endif
    return merged_policy;
 }
 
@@ -481,11 +485,13 @@ bool BSOCK::two_way_authenticate(JCR *jcr,
          free_tls();          /* yes, shutdown tls */
       }
    }
-
    if (!initiated_by_remote) {
+#ifdef HAVE_OPENSSL
       tls_log_conninfo(jcr, GetTlsConnection(), host(), port(), who());
+#else
+      tls_log_conninfo(jcr, GetTlsConnection(), host(), port(), who());
+#endif
    }
-
 auth_fatal:
    if (tid) {
       stop_bsock_timer(tid);
