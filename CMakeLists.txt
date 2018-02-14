@@ -53,12 +53,18 @@ INCLUDE(BareosExtractVersionInfo)
 
 INCLUDE(BareosFindAllLibraries)
 
-
-IF(CMAKE_BUILD_TYPE STREQUAL "Debug")
-   INCLUDE(CodeCoverage)
-   APPEND_COVERAGE_COMPILER_FLAGS()
+IF (coverage)
+   set(COVERAGE_COMPILER_FLAGS "-g -O0 --coverage -fprofile-arcs -ftest-coverage" CACHE INTERNAL "")
+   MESSAGE(STATUS "coverage requested, adding COVERAGE_COMPILER_FLAGS : ${COVERAGE_COMPILER_FLAGS}")
+   set(CMAKE_BUILD_TYPE Debug)
+   if(CMAKE_C_COMPILER_ID STREQUAL "GNU")
+      link_libraries(gcov)
+   else()
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --coverage")
+   endif()
+   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
+   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${COVERAGE_COMPILER_FLAGS}")
 ENDIF()
-
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
    set(HAVE_LINUX_OS 1)
@@ -646,6 +652,7 @@ MESSAGE("   gtest support:                ${GTEST_FOUND} ${GTEST_LIBRARIES} ${GT
 
 MESSAGE("   Dynamic cats backends:        ${dynamic-cats-backends} ${HAVE_DYNAMIC_CATS_BACKENDS} ")
 MESSAGE("   Dynamic storage backends:     ${dynamic-storage-backends} ${HAVE_DYNAMIC_SD_BACKENDS} ")
+MESSAGE("   Build for Test Coverage :     ${coverage} ")
 
 message("   PSCMD:                        ${PSCMD}")
 message("   PS:                           ${PS}")
