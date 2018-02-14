@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 
 ### Changed
+
+### Removed
+
+## [17.2.5]
+
+### Changed
 - Fix to bugreport #887
 - Fix to bugreport #893
 - Fix to bugreport #905
 - Selenium tests enhanced
-
-### Removed
 
 ## [17.2.4]
 
