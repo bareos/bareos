@@ -29,7 +29,7 @@
 #include "bareos.h"
 #include "jcr.h"
 
-uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
+DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
    uint32_t merged_policy = 0;
 
 #if defined(HAVE_TLS)

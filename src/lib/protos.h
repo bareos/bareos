@@ -59,9 +59,9 @@ DLL_IMP_EXP bool bnet_send(BSOCK *bsock);
 DLL_IMP_EXP bool bnet_fsend(BSOCK *bs, const char *fmt, ...);
 DLL_IMP_EXP bool bnet_set_buffer_size(BSOCK *bs, uint32_t size, int rw);
 DLL_IMP_EXP bool bnet_sig(BSOCK *bs, int sig);
-bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock,
+DLL_IMP_EXP bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock,
                      alist *verify_list);
-bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock,
+DLL_IMP_EXP bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock,
                      bool verify_peer, alist *verify_list);
 DLL_IMP_EXP int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen);
 DLL_IMP_EXP BSOCK *dup_bsock(BSOCK *bsock);

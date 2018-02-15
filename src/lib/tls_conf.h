@@ -80,7 +80,7 @@ class PskCredentials {
    }
 };
 
-class tls_base_t {
+class DLL_IMP_EXP tls_base_t {
  public:
    bool enable;  /*!< Enable TLS */
    bool require; /*!< Require TLS */
@@ -111,7 +111,7 @@ class tls_base_t {
    tls_base_t() : enable(false), require(false) {}
 };
 
-class tls_cert_t : public tls_base_t {
+class DLL_IMP_EXP tls_cert_t : public tls_base_t {
    static u_int32_t const policy_offset = 0;
  public:
    bool authenticate;       /* Authenticate with TLS */
@@ -168,7 +168,7 @@ class tls_cert_t : public tls_base_t {
    static bool required(u_int32_t policy);
 };
 
-class tls_psk_t : public tls_base_t {
+class DLL_IMP_EXP tls_psk_t : public tls_base_t {
    static u_int32_t const policy_offset = 2;
 
  public:

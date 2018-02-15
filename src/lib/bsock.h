@@ -50,7 +50,7 @@ uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration);
 
 tls_base_t *SelectTlsFromPolicy(TLSRES *tls_configuration, uint32_t remote_policy);
 
-class BSOCK : public SMARTALLOC {
+class DLL_IMP_EXP BSOCK : public SMARTALLOC {
 /*
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.
