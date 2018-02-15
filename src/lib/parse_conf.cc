@@ -783,7 +783,7 @@ void CONFIG::init_resource(int type,
           * If this triggers, take a look at lib/parse_conf.h
           */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first]);
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first].name);
          }
       }
       break;
@@ -853,7 +853,7 @@ void CONFIG::init_resource(int type,
           * If this triggers, take a look at lib/parse_conf.h
           */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first]);
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first].name);
          }
       }
       break;

@@ -280,7 +280,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       if (items[i].flags & CFG_ITEM_REQUIRED) {
             if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
                Emsg2(M_ABORT, 0, _("%s item is required in %s resource, but not found.\n"),
-                 items[i].name, resources[rindex]);
+                 items[i].name, resources[rindex].name);
              }
       }
    }

@@ -3157,7 +3157,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
          if (!bit_is_set(0, res_all.res_dir.hdr.item_present)) {
             Emsg2(M_ERROR, 0,
                   _("%s item is required in %s resource, but not found.\n"),
-                  items[0].name, resources[rindex]);
+                  items[0].name, resources[rindex].name);
             return false;
          }
       }
@@ -3194,7 +3194,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       RES *next, *last;
       if (!res->res_dir.name()) {
          Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
-               resources[rindex]);
+               resources[rindex].name);
          return false;
       }
       /*

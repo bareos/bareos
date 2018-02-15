@@ -731,14 +731,14 @@ bool save_resource(int type, RES_ITEM *items, int pass)
          if (!bit_is_set(i, res_all.res_dir.hdr.item_present)) {
             Emsg2(M_ERROR_TERM, 0,
                   _("\"%s\" item is required in \"%s\" resource, but not found.\n"),
-                  items[i].name, resources[rindex]);
+                  items[i].name, resources[rindex].name);
           }
       }
       /*
        * If this triggers, take a look at lib/parse_conf.h
        */
       if (i >= MAX_RES_ITEMS) {
-         Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"), resources[rindex]);
+         Emsg1(M_ERROR_TERM, 0, _("Too many items in \"%s\" resource\n"), resources[rindex].name);
       }
    }
 
