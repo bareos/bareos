@@ -467,11 +467,16 @@ create [pool=<pool-name>]
 
         This command allows to add resources during runtime.
         Usage:
-\begin{bconsole}{}
+\begin{bconsole}{configure add usage}
 configure add <resourcetype> name=<resourcename> <directive1>=<value1> <directive2>=<value2> ...
 \end{bconsole}
 
-    The command generates and loads a new, valid resource.
+    Values that must be quoted in the resulting configuration must be added as:
+\begin{bconsole}{configure add usage with values containing spaces}
+configure add <resourcetype> name=<resourcename> <directive1>="\"<value containing spaces>\"" ...
+\end{bconsole}
+
+    The command generates and loads a new valid resource.
     As the new resource is also stored at
 
     \file{<CONFIGDIR>/bareos-dir.d/<resourcetype>/<resourcename>.conf}
