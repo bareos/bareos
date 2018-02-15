@@ -20,6 +20,11 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos)
 
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 include_directories(/usr/include)
 endif()
@@ -124,6 +129,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 else()
    add_definitions("-D_FILE_OFFSET_BITS=64")
 endif()
+
 
 INCLUDE(BareosFindPrograms)
 
