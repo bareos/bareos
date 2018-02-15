@@ -569,7 +569,7 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist) 
 #endif
    if (!ctx->openssl) {
       openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
-      goto err;
+      throw std::runtime_error(_("Error initializing SSL context"));
    }
 
    /*
@@ -590,20 +590,10 @@ static std::shared_ptr<TLS_CONTEXT> new_tls_psk_context(const char *cipherlist) 
 
    if (SSL_CTX_set_cipher_list(ctx->openssl, cipherlist) != 1) {
       Jmsg0(NULL, M_ERROR, 0, _("Error setting cipher list, no valid ciphers available\n"));
-      goto err;
+      throw std::runtime_error(_("Error setting cipher list, no valid ciphers available"));
    }
 
    return ctx;
-
-err:
-   /*
-    * Clean up after ourselves
-    */
-   if (ctx->openssl) {
-      SSL_CTX_free(ctx->openssl);
-   }
-
-   return nullptr;
 }
 
 static std::shared_ptr<TLS_CONTEXT> new_tls_psk_client_context(
@@ -659,7 +649,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
 #endif
    if (!ctx->openssl) {
       openssl_post_errors(M_FATAL, _("Error initializing SSL context"));
-      goto err;
+      throw std::runtime_error(_("Error initializing SSL context"));
    }
 
    /*
@@ -694,13 +684,14 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    if (ca_certfile || ca_certdir) {
       if (!SSL_CTX_load_verify_locations(ctx->openssl, ca_certfile, ca_certdir)) {
          openssl_post_errors(M_FATAL, _("Error loading certificate verification stores"));
-         goto err;
+         throw std::runtime_error(_("Error loading certificate verification stores"));
       }
    } else if (verify_peer) {
       /* At least one CA is required for peer verification */
       Jmsg0(NULL, M_ERROR, 0, _("Either a certificate file or a directory must be"
                          " specified as a verification store\n"));
-      goto err;
+      throw std::runtime_error(_("Either a certificate file or a directory must be"
+                                    " specified as a verification store"));
    }
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L)  && (OPENSSL_VERSION_NUMBER < 0x10100000L)
@@ -714,18 +705,18 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
       store = SSL_CTX_get_cert_store(ctx->openssl);
       if (!store) {
          openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
-         goto err;
+         throw std::runtime_error(_("Error loading revocation list file"));
       }
 
       lookup = X509_STORE_add_lookup(store, X509_LOOKUP_crl_reloader());
       if (!lookup) {
          openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
-         goto err;
+         throw std::runtime_error(_("Error loading revocation list file"));
       }
 
       if (!load_new_crl_file(lookup, (char *)crlfile)) {
          openssl_post_errors(M_FATAL, _("Error loading revocation list file"));
-         goto err;
+         throw std::runtime_error(_("Error loading revocation list file"));
       }
 
       X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK | X509_V_FLAG_CRL_CHECK_ALL);
@@ -739,7 +730,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    if (certfile) {
       if (!SSL_CTX_use_certificate_chain_file(ctx->openssl, certfile)) {
          openssl_post_errors(M_FATAL, _("Error loading certificate file"));
-         goto err;
+         throw std::runtime_error(_("Error loading certificate file"));
       }
    }
 
@@ -749,7 +740,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    if (keyfile) {
       if (!SSL_CTX_use_PrivateKey_file(ctx->openssl, keyfile, SSL_FILETYPE_PEM)) {
          openssl_post_errors(M_FATAL, _("Error loading private key"));
-         goto err;
+         throw std::runtime_error(_("Error loading private key"));
       }
    }
 
@@ -759,18 +750,18 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    if (dhfile) {
       if (!(bio = BIO_new_file(dhfile, "r"))) {
          openssl_post_errors(M_FATAL, _("Unable to open DH parameters file"));
-         goto err;
+         throw std::runtime_error(_("Unable to open DH parameters file"));
       }
       dh = PEM_read_bio_DHparams(bio, NULL, NULL, NULL);
       BIO_free(bio);
       if (!dh) {
          openssl_post_errors(M_FATAL, _("Unable to load DH parameters from specified file"));
-         goto err;
+         throw std::runtime_error(_("Unable to load DH parameters from specified file"));
       }
       if (!SSL_CTX_set_tmp_dh(ctx->openssl, dh)) {
          openssl_post_errors(M_FATAL, _("Failed to set TLS Diffie-Hellman parameters"));
          DH_free(dh);
-         goto err;
+         throw std::runtime_error(_("Failed to set TLS Diffie-Hellman parameters"));
       }
 
       /*
@@ -786,7 +777,7 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    if (SSL_CTX_set_cipher_list(ctx->openssl, cipherlist) != 1) {
       Jmsg0(NULL, M_ERROR, 0,
              _("Error setting cipher list, no valid ciphers available\n"));
-      goto err;
+      throw std::runtime_error(_("Error setting cipher list, no valid ciphers available"));
    }
 
    /*
@@ -806,9 +797,6 @@ static  std::shared_ptr<TLS_CONTEXT> new_tls_context(const char *ca_certfile, co
    }
 
    return ctx;
-
-err:
-   return nullptr;
 }
 
 std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateClientContext(
