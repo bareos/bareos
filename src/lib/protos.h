@@ -376,7 +376,7 @@ DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
 
 /* tls_openssl.cc */
 
-DLL_IMP_EXP using sharedPskCredentials = std::shared_ptr<PskCredentials>;
+typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
 
 DLL_IMP_EXP int hex2bin(char *str, unsigned char *out, unsigned int max_out_len);
 DLL_IMP_EXP void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx);
