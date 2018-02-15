@@ -51,27 +51,27 @@ ENDIF()
 
 
 IF(HAVE_WIN32)
-add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
-target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
-set_target_properties(mssqlvdi-fd PROPERTIES PREFIX ""
-                                  DEFINE_SYMBOL "BUILDING_DLL"
-   )
+   add_library(mssqlvdi-fd MODULE ../../win32/plugins/filed/mssqlvdi-fd.cc)
+   target_compile_options(mssqlvdi-fd PUBLIC -fpermissive)
+   set_target_properties(mssqlvdi-fd PROPERTIES PREFIX ""
+      DEFINE_SYMBOL "BUILDING_DLL"
+      )
 
-INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir})
-target_link_libraries(mssqlvdi-fd bareos)
+   INSTALL(TARGETS mssqlvdi-fd DESTINATION ${plugindir})
+   target_link_libraries(mssqlvdi-fd bareos)
 ENDIF()
 
 
 if(${HAVE_CEPHFS})
-add_library(cephfs-fd MODULE cephfs-fd.cc)
-set_target_properties(cephfs-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir})
+   add_library(cephfs-fd MODULE cephfs-fd.cc)
+   set_target_properties(cephfs-fd PROPERTIES PREFIX "")
+   INSTALL(TARGETS cephfs-fd DESTINATION ${plugindir})
 endif()
 
 if(${HAVE_CEPH_RADOS})
-add_library(rados-fd MODULE rados-fd.cc)
-set_target_properties(rados-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS rados-fd DESTINATION ${plugindir})
+   add_library(rados-fd MODULE rados-fd.cc)
+   set_target_properties(rados-fd PROPERTIES PREFIX "")
+   INSTALL(TARGETS rados-fd DESTINATION ${plugindir})
 endif()
 
 IF(NOT HAVE_WIN32)
@@ -79,17 +79,19 @@ IF(NOT HAVE_WIN32)
    set_target_properties(example-plugin-fd PROPERTIES PREFIX "")
 ENDIF()
 
-add_library(python-fd MODULE python-fd.cc)
-set_target_properties(python-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS python-fd DESTINATION ${plugindir})
-IF(HAVE_WIN32)
-   target_link_libraries(python-fd python27 bareos)
+IF(HAVE_PYTHON)
+   add_library(python-fd MODULE python-fd.cc)
+   set_target_properties(python-fd PROPERTIES PREFIX "")
+   INSTALL(TARGETS python-fd DESTINATION ${plugindir})
+   IF(HAVE_WIN32)
+      target_link_libraries(python-fd python27 bareos)
+   ENDIF()
 ENDIF()
 
 if(${HAVE_GLUSTERFS})
-add_library(gfapi-fd MODULE gfapi-fd.cc)
-set_target_properties(gfapi-fd PROPERTIES PREFIX "")
-INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir})
+   add_library(gfapi-fd MODULE gfapi-fd.cc)
+   set_target_properties(gfapi-fd PROPERTIES PREFIX "")
+   INSTALL(TARGETS gfapi-fd DESTINATION ${plugindir})
 endif()
 
 if (${HAVE_TEST_PLUGIN})

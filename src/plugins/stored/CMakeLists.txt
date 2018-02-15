@@ -49,19 +49,20 @@ IF(NOT HAVE_WIN32)
    INSTALL(TARGETS scsitapealert-sd DESTINATION ${plugindir})
 ENDIF()
 
+IF(HAVE_PYTHON)
+   add_library(python-sd MODULE python-sd.cc)
+   set_target_properties(python-sd PROPERTIES PREFIX "")
+   INSTALL(TARGETS python-sd DESTINATION ${plugindir})
+   IF(HAVE_WIN32)
+      target_link_libraries(python-sd python27 bareos)
+   ENDIF()
 
-add_library(python-sd MODULE python-sd.cc)
-set_target_properties(python-sd PROPERTIES PREFIX "")
-INSTALL(TARGETS python-sd DESTINATION ${plugindir})
-IF(HAVE_WIN32)
-   target_link_libraries(python-sd python27 bareos)
+
+   set (PYFILES bareos-sd-class-plugin.py
+      bareos_sd_consts.py
+      BareosSdPluginBaseclass.py
+      bareos-sd.py.template
+      BareosSdWrapper.py)
+
+   INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
 ENDIF()
-
-
-set (PYFILES bareos-sd-class-plugin.py
-             bareos_sd_consts.py
-             BareosSdPluginBaseclass.py
-             bareos-sd.py.template
-             BareosSdWrapper.py)
-
-INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})

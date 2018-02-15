@@ -32,20 +32,22 @@ ELSE()
    include_directories(../.. . ../../include ../../dird)
 ENDIF()
 
-add_library(python-dir MODULE python-dir.cc)
-# do not prefix with "lib"
-set_target_properties(python-dir PROPERTIES PREFIX "")
-INSTALL(TARGETS python-dir DESTINATION ${plugindir})
+IF(HAVE_PYTHON)
+   add_library(python-dir MODULE python-dir.cc)
+   # do not prefix with "lib"
+   set_target_properties(python-dir PROPERTIES PREFIX "")
+   INSTALL(TARGETS python-dir DESTINATION ${plugindir})
 
-IF(HAVE_WIN32)
-   target_link_libraries(python-dir python27 bareos)
+   IF(HAVE_WIN32)
+      target_link_libraries(python-dir python27 bareos)
+   ENDIF()
+
+
+   set (PYFILES bareos-dir.py.template
+      bareos-dir-class-plugin.py
+      bareos_dir_consts.py
+      BareosDirPluginBaseclass.py
+      BareosDirWrapper.py)
+
+   INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
 ENDIF()
-
-
-set (PYFILES bareos-dir.py.template
-             bareos-dir-class-plugin.py
-             bareos_dir_consts.py
-             BareosDirPluginBaseclass.py
-             BareosDirWrapper.py)
-
-INSTALL(FILES ${PYFILES} DESTINATION ${plugindir})
