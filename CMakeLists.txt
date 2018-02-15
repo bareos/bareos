@@ -120,6 +120,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
 
    SET(PYTHON_LIBRARIES ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/lib/${WINDOWS_BITS}/python27.dll )
    SET(PYTHON_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/src/win32/plugins/python/include)
+   SET(HAVE_PYTHON 1)
 
    SET(PostgreSQL_LIBRARY ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/lib/${WINDOWS_BITS}/libpq.dll)
    SET(PostgreSQL_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/src/win32/cats/pgsql/include)
