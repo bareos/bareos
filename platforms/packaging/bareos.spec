@@ -127,6 +127,12 @@ Vendor: 	The Bareos Team
 %define ceph 1
 %endif
 
+# use Developer Toolset 7 compiler as standard is too old
+%if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
+BuildRequires: devtoolset-7-gcc
+BuildRequires: devtoolset-7-gcc-c++
+%endif
+
 %if 0%{?systemd_support}
 BuildRequires: systemd
 # see https://en.opensuse.org/openSUSE:Systemd_packaging_guidelines
@@ -699,6 +705,11 @@ export MTX=/usr/sbin/mtx
 
 mkdir %{CMAKE_BUILDDIR}
 pushd %{CMAKE_BUILDDIR}
+
+# use Developer Toolset 7 compiler as standard is too old
+%if 0%{?centos_version} == 600 || 0%{?rhel_version} == 600
+export PATH=/opt/rh/devtoolset-7/root/usr/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
+%endif
 
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
