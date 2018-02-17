@@ -1150,6 +1150,7 @@ Section -ConfigureConfiguration
   FileSeek $R1 0 END
 
   FileWrite $R1 "s#@basename@-fd#$ClientName#g$\r$\n"
+  FileWrite $R1 "s#localhost-fd#$ClientName#g$\r$\n"
   FileWrite $R1 "s#bareos-dir#$DirectorName#g$\r$\n"
   FileWrite $R1 "s#bareos-mon#$HostName-mon#g$\r$\n"
   FileWrite $R1 "s#@basename@-sd#$StorageDaemonName#g$\r$\n"
