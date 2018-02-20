@@ -20,9 +20,20 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos)
 
+# switch on CXX 11 Support
+#
+if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+   set(CMAKE_CXX_STANDARD 11)
+   set(CMAKE_CXX_STANDARD_REQUIRED ON)
+endif()
 
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+# cmake does not understand how to enforce CMAKE_CXX_STANDARD 11
+# on Solaris  so we do it manually.
+if (${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
+  set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
+
+
 
 
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
