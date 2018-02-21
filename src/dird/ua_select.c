@@ -1046,7 +1046,7 @@ int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt,
       if (prompt) {
          bstrncpy(prompt, ua->prompt[1], max_prompt);
       }
-      if (!ua->api) {
+      if (!ua->api && !ua->runscript) {
          ua->send_msg(_("Automatically selected %s: %s\n"), automsg, ua->prompt[1]);
       }
       goto done;

@@ -176,7 +176,7 @@ bool open_db(UAContext *ua, bool use_private)
       ua->shared_db = ua->db;
    }
 
-   if (!ua->api) {
+   if (!ua->api && !ua->runscript) {
       ua->send_msg(_("Using Catalog \"%s\"\n"), ua->catalog->name());
    }
 
