@@ -1859,9 +1859,9 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
    }
 
    /*
-    * If no jcr or no queue or dequeuing send to syslog
+    * If no jcr  or no JobId or no queue or dequeuing send to syslog
     */
-   if (!jcr || !jcr->msg_queue || jcr->dequeuing_msgs) {
+   if (!jcr || !jcr->JobId || !jcr->msg_queue || jcr->dequeuing_msgs) {
       syslog(LOG_DAEMON|LOG_ERR, "%s", item->msg);
       free(item);
    } else {
