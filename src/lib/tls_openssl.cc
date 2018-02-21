@@ -865,10 +865,12 @@ void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx) {
 
 /**
  * Get connection cipher info and log it into joblog
+ * if this is a connection belonging to a job (jcr != NULL)
+ *
  */
 void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
    if (tls_conn == nullptr) {
-         Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
+      Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
    } else {
       SSL *ssl                 = tls_conn->GetSsl();
       const SSL_CIPHER *cipher = SSL_get_current_cipher(ssl);
@@ -878,7 +880,7 @@ void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int 
          cipher_name = SSL_CIPHER_get_name(cipher);
          Qmsg(jcr, M_INFO, 0, _("Secure connection to %s at %s:%d with cipher %s established\n"), who, host, port, cipher_name);
       } else {
-         Qmsg3(jcr, M_WARNING, 0, _("Secure connection to %s at %s:%d with UNKNOWN cipher established\n"), who, host, port);
+         Qmsg(jcr, M_WARNING, 0, _("Secure connection to %s at %s:%d with UNKNOWN cipher established\n"), who, host, port);
       }
    }
 }
