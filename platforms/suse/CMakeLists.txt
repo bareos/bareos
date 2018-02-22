@@ -23,6 +23,8 @@ set (DESTSTARTDIR ${sysconfdir}/init.d/)
 
 MESSAGE(STATUS  "installing startfiles to ${DESTSTARTDIR}")
 
+INSTALL(DIRECTORY DESTINATION ${DESTSTARTDIR})
+
 # Install autostart fd
 INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-fd" DESTINATION "${DESTSTARTDIR}"
          PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE
@@ -49,7 +51,8 @@ INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-sd.fw" DESTINATION "${FIREWALL_
 # Install firewall dir
 INSTALL (FILES "${CMAKE_CURRENT_LIST_DIR}/bareos-dir.fw" DESTINATION "${FIREWALL_DIR}" RENAME bareos-dir)
 
-install(DIRECTORY DESTINATION ${sbindir})
+INSTALL(DIRECTORY DESTINATION ${sbindir})
+
 INSTALL(
    CODE "execute_process( COMMAND ${CMAKE_COMMAND} -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
    CODE "MESSAGE(STATUS ${CMAKE_COMMAND}           -E create_symlink ${DESTSTARTDIR}/bareos-fd $ENV{RPM_BUILD_ROOT}/${sbindir}/rcbareos-fd )"
