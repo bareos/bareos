@@ -63,7 +63,12 @@ IF(HAVE_WIN32)
       )
 ENDIF()
 
-add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
+IF(HAVE_WIN32)
+   add_executable(bareos-tray-monitor WIN32 ${SOURCES} main.qrc)
+ELSE()
+   add_executable(bareos-tray-monitor ${SOURCES} main.qrc)
+ENDIF()
+
 target_link_libraries(${TRAYMON_LIBRARIES})
 
 INSTALL(TARGETS bareos-tray-monitor DESTINATION "${bindir}")
