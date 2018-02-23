@@ -47,7 +47,7 @@ if(${scsi-crypto})
 
    # FREEBSD: HAVE_CAMLIB_H and HAVE_CAM_SCSI_SCSI_MESSAGE_H also add CAM_LIBS="-lcam"
    if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
-      if ("${HAVE_CAMLIB_HHAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
+      if ("${HAVE_CAMLIB_H}" AND "${HAVE_CAM_SCSI_SCSI_MESSAGE_H}")
          SET(HAVE_LOWLEVEL_SCSI_INTERFACE 1)
          SET(CAM_LIBRARIES cam)
       else()

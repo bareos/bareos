@@ -98,6 +98,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
    set(PSCMD "ps -ax -o pid,command")
    include_directories(/usr/local/include)
    link_directories(/usr/local/lib)
+   link_libraries(intl)
 endif()
 
 # hpux

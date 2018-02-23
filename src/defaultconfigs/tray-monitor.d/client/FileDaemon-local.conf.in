@@ -1,5 +1,5 @@
 Client {
-  Name = FileDaemon-local
+  Name = @basename@-fd
   Address = localhost
   Password = "@mon_fd_password@"          # password for FileDaemon
 }
