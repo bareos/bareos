@@ -38,6 +38,9 @@ set_target_properties(bareosfind PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
                                           DEFINE_SYMBOL "BUILDING_DLL"
                                           )
+IF(HAVE_WIN32)
+   set_target_properties(bareosfind PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+ENDIF()
 
 IF(NOT HAVE_WIN32 AND GTEST_FOUND)
    #add_subdirectory(unittests)

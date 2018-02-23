@@ -25,10 +25,10 @@ set_property(TARGET bareoslmdb PROPERTY INCLUDE_DIRECTORIES "")
 
 set_target_properties(bareoslmdb PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
-                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
 IF(HAVE_WIN32)
-target_link_libraries(bareoslmdb -lntdll)
+   set_target_properties(bareoslmdb PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+   target_link_libraries(bareoslmdb -lntdll)
 ENDIF()
 
 INSTALL(TARGETS bareoslmdb DESTINATION ${libdir})

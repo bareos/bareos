@@ -96,13 +96,15 @@ INSTALL(TARGETS bareoscfg DESTINATION ${libdir})
 
 set_target_properties(bareoscfg PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
-                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
 
 set_target_properties(bareos PROPERTIES VERSION "${VERSION}"
                                           SOVERSION "${SOVERSION}"
-                                          DEFINE_SYMBOL "BUILDING_DLL"
                                           )
+IF(HAVE_WIN32)
+   set_target_properties(bareoscfg PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+   set_target_properties(bareos PROPERTIES DEFINE_SYMBOL "BUILDING_DLL")
+ENDIF()
 
 INSTALL(FILES ${INCLUDE_FILES} DESTINATION ${includedir})
 
