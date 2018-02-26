@@ -635,6 +635,7 @@ const char *B_DB_MYSQL::query_definitions[] = {
 "WHERE T1.JobTDate = Job.JobTDate "
   "AND Job.JobId = File.JobId "
   "AND T1.PathId = File.PathId "
+  "AND T1.Name = File.Name "
   "AND File.FileIndex > 0 "
   "AND Job.JobId IN "
     "(SELECT DISTINCT JobId "
