@@ -6,8 +6,8 @@ incremental: False
 [Product]
 type: localboot
 id: winbareos
-name: Bareos file daemon
-description: backup software
+name: Bareos File Daemon
+description: backup and restore client
 advice:
 version: $ProductVersion
 priority: 0
@@ -51,7 +51,7 @@ type: unicode
 name: filedaemon_client_address
 multivalue: False
 editable: True
-description: address of the filedaemon. Leave empty for HostID-fd
+description: FQDN of the Bareos File Daemon. Default is the detected HostID.
 default: [""]
 
 [ProductProperty]
@@ -59,7 +59,7 @@ type: unicode
 name: filedaemon_monitor_name
 multivalue: False
 editable: True
-description: filedaemon bareos name. Leave empty for HostID-mon
+description: Name used by monitoring (eg. Tray Monitor) to connect to this Bareos File Daemon. Default is HostID-mon.
 default: [""]
 
 [ProductProperty]
@@ -67,32 +67,66 @@ type: unicode
 name: filedaemon_monitor_password
 multivalue: False
 editable: True
-description: password used by monitoring (eg. tray-monitor) to connect to this filedaemon
+description: password used by monitoring (eg. Tray Monitor) to connect to this Bareos File Daemon.
 default: ["filedaemon_monitor_password"]
-
-[ProductProperty]
-type: unicode
-name: director_name
-multivalue: False
-editable: True
-description: access to Bareos director for bconsole and bat
-default: ["director_name"]
 
 [ProductProperty]
 type: unicode
 name: director_address
 multivalue: False
 editable: True
-description: access to Bareos director for bconsole and bat
+description: FQDN/IP of the Bareos Director. Used by the locally initiated console connections.
 default: ["director_address"]
+
+[ProductProperty]
+type: unicode
+name: director_name
+multivalue: False
+editable: True
+description: Name of the Bareos Director. Used by the locally initiated console connections.
+default: ["director_name"]
 
 [ProductProperty]
 type: unicode
 name: director_password
 multivalue: False
 editable: True
-description: access to Bareos director for bconsole and bat
+description: Password of the Bareos Director. Used by the locally initiated console connections.
 default: ["director_password"]
+
+[ProductProperty]
+type: unicode
+name: jobdefs
+multivalue: False
+editable: True
+description: Only used by Bareos OPSI integration script: use a predefined job definitions (JobDefs).
+default: ["DefaultJob"]
+
+[ProductProperty]
+type: unicode
+name: fileset
+multivalue: False
+editable: True
+description: Only used by Bareos OPSI integration script: if set, let the backup job use this explicitly defined FileSet.
+default: ["Windows All Drives"]
+
+#[ProductProperty]
+#type: BoolProductProperty
+#name: ConnectionFromDirectorToClient
+#multivalue: False
+#editable: False
+#description: Network connections are initiated from the Director to the Client.
+#values: ["false", "true"]
+#default: ["true"]
+
+#[ProductProperty]
+#type: BoolProductProperty
+#name: ConnectionFromClientToDirector
+#multivalue: False
+#editable: False
+#description: Network connections are initiated from the Client to the Director.
+#values: ["false", "true"]
+#default: ["false"]
 
 [ProductProperty]
 type: unicode
@@ -104,13 +138,17 @@ values: ["32 only", "64 only", "both", "system specific"]
 default: ["system specific"]
 
 [Changelog]
+20180222, Jörg Steffens
+  * cleanup
+  * add ProductProperty jobdefs and fileset.
+
 20130627, Daniel Neuberger
   * added ProductProperty Update_KeepConfig
 
 20130215, Joerg Steffens
   * adapted to be build with http://build.opensuse.org
 
-20130129, , Daniel Neuberger
+20130129, Daniel Neuberger
   * inital Bareos
   * added properties filedaemon_client_address
   * added Variables in setup
