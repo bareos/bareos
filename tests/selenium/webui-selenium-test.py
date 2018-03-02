@@ -163,6 +163,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         Select(driver.find_element_by_id('job')).select_by_visible_text('backup-%s' % self.client)
         Select(driver.find_element_by_id('client')).select_by_visible_text(self.client)
         Select(driver.find_element_by_id('level')).select_by_visible_text('Incremental')
+        # Clears the priority field and enters 5.
         driver.find_element_by_id('priority').clear()
         driver.find_element_by_id('priority').send_keys('5')
         
@@ -198,7 +199,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait_and_click(By.LINK_TEXT, self.client)
         # Select first backup in list
         self.wait_and_click(By.XPATH, '//tr[@data-index="0"]/td[1]/a')
-        # Press on repeat button
+        # Press on rerun button
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-repeat")
         self.wait_and_click(By.ID, "menu-topnavbar-dashboard", By.XPATH, "//div[@id='modal-002']/div/div/div[3]/button")
         self.logout()
