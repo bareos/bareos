@@ -66,28 +66,28 @@ DLL_IMP_EXP void reallyfree(const char *file, int line, void *fp);
 DLL_IMP_EXP void *sm_malloc(const char *fname, int lineno, unsigned int nbytes);
 DLL_IMP_EXP void sm_free(const char *file, int line, void *fp);
 
-inline void *operator new(size_t size, char const * file, int line)
+void *operator new(size_t size, char const * file, int line)
 {
    void *pnew = sm_malloc(file,line, size);
    memset((char *)pnew, 0, size);
    return pnew;
 }
 
-inline void *operator new[](size_t size, char const * file, int line)
+void *operator new[](size_t size, char const * file, int line)
 {
    void *pnew = sm_malloc(file, line, size);
    memset((char *)pnew, 0, size);
    return pnew;
 }
 
-inline void *operator new(size_t size)
+void *operator new(size_t size)
 {
    void *pnew = sm_malloc(__FILE__, __LINE__, size);
    memset((char *)pnew, 0, size);
    return pnew;
 }
 
-inline void *operator new[](size_t size)
+void *operator new[](size_t size)
 {
    void *pnew = sm_malloc(__FILE__, __LINE__, size);
    memset((char *)pnew, 0, size);
@@ -96,12 +96,12 @@ inline void *operator new[](size_t size)
 
 #define new   new(__FILE__, __LINE__)
 
-inline void operator delete(void *buf)
+void operator delete(void *buf) noexcept
 {
    sm_free( __FILE__, __LINE__, buf);
 }
 
-inline void operator delete[] (void *buf)
+void operator delete[] (void *buf) noexcept
 {
   sm_free(__FILE__, __LINE__, buf);
 }

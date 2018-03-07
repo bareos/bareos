@@ -1763,7 +1763,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char insta
    b_plugin_ctx *b_ctx;
 
    b_ctx = (b_plugin_ctx *)malloc(sizeof(b_plugin_ctx));
-   (b_plugin_ctx *)memset(b_ctx, 0, sizeof(b_plugin_ctx));
+   b_ctx = (b_plugin_ctx *)memset(b_ctx, 0, sizeof(b_plugin_ctx));
    b_ctx->jcr = jcr;
    b_ctx->plugin = plugin;
 

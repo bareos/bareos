@@ -117,11 +117,6 @@ int ndmp_load_next(struct ndm_session *sess) {
          goto bail_out;
       }
 
-      if ( media->slot_addr < 0 ) {
-         Jmsg(jcr, M_FATAL, 0, _("lookup_storage_mapping failed\n"));
-         goto bail_out;
-      }
-
       slot_number_t slotnumber = lookup_storage_mapping(store, slot_type_normal, LOGICAL_TO_PHYSICAL, mr.Slot);
       /*
        * check if lookup_storage_mapping was successful

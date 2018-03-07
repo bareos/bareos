@@ -523,7 +523,7 @@ static unsigned int psk_client_cb(SSL *ssl,
           * Now let's check if the given identity is the same and
           * provide the psk.
           */
-         unsigned int ret =
+         int ret =
              bsnprintf(identity, max_identity_len, "%s", credentials->get_identity().c_str());
 
          if (ret < 0 || (unsigned int)ret > max_identity_len) {
@@ -828,19 +828,19 @@ std::shared_ptr<TLS_CONTEXT> tls_cert_t::CreateServerContext(
 }
 
 bool tls_cert_t::enabled(u_int32_t policy) {
-   return (policy >> tls_cert_t::policy_offset) & BNET_TLS_ENABLED == BNET_TLS_ENABLED;
+   return ((policy >> tls_cert_t::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
 }
 
 bool tls_cert_t::required(u_int32_t policy) {
-   return (policy >> tls_cert_t::policy_offset) & BNET_TLS_REQUIRED == BNET_TLS_REQUIRED;
+   return ((policy >> tls_cert_t::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
 bool tls_psk_t::enabled(u_int32_t policy) {
-   return (policy >> tls_psk_t::policy_offset) & BNET_TLS_ENABLED == BNET_TLS_ENABLED;
+   return ((policy >> tls_psk_t::policy_offset) & BNET_TLS_ENABLED) == BNET_TLS_ENABLED;
 }
 
 bool tls_psk_t::required(u_int32_t policy) {
-   return (policy >> tls_psk_t::policy_offset) & BNET_TLS_REQUIRED == BNET_TLS_REQUIRED;
+   return ((policy >> tls_psk_t::policy_offset) & BNET_TLS_REQUIRED) == BNET_TLS_REQUIRED;
 }
 
 std::shared_ptr<TLS_CONTEXT> tls_psk_t::CreateClientContext(

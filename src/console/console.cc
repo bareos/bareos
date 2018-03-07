@@ -1114,7 +1114,7 @@ static int dir_psk_client_callback(char *identity,
    } else {
       static char *psk_identity = (char *)"Nasenbaer";
 
-      unsigned int ret = snprintf(identity, max_identity_len, "%s", psk_identity);
+      int ret = bsnprintf(identity, max_identity_len, "%s", psk_identity);
       if (ret < 0 || (unsigned int)ret > max_identity_len) {
          Dmsg0(100, "Error, psk_identify too long\n");
          result = 0;
