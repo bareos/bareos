@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ### Changed
 - Fix to bugreport #887
+- Fix to bugreport #891
 - Fix to bugreport #893
 - Fix to bugreport #905
 - Selenium tests enhanced
