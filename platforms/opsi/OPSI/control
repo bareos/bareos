@@ -84,7 +84,7 @@ name: director_name
 multivalue: False
 editable: True
 description: Name of the Bareos Director. Used by the locally initiated console connections.
-default: ["director_name"]
+default: ["bareos-dir"]
 
 [ProductProperty]
 type: unicode
