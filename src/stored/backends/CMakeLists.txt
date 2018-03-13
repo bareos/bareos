@@ -1,6 +1,6 @@
 #   BAREOS�� - Backup Archiving REcovery Open Sourced
 #
-#   Copyright (C) 2017-2017 Bareos GmbH & Co. KG
+#   Copyright (C) 2017-2018 Bareos GmbH & Co. KG
 #
 #   This program is Free Software; you can redistribute it and/or
 #   modify it under the terms of version three of the GNU Affero General Public
@@ -19,6 +19,8 @@
 
 
 include_directories(../.. . ../../include ../../stored)
+
+LIST(APPEND CMAKE_INSTALL_RPATH ${backenddir})
 
 if(${HAVE_CEPHFS})
 add_library(libbareossd-cephfs MODULE cephfs_device.cc)
@@ -46,17 +48,17 @@ target_link_libraries(libbareossd-gfapi ${GFAPI_LIBRARIES})
 endif()
 
 if(${HAVE_DROPLET})
-add_library(libbareossd-droplet MODULE droplet_device.cc)
-# do not prefix with "lib"
-set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
-target_link_libraries(libbareossd-droplet ${DROPLET_LIBRARIES})
-INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
-
-add_library(libbareossd-chunked MODULE chunked_device.cc)
+add_library(libbareossd-chunked SHARED chunked_device.cc)
 # do not prefix with "lib"
 set_target_properties(libbareossd-chunked PROPERTIES PREFIX "")
 target_link_libraries(libbareossd-chunked ${DROPLET_LIBRARIES})
 INSTALL(TARGETS libbareossd-chunked DESTINATION ${backenddir})
+
+add_library(libbareossd-droplet MODULE droplet_device.cc)
+# do not prefix with "lib" (only if you reference to other targets).
+set_target_properties(libbareossd-droplet PROPERTIES PREFIX "")
+target_link_libraries(libbareossd-droplet libbareossd-chunked ${DROPLET_LIBRARIES})
+INSTALL(TARGETS libbareossd-droplet DESTINATION ${backenddir})
 endif()
 
 add_library(libbareossd-elasto MODULE elasto_device.cc)

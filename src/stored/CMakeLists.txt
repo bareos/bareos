@@ -143,7 +143,6 @@ ELSE()
    if(${HAVE_DROPLET})
       LIST(APPEND BACKEND_OBJECTS ${DROPLET_LIBRARIES})
    endif()
-
 ENDIF()
 MESSAGE(STATUS "BACKEND_OBJECTS ARE ${BACKEND_OBJECTS}")
 
@@ -222,6 +221,6 @@ install(SCRIPT ${CMAKE_SOURCE_DIR}/cmake/install-stored-configfiles.cmake)
 
 INSTALL(DIRECTORY DESTINATION "../${archivedir}")
 
-IF( ${HAVE_DYNAMIC_SD_BACKENDS})
+IF(${HAVE_DYNAMIC_SD_BACKENDS})
 add_subdirectory(backends)
 ENDIF()

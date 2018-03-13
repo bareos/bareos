@@ -27,7 +27,7 @@ set(LIBBAREOSSQL_SRCS
     bvfs.cc cats.cc sql.cc sql_create.cc sql_delete.cc sql_find.cc
     sql_get.cc sql_list.cc sql_pooling.cc sql_query.cc sql_update.cc
     )
- set(LIBBAREOSCATS_SRCS
+set(LIBBAREOSCATS_SRCS
     cats_backends.cc
     )
 
