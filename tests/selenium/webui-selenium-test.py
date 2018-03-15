@@ -160,7 +160,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait_and_click(By.ID, 'menu-topnavbar-job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
 
-        Select(driver.find_element_by_id('job')).select_by_visible_text('backup-%s' % self.client)
+        Select(driver.find_element_by_id('job')).select_by_visible_text('backup-bareos-fd')
         Select(driver.find_element_by_id('client')).select_by_visible_text(self.client)
         Select(driver.find_element_by_id('level')).select_by_visible_text('Incremental')
         # Clears the priority field and enters 5.
@@ -180,6 +180,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
         # Count how many digits are at the end of the url / how long the id is
         job_id = driver.current_url.split('/')[-1]
+        # If the current URL doesn't end with a digit we didn't start the job properly.
         if not job_id.isdigit():
             raise BadJobException
             
@@ -255,10 +256,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait_for_spinner_absence()
 
     def logout(self):
-        if self.browser == 'chrome':
-            self.wait_and_click(By.CSS_SELECTOR, 'a.dropdown-toggle')
-        else:
-            self.wait_and_click(By.LINK_TEXT, self.username)
+        self.wait_and_click(By.CSS_SELECTOR, 'a.dropdown-toggle')
         self.wait_and_click(By.LINK_TEXT, 'Logout')
         sleep(self.sleeptime)
 

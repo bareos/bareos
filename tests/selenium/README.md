@@ -27,7 +27,7 @@ To run the test you must set certain environment variables:
 BAREOS_BASE_URL=http://127.0.0.1/bareos-webui/
 BAREOS_USERNAME=admin
 BAREOS_PASSWORD=linuxlinux
-BAREOS_CLIENT=bareos-fd
+BAREOS_CLIENT_NAME=bareos-fd
 BAREOS_RESTOREFILE=/etc/passwd
 BAREOS_LOG_PATH=/tmp/selenium-logs/
 BAREOS_DELAY=1
