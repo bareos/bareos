@@ -144,14 +144,14 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_job_canceling(self):
-        
+
         driver = self.driver
-        
+
         self.login()
-        
+
         job_id = self.job_start_configured()
         self.job_cancel(job_id)
-        
+
         self.logout()
 
     def job_start_configured(self):
@@ -166,7 +166,7 @@ class WebuiSeleniumTest(unittest.TestCase):
         # Clears the priority field and enters 5.
         driver.find_element_by_id('priority').clear()
         driver.find_element_by_id('priority').send_keys('5')
-        
+
         # Open the calendar
         self.wait_and_click(By.CSS_SELECTOR, "span.glyphicon.glyphicon-calendar")
         # Click the icon to delay jobstart by 1min two times
@@ -183,14 +183,14 @@ class WebuiSeleniumTest(unittest.TestCase):
         # If the current URL doesn't end with a digit we didn't start the job properly.
         if not job_id.isdigit():
             raise BadJobException
-            
+
         return job_id
 
     def job_cancel(self, id):
         # Go to job list
         self.wait_and_click(By.ID, 'menu-topnavbar-job')
         # Click on the object that has id in its url
-        self.wait_for_url_and_click('/bareos-webui/job/details/%s' % id)
+        self.wait_for_url_and_click('/job/details/%s' % id)
         # Click on cancel button
         self.wait_and_click(By.XPATH, '//*[@title="Cancel"]')
 
