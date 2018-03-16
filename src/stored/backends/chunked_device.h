@@ -46,6 +46,13 @@
  */
 #define MAX_CHUNKS 10000
 
+/*
+ * Busy wait retry for inflight chunks.
+ * Default 12 * 5 = 60 seconds.
+ */
+#define INFLIGHT_RETRIES 12
+#define INFLIGT_RETRY_TIME 5
+
 enum thread_wait_type {
    WAIT_CANCEL_THREAD,     /* Perform a pthread_cancel() on exit. */
    WAIT_JOIN_THREAD        /* Perform a pthread_join() on exit. */
@@ -62,6 +69,7 @@ struct chunk_io_request {
    char *buffer;           /* Data */
    uint32_t wbuflen;       /* Size of the actual valid data in the chunk (Write) */
    uint32_t *rbuflen;      /* Size of the actual valid data in the chunk (Read) */
+   uint8_t tries;          /* Number of times the flush was tried to the backing store */
    bool release;           /* Should we release the data to which the buffer points ? */
 };
 
@@ -86,6 +94,8 @@ private:
     */
    bool m_io_threads_started;
    bool m_end_of_media;
+   bool m_readonly;
+   uint8_t m_inflight_chunks;
    char *m_current_volname;
    ordered_circbuf *m_cb;
    alist *m_thread_ids;
@@ -109,6 +119,7 @@ protected:
     */
    uint8_t m_io_threads;
    uint8_t m_io_slots;
+   uint8_t m_retries;
    uint64_t m_chunk_size;
    boffset_t m_offset;
    bool m_use_mmap;
@@ -116,7 +127,11 @@ protected:
    /*
     * Protected Methods
     */
-   void setup_chunk(int flags);
+   bool set_inflight_chunk(chunk_io_request *request);
+   void clear_inflight_chunk(chunk_io_request *request);
+   bool is_inflight_chunk(chunk_io_request *request);
+   int nr_inflight_chunks();
+   int setup_chunk(const char *pathname, int flags, int mode);
    ssize_t read_chunked(int fd, void *buffer, size_t count);
    ssize_t write_chunked(int fd, const void *buffer, size_t count);
    int close_chunk();

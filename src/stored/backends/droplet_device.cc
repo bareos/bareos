@@ -21,6 +21,7 @@
 */
 /*
  * Marco van Wieringen, February 2014
+ *
  * Object Storage API device abstraction.
  *
  * Stacking is the following:
@@ -59,6 +60,7 @@ enum device_option_type {
    argument_chunksize,
    argument_iothreads,
    argument_ioslots,
+   argument_retries,
    argument_mmap
 };
 
@@ -77,6 +79,7 @@ static device_option device_options[] = {
    { "chunksize=", argument_chunksize, 10 },
    { "iothreads=", argument_iothreads, 10 },
    { "ioslots=", argument_ioslots, 8 },
+   { "retries=", argument_retries, 8 },
    { "mmap", argument_mmap, 4 },
    { NULL, argument_none }
 };
@@ -87,7 +90,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Generic log function that glues libdroplet with BAREOS.
  */
-static void droplet_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
+static void droplet_device_logfunc(dpl_ctx_t *ctx, dpl_log_level_t level, const char *message)
 {
    switch (level) {
    case DPL_DEBUG:
@@ -289,6 +292,13 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    Mmsg(chunk_dir, "/%s", request->volname);
    Mmsg(chunk_name, "%s/%04d", chunk_dir.c_str(), request->chunk);
 
+   /*
+    * Set that we are uploading the chunk.
+    */
+   if (!set_inflight_chunk(request)) {
+      goto bail_out;
+   }
+
    Dmsg1(100, "Flushing chunk %s\n", chunk_name.c_str());
 
    /*
@@ -390,6 +400,11 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    retval = true;
 
 bail_out:
+   /*
+    * Clear that we are uploading the chunk.
+    */
+   clear_inflight_chunk(request);
+
    if (sysmd) {
       dpl_sysmd_free(sysmd);
    }
@@ -516,7 +531,7 @@ bool droplet_device::initialize()
     */
    P(mutex);
    if (droplet_reference_count == 0) {
-      dpl_set_log_func(droplet_logfunc);
+      dpl_set_log_func(droplet_device_logfunc);
 
       status = dpl_init();
       switch (status) {
@@ -530,7 +545,7 @@ bool droplet_device::initialize()
    droplet_reference_count++;
    V(mutex);
 
-   if (!m_object_configstring) {
+   if (!m_configstring) {
       int len;
       bool done;
       uint64_t value;
@@ -542,9 +557,9 @@ bool droplet_device::initialize()
          return -1;
       }
 
-      m_object_configstring = bstrdup(dev_options);
+      m_configstring = bstrdup(dev_options);
 
-      bp = m_object_configstring;
+      bp = m_configstring;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -586,7 +601,7 @@ bool droplet_device::initialize()
                   done = true;
                   break;
                case argument_bucket:
-                  m_object_bucketname = bp + device_options[i].compare_size;
+                  m_bucketname = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_chunksize:
@@ -602,6 +617,11 @@ bool droplet_device::initialize()
                case argument_ioslots:
                   size_to_uint64(bp + device_options[i].compare_size, &value);
                   m_io_slots = value & 0xFF;
+                  done = true;
+                  break;
+               case argument_retries:
+                  size_to_uint64(bp + device_options[i].compare_size, &value);
+                  m_retries = value & 0xFF;
                   done = true;
                   break;
                case argument_mmap:
@@ -728,8 +748,8 @@ bool droplet_device::initialize()
       /*
        * If a bucketname was defined set it in the context.
        */
-      if (m_object_bucketname) {
-         m_ctx->cur_bucket = bstrdup(m_object_bucketname);
+      if (m_bucketname) {
+         m_ctx->cur_bucket = bstrdup(m_bucketname);
       }
    }
 
@@ -744,20 +764,14 @@ bail_out:
  */
 int droplet_device::d_open(const char *pathname, int flags, int mode)
 {
-   int retval = -1;
-
    if (!initialize()) {
-      goto bail_out;
+      return -1;
    }
 
-   setup_chunk(flags);
-   retval = 0;
-
-bail_out:
-   return retval;
+   return setup_chunk(pathname, flags, mode);
 }
 
-/**
+/*
  * Read data from a volume using libdroplet.
  */
 ssize_t droplet_device::d_read(int fd, void *buffer, size_t count)
@@ -784,10 +798,11 @@ int droplet_device::d_ioctl(int fd, ioctl_req_t request, char *op)
 }
 
 /**
- * Open a directory on the object store and find out size information for a volume.
+ * Open a directory on the backing store and find out size information for a volume.
  */
 ssize_t droplet_device::chunked_remote_volume_size()
 {
+   dpl_status_t status;
    ssize_t volumesize = 0;
    dpl_sysmd_t *sysmd = NULL;
    POOL_MEM chunk_dir(PM_FNAME);
@@ -803,7 +818,6 @@ ssize_t droplet_device::chunked_remote_volume_size()
     */
 
 #if 0
-   dpl_status_t status;
    /*
     * First make sure that the chunkdir exists otherwise it makes little sense to scan it.
     */
@@ -888,7 +902,7 @@ bool droplet_device::d_truncate(DCR *dcr)
 droplet_device::~droplet_device()
 {
    if (m_ctx) {
-      if (m_object_bucketname && m_ctx->cur_bucket) {
+      if (m_bucketname && m_ctx->cur_bucket) {
          free(m_ctx->cur_bucket);
          m_ctx->cur_bucket = NULL;
       }
@@ -896,8 +910,8 @@ droplet_device::~droplet_device()
       m_ctx = NULL;
    }
 
-   if (m_object_configstring) {
-      free(m_object_configstring);
+   if (m_configstring) {
+      free(m_configstring);
    }
 
    P(mutex);
@@ -910,8 +924,8 @@ droplet_device::~droplet_device()
 
 droplet_device::droplet_device()
 {
-   m_object_configstring = NULL;
-   m_object_bucketname = NULL;
+   m_configstring = NULL;
+   m_bucketname = NULL;
    m_location = NULL;
    m_canned_acl = NULL;
    m_storage_class = NULL;

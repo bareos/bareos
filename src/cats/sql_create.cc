@@ -829,6 +829,7 @@ bool B_DB::write_batch_file_records(JCR *jcr)
    Dmsg1(50,"db_create_file_record changes=%u\n", changes);
 
    jcr->JobStatus = JS_AttrInserting;
+
    Jmsg(jcr, M_INFO, 0, "Insert of attributes batch table with %u entries start\n", jcr->db_batch->changes);
 
    if (!jcr->db_batch->sql_batch_end(jcr, NULL)) {
