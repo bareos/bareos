@@ -712,6 +712,9 @@ pushd %{CMAKE_BUILDDIR}
 export PATH=/opt/rh/devtoolset-7/root/usr/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin:/root/bin
 %endif
 
+CFLAGS="${CFLAGS:-%optflags}" ; export CFLAGS ;
+CXXFLAGS="${CXXFLAGS:-%optflags}" ; export CXXFLAGS ;
+
 # use our own cmake call instead of cmake macro as it is different on different platforms/versions
 cmake  .. \
       -DCMAKE_VERBOSE_MAKEFILE=ON \
