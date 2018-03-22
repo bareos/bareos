@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2009 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -191,8 +191,9 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
+   POOL_MEM select(PM_MESSAGE);
+   POOL_MEM query(PM_MESSAGE);
 
-   db_lock(this);
    escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
 
    /*
@@ -205,88 +206,34 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool
       range = "";
    }
 
-   if (type == VERT_LIST) {
-      if (mdbr->VolumeName[0] != 0) {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-                   "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-                   "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-                   "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-                   "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-                   "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-                   "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                   "Comment,Name AS Storage "
-                   "FROM Media "
-                   "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE Media.VolumeName='%s'", esc);
-      } else if (mdbr->PoolId > 0) {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-                   "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-                   "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-                   "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-                   "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-                   "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-                   "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                   "Comment,Name AS Storage "
-                   "FROM Media "
-                   "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE Media.PoolId=%s ORDER BY MediaId "
-                   "%s",
-              edit_int64(mdbr->PoolId, ed1), range);
-      } else {
-          Mmsg(cmd, "SELECT MediaId,VolumeName,Slot,PoolId,"
-                    "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs,"
-                    "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites,"
-                    "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention,"
-                    "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger,"
-                    "EndFile,EndBlock,LabelType,StorageId,DeviceId,"
-                    "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
-                    "Comment,Name AS Storage "
-                    "FROM Media "
-                    "LEFT JOIN Storage USING(StorageId) "
-                    "ORDER BY MediaId "
-                    "%s", range);
-      }
-   } else {
-      if (mdbr->VolumeName[0] != 0) {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-                   "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
-                   "MediaType,LastWritten,Name AS Storage "
-                   "FROM Media "
-                   "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE VolumeName='%s'", esc);
-      } else if (mdbr->PoolId > 0) {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-                   "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
-                   "MediaType,LastWritten,Name AS Storage "
-                   "FROM Media "
-                   "LEFT JOIN Storage USING(StorageId) "
-                   "WHERE PoolId=%s ORDER BY MediaId "
-                   "%s",
-              edit_int64(mdbr->PoolId, ed1), range);
-      } else {
-         Mmsg(cmd, "SELECT MediaId,VolumeName,VolStatus,Enabled,"
-                   "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,"
-                   "MediaType,LastWritten,Name AS Storage "
-                   "FROM Media "
-                   "LEFT JOIN Storage USING(StorageId) "
-                   "ORDER BY MediaId "
-                   "%s",
-              range);
-      }
-   }
-
    if (count) {
       /* NOTE: ACLs are ignored. */
       if (mdbr->VolumeName[0] != 0) {
-         fill_query(SQL_QUERY_list_volumes_by_name_count_1, esc);
+         fill_query(query, SQL_QUERY_list_volumes_by_name_count_1, esc);
       } else if (mdbr->PoolId > 0) {
-         fill_query(SQL_QUERY_list_volumes_by_poolid_count_1, edit_int64(mdbr->PoolId, ed1));
+         fill_query(query, SQL_QUERY_list_volumes_by_poolid_count_1, edit_int64(mdbr->PoolId, ed1));
       } else {
-         fill_query(SQL_QUERY_list_volumes_count_0);
+         fill_query(query, SQL_QUERY_list_volumes_count_0);
+      }
+   } else {
+      if (type == VERT_LIST) {
+         fill_query(select, SQL_QUERY_list_volumes_select_long_0);
+      } else {
+         fill_query(select, SQL_QUERY_list_volumes_select_0);
+      }
+
+      if (mdbr->VolumeName[0] != 0) {
+         query.bsprintf("%s WHERE VolumeName='%s'", select.c_str(), esc);
+      } else if (mdbr->PoolId > 0) {
+         query.bsprintf("%s WHERE PoolId=%s ORDER BY MediaId %s", select.c_str(), edit_int64(mdbr->PoolId, ed1), range);
+      } else {
+         query.bsprintf("%s ORDER BY MediaId %s", select.c_str(), range);
       }
    }
 
-   if (!QUERY_DB(jcr, cmd)) {
+   db_lock(this);
+
+   if (!QUERY_DB(jcr, query.c_str())) {
       goto bail_out;
    }
 
@@ -297,6 +244,8 @@ void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool
 bail_out:
    db_unlock(this);
 }
+
+
 
 void B_DB::list_jobmedia_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
@@ -340,6 +289,41 @@ void B_DB::list_jobmedia_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sen
 bail_out:
    db_unlock(this);
 }
+
+
+void B_DB::list_volumes_of_jobid(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+{
+   char ed1[50];
+
+   if (JobId <= 0) {
+      return;
+   }
+
+   db_lock(this);
+   if (type == VERT_LIST) {
+         Mmsg(cmd, "SELECT JobMediaId,JobId,Media.MediaId,Media.VolumeName "
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
+              "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+   } else {
+         Mmsg(cmd, "SELECT Media.VolumeName "
+              "FROM JobMedia,Media WHERE Media.MediaId=JobMedia.MediaId "
+              "AND JobMedia.JobId=%s", edit_int64(JobId, ed1));
+   }
+   if (!QUERY_DB(jcr, cmd)) {
+      goto bail_out;
+   }
+
+   sendit->array_start("volumes");
+   list_result(jcr, sendit, type);
+   sendit->array_end("volumes");
+
+   sql_free_result();
+
+bail_out:
+   db_unlock(this);
+}
+
+
 
 void B_DB::list_copies_records(JCR *jcr, const char *range, const char *JobIds,
                                OUTPUT_FORMATTER *send, e_list_type type)

@@ -76,5 +76,7 @@ const char *B_DB::query_names[] = {
 "get_bad_paths_0",
 "bvfs_ls_special_dirs_3",
 "bvfs_ls_sub_dirs_5",
+"list_volumes_select_0",
+"list_volumes_select_long_0",
 NULL
 };

@@ -78,6 +78,8 @@ public:
       SQL_QUERY_get_bad_paths_0 = 72,
       SQL_QUERY_bvfs_ls_special_dirs_3 = 73,
       SQL_QUERY_bvfs_ls_sub_dirs_5 = 74,
-      SQL_QUERY_NUMBER = 75
+      SQL_QUERY_list_volumes_select_0 = 75,
+      SQL_QUERY_list_volumes_select_long_0 = 76,
+      SQL_QUERY_NUMBER = 77
    } SQL_QUERY_ENUM;
 };

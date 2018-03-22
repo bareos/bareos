@@ -928,5 +928,26 @@ const char *B_DB_POSTGRESQL::query_definitions[] = {
 ") AS A "
 ,
 
+/* 0076_list_volumes_select_0 */
+"SELECT    MediaId,VolumeName,VolStatus,Enabled, "
+          "VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger, "
+          "MediaType,LastWritten,Name AS Storage "
+"FROM      Media "
+"LEFT JOIN Storage USING(StorageId) "
+,
+
+/* 0077_list_volumes_select_long_0 */
+"SELECT    MediaId,VolumeName,Slot,PoolId, "
+          "MediaType,FirstWritten,LastWritten,LabelDate,VolJobs, "
+          "VolFiles,VolBlocks,VolMounts,VolBytes,VolErrors,VolWrites, "
+          "VolCapacityBytes,VolStatus,Enabled,Recycle,VolRetention, "
+          "VolUseDuration,MaxVolJobs,MaxVolFiles,MaxVolBytes,InChanger, "
+          "EndFile,EndBlock,LabelType,StorageId,DeviceId, "
+          "LocationId,RecycleCount,InitialWrite,ScratchPoolId,RecyclePoolId, "
+          "Comment,Name AS Storage "
+"FROM      Media "
+"LEFT JOIN Storage USING(StorageId) "
+,
+
 NULL
 };

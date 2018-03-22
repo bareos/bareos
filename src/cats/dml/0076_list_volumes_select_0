@@ -1,0 +1,6 @@
+SELECT    MediaId,VolumeName,VolStatus,Enabled,
+          VolBytes,VolFiles,VolRetention,Recycle,Slot,InChanger,
+          MediaType,LastWritten,Name AS Storage 
+FROM      Media 
+LEFT JOIN Storage USING(StorageId)
+

@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -740,6 +740,7 @@ public:
    void list_storage_records(JCR *jcr, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_jobmedia_records(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_volumes_of_jobid(JCR *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_joblog_records(JCR *jcr, JobId_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
    void list_log_records(JCR *jcr, const char *clientname, const char *range,
                          bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);

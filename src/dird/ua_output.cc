@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -905,13 +905,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
        */
       jobid = get_jobid_from_cmdline(ua);
       if (jobid > 0) {
-         int num_vols = 0;
-         POOLMEM *VolumeName;
-
-         VolumeName = get_pool_memory(PM_FNAME);
-         num_vols = ua->db->get_job_volume_names(ua->jcr, jobid, VolumeName);
-         ua->send_msg(_("Jobid %d used %d Volume(s): %s\n"), jobid, num_vols, VolumeName);
-         free_pool_memory(VolumeName);
+         ua->db->list_volumes_of_jobid(ua->jcr, jobid, ua->send, llist);
       } else if (jobid == 0) {
          /*
           * List a specific volume?
