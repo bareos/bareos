@@ -1511,7 +1511,7 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
          ua->send->object_key_value("client", "%s=", ((job->client) ? job->client->name() : _("*None*")), "%s\n");
          ua->send->send_buffer();
          get_job_storage(&store, job, NULL);
-         ua->send->object_key_value("storage", "%s=", store.store->name(), "%s\n");
+         ua->send->object_key_value("storage", "%s=", ((store.store) ? store.store->name() : _("*None*")), "%s\n");
          ua->send->send_buffer();
          ua->send->object_key_value("where", "%s=", (job->RestoreWhere ? job->RestoreWhere : ""), "%s\n");
          ua->send->send_buffer();
