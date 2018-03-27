@@ -120,6 +120,9 @@ class JobModel
                return $error['result']['error'];
             } else {
                $jobs = \Zend\Json\Json::decode($result, \Zend\Json\Json::TYPE_ARRAY);
+               if(empty($result)) {
+                  return false;
+               }
                if ( empty($jobs['result']['jobs']) && $jobs['result']['meta']['range']['filtered'] === 0 ) {
                   return array_reverse($retval);
                } else {
