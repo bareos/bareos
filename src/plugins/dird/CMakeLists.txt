@@ -40,6 +40,8 @@ IF(HAVE_PYTHON)
 
    IF(HAVE_WIN32)
       target_link_libraries(python-dir python27 bareos)
+   ELSE()
+      target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
    ENDIF()
 
 

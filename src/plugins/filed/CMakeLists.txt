@@ -85,6 +85,8 @@ IF(HAVE_PYTHON)
    INSTALL(TARGETS python-fd DESTINATION ${plugindir})
    IF(HAVE_WIN32)
       target_link_libraries(python-fd python27 bareos)
+   ELSE()
+      target_link_libraries(python-fd ${PYTHON_LIBRARIES} bareos)
    ENDIF()
 ENDIF()
 
