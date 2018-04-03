@@ -37,12 +37,7 @@ IF(HAVE_PYTHON)
    # do not prefix with "lib"
    set_target_properties(python-dir PROPERTIES PREFIX "")
    INSTALL(TARGETS python-dir DESTINATION ${plugindir})
-
-   IF(HAVE_WIN32)
-      target_link_libraries(python-dir python27 bareos)
-   ELSE()
-      target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
-   ENDIF()
+   target_link_libraries(python-dir ${PYTHON_LIBRARIES} bareos)
 
 
    set (PYFILES bareos-dir.py.template

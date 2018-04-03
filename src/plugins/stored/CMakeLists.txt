@@ -53,11 +53,7 @@ IF(HAVE_PYTHON)
    add_library(python-sd MODULE python-sd.cc)
    set_target_properties(python-sd PROPERTIES PREFIX "")
    INSTALL(TARGETS python-sd DESTINATION ${plugindir})
-   IF(HAVE_WIN32)
-      target_link_libraries(python-sd python27 bareos)
-   ELSE()
-      target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
-   ENDIF()
+   target_link_libraries(python-sd ${PYTHON_LIBRARIES} bareos)
 
 
    set (PYFILES bareos-sd-class-plugin.py
