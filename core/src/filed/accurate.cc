@@ -356,16 +356,16 @@ bool accurate_cmd(JCR *jcr)
 
 #ifdef HAVE_LMDB
    if (me->always_use_lmdb) {
-      jcr->file_list = New(B_ACCURATE_LMDB);
+      jcr->file_list = New(BareosAccurateFilelistLmdb);
    } else {
       if (me->lmdb_threshold > 0 && nb >= me->lmdb_threshold) {
-         jcr->file_list = New(B_ACCURATE_LMDB);
+         jcr->file_list = New(BareosAccurateFilelistLmdb);
       } else {
-         jcr->file_list = New(B_ACCURATE_HTABLE);
+         jcr->file_list = New(BareosAccurateFilelistHtable);
       }
    }
 #else
-   jcr->file_list = New(B_ACCURATE_HTABLE);
+   jcr->file_list = New(BareosAccurateFilelistHtable);
 #endif
 
    jcr->file_list->init(jcr, nb);

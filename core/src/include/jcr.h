@@ -195,7 +195,7 @@ struct CP_THREAD_CTX;
 
 #ifdef FILE_DAEMON
 class htable;
-class B_ACCURATE;
+class BareosAccurateFilelist;
 struct acl_data_t;
 struct xattr_data_t;
 
@@ -543,7 +543,7 @@ public:
    bool enable_vss;                       /**< VSS used by FD */
    bool got_metadata;                     /**< Set when found job_metadata */
    bool multi_restore;                    /**< Dir can do multiple storage restore */
-   B_ACCURATE *file_list;                 /**< Previous file list (accurate mode) */
+   BareosAccurateFilelist *file_list;     /**< Previous file list (accurate mode) */
    uint64_t base_size;                    /**< Compute space saved with base job */
 #ifdef HAVE_WIN32
    VSSClient *pVSSClient;                 /**< VSS Client Instance */

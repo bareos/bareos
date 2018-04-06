@@ -34,35 +34,35 @@
 
 static int dbglvl = 100;
 
-B_ACCURATE_HTABLE::B_ACCURATE_HTABLE()
+BareosAccurateFilelistHtable::BareosAccurateFilelistHtable()
 {
-   m_filenr = 0;
-   m_file_list = NULL;
-   m_seen_bitmap = NULL;
+   filenr_ = 0;
+   file_list_ = NULL;
+   seen_bitmap_ = NULL;
 }
 
-B_ACCURATE_HTABLE::~B_ACCURATE_HTABLE()
+BareosAccurateFilelistHtable::~BareosAccurateFilelistHtable()
 {
 }
 
-bool B_ACCURATE_HTABLE::init(JCR *jcr, uint32_t nbfile)
+bool BareosAccurateFilelistHtable::init(JCR *jcr, uint32_t nbfile)
 {
    CurFile *elt = NULL;
 
-   if (!m_file_list) {
-      m_file_list = (htable *)malloc(sizeof(htable));
-      m_file_list->init(elt, &elt->link, nbfile);
+   if (!file_list_) {
+      file_list_ = (htable *)malloc(sizeof(htable));
+      file_list_->init(elt, &elt->link, nbfile);
    }
 
-   if (!m_seen_bitmap) {
-      m_seen_bitmap = (char *)malloc(nbytes_for_bits(nbfile));
-      clear_all_bits(nbfile, m_seen_bitmap);
+   if (!seen_bitmap_) {
+      seen_bitmap_ = (char *)malloc(nbytes_for_bits(nbfile));
+      clear_all_bits(nbfile, seen_bitmap_);
    }
 
    return true;
 }
 
-bool B_ACCURATE_HTABLE::add_file(JCR *jcr,
+bool BareosAccurateFilelistHtable::add_file(JCR *jcr,
                                  char *fname,
                                  int fname_length,
                                  char *lstat,
@@ -76,7 +76,7 @@ bool B_ACCURATE_HTABLE::add_file(JCR *jcr,
    bool retval = true;
 
    total_length = sizeof(CurFile) + fname_length + lstat_length + chksum_length + 3;
-   item = (CurFile *)m_file_list->hash_malloc(total_length);
+   item = (CurFile *)file_list_->hash_malloc(total_length);
 
    item->fname = (char *)item + sizeof(CurFile);
    memcpy(item->fname, fname, fname_length);
@@ -93,8 +93,8 @@ bool B_ACCURATE_HTABLE::add_file(JCR *jcr,
    item->payload.chksum[chksum_length] = '\0';
 
    item->payload.delta_seq = delta_seq;
-   item->payload.filenr = m_filenr++;
-   m_file_list->insert(item->fname, item);
+   item->payload.filenr = filenr_++;
+   file_list_->insert(item->fname, item);
 
    if (chksum) {
       Dmsg4(dbglvl, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname, lstat, delta_seq, chksum);
@@ -105,7 +105,7 @@ bool B_ACCURATE_HTABLE::add_file(JCR *jcr,
    return retval;
 }
 
-bool B_ACCURATE_HTABLE::end_load(JCR *jcr)
+bool BareosAccurateFilelistHtable::end_load(JCR *jcr)
 {
    /*
     * Nothing to do.
@@ -113,15 +113,15 @@ bool B_ACCURATE_HTABLE::end_load(JCR *jcr)
    return true;
 }
 
-accurate_payload *B_ACCURATE_HTABLE::lookup_payload(JCR *jcr, char *fname)
+accurate_payload *BareosAccurateFilelistHtable::lookup_payload(JCR *jcr, char *fname)
 {
    CurFile *temp;
 
-   temp = (CurFile *)m_file_list->lookup(fname);
+   temp = (CurFile *)file_list_->lookup(fname);
    return (temp) ? &temp->payload : NULL;
 }
 
-bool B_ACCURATE_HTABLE::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistHtable::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
 {
    /*
     * Nothing to do.
@@ -129,7 +129,7 @@ bool B_ACCURATE_HTABLE::update_payload(JCR *jcr, char *fname, accurate_payload *
    return true;
 }
 
-bool B_ACCURATE_HTABLE::send_base_file_list(JCR *jcr)
+bool BareosAccurateFilelistHtable::send_base_file_list(JCR *jcr)
 {
    CurFile *elt;
    FF_PKT *ff_pkt;
@@ -141,15 +141,15 @@ bool B_ACCURATE_HTABLE::send_base_file_list(JCR *jcr)
       return true;
    }
 
-   if (m_file_list == NULL) {
+   if (file_list_ == NULL) {
       return true;
    }
 
    ff_pkt = init_find_files();
    ff_pkt->type = FT_BASE;
 
-   foreach_htable(elt, m_file_list) {
-      if (bit_is_set(elt->payload.filenr, m_seen_bitmap)) {
+   foreach_htable(elt, file_list_) {
+      if (bit_is_set(elt->payload.filenr, seen_bitmap_)) {
          Dmsg1(dbglvl, "base file fname=%s\n", elt->fname);
          decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = elt->fname;
@@ -162,7 +162,7 @@ bool B_ACCURATE_HTABLE::send_base_file_list(JCR *jcr)
    return true;
 }
 
-bool B_ACCURATE_HTABLE::send_deleted_list(JCR *jcr)
+bool BareosAccurateFilelistHtable::send_deleted_list(JCR *jcr)
 {
    CurFile *elt;
    FF_PKT *ff_pkt;
@@ -177,8 +177,8 @@ bool B_ACCURATE_HTABLE::send_deleted_list(JCR *jcr)
    ff_pkt = init_find_files();
    ff_pkt->type = FT_DELETED;
 
-   foreach_htable(elt, m_file_list) {
-      if (bit_is_set(elt->payload.filenr, m_seen_bitmap) ||
+   foreach_htable(elt, file_list_) {
+      if (bit_is_set(elt->payload.filenr, seen_bitmap_) ||
           plugin_check_file(jcr, elt->fname)) {
          continue;
       }
@@ -194,18 +194,18 @@ bool B_ACCURATE_HTABLE::send_deleted_list(JCR *jcr)
    return true;
 }
 
-void B_ACCURATE_HTABLE::destroy(JCR *jcr)
+void BareosAccurateFilelistHtable::destroy(JCR *jcr)
 {
-   if (m_file_list) {
-      m_file_list->destroy();
-      free(m_file_list);
-      m_file_list = NULL;
+   if (file_list_) {
+      file_list_->destroy();
+      free(file_list_);
+      file_list_ = NULL;
    }
 
-   if (m_seen_bitmap) {
-      free(m_seen_bitmap);
-      m_seen_bitmap = NULL;
+   if (seen_bitmap_) {
+      free(seen_bitmap_);
+      seen_bitmap_ = NULL;
    }
 
-   m_filenr = 0;
+   filenr_ = 0;
 }

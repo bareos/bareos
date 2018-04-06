@@ -38,29 +38,29 @@ static int dbglvl = 100;
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
 
-B_ACCURATE_LMDB::B_ACCURATE_LMDB()
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb()
 {
-   m_filenr = 0;
-   m_pay_load = NULL;
-   m_lmdb_name = NULL;
-   m_seen_bitmap = NULL;
-   m_db_env = NULL;
-   m_db_ro_txn = NULL;
-   m_db_rw_txn = NULL;
-   m_db_dbi = 0;
+   filenr_ = 0;
+   pay_load_ = NULL;
+   lmdb_name_ = NULL;
+   seen_bitmap_ = NULL;
+   db_env_ = NULL;
+   db_ro_txn_ = NULL;
+   db_rw_txn_ = NULL;
+   db_dbi_ = 0;
 }
 
-B_ACCURATE_LMDB::~B_ACCURATE_LMDB()
+BareosAccurateFilelistLmdb::~BareosAccurateFilelistLmdb()
 {
 }
 
-bool B_ACCURATE_LMDB::init(JCR *jcr, uint32_t nbfile)
+bool BareosAccurateFilelistLmdb::init(JCR *jcr, uint32_t nbfile)
 {
    int result;
    MDB_env *env;
    size_t mapsize = 10485760;
 
-   if (!m_db_env) {
+   if (!db_env_) {
       result = mdb_env_create(&env);
       if (result) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
@@ -93,41 +93,41 @@ bool B_ACCURATE_LMDB::init(JCR *jcr, uint32_t nbfile)
          goto bail_out;
       }
 
-      Mmsg(m_lmdb_name, "%s/.accurate_lmdb.%d", me->working_directory, jcr->JobId);
-      result = mdb_env_open(env, m_lmdb_name, MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
+      Mmsg(lmdb_name_, "%s/.accurate_lmdb.%d", me->working_directory, jcr->JobId);
+      result = mdb_env_open(env, lmdb_name_, MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
       if (result) {
-         Jmsg2(jcr, M_FATAL, 0, _("Unable create LDMD database %s: %s\n"), m_lmdb_name, mdb_strerror(result));
+         Jmsg2(jcr, M_FATAL, 0, _("Unable create LDMD database %s: %s\n"), lmdb_name_, mdb_strerror(result));
          goto bail_out;
       }
 
-      result = mdb_txn_begin(env, NULL, 0, &m_db_rw_txn);
+      result = mdb_txn_begin(env, NULL, 0, &db_rw_txn_);
       if (result) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
-      result = mdb_dbi_open(m_db_rw_txn, NULL, MDB_CREATE, &m_db_dbi);
+      result = mdb_dbi_open(db_rw_txn_, NULL, MDB_CREATE, &db_dbi_);
       if (result) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
-         mdb_txn_abort(m_db_rw_txn);
-         m_db_rw_txn = NULL;
+         mdb_txn_abort(db_rw_txn_);
+         db_rw_txn_ = NULL;
          goto bail_out;
       }
 
-      m_db_env = env;
+      db_env_ = env;
    }
 
-   if (!m_pay_load) {
-      m_pay_load = get_pool_memory(PM_MESSAGE);
+   if (!pay_load_) {
+      pay_load_ = get_pool_memory(PM_MESSAGE);
    }
 
-   if (!m_lmdb_name) {
-      m_lmdb_name = get_pool_memory(PM_FNAME);
+   if (!lmdb_name_) {
+      lmdb_name_ = get_pool_memory(PM_FNAME);
    }
 
-   if (!m_seen_bitmap) {
-      m_seen_bitmap = (char *)malloc(nbytes_for_bits(nbfile));
-      clear_all_bits(nbfile, m_seen_bitmap);
+   if (!seen_bitmap_) {
+      seen_bitmap_ = (char *)malloc(nbytes_for_bits(nbfile));
+      clear_all_bits(nbfile, seen_bitmap_);
    }
 
    return true;
@@ -140,13 +140,13 @@ bail_out:
    return false;
 }
 
-bool B_ACCURATE_LMDB::add_file(JCR *jcr,
+bool BareosAccurateFilelistLmdb::add_file(JCR *jcr,
                                char *fname,
                                int fname_length,
                                char *lstat,
                                int lstat_length,
                                char *chksum,
-                               int chksum_length,
+                               int chksulength_,
                                int32_t delta_seq)
 {
    accurate_payload *payload;
@@ -155,32 +155,32 @@ bool B_ACCURATE_LMDB::add_file(JCR *jcr,
    MDB_val key, data;
    bool retval = false;
 
-   total_length = sizeof(accurate_payload) + lstat_length + chksum_length + 2;
+   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
    /*
-    * Make sure m_pay_load is large enough.
+    * Make sure pay_load_ is large enough.
     */
-   m_pay_load = check_pool_memory_size(m_pay_load, total_length);
+   pay_load_ = check_pool_memory_size(pay_load_, total_length);
 
    /*
     * We store the total pay load as:
     *
     * accurate_payload structure\0lstat\0chksum\0
     */
-   payload = (accurate_payload *)m_pay_load;
+   payload = (accurate_payload *)pay_load_;
 
    payload->lstat = (char *)payload + sizeof(accurate_payload);
    memcpy(payload->lstat, lstat, lstat_length);
    payload->lstat[lstat_length] = '\0';
 
    payload->chksum = (char *)payload->lstat + lstat_length + 1;
-   if (chksum_length) {
-      memcpy(payload->chksum, chksum, chksum_length);
+   if (chksulength_) {
+      memcpy(payload->chksum, chksum, chksulength_);
    }
-   payload->chksum[chksum_length] = '\0';
+   payload->chksum[chksulength_] = '\0';
 
    payload->delta_seq = delta_seq;
-   payload->filenr = m_filenr++;
+   payload->filenr = filenr_++;
 
    key.mv_data = fname;
    key.mv_size = strlen(fname) + 1;
@@ -189,7 +189,7 @@ bool B_ACCURATE_LMDB::add_file(JCR *jcr,
    data.mv_size = total_length;
 
 retry:
-   result = mdb_put(m_db_rw_txn, m_db_dbi, &key, &data, MDB_NOOVERWRITE);
+   result = mdb_put(db_rw_txn_, db_dbi_, &key, &data, MDB_NOOVERWRITE);
    switch (result) {
    case 0:
       if (chksum) {
@@ -204,9 +204,9 @@ retry:
        * Seems we filled the transaction.
        * Flush the current transaction start a new one and retry the put.
        */
-      result = mdb_txn_commit(m_db_rw_txn);
+      result = mdb_txn_commit(db_rw_txn_);
       if (result == 0) {
-         result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
+         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
          if (result == 0) {
             goto retry;
          } else {
@@ -224,20 +224,20 @@ retry:
    return retval;
 }
 
-bool B_ACCURATE_LMDB::end_load(JCR *jcr)
+bool BareosAccurateFilelistLmdb::end_load(JCR *jcr)
 {
    int result;
 
    /*
     * Commit any pending write transactions.
     */
-   if (m_db_rw_txn) {
-      result = mdb_txn_commit(m_db_rw_txn);
+   if (db_rw_txn_) {
+      result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
-      result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
+      result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
          return false;
@@ -247,8 +247,8 @@ bool B_ACCURATE_LMDB::end_load(JCR *jcr)
    /*
     * From now on we also will be doing read transactions so create a read transaction context.
     */
-   if (!m_db_ro_txn) {
-      result = mdb_txn_begin(m_db_env, NULL, MDB_RDONLY, &m_db_ro_txn);
+   if (!db_ro_txn_) {
+      result = mdb_txn_begin(db_env_, NULL, MDB_RDONLY, &db_ro_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to create read transaction: %s\n"), mdb_strerror(result));
          return false;
@@ -258,7 +258,7 @@ bool B_ACCURATE_LMDB::end_load(JCR *jcr)
    return true;
 }
 
-accurate_payload *B_ACCURATE_LMDB::lookup_payload(JCR *jcr, char *fname)
+accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(JCR *jcr, char *fname)
 {
    int result;
    int lstat_length;
@@ -268,7 +268,7 @@ accurate_payload *B_ACCURATE_LMDB::lookup_payload(JCR *jcr, char *fname)
    key.mv_data = fname;
    key.mv_size = strlen(fname) + 1;
 
-   result = mdb_get(m_db_ro_txn, m_db_dbi, &key, &data);
+   result = mdb_get(db_ro_txn_, db_dbi_, &key, &data);
    switch (result) {
    case 0:
       /*
@@ -279,9 +279,9 @@ accurate_payload *B_ACCURATE_LMDB::lookup_payload(JCR *jcr, char *fname)
        * and chksum pointer to point to the actual lstat and chksum that
        * is stored behind the accurate_payload structure in the LMDB.
        */
-      m_pay_load = check_pool_memory_size(m_pay_load, data.mv_size);
+      pay_load_ = check_pool_memory_size(pay_load_, data.mv_size);
 
-      payload = (accurate_payload *)m_pay_load;
+      payload = (accurate_payload *)pay_load_;
       memcpy(payload, data.mv_data, data.mv_size);
       payload->lstat = (char *)payload + sizeof(accurate_payload);
       lstat_length = strlen(payload->lstat);
@@ -292,8 +292,8 @@ accurate_payload *B_ACCURATE_LMDB::lookup_payload(JCR *jcr, char *fname)
        * and copying the actual data out we reset the read transaction
        * and do a renew of the read transaction for a new run.
        */
-      mdb_txn_reset(m_db_ro_txn);
-      result = mdb_txn_renew(m_db_ro_txn);
+      mdb_txn_reset(db_ro_txn_);
+      result = mdb_txn_renew(db_ro_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
          return NULL;
@@ -311,41 +311,41 @@ accurate_payload *B_ACCURATE_LMDB::lookup_payload(JCR *jcr, char *fname)
    return payload;
 }
 
-bool B_ACCURATE_LMDB::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistLmdb::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
 {
    int result,
        total_length,
        lstat_length,
-       chksum_length;
+       chksulength_;
    MDB_val key, data;
    bool retval = false;
    accurate_payload *new_payload;
 
    lstat_length = strlen(payload->lstat);
-   chksum_length = strlen(payload->chksum);
-   total_length = sizeof(accurate_payload) + lstat_length + chksum_length + 2;
+   chksulength_ = strlen(payload->chksum);
+   total_length = sizeof(accurate_payload) + lstat_length + chksulength_ + 2;
 
    /*
-    * Make sure m_pay_load is large enough.
+    * Make sure pay_load_ is large enough.
     */
-   m_pay_load = check_pool_memory_size(m_pay_load, total_length);
+   pay_load_ = check_pool_memory_size(pay_load_, total_length);
 
    /*
     * We store the total pay load as:
     *
     * accurate_payload structure\0lstat\0chksum\0
     */
-   new_payload = (accurate_payload *)m_pay_load;
+   new_payload = (accurate_payload *)pay_load_;
 
    new_payload->lstat = (char *)payload + sizeof(accurate_payload);
    memcpy(new_payload->lstat, payload->lstat, lstat_length);
    new_payload->lstat[lstat_length] = '\0';
 
    new_payload->chksum = (char *)new_payload->lstat + lstat_length + 1;
-   if (chksum_length) {
-      memcpy(new_payload->chksum, payload->chksum, chksum_length);
+   if (chksulength_) {
+      memcpy(new_payload->chksum, payload->chksum, chksulength_);
    }
-   new_payload->chksum[chksum_length] = '\0';
+   new_payload->chksum[chksulength_] = '\0';
 
    new_payload->delta_seq = payload->delta_seq;
    new_payload->filenr = payload->filenr;
@@ -357,12 +357,12 @@ bool B_ACCURATE_LMDB::update_payload(JCR *jcr, char *fname, accurate_payload *pa
    data.mv_size = total_length;
 
 retry:
-   result = mdb_put(m_db_rw_txn, m_db_dbi, &key, &data, 0);
+   result = mdb_put(db_rw_txn_, db_dbi_, &key, &data, 0);
    switch (result) {
    case 0:
-      result = mdb_txn_commit(m_db_rw_txn);
+      result = mdb_txn_commit(db_rw_txn_);
       if (result == 0) {
-         result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
+         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
          if (result != 0) {
             Jmsg1(jcr, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
          } else {
@@ -377,9 +377,9 @@ retry:
        * Seems we filled the transaction.
        * Flush the current transaction start a new one and retry the put.
        */
-      result = mdb_txn_commit(m_db_rw_txn);
+      result = mdb_txn_commit(db_rw_txn_);
       if (result == 0) {
-         result = mdb_txn_begin(m_db_env, NULL, 0, &m_db_rw_txn);
+         result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
          if (result == 0) {
             goto retry;
          } else {
@@ -397,7 +397,7 @@ retry:
    return retval;
 }
 
-bool B_ACCURATE_LMDB::send_base_file_list(JCR *jcr)
+bool BareosAccurateFilelistLmdb::send_base_file_list(JCR *jcr)
 {
    int result;
    int32_t LinkFIc;
@@ -415,23 +415,23 @@ bool B_ACCURATE_LMDB::send_base_file_list(JCR *jcr)
    /*
     * Commit any pending write transactions.
     */
-   if (m_db_rw_txn) {
-      result = mdb_txn_commit(m_db_rw_txn);
+   if (db_rw_txn_) {
+      result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
-      m_db_rw_txn = NULL;
+      db_rw_txn_ = NULL;
    }
 
    ff_pkt = init_find_files();
    ff_pkt->type = FT_BASE;
 
-   result = mdb_cursor_open(m_db_ro_txn, m_db_dbi, &cursor);
+   result = mdb_cursor_open(db_ro_txn_, db_dbi_, &cursor);
    if (result == 0) {
       while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
          payload = (accurate_payload *)data.mv_data;
-         if (bit_is_set(payload->filenr, m_seen_bitmap)) {
+         if (bit_is_set(payload->filenr, seen_bitmap_)) {
             Dmsg1(dbglvl, "base file fname=%s\n", key.mv_data);
             decode_stat(payload->lstat, &ff_pkt->statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
             ff_pkt->fname = (char *)key.mv_data;
@@ -443,8 +443,8 @@ bool B_ACCURATE_LMDB::send_base_file_list(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
    }
 
-   mdb_txn_reset(m_db_ro_txn);
-   result = mdb_txn_renew(m_db_ro_txn);
+   mdb_txn_reset(db_ro_txn_);
+   result = mdb_txn_renew(db_ro_txn_);
    if (result != 0) {
       Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
       goto bail_out;
@@ -457,7 +457,7 @@ bail_out:
    return retval;
 }
 
-bool B_ACCURATE_LMDB::send_deleted_list(JCR *jcr)
+bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
 {
    int result;
    int32_t LinkFIc;
@@ -476,24 +476,24 @@ bool B_ACCURATE_LMDB::send_deleted_list(JCR *jcr)
    /*
     * Commit any pending write transactions.
     */
-   if (m_db_rw_txn) {
-      result = mdb_txn_commit(m_db_rw_txn);
+   if (db_rw_txn_) {
+      result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
          Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
-      m_db_rw_txn = NULL;
+      db_rw_txn_ = NULL;
    }
 
    ff_pkt = init_find_files();
    ff_pkt->type = FT_DELETED;
 
-   result = mdb_cursor_open(m_db_ro_txn, m_db_dbi, &cursor);
+   result = mdb_cursor_open(db_ro_txn_, db_dbi_, &cursor);
    if (result == 0) {
       while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
          payload = (accurate_payload *)data.mv_data;
 
-         if (bit_is_set(payload->filenr, m_seen_bitmap) ||
+         if (bit_is_set(payload->filenr, seen_bitmap_) ||
              plugin_check_file(jcr, (char *)key.mv_data)) {
             continue;
          }
@@ -510,8 +510,8 @@ bool B_ACCURATE_LMDB::send_deleted_list(JCR *jcr)
       Jmsg1(jcr, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
    }
 
-   mdb_txn_reset(m_db_ro_txn);
-   result = mdb_txn_renew(m_db_ro_txn);
+   mdb_txn_reset(db_ro_txn_);
+   result = mdb_txn_renew(db_ro_txn_);
    if (result != 0) {
       Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
       goto bail_out;
@@ -524,67 +524,67 @@ bail_out:
    return retval;
 }
 
-void B_ACCURATE_LMDB::destroy(JCR *jcr)
+void BareosAccurateFilelistLmdb::destroy(JCR *jcr)
 {
    /*
     * Abort any pending read transaction.
     */
-   if (m_db_ro_txn) {
-      mdb_txn_abort(m_db_ro_txn);
-      m_db_ro_txn = NULL;
+   if (db_ro_txn_) {
+      mdb_txn_abort(db_ro_txn_);
+      db_ro_txn_ = NULL;
    }
 
    /*
     * Abort any pending write transaction.
     */
-   if (m_db_rw_txn) {
-      mdb_txn_abort(m_db_rw_txn);
-      m_db_rw_txn = NULL;
+   if (db_rw_txn_) {
+      mdb_txn_abort(db_rw_txn_);
+      db_rw_txn_ = NULL;
    }
 
-   if (m_db_env) {
+   if (db_env_) {
       /*
        * Drop the contents of the LMDB.
        */
-      if (m_db_dbi) {
+      if (db_dbi_) {
          int result;
          MDB_txn *txn;
 
-         result = mdb_txn_begin(m_db_env, NULL, 0, &txn);
+         result = mdb_txn_begin(db_env_, NULL, 0, &txn);
          if (result == 0) {
-            result = mdb_drop(txn, m_db_dbi, 1);
+            result = mdb_drop(txn, db_dbi_, 1);
             if (result == 0) {
                mdb_txn_commit(txn);
             } else {
                mdb_txn_abort(txn);
             }
          }
-         m_db_dbi = 0;
+         db_dbi_ = 0;
       }
 
       /*
        * Close the environment.
        */
-      mdb_env_close(m_db_env);
-      m_db_env = NULL;
+      mdb_env_close(db_env_);
+      db_env_ = NULL;
    }
 
-   if (m_pay_load) {
-      free_pool_memory(m_pay_load);
-      m_pay_load = NULL;
+   if (pay_load_) {
+      free_pool_memory(pay_load_);
+      pay_load_ = NULL;
    }
 
-   if (m_lmdb_name) {
-      secure_erase(jcr, m_lmdb_name);
-      free_pool_memory(m_lmdb_name);
-      m_lmdb_name = NULL;
+   if (lmdb_name_) {
+      secure_erase(jcr, lmdb_name_);
+      free_pool_memory(lmdb_name_);
+      lmdb_name_ = NULL;
    }
 
-   if (m_seen_bitmap) {
-      free(m_seen_bitmap);
-      m_seen_bitmap = NULL;
+   if (seen_bitmap_) {
+      free(seen_bitmap_);
+      seen_bitmap_ = NULL;
    }
 
-   m_filenr = 0;
+   filenr_ = 0;
 }
 #endif /* HAVE_LMDB */

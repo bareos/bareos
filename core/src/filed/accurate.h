@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -58,15 +58,15 @@ struct accurate_payload {
 /*
  * Accurate payload storage abstraction classes.
  */
-class B_ACCURATE: public SMARTALLOC {
+class BareosAccurateFilelist: public SMARTALLOC {
 protected:
-   int64_t m_filenr;
-   char *m_seen_bitmap;
+   int64_t filenr_;
+   char *seen_bitmap_;
 
 public:
    /* methods */
-   B_ACCURATE() { m_filenr = 0; m_seen_bitmap = NULL; };
-   virtual ~B_ACCURATE() {};
+   BareosAccurateFilelist() { filenr_ = 0; seen_bitmap_ = NULL; };
+   virtual ~BareosAccurateFilelist() {};
    virtual bool init(JCR *jcr, uint32_t nbfile) = 0;
    virtual bool add_file(JCR *jcr,
                          char *fname,
@@ -74,7 +74,7 @@ public:
                          char *lstat,
                          int lstat_length,
                          char *chksum,
-                         int chksum_length,
+                         int checksum_length,
                          int32_t delta_seq) = 0;
    virtual bool end_load(JCR *jcr) = 0;
    virtual accurate_payload *lookup_payload(JCR *jcr, char *fname) = 0;
@@ -82,10 +82,10 @@ public:
    virtual bool send_base_file_list(JCR *jcr) = 0;
    virtual bool send_deleted_list(JCR *jcr) = 0;
    virtual void destroy(JCR *jcr) = 0;
-   void mark_file_as_seen(JCR *jcr, accurate_payload *payload) { set_bit(payload->filenr, m_seen_bitmap); };
-   void unmark_file_as_seen(JCR *jcr, accurate_payload *payload) { clear_bit(payload->filenr, m_seen_bitmap); };
-   void mark_all_files_as_seen(JCR *jcr) { set_bits(0, m_filenr - 1, m_seen_bitmap); };
-   void unmark_all_files_as_seen(JCR *jcr) { clear_bits(0, m_filenr - 1, m_seen_bitmap); };
+   void mark_file_as_seen(JCR *jcr, accurate_payload *payload) { set_bit(payload->filenr, seen_bitmap_); };
+   void unmark_file_as_seen(JCR *jcr, accurate_payload *payload) { clear_bit(payload->filenr, seen_bitmap_); };
+   void mark_all_files_as_seen(JCR *jcr) { set_bits(0, filenr_ - 1, seen_bitmap_); };
+   void unmark_all_files_as_seen(JCR *jcr) { clear_bits(0, filenr_ - 1, seen_bitmap_); };
 };
 
 /*
@@ -101,14 +101,14 @@ struct CurFile {
 #pragma pack(pop)
 #endif
 
-class B_ACCURATE_HTABLE: public B_ACCURATE {
+class BareosAccurateFilelistHtable: public BareosAccurateFilelist {
 protected:
-   htable *m_file_list;
+   htable *file_list_;
 
 public:
    /* methods */
-   B_ACCURATE_HTABLE();
-   ~B_ACCURATE_HTABLE();
+   BareosAccurateFilelistHtable();
+   ~BareosAccurateFilelistHtable();
    bool init(JCR *jcr, uint32_t nbfile);
    bool add_file(JCR *jcr,
                  char *fname,
@@ -116,7 +116,7 @@ public:
                  char *lstat,
                  int lstat_length,
                  char *chksum,
-                 int chksum_length,
+                 int checksum_length,
                  int32_t delta_seq);
    bool end_load(JCR *jcr);
    accurate_payload *lookup_payload(JCR *jcr, char *fname);
@@ -133,20 +133,20 @@ public:
 /*
  * Lighning Memory DataBase (LMDB) specific storage abstraction class using the Symas LMDB.
  */
-class B_ACCURATE_LMDB: public B_ACCURATE {
+class BareosAccurateFilelistLmdb: public BareosAccurateFilelist {
 protected:
-   int m_pay_load_length;
-   POOLMEM *m_pay_load;
-   POOLMEM *m_lmdb_name;
-   MDB_env *m_db_env;
-   MDB_dbi m_db_dbi;
-   MDB_txn *m_db_rw_txn;
-   MDB_txn *m_db_ro_txn;
+   int pay_load_length_;
+   POOLMEM *pay_load_;
+   POOLMEM *lmdb_name_;
+   MDB_env *db_env_;
+   MDB_dbi db_dbi_;
+   MDB_txn *db_rw_txn_;
+   MDB_txn *db_ro_txn_;
 
 public:
    /* methods */
-   B_ACCURATE_LMDB();
-   ~B_ACCURATE_LMDB();
+   BareosAccurateFilelistLmdb();
+   ~BareosAccurateFilelistLmdb();
    bool init(JCR *jcr, uint32_t nbfile);
    bool add_file(JCR *jcr,
                  char *fname,
@@ -154,7 +154,7 @@ public:
                  char *lstat,
                  int lstat_length,
                  char *chksum,
-                 int chksum_length,
+                 int checksum_length,
                  int32_t delta_seq);
    bool end_load(JCR *jcr);
    accurate_payload *lookup_payload(JCR *jcr, char *fname);
