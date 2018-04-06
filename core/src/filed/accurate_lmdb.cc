@@ -48,13 +48,15 @@ BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number
    db_ro_txn_ = NULL;
    db_rw_txn_ = NULL;
    db_dbi_ = 0;
+   number_of_previous_files_ = number_of_files;
+   init();
 }
 
 BareosAccurateFilelistLmdb::~BareosAccurateFilelistLmdb()
 {
 }
 
-bool BareosAccurateFilelistLmdb::init(uint32_t nbfile)
+bool BareosAccurateFilelistLmdb::init()
 {
    int result;
    MDB_env *env;
@@ -67,7 +69,7 @@ bool BareosAccurateFilelistLmdb::init(uint32_t nbfile)
          return false;
       }
 
-      if ((nbfile * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
+      if ((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) > mapsize) {
          size_t pagesize;
 
 #ifdef HAVE_GETPAGESIZE
@@ -76,7 +78,7 @@ bool BareosAccurateFilelistLmdb::init(uint32_t nbfile)
          pagesize = B_PAGE_SIZE;
 #endif
 
-         mapsize = (((nbfile * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
+         mapsize = (((number_of_previous_files_ * AVG_NR_BYTES_PER_ENTRY) / pagesize) + 1) * pagesize;
       }
       result = mdb_env_set_mapsize(env, mapsize);
       if (result) {
@@ -126,8 +128,8 @@ bool BareosAccurateFilelistLmdb::init(uint32_t nbfile)
    }
 
    if (!seen_bitmap_) {
-      seen_bitmap_ = (char *)malloc(nbytes_for_bits(nbfile));
-      clear_all_bits(nbfile, seen_bitmap_);
+      seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
+      clear_all_bits(number_of_previous_files_, seen_bitmap_);
    }
 
    return true;

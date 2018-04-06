@@ -63,19 +63,20 @@ protected:
    int64_t filenr_;
    char *seen_bitmap_;
    JCR *jcr_;
+   int32_t number_of_previous_files_;
 
 public:
    /* methods */
    BareosAccurateFilelist() {
       filenr_ = 0;
       seen_bitmap_ = NULL;
+      number_of_previous_files_ = 0;
       jcr_ = NULL;
    };
 
    virtual ~BareosAccurateFilelist() {
    };
 
-   virtual bool init(uint32_t nbfile) = 0;
    virtual bool add_file(char *fname,
                          int fname_length,
                          char *lstat,
@@ -123,13 +124,13 @@ struct CurFile {
 class BareosAccurateFilelistHtable: public BareosAccurateFilelist {
 protected:
    htable *file_list_;
+   bool init();
 
 public:
    /* methods */
    BareosAccurateFilelistHtable() = delete;
    BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistHtable();
-   bool init(uint32_t nbfile);
    bool add_file(char *fname,
                  int fname_length,
                  char *lstat,
@@ -162,12 +163,13 @@ protected:
    MDB_txn *db_rw_txn_;
    MDB_txn *db_ro_txn_;
 
+   bool init();
+
 public:
    /* methods */
    BareosAccurateFilelistLmdb() = delete;
    BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistLmdb();
-   bool init(uint32_t nbfile);
    bool add_file(char *fname,
                  int fname_length,
                  char *lstat,

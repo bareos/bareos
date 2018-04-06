@@ -337,7 +337,7 @@ bail_out:
 
 bool accurate_cmd(JCR *jcr)
 {
-   uint32_t nb;
+   uint32_t number_of_previous_files;
    int fname_length,
        lstat_length,
        chksum_length;
@@ -349,26 +349,25 @@ bool accurate_cmd(JCR *jcr)
       return true;
    }
 
-   if (sscanf(dir->msg, "accurate files=%u", &nb) != 1) {
+   if (sscanf(dir->msg, "accurate files=%u", &number_of_previous_files) != 1) {
       dir->fsend(_("2991 Bad accurate command\n"));
       return false;
    }
 
 #ifdef HAVE_LMDB
    if (me->always_use_lmdb) {
-      jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, nb);
+      jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, number_of_previous_files);
    } else {
-      if (me->lmdb_threshold > 0 && nb >= me->lmdb_threshold) {
-         jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, nb);
+      if (me->lmdb_threshold > 0 && number_of_previous_files >= me->lmdb_threshold) {
+         jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, number_of_previous_files);
       } else {
-         jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, nb);
+         jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
       }
    }
 #else
-   jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, nb);
+   jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
 #endif
 
-   jcr->file_list->init(nb);
    jcr->accurate = true;
 
    /**

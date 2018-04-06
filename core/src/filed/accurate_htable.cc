@@ -40,24 +40,26 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JCR *jcr, uint32_t nu
    filenr_ = 0;
    file_list_ = NULL;
    seen_bitmap_ = NULL;
+   number_of_previous_files_ = number_of_files;
+   init();
 }
 
 BareosAccurateFilelistHtable::~BareosAccurateFilelistHtable()
 {
 }
 
-bool BareosAccurateFilelistHtable::init(uint32_t nbfile)
+bool BareosAccurateFilelistHtable::init()
 {
    CurFile *elt = NULL;
 
    if (!file_list_) {
       file_list_ = (htable *)malloc(sizeof(htable));
-      file_list_->init(elt, &elt->link, nbfile);
+      file_list_->init(elt, &elt->link, number_of_previous_files_);
    }
 
    if (!seen_bitmap_) {
-      seen_bitmap_ = (char *)malloc(nbytes_for_bits(nbfile));
-      clear_all_bits(nbfile, seen_bitmap_);
+      seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
+      clear_all_bits(number_of_previous_files_, seen_bitmap_);
    }
 
    return true;
