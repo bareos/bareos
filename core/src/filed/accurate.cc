@@ -354,18 +354,20 @@ bool accurate_cmd(JCR *jcr)
    }
 
 #ifdef HAVE_LMDB
-   if (me->always_use_lmdb) {
+   if ( me->always_use_lmdb ||
+         ( me->lmdb_threshold > 0 && number_of_previous_files >= me->lmdb_threshold)
+      ) {
       jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, number_of_previous_files);
    } else {
-      if (me->lmdb_threshold > 0 && number_of_previous_files >= me->lmdb_threshold) {
-         jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, number_of_previous_files);
-      } else {
-         jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
-      }
+      jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
    }
 #else
    jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, number_of_previous_files);
 #endif
+
+   if (! jcr->file_list->init() ) {
+      return false;
+   }
 
    jcr->accurate = true;
 
@@ -392,7 +394,7 @@ bool accurate_cmd(JCR *jcr)
 
          /**
           * Sanity check total length of the received msg must be at least
-          * total of the 3 lengths calculcated + 3 (\0)
+          * total of the 3 lengths calculated + 3 (\0)
           */
          if ((fname_length + lstat_length + chksum_length + 3) > dir->msglen) {
             continue;

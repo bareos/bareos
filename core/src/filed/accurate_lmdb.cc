@@ -41,15 +41,15 @@ static int dbglvl = 100;
 BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files)
 {
    filenr_ = 0;
-   pay_load_ = NULL;
-   lmdb_name_ = NULL;
-   seen_bitmap_ = NULL;
+   pay_load_ = get_pool_memory(PM_MESSAGE);
+   lmdb_name_ = get_pool_memory(PM_FNAME);
+   seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
+   clear_all_bits(number_of_previous_files_, seen_bitmap_);
    db_env_ = NULL;
    db_ro_txn_ = NULL;
    db_rw_txn_ = NULL;
    db_dbi_ = 0;
    number_of_previous_files_ = number_of_files;
-   init();
 }
 
 bool BareosAccurateFilelistLmdb::init()
@@ -113,19 +113,6 @@ bool BareosAccurateFilelistLmdb::init()
       }
 
       db_env_ = env;
-   }
-
-   if (!pay_load_) {
-      pay_load_ = get_pool_memory(PM_MESSAGE);
-   }
-
-   if (!lmdb_name_) {
-      lmdb_name_ = get_pool_memory(PM_FNAME);
-   }
-
-   if (!seen_bitmap_) {
-      seen_bitmap_ = (char *)malloc(nbytes_for_bits(number_of_previous_files_));
-      clear_all_bits(number_of_previous_files_, seen_bitmap_);
    }
 
    return true;
