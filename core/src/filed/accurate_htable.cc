@@ -44,10 +44,6 @@ BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JCR *jcr, uint32_t nu
    init();
 }
 
-BareosAccurateFilelistHtable::~BareosAccurateFilelistHtable()
-{
-}
-
 bool BareosAccurateFilelistHtable::init()
 {
    CurFile *elt = NULL;

@@ -89,7 +89,6 @@ public:
    virtual bool update_payload(char *fname, accurate_payload *payload) = 0;
    virtual bool send_base_file_list() = 0;
    virtual bool send_deleted_list() = 0;
-   virtual void destroy() = 0;
 
    void mark_file_as_seen(accurate_payload *payload) {
       set_bit(payload->filenr, seen_bitmap_);
@@ -125,12 +124,15 @@ class BareosAccurateFilelistHtable: public BareosAccurateFilelist {
 protected:
    htable *file_list_;
    bool init();
+   void destroy();
 
 public:
    /* methods */
    BareosAccurateFilelistHtable() = delete;
    BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files);
-   ~BareosAccurateFilelistHtable();
+   ~BareosAccurateFilelistHtable() {
+      destroy();
+   }
    bool add_file(char *fname,
                  int fname_length,
                  char *lstat,
@@ -143,7 +145,6 @@ public:
    bool update_payload(char *fname, accurate_payload *payload);
    bool send_base_file_list();
    bool send_deleted_list();
-   void destroy();
 };
 
 #ifdef HAVE_LMDB
@@ -164,12 +165,15 @@ protected:
    MDB_txn *db_ro_txn_;
 
    bool init();
+   void destroy();
 
 public:
    /* methods */
    BareosAccurateFilelistLmdb() = delete;
    BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files);
-   ~BareosAccurateFilelistLmdb();
+   ~BareosAccurateFilelistLmdb() {
+      destroy();
+   }
    bool add_file(char *fname,
                  int fname_length,
                  char *lstat,
@@ -182,7 +186,6 @@ public:
    bool update_payload(char *fname, accurate_payload *payload);
    bool send_base_file_list();
    bool send_deleted_list();
-   void destroy();
 };
 #endif /* HAVE_LMDB */
 

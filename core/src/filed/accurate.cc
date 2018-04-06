@@ -101,7 +101,6 @@ static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **pay
 void accurate_free(JCR *jcr)
 {
    if (jcr->file_list) {
-      jcr->file_list->destroy();
       delete jcr->file_list;
       jcr->file_list = NULL;
    }

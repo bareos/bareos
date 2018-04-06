@@ -52,10 +52,6 @@ BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number
    init();
 }
 
-BareosAccurateFilelistLmdb::~BareosAccurateFilelistLmdb()
-{
-}
-
 bool BareosAccurateFilelistLmdb::init()
 {
    int result;
