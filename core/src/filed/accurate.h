@@ -62,30 +62,49 @@ class BareosAccurateFilelist: public SMARTALLOC {
 protected:
    int64_t filenr_;
    char *seen_bitmap_;
+   JCR *jcr_;
 
 public:
    /* methods */
-   BareosAccurateFilelist() { filenr_ = 0; seen_bitmap_ = NULL; };
-   virtual ~BareosAccurateFilelist() {};
-   virtual bool init(JCR *jcr, uint32_t nbfile) = 0;
-   virtual bool add_file(JCR *jcr,
-                         char *fname,
+   BareosAccurateFilelist() {
+      filenr_ = 0;
+      seen_bitmap_ = NULL;
+      jcr_ = NULL;
+   };
+
+   virtual ~BareosAccurateFilelist() {
+   };
+
+   virtual bool init(uint32_t nbfile) = 0;
+   virtual bool add_file(char *fname,
                          int fname_length,
                          char *lstat,
                          int lstat_length,
                          char *chksum,
                          int checksum_length,
                          int32_t delta_seq) = 0;
-   virtual bool end_load(JCR *jcr) = 0;
-   virtual accurate_payload *lookup_payload(JCR *jcr, char *fname) = 0;
-   virtual bool update_payload(JCR *jcr, char *fname, accurate_payload *payload) = 0;
-   virtual bool send_base_file_list(JCR *jcr) = 0;
-   virtual bool send_deleted_list(JCR *jcr) = 0;
-   virtual void destroy(JCR *jcr) = 0;
-   void mark_file_as_seen(JCR *jcr, accurate_payload *payload) { set_bit(payload->filenr, seen_bitmap_); };
-   void unmark_file_as_seen(JCR *jcr, accurate_payload *payload) { clear_bit(payload->filenr, seen_bitmap_); };
-   void mark_all_files_as_seen(JCR *jcr) { set_bits(0, filenr_ - 1, seen_bitmap_); };
-   void unmark_all_files_as_seen(JCR *jcr) { clear_bits(0, filenr_ - 1, seen_bitmap_); };
+   virtual bool end_load() = 0;
+   virtual accurate_payload *lookup_payload(char *fname) = 0;
+   virtual bool update_payload(char *fname, accurate_payload *payload) = 0;
+   virtual bool send_base_file_list() = 0;
+   virtual bool send_deleted_list() = 0;
+   virtual void destroy() = 0;
+
+   void mark_file_as_seen(accurate_payload *payload) {
+      set_bit(payload->filenr, seen_bitmap_);
+   };
+
+   void unmark_file_as_seen(accurate_payload *payload) {
+      clear_bit(payload->filenr, seen_bitmap_);
+   };
+
+   void mark_all_files_as_seen() {
+      set_bits(0, filenr_ - 1, seen_bitmap_);
+   };
+
+   void unmark_all_files_as_seen() {
+      clear_bits(0, filenr_ - 1, seen_bitmap_);
+   };
 };
 
 /*
@@ -107,23 +126,23 @@ protected:
 
 public:
    /* methods */
-   BareosAccurateFilelistHtable();
+   BareosAccurateFilelistHtable() = delete;
+   BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistHtable();
-   bool init(JCR *jcr, uint32_t nbfile);
-   bool add_file(JCR *jcr,
-                 char *fname,
+   bool init(uint32_t nbfile);
+   bool add_file(char *fname,
                  int fname_length,
                  char *lstat,
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
                  int32_t delta_seq);
-   bool end_load(JCR *jcr);
-   accurate_payload *lookup_payload(JCR *jcr, char *fname);
-   bool update_payload(JCR *jcr, char *fname, accurate_payload *payload);
-   bool send_base_file_list(JCR *jcr);
-   bool send_deleted_list(JCR *jcr);
-   void destroy(JCR *jcr);
+   bool end_load();
+   accurate_payload *lookup_payload(char *fname);
+   bool update_payload(char *fname, accurate_payload *payload);
+   bool send_base_file_list();
+   bool send_deleted_list();
+   void destroy();
 };
 
 #ifdef HAVE_LMDB
@@ -131,7 +150,7 @@ public:
 #include "lmdb.h"
 
 /*
- * Lighning Memory DataBase (LMDB) specific storage abstraction class using the Symas LMDB.
+ * Lightning Memory DataBase (LMDB) specific storage abstraction class using the Symas LMDB.
  */
 class BareosAccurateFilelistLmdb: public BareosAccurateFilelist {
 protected:
@@ -145,23 +164,23 @@ protected:
 
 public:
    /* methods */
-   BareosAccurateFilelistLmdb();
+   BareosAccurateFilelistLmdb() = delete;
+   BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistLmdb();
-   bool init(JCR *jcr, uint32_t nbfile);
-   bool add_file(JCR *jcr,
-                 char *fname,
+   bool init(uint32_t nbfile);
+   bool add_file(char *fname,
                  int fname_length,
                  char *lstat,
                  int lstat_length,
                  char *chksum,
                  int checksum_length,
                  int32_t delta_seq);
-   bool end_load(JCR *jcr);
-   accurate_payload *lookup_payload(JCR *jcr, char *fname);
-   bool update_payload(JCR *jcr, char *fname, accurate_payload *payload);
-   bool send_base_file_list(JCR *jcr);
-   bool send_deleted_list(JCR *jcr);
-   void destroy(JCR *jcr);
+   bool end_load();
+   accurate_payload *lookup_payload(char *fname);
+   bool update_payload(char *fname, accurate_payload *payload);
+   bool send_base_file_list();
+   bool send_deleted_list();
+   void destroy();
 };
 #endif /* HAVE_LMDB */
 

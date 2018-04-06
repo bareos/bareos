@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,8 +34,9 @@
 
 static int dbglvl = 100;
 
-BareosAccurateFilelistHtable::BareosAccurateFilelistHtable()
+BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files)
 {
+   jcr_= jcr;
    filenr_ = 0;
    file_list_ = NULL;
    seen_bitmap_ = NULL;
@@ -45,7 +46,7 @@ BareosAccurateFilelistHtable::~BareosAccurateFilelistHtable()
 {
 }
 
-bool BareosAccurateFilelistHtable::init(JCR *jcr, uint32_t nbfile)
+bool BareosAccurateFilelistHtable::init(uint32_t nbfile)
 {
    CurFile *elt = NULL;
 
@@ -62,14 +63,13 @@ bool BareosAccurateFilelistHtable::init(JCR *jcr, uint32_t nbfile)
    return true;
 }
 
-bool BareosAccurateFilelistHtable::add_file(JCR *jcr,
-                                 char *fname,
-                                 int fname_length,
-                                 char *lstat,
-                                 int lstat_length,
-                                 char *chksum,
-                                 int chksum_length,
-                                 int32_t delta_seq)
+bool BareosAccurateFilelistHtable::add_file( char *fname,
+                                             int fname_length,
+                                             char *lstat,
+                                             int lstat_length,
+                                             char *chksum,
+                                             int chksum_length,
+                                             int32_t delta_seq)
 {
    CurFile *item;
    int total_length;
@@ -105,7 +105,7 @@ bool BareosAccurateFilelistHtable::add_file(JCR *jcr,
    return retval;
 }
 
-bool BareosAccurateFilelistHtable::end_load(JCR *jcr)
+bool BareosAccurateFilelistHtable::end_load()
 {
    /*
     * Nothing to do.
@@ -113,7 +113,7 @@ bool BareosAccurateFilelistHtable::end_load(JCR *jcr)
    return true;
 }
 
-accurate_payload *BareosAccurateFilelistHtable::lookup_payload(JCR *jcr, char *fname)
+accurate_payload *BareosAccurateFilelistHtable::lookup_payload(char *fname)
 {
    CurFile *temp;
 
@@ -121,7 +121,7 @@ accurate_payload *BareosAccurateFilelistHtable::lookup_payload(JCR *jcr, char *f
    return (temp) ? &temp->payload : NULL;
 }
 
-bool BareosAccurateFilelistHtable::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistHtable::update_payload(char *fname, accurate_payload *payload)
 {
    /*
     * Nothing to do.
@@ -129,7 +129,7 @@ bool BareosAccurateFilelistHtable::update_payload(JCR *jcr, char *fname, accurat
    return true;
 }
 
-bool BareosAccurateFilelistHtable::send_base_file_list(JCR *jcr)
+bool BareosAccurateFilelistHtable::send_base_file_list()
 {
    CurFile *elt;
    FF_PKT *ff_pkt;
@@ -137,7 +137,7 @@ bool BareosAccurateFilelistHtable::send_base_file_list(JCR *jcr)
    struct stat statp;
    int stream = STREAM_UNIX_ATTRIBUTES;
 
-   if (!jcr->accurate || jcr->getJobLevel() != L_FULL) {
+   if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) {
       return true;
    }
 
@@ -154,7 +154,7 @@ bool BareosAccurateFilelistHtable::send_base_file_list(JCR *jcr)
          decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = elt->fname;
          ff_pkt->statp = statp;
-         encode_and_send_attributes(jcr, ff_pkt, stream);
+         encode_and_send_attributes(jcr_, ff_pkt, stream);
       }
    }
 
@@ -162,7 +162,7 @@ bool BareosAccurateFilelistHtable::send_base_file_list(JCR *jcr)
    return true;
 }
 
-bool BareosAccurateFilelistHtable::send_deleted_list(JCR *jcr)
+bool BareosAccurateFilelistHtable::send_deleted_list()
 {
    CurFile *elt;
    FF_PKT *ff_pkt;
@@ -170,7 +170,7 @@ bool BareosAccurateFilelistHtable::send_deleted_list(JCR *jcr)
    struct stat statp;
    int stream = STREAM_UNIX_ATTRIBUTES;
 
-   if (!jcr->accurate) {
+   if (!jcr_->accurate) {
       return true;
    }
 
@@ -179,7 +179,7 @@ bool BareosAccurateFilelistHtable::send_deleted_list(JCR *jcr)
 
    foreach_htable(elt, file_list_) {
       if (bit_is_set(elt->payload.filenr, seen_bitmap_) ||
-          plugin_check_file(jcr, elt->fname)) {
+          plugin_check_file(jcr_, elt->fname)) {
          continue;
       }
       Dmsg1(dbglvl, "deleted fname=%s\n", elt->fname);
@@ -187,14 +187,14 @@ bool BareosAccurateFilelistHtable::send_deleted_list(JCR *jcr)
       decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
       ff_pkt->statp.st_mtime = statp.st_mtime;
       ff_pkt->statp.st_ctime = statp.st_ctime;
-      encode_and_send_attributes(jcr, ff_pkt, stream);
+      encode_and_send_attributes(jcr_, ff_pkt, stream);
    }
 
    term_find_files(ff_pkt);
    return true;
 }
 
-void BareosAccurateFilelistHtable::destroy(JCR *jcr)
+void BareosAccurateFilelistHtable::destroy()
 {
    if (file_list_) {
       file_list_->destroy();

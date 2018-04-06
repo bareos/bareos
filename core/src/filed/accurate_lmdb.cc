@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -38,7 +38,7 @@ static int dbglvl = 100;
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
 
-BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb()
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files)
 {
    filenr_ = 0;
    pay_load_ = NULL;
@@ -54,7 +54,7 @@ BareosAccurateFilelistLmdb::~BareosAccurateFilelistLmdb()
 {
 }
 
-bool BareosAccurateFilelistLmdb::init(JCR *jcr, uint32_t nbfile)
+bool BareosAccurateFilelistLmdb::init(uint32_t nbfile)
 {
    int result;
    MDB_env *env;
@@ -63,7 +63,7 @@ bool BareosAccurateFilelistLmdb::init(JCR *jcr, uint32_t nbfile)
    if (!db_env_) {
       result = mdb_env_create(&env);
       if (result) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
          return false;
       }
 
@@ -80,7 +80,7 @@ bool BareosAccurateFilelistLmdb::init(JCR *jcr, uint32_t nbfile)
       }
       result = mdb_env_set_mapsize(env, mapsize);
       if (result) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to set MDB mapsize: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to set MDB mapsize: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
@@ -89,26 +89,26 @@ bool BareosAccurateFilelistLmdb::init(JCR *jcr, uint32_t nbfile)
        */
       result = mdb_env_set_maxreaders(env, 1);
       if (result) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to set MDB maxreaders: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to set MDB maxreaders: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
-      Mmsg(lmdb_name_, "%s/.accurate_lmdb.%d", me->working_directory, jcr->JobId);
+      Mmsg(lmdb_name_, "%s/.accurate_lmdb.%d", me->working_directory, jcr_->JobId);
       result = mdb_env_open(env, lmdb_name_, MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
       if (result) {
-         Jmsg2(jcr, M_FATAL, 0, _("Unable create LDMD database %s: %s\n"), lmdb_name_, mdb_strerror(result));
+         Jmsg2(jcr_, M_FATAL, 0, _("Unable create LDMD database %s: %s\n"), lmdb_name_, mdb_strerror(result));
          goto bail_out;
       }
 
       result = mdb_txn_begin(env, NULL, 0, &db_rw_txn_);
       if (result) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
       result = mdb_dbi_open(db_rw_txn_, NULL, MDB_CREATE, &db_dbi_);
       if (result) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
          mdb_txn_abort(db_rw_txn_);
          db_rw_txn_ = NULL;
          goto bail_out;
@@ -140,14 +140,13 @@ bail_out:
    return false;
 }
 
-bool BareosAccurateFilelistLmdb::add_file(JCR *jcr,
-                               char *fname,
-                               int fname_length,
-                               char *lstat,
-                               int lstat_length,
-                               char *chksum,
-                               int chksulength_,
-                               int32_t delta_seq)
+bool BareosAccurateFilelistLmdb::add_file( char *fname,
+                                           int fname_length,
+                                           char *lstat,
+                                           int lstat_length,
+                                           char *chksum,
+                                           int chksulength_,
+                                           int32_t delta_seq)
 {
    accurate_payload *payload;
    int result;
@@ -210,21 +209,21 @@ retry:
          if (result == 0) {
             goto retry;
          } else {
-            Jmsg1(jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(jcr_, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
          }
       } else {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
       }
       break;
    default:
-      Jmsg1(jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
       break;
    }
 
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::end_load(JCR *jcr)
+bool BareosAccurateFilelistLmdb::end_load()
 {
    int result;
 
@@ -234,12 +233,12 @@ bool BareosAccurateFilelistLmdb::end_load(JCR *jcr)
    if (db_rw_txn_) {
       result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
       result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
    }
@@ -250,7 +249,7 @@ bool BareosAccurateFilelistLmdb::end_load(JCR *jcr)
    if (!db_ro_txn_) {
       result = mdb_txn_begin(db_env_, NULL, MDB_RDONLY, &db_ro_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to create read transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to create read transaction: %s\n"), mdb_strerror(result));
          return false;
       }
    }
@@ -258,7 +257,7 @@ bool BareosAccurateFilelistLmdb::end_load(JCR *jcr)
    return true;
 }
 
-accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(JCR *jcr, char *fname)
+accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(char *fname)
 {
    int result;
    int lstat_length;
@@ -295,7 +294,7 @@ accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(JCR *jcr, char *fna
       mdb_txn_reset(db_ro_txn_);
       result = mdb_txn_renew(db_ro_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
          return NULL;
       }
       break;
@@ -311,7 +310,7 @@ accurate_payload *BareosAccurateFilelistLmdb::lookup_payload(JCR *jcr, char *fna
    return payload;
 }
 
-bool BareosAccurateFilelistLmdb::update_payload(JCR *jcr, char *fname, accurate_payload *payload)
+bool BareosAccurateFilelistLmdb::update_payload(char *fname, accurate_payload *payload)
 {
    int result,
        total_length,
@@ -364,12 +363,12 @@ retry:
       if (result == 0) {
          result = mdb_txn_begin(db_env_, NULL, 0, &db_rw_txn_);
          if (result != 0) {
-            Jmsg1(jcr, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(jcr_, M_FATAL, 0, _("Unable to create write transaction: %s\n"), mdb_strerror(result));
          } else {
             retval = true;
          }
       } else {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
       }
       break;
    case MDB_TXN_FULL:
@@ -383,21 +382,21 @@ retry:
          if (result == 0) {
             goto retry;
          } else {
-            Jmsg1(jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
+            Jmsg1(jcr_, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
          }
       } else {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
       }
       break;
    default:
-      Jmsg1(jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
       break;
    }
 
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::send_base_file_list(JCR *jcr)
+bool BareosAccurateFilelistLmdb::send_base_file_list()
 {
    int result;
    int32_t LinkFIc;
@@ -408,7 +407,7 @@ bool BareosAccurateFilelistLmdb::send_base_file_list(JCR *jcr)
    accurate_payload *payload;
    int stream = STREAM_UNIX_ATTRIBUTES;
 
-   if (!jcr->accurate || jcr->getJobLevel() != L_FULL) {
+   if (!jcr_->accurate || jcr_->getJobLevel() != L_FULL) {
       return true;
    }
 
@@ -418,7 +417,7 @@ bool BareosAccurateFilelistLmdb::send_base_file_list(JCR *jcr)
    if (db_rw_txn_) {
       result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
       db_rw_txn_ = NULL;
@@ -435,18 +434,18 @@ bool BareosAccurateFilelistLmdb::send_base_file_list(JCR *jcr)
             Dmsg1(dbglvl, "base file fname=%s\n", key.mv_data);
             decode_stat(payload->lstat, &ff_pkt->statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
             ff_pkt->fname = (char *)key.mv_data;
-            encode_and_send_attributes(jcr, ff_pkt, stream);
+            encode_and_send_attributes(jcr_, ff_pkt, stream);
          }
       }
       mdb_cursor_close(cursor);
    } else {
-      Jmsg1(jcr, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
    }
 
    mdb_txn_reset(db_ro_txn_);
    result = mdb_txn_renew(db_ro_txn_);
    if (result != 0) {
-      Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
       goto bail_out;
    }
 
@@ -457,7 +456,7 @@ bail_out:
    return retval;
 }
 
-bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
+bool BareosAccurateFilelistLmdb::send_deleted_list()
 {
    int result;
    int32_t LinkFIc;
@@ -469,7 +468,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
    accurate_payload *payload;
    int stream = STREAM_UNIX_ATTRIBUTES;
 
-   if (!jcr->accurate) {
+   if (!jcr_->accurate) {
       return true;
    }
 
@@ -479,7 +478,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
    if (db_rw_txn_) {
       result = mdb_txn_commit(db_rw_txn_);
       if (result != 0) {
-         Jmsg1(jcr, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
+         Jmsg1(jcr_, M_FATAL, 0, _("Unable close write transaction: %s\n"), mdb_strerror(result));
          return false;
       }
       db_rw_txn_ = NULL;
@@ -494,7 +493,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
          payload = (accurate_payload *)data.mv_data;
 
          if (bit_is_set(payload->filenr, seen_bitmap_) ||
-             plugin_check_file(jcr, (char *)key.mv_data)) {
+             plugin_check_file(jcr_, (char *)key.mv_data)) {
             continue;
          }
 
@@ -503,17 +502,17 @@ bool BareosAccurateFilelistLmdb::send_deleted_list(JCR *jcr)
          ff_pkt->fname = (char *)key.mv_data;
          ff_pkt->statp.st_mtime = statp.st_mtime;
          ff_pkt->statp.st_ctime = statp.st_ctime;
-         encode_and_send_attributes(jcr, ff_pkt, stream);
+         encode_and_send_attributes(jcr_, ff_pkt, stream);
       }
       mdb_cursor_close(cursor);
    } else {
-      Jmsg1(jcr, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable create cursor: %s\n"), mdb_strerror(result));
    }
 
    mdb_txn_reset(db_ro_txn_);
    result = mdb_txn_renew(db_ro_txn_);
    if (result != 0) {
-      Jmsg1(jcr, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
+      Jmsg1(jcr_, M_FATAL, 0, _("Unable to renew read transaction: %s\n"), mdb_strerror(result));
       goto bail_out;
    }
 
@@ -524,7 +523,7 @@ bail_out:
    return retval;
 }
 
-void BareosAccurateFilelistLmdb::destroy(JCR *jcr)
+void BareosAccurateFilelistLmdb::destroy()
 {
    /*
     * Abort any pending read transaction.
@@ -575,7 +574,7 @@ void BareosAccurateFilelistLmdb::destroy(JCR *jcr)
    }
 
    if (lmdb_name_) {
-      secure_erase(jcr, lmdb_name_);
+      secure_erase(jcr_, lmdb_name_);
       free_pool_memory(lmdb_name_);
       lmdb_name_ = NULL;
    }

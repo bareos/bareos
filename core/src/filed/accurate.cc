@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2013-2014 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -35,9 +35,9 @@ bool accurate_mark_file_as_seen(JCR *jcr, char *fname)
       return false;
    }
 
-   temp = jcr->file_list->lookup_payload(jcr, fname);
+   temp = jcr->file_list->lookup_payload(fname);
    if (temp) {
-      jcr->file_list->mark_file_as_seen(jcr, temp);
+      jcr->file_list->mark_file_as_seen(temp);
       Dmsg1(dbglvl, "marked <%s> as seen\n", fname);
    } else {
       Dmsg1(dbglvl, "<%s> not found to be marked as seen\n", fname);
@@ -54,9 +54,9 @@ bool accurate_unmark_file_as_seen(JCR *jcr, char *fname)
       return false;
    }
 
-   temp = jcr->file_list->lookup_payload(jcr, fname);
+   temp = jcr->file_list->lookup_payload(fname);
    if (temp) {
-      jcr->file_list->unmark_file_as_seen(jcr, temp);
+      jcr->file_list->unmark_file_as_seen(temp);
       Dmsg1(dbglvl, "unmarked <%s> as seen\n", fname);
    } else {
       Dmsg1(dbglvl, "<%s> not found to be unmarked as seen\n", fname);
@@ -71,7 +71,7 @@ bool accurate_mark_all_files_as_seen(JCR *jcr)
       return false;
    }
 
-   jcr->file_list->mark_all_files_as_seen(jcr);
+   jcr->file_list->mark_all_files_as_seen();
    return true;
 }
 
@@ -81,7 +81,7 @@ bool accurate_unmark_all_files_as_seen(JCR *jcr)
       return false;
    }
 
-   jcr->file_list->unmark_all_files_as_seen(jcr);
+   jcr->file_list->unmark_all_files_as_seen();
    return true;
 }
 
@@ -89,7 +89,7 @@ static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **pay
 {
    bool found = false;
 
-   *payload = jcr->file_list->lookup_payload(jcr, fname);
+   *payload = jcr->file_list->lookup_payload(fname);
    if (*payload) {
       found = true;
       Dmsg1(dbglvl, "lookup <%s> ok\n", fname);
@@ -101,7 +101,7 @@ static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **pay
 void accurate_free(JCR *jcr)
 {
    if (jcr->file_list) {
-      jcr->file_list->destroy(jcr);
+      jcr->file_list->destroy();
       delete jcr->file_list;
       jcr->file_list = NULL;
    }
@@ -122,10 +122,10 @@ bool accurate_finish(JCR *jcr)
    if (jcr->accurate && jcr->file_list) {
       if (jcr->is_JobLevel(L_FULL)) {
          if (!jcr->rerunning) {
-            retval = jcr->file_list->send_base_file_list(jcr);
+            retval = jcr->file_list->send_base_file_list();
          }
       } else {
-         retval = jcr->file_list->send_deleted_list(jcr);
+         retval = jcr->file_list->send_deleted_list();
       }
 
       accurate_free(jcr);
@@ -325,10 +325,10 @@ bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
           * Compute space saved with basefile.
           */
          jcr->base_size += ff_pkt->statp.st_size;
-         jcr->file_list->mark_file_as_seen(jcr, payload);
+         jcr->file_list->mark_file_as_seen(payload);
       }
    } else {
-      jcr->file_list->mark_file_as_seen(jcr, payload);
+      jcr->file_list->mark_file_as_seen(payload);
    }
 
 bail_out:
@@ -356,19 +356,19 @@ bool accurate_cmd(JCR *jcr)
 
 #ifdef HAVE_LMDB
    if (me->always_use_lmdb) {
-      jcr->file_list = New(BareosAccurateFilelistLmdb);
+      jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, nb);
    } else {
       if (me->lmdb_threshold > 0 && nb >= me->lmdb_threshold) {
-         jcr->file_list = New(BareosAccurateFilelistLmdb);
+         jcr->file_list = New(BareosAccurateFilelistLmdb)(jcr, nb);
       } else {
-         jcr->file_list = New(BareosAccurateFilelistHtable);
+         jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, nb);
       }
    }
 #else
-   jcr->file_list = New(BareosAccurateFilelistHtable);
+   jcr->file_list = New(BareosAccurateFilelistHtable)(jcr, nb);
 #endif
 
-   jcr->file_list->init(jcr, nb);
+   jcr->file_list->init(nb);
    jcr->accurate = true;
 
    /**
@@ -401,11 +401,11 @@ bool accurate_cmd(JCR *jcr)
          }
       }
 
-      jcr->file_list->add_file(jcr, fname, fname_length, lstat, lstat_length,
+      jcr->file_list->add_file(fname, fname_length, lstat, lstat_length,
                                chksum, chksum_length, delta_seq);
    }
 
-   if (!jcr->file_list->end_load(jcr)) {
+   if (!jcr->file_list->end_load()) {
       return false;
    }
 
