@@ -22,5 +22,5 @@ The Bareos project offers two mailing lists: bareos-users and bareos-devel.
 
 [CHANGELOG]: ./CHANGELOG.md
 [LICENSE]: ./LICENSE
-[version-badge]: https://img.shields.io/badge/version-17.2.5-blue.svg
+[version-badge]: https://img.shields.io/badge/version-18.2.1-blue.svg
 [license-badge]: https://img.shields.io/badge/license-AGPL--3.0-blue.svg
