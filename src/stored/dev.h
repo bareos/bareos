@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -517,6 +517,7 @@ public:
    virtual bool device_status(bsdDevStatTrig *dst) { return false; };
    boffset_t lseek(DCR *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
    bool truncate(DCR *dcr) { return d_truncate(dcr); };
+   bool flush(DCR *dcr) { return d_flush(dcr); };
 
    /*
     * Low level operations
@@ -528,6 +529,7 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
    virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence) = 0;
    virtual bool d_truncate(DCR *dcr) = 0;
+   virtual bool d_flush(DCR *dcr) { return true; };
 
    /*
     * Locking and blocking calls

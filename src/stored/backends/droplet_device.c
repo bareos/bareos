@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2014-2017 Planets Communications B.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -140,6 +140,9 @@ static inline int droplet_errno_to_system_errno(dpl_status_t status)
    case DPL_EPERM:
       errno = EPERM;
       break;
+   case DPL_FAILURE: /**< General failure */
+      errno = EIO;
+      break;
    default:
       errno = EINVAL;
       break;
@@ -269,6 +272,91 @@ static bool walk_dpl_directory(dpl_ctx_t *ctx, const char *dirname, t_call_back 
 
    return true;
 }
+
+
+/*
+ *
+ * Checks is connection to backend storage system is possible.
+ *
+ * Returns true  - if connection can be established
+ *         false - otherwise
+ *
+ * FIXME: currently, check_remote() returns true,
+ *        after an initial connection could be made,
+ *        even if the system is now no more reachable.
+ *        Seams to be some caching effect.
+ */
+bool droplet_device::check_remote()
+{
+   bool retval = false;
+   dpl_status_t status;
+   dpl_sysmd_t *sysmd = NULL;
+
+   if (!m_ctx) {
+      if (!initialize()) {
+         return false;
+      }
+   }
+
+   sysmd = dpl_sysmd_dup(&m_sysmd);
+   status = dpl_getattr(m_ctx, /* context */
+                        "", /* locator */
+                        NULL, /* metadata */
+                        sysmd); /* sysmd */
+
+   switch (status) {
+   case DPL_SUCCESS:
+      Dmsg0(100, "check_remote: ok\n");
+      retval = true;
+      break;
+   case DPL_ENOENT:
+   case DPL_FAILURE:
+   default:
+      Dmsg0(100, "check_remote: failed\n");
+      break;
+   }
+
+   return retval;
+}
+
+
+
+bool droplet_device::remote_chunked_volume_exists()
+{
+   bool retval = false;
+   dpl_status_t status;
+   dpl_sysmd_t *sysmd = NULL;
+   POOL_MEM chunk_dir(PM_FNAME);
+
+   if (!check_remote()) {
+      return false;
+   }
+
+   Mmsg(chunk_dir, "/%s", getVolCatName());
+
+   Dmsg1(100, "checking remote_chunked_volume_exists %s\n", chunk_dir.c_str());
+
+   sysmd = dpl_sysmd_dup(&m_sysmd);
+   status = dpl_getattr(m_ctx, /* context */
+                        chunk_dir.c_str(), /* locator */
+                        NULL, /* metadata */
+                        sysmd); /* sysmd */
+
+   switch (status) {
+   case DPL_SUCCESS:
+      Dmsg1(100, "remote_chunked_volume %s exists\n", chunk_dir.c_str());
+      retval = true;
+      break;
+   case DPL_ENOENT:
+   case DPL_FAILURE:
+   default:
+      Dmsg1(100, "remote_chunked_volume %s does not exists\n", chunk_dir.c_str());
+      break;
+   }
+
+   return retval;
+}
+
 
 /*
  * Internal method for flushing a chunk to the backing store.
@@ -513,6 +601,12 @@ bool droplet_device::truncate_remote_chunked_volume(DCR *dcr)
 
    return true;
 }
+
+
+bool droplet_device::d_flush(DCR *dcr)
+{
+   return wait_until_chunks_written();
+};
 
 /*
  * Initialize backend.
