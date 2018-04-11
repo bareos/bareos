@@ -159,7 +159,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_job_canceling(self):
-
         driver = self.driver
         self.login()
         job_id = self.job_start_configured()
@@ -171,7 +170,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_languages(self):
-
         driver = self.driver
         driver.get(self.base_url + '/auth/login')
         self.driver.find_element_by_xpath('//button[@data-id="locale"]').click()
@@ -187,7 +185,6 @@ class WebuiSeleniumTest(unittest.TestCase):
             raise LocaleException(expected_languages,elements)
 
     def test_menue(self):
-
         self.login()
         self.wait_for_url_and_click('/director/')
         self.wait_for_url_and_click('/schedule/')
@@ -211,7 +208,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.logout()
 
     def test_restore(self):
-        
         # Login
         self.login()
         self.wait_for_url_and_click('/restore/')
@@ -267,21 +263,20 @@ class WebuiSeleniumTest(unittest.TestCase):
         return status
 
     def compare_locales(self):
-
         return b
 
     def job_cancel(self, id):
         # Go to job list
         self.wait_and_click(By.ID, 'menu-topnavbar-job')
         # Click on the object that has id in its url
-        self.wait_for_url_and_click('/bareos-webui/job/details/%s' % id)
+        self.wait_and_click(By.ID, 'btn-1')
+        #self.wait_for_url_and_click('/bareos-webui/job/details/%s' % id)
         # Wait for the cancel button to load
-        self.wait_for_element(By.XPATH, '//*[@title="Cancel"]')
+        #self.wait_for_element(By.XPATH, '//*[@title="Cancel"]')
         # Click on cancel button
-        self.wait_and_click(By.XPATH, '//*[@title="Cancel"]')
+        #self.wait_and_click(By.XPATH, '//*[@title="Cancel"]')
 
     def job_start_configured(self):
-        
         driver = self.driver
         self.wait_and_click(By.ID, 'menu-topnavbar-job')
         self.wait_and_click(By.LINK_TEXT, 'Run')
