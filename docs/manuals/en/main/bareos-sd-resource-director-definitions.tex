@@ -1,0 +1,70 @@
+\defDirective{Sd}{Director}{Description}{}{}{%
+}
+
+\defDirective{Sd}{Director}{Key Encryption Key}{}{}{%
+This key is used to encrypt the Security Key that is exchanged between
+the Director and the Storage Daemon for supporting Application Managed
+Encryption (AME). For security reasons each Director should have a
+different Key Encryption Key.
+}
+
+\defDirective{Sd}{Director}{Maximum Bandwidth Per Job}{}{}{%
+}
+
+\defDirective{Sd}{Director}{Monitor}{}{}{%
+If Monitor is set to {\bf no} (default), this director will have full
+access to this Storage daemon.  If Monitor is set to {\bf yes}, this
+director will only be able to fetch the current status of this Storage
+daemon.
+
+Please note that if this director is being used by a Monitor, we highly
+recommend to set this directive to {\bf yes} to avoid serious security
+problems.
+}
+
+\defDirective{Sd}{Director}{Name}{}{}{%
+Specifies the Name of the Director allowed to connect  to the Storage daemon.
+This directive is required.
+}
+
+\defDirective{Sd}{Director}{Password}{}{}{%
+Specifies the password that must be supplied by the above named  Director.
+This directive is required.
+}
+
+\defDirective{Sd}{Director}{TLS Allowed CN}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Authenticate}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS CA Certificate Dir}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS CA Certificate File}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Certificate}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Certificate Revocation List}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS DH File}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+Chapter \nameref{TlsDirectives} explains
+how the Bareos components must be configured to use TLS.
+}
+
+\defDirective{Sd}{Director}{TLS Key}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Require}{}{}{%
+}
+
+\defDirective{Sd}{Director}{TLS Verify Peer}{}{}{%
+}
+

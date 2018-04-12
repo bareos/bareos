@@ -1,0 +1,117 @@
+\defDirective{Dir}{Console}{Catalog ACL}{}{}{%
+This directive is used to specify a list of Catalog resource names that
+can be accessed by the console.
+}
+
+\defDirective{Dir}{Console}{Client ACL}{}{}{%
+This directive is used to  specify a list of Client resource names that can be accessed by  the console.
+}
+
+\defDirective{Dir}{Console}{Command ACL}{}{}{%
+This directive is used to specify a list of of console commands that can
+be executed by the console.
+See examples at \nameref{sec:CommandAclExample}.
+}
+
+\defDirective{Dir}{Console}{Description}{}{}{%
+}
+
+\defDirective{Dir}{Console}{File Set ACL}{}{}{%
+This directive is used to specify a list of FileSet resource names that
+can be accessed by the console.
+}
+
+\defDirective{Dir}{Console}{Job ACL}{}{}{%
+This directive is used to specify a list of Job resource names that can
+be accessed by the console.  Without this directive, the console cannot
+access any of the Director's Job resources.  Multiple Job resource names
+may be specified by separating them with commas, and/or by specifying
+multiple \configdirective{Job ACL} directives.
+For example, the directive may be specified as:
+\bconfigInput{config/DirConsoleJobACL1.conf}
+With the above specification, the console can access the Director's  resources
+for the jobs named on the \configdirective{Job ACL} directives,  but for no others.
+}
+
+\defDirective{Dir}{Console}{Name}{}{}{%
+The name of the console. This  name must match the name specified at the
+Console client.
+}
+
+\defDirective{Dir}{Console}{Password}{}{}{%
+Specifies the password that must be supplied for a named Bareos Console
+to be authorized.
+}
+
+\defDirective{Dir}{Console}{Plugin Options ACL}{}{}{%
+Use this directive to specify the list of allowed Plugin Options.
+}
+
+\defDirective{Dir}{Console}{Pool ACL}{}{}{%
+This directive is used to  specify a list of Pool resource names that can be
+accessed by the console.
+}
+
+\defDirective{Dir}{Console}{Profile}{}{}{%
+One or more Profile names can be assigned to a Console.
+If an ACL is not defined in the Console, the profiles of the Console will be checked in the order as specified here.
+The first found ACL will be used. See \nameref{DirectorResourceProfile}.
+}
+
+\defDirective{Dir}{Console}{Schedule ACL}{}{}{%
+This directive is used to  specify a list of Schedule resource names that can
+be accessed by the console.
+}
+
+\defDirective{Dir}{Console}{Storage ACL}{}{}{%
+This directive is used to  specify a list of Storage resource names that can
+be accessed by  the console.
+}
+
+\defDirective{Dir}{Console}{TLS Allowed CN}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Authenticate}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS CA Certificate Dir}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS CA Certificate File}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Certificate}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Certificate Revocation List}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS DH File}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+See chapter \nameref{TlsDirectives} to see,
+how the Bareos Director (and the other components) must be configured to use TLS.
+}
+
+\defDirective{Dir}{Console}{TLS Key}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Require}{}{}{%
+}
+
+\defDirective{Dir}{Console}{TLS Verify Peer}{}{}{%
+}
+
+\defDirective{Dir}{Console}{Where ACL}{}{}{%
+This directive permits you to specify where a restricted console
+can restore files. If this directive is not specified, only the
+default restore location is permitted (normally \file{/tmp/bareos-restores}.
+If \argument{*all*} is specified any path the
+user enters will be accepted. Any other
+value specified (there may be multiple \configdirective{Where ACL} directives) will
+restrict the user to use that path. For example, on a Unix system,
+if you specify "/", the file will be restored to the original
+location.
+}

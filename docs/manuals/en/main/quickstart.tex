@@ -1,0 +1,287 @@
+\section{Understanding Jobs and Schedules}
+\index[general]{Schedule!Understanding Schedules}
+\label{JobsandSchedules}
+
+In order to make Bareos as flexible as possible, the directions given
+to Bareos are specified in several pieces.  The main instruction is the
+job resource, which defines a job.  A backup job generally consists of a
+FileSet, a Client, a Schedule for one or several levels or times of backups,
+a Pool, as well as additional instructions. Another way of looking
+at it is the FileSet is what to backup; the Client is who to backup; the
+Schedule defines when, and the Pool defines where (i.e. what Volume).
+
+Typically one FileSet/Client combination will have one corresponding job.
+Most of the directives, such as FileSets, Pools, Schedules, can be mixed
+and matched among the jobs.  So you might have two different Job
+definitions (resources) backing up different servers using the same
+Schedule, the same Fileset (backing up the same directories on two machines)
+and maybe even the same Pools.  The Schedule will define what type of
+backup will run when (e.g. Full on Monday, incremental the rest of the
+week), and when more than one job uses the same schedule, the job priority
+determines which actually runs first.  If you have a lot of jobs, you might
+want to use JobDefs, where you can set defaults for the jobs, which can
+then be changed in the job resource, but this saves rewriting the
+identical parameters for each job.  In addition to the FileSets you want to
+back up, you should also have a job that backs up your catalog.
+
+Finally, be aware that in addition to the backup jobs there are
+restore, verify, and admin jobs, which have different requirements.
+
+\section{Understanding Pools, Volumes and Labels}
+\index[general]{Pools!Understanding}
+\index[general]{Volumes!Understanding}
+\index[general]{Label!Understanding Labels}
+\label{PoolsVolsLabels}
+
+If you have been using a program such as \command{tar} to backup your system,
+Pools, Volumes, and labeling may be a bit confusing at first. A Volume is a
+single physical tape (or possibly a single file) on which Bareos will write
+your backup data. Pools group together Volumes so that a backup is not
+restricted to the length of a single Volume (tape). Consequently, rather than
+explicitly naming Volumes in your Job, you specify a Pool, and Bareos will
+select the next appendable Volume from the Pool and mounts it.
+
+Although the basic Pool options are specified in the Director's \ilink{Pool}{DirectorResourcePool} resource,
+the real Pool is maintained in the Bareos Catalog. It contains
+information taken from the Pool resource (configuration file) as well as
+information on all the Volumes that have been added to the Pool.
+% Adding
+%Volumes to a Pool is usually done manually with the Console program using the
+%\bcommand{label}{} command.
+
+For each Volume, Bareos maintains a fair amount of catalog information such as
+the first write date/time, the last write date/time, the number of files on
+the Volume, the number of bytes on the Volume, the number of Mounts, etc.
+
+Before Bareos will read or write a Volume, the physical Volume must have a
+Bareos software label so that Bareos can be sure the correct Volume is
+mounted.
+Depending on your configuration,
+this is either done automatically by Bareos
+or manually using the \bcommand{label}{} command in the Console
+program.
+
+The steps for creating a Pool, adding Volumes to it, and writing software
+labels to the Volumes, may seem tedious at first, but in fact, they are quite
+simple to do, and they allow you to use multiple Volumes (rather than being
+limited to the size of a single tape). Pools also give you significant
+flexibility in your backup process. For example, you can have a "Daily" Pool
+of Volumes for Incremental backups and a "Weekly" Pool of Volumes for Full
+backups. By specifying the appropriate Pool in the daily and weekly backup
+Jobs, you thereby insure that no daily Job ever writes to a Volume in the
+Weekly Pool and vice versa, and Bareos will tell you what tape is needed and
+when.
+
+For more on Pools, see the
+\nameref{DirectorResourcePool} section of the Director
+Configuration chapter, or simply read on, and we will come back to this
+subject later.
+
+\section{Setting Up Bareos Configuration Files}
+\label{config}
+\index[general]{Configuration!Files}
+
+On Unix, Bareos configuration files are usually located in the \path|/etc/bareos/| directory
+and are named accordingly to the programs that use it.
+Since Bareos \sinceVersion{Dir}{Subdirectory Configuration Scheme used as Default}{16.2.4} the default configuration
+is stored as one file per resource in subdirectories under \directory{bareos-dir.d}, \directory{bareos-sd.d} or \directory{bareos-fd.d}.
+For details, see \nameref{ConfigureChapter} and \nameref{sec:SubdirectoryConfigurationScheme}.
+
+%For information about Windows configuration files, see the \ilink{Windows chapter}{Windows:Configuration:Files}.
+
+
+% \subsection{Configuring the bconsole Program}
+% \index[general]{Configure!Console}
+% 
+% The Console program is used by the administrator to interact with the Director
+% and to manually start/stop Jobs or to obtain Job status information.
+% 
+% The Console configuration file is named \file{bconsole.conf}.
+% 
+% Normally, for first time users, no change is needed to these files.
+% Reasonable defaults are set.
+% 
+% Further details are in the
+% \ilink{Console configuration}{ConsoleConfChapter} chapter.
+
+% \subsection{Configuring the Monitor Program}
+% \index[general]{Program!Configuring the Monitor}
+% \index[general]{Configuring the Monitor Program}
+% 
+% The Monitor program is typically an icon in the system tray. However, once the
+% icon is expanded into a full window, the administrator or user can obtain
+% status information about the Director or the backup status on the local
+% workstation or any other Bareos daemon that is configured.
+% 
+% %\addcontentsline{lof}{figure}{Bareos Tray Monitor}
+% %\includegraphics{\idir Bareos-tray-monitor}
+% 
+% % TODO: image may be too wide for 6" wide printed page.
+% %The image shows a tray-monitor configured for three daemons. By clicking on
+% %the radio buttons in the upper left corner of the image, you can see the
+% %status for each of the daemons. The image shows the status for the Storage
+% %daemon (MainSD) that is currently selected.
+% 
+% The Monitor configuration file is named {\bf tray-monitor.conf}. 
+% 
+% More information is in the
+% \ilink{Monitor configuration}{_MonitorChapter} chapter.
+
+% \subsection{Configuring the \bareosFd}
+% \index[general]{Configure!Client}
+% \index[fd]{Configure}
+% 
+% The File daemon is a program that runs on each (Client) machine. At the
+% request of the \bareosDir,
+% finds the files to be backed up and sends them (their
+% data) to the \bareosSd.
+
+% The File daemon configuration file is named {\bf
+% bareos-fd.conf}.
+
+% Normally, for first time users, no change is needed to this file.
+% Reasonable defaults are set.
+% 
+% However, if you are going to back up more
+% than one machine, you will need to install the \bareosFd with a unique
+% configuration on each machine to be backed up.
+%  The information about each
+% \bareosFd must appear in the \bareosDir configuration, see \nameref{sec:AddAClient}.
+% 
+% Further details about configuration can be found at \nameref{FiledConfChapter}.
+
+% \subsection{Configuring the Director}
+% \index[general]{Configure!Director}
+% \index[dir]{Configure}
+% 
+% The Director is the central control program for all the other daemons.
+% It schedules and monitors all jobs to be backed up.
+% 
+% %The Director configuration file is named {\bf bareos-dir.conf}.
+% 
+% You may want to change the email address for notification from the
+% default \email{root@localhost} to your email address.
+% 
+% If you have multiple systems to be backed up, you will need a
+% separate \bareosFd resource for each system, specifying its
+% name, address, and password.
+% We have found that giving your daemons the same
+% name as your system but post fixed with {\bf -fd} helps a lot when reading log messages.
+% That is, if your system name is \name{foobaz}, you would give the \bareosFd
+% the name \name{foobaz-fd}.
+% For the \bareosDir, you should use \name{foobaz-dir},
+% and for the storage daemon, you might use \name{foobaz-sd}.
+% Each of your Bareos components {\bf must} have a unique name.  If you
+% make them all the same, aside from the fact that you will not
+% know what daemon is sending what message, if they share the same
+% working directory, the daemons temporary file names will not
+% be unique, and you will get many strange failures.
+% % TODO: why not check for that and not allow sharing working directory?
+% 
+% More information is in the
+% \nameref{DirectorChapter} chapter.
+% 
+% \subsection{Configuring the Storage daemon}
+% \index[general]{Daemon!Configuring the Storage}
+% \index[general]{Configuring the Storage daemon}
+% 
+% The Storage daemon is responsible, at the Director's request, for accepting
+% data from a File daemon and placing it on Storage media, or in the case of a
+% restore request, to find the data and send it to the File daemon.
+% 
+% The Storage daemon's configuration file is named {\bf bareos-sd.conf}.
+% The default configuration comes with backup to disk only,
+% so the Archive device points to a directory in which the
+% Volumes will be created as files when you label the Volume.
+% %Edit this file to contain the correct Archive device names for any tape
+% %devices that you have. 
+% %If the configuration process properly detected your
+% %system, they will already be correctly set. 
+% These Storage resource name and
+% Media Type must be the same as the corresponding ones in the Director's
+% configuration file {\bf bareos-dir.conf}.
+% \label{ConfigTesting}
+% 
+% Further information is in the
+% \ilink{Storage daemon configuration}{StoredConfChapter} chapter.
+
+\section{Testing your Configuration Files}
+\index[general]{Testing!Configuration Files}
+
+You can test if your configuration file is syntactically correct by running
+the appropriate daemon with the \parameter{-t} option. The daemon will process the
+configuration file and print any error messages then terminate.
+
+As the \bareosDir and \bareosSd runs as user \user{bareos},
+testing the configuration should be done as \user{bareos}.
+
+This is especially required to test the \bareosDir,
+as it also connects to the database and checks if the catalog schema version is correct.
+Depending on your database, only the \user{bareos} has permission to access it.
+
+\begin{commands}{Testing Configuration Files}
+su bareos -s /bin/sh -c "/usr/sbin/bareos-dir -t"
+su bareos -s /bin/sh -c "/usr/sbin/bareos-sd -t"
+bareos-fd -t
+bconsole -t
+bareos-tray-monitor -t
+\end{commands}
+
+% \section{Testing Compatibility with Your Tape Drive}
+% \index[general]{Drive!Testing Compatibility with Your Tape}
+% \index[general]{Testing Compatibility with Your Tape Drive}
+% 
+% Before spending a lot of time on Bareos only to find that it doesn't work
+% with your tape drive, please read the \nameref{TapeTestingChapter} section.
+% If you have a modern
+% standard SCSI tape drive on a Linux or Solaris, most likely it will work,
+% but better test than be sorry.  For FreeBSD (and probably other xBSD
+% flavors), reading the above mentioned tape testing chapter is a must.
+
+
+% \section{Running Bareos}
+% \index[general]{Running Bareos}
+%
+% Probably the most important part of running Bareos is being able to restore
+% files. If you haven't tried recovering files at least once, when you actually
+% have to do it, you will be under a lot more pressure, and prone to make
+% errors, than if you had already tried it once.
+% 
+% To get a good idea how to use Bareos in a short time, we {\bf strongly}
+% recommend that you follow the example in the
+% \nameref{TutorialChapter} chapter of this manual where
+% you will get detailed instructions on how to run Bareos.
+
+% \section{Log Rotation}
+% \index[general]{Rotation!Log}
+% \index[general]{Log Rotation}
+% If you use the default {\bf bareos-dir.conf} or some variation of it, you will
+% note that it logs all the Bareos output to a file. To avoid that this file
+% grows without limit, we recommend that you copy the file {\bf logrotate} from
+% the {\bf scripts/logrotate} to {\bf /etc/logrotate.d/bareos}. This will cause
+% the log file to be rotated once a month and kept for a maximum of five months.
+% You may want to edit this file to change the default log rotation preferences.
+
+% \section{Log Watch}
+% \index[general]{Watch!Log}
+% \index[general]{Log Watch}
+% Some systems such as Red Hat and Fedora run the logwatch program
+% every night, which does an analysis of your log file and sends an
+% email report.  If you wish to include the output from your Bareos
+% jobs in that report, please look in the {\bf scripts/logwatch}
+% directory.  The {\bf README} file in that directory gives a brief
+% explanation on how to install it and what kind of output to expect.
+
+
+% \section{Disaster Recovery}
+% \index[general]{Recovery!Disaster}
+% \index[general]{Disaster!Recovery}
+% 
+% If you intend to use Bareos as a disaster recovery tool rather than simply a
+% program to restore lost or damaged files, you will want to read the
+% \ilink{Disaster Recovery Using Bareos Chapter}{RescueChapter} of
+% this manual.
+% 
+% In any case, you are strongly urged to carefully test restoring some files
+% that you have saved rather than wait until disaster strikes. This way, you
+% will be prepared.

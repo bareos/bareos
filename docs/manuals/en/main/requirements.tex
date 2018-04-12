@@ -1,0 +1,28 @@
+%%
+%%
+
+\chapter{System Requirements}
+\label{SysReqs}
+\index[general]{System Requirements}
+\index[general]{Requirements!System}
+
+\begin{itemize}
+\item The minimum versions for each of the databases supported by Bareos
+   are:
+   \begin{itemize}
+   \item PostgreSQL 8.4 (since Bareos 13.2.3)
+   \item MySQL 4.1 - 5.6 or compatible fork (e.g. MariaDB), see \nameref{sec:MysqlSupport}
+   \item SQLite 3
+   \end{itemize}
+\item Windows release is cross-compiled on Linux
+\item Bareos requires a good implementation of pthreads to work.  This
+   is not the case on some of the BSD systems.
+\item The source code has been written with portability in mind and is  mostly
+   POSIX compatible. Thus porting to any POSIX compatible  operating system
+   should be relatively easy.
+\item Jansson library:
+    \label{jansson}
+    \index[general]{JSON}
+    \index[general]{Jansson!\see{JSON}}
+    Bareos \sinceVersion{dir}{requires!jansson}{15.2.0} offers a JSON API mode, see \bareosDeveloperGuideApiModeJson. On some platform, the Jansson library is directory available. On others it can easly be added. For some older platforms, we compile Bareos without JSON API mode.
+\end{itemize}

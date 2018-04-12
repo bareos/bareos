@@ -1,0 +1,72 @@
+\section{Client Initiated Connection}
+\label{sec:ClientInitiatedConnection}
+
+The \bareosDir knows, when it is required to talk to a client (\bareosFd).
+Therefore, by defaults, the \bareosDir connects to the clients.
+
+However, there are setups where this can cause problems, as this means that:
+\begin{itemize}
+    \item The client must be reachable by its configured \linkResourceDirective{Dir}{Client}{Address}. Address can be the DNS name or the IP address. (For completeness: there are potential workarounds by using the \ilink{setip}{bcommandSetIP} command.)
+    \item The \bareosDir must be able to connect to the \bareosFd over the network.
+\end{itemize}
+
+To circumvent these problems, since Bareos \sinceVersion{Dir}{Client Initiated Connection}{16.2.2} it is possible to let the \bareosFd initiate the network connection to the \bareosDir.
+
+Which address the client connects to reach the \bareosDir is configured in the \linkResourceDirective{Fd}{Director}{Address} directive.
+
+To additional allow this connection direction use:
+\begin{itemize}
+  \item \linkResourceDirective{Dir}{Client}{Connection From Client To Director} = yes
+  \item \linkResourceDirective{Dir}{Client}{Heartbeat Interval} = 60 \verb|#| to keep the network connection established
+  \item \linkResourceDirective{Fd}{Director}{Connection From Client To Director} = yes
+\end{itemize}
+
+To only allow Connection From the Client to the Director use:
+\begin{itemize}
+  \item \linkResourceDirective{Dir}{Client}{Connection From Director To Client} = no
+  \item \linkResourceDirective{Dir}{Client}{Connection From Client To Director} = yes
+  \item \linkResourceDirective{Dir}{Client}{Heartbeat Interval} = 60 \verb|#| to keep the network connection established
+  \item \linkResourceDirective{Fd}{Director}{Connection From Director To Client} = no
+  \item \linkResourceDirective{Fd}{Director}{Connection From Client To Director} = yes
+\end{itemize}
+
+Using Client Initiated Connections has disadvantages.
+Without Client Initiated Connections the \bareosDir only establishes a network connection when this is required.
+With Client Initiated Connections, the \bareosFd connects to the \bareosDir and the \bareosDir keeps these connections open.
+The command \bcommand{status}{dir} will show all waiting connections:
+\begin{bconsole}{show waiting client connections}
+*<input>status dir</input>
+...
+Client Initiated Connections (waiting for jobs):
+Connect time        Protocol            Authenticated       Name
+====================================================================================================
+19-Apr-16 21:50     54                  1                   client1.example.com
+...
+====
+\end{bconsole}
+
+When both connection directions are allowed, the \bareosDir 
+\begin{enumerate}
+  \item checks, if there is a waiting connection from this client.
+  \item tries to connect to the client (using the usual timeouts).
+  \item waits for a client connection to appear (using the same timeout as when trying to connect to a client).
+\end{enumerate}
+If none of this worked, the job fails.
+
+When a waiting connection is used for a job, the \bareosFd will detect this and creates an additional connection.
+This is required, to keep the client responsive for additional commands, like \bcommand{cancel}{}.
+
+To get feedback in case the \bareosFd fails to connect to the \bareosDir, consider configuring \bareosFd to log in a local file.
+This can be archived by adding the line
+
+\configline{Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored}
+
+to the default message resource \resourcename{Fd}{Messages}{Standard}:
+
+\begin{bareosConfigResource}{bareos-fd}{messages}{Standard}
+Messages {
+  Name = Standard
+  Director = bareos-dir = all, !skipped, !restored
+  Append = "/var/log/bareos/bareos-fd.log" = all, !skipped, !restored
+}
+\end{bareosConfigResource}

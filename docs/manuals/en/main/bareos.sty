@@ -1,0 +1,873 @@
+%% bareos.sty
+%% Provides macros and other stuff for the bareos manual
+%%
+%% Original Creation -- K. Cunningham 2005-01-09
+%%
+%% New Commands Currently implemented:
+%%
+%% \idir
+%%    Inserts the path to the images
+%%
+\ProvidesPackage{bareos}[2012/11/16]
+%%
+%%
+%% define images directory
+%\def\idir{../../images/conv/}  %% images directory
+\def\idir{images/}
+
+
+%% NOTE:
+%
+% ^, cirum, caret:
+% \path|^| does not work with tex4ht,
+% therefore use \textasciicircum instead.
+% However, ^ works inside verbatim and lst environments.
+
+\newcommand{\subsubsubsection}[1]{\paragraph{#1}}
+
+\newcommand{\bareosFd}{Bareos File Daemon\xspace}
+\newcommand{\bareosSd}{Bareos Storage Daemon\xspace}
+\newcommand{\bareosDir}{Bareos Director\xspace}
+\newcommand{\bareosTrayMonitor}{Bareos Tray Monitor\xspace}
+\newcommand{\bareosWebui}{Bareos Webui\xspace}
+
+%
+% Bareos paths and filenames
+%
+\newcommand{\fileStoragePath}{\path|/var/lib/bareos/storage/|}
+\newcommand{\scriptPathUnix}{\path|/usr/lib/bareos/scripts/|}
+\newcommand{\configPathUnix}{\path|/etc/bareos/|}
+
+\newcommand{\configFileDirUnix}{\path|/etc/bareos/bareos-dir.conf|}
+\newcommand{\configFileSdUnix}{\path|/etc/bareos/bareos-sd.conf|}
+\newcommand{\configFileFdUnix}{\path|/etc/bareos/bareos-fd.conf|}
+\newcommand{\configFileBconsoleUnix}{\path|/etc/bareos/bconsole.conf|}
+\newcommand{\configFileTrayMonitorUnix}{\path|/etc/bareos/tray-monitor.conf|}
+\newcommand{\configFileBatUnix}{\path|/etc/bareos/bat.conf|}
+
+\newcommand{\configDirectoryDirUnix}{\path|/etc/bareos/bareos-dir.d/|}
+\newcommand{\configDirectorySdUnix}{\path|/etc/bareos/bareos-sd.d/|}
+\newcommand{\configDirectoryFdUnix}{\path|/etc/bareos/bareos-fd.d/|}
+\newcommand{\configDirectoryBconsoleUnix}{\path|/etc/bareos/bconsole.d/|}
+\newcommand{\configDirectoryTrayMonitorUnix}{\path|/etc/bareos/tray-monitor.d/|}
+
+\newcommand{\logfileUnix}{\path|/var/log/bareos/bareos.log|}
+
+\newcommand{\yesno}{yes{\textbar}no}
+%
+% data type definitions. 
+% all data types should be defined here.
+% use them in xdirective.
+\csdef{dtAcl}{\ilink{acl}{DataTypeAcl}}
+\csdef{dtAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\csdef{dtAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\csdef{dtAuditCommandList}{\ilink{audit-command-list}{DataTypeAuditCommandList}}
+\csdef{dtAuthType}{\ilink{None{\textbar}Clear{\textbar}MD5}{DataTypeAuthType}}
+\csdef{dtAutopassword}{\ilink{password}{DataTypePassword}}
+% internaly, bit and boolean are handled differently.
+% However, for the user this does not matter.
+\csdef{dtBit}{\ilink{\yesno}{DataTypeYesNo}}
+\csdef{dtBoolean}{\ilink{\yesno}{DataTypeYesNo}}
+\csdef{dtDirectory}{\ilink{path}{DataTypeDirectory}}
+\csdef{dtName}{\ilink{name}{DataTypeName}}
+\csdef{dtNetAddress}{\ilink{net-address}{DataTypeNetAddress}}
+\csdef{dtNetAddresses}{\ilink{net-addresses}{DataTypeNetAddresses}}
+\csdef{dtNetPort}{\ilink{net-port}{DataTypeNetPort}}
+\csdef{dtMessages}{[ address = ] \ilink{message-type}{MessageTypes} [ , \ilink{message-type}{MessageTypes} ]* }
+\csdef{dtPassword}{\ilink{password}{DataTypePassword}}
+\csdef{dtPath}{\ilink{path}{DataTypePath}}
+% use csdef instead of newcommand, because command contains numbers
+\csdef{dtPint32}{\dtUInt}
+\csdef{dtProtocolType}{\ilink{job protocol}{DataTypeJobProtocol}}
+\csdef{dtRes}{\ilink{resource-name}{DataTypeRes}}
+\csdef{dtPort}{\dtNetPort}
+\csdef{dtScheduleRunCommand}{{job-overrides{\gt} {\lt}date-time-specification}}
+\csdef{dtSize}{\ilink{size}{DataTypeSize}}
+\csdef{dtSpeed}{\ilink{speed}{DataTypeSpeed}}
+\csdef{dtString}{\ilink{string}{DataTypeString}}
+\csdef{dtStringList}{\ilink{string-list}{DataTypeStringList}}
+\csdef{dtStrname}{\ilink{strname}{DataTypeStrname}}
+\csdef{dtTime}{\ilink{time}{DataTypeTime}}
+\csdef{dtUInt}{\ilink{positive-integer}{DataTypePositiveInteger}}
+\csdef{dtYesNo}{\ilink{\yesno}{DataTypeYesNo}}
+
+\newcommand{\dt}[1]{%
+    \ifcsdef{dt#1}{\csuse{dt#1}}{\path|#1|}%
+}
+
+%
+% references
+%
+
+% 1: text, 2: URL
+% \elink{target}{text}
+%    Inserts the text indicated (highlighted) and provides
+%    an external hyperlink to the target.
+\newcommand*{\elink}[2]{%
+    %\htmladdnormallink{#1}{#2}%
+    \href{#2}{#1}%
+}
+% or use \url{URL}
+
+% 1: text, 2. label
+% \ilink{target}{text}
+%    Inserts the text indicated (highlighted) and provides
+%    an internal hyperlink to the target. Target must be a
+%    \label somewhere in the same document.
+\newcommand*{\ilink}[2]{%
+  %\htmlref{#1}{#2}%
+    \hyperref[#2]{#1}%
+}
+% or use \nameref{label} or \autoref{label}
+
+% for links directly to a text (not just only to the section) use
+% \hyppertarget{label}{text}
+% and
+% \hyperlink{label}{text}
+
+% short cut for links from check marks to a internal chapter
+% \DeclareUnicodeCharacter{2713}{\bcheckmark}
+% \DeclareRobustCommand\bcheckmark{%
+%   \unskip\nobreak\thinspace\textemdash\allowbreak\thinspace\ignorespaces}
+\newcommand{\bcheckmark}{x}
+% check mark internal link
+\newcommand{\cmlink}[1]{\ilink{\bcheckmark}{#1}}
+
+
+
+
+\newcommand{\ticket}[1]{%
+    \href{https://bugs.bareos.org/view.php?id=#1}{Ticket \##1}%
+}
+
+\newcommand{\releaseUrlDownloadBareosOrg}[1]{%
+\url{http://download.bareos.org/bareos/release/#1/}%
+}
+
+\newcommand{\releaseUrlDownloadBareosCom}[1]{%
+\url{https://download.bareos.com/bareos/release/#1/}%
+}
+
+\newcommand{\contribDownloadBareosOrg}{%
+\url{http://download.bareos.org/bareos/contrib/}%
+}
+
+% handle links to the Bareos Developer Guide via own commands
+% to keep track of cross links
+\newcommand{\developerGuide}[1]{%
+\elink{Bareos Developer Guide (#1)}{http://doc.bareos.org/master/html/bareos-developer-guide.html\##1}%
+}
+
+\newcommand{\bareosDeveloperGuideDotCommands}{%
+\developerGuide{dot-commands}
+}
+\newcommand{\bareosDeveloperGuideApiModeJson}{%
+\developerGuide{api-mode-2-json}
+}
+\newcommand{\bareosDeveloperGuideStorageMediaOutputFormat}{%
+\developerGuide{storage-media-output-format}
+}
+
+\newcommand{\bareosWhitepaperTapeSpeedTuning}{%
+\elink{Bareos Whitepaper Tape Speed Tuning}{http://www.bareos.org/en/Whitepapers/articles/Speed_Tuning_of_Tape_Drives.html}\xspace%
+}
+
+\newcommand{\bareosMigrateConfigSh}{%
+\elink{bareos-migrate-config.sh}{https://github.com/bareos/bareos-contrib/blob/master/misc/bareos-migrate-config/bareos-migrate-config.sh}\xspace%
+}
+
+\newcommand{\bareosTlsConfigurationExample}{%
+\elink{Bareos Regression Testing Base Configuration}{https://github.com/bareos/bareos-regress/tree/master/configs/BASE/}\xspace%
+}
+
+\newcommand{\externalReferenceIsilonNdmpEnvironmentVariables}{%
+\elink{Isilon OneFS 7.2.0 CLI Administration Guide}{https://www.emc.com/collateral/TechnicalDocument/docu56048.pdf}, section \bquote{NDMP environment variables}\xspace%
+}
+
+%
+% special characters
+%
+\newcommand{\at}{\makeatletter @\makeatother}
+\newcommand{\lt}{\textless}
+\newcommand{\gt}{\textgreater}
+\newcommand{\pipe}{\textbar\ }
+\newcommand{\registered}{\raisebox{.6ex}{\textsuperscript{\textregistered}}}
+\newcommand{\trademark}{\raisebox{.6ex}{\textsuperscript{\texttrademark}}}
+% these characters must be quoted in Bareos config files: &<>()@^|
+\newcommand{\configCharsToQuote}{\parameter{&<>()@^}\textbar\ }
+
+%
+% specific types of text
+%
+% bcommand{command}{parameter}
+\newcommand{\bcommand}[2]{\path|#1| \path|#2|}
+%\newcommand{\bcommand}[2]{\path|#1| \path|#2|\index[general]{Console!Command!#1}}
+\newcommand{\bconsoleOutput}[1]{\path|#1|}
+\newcommand{\bnfvar}[1]{\lt#1\gt}
+\newcommand{\commandPrompt}{root{\at}linux:\~{}\# }
+\newcommand{\command}[1]{\path|#1|}
+% to also link to a directive, use \linkResourceDirective}{Dir|Sd|Fd}{Resource}{Directive Name}
+\newcommand{\configdirective}[1]{\path!#1!}
+\newcommand{\configresource}[1]{\path|#1|}
+\newcommand{\configline}[1]{\path|#1|}
+\newcommand{\directory}[1]{\path|#1|}
+\newcommand{\dbcolumn}[1]{\path|#1|}
+\newcommand{\dbtable}[1]{\path|#1|}
+\newcommand{\email}[1]{\url{#1}}
+\newcommand{\file}[1]{\path|#1|}
+\newcommand{\fileset}[1]{\resourcename{Dir}{FileSet}{#1}}
+\newcommand{\group}[1]{\path|#1|}
+\newcommand{\host}[1]{\path|#1|}
+\newcommand{\job}[1]{\resourcename{Dir}{Job}{#1}}
+\newcommand{\name}[1]{\textbf{#1}}
+\newcommand{\user}[1]{\path|#1|}
+\newcommand{\package}[1]{\index[general]{Package!#1}\path|#1|\xspace}
+\newcommand{\parameter}[1]{\path|#1|}
+\newcommand{\pluginevent}[1]{\path|#1|}
+\newcommand{\pool}[1]{\resourcename{Dir}{Pool}{#1}}
+\newcommand{\argument}[1]{\textit{#1}}
+\newcommand{\resourcetype}[2]{\path|#2|$^{\mbox{\tiny #1}}$}
+\newcommand{\sqlcommand}[1]{\path|#1|}
+
+\makeatletter
+\newcommand{\resourcename}{%
+\@ifstar{%
+\resourcenameStar%
+}{%
+\resourcenameNostar%
+}%
+}
+\makeatother
+\newcommand{\resourcenameStar}[3]{\path|#3|}
+\newcommand{\resourcenameNostar}[3]{\path|#3|$^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}
+
+\newcommand{\registrykey}[1]{\path|#1|}
+\newcommand{\variable}[1]{\path|#1|}
+\newcommand{\volume}[1]{\path|#1|}
+\newcommand{\volumestatus}[1]{\path|#1|}
+\newcommand{\volumeparameter}[2]{\ifthenelse{\isempty{#2}}{%
+    \path|#1|%
+}{%
+    \path|#1 = #2|%
+}}
+\newcommand{\os}[2]{\ifthenelse{\isempty{#2}}{%
+    \path|#1|\index[general]{Platform!#1}%
+}{%
+    \path|#1 #2|\index[general]{Platform!#1!#2}%
+}}
+
+\newcommand{\mysql}{MySQL/MariaDB\xspace}
+\newcommand{\postgresql}{PostgreSQL\xspace}
+\newcommand{\sqlite}{Sqlite\xspace}
+\newcommand{\vmware}{VMware\registered\xspace}
+\newcommand{\vSphere}{VMware vSphere\registered\xspace}
+
+% NDMP
+\newcommand{\DataManagementAgent}{Data Management Agent\xspace}
+\newcommand{\DataAgent}{Data Agent\xspace}
+\newcommand{\TapeAgent}{Tape Agent\xspace}
+\newcommand{\RobotAgent}{Robot Agent\xspace}
+
+\newcommand{\NdmpBareos}{\ilink{NDMP\_BAREOS}{sec:NdmpBareos}}
+\newcommand{\NdmpNative}{\ilink{NDMP\_NATIVE}{sec:NdmpNative}}
+
+% Bareos quote
+\newcommand{\bquote}[1]{``#1''}
+%%
+\newcommand{\debug}[1]{\marginpar{#1}}
+%%
+%\newcommand{\TODO}[1]{\textit{#1}\marginpar{TODO: #1}}
+\newcommand{\TODO}[1]{\textit{TODO: #1}}
+%\newcommand{\TODO}[1]{}
+\newcommand{\hide}[1]{}
+%
+\newcommand{\warning}[1]{Please note! \textit{#1}}
+
+
+\newcommand{\releasenoteSection}[1]{
+    \section*{#1}
+    \addcontentsline{toc}{section}{\protect\numberline{}#1}%
+}
+
+% 1: version, 2: description
+\newcommand{\releasenote}[2]{
+    \subsection*{bareos-#1}
+    \addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
+    \label{bareos-#1}
+    \index[general]{bareos-#1!Release Notes}%
+    #2
+}
+
+\newcommand{\releasenoteUnstable}[2]{
+    \subsection*{\textit{bareos-#1 (unstable)}}
+    %\addcontentsline{toc}{subsection}{\protect\numberline{}#1}%
+    %\index[general]{bareos-#1!Release Notes}%
+    #2
+}
+
+
+\newcommand{\sinceVersion}[3]{%
+% 1: daemon (dir|sd|fd),
+% 2: item,
+% 3: version
+\edef\pv{#3}%
+\ifcsvoid{pv}{}{%
+Version $>=$ #3%
+%\index[#1]{#2}%
+% expand variables
+\edef\temp{\noexpand\index[general]{bareos-#3!#2}}%
+\temp%
+}%
+}
+
+
+\makeatletter
+\newcommand{\limitation}{%
+\@ifstar{%
+\limitationStar
+}{%
+\limitationNostar
+}%
+}
+\makeatother
+
+\newcommand{\limitationStar}[3]{%
+\paragraph{#2.}
+%\limitationCommon{#1}{#2}{#3}
+#3
+\index[general]{Limitation!#1!#2}%
+\index[general]{#1!Limitation!#2}%
+}
+
+\newcommand{\limitationNostar}[3]{%
+\paragraph{Limitation: #1: #2.}
+%\limitationCommon{#1}{#2}{#3}
+#3
+\index[general]{Limitation!#1!#2}%
+\index[general]{#1!Limitation!#2}%
+}
+
+
+% #1 backend name (Rados)
+% [ #2: backend category (CEPH Object Store) ]
+\newcommand{\sdBackend}[2]{%
+  \ifthenelse{\isempty{#2}}{%
+    \path|#1|%
+    \index[general]{#1}%
+    \index[sd]{Backend!#1}%
+  }{%
+    \path|#1| (#2)%
+    \index[general]{#1 (#2)}%
+    \index[general]{#2!#1}%
+    \index[sd]{Backend!#1 (#2)}%
+  }%
+}
+
+\newcommand{\betaSince}[3]{\index[#1]{#2}Included as beta since version #3. Don't use in productive environment!}
+\newcommand{\deprecatedSince}[3]{This option is deprecated since version #3}
+\newcommand{\removedSince}[3]{This option is removed since version #3}
+
+% deprecated. use xdirective instead.
+\newcommand{\directive}[6]{
+% 1: config file (dir | sd | fd)
+% 2: directive name
+% 3: directive type/value
+% 4: "required" | ""
+% 5: default value
+% 6: since version
+\item [#2 = {\textless}#3{\textgreater}]
+    \hfill
+  \ifthenelse{\isempty{#5}}{}{(default: #5)}
+  \ifthenelse{\isempty{#4}}{}{(#4)}
+  \ifthenelse{\isempty{#6}}{}{\sinceVersion{#1}{#2}{#6}}
+  \hfill \\
+  \index[#1]{#2}
+  \index[#1]{Directive!#2}
+}
+
+\newcommand{\xdirective}[8]{
+% 1: config file (Dir | Sd | Fd | Console)
+% 2: Resource
+% 3: directive name
+% 4: directive data type (\dtXXX) or value
+% 5: "required" | ""
+% 6: default value
+% 7: "deprecated" | since version
+% 8: description
+%
+% translate daemon name to lowercase.
+% Unfortunally, the result of
+% \MakeLowercase{#1} or \makefirstuc{#1}
+% can be used for \index
+\ifthenelse{\equal{#1}{Dir}}{
+    \def\daemon{dir}
+}{ 
+  \ifthenelse{\equal{#1}{Sd}}{
+    \def\daemon{sd}
+  }{ 
+    \ifthenelse{\equal{#1}{Fd}}{
+        \def\daemon{fd}
+    }{
+      \ifthenelse{\equal{#1}{Console}}{
+          \def\daemon{console}
+      }{
+        % hopefully, no translatation needed. Take original parameter
+        \def\daemon{#1}
+      }
+    }
+  }
+}
+%
+\item [\hypertarget{directive#1#2#3}{#3} = {\textless}#4{\textgreater}]%
+    \hfill%
+  \ifthenelse{\isempty{#6}}{}{(default: #6)}%
+  \ifthenelse{\isempty{#5}}{}{(#5)}%
+  \hfill \\%
+  %\index[\daemon]{#3|textbf}%
+  \index[\daemon]{Configuration Directive!#3|textbf}%
+  \ifthenelse{\equal{#7}{deprecated}}{%
+\warning{This directive is deprecated.\\}
+  }{}%
+#8\ \\%
+  \ifthenelse{\equal{#7}{deprecated}}{}{%
+    \ifthenelse{\equal{#7}{}}{}{%
+      \sinceVersion{\daemon}{#3}{#7}%
+    }%
+  }%
+}
+% usage:
+% \xdirective{Dir|Sd|Fd}{Resource}{Name}{\dtXXX}{required}{default}{version}{%
+% }
+% \xdirective{}{}{}{}{required}{}{}{}
+
+
+\newcommand{\defDirective}[6]{%
+% defDirective: 
+%   provide additional information to a directive.
+%   These information will not displayed right away,
+%   but used by \resourceDirective
+%   which will be used at autogenerated/*-resource-*-description.tex
+%
+% 1: daemon (Dir | Sd | Fd | Console)
+% 2: Resource
+% 3: DirectiveName
+% 4: "" | parameter (postgresql | mysql | ...)
+% 5: "" | since version
+% 6: description
+%       can't contain verbatim/lstlisting parts. 
+%       Therefore use \bconfiginput{filename} to include config examples.
+\def\pp{#4}
+\def\pv{#5}
+\def\pd{#6}
+\ifcsvoid{pp}{}{%
+    \csdef{directiveParameter#1#2#3}{#4}%
+}%
+\ifcsvoid{pv}{}{%
+    \csdef{directiveSinceVersion#1#2#3}{#5}%
+}%
+\ifcsvoid{pd}{}{%
+    \csdef{directiveDescription#1#2#3}{#6}%
+}%
+%
+\ifcsvoid{resourceDirectiveDefined#1#2#3}{%
+\wlog{Warning: defDirective{#1}{#2}{#3} has no matching resourceDirective and will be ignored}
+}{}%
+}
+
+\newcommand{\resourceDirective}[8]{%
+% 1: config file (Dir | Sd | Fd)
+% 2: Resource
+% 3: directive name
+% 4: directive data type (\dtXXX) or value
+% 5: "required" | ""
+% 6: default value
+% 7: "deprecated" | since version
+% 8: description
+\ifcsdef{directiveParameter#1#2#3}{%
+    \csletcs{resourceDirectiveParameter}{directiveParameter#1#2#3}%
+}{%
+    \csdef{resourceDirectiveParameter}{#4}%
+}%
+\ifcsdef{directiveSinceVersion#1#2#3}{%
+    \csletcs{resourceDirectiveVersion}{directiveSinceVersion#1#2#3}%
+}{%
+    \csedef{resourceDirectiveVersion}{#7}%
+}%
+\xdirective{#1}{#2}{#3}{\resourceDirectiveParameter}{#5}{#6}{\resourceDirectiveVersion}{%
+\ifthenelse{\isempty{#8}}{}{%
+#8
+
+}%
+\ifcsdef{directiveDescription#1#2#3}{\csuse{directiveDescription#1#2#3}}{}%
+}%
+}
+
+\makeatletter
+\newcommand{\linkResourceDirective}{%
+\@ifstar{%
+\linkResourceDirectiveStar%
+}{%
+\linkResourceDirectiveNostar%
+}%
+}
+\makeatother
+
+\newcommand{\linkResourceDirectiveStar}[3]{%
+\linkResourceDirectiveOpt{#1}{#2}{#3}{#3}%
+}
+
+\newcommand{\linkResourceDirectiveNostar}[3]{%
+\linkResourceDirectiveOpt{#1}{#2}{#3}{#3 $^{\mbox{\tiny #1}}_{\mbox{\tiny #2}}$}%
+}
+
+\newcommand{\linkResourceDirectiveOpt}[4]{%
+% 1: config file (Dir | Sd | Fd)
+% 2: Resource
+% 3: Directive Name
+%
+\ifthenelse{\equal{#1}{Dir}}{%
+    \def\daemon{dir}%
+}{%
+  \ifthenelse{\equal{#1}{Sd}}{%
+    \def\daemon{sd}%
+  }{%
+    \ifthenelse{\equal{#1}{Fd}}{%
+        \def\daemon{fd}%
+    }{%
+      \ifthenelse{\equal{#1}{Console}}{
+          \def\daemon{console}%
+      }{%
+        % hopefully, no translatation needed. Take original parameter
+        \def\daemon{#1}%
+      }%
+    }%
+  }%
+}%
+\index[\daemon]{Configuration Directive!#3}%
+\hyperlink{directive#1#2#3}{#4}%
+}
+
+\newcommand{\linkResourceDirectiveValue}[4]{%
+\linkResourceDirective{#1}{#2}{#3} \path|= #4|%
+}
+
+\newcommand{\resourceDirectiveValue}[4]{%
+\linkResourceDirectiveValue{#1}{#2}{#3}{#4}%
+}
+
+%
+% lstnewenvironment
+%
+% columns=fullflexible, keepspaces=true: prevents spaces between characters on copy-and-paste
+% literate={-}{-}1: prevents that a minus ("-") get displayed as long minus (and causing erros on copy-and-paste)
+%
+
+\lstnewenvironment{bconsole}[1]{
+    % #1 caption
+    \renewcommand*{\lstlistingname}{bconsole}
+    \definecolor{colorBconsole}{gray}{0.9}
+    \lstset{
+        %label=bconsole:#1,
+        breaklines=true,
+        breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        caption=\mbox{#1},
+        basicstyle=\ttfamily\small,
+        %columns=fixed,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        backgroundcolor=\color{colorBconsole},
+        frame=single,
+        framerule=0pt,
+        captionpos=b,
+        %moredelim=[l][\bf]{* },
+        %moredelim=[l][\bf]{Select\ item: },
+        %moredelim=[l][\bf]{Select\ Client },
+        moredelim=[is][\bf]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+
+\lstnewenvironment{bmessage}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Messages} 
+    \footnotesize
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        %label=config:#1,
+        caption=\mbox{#1},
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+
+\definecolor{colorConfig}{gray}{0.9}
+
+\lstnewenvironment{bconfig}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Configuration}
+    \footnotesize
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        caption=\mbox{#1},
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+\newcommand{\bconfigInput}[1]{
+    {
+        \footnotesize
+%     \lstinputlisting[backgroundcolor=\color{colorConfig},frame=single,framerule=0pt,basicstyle=\ttfamily,keepspaces=true,columns=fullflexible,moredelim=[is][\it]{<input>}{</input>},moredelim=[is][\underline]{<strong>}{</strong>}]{#1}
+        \lstinputlisting[
+                backgroundcolor=\color{colorConfig},
+                frame=single,framerule=0pt,
+                basicstyle=\ttfamily,
+                columns=fullflexible,
+                keepspaces=true,
+                literate={-}{-}1
+            ]{#1}
+    }
+}
+
+\lstnewenvironment{bareosConfigResource}[3]{%
+    % #1 component
+    % #2 resource type
+    % #3 resource name
+    \renewcommand*{\lstlistingname}{Resource}
+    \footnotesize
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        %breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        caption=#1.d/#2/#3.conf,
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+
+\lstnewenvironment{config}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Configuration}
+    \footnotesize
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        caption=#1,
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+
+\lstnewenvironment{commands}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Commands}
+    \footnotesize
+    \definecolor{colorConfig}{gray}{0.9}
+    \lstset{
+        backgroundcolor=\color{colorConfig},
+        breaklines=true,
+        breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1
+                 {ch}{c{}h}2
+                 {ck}{c{}k}2
+                 {fb}{f{}b}2
+                 {ff}{f{}f}2
+                 {fh}{f{}h}2
+                 {fi}{f{}i}2
+                 {fj}{f{}j}2
+                 {fl}{f{}l}2
+                 {fk}{f{}k}2
+                 {ll}{l{}l}2
+                 {th}{t{}h}2
+                 {tt}{t{}t}2
+                 ,
+        caption=\mbox{#1},
+        captionpos=b,
+        % command only work for single commands without parameter.
+        % as workaround, split a command and its parameter as in following example:
+        % <command>su</command><input> - bareos</input>
+        moredelim=[is][\commandPrompt\bf]{<command>}{</command>},
+        moredelim=[is][\bf]{<parameter>}{</parameter>},
+        moredelim=[is][\bf]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+
+\newfloat{floatCommandOut}{h}{lop}
+\floatname{floatCommandOut}{Command}
+
+\newenvironment{commandOut}[3]{%
+    % #1 caption
+    % #2 prompt
+    % #3 command
+    \footnotesize
+    \def\commandOut1{#1}
+    \ifthenelse{\isempty{#2}}{
+        \def\commandOutPrompt{\commandPrompt}
+    }{
+        \def\commandOutPrompt{#2}
+    }
+
+    % \definecolor{shadecolor}{gray}{0.95}
+    % TODO: does not work with htlatex
+    % \snugshade
+    \verbatim
+\commandOutPrompt{}#3
+}
+{
+    \endverbatim
+    % \endsnugshade
+    \ifthenelse{\isempty{\commandOut1}}{
+    }{
+        \captionof{floatCommandOut}{\commandOut1}
+    }
+}
+
+\definecolor{colorLog}{gray}{0.9}
+
+\lstnewenvironment{logging}[1]{%
+    % #1 caption
+    \renewcommand*{\lstlistingname}{Logging} 
+    \footnotesize
+    \lstset{
+        backgroundcolor=\color{colorLog},
+        breaklines=true,
+        %breakatwhitespace=true,
+        prebreak=\raisebox{0ex}[0ex][0ex]{ \ensuremath{\swarrow}},
+        postbreak=\raisebox{0ex}[0ex][0ex]{\ensuremath{\hookrightarrow} },
+        frame=single,
+        framerule=0pt,
+        basicstyle=\ttfamily,
+        columns=fullflexible,
+        keepspaces=true,
+        literate={-}{-}1,
+        caption=\mbox{#1},
+        captionpos=b,
+        moredelim=[is][\it]{<input>}{</input>},
+        moredelim=[is][\underline]{<strong>}{</strong>},
+    }
+}{}
+
+\endinput

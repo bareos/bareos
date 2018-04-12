@@ -1,0 +1,39 @@
+
+\section{Tape Labels: ANSI or IBM}
+\label{AnsiLabelsChapter}
+\index[general]{Label!Tape Labels}
+\index[general]{Tape!Label!ANSI}
+\index[general]{Tape!Label!IBM}
+
+By default, Bareos uses its own tape label (see \nameref{backward-compability-tape-format} and \linkResourceDirective{Dir}{Pool}{Label Type}).
+However, Bareos also supports reading and write ANSI and IBM tape labels.
+
+\subsection{Reading}
+
+Reading ANSI/IBM labels is important,
+if some of your tapes are used by other programs that also support ANSI/IBM labels.
+For example, LTFS tapes \index[general]{Tape!LTFS}
+are indicated by an ANSI label.
+
+If your are running Bareos in such an environment,
+you must set \linkResourceDirective{Sd}{Device}{Check Labels} to yes,
+otherwise Bareos will not recognize that these tapes are already in use.
+
+\subsection{Writing}
+
+To configure Bareos to also write ANSI/IBM tape labels,
+use \linkResourceDirective{Dir}{Pool}{Label Type}
+ or \linkResourceDirective{Sd}{Device}{Label Type}.
+With the proper configuration, you can
+force Bareos to require ANSI or IBM labels.
+
+Even though Bareos will recognize and write ANSI and IBM labels,
+it always writes its own tape labels as well.
+
+If you have labeled your volumes outside of Bareos, then the
+ANSI/IBM label will be recognized by Bareos only if you have created
+the HDR1 label with {\bf BAREOS.DATA} in the filename field (starting
+with character 5).  If Bareos writes the labels, it will use
+this information to recognize the tape as a Bareos tape.  This allows
+ANSI/IBM labeled tapes to be used at sites with multiple machines
+and multiple backup programs.

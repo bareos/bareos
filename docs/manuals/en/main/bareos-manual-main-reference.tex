@@ -1,0 +1,330 @@
+%%
+%%
+%%  The following characters must be preceded by a backslash
+%%    to be entered as printable characters:
+%%
+%%   # $ % & ~ _ ^ \ { }
+%%
+\listfiles
+\documentclass[10pt,a4paper]{book}
+\PassOptionsToPackage{obeyspaces}{url} %white space in url path
+\topmargin -0.5in
+\oddsidemargin 0.0in
+\evensidemargin 0.0in
+\textheight 10in
+\textwidth 6.5in
+
+
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+\usepackage{float}
+\usepackage{graphicx}
+\DeclareGraphicsExtensions{.png,.jpg}
+\usepackage{longtable}
+\usepackage{makeidx}
+\usepackage{index}
+\usepackage[usenames,dvipsnames]{color} % required by framed, used by hyperref
+%\usepackage{titlesec}
+
+\usepackage[titles]{tocloft}
+%\tocloftpagestyle{fancy}
+\cftsetindents{chapter}{0em}{1.5em}
+\cftsetindents{section}{1.5em}{3em}
+\cftsetindents{subsection}{4.5em}{4em}
+
+\usepackage[hyperindex=true,colorlinks=true,linkcolor=blue]{hyperref}
+\usepackage{url}
+\usepackage{moreverb}
+\renewcommand\verbatimtabsize{4\relax}
+\usepackage{ifthen}
+\usepackage{xifthen}
+% framed does not work with htlatex, therefore replaced by listings
+%\usepackage{framed} % framed, oframed, shaded, shaded*, snugshade, snugshade*, leftbar, titled-frame
+\usepackage{listings}
+\usepackage{caption} % captionof
+% mdframed does not work on openSUSE 12.2
+%\usepackage{mdframed}
+
+% check for undefined references (refcheck),
+% but don't write them as marginal notes, 
+% instead only write remarks to the log file
+\usepackage[norefs,nocites]{refcheck}
+\usepackage{textcomp}
+
+% \ifcsdef: check if a label is defined
+\usepackage{etoolbox}
+
+% string manipulations
+%   \capitalizewords, \noblanks
+\usepackage{stringstrings}
+
+\usepackage{xspace}
+%\usepackage{svg}
+%\usepackage{import}
+%\usepackage{xparse}
+
+\usepackage{bareos}
+
+\makeindex
+\ifdefined\HCode
+    %htlatex code here
+    \newindex{general}{general.htidx}{general.htind}{General Index}
+    \newindex{dir}{director.htidx}{director.htind}{Director Index}
+    \newindex{fd}{fd.htidx}{fd.htind}{File Daemon Index}
+    \newindex{sd}{sd.htidx}{sd.htind}{Storage Daemon Index}
+    \newindex{console}{console.htidx}{console.htind}{Console Index}
+    \newindex{monitor}{monitor.htidx}{monitor.htind}{Monitor Index}
+\else
+    %pdflatex code here
+    \newindex{general}{general.idx}{general.ind}{General Index}
+    \newindex{dir}{director.idx}{director.ind}{Director Index}
+    \newindex{fd}{fd.idx}{fd.ind}{File Daemon Index}
+    \newindex{sd}{sd.idx}{sd.ind}{Storage Daemon Index}
+    \newindex{console}{console.idx}{console.ind}{Console Index}
+    \newindex{monitor}{monitor.idx}{monitor.ind}{Monitor Index}
+\fi
+
+% set links back to TOC. Failed to work with htlatex
+% \titleformat{\chapter}[display]
+%   {\normalfont\huge\bfseries}{\chaptertitlename\ {\fontfamily{cmr}\selectfont\thechapter}}{20pt}{\hyperlink{chap-\thechapter}{\Huge#1}
+% 
+% \titleformat{name=\chapter,numberless}
+%   {\normalfont\huge\bfseries}{}{-20pt}{\Huge#1}
+% 
+% \titleformat{\section}
+%   {\normalfont\Large\bfseries}{\thesection}{1em}{\hyperlink{sec-\thesection}{#1}
+% \addtocontents{toc}{\protect\hypertarget{sec-\thesection}{}}}
+% 
+% \titleformat{name=\section,numberless}
+%   {\normalfont\Large\bfseries}{}{0pt}{#1}
+% 
+% \titleformat{\subsection}
+%   {\normalfont\large\bfseries}{\thesubsection}{1em}{\hyperlink{subsec-\thesubsection}{#1}
+% \addtocontents{toc}{\protect\hypertarget{subsec-\thesubsection}{}}}
+% 
+% \titleformat{name=\subsection,numberless}
+%   {\normalfont\large\bfseries}{\thesubsection}{0pt}{#1}
+
+\begin{document}
+
+\sloppy
+\parindent 0pt
+
+\input{version}
+\def\version{\bareosBranch{} (\today)}
+\input{coverpage}
+
+\clearpage
+\pagenumbering{roman}
+\tableofcontents
+\clearpage
+
+\pagestyle{myheadings}
+\markboth{Bareos Version \version}{Bareos Version \version}
+\pagenumbering{arabic}
+
+
+\part{Introduction and Tutorial}
+
+\include{general}
+\include{state}
+
+
+\chapter{Installing Bareos}
+\label{InstallChapter}
+\index[general]{Bareos!Installing}
+\index[general]{Installation!Linux}
+
+  \input{install}      % install
+
+\chapter{Installing Bareos Webui}
+\label{sec:webui}
+\label{sec:install-webui}
+\index[general]{Webui}
+\index[general]{Webui!Install}
+
+  \input{webui}
+
+\chapter{Updating Bareos}
+\label{bareos-update}
+
+  \input{update}
+
+
+\chapter{Getting Started with Bareos}
+\label{QuickStartChapter}
+
+    \input{quickstart}   % install
+
+
+
+\include{tutorial}
+
+\include{critical}     % install
+
+%\include{webui}
+
+\part{Configuration}
+
+    \include{configure}
+    \include{dirdconf}
+    \include{storedconf}
+    \include{filedconf}
+    \include{messagesres}
+    \include{consoleconf}
+    \include{monitorconf}
+
+
+\part{Tasks and Concepts}
+
+\include{bconsole}
+
+\include{restore}
+
+\chapter{Volume Management}
+  \input{disk}
+  \include{recycling}
+
+\include{pools}
+
+%tape
+\include{autochangers}
+%tape
+\include{tape-without-autochanger}
+
+\include{spooling}
+\include{migration}
+\include{always-incremental}
+
+%\chapter{Accurate Mode}
+%    \input{accuratemode}
+
+\include{basejob}
+
+\include{plugins}
+
+\include{win32}
+
+\chapter{Network setup}
+    \input{client-initiated-connection}
+    \input{passiveclient}
+    \input{lanaddress}
+
+\include{tls}
+\include{dataencryption}
+
+\chapter{NDMP Backups with Bareos}
+\input{ndmp}
+
+
+\include{catmaintenance}  %catalog
+
+\include{security}        % install
+
+
+\appendix
+\part{Appendix}
+
+\input{requirements}
+
+\chapter{Operating Systems}
+\label{SupportedOSes}
+\index[general]{Systems!Supported Operating Systems}
+\index[general]{Support!Operating Systems}
+
+    \input{supportedoses}
+
+% outdated information
+%\include{supporteddrives}
+%\include{supportedchangers}
+
+%\chapter{Compile Bareos from Source}
+% TODO: rework this chapter later. Most of the stuff can be removed,
+% however the description of the configure flags is usefull.  But is there a better place to document it?
+%\include{compile}
+%\include{mysql}           % catalog
+%\include{postgresql}      % catalog
+%\include{sqlite}          % catalog
+
+\include{programs}
+
+\include{bootstrap}
+
+\include{verify}
+
+\include{backward-compability}
+
+\include{tables}
+
+\chapter{Howtos}
+\input{howto}
+
+
+\include{rescue}
+
+\chapter{Troubleshooting}
+\input{troubleshooting}
+
+\chapter{Debugging}
+\input{debug}
+
+\chapter{Release Notes}
+\input{releasenotes}
+
+\chapter{Bareos Copyright, Trademark, and Licenses}
+\label{LicenseChapter}
+\index[general]{License!Bareos Copyright Trademark Licenses}
+\index[general]{Bareos Copyright, Trademark, and Licenses}
+
+    \input{license}
+
+    %\include{fdl}
+\pagebreak
+\section{GNU Free Documentation License}
+    \label{fdl}
+    \verbatiminput{fdl.txt}
+
+    %\include{agpl}
+\pagebreak
+\section{GNU Affero Gerneral Public License}
+    \label{agpl}
+    \verbatiminput{agpl.txt}
+
+    %\include{lesser}
+\pagebreak
+\section{GNU Lesser Gerneral Public License}
+    \label{lgpl}
+    \verbatiminput{lgpl.txt}
+
+% pull in the index
+%\clearpage
+\part{Index}
+
+% label should reside directly at index begin, not Index cover page.
+\phantomsection
+\label{index}
+\addcontentsline{toc}{chapter}{General}
+\printindex[general]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Director}
+\printindex[dir]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Storage Daemon}
+\printindex[sd]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{File Daemon}
+\printindex[fd]
+
+\phantomsection
+\addcontentsline{toc}{chapter}{Console}
+\printindex[console]
+
+% \phantomsection
+% \addcontentsline{toc}{chapter}{Monitor}
+% \printindex[monitor]
+
+
+\end{document}

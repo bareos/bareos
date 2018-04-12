@@ -1,0 +1,517 @@
+\defDirective{Dir}{Pool}{Action On Purge}{}{}{%
+% DEPRECATED:
+% because it does not do what is expected by the name.
+% Is only has an influence,
+% when using the command "purge volume action=truncate"
+% but did do nothing automatically.
+
+The directive \configline{Action On Purge=Truncate} instructs Bareos to truncate the
+volume when it is purged with the \bcommand{purge}{volume action=truncate}
+command. It is useful to prevent disk based volumes from consuming too much
+space.
+
+% \bconfigInput{config/DirPoolActionOnPurge1.conf}
+%
+% THIS DOES NOT WORK:
+% You can schedule the truncate operation at the end of your \job{BackupCatalog} job
+% like in this example:
+% 
+% \bconfigInput{config/DirPoolActionOnPurge2.conf}
+}
+
+\defDirective{Dir}{Pool}{Auto Prune}{}{}{%
+If \configline{Auto Prune=yes}, the \linkResourceDirective{Dir}{Pool}{Volume Retention} period
+is automatically applied when a new
+Volume is needed and no appendable Volumes exist in the Pool.  Volume
+pruning causes expired Jobs (older than the \linkResourceDirective{Dir}{Pool}{Volume Retention}
+period) to be deleted from the Catalog and permits possible recycling of
+the Volume.
+}
+
+\defDirective{Dir}{Pool}{Catalog}{}{}{%
+This specifies the name of the catalog resource to be used for this Pool.
+When a catalog is defined in a Pool it will override the definition in
+the client (and the Catalog definition in a Job since
+\sinceVersion{dir}{Job catalog overwritten by Pool catalog}{13.4.0}). e.g.
+this catalog setting takes precedence over any other definition.
+}
+
+\defDirective{Dir}{Pool}{Catalog Files}{}{}{%
+This directive defines whether or not you want the names of the files
+that were saved to be put into the catalog.
+If disabled, the Catalog database will be significantly smaller.
+The disadvantage is that
+you will not be able to produce a Catalog listing of the files backed up
+for each Job (this is often called Browsing).  Also, without the File
+entries in the catalog, you will not be able to use the Console \bcommand{restore}{} command
+nor any other command that references File entries.
+}
+
+\defDirective{Dir}{Pool}{Cleaning Prefix}{}{}{%
+This directive defines a prefix string, which if it matches the
+beginning of a Volume name during labeling of a Volume, the Volume will
+be defined with the VolStatus set to {\bf Cleaning} and thus Bareos will
+never attempt to use this tape.  This is primarily for use with
+autochangers that accept barcodes where the convention is that barcodes
+beginning with {\bf CLN} are treated as cleaning tapes.
+
+The default value for this directive is consequently set to {\bf CLN}, so
+that in most cases the cleaning tapes are automatically recognized without
+configuration.
+If you use another prefix for your cleaning tapes, you can set this directive
+accordingly.
+}
+
+\defDirective{Dir}{Pool}{Description}{}{}{%
+}
+
+\defDirective{Dir}{Pool}{File Retention}{}{}{%
+The File Retention directive defines the length of time that  Bareos will
+keep File records in the Catalog database after the End time of the
+Job corresponding to the File records.
+
+This directive takes precedence over Client directives of the same name. For
+example, you can decide to increase Retention times for Archive or OffSite
+Pool.
+
+Note, this affects only records in the catalog database. It does not affect
+your archive backups.
+
+For more information see Client documentation about
+\linkResourceDirective{Dir}{Client}{File Retention}
+}
+
+\defDirective{Dir}{Pool}{Job Retention}{}{}{%
+The Job Retention directive defines the length of time that Bareos will keep
+Job records in the Catalog database after the Job End time.  As with the
+other retention periods, this affects only records in the catalog and not
+data in your archive backup.
+
+This directive takes precedence over Client directives of the same name.
+For example, you can decide to increase Retention times for Archive or
+OffSite Pool.
+
+For more information see Client side documentation
+\linkResourceDirective{Dir}{Client}{Job Retention}
+}
+
+\defDirective{Dir}{Pool}{Label Format}{}{}{%
+This directive specifies the format of the labels contained in this
+pool.  The format directive is used as a sort of template to create new
+Volume names during automatic Volume labeling.
+
+The format should be specified in double quotes (\path|"|), and consists of
+letters, numbers and the special characters hyphen (\path|-|), underscore
+(\path|_|), colon (\path|:|), and period (\path|.|), which are the legal
+characters for a Volume name.
+
+In addition, the format may contain a number of variable expansion
+characters which will be expanded by a complex algorithm allowing you to
+create Volume names of many different formats.  In all cases, the
+expansion process must resolve to the set of characters noted above that
+are legal Volume names.  Generally, these variable expansion characters
+begin with a dollar sign (\path|$|)\hide{$}
+or a left bracket (\path|[|).
+For more details on
+variable expansion, please see \nameref{sec:VariableExpansionVolumeLabels}.
+
+If no variable expansion characters are found in the string, the Volume
+name will be formed from the format string appended with the
+a unique number that increases.  If you do not remove volumes from the
+pool, this number should be the number of volumes plus one, but this
+is not guaranteed. The unique number will be edited as four
+digits with leading zeros.  For example, with a 
+\configdirective{Label Format = "File-"},
+the first volumes will be named \volume{File-0001}, \volume{File-0002}, ...
+
+In almost all cases, you should enclose the format specification (part
+after the equal sign) in double quotes (\path|"|).
+}
+
+\defDirective{Dir}{Pool}{Label Type}{ANSI{\textbar}IBM{\textbar}Bareos}{}{%
+This directive is implemented in the
+Director Pool resource and in the SD Device
+resource (\linkResourceDirective{Sd}{Device}{Label Type}).
+If it is specified in the SD Device resource, it will take
+precedence over the value passed from the Director to the SD.
+}
+
+\defDirective{Dir}{Pool}{Maximum Block Size}{}{14.2.0}{%
+The \configdirective{Maximum Block Size} can be defined here to define different block sizes per volume
+or statically for all volumes at \linkResourceDirective{Sd}{Device}{Maximum Block Size}.
+If not defined, its default is 63 KB.
+Increasing this value could improve the throughput of writing to tapes.
+
+\warning{However make sure to read the \ilink{Setting Block Sizes}{setblocksizes} chapter carefully before applying any changes.}
+}
+
+\defDirective{Dir}{Pool}{Maximum Volume Bytes}{}{}{%
+This directive specifies the maximum number of bytes that can be written
+to the Volume.  If you specify zero (the default), there is no limit
+except the physical size of the Volume.  Otherwise, when the number of
+bytes written to the Volume equals {\bf size} the Volume will be marked
+{\bf Used}.  When the Volume is marked {\bf Used} it can no longer be
+used for appending Jobs, much like the {\bf Full} status but it can be
+recycled if recycling is enabled, and thus the Volume can be re-used
+after recycling.  This value is checked and the {\bf Used} status set
+while the job is writing to the particular volume.
+
+This directive is particularly useful for restricting the size
+of disk volumes, and will work correctly even in the case of
+multiple simultaneous jobs writing to the volume.
+
+The value defined by this directive in the bareos-dir.conf file is the
+default value used when a Volume is created.  Once the volume is
+created, changing the value in the bareos-dir.conf file will not change
+what is stored for the Volume.  To change the value for an existing
+Volume you must use the {\bf update} command in the Console.
+}
+
+\defDirective{Dir}{Pool}{Maximum Volume Files}{}{}{%
+This directive specifies the maximum number of files that can be written
+to the Volume.  If you specify zero (the default), there is no limit.
+Otherwise, when the number of files written to the Volume equals {\bf
+positive-integer} the Volume will be marked {\bf Used}.  When the Volume
+is marked {\bf Used} it can no longer be used for appending Jobs, much
+like the {\bf Full} status but it can be recycled if recycling is
+enabled and thus used again.  This value is checked and the {\bf Used}
+status is set only at the end of a job that writes to the particular
+volume.
+
+The value defined by this directive in the bareos-dir.conf file is the
+default value used when a Volume is created.  Once the volume is
+created, changing the value in the bareos-dir.conf file will not change
+what is stored for the Volume.  To change the value for an existing
+Volume you must use the {\bf update} command in the Console.
+}
+
+\defDirective{Dir}{Pool}{Maximum Volume Jobs}{}{}{%
+This directive specifies the maximum number of Jobs that can be written
+to the Volume.  If you specify zero (the default), there is no limit.
+Otherwise, when the number of Jobs backed up to the Volume equals {\bf
+positive-integer} the Volume will be marked {\bf Used}.  When the Volume
+is marked {\bf Used} it can no longer be used for appending Jobs, much
+like the {\bf Full} status but it can be recycled if recycling is
+enabled, and thus used again.  By setting {\bf MaximumVolumeJobs} to
+one, you get the same effect as setting {\bf UseVolumeOnce = yes}.
+
+The value defined by this directive in the  bareos-dir.conf
+file is the default value used when a Volume  is created. Once the volume is
+created, changing the value  in the bareos-dir.conf file will not change what
+is stored  for the Volume. To change the value for an existing Volume  you
+must use the {\bf update} command in the Console.
+
+If you are running multiple simultaneous jobs, this directive may not
+work correctly because when a drive is reserved for a job, this
+directive is not taken into account, so multiple jobs may try to
+start writing to the Volume. At some point, when the Media record is
+updated, multiple simultaneous jobs may fail since the Volume can no
+longer be written.
+}
+
+\defDirective{Dir}{Pool}{Maximum Volumes}{}{}{%
+This directive specifies the maximum number of volumes (tapes or files)
+contained in the pool.  This directive is optional, if omitted or set to
+zero, any number of volumes will be permitted.  In general, this
+directive is useful for Autochangers where there is a fixed number of
+Volumes, or for File storage where you wish to ensure that the backups
+made to disk files do not become too numerous or consume too much space.
+}
+
+\defDirective{Dir}{Pool}{Migration High Bytes}{}{}{%
+This directive specifies the number of bytes in the Pool which will
+   trigger a migration if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy
+   has been specified. The fact that the Pool
+   usage goes above this level does not automatically trigger a migration
+   job. However, if a migration job runs and has the PoolOccupancy selection
+   type set, the Migration High Bytes will be applied.  Bareos does not
+   currently restrict a pool to have only a single \linkResourceDirective{Dir}{Storage}{Media Type}, so you
+   must keep in mind that if you mix Media Types in a Pool, the results
+   may not be what you want, as the Pool count of all bytes will be
+   for all Media Types combined.
+}
+
+\defDirective{Dir}{Pool}{Migration Low Bytes}{}{}{%
+This directive specifies the number of bytes in the Pool which will
+   stop a migration if \linkResourceDirective{Dir}{Job}{Selection Type} = PoolOccupancy
+   has been specified and triggered by more than 
+   \linkResourceDirective{Dir}{Pool}{Migration High Bytes}
+   being in the pool. In other words, once a migration job
+   is started with {\bf PoolOccupancy} migration selection and it
+   determines that there are more than Migration High Bytes, the
+   migration job will continue to run jobs until the number of
+   bytes in the Pool drop to or below Migration Low Bytes.
+}
+
+\defDirective{Dir}{Pool}{Migration Time}{}{}{%
+If \linkResourceDirective{Dir}{Job}{Selection Type} = PoolTime, 
+the time specified here will be used. 
+If the previous Backup Job or Jobs selected have been in the Pool longer than
+the specified time, then they will be migrated.
+}
+
+\defDirective{Dir}{Pool}{Minimum Block Size}{}{}{%
+The \configdirective{Minimum Block Size} can be defined here to define different block sizes per volume
+or statically for all volumes at \linkResourceDirective{Sd}{Device}{Minimum Block Size}.
+For details, see chapter \ilink{Setting Block Sizes}{setblocksizes}.
+}
+
+\defDirective{Dir}{Pool}{Name}{}{}{%
+The name of the pool.
+}
+
+\defDirective{Dir}{Pool}{Next Pool}{}{}{%
+This directive specifies the pool a Migration or Copy Job
+and a Virtual Backup Job will write their data too.
+This directive is required to define the Pool into which
+   the data will be migrated. Without this directive, the migration job
+   will terminate in error.
+}
+
+\defDirective{Dir}{Pool}{Pool Type}{}{}{%
+This directive defines the pool type, which corresponds to the type of
+Job being run.  It is required and may be one of the following:
+
+\begin{description}
+  \item [Backup]
+  \item [*Archive]
+  \item [*Cloned]
+  \item [*Migration]
+  \item [*Copy]
+  \item [*Save]
+\end{description}
+Note, only Backup is currently implemented.
+}
+
+\defDirective{Dir}{Pool}{Purge Oldest Volume}{}{}{%
+This directive instructs the Director to search for the oldest used
+Volume in the Pool when another Volume is requested by the Storage
+daemon and none are available.  The catalog is then {\bf purged}
+irrespective of retention periods of all Files and Jobs written to this
+Volume.  The Volume is then recycled and will be used as the next Volume
+to be written.  This directive overrides any Job, File, or Volume
+retention periods that you may have specified.
+
+This directive can be useful if you have a fixed number of Volumes in
+the Pool and you want to cycle through them and reusing the oldest one
+when all Volumes are full, but you don't want to worry about setting
+proper retention periods.  However, by using this option you risk losing
+valuable data.
+
+In most cases, you should use \linkResourceDirective{Dir}{Pool}{Recycle Oldest Volume} instead.
+
+\warning{
+Be aware that \configdirective{Purge Oldest Volume} disregards all retention
+periods. If you have only a single Volume defined and you turn this
+variable on, that Volume will always be immediately overwritten when it
+fills!  So at a minimum, ensure that you have a decent number of Volumes
+in your Pool before running any jobs.  If you want retention periods to
+apply do not use this directive.\\
+We \textbf{highly} recommend against using this directive, because it is
+sure that some day, Bareos will purge a Volume that contains current
+data.
+}
+}
+
+\defDirective{Dir}{Pool}{Recycle}{}{}{%
+This directive specifies whether or not Purged Volumes may be recycled.
+If it is set to \argument{yes} and Bareos needs a volume but finds
+none that are appendable, it will search for and recycle (reuse) Purged
+Volumes (i.e.  volumes with all the Jobs and Files expired and thus
+deleted from the Catalog).  If the Volume is recycled, all previous data
+written to that Volume will be overwritten. If Recycle is set to \argument{no},
+the Volume will not be recycled, and hence, the data will remain
+valid.  If you want to reuse (re-write) the Volume, and the recycle flag
+is no (0 in the catalog), you may manually set the recycle flag (update
+command) for a Volume to be reused.
+
+Please note that the value defined by this directive in the
+configuration file is the default value used when a Volume is created.
+Once the volume is created, changing the value in the configuration
+file will not change what is stored for the Volume.  To change the value
+for an existing Volume you must use the \bcommand{update}{volume} command.
+
+When all Job and File records have been pruned or purged from the
+catalog for a particular Volume, if that Volume is marked as
+Append, Full, Used, or Error, it will then be marked as Purged. Only
+Volumes marked as Purged will be considered to be converted to the
+Recycled state if the \configdirective{Recycle} directive is set to \argument{yes}.
+}
+
+\defDirective{Dir}{Pool}{Recycle Current Volume}{}{}{%
+If Bareos needs a new Volume, this directive instructs Bareos to Prune
+the volume respecting the Job and File retention periods.  If all Jobs
+are pruned (i.e.  the volume is Purged), then the Volume is recycled and
+will be used as the next Volume to be written.  This directive respects
+any Job, File, or Volume retention periods that you may have specified.
+
+This directive can be useful if you have: a fixed number of Volumes in
+the Pool, you want to cycle through them, and you have specified
+retention periods that prune Volumes before you have cycled through the
+Volume in the Pool.
+
+However, if you use this directive and have only one Volume in the Pool,
+you will immediately recycle your Volume if you fill it and Bareos needs
+another one.  Thus your backup will be totally invalid.  Please use this
+directive with care.
+}
+
+\defDirective{Dir}{Pool}{Recycle Oldest Volume}{}{}{%
+This directive instructs the Director to search for the oldest used
+Volume in the Pool when another Volume is requested by the Storage
+daemon and none are available.  The catalog is then {\bf pruned}
+respecting the retention periods of all Files and Jobs written to this
+Volume.  If all Jobs are pruned (i.e. the volume is Purged), then the
+Volume is recycled and will be used as the next Volume to be written.
+This directive respects any Job, File, or Volume retention periods that
+you may have specified.
+
+This directive can be useful if you have a fixed number of Volumes in the
+Pool and you want to cycle through them and you have specified the correct
+retention periods.
+
+However, if you use this directive and have only one
+Volume in the Pool, you will immediately recycle your Volume if you fill
+it and Bareos needs another one. Thus your backup will be totally invalid.
+Please use this directive with care.
+}
+
+\defDirective{Dir}{Pool}{Recycle Pool}{}{}{%
+This directive defines to which pool
+the Volume will be placed (moved) when it is recycled. Without
+this directive, a Volume will remain in the same pool when it is
+recycled. With this directive, it can be moved automatically to any
+existing pool during a recycle. This directive is probably most
+useful when defined in the Scratch pool, so that volumes will
+be recycled back into the Scratch pool. For more on the see the
+\ilink{Scratch Pool}{TheScratchPool} section of this manual.
+
+Although this directive is called RecyclePool, the Volume in
+question is actually moved from its current pool to the one
+you specify on this directive when Bareos prunes the Volume and
+discovers that there are no records left in the catalog and hence
+marks it as {\bf Purged}.
+}
+
+\defDirective{Dir}{Pool}{Scratch Pool}{}{}{%
+This directive permits to specify a dedicate \textsl{Scratch} for the
+current pool. This pool will replace the special pool named \textsl{Scrach}
+for volume selection. For more information about \textsl{Scratch} see
+\ilink{Scratch Pool}{TheScratchPool} section of this manual. This is useful
+when using multiple storage sharing the same mediatype or when you want to
+dedicate volumes to a particular set of pool.
+}
+
+\defDirective{Dir}{Pool}{Storage}{}{}{%
+The Storage directive defines the name of the storage services where you
+want to backup the FileSet data.  For additional details, see the
+\nameref{DirectorResourceStorage} of this manual.
+The Storage resource may also be specified in the Job resource,
+but the value, if any, in the Pool resource overrides any value
+in the Job. This Storage resource definition is not required by either
+the Job resource or in the Pool, but it must be specified in
+one or the other.  If not configuration error will result.
+  We highly recommend
+   that you define the Storage resource to be used in the Pool rather
+   than elsewhere (job, schedule run, ...). Be aware that you theoretically can
+give a list of storages here but only the first item from the list is actually
+used for backup and restore jobs.
+}
+
+\defDirective{Dir}{Pool}{Use Catalog}{}{}{%
+Store information into Catalog. In all pratical use cases, leave this value to its defaults.
+
+}
+
+\defDirective{Dir}{Pool}{Use Volume Once}{}{}{%
+Use \linkResourceDirective{Dir}{Pool}{Maximum Volume Jobs} = 1 instead.
+}
+
+\defDirective{Dir}{Pool}{Volume Retention}{}{}{%
+The Volume Retention directive defines the length of time that
+Bareos will keep records associated with the Volume in
+the Catalog database after the End time of each Job written to the
+Volume.  When this time period expires, and if {\bf AutoPrune} is set to
+{\bf yes} Bareos may prune (remove) Job records that are older than the
+specified Volume Retention period if it is necessary to free up a
+Volume.  Recycling will not occur until it is absolutely necessary to
+free up a volume (i.e. no other writable volume exists).
+All File records associated with pruned Jobs are also
+pruned.  The time may be specified as seconds, minutes, hours, days,
+weeks, months, quarters, or years.  The {\bf Volume Retention} is
+applied independently of the {\bf Job Retention} and the {\bf File
+Retention} periods defined in the Client resource.  This means that all
+the retentions periods are applied in turn and that the shorter period
+is the one that effectively takes precedence.  Note, that when the {\bf
+Volume Retention} period has been reached, and it is necessary to obtain
+a new volume, Bareos will prune both the Job and the File records.  This
+pruning could also occur during a {\bf status dir} command because it
+uses similar algorithms for finding the next available Volume.
+
+It is important to know that when the Volume Retention period expires,
+Bareos does not automatically recycle a Volume. It attempts to keep the
+Volume data intact as long as possible before over writing the Volume.
+
+By defining multiple Pools with different Volume Retention periods, you
+may effectively have a set of tapes that is recycled weekly, another
+Pool of tapes that is recycled monthly and so on.  However, one must
+keep in mind that if your {\bf Volume Retention} period is too short, it
+may prune the last valid Full backup, and hence until the next Full
+backup is done, you will not have a complete backup of your system, and
+in addition, the next Incremental or Differential backup will be
+promoted to a Full backup.  As a consequence, the minimum {\bf Volume
+Retention} period should be at twice the interval of your Full backups.
+This means that if you do a Full backup once a month, the minimum Volume
+retention period should be two months.
+
+The default Volume retention period is 365 days, and either the default
+or the value defined by this directive in the bareos-dir.conf file is
+the default value used when a Volume is created.  Once the volume is
+created, changing the value in the \file{bareos-dir.conf} file will not change
+what is stored for the Volume.  To change the value for an existing
+Volume you must use the {\bf update} command in the Console.
+}
+
+\defDirective{Dir}{Pool}{Volume Use Duration}{}{}{%
+The Volume Use Duration directive defines the time period that the
+Volume can be written beginning from the time of first data write to the
+Volume.  If the time-period specified is zero (the default), the Volume
+can be written indefinitely.  Otherwise, the next time a job
+runs that wants to access this Volume, and the time period from the
+first write to the volume (the first Job written) exceeds the
+time-period-specification, the Volume will be marked {\bf Used}, which
+means that no more Jobs can be appended to the Volume, but it may be
+recycled if recycling is enabled.
+% Using the command {\bf
+% status dir} applies algorithms similar to running jobs, so
+% during such a command, the Volume status may also be changed.
+Once the Volume is
+recycled, it will be available for use again.
+
+You might use this directive, for example, if you have a Volume used for
+Incremental backups, and Volumes used for Weekly Full backups.  Once the
+Full backup is done, you will want to use a different Incremental
+Volume.  This can be accomplished by setting the Volume Use Duration for
+the Incremental Volume to six days.  I.e.  it will be used for the 6
+days following a Full save, then a different Incremental volume will be
+used.  Be careful about setting the duration to short periods such as 23
+hours, or you might experience problems of Bareos waiting for a tape
+over the weekend only to complete the backups Monday morning when an
+operator mounts a new tape.
+
+% The use duration is checked and the {\bf Used} status is set only at the
+% end of a job that writes to the particular volume, which means that even
+% though the use duration may have expired, the catalog entry will not be
+% updated until the next job that uses this volume is run. This
+% directive is not intended to be used to limit volume sizes
+% and will not work correctly (i.e. will fail jobs) if the use
+% duration expires while multiple simultaneous jobs are writing
+% to the volume.
+
+Please note that the value defined by this directive in the  bareos-dir.conf
+file is the default value used when a Volume  is created. Once the volume is
+created, changing the value  in the bareos-dir.conf file will not change what
+is stored  for the Volume. To change the value for an existing Volume  you
+must use the
+\ilink{\bf update volume}{UpdateCommand} command in the Console.
+}

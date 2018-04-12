@@ -1,0 +1,34 @@
+\defDirective{Console}{Monitor}{Description}{}{}{%
+}
+
+\defDirective{Console}{Monitor}{Dir Connect Timeout}{}{}{%
+}
+
+\defDirective{Console}{Monitor}{FD Connect Timeout}{}{}{%
+}
+
+\defDirective{Console}{Monitor}{Name}{}{}{%
+Specifies the Director name used to connect to Client and Storage, and the
+Console name used to connect to Director. This record is required.
+}
+
+\defDirective{Console}{Monitor}{Password}{}{}{%
+Where the password is needed for Directors to accept the Console
+connection. This password must be identical to the {\bf Password} specified
+in the {\bf Console} resource of the \ilink{Director's configuration}{DirectorChapter}
+file. This record is required if you wish to monitor Directors.
+}
+
+\defDirective{Console}{Monitor}{Refresh Interval}{}{}{%
+Specifies the time to wait  between status requests to each daemon. It can't
+be set to less than  1 second or more than 10 minutes.
+% TODO: what is format of the time?
+% TODO: should the digits in this  definition be spelled out? should
+% TODO: this say "time-period-specification" above??)
+}
+
+\defDirective{Console}{Monitor}{Require SSL}{}{}{%
+}
+
+\defDirective{Console}{Monitor}{SD Connect Timeout}{}{}{%
+}

@@ -1,0 +1,161 @@
+%%
+%%
+
+\chapter{Supported Tape Drives}
+\label{SupportedDrives}
+\index[general]{Drives!Supported Tape}
+\index[general]{Supported Tape Drives}
+
+Bareos uses standard operating system calls (read, write, ioctl) to
+interface to tape drives.  As a consequence, it relies on having a
+correctly written OS tape driver. Bareos is known to work perfectly well
+with SCSI tape drivers on FreeBSD, Linux, Solaris, and Windows machines,
+and it may work on other *nix machines.
+
+Recently there are many new drives that use IDE, ATAPI, or
+SATA interfaces rather than SCSI. On Linux the OnStream drive, which uses
+the OSST driver is one such
+example, and it is known to work with Bareos. In addition a number of such
+tape drives (i.e. OS drivers) seem to work on Windows systems.  However,
+non-SCSI tape drives (other than the OnStream) that use ide-scis, ide-tape,
+or other non-scsi drivers do not function correctly with Bareos (or any
+other demanding tape application) as of today (April 2007).  If you
+have purchased a non-SCSI tape drive for use with Bareos on Linux, there
+is a good chance that it will not work. We are working with the kernel
+developers to rectify this situation, but it will not be resolved in the
+near future.
+
+Generally any modern tape drive (i.e. after 2010) will work out
+of the box with Bareos using the standard Bareos Device specification
+in the bareos-sd.conf file.
+
+Even if your drive is on the list below, please check the
+\ilink{Tape Testing Chapter}{btape1} of this manual for
+procedures that you can use to verify if your tape drive will work with
+Bareos. If your drive is in fixed block mode, it may appear to work with
+Bareos until you attempt to do a restore and Bareos wants to position the
+tape. You can be sure only by following the procedures suggested above and
+testing.
+
+It is very difficult to supply a list of supported tape drives, or drives that
+are known to work with Bareos because of limited feedback (so if you use
+Bareos on a different drive, please let us know). Based on user feedback, the
+following drives are known to work with Bareos. A dash in a column means
+unknown:
+
+\addcontentsline{lot}{table}{Supported Tape Drives}
+\begin{longtable}{|p{2.0in}|l|l|p{2.5in}|l|}
+ \hline
+\multicolumn{1}{|c| }{\bf OS } & \multicolumn{1}{c| }{\bf Man. } &
+\multicolumn{1}{c| }{\bf Media } & \multicolumn{1}{c| }{\bf Model } &
+\multicolumn{1}{c| }{\bf Capacity  } \\
+ \hline {- } & {ADIC } & {DLT } & {Adic Scalar 100 DLT } & {100GB  } \\
+ \hline {- } & {ADIC } & {DLT } & {Adic Fastor 22 DLT } & {-  } \\
+ \hline {FreeBSD 5.4-RELEASE-p1 amd64 } & {Certance} & {LTO } & {AdicCertance CL400 LTO Ultrium 2 } & {200GB  } \\
+ \hline {- } & {- } & {DDS } & {Compaq DDS 2,3,4 } & {-  } \\
+ \hline {SuSE 8.1 Pro} & {Compaq} & {AIT } & {Compaq AIT 35 LVD } & {35/70GB } \\
+ \hline {- } & {HP } & {Travan 4 } & {Colorado T4000S } & {-  } \\
+ \hline {- } & {HP } & {DLT } & {HP DLT drives } & {-  } \\
+ \hline {- } & {HP } & {LTO } & {HP LTO Ultrium drives } & {-  } \\
+ \hline {- } & {IBM} & {??} & {3480, 3480XL, 3490, 3490E, 3580 and 3590 drives} & {-  } \\
+ \hline {FreeBSD 4.10 RELEASE } & {HP } & {DAT } & {HP StorageWorks DAT72i } & {-  } \\
+ \hline {- } & {Overland } & {LTO } & {LoaderXpress LTO } & {-  } \\
+ \hline {- } & {Overland } & {- } & {Neo2000 } & {-  } \\
+ \hline {- } & {OnStream } & {- } & {OnStream drives (see below) } & {-  } \\
+ \hline {FreeBSD 4.11-Release} & {Quantum } & {SDLT } & {SDLT320 } & {160/320GB  } \\
+ \hline {- } & {Quantum } & {DLT } & {DLT-8000 } & {40/80GB  } \\
+ \hline {Linux } & {Seagate } & {DDS-4 } & {Scorpio 40 } & {20/40GB  } \\
+ \hline {FreeBSD 4.9 STABLE } & {Seagate } & {DDS-4 } & {STA2401LW } & {20/40GB  } \\
+ \hline {FreeBSD 5.2.1 pthreads patched RELEASE } & {Seagate } & {AIT-1 } & {STA1701W} & {35/70GB  } \\
+ \hline {Linux } & {Sony } & {DDS-2,3,4 } & {- } & {4-40GB  } \\
+ \hline {Linux } & {Tandberg } & {- } & {Tandbert MLR3 } & {-  } \\
+ \hline {FreeBSD } & {Tandberg } & {- } & {Tandberg SLR6 } & {-  } \\
+ \hline {Solaris } & {Tandberg } & {- } & {Tandberg SLR75 } & {- } \\
+ \hline
+
+\end{longtable}
+
+There is a list of \ilink{supported autochangers}{Models} in the Supported
+Autochangers chapter of this document, where you will find other tape drives
+that work with Bareos.
+
+\section{Unsupported Tape Drives}
+\label{UnSupportedDrives}
+\index[general]{Unsupported Tape Drives}
+\index[general]{Drives!Unsupported Tape}
+
+Previously OnStream IDE-SCSI tape drives did not work with Bareos. As of
+Bareos version 1.33 and the osst kernel driver version 0.9.14 or later, they
+now work. Please see the testing chapter as you must set a fixed block size.
+
+QIC tapes are known to have a number of particularities (fixed block size, and
+one EOF rather than two to terminate the tape). As a consequence, you will
+need to take a lot of care in configuring them to make them work correctly
+with Bareos.
+
+\section{FreeBSD Users Be Aware!!!}
+\index[general]{FreeBSD Users Be Aware}
+\index[general]{Aware!FreeBSD Users Be}
+
+Unless you have patched the pthreads library on FreeBSD 4.11 systems, you will
+lose data when Bareos spans tapes. This is because the unpatched pthreads
+library fails to return a warning status to Bareos that the end of the tape is
+near. This problem is fixed in FreeBSD systems released after 4.11. Please see the
+\ilink{Tape Testing Chapter}{FreeBSDTapes} of this manual for
+{\bf important} information on how to configure your tape drive for
+compatibility with Bareos.
+
+\section{Supported Autochangers}
+\index[general]{Autochangers!Supported}
+\index[general]{Supported Autochangers}
+
+For information on supported autochangers, please see the
+\ilink{Autochangers Known to Work with Bareos}{Models}
+section of the Supported Autochangers chapter of this manual.
+
+\section{Tape Specifications}
+\index[general]{Specifications!Tape}
+\index[general]{Tape Specifications}
+If you want to know what tape drive to buy that will work with Bareos,
+we really cannot tell you.  However, we can say that if you are going
+to buy a drive, you should try to avoid DDS drives. The technology is
+rather old and DDS tape drives need frequent cleaning.  DLT drives are
+generally much better (newer technology) and do not need frequent
+cleaning.
+
+Below, you will find a table of DLT and LTO tape specifications that will
+give you some idea of the capacity and speed of modern tapes. The
+capacities that are listed are the native tape capacity without compression.
+All modern drives have hardware compression, and manufacturers often list
+compressed capacity using a compression ration of 2:1. The actual compression
+ratio will depend mostly on the data you have to backup, but I find that
+1.5:1 is a much more reasonable number (i.e. multiply the value shown in
+the table by 1.5 to get a rough average of what you will probably see).
+The transfer rates are rounded to the nearest GB/hr.  All values are provided
+by various manufacturers.
+
+The Media Type is what is designated by the manufacturers and you are not
+required to use (but you may) the same name in your Bareos conf resources.
+
+
+\begin{tabular}{|c|c|c|c}
+Media Type      & Drive Type & Media Capacity & Transfer Rate \\ \hline
+DDS-1              & DAT        & 2 GB &        ?? GB/hr   \\ \hline
+DDS-2              & DAT        & 4 GB &        ?? GB/hr   \\ \hline
+DDS-3              & DAT        & 12 GB &       5.4 GB/hr   \\ \hline
+Travan 40          & Travan     & 20 GB &       ?? GB/hr    \\ \hline
+DDS-4              & DAT        & 20 GB &       11 GB/hr    \\ \hline
+VXA-1              & Exabyte    & 33 GB &       11 GB/hr    \\ \hline
+DAT-72             & DAT        & 36 GB &       13 GB/hr    \\ \hline
+DLT IV             & DLT8000    & 40 GB  &      22 GB/hr    \\ \hline
+VXA-2              & Exabyte    & 80 GB &       22 GB/hr    \\ \hline
+Half-high Ultrium 1 & LTO 1      & 100 GB &      27 GB/hr    \\ \hline
+Ultrium 1          & LTO 1      & 100 GB &      54 GB/hr    \\ \hline
+Super DLT 1        & SDLT 220   & 110 GB &      40 GB/hr    \\ \hline
+VXA-3              & Exabyte    & 160 GB &      43 GB/hr    \\ \hline
+Super DLT I        & SDLT 320   & 160 GB &      58 GB/hr    \\ \hline
+Ultrium 2          & LTO 2      & 200 GB &      108 GB/hr   \\ \hline
+Super DLT II       & SDLT 600   & 300 GB &      127 GB/hr   \\ \hline
+VXA-4              & Exabyte    & 320 GB &      86 GB/hr    \\ \hline
+Ultrium 3          & LTO 3      & 400 GB &      216 GB/hr   \\ \hline
+\end{tabular}

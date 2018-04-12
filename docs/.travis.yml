@@ -1,0 +1,35 @@
+dist: trusty
+#sudo: required
+cache: apt
+
+addons:
+    apt:
+        sources:
+            - sourceline: 'deb http://download.bareos.org/bareos/experimental/nightly/xUbuntu_14.04/ /'
+              key_url: 'http://download.bareos.org/bareos/experimental/nightly/xUbuntu_14.04/Release.key'
+        packages:
+            - bareos-director
+            - bareos-database-sqlite3
+            - bareos-storage
+            - bareos-filedaemon
+            - bareos-bconsole
+            - bareos-traymonitor
+            - ghostscript
+            - graphviz
+            - imagemagick
+            - librsvg2-bin
+            - make
+            - pandoc
+            - python
+            - tex4ht
+            - texlive-latex-extra
+            - texlive-latex-recommended
+            - texlive-fonts-recommended
+
+script:
+    - make pdf
+    - make check
+    - make html
+    - make check
+
+

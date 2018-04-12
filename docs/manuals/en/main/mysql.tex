@@ -1,0 +1,298 @@
+%%
+%%
+
+\chapter{Installing and Configuring MySQL}
+\label{MySqlChapter}
+\index[general]{MySQL!Installing and Configuring}
+\index[general]{Installing and Configuring MySQL}
+
+\section{Installing and Configuring MySQL -- Phase I}
+\index[general]{Installing and Configuring MySQL -- Phase I}
+\index[general]{Phase I!Installing and Configuring MySQL -- }
+
+If you use the ./configure \verb:--:with-mysql=mysql-directory statement for
+configuring {\bf Bareos}, you will need MySQL version 4.1 or later installed
+in the {\bf mysql-directory}.  If you are using one of the new modes such as
+ANSI/ISO compatibility, you may experience problems.
+
+If MySQL is installed in the standard system location, you need only enter
+{\bf \verb:--:with-mysql} since the configure program will search all the
+standard locations.  If you install MySQL in your home directory or some
+other non-standard directory, you will need to provide the full path to it.
+
+Installing and Configuring MySQL is not difficult but can be confusing the
+first time. As a consequence, below, we list the steps that we used to install
+it on our machines. Please note that our configuration leaves MySQL without
+any user passwords. This may be an undesirable situation if you have other
+users on your system.
+
+The notes below describe how to build MySQL from the source tar files. If
+you have a pre-installed MySQL, you can return to complete the installation
+of Bareos, then come back to Phase II of the MySQL installation.  If you
+wish to install MySQL from rpms, you will probably need to install
+the following:
+
+\footnotesize
+\begin{verbatim}
+mysql-<version>.rpm
+mysql-server-<version>.rpm
+mysql-devel-<version>.rpm
+\end{verbatim}
+\normalsize
+
+If you wish to install them from debs, you will probably need the
+following:
+
+\footnotesize
+\begin{verbatim}
+mysql-server-<version>.deb
+mysql-client-<version>.deb
+libmysqlclient15-dev-<version>.deb
+libmysqlclient15off-<version>.deb
+\end{verbatim}
+\normalsize
+
+The names of the packages may vary from distribution to
+distribution. It is important to have the {\bf devel} or {\bf dev} package loaded as
+it contains the libraries and header files necessary to build
+Bareos.  There may be additional packages that are required to
+install the above, for example, zlib and openssl.
+
+Once these packages are installed, you will be able to build Bareos (using
+the files installed with the mysql package, then run MySQL using the
+files installed with mysql-server. If you have installed MySQL by debs or rpms,
+please skip Phase I below, and return to complete the installation of
+Bareos, then come back to Phase II of the MySQL installation when indicated
+to do so.
+
+Beginning with Bareos version 1.31, the thread safe version of the
+MySQL client library is used, and hence you should add the {\bf
+\verb:--:enable-thread-safe-client} option to the {\bf
+./configure} as shown below:
+
+\begin{enumerate}
+\item Download MySQL source code from
+   \elink{www.mysql.com/downloads}{http://www.mysql.com/downloads}
+
+\item Detar it with something like:
+
+   {\bf tar xvfz mysql-filename}
+
+Note, the above command requires GNU tar. If you do not  have GNU tar, a
+command such as:
+
+{\bf zcat mysql-filename \verb+|+ tar xvf - }
+
+will probably accomplish the same thing.
+
+\item cd {\bf mysql-source-directory}
+
+   where you replace {\bf mysql-source-directory} with the  directory name where
+   you put the MySQL source code.
+
+\item ./configure \verb:--:enable-thread-safe-client \verb:--:prefix=mysql-directory
+
+   where you replace {\bf mysql-directory} with the directory  name where you
+   want to install mysql. Normally for system  wide use this is /usr/local/mysql.
+   In my case, I use  \~{}user/mysql.
+
+\item make
+
+   This takes a bit of time.
+
+\item make install
+
+   This will put all the necessary binaries, libraries and support  files into
+   the {\bf mysql-directory} that you specified above.
+
+\item ./scripts/mysql\_install\_db
+
+   This will create the necessary MySQL databases for controlling  user access.
+Note, this script can also be found in the  {\bf bin} directory in the
+installation directory
+
+\end{enumerate}
+
+The MySQL client library {\bf mysqlclient} requires the gzip compression
+library {\bf libz.a} or {\bf libz.so}. If you are using rpm packages, these
+libraries are in the {\bf libz-devel} package. On Debian systems, you will
+need to load the {\bf zlib1g-dev} package. If you are not using rpms or debs,
+you will need to find the appropriate package for your system.
+
+At this point, you should return to completing the installation of {\bf
+Bareos}. Later after Bareos is installed, come back to this chapter to
+complete the installation. Please note, the installation files used in the
+second phase of the MySQL installation are created during the Bareos
+Installation.
+
+\section{Installing and Configuring MySQL -- Phase II}
+\index[general]{Installing and Configuring MySQL -- Phase II}
+\index[general]{Phase II!Installing and Configuring MySQL -- }
+
+At this point, you should have built and installed MySQL, or already have a
+running MySQL, and you should have configured, built and installed {\bf
+Bareos}. If not, please complete these items before proceeding.
+
+Please note that the {\bf ./configure} used to build {\bf Bareos} will need to
+include {\bf \verb:--:with-mysql=mysql-directory}, where {\bf mysql-directory} is the
+directory name that you specified on the ./configure command for configuring
+MySQL. This is needed so that Bareos can find the necessary include headers
+and library files for interfacing to MySQL.
+
+{\bf Bareos} will install scripts for manipulating the database (create,
+delete, make tables etc) into the main installation directory. These files
+will be of the form *\_bareos\_* (e.g. create\_bareos\_database). These files
+are also available in the {\textless}bareos-src{\textgreater}/src/cats directory after
+running ./configure. If you inspect create\_bareos\_database, you will see
+that it calls create\_mysql\_database. The *\_bareos\_* files are provided for
+convenience. It doesn't matter what database you have chosen;
+create\_bareos\_database will always create your database.
+
+Now you will create the Bareos MySQL database and the tables that Bareos uses.
+
+
+\begin{enumerate}
+\item Start {\bf mysql}. You might want to use the {\bf startmysql}  script
+   provided in the Bareos release.
+
+\item cd {\textless}install-directory{\textgreater}
+   This directory contains the Bareos catalog  interface routines.
+
+\item ./grant\_mysql\_privileges
+   This script creates unrestricted access rights for the user {\bf bareos}.
+   You may  want to modify it to suit your situation. Please
+   note that none of the userids, including root, are password protected.
+   If you need more security, please assign a password to the root user
+   and to bareos. The program {\bf mysqladmin} can be used for this.
+
+\item ./create\_mysql\_database
+   This script creates the MySQL {\bf bareos} database.  The databases you
+   create as well as the access databases will be located in
+   {\textless}install-dir{\textgreater}/var/ in a subdirectory with the name of the
+   database, where {\textless}install-dir{\textgreater} is the directory name that you
+   specified on the {\bf \verb:--:prefix} option.  This can be important to
+   know if you want to make a special backup of the Bareos database or to
+   check its size.
+
+\item ./make\_mysql\_tables
+   This script creates the MySQL tables used by {\bf Bareos}.
+\end{enumerate}
+
+Each of the three scripts (grant\_mysql\_privileges, create\_mysql\_database
+and make\_mysql\_tables) allows the addition of a command line argument. This
+can be useful for specifying the user and or password. For example, you might
+need to add {\bf -u root} to the command line to have sufficient privilege to
+create the Bareos tables.
+
+To take a closer look at the access privileges that you have setup with the
+above, you can do:
+
+\footnotesize
+\begin{verbatim}
+mysql-directory/bin/mysql -u root mysql
+select * from user;
+\end{verbatim}
+\normalsize
+
+\section{Re-initializing the Catalog Database}
+\index[general]{Database!Re-initializing the Catalog}
+\index[general]{Re-initializing the Catalog Database}
+
+After you have done some initial testing with {\bf Bareos}, you will probably
+want to re-initialize the catalog database and throw away all the test Jobs
+that you ran. To do so, you can do the following:
+
+\footnotesize
+\begin{verbatim}
+  cd <install-directory>
+  ./drop_mysql_tables
+  ./make_mysql_tables
+\end{verbatim}
+\normalsize
+
+Please note that all information in the database will be lost and you will be
+starting from scratch. If you have written on any Volumes, you must write an
+end of file mark on the volume so that Bareos can reuse it. Do so with:
+
+\footnotesize
+\begin{verbatim}
+   (stop Bareos or unmount the drive)
+   mt -f /dev/nst0 rewind
+   mt -f /dev/nst0 weof
+\end{verbatim}
+\normalsize
+
+Where you should replace {\bf /dev/nst0} with the appropriate tape drive
+device name for your machine.
+
+\section{Linking Bareos with MySQL}
+\index[general]{Linking Bareos with MySQL}
+\index[general]{MySQL!Linking Bareos with}
+\index[general]{Upgrading}
+
+After configuring Bareos with
+
+./configure \verb:--:enable-thread-safe-client \verb:--:prefix={\textless}mysql-directory{\textgreater}
+where {\textless}mysql-directory{\textgreater} is in my case {\bf /home/user/mysql}, you may
+have to configure the loader so that it can find the MySQL shared libraries.
+If you have previously followed this procedure and later add the {\bf
+\verb:--:enable-thread-safe-client} options, you will need to rerun the {\bf
+ldconfig} program shown below. If you put MySQL in a standard place such as
+{\bf /usr/lib} or {\bf /usr/local/lib} this will not be necessary, but in my
+case it is. The description that follows is Linux specific. For other
+operating systems, please consult your manuals on how to do the same thing:
+
+First edit: {\bf /etc/ld.so.conf} and add a new line to the end of the file
+with the name of the mysql-directory. In my case, it is:
+
+/home/user/mysql/lib/mysql then rebuild the loader's cache with:
+
+/sbin/ldconfig If you upgrade to a new version of {\bf MySQL}, the shared
+library names will probably change, and you must re-run the {\bf
+/sbin/ldconfig} command so that the runtime loader can find them.
+
+Alternatively, your system my have a loader environment variable that can be
+set. For example, on a Solaris system where I do not have root permission, I
+use:
+
+LD\_LIBRARY\_PATH=/home/user/mysql/lib/mysql
+
+Finally, if you have encryption enabled in MySQL, you may need to add {\bf
+-lssl -lcrypto} to the link. In that case, you can either export the
+appropriate LDFLAGS definition, or alternatively, you can include them
+directly on the ./configure line as in:
+
+\footnotesize
+\begin{verbatim}
+LDFLAGS="-lssl -lcyrpto" \
+   ./configure \
+      <your-options>
+\end{verbatim}
+\normalsize
+
+\section{Installing MySQL from RPMs}
+\index[general]{MySQL!Installing from RPMs}
+\index[general]{Installing MySQL from RPMs}
+If you are installing MySQL from RPMs, you will need to install
+both the MySQL binaries and the client libraries.  The client
+libraries are usually found in a devel package, so you must
+install:
+
+\footnotesize
+\begin{verbatim}
+  mysql
+  mysql-devel
+\end{verbatim}
+\normalsize
+
+This will be the same with most other package managers too.
+
+\section{Upgrading MySQL}
+\index[general]{Upgrading MySQL}
+\index[general]{Upgrading!MySQL}
+\index[general]{Upgrading}
+If you upgrade MySQL, you must reconfigure, rebuild, and re-install
+Bareos otherwise you are likely to get bizarre failures.  If you
+install from rpms and you upgrade MySQL, you must also rebuild Bareos.
+You can do so by rebuilding from the source rpm. To do so, you may need
+to modify the bareos.spec file to account for the new MySQL version.

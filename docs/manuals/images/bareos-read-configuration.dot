@@ -1,0 +1,39 @@
+digraph G {
+
+rankdir=LR;
+
+start[label="start Bareos component"]
+
+path_given[label="component is started with path parameter"]
+path_not_given[label="component is started without path parameter"]
+
+config_file_path[label="read configuration from the file specified in $PATH"]
+config_dir_path[label="read configuration from $PATH/$COMPONENT.d/*/*.conf"]
+config_file_default[label="read configuration from $CONFIGDIR/$COMPONENT.conf"]
+config_dir_default[label="read configuration from $CONFIGDIR/$COMPONENT.d/*/*.conf"]
+
+error[label="exit with error"]
+
+start -> path_given [label="parameter -c $PATH is given"]
+path_given -> config_file_path [label="$PATH is a file"]
+config_file_path -> "running" //[label="configuration is valid"]
+//config_file_path -> error [label="configuration contains errors"]
+
+path_given -> config_dir_path [label="$PATH/$COMPONENT.d/ is a directory"]
+config_dir_path -> "running" //[label="configuration is valid"]
+//config_dir_path -> error [label="configuration contains errors"]
+
+path_given -> error [label="otherwise"]
+
+start -> path_not_given [label="parameter -c is not given"]
+path_not_given -> config_file_default [label="$CONFIGDIR/$COMPONENT.conf exists"]
+config_file_default -> "running" //[label="configuration is valid"]
+//config_file_default -> error [label="configuration contains errors"]
+
+path_not_given -> config_dir_default [label="$CONFIGDIR/$COMPONENT.d/ is a directory"]
+config_dir_default -> "running" //[label="configuration is valid"]
+//config_dir_default -> error [label="configuration contains errors"]
+
+path_not_given -> error [label="otherwise"]
+
+}

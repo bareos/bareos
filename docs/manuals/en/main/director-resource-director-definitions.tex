@@ -1,0 +1,271 @@
+\defDirective{Dir}{Director}{Backend Directory}{}{}{%
+This directive specifies a directory from where the Bareos Director loads his dynamic backends.
+}
+
+\defDirective{Dir}{Director}{Name}{}{}{%
+The director name used by the system  administrator.
+}
+
+\defDirective{Dir}{Director}{Absolute Job Timeout}{}{14.2.0}{%
+}
+
+\defDirective{Dir}{Director}{Auditing}{}{14.2.0}{%
+This directive allows to en- or disable auditing of interaction with the Bareos Director.
+If enabled, \ilink{audit messages}{MessageTypes} will be generated.
+The \ilink{messages resource}{MessagesChapter} configured in \linkResourceDirective{Dir}{Director}{Messages} 
+defines, how these messages are handled.
+}
+
+\defDirective{Dir}{Director}{Audit Events}{}{14.2.0}{%
+Specify which commands (see \nameref{sec:ConsoleCommands}) will be audited. If nothing is specified (and \linkResourceDirective{Dir}{Director}{Auditing} is enabled), all commands will be audited.
+}
+
+\defDirective{Dir}{Director}{Description}{}{}{%
+The text field contains a  description of the Director that will be displayed
+in the  graphical user interface. This directive is optional.
+}
+
+\defDirective{Dir}{Director}{Dir Address}{}{}{%
+This directive is optional, but if it is specified, it will cause the
+Director server (for the Console program) to bind to the specified address.
+If this and the \linkResourceDirective{Dir}{Director}{Dir Addresses} directives are
+not specified, the Director will bind to any available address (the
+default).
+}
+
+
+\defDirective{Dir}{Director}{Dir Addresses}{}{}{%
+Specify the ports and addresses on which the Director daemon will listen
+for Bareos Console connections.
+
+Please note that if you use the \linkResourceDirective{Dir}{Director}{Dir Addresses} directive, you must
+not use either a \linkResourceDirective{Dir}{Director}{Dir Port} or a \linkResourceDirective{Dir}{Director}{Dir Address} directive in the same
+resource.
+}
+
+
+\defDirective{Dir}{Director}{Dir Port}{}{}{%
+Specify the port on which the  Director daemon will
+listen for Bareos Console connections.  This same port number must be
+specified in the Director resource  of the Console configuration file.
+This directive should not be used if you specify \linkResourceDirective{Dir}{Director}{Dir Addresses} (N.B plural)
+directive.
+}
+
+\defDirective{Dir}{Director}{Dir Source Address}{}{}{%
+This record is optional, and if it is specified, it will cause the Director
+server (when initiating connections to a storage or file daemon) to source
+its connections from the specified address.  Only a single IP address may be
+specified.  If this record is not specified, the Director server will source
+its outgoing connections according to the system routing table (the default).
+}
+
+
+\defDirective{Dir}{Director}{FD Connect Timeout}{}{}{%
+where \parameter{time} is the time that the Director should continue
+attempting to contact the File daemon to start a job, and after which
+the Director will cancel the job.
+}
+
+\defDirective{Dir}{Director}{Heartbeat Interval}{}{}{%
+This directive is optional and if specified will cause the Director to
+set a keepalive interval (heartbeat) in seconds on each of the sockets
+it opens for the Client resource.  This value will override any
+specified at the Director level.  It is implemented only on systems
+that provide the {\bf setsockopt} TCP\_KEEPIDLE function (Linux, ...).
+The default value is zero, which means no change is made to the socket.
+}
+
+\defDirective{Dir}{Director}{Key Encryption Key}{}{}{%
+This key is used to encrypt the Security Key that is exchanged between
+the Director and the Storage Daemon for supporting Application Managed
+Encryption (AME). For security reasons each Director should have a
+different Key Encryption Key.
+}
+
+\defDirective{Dir}{Director}{Maximum Concurrent Jobs}{}{}{%
+\index[general]{Simultaneous Jobs}%
+\index[general]{Concurrent Jobs}%
+This directive specifies the maximum number of total Director Jobs that
+should run concurrently.
+
+The Volume format becomes more complicated with
+multiple simultaneous jobs, consequently, restores may take longer if
+Bareos must sort through interleaved volume blocks from  multiple simultaneous
+jobs. This can be avoided by having each simultaneous job write to
+a different volume or  by using data spooling, which will first spool the data
+to disk simultaneously, then write one spool file at a time to the volume
+thus avoiding excessive interleaving of the different job blocks.
+
+See also the section about \ilink{Concurrent Jobs}{ConcurrentJobs}.
+}
+
+\defDirective{Dir}{Director}{Maximum Console Connections}{}{}{%
+This directive specifies the maximum number of Console Connections that
+could run concurrently.
+}
+
+\defDirective{Dir}{Director}{Messages}{}{}{%
+The messages resource  specifies where to deliver Director messages that are
+not associated  with a specific Job. Most messages are specific to a job and
+will  be directed to the Messages resource specified by the job. However,
+there are a messages that can occur when no job is running.
+}
+
+
+\defDirective{Dir}{Director}{NDMP Snooping}{}{13.2.0}{%
+This directive enables the Snooping and pretty printing of NDMP protocol
+information in debugging mode.
+}
+
+\defDirective{Dir}{Director}{NDMP Log Level}{}{13.2.0}{%
+This directive sets the loglevel for the NDMP protocol library.
+}
+
+
+\defDirective{Dir}{Director}{Omit Defaults}{}{}{%
+When showing the configuration, omit those parameter that have there default value assigned.
+}
+
+\defDirective{Dir}{Director}{Optimize For Size}{}{}{%
+If set to \parameter{yes} this directive will use the optimizations
+for memory size over speed. So it will try to use less memory which may lead
+to a somewhat lower speed. Its currently mostly used for keeping all hardlinks
+in memory.
+
+If none of \linkResourceDirective{Dir}{Director}{Optimize For Size} and \linkResourceDirective{Dir}{Director}{Optimize For Speed} is enabled, \linkResourceDirective{Dir}{Director}{Optimize For Size} is enabled by default.
+}
+
+\defDirective{Dir}{Director}{Optimize For Speed}{}{}{%
+If set to \parameter{yes} this directive will use the
+optimizations for speed over the memory size. So it will try to use more memory
+which lead to a somewhat higher speed. Its currently mostly used for keeping all
+hardlinks in memory. Its relates to the \linkResourceDirective{Dir}{Director}{Optimize For Size}
+option set either one to \parameter{yes} as they are mutually exclusive.
+}
+
+
+\defDirective{Dir}{Director}{Password}{}{}{%
+Specifies the password that must be supplied for the default Bareos
+Console to be authorized.
+This password correspond to \linkResourceDirective{Console}{Director}{Password}
+of the Console configuration file.
+
+The password is plain text.
+}
+
+
+\defDirective{Dir}{Director}{Pid Directory}{}{}{%
+This directive  is optional and specifies a directory in which the Director
+may put its process Id file. The process Id file is used to  shutdown
+Bareos and to prevent multiple copies of  Bareos from running simultaneously.
+Standard shell expansion of the {\bf Directory}  is done when the
+configuration file is read so that values such  as {\bf \$HOME} will be
+properly expanded.
+
+The PID directory specified must already exist and be
+readable and writable by the Bareos daemon referencing it.
+
+Typically on Linux systems, you will set this to:  \directory{/var/run}. If you are
+not installing Bareos in the  system directories, you can use the {\bf Working
+Directory} as  defined above.
+}
+
+
+\defDirective{Dir}{Director}{Plugin Directory}{}{}{%
+% auto generated
+}
+
+
+
+\defDirective{Dir}{Director}{Plugin Names}{}{}{%
+% auto generated
+}
+
+
+
+\defDirective{Dir}{Director}{Query File}{}{}{%
+This directive is required and specifies a directory and file in which
+the Director can find the canned SQL statements for the \ilink{query}{sec:bcommandQuery}
+command.
+%
+%Standard shell expansion of the {\bf Path} is
+%done when the configuration file is read so that values such as {\bf
+%\$HOME} will be properly expanded.
+}
+
+
+\defDirective{Dir}{Director}{Scripts Directory}{}{}{%
+}
+
+
+\defDirective{Dir}{Director}{SD Connect Timeout}{}{}{%
+where \parameter{time} is the time that the Director should continue
+attempting to contact the Storage daemon to start a job, and after which
+the Director will cancel the job.
+}
+
+
+\defDirective{Dir}{Director}{Statistics Collect Interval}{}{14.2.0}{%
+Bareos offers the possibility to collect statistic information from its connected devices.
+To do so, \linkResourceDirective{Dir}{Storage}{Collect Statistics} must be enabled.
+This interval defines, how often the Director connects to the attached Storage Daemons to collect the statistic information.
+}
+
+\defDirective{Dir}{Director}{Secure Erase Command}{}{}{%
+When files are no longer needed, Bareos will delete (unlink) them.
+With this directive, it will call the specified command to delete these files. See \nameref{sec:SecureEraseCommand} for details.
+}
+
+\defDirective{Dir}{Director}{Statistics Retention}{}{}{%
+\label{PruneStatistics}%
+The \configdirective{Statistics Retention} directive defines the length of time that
+Bareos will keep statistics job records in the Catalog database after the
+Job End time (in the catalog \dbtable{JobHisto} table). When this time period expires,
+and if user runs \bcommand{prune}{stats} command, Bareos will prune (remove)
+Job records that are older than the specified period.
+
+Theses statistics records aren't use for restore purpose, but mainly for
+capacity planning, billings, etc.
+See chapter \nameref{sec:JobStatistics} for additional information.
+}
+
+
+\defDirective{Dir}{Director}{Subscriptions}{}{12.4.4}{%
+In case you want check that the number of active clients don't exceed a specific number,
+you can define this number here and check with the \bcommand{status subscriptions}{} command.
+
+However, this is only intended to give a hint. No active limiting is implemented.
+}
+
+
+\defDirective{Dir}{Director}{Sub Sys Directory}{}{}{%
+}
+
+
+\defDirective{Dir}{Director}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+See chapter \nameref{TlsDirectives} to see,
+how the Bareos Director (and the other components) must be configured to use TLS.
+}
+
+
+\defDirective{Dir}{Director}{Ver Id}{}{}{%
+where  \parameter{string} is an identifier which can be used for support purpose.
+This string is displayed using the \bcommand{version}{} command.
+}
+
+
+\defDirective{Dir}{Director}{Working Directory}{}{}{%
+This directive is optional and specifies a directory in which the Director
+may put its status files. This directory should be used only  by Bareos but
+may be shared by other Bareos daemons.
+Standard shell expansion of the {\bf
+directory}  is done when the configuration file is read so that values such
+as \path|$HOME|
+\hide{$}
+will be properly expanded.
+
+The working directory specified must already exist and be
+readable and writable by the Bareos daemon referencing it.
+}

@@ -1,0 +1,230 @@
+\defDirective{Dir}{Storage}{Address}{}{}{%
+Where the address is a host name,  a {\bf fully qualified domain name}, or an
+{\bf IP address}. Please note  that the {\textless}address{\textgreater} as specified here
+will be transmitted to  the File daemon who will then use it to contact the
+Storage daemon. Hence,  it is {\bf not}, a good idea to use {\bf localhost} as
+the  name but rather a fully qualified machine name or an IP address.  This
+directive is required.
+}
+
+\defDirective{Dir}{Storage}{Allow Compression}{}{}{%
+This directive is optional, and if you specify {\bf No},
+it will cause backups jobs running on this storage resource to run
+without client File Daemon compression.  This effectively overrides
+compression options in FileSets used by jobs which use this storage
+resource.
+\label{AllowCompression}
+}
+
+\defDirective{Dir}{Storage}{Auth Type}{}{}{%
+Specifies the authentication type that must be supplied when connecting to
+a backup protocol that uses a specific authentication type.
+}
+
+\defDirective{Dir}{Storage}{Auto Changer}{}{}{%
+When \linkResourceDirective{Dir}{Storage}{Device} refers to an Auto Changer (\linkResourceDirective{Sd}{Device}{Autochanger}),
+this directive must be set to \parameter{yes}.
+
+If you specify \parameter{yes},
+\begin{itemize}
+  \item Volume management command like \bcommand{label}{} or \bcommand{add}{} will request a Autochanger Slot number.
+  \item Bareos will prefer Volumes, that are in a Auto Changer slot.
+    If none of theses volumes can be used, even after recycling, pruning, ...,
+    Bareos will search for any volume of the same \linkResourceDirective{Dir}{Storage}{Media Type} whether or not in the magazine.
+\end{itemize}
+
+Please consult the \nameref{AutochangersChapter} chapter for details.
+}
+
+\defDirective{Dir}{Storage}{Collect Statistics}{}{}{%
+Collect statistic information. These information will be collected by the Director (see \linkResourceDirective{Dir}{Director}{Statistics Collect Interval}) and stored in the Catalog.
+}
+
+\defDirective{Dir}{Storage}{Description}{}{}{%
+Information.
+}
+
+\defDirective{Dir}{Storage}{Device}{}{}{%
+
+If \linkResourceDirective{Dir}{Job}{Protocol} is not \parameter{NDMP_NATIVE} (default is \linkResourceDirectiveValue{Dir}{Job}{Protocol}{Native}), this directive refers to one or multiple \linkResourceDirective{Sd}{Device}{Name}
+or a single \linkResourceDirective{Sd}{Autochanger}{Name}.
+
+If an Autochanger should be used, it had to refer to a configured \linkResourceDirective{Sd}{Autochanger}{Name}.
+In this case, also set \linkResourceDirectiveValue{Dir}{Storage}{Auto Changer}{yes}.
+
+Otherwise it refers to one or more configured \linkResourceDirective{Sd}{Device}{Name}, see  \nameref{sec:MultipleStorageDevices}.
+
+This name is not the physical device name, but the logical device name as
+defined in the \bareosSd resource.
+
+If \resourceDirectiveValue{Dir}{Job}{Protocol}{NDMP_NATIVE}, it refers to tape devices on the NDMP \TapeAgent, see \nameref{sec:NdmpNative}.
+}
+
+
+
+\defDirective{Dir}{Storage}{Enabled}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{Heartbeat Interval}{}{}{%
+This directive is optional and if specified will cause the Director to
+set a keepalive interval (heartbeat) in seconds on each of the sockets
+it opens for the Storage resource.  This value will override any
+specified at the Director level.  It is implemented only on systems
+(Linux, ...) that provide the {\bf setsockopt} TCP\_KEEPIDLE function.
+The default value is zero, which means no change is made to the socket.
+}
+
+
+\defDirective{Dir}{Storage}{Lan Address}{}{}{%
+This directive might be useful in network setups where the \bareosDir and \bareosFd need different addresses to communicate with the \bareosSd.
+
+For details, see \nameref{LanAddress}.
+
+This directive corresponds to \linkResourceDirective{Dir}{Client}{Lan Address}.
+}
+
+\defDirective{Dir}{Storage}{Maximum Bandwidth Per Job}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{Maximum Concurrent Jobs}{}{}{%
+This directive specifies the maximum number of Jobs with the current
+Storage resource that can run concurrently.  Note, this directive limits
+only Jobs for Jobs using this Storage daemon.  Any other restrictions on
+the maximum concurrent jobs such as in the Director, Job or Client
+resources will also apply in addition to any limit specified here.
+
+If you set the Storage daemon's number of concurrent jobs greater than one,
+we recommend that you read \nameref{ConcurrentJobs} and/or
+turn data spooling on as documented in \nameref{SpoolingChapter}.
+}
+
+\defDirective{Dir}{Storage}{Maximum Concurrent Read Jobs}{}{}{%
+This directive specifies the maximum number of Jobs with the current
+Storage resource that can read concurrently.
+}
+
+\defDirective{Dir}{Storage}{Media Type}{}{}{%
+This directive specifies the Media Type to be used to store the data.
+This is an arbitrary string of characters up to 127 maximum that you
+define.  It can be anything you want.  However, it is best to make it
+descriptive of the storage media (e.g.  File, DAT, "HP DLT8000", 8mm,
+...).  In addition, it is essential that you make the {\bf Media Type}
+specification unique for each storage media type.  If you have two DDS-4
+drives that have incompatible formats, or if you have a DDS-4 drive and
+a DDS-4 autochanger, you almost certainly should specify different {\bf
+Media Types}.  During a restore, assuming a {\bf DDS-4} Media Type is
+associated with the Job, Bareos can decide to use any Storage daemon
+that supports Media Type {\bf DDS-4} and on any drive that supports it.
+
+If you are writing to disk Volumes, you must make doubly sure that each
+Device resource defined in the Storage daemon (and hence in the
+Director's conf file) has a unique media type.  Otherwise Bareos
+may assume, these Volumes can be mounted and read by any Storage daemon File device.
+
+Currently Bareos permits only a single Media Type per Storage
+Device definition. Consequently, if
+you have a drive that supports more than one Media Type, you can
+give a unique string to Volumes with different intrinsic Media
+Type (Media Type = DDS-3-4 for DDS-3 and DDS-4 types), but then
+those volumes will only be mounted on drives indicated with the
+dual type (DDS-3-4).
+
+If you want to tie Bareos to using a single Storage daemon or drive, you
+must specify a unique Media Type for that drive.  This is an important
+point that should be carefully understood.  Note, this applies equally
+to Disk Volumes.  If you define more than one disk Device resource in
+your Storage daemon's conf file, the Volumes on those two devices are in
+fact incompatible because one can not be mounted on the other device
+since they are found in different directories.  For this reason, you
+probably should use two different Media Types for your two disk Devices
+(even though you might think of them as both being File types).  You can
+find more on this subject in the \ilink{Basic Volume
+Management}{DiskChapter} chapter of this manual.
+
+The {\bf MediaType} specified in the Director's Storage resource, {\bf
+must} correspond to the {\bf Media Type} specified in the {\bf Device}
+resource of the {\bf Storage daemon} configuration file.  This directive
+is required, and it is used by the Director and the Storage daemon to
+ensure that a Volume automatically selected from the Pool corresponds to
+the physical device.  If a Storage daemon handles multiple devices (e.g.
+will write to various file Volumes on different partitions), this
+directive allows you to specify exactly which device.
+
+As mentioned above, the value specified in the Director's Storage
+resource must agree with the value specified in the Device resource in
+the {\bf Storage daemon's} configuration file.  It is also an additional
+check so that you don't try to write data for a DLT onto an 8mm device.
+\label{MediaType}
+}
+
+\defDirective{Dir}{Storage}{Name}{}{}{%
+The name of the storage resource. This  name appears on the Storage directive
+specified in the Job resource and is required.
+}
+
+\defDirective{Dir}{Storage}{Paired Storage}{}{}{%
+For NDMP backups this points to the definition of the Native Storage
+that is accesses via the NDMP protocol. For now we only support NDMP
+backups and restores to access Native Storage Daemons via the NDMP
+protocol. In the future we might allow to use Native NDMP storage which
+is not bound to a Bareos Storage Daemon.
+}
+
+\defDirective{Dir}{Storage}{Password}{}{}{%
+This is the password to be used  when establishing a connection with the
+Storage services. This  same password also must appear in the Director
+resource of the Storage  daemon's configuration file. This directive is
+required.
+
+The password is plain text.
+}
+
+\defDirective{Dir}{Storage}{Port}{}{}{%
+Where port is the port to use to  contact the storage daemon for information
+and to start jobs.  This same port number must appear in the Storage resource
+of the  Storage daemon's configuration file.
+}
+
+\defDirective{Dir}{Storage}{Protocol}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{SD Address}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{SD Password}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{SD Port}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{Sdd Port}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS Authenticate}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS CA Certificate File}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS CA Certificate Dir}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS Certificate}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS Certificate Revocation List}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS Enable}{}{}{%
+Bareos can be configured to encrypt all its network traffic.
+For details, refer to chapter \nameref{TlsDirectives}.
+}
+
+\defDirective{Dir}{Storage}{TLS Key}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{TLS Require}{}{}{%
+}
+
+\defDirective{Dir}{Storage}{Username}{}{}{%
+}

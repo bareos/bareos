@@ -1,0 +1,177 @@
+
+\chapter{Data Encryption}
+\label{DataEncryption}
+\index[general]{Data Encryption}
+\index[general]{Encryption!Data}
+
+Bareos permits file data encryption and signing within the File Daemon (or
+Client) prior to sending data to the Storage Daemon.  Upon restoration,
+file signatures are validated and any mismatches are reported.  At no time
+does the Director or the Storage Daemon have access to unencrypted file
+contents.
+
+\warning{These feature is only available, if Bareos is build against OpenSSL.}
+
+
+It is very important to specify what this implementation does NOT
+do:
+\begin{itemize}
+% \item There is one important restore problem to be aware of, namely, it's
+%   possible for the director to restore new keys or a Bareos configuration
+%   file to the client, and thus force later backups to be made with a
+%   compromised key and/or with no encryption at all.  You can avoid this by
+%   not changing the location of the keys in your Bareos File daemon
+%   configuration file, and not changing your File daemon keys.  If you do
+%   change either one, you must ensure that no restore is done that restores
+%   the old configuration or the old keys.  In general, the worst effect of
+%   this will be that you can no longer connect the File daemon.
+%       %\TODO{what does this sentence mean?}
+%       %\TODO{refer to SElinux?}
+
+\item The implementation does not encrypt file metadata such as file path
+  names, permissions, ownership and extended attributes.
+  However, Mac OS X resource forks are encrypted.
+\end{itemize}
+
+Encryption and signing are implemented using RSA private keys coupled with
+self-signed x509 public certificates. This is also sometimes known as PKI
+or Public Key Infrastructure.
+
+Each File Daemon should be given its own unique private/public key pair.
+In addition to this key pair, any number of "Master Keys" may be specified
+-- these are key pairs that may be used to decrypt any backups should the
+File Daemon key be lost.  Only the Master Key's public certificate should
+be made available to the File Daemon.  Under no circumstances should the
+Master Private Key be shared or stored on the Client machine.
+
+The Master Keys should be backed up to a secure location, such as a CD
+placed in a in a fire-proof safe or bank safety deposit box. The Master
+Keys should never be kept on the same machine as the Storage Daemon or
+Director if you are worried about an unauthorized party compromising either
+machine and accessing your encrypted backups.
+
+While less critical than the Master Keys, File Daemon Keys are also a prime
+candidate for off-site backups; burn the key pair to a CD and send the CD
+home with the owner of the machine.
+
+\warning{If you lose your encryption keys, backups will be unrecoverable.
+{\bf always} store a copy of your master keys in a secure, off-site location.}
+
+The basic algorithm used for each backup session (Job) is:
+\begin{enumerate}
+\item The File daemon generates a session key.
+\item The FD encrypts that session key via PKE for all recipients (the file
+daemon, any master keys).
+\item The FD uses that session key to perform symmetric encryption on the data.
+\end{enumerate}
+
+
+
+\section{Encryption Technical Details}
+\index[general]{Encryption!Technical Details}
+
+The implementation uses 128bit AES-CBC, with RSA encrypted symmetric
+session keys. The RSA key is user supplied.
+If you are running OpenSSL $>=$ 0.9.8, the signed file hash uses
+SHA-256, otherwise SHA-1 is used.
+
+End-user configuration settings for the algorithms are not currently
+exposed, only the algorithms listed above are used. However, the
+data written to Volume supports arbitrary symmetric, asymmetric, and
+digest algorithms for future extensibility, and the back-end
+implementation currently supports:
+
+\begin{verbatim}
+Symmetric Encryption:
+    - 128, 192, and 256-bit AES-CBC
+    - Blowfish-CBC
+
+Asymmetric Encryption (used to encrypt symmetric session keys):
+    - RSA
+
+Digest Algorithms:
+    - MD5
+    - SHA1
+    - SHA256
+    - SHA512
+\end{verbatim}
+
+The various algorithms are exposed via an entirely re-usable,
+OpenSSL-agnostic API (ie, it is possible to drop in a new encryption
+backend). The Volume format is DER-encoded ASN.1, modeled after the
+Cryptographic Message Syntax from RFC 3852. Unfortunately, using CMS
+directly was not possible, as at the time of coding a free software
+streaming DER decoder/encoder was not available.
+
+
+
+
+\section{Generating Private/Public Encryption Keys}
+\index[general]{Encryption!Generating Private/Public Encryption Keypairs}
+
+Generate a Master Key Pair with:
+
+\footnotesize
+\begin{verbatim}
+  openssl genrsa -out master.key 2048
+  openssl req -new -key master.key -x509 -out master.cert
+\end{verbatim}
+\normalsize
+
+Generate  a File Daemon Key Pair for each FD:
+
+\footnotesize
+\begin{verbatim}
+  openssl genrsa -out fd-example.key 2048
+  openssl req -new -key fd-example.key -x509 -out fd-example.cert
+  cat fd-example.key fd-example.cert >fd-example.pem
+\end{verbatim}
+\normalsize
+
+Note, there seems to be a lot of confusion around the file extensions given
+to these keys.  For example, a .pem file can contain all the following:
+private keys (RSA and DSA), public keys (RSA and DSA) and (x509) certificates.
+It is the default format for OpenSSL. It stores data Base64 encoded DER format,
+surrounded by ASCII headers, so is suitable for text mode transfers between
+systems. A .pem file may contain any number of keys either public or
+private. We use it in cases where there is both a public and a private
+key.
+
+Above we have used the .cert extension to refer to X509
+certificate encoding that contains only a single public key.
+
+
+\section{Example Data Encryption Configurations (bareos-fd.conf)}
+%\index[general]{Example!File Daemon Configuration File}
+\index[general]{Example!Data Encryption Configuration File}
+%\index[general]{Example Data Encryption Configuration}
+
+\bconfigInput{config/FdClientPki.conf}
+
+
+\section{Decrypting with a Master Key}
+\index[general]{Decrypting with a Master Key}
+\index[general]{Encryption!Decrypting with a Master Key}
+
+It is preferable to retain a secure, non-encrypted copy of the
+client's own encryption keypair. However, should you lose the
+client's keypair, recovery with the master keypair is possible.
+
+You must:
+\begin{itemize}
+\item Concatenate the master private and public key into a single
+   keypair file, ie:
+    \begin{verbatim}
+cat master.key master.cert > master.keypair
+    \end{verbatim}
+
+
+\item Set the PKI Keypair statement in your bareos configuration file:
+\begin{verbatim}
+   PKI Keypair = master.keypair
+\end{verbatim}
+
+\item Start the restore. The master keypair will be used to decrypt
+     the file data.
+
+\end{itemize}
