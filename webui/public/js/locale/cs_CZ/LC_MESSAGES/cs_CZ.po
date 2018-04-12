@@ -1,0 +1,259 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
+"PO-Revision-Date: 2017-07-08 19:51+0200\n"
+"Last-Translator: Pavel Borecki <pavel.borecki@gmail.com>\n"
+"Language-Team: \n"
+"Language: cs\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.7.1\n"
+"Plural-Forms: nplurals=3; plural=(n==1) ? 0 : (n>=2 && n<=4) ? 1 : 2;\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "Záloha"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "Přestěhováno"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "Ověřit"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "Obnovit"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "Konzolový program"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "Vnitřní systémová úloha"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr "Správce"
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr "Archiv"
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "Kopie úlohy"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "Zkopírovat úlohu"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "Stěhovací úloha"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr "Prohledat"
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr "Sjednotit"
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "Úplná"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "Rozdílová"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "Přírůstková"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "Virtuální úplná"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "Základ"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "Katalog"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "Inicializovat katalog"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "Svazek na katalog"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "Jednotka datového úložiště na katalog"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "Data"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "Nichts"
+
+#: ../../js/custom-functions.js:169
+#, fuzzy
+msgid "year(s)"
+msgstr "roky předtím"
+
+#: ../../js/custom-functions.js:172
+#, fuzzy
+msgid "month(s)"
+msgstr "měsíci předtím"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "Tag(e)"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "Využito"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "platnost skončila"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "platnost skončí za 1 den"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "platnost skončí za"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "dny"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "nikdy"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "dnes"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "dny předtím"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "měsíci předtím"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "roky předtím"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "zapnuto"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "vypnuto"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "Ano"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "Ne"
+
+#: ../../js/custom-functions.js:320 ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
+msgid "Failure"
+msgstr "Nezdar"
+
+#: ../../js/custom-functions.js:332
+msgid "Success"
+msgstr "Úspěch"
+
+#: ../../js/custom-functions.js:336
+msgid "Running"
+msgstr "Spuštěné"
+
+#: ../../js/custom-functions.js:340
+msgid "Queued"
+msgstr "Zařazeno do fronty"
+
+#: ../../js/custom-functions.js:344
+msgid "Blocked"
+msgstr "Blokováno"
+
+#: ../../js/custom-functions.js:348
+msgid "Verify found differences"
+msgstr "Ověřit nalezené rozdíly"
+
+#: ../../js/custom-functions.js:352
+msgid "Canceled"
+msgstr "Zrušeno"
+
+#: ../../js/custom-functions.js:356 ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364 ../../js/custom-functions.js:368
+#: ../../js/custom-functions.js:372 ../../js/custom-functions.js:376
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388 ../../js/custom-functions.js:392
+msgid "Waiting"
+msgstr "Čekající"
+
+#: ../../js/custom-functions.js:396
+msgid "SD despooling attributes"
+msgstr "Atributy SD vybírání z fronty"
+
+#: ../../js/custom-functions.js:400
+msgid "Doing batch insert file records"
+msgstr "Dělání dávkového vkládání souborových záznamů"
+
+#: ../../js/custom-functions.js:404
+msgid "Incomplete"
+msgstr "Neúplné"
+
+#: ../../js/custom-functions.js:408
+msgid "Committing data"
+msgstr "Aplikace dat"
+
+#: ../../js/custom-functions.js:412
+msgid "Warning"
+msgstr "Varování"
+
+#: ../../js/custom-functions.js:416
+msgid "Doing data despooling"
+msgstr "Vybírání dat z fronty"
+
+#: ../../js/custom-functions.js:420
+msgid "Queued waiting for device"
+msgstr "Čekání na zařízení zařazeno do fronty"

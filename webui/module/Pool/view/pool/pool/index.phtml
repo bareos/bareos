@@ -1,0 +1,151 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Pools');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('storage', array('action'=>'index')); ?>"><?php echo $this->translate('Devices'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('pool', array('action'=>'index')); ?>"><?php echo $this->translate('Pools'); ?></a></li>
+   <li><a href="<?php echo $this->url('media', array('action'=>'index')); ?>"><?php echo $this->translate('Volumes'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Pools"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="pools">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Volumes"); ?></th>
+   <th><?php echo $this->translate("Maximum volumes"); ?></th>
+   <th><?php echo $this->translate("Volume retention"); ?></th>
+   <th><?php echo $this->translate("Maximum volume jobs"); ?></th>
+   <th><?php echo $this->translate("Maximum volume bytes"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<script>
+
+   var pools = null;
+
+   function getPools() {
+      pools = $('#pools').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'pool_index',
+         url: '<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=all'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'name',
+         sortOrder: 'asc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/pool/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'pooltype',
+               sortable: true,
+            },
+            {
+               field: 'numvols',
+               sortable: true,
+            },
+            {
+               field: 'maxvols',
+               sortable: true,
+            },
+            {
+               field: 'volretention',
+               sortable: true,
+               formatter: function(value) {
+                  return formatRetention(value);
+               }
+            },
+            {
+               field: 'maxvoljobs',
+               sortable: true,
+            },
+            {
+               field: 'maxvolbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ]
+      });
+   }
+
+   $(document).ready(function() {
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+      getPools();
+   });
+
+</script>
+
+<?php endif; ?>

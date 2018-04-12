@@ -1,0 +1,293 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Pool details');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('storage', array('action'=>'index')); ?>"><?php echo $this->translate('Devices'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('pool', array('action'=>'index')); ?>"><?php echo $this->translate('Pools'); ?></a></li>
+   <li><a href="<?php echo $this->url('media', array('action'=>'index')); ?>"><?php echo $this->translate('Volumes'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<!-- POOL -->
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Pool"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="pool">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Volumes"); ?></th>
+   <th><?php echo $this->translate("Maximum volumes"); ?></th>
+   <th><?php echo $this->translate("Volume retention"); ?></th>
+   <th><?php echo $this->translate("Maximum volume jobs"); ?></th>
+   <th><?php echo $this->translate("Maximum volume bytes"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<!-- VOLUMES -->
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Volumes"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="vols">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Storage"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Last written"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
+   <th><?php echo $this->translate("Retention/Expiration"); ?></th>
+   <th><?php echo $this->translate("Maximum bytes"); ?></th>
+   <th><?php echo $this->translate("Current bytes"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
+      </div>
+      <div class="modal-body">
+   <p><?php echo $this->translate("Error message received from director:"); ?></p>
+   <p class="text-danger"><?php echo $this->translate("Failed to send result as json. Maybe the result message is too long?"); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<script>
+
+   var pool = null;
+   var vols = null;
+
+   function getPool() {
+      pool = $('#pool').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=details&pool='.$this->pool; ?>',
+         method: 'get',
+         dataType: 'json',
+         columns: [
+            {
+               field: 'name',
+            },
+            {
+               field: 'pooltype',
+            },
+            {
+               field: 'numvols',
+            },
+            {
+               field: 'maxvols',
+            },
+            {
+               field: 'volretention',
+               formatter: function(value) {
+                  return formatRetention(value);
+               }
+            },
+            {
+               field: 'maxvoljobs',
+            },
+            {
+               field: 'maxvolbytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ]
+      });
+   }
+
+   function getVols() {
+      vols = $('#vols').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'pool_volumes',
+         url: '<?php echo $this->url('pool', array('action' => 'getData'), null) . '?data=volumes&pool='.$this->pool; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showToggle: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'volumename',
+         sortOrder: 'asc',
+         detailView: true,
+         detailFormatter: 'detailFormatterVolume',
+         columns: [
+            {
+               field: 'volumename',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/media/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'storage',
+               sortable: true,
+            },
+            {
+               field: 'mediatype',
+               sortable: true,
+            },
+            {
+               field: 'lastwritten',
+               sortable: true,
+               formatter: function(value) {
+                  return formatLastWritten(value);
+               }
+            },
+            {
+               field: 'volstatus',
+               sortable: true,
+            },
+            {
+               field: 'retention',
+               sortable: true,
+               formatter: function(value, row, index) {
+                  return formatExpiration(row.volstatus, row.lastwritten, row.volretention);
+               }
+            },
+            {
+               field: 'maxvolbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'volbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ]
+      });
+   }
+
+   function detailFormatterVolume(index, row) {
+      var html = [];
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Label date"); ?></th>');
+      html.push('<td>' + row.labeldate + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("First written"); ?></th>');
+      html.push('<td>' + row.firstwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Last written"); ?></th>');
+      html.push('<td>' + row.lastwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume jobs"); ?></th>');
+      html.push('<td>' + row.voljobs + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Recycle"); ?></th>');
+      html.push('<td>' + formatRecycle(row.recycle) + '</td>');
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
+
+   $(document).ready(function() {
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getPool();
+      getVols();
+
+      $('#vols').on('load-error.bs.table', function(status, res) {
+         $("#modal-001").modal();
+      });
+
+   });
+
+</script>
+
+<?php endif; ?>

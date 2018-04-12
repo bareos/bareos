@@ -1,0 +1,229 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = 'Login';
+$this->headTitle($title);
+
+?>
+
+<div class="row">
+
+<!-- Left space -->
+<div class="col-md-4">
+</div>
+
+<!-- Login form -->
+<div class="col-md-4">
+
+   <div class="panel panel-default">
+   <div class="panel-body">
+   <div class="container-fluid">
+
+   <?php
+      $form->prepare();
+      echo $this->form()->openTag($form);
+   ?>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      if($this->formElementErrors($form->get('director'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-log-in" aria-hidden="true"></span></div>';
+      echo $this->formSelect($form->get('director')->setAttribute('class','form-control selectpicker'));
+      echo '</div>';
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      if($this->formElementErrors($form->get('consolename'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-user" aria-hidden="true"></span></div>';
+      echo $this->formInput($form->get('consolename')->setAttribute('class','form-control'));
+      echo '</div>';
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      if($this->formElementErrors($form->get('password'))) {
+         echo '<div class="input-group has-error">';
+      }
+      else {
+         echo '<div class="input-group">';
+      }
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-lock" aria-hidden="true"></span></div>';
+      echo $this->formInput($form->get('password')->setAttribute('class','form-control'));
+      echo '</div>';
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      echo '<div class="input-group">';
+      echo '<div class="input-group-addon"><span class="glyphicon glyphicon-flag" aria-hidden="true"></span></div>';
+      echo $this->formSelect($form->get('locale')->setAttribute('class','form-control selectpicker'));
+      echo '</div>';
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      echo $this->formInput($form->get('bareos_updates')->setAttribute('class','form-control'));
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <div class="row centered text-centered">
+   <div class="col">
+   <div class="form-group">
+
+   <?php
+      echo $this->formSubmit($form->get('submit')->setAttribute('class','btn btn-primary'));
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+   <?php
+      echo $this->form()->closeTag();
+   ?>
+
+   </div>
+   </div>
+   </div>
+
+</div>
+
+<!-- Right space -->
+<div class="col-md-4">
+</div>
+
+</diV>
+
+<div class="row">
+
+<!-- Left space -->
+<div class="col-md-3">
+</div>
+
+<!-- ALERTS -->
+   <?php
+      if(!empty($this->err_msg)) {
+         echo '<div class="col-md-6 alert alert-danger" role="alert">';
+         echo $this->err_msg;
+         echo '</div>';
+      }
+   ?>
+
+<!-- Right space -->
+<div class="col-md-3">
+</div>
+
+</div>
+
+<script>
+
+/*
+
+get latest versions information via ajax call
+
+*/
+
+function getVersions() {
+
+   var update_url = window.location.protocol + "//download.bareos.com/release-info/bareos-release-info.js?callback=jsonCallback";
+
+   var v = $.ajax({
+      method: "GET",
+      url: update_url,
+      jsonpCallback: 'jsonCallback',
+      contentType: 'application/javascript',
+      dataType: 'jsonp',
+      timeout: 15000,
+      error: function(jqXHR, textStatus, errorThrown) {
+         return false;
+      },
+      success: function(result) {
+         return result;
+      },
+      complete: function(result) {
+         return result;
+      }
+   });
+
+   return v;
+
+}
+
+$(document).ready(function() {
+
+   var versions = getVersions();
+
+   $.when(versions).always(function(v) {
+      document.getElementById("bareos_updates").value = JSON.stringify(v);
+   });
+
+});
+
+</script>

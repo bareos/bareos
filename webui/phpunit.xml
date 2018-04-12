@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<phpunit
+   bootstrap="tests/phpunit/Bootstrap.php"
+   convertErrorsToExceptions="true"
+   convertNoticesToExceptions="true"
+   convertWarningsToExceptions="true"
+   colors="true">
+
+<testsuites>
+   <testsuite name="bareos-webui">
+   </testsuite>
+</testsuites>
+
+</phpunit>
+

@@ -1,0 +1,90 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = $this->translate('Director');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<div class="row">
+<div class="col-md-8">
+
+<div class="text-right"><a class="btn btn-primary" onclick="refreshMessages();" /><span class="glyphicon glyphicon-refresh">&nbsp;</span><?php echo $this->translate("Refresh"); ?></a></div>
+
+<br />
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+   <h3 class="panel-title"><?php echo $this->translate("Director messages"); ?></h3>
+</div>
+
+<div class="panel-body">
+   <pre class="dird-messages" style="height: 500px; font-size: 8pt;">
+   </pre>
+</div>
+
+</div>
+</div>
+</div>
+
+<script>
+
+function getDirectorMessages() {
+   $.ajax({
+      url : '<?php echo $this->url('director', array('action' => 'getData'), null) . '?data=messages&limit=500&offset=null&reverse=true'; ?>',
+      dataType: 'json',
+      timeout: 10000,
+      success: function(data) {
+         for(var i in data) {
+               var msg = $('<div class="msg" id="'+data[i].logid+'"><strong>'+data[i].time+'</strong>&nbsp;'+data[i].logtext.replace(/(?:\r\n|\r|\n)/g, '<br />')+'</div>');
+               msg.appendTo('.dird-messages');
+         }
+      }
+   });
+}
+
+function refreshMessages() {
+   $('.msg').remove();
+   getDirectorMessages();
+}
+
+$(document).ready(function() {
+   getDirectorMessages();
+});
+
+</script>
+
+<?php endif; ?>

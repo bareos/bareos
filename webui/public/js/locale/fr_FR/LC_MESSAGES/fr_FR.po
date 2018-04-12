@@ -1,0 +1,259 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# Bruno Friedmann <bruno@ioda-net.ch>, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
+"PO-Revision-Date: 2016-06-22 14:31+0200\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: de\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.5\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "Sauvegarde"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "Migré"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "Vérification"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "Restauration"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "Program console"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "job système interne"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr ""
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr ""
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "Copie d'un job"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "Job de copie"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "Job de migration"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr ""
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr ""
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "Complet"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "Différentiel"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "Incrémentiel"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "Virtuel complet"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "Base"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "Catalogue"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "Initialisation catalogue"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "Volume et catalogue"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "Disque et catalogue"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "Données"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "Aucun"
+
+#: ../../js/custom-functions.js:169
+#, fuzzy
+msgid "year(s)"
+msgstr "années en arrières"
+
+#: ../../js/custom-functions.js:172
+#, fuzzy
+msgid "month(s)"
+msgstr "mois en arrière"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "jour(s)"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "Utilisé"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "expiré"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "expire dans 1 jour"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "expire dans"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "jours"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "jamais"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "aujourd'hui"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "jour(s) en arrière"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "mois en arrière"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "années en arrières"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "actif"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "inactif"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "Oui"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "Non"
+
+#: ../../js/custom-functions.js:320 ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
+msgid "Failure"
+msgstr "Erreur"
+
+#: ../../js/custom-functions.js:332
+msgid "Success"
+msgstr "Succès"
+
+#: ../../js/custom-functions.js:336
+msgid "Running"
+msgstr "En cours"
+
+#: ../../js/custom-functions.js:340
+msgid "Queued"
+msgstr "En file d'attente"
+
+#: ../../js/custom-functions.js:344
+msgid "Blocked"
+msgstr "Bloqué"
+
+#: ../../js/custom-functions.js:348
+msgid "Verify found differences"
+msgstr "La vérification a trouvé des différences"
+
+#: ../../js/custom-functions.js:352
+msgid "Canceled"
+msgstr "Annulé"
+
+#: ../../js/custom-functions.js:356 ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364 ../../js/custom-functions.js:368
+#: ../../js/custom-functions.js:372 ../../js/custom-functions.js:376
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388 ../../js/custom-functions.js:392
+msgid "Waiting"
+msgstr "En attente"
+
+#: ../../js/custom-functions.js:396
+msgid "SD despooling attributes"
+msgstr "SD envoi des attributs"
+
+#: ../../js/custom-functions.js:400
+msgid "Doing batch insert file records"
+msgstr "Insertion batch des enregistrements de fichiers"
+
+#: ../../js/custom-functions.js:404
+msgid "Incomplete"
+msgstr "Incomplet"
+
+#: ../../js/custom-functions.js:408
+msgid "Committing data"
+msgstr "Insertion des données"
+
+#: ../../js/custom-functions.js:412
+msgid "Warning"
+msgstr "Attention"
+
+#: ../../js/custom-functions.js:416
+msgid "Doing data despooling"
+msgstr "Déspoulage des données en cours"
+
+#: ../../js/custom-functions.js:420
+msgid "Queued waiting for device"
+msgstr "En attente de périphérique"

@@ -1,0 +1,259 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: bareos-webui\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
+"PO-Revision-Date: 2017-01-22 20:28+0100\n"
+"Last-Translator: Sam Verstraete <samverstraete@gmail.com>\n"
+"Language-Team: \n"
+"Language: nl_BE\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "Reservekopie"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "Gemigreerd"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "Verifieer"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "Herstel"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "Console programma"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "Interne systeemtaak"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr "Beheer"
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr "Archief"
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "Kopie van een taak"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "Kopieertaak"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "Migratietaak"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr "Zoeken"
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr "Consolideren"
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "Volledig"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "Differentieel"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "Incrementeel"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "VirtueelVolledig"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "Basis"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "Cataloog"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "IniteerCatalog"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "VolumeNaarCataloog"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "SchijfNaarCataloog"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "Data"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "Niets"
+
+#: ../../js/custom-functions.js:169
+#, fuzzy
+msgid "year(s)"
+msgstr "jaar geleden"
+
+#: ../../js/custom-functions.js:172
+#, fuzzy
+msgid "month(s)"
+msgstr "maand(en) geleden"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "dag(en)"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "Gebruikt"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "verlopen"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "verloopt binnen 1 dag"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "verloopt binnen"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "dagen"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "nooit"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "vandaag"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "dag(en) geleden"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "maand(en) geleden"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "jaar geleden"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "ingeschakeld"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "uitgeschakeld"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "Ja"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "Nee"
+
+#: ../../js/custom-functions.js:320 ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
+msgid "Failure"
+msgstr "Mislukt"
+
+#: ../../js/custom-functions.js:332
+msgid "Success"
+msgstr "Geslaagd"
+
+#: ../../js/custom-functions.js:336
+msgid "Running"
+msgstr "Actief"
+
+#: ../../js/custom-functions.js:340
+msgid "Queued"
+msgstr "In wachtrij"
+
+#: ../../js/custom-functions.js:344
+msgid "Blocked"
+msgstr "Geblokkeerd"
+
+#: ../../js/custom-functions.js:348
+msgid "Verify found differences"
+msgstr "Gevonden verschillen verifiëren"
+
+#: ../../js/custom-functions.js:352
+msgid "Canceled"
+msgstr "Geannuleerd"
+
+#: ../../js/custom-functions.js:356 ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364 ../../js/custom-functions.js:368
+#: ../../js/custom-functions.js:372 ../../js/custom-functions.js:376
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388 ../../js/custom-functions.js:392
+msgid "Waiting"
+msgstr "Wachtend"
+
+#: ../../js/custom-functions.js:396
+msgid "SD despooling attributes"
+msgstr "SD despooling attributen"
+
+#: ../../js/custom-functions.js:400
+msgid "Doing batch insert file records"
+msgstr "Reeks bestandsrecords invoegen"
+
+#: ../../js/custom-functions.js:404
+msgid "Incomplete"
+msgstr "Onvolledig"
+
+#: ../../js/custom-functions.js:408
+msgid "Committing data"
+msgstr "Data uitschrijven"
+
+#: ../../js/custom-functions.js:412
+msgid "Warning"
+msgstr "Waarschuwing"
+
+#: ../../js/custom-functions.js:416
+msgid "Doing data despooling"
+msgstr "Data despoolen"
+
+#: ../../js/custom-functions.js:420
+msgid "Queued waiting for device"
+msgstr "In wachtrij wachtend op apparaat"

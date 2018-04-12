@@ -1,0 +1,75 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+?>
+
+<div class="panel panel-default">
+
+   <div class="panel-heading">
+      <h3 class="panel-title"><?php echo $this->translate('Most recent job status per job name'); ?>
+         <a href="#" onClick="refreshPartials();return false;" title="Refresh"><span class="glyphicon glyphicon-refresh pull-right" aria-hidden="true"></span></a>
+      </h3>
+   </div>
+
+   <div class="panel-body">
+      <table class="table table-no-bordered table-hover" id="jobs-last-status">
+         <thead class="bg-primary">
+            <th><?php echo $this->translate("Job name"); ?></th>
+            <!-- <th data-cell-style="cellStyle"><?php echo $this->translate("Status"); ?></th> -->
+            <th><?php echo $this->translate("Status"); ?></th>
+            <th><?php echo $this->translate("Job ID"); ?></th>
+            <th><?php echo $this->translate("Client"); ?></th>
+            <th><?php echo $this->translate("Level"); ?></th>
+            <th><?php echo $this->translate("Start"); ?></th>
+            <th><?php echo $this->translate("End"); ?></th>
+            <th><?php echo $this->translate("Bytes"); ?></th>
+         </thead>
+      </table>
+   </div>
+
+</div>
+
+<script>
+
+/*
+function cellStyle(value, row, index) {
+   var classes = ['active', 'success', 'info', 'warning', 'danger'];
+   switch(value) {
+      case "T":
+         return { classes: classes[1] };
+      case "f":
+      case "E":
+         return { classes: classes[4] };
+      case "W":
+         return { classes: classes[3] };
+      case "R":
+         return { classes: classes[2] };
+      default:
+         return {};
+   }
+}
+*/
+
+</script>

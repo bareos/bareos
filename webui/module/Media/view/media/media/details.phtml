@@ -1,0 +1,410 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Volume details');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('storage', array('action'=>'index')); ?>"><?php echo $this->translate('Devices'); ?></a></li>
+   <li><a href="<?php echo $this->url('pool', array('action'=>'index')); ?>"><?php echo $this->translate('Pools'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('media', array('action'=>'index')); ?>"><?php echo $this->translate('Volumes'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title">Volume <?php echo $this->volume; ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="vol">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Storage"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Last written"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
+   <th><?php echo $this->translate("Retention/Expiration"); ?></th>
+   <th><?php echo $this->translate("Maximum bytes"); ?></div></th>
+   <th><?php echo $this->translate("Current bytes"); ?></div></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Jobs on volume"); ?> <?php echo $this->volume; ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="voljobs">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Job ID"); ?></th>
+   <th><?php echo $this->translate("Job name"); ?></th>
+   <th><?php echo $this->translate("Client"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Level"); ?></th>
+   <th><?php echo $this->translate("Files"); ?></th>
+   <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Starttime"); ?></th>
+   <th><?php echo $this->translate("Endtime"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
+      </div>
+      <div class="modal-body">
+   <p><?php echo $this->translate("Error message received from director:"); ?></p>
+   <p class="text-danger"><?php echo $this->translate("Failed to send result as json. Maybe the result message is too long?"); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<script>
+
+   var vol = null;
+   var voljobs = null;
+
+   function getVol() {
+      vol = $('#vol').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=details&volume=' . $this->volume; ?>',
+         method: 'get',
+         dataType: 'json',
+         detailView: true,
+         detailFormatter: 'detailFormatterVol',
+         columns: [
+            {
+               field: 'volumename',
+            },
+            {
+               field: 'storage',
+            },
+            {
+               field: 'mediatype',
+            },
+            {
+               field: 'lastwritten',
+               formatter: function(value) {
+                  return formatLastWritten(value);
+               }
+            },
+            {
+               field: 'volstatus',
+            },
+            {
+               field: 'retention',
+               formatter: function(value, row, index) {
+                  return formatExpiration(row.volstatus, row.lastwritten, row.volretention);
+               }
+            },
+            {
+               field: 'maxvolbytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'volbytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ]
+      }); 
+   }
+
+   function getVolJobs() {
+      voljobs = $('#voljobs').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'vol_jobs',
+         url: '<?php echo $this->url('media', array('action' => 'getData'), null) . '?data=jobs&volume=' . $this->volume; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showToggle: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'jobid',
+         sortOrder: 'desc',
+         columns: [
+            {
+               field: 'jobid',
+               sortable: true,
+            },
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field:  'client',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'type',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobType(value);
+               }
+            },
+            {
+               field: 'level',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobLevel(value);
+               }
+            },
+            {
+               field: 'jobfiles',
+               sortable: true,
+            },
+            {
+               field: 'jobbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'starttime',
+               sortable: true,
+            },
+            {
+               field: 'endtime',
+               sortable: true,
+            }
+         ]
+      });
+   }
+
+   function detailFormatterVol(index, row) {
+      var html = [];
+      var r;
+      if(row.recycle == 1) {
+         r = '<span class="label label-success">Yes</span>';
+      }
+      else {
+         r = '<span class="label label-danger">No</span>';
+      }
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Label date"); ?></th>');
+      html.push('<td>' + row.labeldate + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("First written"); ?></th>');
+      html.push('<td>' + row.firstwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Last written"); ?></th>');
+      html.push('<td>' + row.lastwritten + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume jobs"); ?></th>');
+      html.push('<td>' + row.voljobs + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Recycle"); ?></th>');
+      html.push('<td>' + r + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume writes"); ?></th>');                                                                 
+      html.push('<td>' + row.volwrites + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Slot"); ?></th>');                                                                 
+      html.push('<td>' + row.slot + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Media Id"); ?></th>');                                                                 
+      html.push('<td>' + row.mediaid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume Blocks"); ?></th>');                                                                 
+      html.push('<td>' + row.volblocks + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume use duration"); ?></th>');                                                                 
+      html.push('<td>' + row.voluseduration + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume Pool Id"); ?></th>');                                                                 
+      html.push('<td>' + row.poolid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("In changer"); ?></th>');                                                                 
+      html.push('<td>' + row.inchanger + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume Files"); ?></th>');                                                                 
+      html.push('<td>' + row.volfiles + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Max. volume jobs"); ?></th>');                                                                 
+      html.push('<td>' + row.maxvoljobs + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume mounts"); ?></th>');                                                                 
+      html.push('<td>' + row.volmounts + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume capacity bytes"); ?></th>');                                                                 
+      html.push('<td>' + row.volcapacitybytes + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Volume errors"); ?></th>');                                                                 
+      html.push('<td>' + row.volerrors + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Enabled"); ?></th>');                                                                 
+      html.push('<td>' + row.enabled + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Max. volume files"); ?></th>');                                                                 
+      html.push('<td>' + row.maxvolfiles + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Endfile"); ?></th>');                                                                 
+      html.push('<td>' + row.endfile + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Endblock"); ?></th>');
+      html.push('<td>' + row.endblock + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Labeltype"); ?></th>');                                                                 
+      html.push('<td>' + row.labeltype + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Device Id"); ?></th>');                                                                 
+      html.push('<td>' + row.deviceid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Location Id"); ?></th>');                                                                 
+      html.push('<td>' + row.locationid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Recycle count"); ?></th>');                                                                 
+      html.push('<td>' + row.recyclecount + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Initial write"); ?></th>');                                                                 
+      html.push('<td>' + row.initialwrite + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Scratch Pool Id"); ?></th>');                                                                 
+      html.push('<td>' + row.scratchpoolid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Recycle Pool Id"); ?></th>');                                                                 
+      html.push('<td>' + row.recyclepoolid + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Comment"); ?></th>');                                                                 
+      html.push('<td>' + row.comment + '</td>');                                                                                                  
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
+
+   $(document).ready(function() {
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getVol();
+      getVolJobs();
+
+      $('#voljobs').on('load-error.bs.table', function(status, res) {
+         $("#modal-001").modal();
+      });
+
+   });
+
+</script>
+
+<?php endif; ?>

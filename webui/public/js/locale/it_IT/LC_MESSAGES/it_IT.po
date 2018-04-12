@@ -1,0 +1,259 @@
+# Bareos WebUI, Italian Localization
+# Copyright (C) 2016
+# This file is distributed under the same license as the Bareos WebUI package.
+# Alessandro Rigopoulos, 2016.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Bareos WebUI\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
+"PO-Revision-Date: 2016-11-09 19:01+0100\n"
+"Last-Translator: Alessandro Rigopoulos\n"
+"Language-Team: \n"
+"Language: it_IT\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "Backup"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "Migrato"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "Verifica"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "Ripristino"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "Programma da Terminale"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "Job interno di sistema"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr "Admin"
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr "Archivio"
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "Copia di un job"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "Copia job"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "Job di Migrazione"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr "Scansione"
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr ""
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "Totale"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "Differenziale"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "Incrementale"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "Virtuale Totale"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "Base"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "Catalogo"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "Inizializza Catalogo"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "Volume con Catalogo"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "Disco con Catalogo"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "Dati"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "Nessuno"
+
+#: ../../js/custom-functions.js:169
+#, fuzzy
+msgid "year(s)"
+msgstr "anno(i) fa"
+
+#: ../../js/custom-functions.js:172
+#, fuzzy
+msgid "month(s)"
+msgstr "mese(i) fa"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "giorno(i)"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "Utilizzato"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "scaduto"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "scade tra 1 giorno"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "scade tra"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "giorni"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "mai"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "oggi"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "giorno(i) fa"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "mese(i) fa"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "anno(i) fa"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "abilitato"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "disabilitato"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "Sì"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "No"
+
+#: ../../js/custom-functions.js:320 ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
+msgid "Failure"
+msgstr "Fallito"
+
+#: ../../js/custom-functions.js:332
+msgid "Success"
+msgstr "Successo"
+
+#: ../../js/custom-functions.js:336
+msgid "Running"
+msgstr "In esecuzione"
+
+#: ../../js/custom-functions.js:340
+msgid "Queued"
+msgstr "In coda"
+
+#: ../../js/custom-functions.js:344
+msgid "Blocked"
+msgstr "Bloccato"
+
+#: ../../js/custom-functions.js:348
+msgid "Verify found differences"
+msgstr "La Verifica ha rilevato differenze"
+
+#: ../../js/custom-functions.js:352
+msgid "Canceled"
+msgstr "Annullato"
+
+#: ../../js/custom-functions.js:356 ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364 ../../js/custom-functions.js:368
+#: ../../js/custom-functions.js:372 ../../js/custom-functions.js:376
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388 ../../js/custom-functions.js:392
+msgid "Waiting"
+msgstr "In attesa"
+
+#: ../../js/custom-functions.js:396
+msgid "SD despooling attributes"
+msgstr "SD invio attributi"
+
+#: ../../js/custom-functions.js:400
+msgid "Doing batch insert file records"
+msgstr "Inserimento batch dei record dei file"
+
+#: ../../js/custom-functions.js:404
+msgid "Incomplete"
+msgstr "Incompleto"
+
+#: ../../js/custom-functions.js:408
+msgid "Committing data"
+msgstr "Inserimento dati"
+
+#: ../../js/custom-functions.js:412
+msgid "Warning"
+msgstr "Avviso"
+
+#: ../../js/custom-functions.js:416
+msgid "Doing data despooling"
+msgstr "Despooling dati in corso"
+
+#: ../../js/custom-functions.js:420
+msgid "Queued waiting for device"
+msgstr "In coda in attesa di dispositivo"

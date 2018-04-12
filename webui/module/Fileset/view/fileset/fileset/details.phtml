@@ -1,0 +1,110 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Fileset details');
+$this->headTitle($title);
+
+?>
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Fileset"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="filesetdetails">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Id"); ?></th>
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("MD5 checksum"); ?></th>
+   <th><?php echo $this->translate("Creation time"); ?></th>
+</thead>
+
+</table>
+
+<br />
+
+<pre>
+<code>
+<?php echo $this->escapeHtml($this->fileset[0]['filesettext']); ?>
+</code>
+</pre>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<script>
+
+   var filesetdetails = null;
+
+   function getFilesetDetails() {
+      jobtable = $('#filesetdetails').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('fileset', array('action' => 'getData'), null) . '?data=details&fileset='.$this->fileset[0]['filesetid']; ?>',
+         method: 'get',
+         dataType: 'json',
+         columns: [
+            {
+               field: 'filesetid',
+            },
+            {
+               field: 'fileset',
+            },
+            {
+               field: 'md5',
+            },
+            {
+               field: 'createtime',
+            }
+         ]
+      });
+   }
+
+   $(document).ready(function() {
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getFilesetDetails();
+
+   });
+
+</script>

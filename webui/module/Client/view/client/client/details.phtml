@@ -1,0 +1,235 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Client details');
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('client', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+</ul>
+
+<br />
+
+<div class="row">
+
+<div class="col-md-12">
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Client"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="clientdetails">
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Name"); ?></th>
+   <th><?php echo $this->translate("Version"); ?></th>
+   <th><?php echo $this->translate("Autoprune"); ?></th>
+   <th><?php echo $this->translate("Fileretention"); ?></th>
+   <th><?php echo $this->translate("Jobretention"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
+</thead>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<div class="row">
+<div class="col-md-12">
+
+<div class="panel panel-default">
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Last successful backups"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="clientbackups">
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Job ID"); ?></th>
+   <th><?php echo $this->translate("Job name"); ?></th>
+   <th><?php echo $this->translate("Timestamp"); ?></th>
+   <th><?php echo $this->translate("Fileset"); ?></th>
+   <th><?php echo $this->translate("Level"); ?></th>
+   <th><?php echo $this->translate("Files"); ?></th>
+   <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
+</thead>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<script>
+
+   var clientdetails = null;
+   var clientbackups = null;
+
+   function getClientDetails() {
+      clientdetails = $('#clientdetails').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'dashboard_table_jobs_last_status',
+         url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=details&client='.$this->client; ?>',
+         method: 'get',
+         dataType: 'json',
+         columns: [
+            {
+               field: 'name',
+            },
+            {
+               field: 'uname',
+            },
+            {
+               field: 'autoprune',
+               formatter: function(value) {
+                  return formatAutoprune(value);
+               }
+            },
+            {
+               field: 'fileretention',
+               formatter: function(value) {
+                  return formatRetention(value);
+               }
+            },
+            {
+               field: 'jobretention',
+               formatter: function(value) {
+                  return formatRetention(value);
+               }
+            },
+            {
+               field: 'action',
+               formatter: function(value, row, index) {
+                  return '<a href="<?php echo $this->basePath() . '/restore/index?type=client&client='; ?>'+row.name+'"><button type="button" class="btn btn-default btn-xs" id="btn-1" data-toggle="tooltip" data-placement="top" title="<?php echo $this->translate("Restore"); ?>"><span class="glyphicon glyphicon-import"></span></button></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/client/status?client='+row.name+'" title="<?php echo $this->translate("Status"); ?>" id="btn-1"><span class="glyphicon glyphicon-zoom-in"></span></a>';
+               }
+            }
+         ]
+      });
+   }
+
+   function getClientBackups() {
+      clientbackups = $('#clientbackups').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'client_clientbackups',
+         url: '<?php echo $this->url('client', array('action' => 'getData'), null) . '?data=backups&client='.$this->client; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'jobid',
+         sortOrder: 'desc',
+         columns: [
+            {
+               field: 'jobid',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'starttime',
+               sortable: true,
+            },
+            {
+               field: 'fileset',
+               sortable: true,
+               formatter: function(value, row, index) {
+                  return '<a href="<?php echo $this->basePath(). '/fileset/details/'; ?>'+row.filesetid+'">'+row.fileset+'</a>';
+               }
+            },
+            {
+               field: 'level',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobLevel(value);
+               }
+            },
+            {
+               field: 'jobfiles',
+               sortable: true,
+            },
+            {
+               field: 'jobbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'jobstatus',
+               sortable: false,
+               formatter: function(value) {
+                  return formatJobStatus(value);
+               }
+            },
+            {
+               field: 'action',
+               formatter: function(value, row, index) {
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>'; 
+               }
+            }
+         ]
+      });
+   }
+
+   $(document).ready(function() {
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+      getClientDetails();
+      getClientBackups();
+   });
+
+</script>

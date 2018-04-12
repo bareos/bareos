@@ -1,0 +1,25 @@
+Source: bareos-webui
+Section: web
+Priority: extra
+Maintainer: Bareos Packager <packager@bareos.com>
+Build-Depends: debhelper (>= 7.0.50~),
+  apache2-dev | apache2-prefork-dev, apache2,
+  autoconf,
+  automake
+Standards-Version: 3.9.1
+Homepage: https://github.com/bareos/bareos-webui
+Vcs-Git: git://github.com/bareos/bareos-webui.git
+Vcs-Browser: https://github.com/bareos/bareos-webui.git
+
+Package: bareos-webui
+Architecture: all
+Depends: apache2 | httpd, libapache2-mod-php | libapache2-mod-php5 | libapache2-mod-php7 | php | php5 | php7 | php-cgi,
+   php-common | php5-common | php7-common,
+   php-date | php5-date | php7-date,
+   php-intl | php5-intl | php7-intl,
+   php-json | php5-json | php7-json,
+   php-curl | php5-curl | php7-curl,
+   php-gettext | php5-gettext | php7-gettext,
+   ${misc:Depends}
+Description: Backup Archiving Recovery Open Sourced - webui
+ This package contains the webui.

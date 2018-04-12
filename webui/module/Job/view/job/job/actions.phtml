@@ -1,0 +1,166 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = 'Jobs';
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<div class="row">
+
+<div class="col-md-6">
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate("Job Actions"); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="jobactions">
+   <thead class="bg-primary">
+      <th><?php echo $this->translate("Job name"); ?></th>
+      <th><?php echo $this->translate("Status"); ?></th>
+      <th><?php echo $this->translate("Actions"); ?></th>
+   </thead>
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<script>
+
+   var jobactions = null;
+
+   function getJobActions() {
+      jobactions = $('#jobactions').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'job_jobactions',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=runjobs'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         sortName: 'name',
+         sortOrder: 'asc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'enabled',
+               sortable: true,
+               formatter: function(value) {
+                  if(value) {
+                     return '<span class="label label-success"><?php echo $this->translate("Enabled"); ?></span>';
+                  }
+                  else {
+                     return '<span class="label label-danger"><?php echo $this->translate("Disabled"); ?></span>';
+                  }
+               }
+            },
+            {
+               field: 'actions',
+               formatter: function(value, row, index) {
+                  if(row.enabled) {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+row.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=disable&job='+row.name+'" title="<?php echo $this->translate("Disable"); ?>" id="btn-1"><span class="glyphicon glyphicon-remove"></span></a>';
+                  }
+                  else {
+                     return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/actions?action=queue&job='; ?>'+row.name+'" title="<?php echo $this->translate("Run"); ?>" id="btn-1"><span class="glyphicon glyphicon-play"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/job/actions?action=enable&job='+row.name+'" title="<?php echo $this->translate("Enable"); ?>" id="btn-1"><span class="glyphicon glyphicon-ok"></span></a>';
+                  }
+               }
+            }
+         ]
+      });
+   }
+
+   $(document).ready(function() {
+
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+      if(result.length > 0) {
+         $("#modal-001").modal();
+      }
+
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      getJobActions();
+
+   });
+
+</script>
+
+<?php endif; ?>

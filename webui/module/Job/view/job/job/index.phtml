@@ -1,0 +1,368 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = 'Jobs';
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li class="active"><a href="<?php echo $this->url('job', array('action'=>'index')); ?>"><?php echo $this->translate('Show'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'actions')); ?>"><?php echo $this->translate('Actions'); ?></a></li>
+   <li><a href="<?php echo $this->url('job', array('action'=>'run')); ?>"><?php echo $this->translate('Run'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<div class="row">
+
+<div class="col-md-2">
+   <?php echo $this->formRow($form->get('jobname')); ?>
+</div>
+
+<div class="col-md-2">
+   <?php echo $this->formRow($form->get('period')); ?>
+</div>
+
+<div class="col-md-2">
+   <?php echo $this->formRow($form->get('status')); ?>
+</div>
+
+</div>
+
+<br />
+
+<div class="row">
+
+<div class="col-md-12">
+
+<div class="panel panel-default">
+
+<div class="panel-heading">
+<h3 class="panel-title"><?php echo $this->translate('Job list'); ?></h3>
+</div>
+
+<div class="panel-body">
+
+<table class="table table-no-bordered table-hover" id="jobtable">
+
+<thead class="bg-primary">
+   <th><?php echo $this->translate("Job ID"); ?></th>
+   <th><?php echo $this->translate("Job name"); ?></th>
+   <th><?php echo $this->translate("Client"); ?></th>
+   <th><?php echo $this->translate("Type"); ?></th>
+   <th><?php echo $this->translate("Level"); ?></th>
+   <th><?php echo $this->translate("Files"); ?></th>
+   <th><?php echo $this->translate("Bytes"); ?></th>
+   <th><?php echo $this->translate("Errors"); ?></th>
+   <th><?php echo $this->translate("Status"); ?></th>
+   <th><?php echo $this->translate("Actions"); ?></th>
+</thead>
+
+</table>
+
+</div>
+</div>
+</div>
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<!-- modal-001 start -->
+<div id="modal-001" class="modal fade modal-001" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+   <div class="modal-header">
+   <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+   <h4 class="modal-title" id="myModalLabel"><?php echo $this->translate("Failed to retrieve data from Bareos director"); ?></h4>
+      </div>
+      <div class="modal-body">
+   <p><?php echo $this->translate("Please try to reduce the amount of data to display, e.g. reduce time period."); ?></p>
+   <p><?php echo $this->translate("Error message received from director:"); ?></p>
+   <p class="text-danger"><?php echo $this->translate("Failed to send result as json. Maybe the result message is too long?"); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-001 end -->
+
+<!-- modal-002 start -->
+<div id="modal-002" class="modal fade modal-002" tabindex="-1" role="dialog" aria-labelledby="mySmallModalLabel">
+  <div class="modal-dialog modal-md">
+    <div class="modal-content">
+      <div class="modal-header">
+         <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+         </button>
+         <h4 class="modal-title" id="myModalLabel">Director message</h4>
+      </div>
+      <div class="modal-body">
+         <p><?php echo str_replace(array("\n","\r"), "<br />", $this->result); ?></p>
+      </div>
+      <div class="modal-footer">
+         <button type="button" class="btn btn-default" data-dismiss="modal"><?php echo $this->translate("Close"); ?></button>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- modal-002 end -->
+
+<script>
+
+   var jobtable = null;
+
+   function detailFormatter(index, row) {
+      var html = [];
+      html.push('<div class="container-fluid">');
+      html.push('<table class="table table-bordered">');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Fileset"); ?></th>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/fileset/details/'; ?>' + row.filesetid + '">' + row.fileset +'</a></td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Pool"); ?></th>');
+      html.push('<td><a href="<?php echo $this->basePath() . '/pool/details/'; ?>' + row.poolname + '">' + row.poolname + '</a></td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Scheduled"); ?></th>');
+      html.push('<td>' + row.schedtime + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("Start"); ?></th>');
+      html.push('<td>' + row.starttime + '</td>');
+      html.push('</tr>');
+      html.push('<tr>');
+      html.push('<th><?php echo $this->translate("End"); ?></th>');
+      html.push('<td>' + row.endtime + '</td>');
+      html.push('</tr>');
+      html.push('</table>');
+      html.push('</div>');
+      return html.join('');
+   }
+
+   function getJobs() {
+      jobtable = $('#jobtable').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'dashboard_table_jobs_last_status',
+         url: '<?php echo $this->url('job', array('action' => 'getData'), null) . '?data=jobs&jobname='.$this->jobname.'&status='.$this->status.'&period='.$this->period; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         showRefresh: true,
+         sortName: 'jobid',
+         sortOrder: 'desc',
+         detailView: true,
+         detailFormatter: 'detailFormatter',
+         columns: [
+            {
+               field: 'jobid',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'client',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'type',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobType(value);
+               }
+            },
+            {
+               field: 'level',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobLevel(value);
+               }
+            },
+            {
+               field: 'jobfiles',
+               sortable: true,
+            },
+            {
+               field: 'jobbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+            {
+               field: 'joberrors',
+               sortable: true,
+            },
+            {
+               field: 'jobstatus',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobStatus(value);
+               }
+            },
+            {
+               field: 'action',
+               formatter: function(value, row, index) {
+                  switch(row.jobstatus) {
+                     case 'T':
+                     case 'W':
+                        switch(row.type) {
+                           case 'B':
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-download-alt"></span></a>';
+                           case 'C':
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Restore"); ?>" id="btn-1"><span class="glyphicon glyphicon-download-alt"></span></a>';
+                     }
+                     case 'E':
+                     case 'e':
+                     case 'f':
+                     case 'A':
+                        switch(row.type) {
+                           case 'B':
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/index?action=rerun&jobid='; ?>'+row.jobid+'" title="<?php echo $this->translate("Rerun"); ?>" id="btn-1"><span class="glyphicon glyphicon-repeat"></span></a>';
+                     }
+                     case 'F':
+                     case 'S':
+                     case 'm':
+                     case 'M':
+                     case 's':
+                     case 'j':
+                     case 'c':
+                     case 'd':
+                     case 't':
+                     case 'p':
+                     case 'q':
+                     case 'C':
+                     case 'R':
+                     case 'l':
+                        switch(row.type) {
+                           case 'R':
+                              switch(row.jobstatus) {
+                                 case 'R':
+                                 case 'l':
+                                    return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+row.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                                 default:
+                                    return '';
+                              }
+                           case 'B':
+                           case 'C':
+                              return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath() . '/job/cancel/'; ?>'+row.jobid+'" title="<?php echo $this->translate("Cancel"); ?>" id="btn-1"><span class="glyphicon glyphicon-trash"></span></a>';
+                           default:
+                              return '';
+                        }
+                     default:
+                        return '';
+                  }
+               }
+            }
+         ]
+      });
+   }
+
+   function updateQueryParams(k, v) {
+      var p = [];
+      var params = [];
+
+      p['jobname'] = '<?php echo $this->jobname; ?>';
+      p['status'] = '<?php echo $this->status; ?>';
+      p['period'] = '<?php echo $this->period; ?>';
+
+      if(k == 'status' && v == 'running') {
+         p['period'] = 'all';
+      }
+      else if(k == 'status' && v == 'waiting') {
+         p['period'] = 'all';
+      }
+
+      p[k] = v;
+
+      for(key in p) {
+          params.push(key + "=" + p[key]);
+      }
+
+      return params.join('&');
+   }
+
+   $(document).ready(function() {
+      setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+      setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+      var result = '<?php echo str_replace(array("\n","\r"), "", $this->result); ?>';
+
+      if(result.length > 0) {
+         $("#modal-002").modal();
+      }
+
+      getJobs();
+
+      $('#jobname').change(function(event) {
+         window.location.href = window.location.pathname + '?' + updateQueryParams('jobname', this.value);
+      });
+
+      $('#period').change(function(event) {
+         window.location.href = window.location.pathname + '?' + updateQueryParams('period', this.value);
+      });
+
+      $('#status').change(function(event) {
+         window.location.href = window.location.pathname + '?' + updateQueryParams('status', this.value);
+      });
+
+      $('#jobtable').on('load-error.bs.table', function(status, res) {
+         $("#modal-001").modal();
+      });
+
+   });
+
+</script>
+
+<?php endif; ?>

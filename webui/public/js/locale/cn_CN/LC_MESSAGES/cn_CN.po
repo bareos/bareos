@@ -1,0 +1,259 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2017-10-06 11:51+0200\n"
+"PO-Revision-Date: 2016-11-25 16:03+0800\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"Language: zh\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Poedit 1.8.11\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#: ../../js/custom-functions.js:93
+msgid "Backup"
+msgstr "备份"
+
+#: ../../js/custom-functions.js:96
+msgid "Migrated"
+msgstr "迁移"
+
+#: ../../js/custom-functions.js:99
+msgid "Verify"
+msgstr "验证"
+
+#: ../../js/custom-functions.js:102
+msgid "Restore"
+msgstr "还原"
+
+#: ../../js/custom-functions.js:105
+msgid "Console program"
+msgstr "控制台程序"
+
+#: ../../js/custom-functions.js:108
+msgid "Internal system job"
+msgstr "内部系统作业"
+
+#: ../../js/custom-functions.js:111
+msgid "Admin"
+msgstr "管理"
+
+#: ../../js/custom-functions.js:114
+msgid "Archive"
+msgstr "未归档"
+
+#: ../../js/custom-functions.js:117
+msgid "Copy of a job"
+msgstr "复制一份作业"
+
+#: ../../js/custom-functions.js:120
+msgid "Copy job"
+msgstr "复制作业"
+
+#: ../../js/custom-functions.js:123
+msgid "Migration job"
+msgstr "迁移作业"
+
+#: ../../js/custom-functions.js:126
+msgid "Scan"
+msgstr "扫描"
+
+#: ../../js/custom-functions.js:129
+msgid "Consolidate"
+msgstr ""
+
+#: ../../js/custom-functions.js:141 ../../js/custom-functions.js:189
+#: ../../js/custom-functions.js:219
+msgid "Full"
+msgstr "完全"
+
+#: ../../js/custom-functions.js:143
+msgid "Differential"
+msgstr "差异"
+
+#: ../../js/custom-functions.js:145
+msgid "Incremental"
+msgstr "增量"
+
+#: ../../js/custom-functions.js:147
+msgid "VirtualFull"
+msgstr "虚拟完全"
+
+#: ../../js/custom-functions.js:149
+msgid "Base"
+msgstr "基础"
+
+#: ../../js/custom-functions.js:151
+msgid "Catalog"
+msgstr "目录"
+
+#: ../../js/custom-functions.js:153
+msgid "InitCatalog"
+msgstr "初始目录"
+
+#: ../../js/custom-functions.js:155
+msgid "VolumeToCatalog"
+msgstr "卷到目录"
+
+#: ../../js/custom-functions.js:157
+msgid "DiskToCatalog"
+msgstr "磁盘到目录"
+
+#: ../../js/custom-functions.js:159
+msgid "Data"
+msgstr "数据"
+
+#: ../../js/custom-functions.js:161
+msgid "None"
+msgstr "无"
+
+#: ../../js/custom-functions.js:169
+#, fuzzy
+msgid "year(s)"
+msgstr "几年前"
+
+#: ../../js/custom-functions.js:172
+#, fuzzy
+msgid "month(s)"
+msgstr "几月前"
+
+#: ../../js/custom-functions.js:175
+msgid "day(s)"
+msgstr "天数"
+
+#: ../../js/custom-functions.js:178
+msgid "hour(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:181
+msgid "second(s)"
+msgstr ""
+
+#: ../../js/custom-functions.js:189 ../../js/custom-functions.js:219
+msgid "Used"
+msgstr "已使用"
+
+#: ../../js/custom-functions.js:201
+msgid "expired"
+msgstr "过期"
+
+#: ../../js/custom-functions.js:205
+msgid "expires in 1 day"
+msgstr "将在1天后到期"
+
+#: ../../js/custom-functions.js:209
+msgid "expires in"
+msgstr "过期日期在"
+
+#: ../../js/custom-functions.js:209
+msgid "days"
+msgstr "天数"
+
+#: ../../js/custom-functions.js:245
+msgid "never"
+msgstr "从不"
+
+#: ../../js/custom-functions.js:254
+msgid "today"
+msgstr "今天"
+
+#: ../../js/custom-functions.js:257
+msgid "day(s) ago"
+msgstr "几天前"
+
+#: ../../js/custom-functions.js:260
+msgid "month(s) ago"
+msgstr "几月前"
+
+#: ../../js/custom-functions.js:263
+msgid "year(s) ago"
+msgstr "几年前"
+
+#: ../../js/custom-functions.js:296
+msgid "enabled"
+msgstr "使能"
+
+#: ../../js/custom-functions.js:299
+msgid "disabled"
+msgstr "禁用"
+
+#: ../../js/custom-functions.js:307
+msgid "Yes"
+msgstr "是"
+
+#: ../../js/custom-functions.js:310
+msgid "No"
+msgstr "否"
+
+#: ../../js/custom-functions.js:320 ../../js/custom-functions.js:324
+#: ../../js/custom-functions.js:328
+msgid "Failure"
+msgstr "失败"
+
+#: ../../js/custom-functions.js:332
+msgid "Success"
+msgstr "成功"
+
+#: ../../js/custom-functions.js:336
+msgid "Running"
+msgstr "运行"
+
+#: ../../js/custom-functions.js:340
+msgid "Queued"
+msgstr "排队"
+
+#: ../../js/custom-functions.js:344
+msgid "Blocked"
+msgstr "已阻止"
+
+#: ../../js/custom-functions.js:348
+msgid "Verify found differences"
+msgstr "验证发现的差异"
+
+#: ../../js/custom-functions.js:352
+msgid "Canceled"
+msgstr "取消"
+
+#: ../../js/custom-functions.js:356 ../../js/custom-functions.js:360
+#: ../../js/custom-functions.js:364 ../../js/custom-functions.js:368
+#: ../../js/custom-functions.js:372 ../../js/custom-functions.js:376
+#: ../../js/custom-functions.js:380 ../../js/custom-functions.js:384
+#: ../../js/custom-functions.js:388 ../../js/custom-functions.js:392
+msgid "Waiting"
+msgstr "等待"
+
+#: ../../js/custom-functions.js:396
+msgid "SD despooling attributes"
+msgstr "SD去除连接属性"
+
+#: ../../js/custom-functions.js:400
+msgid "Doing batch insert file records"
+msgstr "执行批处理插入文件记录"
+
+#: ../../js/custom-functions.js:404
+msgid "Incomplete"
+msgstr "不完整"
+
+#: ../../js/custom-functions.js:408
+msgid "Committing data"
+msgstr "提交数据"
+
+#: ../../js/custom-functions.js:412
+msgid "Warning"
+msgstr "警告"
+
+#: ../../js/custom-functions.js:416
+msgid "Doing data despooling"
+msgstr "执行数据去除连接"
+
+#: ../../js/custom-functions.js:420
+msgid "Queued waiting for device"
+msgstr "排队等待设备"

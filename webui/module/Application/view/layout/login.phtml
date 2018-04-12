@@ -1,0 +1,86 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2014 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ * @author    Frank Bergkemper
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+echo $this->doctype();
+
+?>
+
+<html lang="en">
+
+   <head>
+
+      <meta charset="utf-8">
+
+      <?php echo $this->headTitle('Bareos','PREPEND')->setSeparator(' - ')->setAutoEscape(false) ?>
+      <?php echo $this->headMeta()
+         ->appendName('viewport', 'width=device-width, initial-scale=1.0')
+         ->appendHttpEquiv('X-UA-Compatible', 'IE=edge')
+      ?>
+
+      <!-- Styles -->
+      <?php echo $this->headLink(array('rel' => 'shortcut icon', 'type' => 'image/vnd.microsoft.icon', 'href' => $this->basePath() . '/img/favicon.ico'))
+         ->prependStylesheet($this->basePath() . '/css/style.css')
+         ->prependStylesheet($this->basePath() . '/css/bootstrap-select.min.css')
+         ->prependStylesheet($this->basePath() . '/css/bootstrap.min.css')
+      ?>
+
+      <!-- Scripts -->
+      <?php echo $this->headScript()
+         ->prependFile($this->basePath() . '/js/bootstrap.min.js')
+         ->prependFile($this->basePath() . '/js/bootstrap-select.min.js')
+         ->prependFile($this->basePath() . '/js/excanvas.min.js')
+         ->prependFile($this->basePath() . '/js/jquery.cookie.js', 'text/javascript')
+         ->prependFile($this->basePath() . '/js/jquery.min.js', 'text/javascript')
+         ->prependFile($this->basePath() . '/js/respond.min.js', 'text/javascript', array('conditional' => 'lt IE 9',))
+         ->prependFile($this->basePath() . '/js/html5shiv.js',   'text/javascript', array('conditional' => 'lt IE 9',));
+      ?>
+
+   </head>
+
+<body>
+
+   <?php
+      $version = "";
+      $vfp = "version.txt";
+      if(is_readable($vfp)) {
+         $version = "Version " . file_get_contents($vfp);
+      }
+   ?>
+
+   <div class="container text-center">
+      <img src="<?php echo $this->basePath() . '/img/bareos.png'; ?>" />
+      <br /><br /><br />
+      <?php echo $this->content; ?>
+      <br />
+      <p class="text-muted">Bareos WebUI <?php echo $version; ?> &copy; 2013 - <?php echo date('Y') ?> <a href="http://www.bareos.com/" target="_blank">Bareos GmbH  &amp; Co. KG</a>,<br />GNU Affero General Public License Version 3</p>
+   </div>
+
+   <?php echo $this->inlineScript() ?>
+
+</body>
+
+</html>
+

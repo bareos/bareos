@@ -1,0 +1,117 @@
+<?php
+
+/**
+*
+* bareos-webui - Bareos Web-Frontend
+*
+* @link      https://github.com/bareos/bareos-webui for the canonical source repository
+* @copyright Copyright (c) 2013-2016 Bareos GmbH & Co. KG (http://www.bareos.org/)
+* @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Affero General Public License as published by
+* the Free Software Foundation, either version 3 of the License, or
+* (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+* GNU Affero General Public License for more details.
+*
+* You should have received a copy of the GNU Affero General Public License
+* along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*
+*/
+
+$title = 'Director';
+$this->headTitle($title);
+
+?>
+
+<ul class="nav nav-tabs">
+   <li><a href="<?php echo $this->url('director', array('action'=>'index')); ?>"><?php echo $this->translate('Status'); ?></a></li>
+   <li><a href="<?php echo $this->url('director', array('action'=>'messages')); ?>"><?php echo $this->translate('Messages'); ?></a></li>
+   <li class="active"><a href="<?php echo $this->url('director', array('action'=>'console')); ?>"><?php echo $this->translate('Console'); ?></a></li>
+</ul>
+
+<br />
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<pre class="bconsole" id="bconsole" style="font-size: 9pt; padding-left: 5px; overflow: scroll; width: 1080px; height: 650px; background: #000; color: #fff;" onclick="focusScreen();">
+   <p><?php echo $this->translate("bconsole (batch-mode), please handle with care."); ?><br /><?php echo $this->translate("All commands have to be a one liner, dialogs are not working."); ?><br /><?php echo $this->translate("Type help for a list of commands."); ?></p>
+   <div class="prompt"><label> * </label><input type="text" class="cli" id="cli" value ="" size=120 style="display: inline; background: #000; color: #fff; border-color: #000; border-style: hidden; outline: none;"/></div>
+</pre>
+
+<br />
+
+<input class="btn btn-primary" type="button" value="Clear" onclick="clearscr();"/>
+<input class="btn btn-primary" type="button" value="Help" onclick="help();"/>
+
+<script>
+
+function focusScreen() {
+   document.getElementById('cli').focus();
+}
+
+function clearscr() {
+   $(".output").remove();
+   document.getElementById('cli').focus();
+}
+
+function help() {
+   send("help");
+   document.getElementById('cli').focus();
+}
+
+function send(cmd) {
+
+   $("<div class='output'> * "+cmd+"</div>").insertBefore(".prompt");
+
+   if(cmd == "") {
+   }
+   else if(cmd == String.fromCharCode(112,105)) {
+      $("<div class='output'> * "+Math.PI+"</div>").insertBefore(".prompt");
+   }
+   else if(cmd == String.fromCharCode(101)) {
+      $("<div class='output'> * "+Math.E+"</div>").insertBefore(".prompt");
+   }
+   else {
+      $('.prompt').hide();
+      var request = $.ajax({
+         method: "POST",
+         url: "<?php echo $this->url('director', array('action' => 'getData'), array('query' => array('data' => 'cli'))); ?>",
+         data: {
+            "command": cmd
+         },
+         dataType: "json",
+      });
+      request.done(function(msg) {
+         $("<div class='output'>"+msg.replace(/(?:\r\n|\r|\n)/g, '<br />')+"</div>").insertBefore(".prompt");
+         $('.prompt').show();
+      });
+   }
+
+   $('.bconsole').scrollTop($('.bconsole')[0].scrollHeight - $('.bconsole')[0].clientHeight);
+
+   document.getElementById('cli').value = "";
+   document.getElementById('cli').focus();
+
+}
+
+var cli = document.getElementById("cli");
+
+cli.addEventListener("keydown", function (e) {
+   if (e.keyCode === 13) {
+      var cmd = document.getElementById('cli').value;
+      send(cmd);
+   }
+});
+
+$(document).ready(function() {
+   focusScreen();
+});
+
+</script>
+
+<?php endif; ?>

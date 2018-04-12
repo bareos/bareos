@@ -1,0 +1,303 @@
+<?php
+
+/**
+ *
+ * bareos-webui - Bareos Web-Frontend
+ *
+ * @link      https://github.com/bareos/bareos-webui for the canonical source repository
+ * @copyright Copyright (c) 2013-2017 Bareos GmbH & Co. KG (http://www.bareos.org/)
+ * @license   GNU Affero General Public License (http://www.gnu.org/licenses/)
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ *
+ */
+
+$title = _('Dashboard');
+$this->headTitle($title);
+
+?>
+
+<?php if($this->acl_alert) : echo $this->ACLAlert($this->required_commands); elseif(!$this->acl_alert) : ?>
+
+<div class="row">
+
+   <div class="col-md-8">
+      <?php echo $this->partial('JobsPast24h'); ?>
+      <?php echo $this->partial('JobsLastStatus'); ?>
+   </div>
+
+   <div class="col-md-4">
+      <?php echo $this->partial('JobTotals'); ?>
+      <?php echo $this->partial('RunningJobs'); ?>
+   </div>
+
+</div>
+
+<?php
+   echo $this->headScript()->prependFile($this->basePath() . '/js/custom-functions.js');
+   echo $this->headLink()->prependStylesheet($this->basePath() . '/css/bootstrap-table.min.css');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-locale-all.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table-cookie.min.js');
+   echo $this->headScript()->prependFile($this->basePath() . '/js/bootstrap-table.min.js');
+?>
+
+<script type="text/javascript">
+
+   var lastlogid = 0;
+   var table_jobs_last_status = null;
+   var table_job_totals = null;
+
+   $(document).ajaxStart(function() {
+         $('.waiting-jobs-field').empty();
+         $('.waiting-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.running-jobs-field').empty();
+         $('.running-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.successful-jobs-field').empty();
+         $('.successful-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.failed-jobs-field').empty();
+         $('.failed-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+   });
+
+   function getJobsPast24h() {
+      $.ajax({
+         url : '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobspast24h'; ?>',
+         dataType: 'json',
+         timeout: function() {
+            console.log('jobpast24h: timeout');
+         },
+         success: function(data) {
+            $('.waiting-jobs-field').empty();
+            $('.waiting-jobs-field').append(
+               data.waiting
+            );
+            $('.running-jobs-field').empty();
+            $('.running-jobs-field').append(
+               data.running
+            );
+            $('.successful-jobs-field').empty();
+            $('.successful-jobs-field').append(
+               data.successful
+            );
+            $('.failed-jobs-field').empty();
+            $('.failed-jobs-field').append(
+               data.failed
+            );
+         },
+         error: function() {
+            console.log('jobspast24h: error');
+         },
+         parseerror: function() {
+            console.log('jobspast24h: parse error');
+         }
+      });
+   }
+
+   function getJobTotals() {
+      table_job_totals = $('#job-totals').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         url: '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobtotals'; ?>',
+         method: 'get',
+         dataType: 'json',
+         columns: [
+            {
+               field: 'jobs',
+            },
+            {
+               field: 'files',
+            },
+            {
+               field: 'bytes',
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            }
+         ],
+         ajaxOptions: {
+            timeout: function() {
+               console.log('jobtotals: timeout');
+            },
+            error: function() {
+               console.log('jobtotals: error');
+            },
+            parseerror: function() {
+               console.log('jobtotals: parse error');
+            }
+         }
+      });
+   }
+
+   function getJobsLastStatus() {
+      table_jobs_last_status = $('#jobs-last-status').bootstrapTable({
+         locale: '<?php echo str_replace('_','-', $_SESSION['bareos']['locale']); ?>',
+         cookie: <?php echo $_SESSION['bareos']['dt_statesave']; ?>,
+         cookieIdTable: 'dashboard_table_jobs_last_status',
+         url: '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=jobslaststatus'; ?>',
+         method: 'get',
+         dataType: 'json',
+         pagination : true,
+         sidePagination: 'client',
+         pageList: [ <?php echo $_SESSION['bareos']['dt_lengthmenu']; ?> ],
+         pageSize: <?php echo $_SESSION['bareos']['dt_pagelength']; ?>,
+         search: true,
+         showToggle: true,
+         showPaginationSwitch: true,
+         showColumns: true,
+         sortName: 'jobid',
+         sortOrder: 'desc',
+         columns: [
+            {
+               field: 'name',
+               sortable: true,
+               formatter: function(value){
+                  return '<a href="<?php echo $this->basePath() . '/job/index?jobname='; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'jobstatus',
+               align: 'center',
+               sortable: true,
+               formatter: function(value, row, index) {
+                  return formatJobStatus(value);
+               }
+            },
+            {
+               field: 'jobid',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'client',
+               sortable: true,
+               formatter: function(value) {
+                  return '<a href="<?php echo $this->basePath() . '/client/details/'; ?>'+value+'">'+value+'</a>';
+               }
+            },
+            {
+               field: 'level',
+               sortable: true,
+               formatter: function(value) {
+                  return formatJobLevel(value);
+               }
+            },
+            {
+               field: 'starttime',
+               sortable: true,
+            },
+            {
+               field: 'endtime',
+               sortable: true,
+            },
+            {
+               field: 'jobbytes',
+               sortable: true,
+               formatter: function(value) {
+                  return formatBytes(value);
+               }
+            },
+         ],
+         ajaxOptions: {
+            timeout: function() {
+               console.log('joblaststatus: timeout');
+            },
+            error: function() {
+               console.log('jobslaststatus: error');
+            },
+            parseerror: function() {
+               console.log('jobslaststatus: parse error');
+            }
+         }
+      });
+   }
+
+   function getRunningJobs() {
+      $.ajax({
+         url: '<?php echo $this->url('dashboard', array('action' => 'getData'), null) . '?data=runningjobs'; ?>',
+         dataType: 'json',
+         timeout: 10000,
+         success: function(data) {
+            if(Object.keys(data).length >= 1) {
+               var i = 0;
+               $('.running-jobs-container').empty();
+               $(Object.keys(data)).each(function(key, id) {
+                  $('.running-jobs-container').append('<div class="panel panel-default"><div class="panel-body rjc-panel-'+ i +'">');
+                  $('.rjc-panel-'+i).append('<p>');
+                  $('.rjc-panel-'+i).append('<strong>' + data[id].name + ' (' + data[id].client + ')' + '</strong>' + ' ');
+                  $('.rjc-panel-'+i).append('<a href="<?php echo $this->basePath() . '/job/cancel/'; ?>' + data[id].jobid + '"><span class="pull-right text-danger glyphicon glyphicon-remove" aria-hidden="true" title="Cancel"></span></a>');
+                  $('.rjc-panel-'+i).append('</p>');
+                  $('.rjc-panel-'+i).append('<strong>Job ID: </strong><a href="<?php echo $this->basePath() . '/job/details/'; ?>' + data[id].jobid + '">' + data[id].jobid + '</a> ');
+                  $('.rjc-panel-'+i).append('<strong>Files: </strong>' + data[id].jobfiles + ' ');
+                  $('.rjc-panel-'+i).append('<strong>Bytes: </strong>' + formatBytes(data[id].jobbytes) + ' ');
+                  $('.rjc-panel-'+i).append('<strong>Bytes/s: </strong>' + formatBytes(data[id].speed) + ' ');
+                  if(data[id].lastbackupsize > 0) {
+                     $('.rjc-panel-'+i).append('<div class="progress"><div class="progress-bar" role="progressbar" aria-valuenow="'+data[id].progress+'" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: '+data[id].progress+'%">'+data[id].progress+'%</div></div>');
+                  }
+                  else {
+                     $('.rjc-panel-'+i).append('<div class="progress" id="progress" data-toggle="tooltip" data-placement="top"><div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="min-width: 2em; width: 100%"></div></div>');
+                     $('.rjc-panel-'+i).append('<span class="text-muted"><i>(<?php echo $this->translate("Not enough data to estimate progress or statistics collection is disabled."); ?>)</i></span>');
+                  }
+                  $('.rjc-panel-'+i).append('</div></div>');
+                  i++;
+               });
+            }
+            else {
+               $('.running-jobs-container').empty();
+               $('.running-jobs-container').append('<?php echo $this->translate('There are no jobs running.'); ?>');
+            }
+         },
+         error: function() {
+            $('.running-jobs-container').empty();
+            $('.running-jobs-container').append('Error fetching data.');
+         },
+         timeout: function() {
+            $('.running-jobs-container').empty();
+            $('.running-jobs-container').append('Timeout fetching data.');
+         },
+         parsererror: function() {
+            $('.running-jobs-container').empty();
+            $('.running-jobs-container').append('Error parsing data.');
+         }
+      });
+   }
+
+   function refreshPartials() {
+      getRunningJobs();
+      getJobsPast24h();
+      $('#job-totals').bootstrapTable('refresh');
+      $('#jobs-last-status').bootstrapTable('refresh');
+   }
+
+   $(document).ready(
+      function() {
+         setDtTextDomain('<?php echo $this->basePath() . '/js/locale'; ?>');
+         setDtLocale('<?php echo $_SESSION['bareos']['locale']; ?>');
+
+         getRunningJobs();
+         setInterval('getRunningJobs()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
+
+         getJobsPast24h();
+         setInterval('getJobsPast24h()', <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
+
+         getJobTotals();
+         setInterval("$('#job-totals').bootstrapTable('refresh')", <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
+
+         getJobsLastStatus();
+         setInterval( "$('#jobs-last-status').bootstrapTable('refresh')", <?php echo $_SESSION['bareos']['dashboard_autorefresh_interval']; ?>);
+      }
+   );
+
+</script>
+
+<?php endif; ?>
