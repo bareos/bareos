@@ -266,15 +266,10 @@ class WebuiSeleniumTest(unittest.TestCase):
         return b
 
     def job_cancel(self, id):
-        # Go to job list
-        self.wait_and_click(By.ID, 'menu-topnavbar-job')
-        # Click on the object that has id in its url
-        self.wait_and_click(By.ID, 'btn-1')
-        #self.wait_for_url_and_click('/bareos-webui/job/details/%s' % id)
-        # Wait for the cancel button to load
-        #self.wait_for_element(By.XPATH, '//*[@title="Cancel"]')
-        # Click on cancel button
-        #self.wait_and_click(By.XPATH, '//*[@title="Cancel"]')
+        # Wait for the cancel button
+        self.wait_for_element(By.ID, "//a[@id='btn-1'][@title='Cancel']")
+        # Click the cancel button
+        self.wait_and_click(By.ID, "//a[@id='btn-1'][@title='Cancel']")
 
     def job_start_configured(self):
         driver = self.driver
@@ -299,15 +294,6 @@ class WebuiSeleniumTest(unittest.TestCase):
         self.wait_and_click(By.CSS_SELECTOR, 'span.input-group-addon')
         # Submit the job
         self.wait_and_click(By.ID, 'submit')
-        # After the now-generated site has loaded, save the job id
-        self.wait_for_spinner_absence()
-        # Count how many digits are at the end of the url / how long the id is
-        job_id = driver.current_url.split('/')[-1]
-        # If the current URL doesn't end with a digit we didn't start the job properly.
-        if not job_id.isdigit():
-            raise BadJobException
-
-        return job_id
 
     def login(self):
         driver = self.driver
