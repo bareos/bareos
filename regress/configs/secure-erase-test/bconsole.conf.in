@@ -1,0 +1,9 @@
+#
+# Bareos User Agent (or Console) Configuration File
+#
+
+Director {
+  Name = @hostname@-dir
+  address = @hostname@
+  Password = "@dir_password@"
+}

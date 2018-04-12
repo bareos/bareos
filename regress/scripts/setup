@@ -1,0 +1,160 @@
+#!/bin/sh -x
+
+#
+# Script to setup running Bareos regression tests
+#
+
+check_exit_code()
+{
+   if [ $? != 0 ] ; then
+      echo "Bad exit code giving up"
+      exit 1
+   fi
+}
+
+. ./config
+
+cwd=`pwd`
+if [ ! -d ${BAREOS_SOURCE} ] ; then
+   echo "The BAREOS_SOURCE environment variable must be a Bareos release directory, but is not."
+   echo " "
+   exit 1
+fi
+
+MAKEOPTS=${MAKEOPT:-"-j3"}
+
+#
+# We build and setup binaries to the $cwd/bin directory not $bin
+#
+rm -rf build bin
+
+#
+# See if this is a git clone
+#
+if [ -f .git/config ] && type git >/dev/null 2>&1; then
+   #
+   # See if we have git available.
+   #
+   git pull
+fi
+
+#
+# Copy the source
+#
+echo "Copying source from ${BAREOS_SOURCE}"
+cp -rp ${BAREOS_SOURCE} build
+
+if [ -f build/.git/config ] && type git >/dev/null 2>&1; then
+    #
+    # update bareos sources
+    #
+    (
+        cd build;
+        git pull;
+        git show HEAD | grep commit | head -1 | awk '{print $2}' > git-version
+    )
+else
+    echo "Git not available." > build/git-version
+fi
+
+scripts/create_sed
+
+
+
+#
+# Now turn on DEVELOPER for regression testing
+#
+echo "s%^.*define DEVELOPER 1.*$%#define DEVELOPER 1%g" >tmp/t$$
+sed -f tmp/t$$ build/src/include/version.h >tmp/o$$
+cp tmp/o$$ build/src/include/version.h
+
+
+sed -f tmp/sed_tmp scripts/regress-config.in >scripts/regress-config
+chmod 755 scripts/regress-config
+cp scripts/regress-config build
+cd build
+rm -f Makefile config.*
+
+
+
+#
+# Run Bareos configuration, make, install
+#
+sh -x ./regress-config ${cwd}
+check_exit_code
+
+#
+# Cleanup any build in source
+#
+make clean
+make ${MAKEOPT}
+check_exit_code
+make install
+if [ a${KEEP_SOURCE} = a ]; then
+   rm -rf examples patches
+   check_exit_code
+   # eliminate non-essential directories to reduce
+   #   size.  Otherwise regress run too long
+   rm -rf src/win32 examples patches
+fi
+
+#
+# Get all tests -- especially testls
+#
+#cd src/tests
+#make installall
+#check_exit_code
+#cd ../..
+
+#
+# Get all tools -- especially timelimit
+#
+#cd src/tools
+#make installall
+#check_exit_code
+#cd ../..
+
+# make -C not available on Solaris, therefore cd in subshell.
+#(
+#  cd src/plugins/filed
+#  make install-test-plugin
+#)
+
+
+cd ${cwd}
+bin/bareos stop
+
+mkdir -p working
+cd bin
+echo "Running database creation scripts"
+./create_bareos_database ${DBTYPE}
+./drop_bareos_tables ${DBTYPE}
+./make_bareos_tables ${DBTYPE}
+./grant_bareos_privileges ${DBTYPE}
+cd ${cwd}
+
+rm_if_exists() {
+   if [ -e $1 ]; then
+      rm -f $1
+   fi
+}
+
+#
+# Remove unneeded directories
+#
+rm -rf build/txt build/src/testprogs
+rm -rf build/.git
+
+rm_if_exists build/cscope.out
+rm_if_exists build/tags
+rm_if_exists build/git-log
+rm -Rf build/src/ndmp
+
+# remove object files
+find build/ -name '*.o' | xargs rm -f
+find build/ -name '*.so' | xargs rm -f
+find build/ -name '*.lo' | xargs rm -f
+find build/ -name '*.la' | xargs rm -f
+find build/ -name '*.patch' | xargs rm -f
+find build/ -name '.libs' | xargs rm -f -R
+

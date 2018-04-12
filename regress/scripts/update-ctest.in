@@ -1,0 +1,42 @@
+#!/bin/sh
+
+cd @regressdir@
+
+if [ ! -d build ] ; then
+    echo "Build directory not present, will run make setup"
+    cd @regressdir@
+    make setup
+    exit
+fi
+
+cd @regressdir@/build
+
+#
+# Check if the regression dir is a git repo
+#
+if [ -f .git/config ]; then
+   #
+   # See if we have git available.
+   #
+   GIT=`which git 2>/dev/null`
+   if [ ! -z "${GIT}" ] ; then
+      touch git-version
+      cur=`cat git-version`
+
+      cd @srcdir@
+
+      new=`${GIT} show HEAD | grep commit | head -1 | awk '{print $2}'`
+
+      cd @regressdir@
+
+      echo Build is ${cur}
+      echo Source is ${new}
+
+      if [ ${cur}x != ${new}x ] ; then
+          echo "Newer version available, will run make setup"
+          make setup
+      else
+          echo "Latest version present in build, skipping make setup"
+      fi
+   fi
+fi

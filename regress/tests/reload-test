@@ -1,0 +1,170 @@
+#!/bin/sh
+
+#
+# test the reload and test command.
+#
+# Adds different (valid and invalid) statements to the Director configuration.
+# Checks if invalid statements are detected by the test command
+# and if reload can cope with them (not reloading the configuration).
+# Also checks, if valid resources are available after reload.
+#
+
+TestName="reload-test"
+. scripts/functions
+
+#require_linux
+scripts/cleanup
+scripts/copy-confs
+
+# backup the configuration
+cp $conf/bareos-dir.conf $tmp/1
+
+bstat=0
+rstat=0
+zstat=0
+
+check_config()
+{
+    # checks, if "bareos-dir -t" detects the error in the configuration
+    $bin/bareos-dir -t $conf/bareos-dir.conf 2>&1 >> $tmp/testconf.log
+    return $?
+}
+
+detect_error()
+{
+    # checks, if "bareos-dir -t" detects the error in the configuration
+    if check_config; then
+        estat=1
+        print_debug "There should be an error in bareos-dir.conf. However, bareos-dir -t does not detect it."
+    fi
+}
+
+do_reload()
+{
+    cat > $tmp/bcons <<EOF
+reload
+messages
+EOF
+    cat $tmp/bcons | $bin/bconsole -c $conf/bconsole.conf 2>&1 >>$tmp/reload.log
+
+    ps $pid > /dev/null
+    if [ $? != 0 ]; then
+        estat=1
+        print_debug "Bareos shouldn't die with a reload"
+    fi
+
+    #ls -l /proc/$pid/fd | grep bareos-dir.conf
+    #if [ $? = 0 ]; then
+    #    estat=1
+    #    print_debug "Should not have bareos-dir.conf open"
+    #fi
+}
+
+is_client_existing()
+{
+    NAME="$1"
+    echo ".clients" | $bin/bconsole -c $conf/bconsole.conf | grep "$NAME" >/dev/null
+    return $?
+}
+
+add_client_resource()
+{
+    NAME="$1"
+
+    if [ -z "$NAME" ]; then
+        set_error "Failed: no client name given."
+    fi
+
+cat >> $conf/bareos-dir.conf<<EOF
+Client {
+  Name = "${NAME}-fd"
+  Address = 127.0.0.1
+  Password = "secret"
+}
+EOF
+    do_reload
+    if ! is_client_existing "$NAME"; then
+        set_error "Failed to add client $NAME."
+    fi
+}
+
+start_test
+
+# should be ok
+if ! check_config; then
+    estat=1
+    print_debug "Error on bareos-dir.conf"
+fi
+
+$bin/bareos-ctl-dir start >/dev/null
+pid=`cat $working/bareos-dir.$BASEPORT.pid`
+
+sleep 2
+
+do_reload
+
+
+print_debug "Adding uncommented string to bareos-dir.conf"
+cat >> $conf/bareos-dir.conf<<EOF
+This is an error
+EOF
+detect_error
+do_reload
+
+cp $tmp/1 $conf/bareos-dir.conf
+add_client_resource "client1"
+
+print_debug "Adding empty job res bareos-dir.conf"
+cat >> $conf/bareos-dir.conf<<EOF
+Job {
+}
+EOF
+detect_error
+do_reload
+
+cp $tmp/1 $conf/bareos-dir.conf
+add_client_resource "client2"
+
+print_debug "Adding two identical Jobs to bareos-dir.conf"
+cat >> $conf/bareos-dir.conf<<EOF
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
+}
+Job {
+  Name = "BackupClient1"
+  JobDefs = "DefaultJob"
+  Write Bootstrap = "/tmp/regress/working/Client1.bsr"
+}
+EOF
+detect_error
+do_reload
+
+cp $tmp/1 $conf/bareos-dir.conf
+add_client_resource "client3"
+
+print_debug "Adding second director to bareos-dir.conf"
+cat >> $conf/bareos-dir.conf<<EOF
+Director {
+  Name = second-dir
+  DIRport = 1101                # where we listen for UA connections
+  QueryFile = "/tmp/regress/bin/query.sql"
+  WorkingDirectory = "/tmp/regress/working"
+  PidDirectory = "/tmp/regress/working"
+  Maximum Concurrent Jobs = 1
+  Password = "xxx"         # Console password
+  Messages = Daemon
+}
+EOF
+
+detect_error
+do_reload
+
+#cp $tmp/1 $conf/bareos-dir.conf
+#add_client_resource "client4"
+
+$bin/bareos-ctl-dir stop >/dev/null
+
+end_test
+

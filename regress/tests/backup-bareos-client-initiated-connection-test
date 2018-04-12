@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# Run a simple backup, then restore it.
+#
+TestName="backup-bareos-client-initiated-connection-test"
+JobName=backup
+
+. scripts/functions
+
+scripts/cleanup
+scripts/copy-confs
+
+# Directory to backup.
+# This directory will be created by setup_data().
+BackupDirectory="${tmp}/data"
+
+# Use a tgz to setup data to be backuped.
+# Data will be placed at "${tmp}/data/".
+setup_data data/small.tgz
+
+# the default fileset FS_TESTJOB backups all file and directories defined in "${tmp}/file-list".
+echo "${BackupDirectory}" >${tmp}/file-list
+
+#
+# Zap out any schedule in default conf file so that
+#  it doesn't start during our test
+#
+outf="$tmp/sed_tmp"
+echo "s%  Schedule =%# Schedule =%g" >${outf}
+cp ${conf}/bareos-dir.conf $tmp/1
+sed -f ${outf} $tmp/1 >${conf}/bareos-dir.conf
+
+dircfg=$conf/bareos-dir.conf
+$bperl -e "add_attribute('$dircfg', 'Connection From Director To Client', 'yes', 'Client')"
+$bperl -e "add_attribute('$dircfg', 'Connection From Client To Director', 'no', 'Client')"
+
+fdcfg=$conf/bareos-fd.conf
+$bperl -e "add_attribute('$fdcfg', 'Address', 'localhost', 'Director')"
+$bperl -e "add_attribute('$fdcfg', 'Connection From Client To Director', 'no', 'Director')"
+$bperl -e "add_attribute('$fdcfg', 'Connection From Director To Client', 'yes', 'Director')"
+
+change_jobname BackupClient1 $JobName
+start_test
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+restore where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+#
+# Now do a second backup after making a few changes
+#
+echo "test test" > ${BackupDirectory}/xxx
+
+cat <<END_OF_DATA >$tmp/bconcmds
+@$out /dev/null
+messages
+@$out $tmp/log1.out
+run job=$JobName yes
+wait
+messages
+@#
+@# now do a restore
+@#
+@$out $tmp/log2.out
+restore where=$tmp/bareos-restores select all done
+yes
+wait
+messages
+quit
+END_OF_DATA
+
+run_bareos
+check_for_zombie_jobs storage=File
+stop_bareos
+
+check_two_logs
+check_restore_diff
+end_test
+
