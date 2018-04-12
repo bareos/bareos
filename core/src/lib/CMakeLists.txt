@@ -32,8 +32,8 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 		../include/bc_types.h ../include/config.h
 		../include/jcr.h ../include/version.h
 		address_conf.h alist.h attr.h base64.h berrno.h
-		bits.h bpipe.h breg.h bregex.h bsock.h bsock_sctp.h
-		bsock_tcp.h bsock_udt.h bsr.h btime.h btimers.h cbuf.h
+		bits.h bpipe.h breg.h bregex.h bsock.h
+		bsock_tcp.h bsr.h btime.h btimers.h cbuf.h
 		crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
 		guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
 		md5.h mem_pool.h message.h mntent_cache.h ordered_cbuf.h parse_conf.h
@@ -44,8 +44,8 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 
 set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    berrno.cc bget_msg.cc binflate.cc bnet_server_tcp.cc bnet.cc  bpipe.cc
-   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_sctp.cc  bsock_tcp.cc
-   bsock_udt.cc bsys.cc btime.cc btimers.cc  cbuf.cc compression.cc
+   breg.cc bregex.cc bsnprintf.cc bsock.cc bsock_tcp.cc
+   bsys.cc btime.cc btimers.cc  cbuf.cc compression.cc
    connection_pool.cc cram-md5.cc crypto.cc  crypto_cache.cc crypto_gnutls.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
