@@ -997,10 +997,10 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
       /*
        * Print the shadow copy (if not filtered out)
        */
-      if (Snap.SnapshotSetId_ == snapshotSetID)  {
+      if (Snap.m_SnapshotSetId == snapshotSetID)  {
          for (int ch='A'-'A';ch<='Z'-'A';ch++) {
-            if (wcscmp(Snap.pwszOriginalVolumeName_, wszUniqueVolumeName_[ch]) == 0) {
-               wcsncpy(szShadowCopyName_[ch],Snap.pwszSnapshotDeviceObject_, MAX_PATH-1);
+            if (wcscmp(Snap.m_pwszOriginalVolumeName, wszUniqueVolumeName_[ch]) == 0) {
+               wcsncpy(szShadowCopyName_[ch],Snap.m_pwszSnapshotDeviceObject, MAX_PATH-1);
                break;
             }
          }
