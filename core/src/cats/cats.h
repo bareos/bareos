@@ -554,14 +554,6 @@ typedef struct sql_field {
 } SQL_FIELD;
 #endif
 
-/*
- * Dynamic loaded query from a query table.
- */
-struct BDB_QUERY {
-   char *query_text;                      /* Query text as loaded from the loadable query table with leading and trailing spaces removed */
-   hlink link;                            /* List management */
-};
-
 class CATS_IMP_EXP B_DB: public SMARTALLOC, public B_DB_QUERY_ENUM_CLASS {
 protected:
    /*
