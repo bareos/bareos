@@ -63,7 +63,7 @@ static CommonResourceHeader **res_head = sres_head;
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static URES res_all;
+static UnionOfResources res_all;
 static int32_t res_all_size = sizeof(res_all);
 
 /* Definition of records permitted within each
@@ -119,7 +119,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
    PoolMem buf;
-   URES *res = (URES *)reshdr;
+   UnionOfResources *res = (UnionOfResources *)reshdr;
    BareosResource *resclass;
    bool recurse = true;
 
@@ -155,7 +155,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
 void free_resource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres;
-   URES *res = (URES *)sres;
+   UnionOfResources *res = (UnionOfResources *)sres;
 
    if (res == NULL)
       return;
@@ -268,7 +268,7 @@ void free_resource(CommonResourceHeader *sres, int type)
  */
 bool save_resource(int type, ResourceItem *items, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = type - R_FIRST;
    int i;
    int error = 0;
@@ -294,14 +294,14 @@ bool save_resource(int type, ResourceItem *items, int pass)
    if (pass == 2) {
       switch (type) {
          case R_CONSOLE:
-            if ((res = (URES *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
+            if ((res = (UnionOfResources *)GetResWithName(R_CONSOLE, res_all.res_cons.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Console resource %s\n"), res_all.res_cons.name());
             } else {
                res->res_cons.tls_cert.allowed_cns = res_all.res_cons.tls_cert.allowed_cns;
             }
             break;
          case R_DIRECTOR:
-            if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
@@ -332,7 +332,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(resources[rindex].size);
+      res = (UnionOfResources *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -353,7 +353,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
-void init_cons_config(CONFIG *config, const char *configfile, int exit_code)
+void init_cons_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -372,7 +372,7 @@ void init_cons_config(CONFIG *config, const char *configfile, int exit_code)
    config->set_config_include_dir("bconsole.d");
 }
 
-bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code)
+bool parse_cons_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    init_cons_config(config, configfile, exit_code);
    return config->parse_config();

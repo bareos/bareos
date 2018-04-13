@@ -45,7 +45,7 @@ static void my_free_jcr(JobControlRecord *jcr);
 /* Global variables */
 char SD_IMP_EXP *configfile;
 STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
-CONFIG SD_IMP_EXP *my_config = NULL;  /* Our Global config */
+ConfigurationParser SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
 /**
  * Setup a "daemon" JobControlRecord for the various standalone tools (e.g. bls, bextract, bscan, ...)

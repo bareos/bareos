@@ -33,10 +33,10 @@
 #include "monitoritem.h"
 #include "monitoritemthread.h"
 
-CONFIG *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 /* Imported function from tray_conf.cpp */
-extern bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Static variables */
 static QApplication* app = NULL;

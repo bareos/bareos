@@ -46,7 +46,7 @@ static CommonResourceHeader **res_head = sres_head;
  * We build the current resource here statically,
  * then move it to dynamic memory
  */
-static URES res_all;
+static UnionOfResources res_all;
 static int32_t res_all_size = sizeof(res_all);
 
 /**
@@ -443,7 +443,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
    PoolMem buf;
-   URES *res = (URES *)reshdr;
+   UnionOfResources *res = (UnionOfResources *)reshdr;
    BareosResource *resclass;
    int recurse = 1;
 
@@ -485,7 +485,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
 void free_resource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres;
-   URES *res = (URES *)sres;
+   UnionOfResources *res = (UnionOfResources *)sres;
 
    if (res == NULL)
       return;
@@ -718,7 +718,7 @@ void free_resource(CommonResourceHeader *sres, int type)
  */
 bool save_resource(int type, ResourceItem *items, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = type - R_FIRST;
    int i;
    int error = 0;
@@ -764,14 +764,14 @@ bool save_resource(int type, ResourceItem *items, int pass)
          /*
           * Resources containing a resource or an alist
           */
-         if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+         if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          } else {
             res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
          }
          break;
       case R_STORAGE:
-         if ((res = (URES *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
+         if ((res = (UnionOfResources *)GetResWithName(R_STORAGE, res_all.res_store.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find Storage resource %s\n"), res_all.res_store.name());
          } else {
             res->res_store.plugin_names = res_all.res_store.plugin_names;
@@ -781,7 +781,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
          }
          break;
       case R_AUTOCHANGER:
-         if ((res = (URES *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
+         if ((res = (UnionOfResources *)GetResWithName(type, res_all.res_changer.name())) == NULL) {
             Emsg1(M_ERROR_TERM, 0, _("Cannot find AutoChanger resource %s\n"), res_all.res_changer.name());
          } else {
             /*
@@ -825,7 +825,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(resources[rindex].size);
+      res = (UnionOfResources *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -904,7 +904,7 @@ static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
    }
 }
 
-void init_sd_config(CONFIG *config, const char *configfile, int exit_code)
+void init_sd_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -923,7 +923,7 @@ void init_sd_config(CONFIG *config, const char *configfile, int exit_code)
    config->set_config_include_dir("bareos-sd.d");
 }
 
-bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code)
+bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    bool retval;
 

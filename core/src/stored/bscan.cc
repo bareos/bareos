@@ -37,7 +37,7 @@
 #include "cats/cats.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
 static void do_scan(void);

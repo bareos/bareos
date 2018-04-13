@@ -78,17 +78,17 @@ class DirectorResource : public TlsResource {
 /* Define the Union of all the above
  * resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    DirectorResource res_dir;
    ConsoleResource res_cons;
    CommonResourceHeader hdr;
 
-   URES() {new(&hdr) CommonResourceHeader();}
-   ~URES() {}
+   UnionOfResources() {new(&hdr) CommonResourceHeader();}
+   ~UnionOfResources() {}
 };
 
 extern ConsoleResource *me;                    /* "Global" Client resource */
-extern CONFIG *my_config;             /* Our Global config */
+extern ConfigurationParser *my_config;             /* Our Global config */
 
-void init_cons_config(CONFIG *config, const char *configfile, int exit_code);
+void init_cons_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool print_config_schema_json(PoolMem &buffer);

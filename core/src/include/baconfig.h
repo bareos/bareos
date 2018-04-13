@@ -173,10 +173,10 @@ void InitWinAPIWrapper();
 /* Maximum Name length including EOS */
 #define MAX_NAME_LENGTH 128
 
-/* Maximum escaped Name lenght including EOS 2*MAX_NAME_LENGTH+1 */
+/* Maximum escaped Name length including EOS 2*MAX_NAME_LENGTH+1 */
 #define MAX_ESCAPE_NAME_LENGTH 257
 
-/* Maximume number of user entered command args */
+/* Maximum number of user entered command args */
 #define MAX_CMD_ARGS 30
 
 /* All tape operations MUST be a multiple of this */

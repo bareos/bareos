@@ -34,7 +34,7 @@
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);
-extern bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_fd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Forward referenced functions */
@@ -42,7 +42,7 @@ static bool check_resources();
 
 /* Exported variables */
 ClientResource *me = NULL;                 /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 bool no_signals = false;
 bool backup_only_mode = false;

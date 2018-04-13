@@ -618,7 +618,7 @@ static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool e
 {
    int token;
    IncludeExcludeItem *incexe;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    if (pass == 1) {
@@ -658,7 +658,7 @@ static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, 
 {
    int token;
    IncludeExcludeItem *incexe;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    if (exclude) {
       scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
@@ -731,7 +731,7 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
    bool options;
    int token, i;
    IncludeExcludeItem *incexe;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    if (!res_all->res_fs.have_MD5) {
       MD5_Init(&res_all->res_fs.md5c);

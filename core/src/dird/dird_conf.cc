@@ -85,7 +85,7 @@ extern void store_run(LEX *lc, ResourceItem *item, int index, int pass);
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static URES res_all;
+static UnionOfResources res_all;
 static int32_t res_all_size = sizeof(res_all);
 
 /**
@@ -585,7 +585,7 @@ static ResourceTable resources[] = {
  * Note, when this resource is used, we are inside a Job
  * resource. We treat the RunScript like a sort of
  * mini-resource within the Job resource. As such we
- * don't use the URES union because that contains
+ * don't use the UnionOfResources union because that contains
  * a Job resource (and it would corrupt the Job resource)
  * but use a global separate resource for holding the
  * runscript data.
@@ -2357,7 +2357,7 @@ void dump_resource(int type, CommonResourceHeader *ures,
 {
    PoolMem buf;
    bool recurse = true;
-   URES *res = (URES *)ures;
+   UnionOfResources *res = (UnionOfResources *)ures;
    UaContext *ua = (UaContext *)sock;
 
    if (!res) {
@@ -2488,7 +2488,7 @@ void free_resource(CommonResourceHeader *sres, int type)
 {
    int num;
    CommonResourceHeader *nres; /* next resource if linked */
-   URES *res = (URES *)sres;
+   UnionOfResources *res = (UnionOfResources *)sres;
 
    if (!res)
       return;
@@ -2925,7 +2925,7 @@ void free_resource(CommonResourceHeader *sres, int type)
 
 static bool update_resource_pointer(int type, ResourceItem *items)
 {
-   URES *res;
+   UnionOfResources *res;
    bool result = true;
 
    switch (type) {
@@ -2948,7 +2948,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
        *
        * Find resource saved in pass 1
        */
-      if (!(res = (URES *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_POOL, res_all.res_pool.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Pool resource %s\n"), res_all.res_pool.name());
          return false;
       } else {
@@ -2965,7 +2965,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       }
       break;
    case R_CONSOLE:
-      if (!(res = (URES *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_CONSOLE, res_all.res_con.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Console resource %s\n"), res_all.res_con.name());
          return false;
       } else {
@@ -2974,7 +2974,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       }
       break;
    case R_DIRECTOR:
-      if (!(res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
          return false;
       } else {
@@ -2985,7 +2985,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       }
       break;
    case R_STORAGE:
-      if (!(res = (URES *)GetResWithName(type, res_all.res_store.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(type, res_all.res_store.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Storage resource %s\n"), res_all.res_dir.name());
          return false;
       } else {
@@ -3010,7 +3010,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       break;
    case R_JOBDEFS:
    case R_JOB:
-      if (!(res = (URES *)GetResWithName(type, res_all.res_job.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(type, res_all.res_job.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Job resource %s\n"), res_all.res_job.name());
          return false;
       } else {
@@ -3070,7 +3070,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       }
       break;
    case R_COUNTER:
-      if (!(res = (URES *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_COUNTER, res_all.res_counter.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Counter resource %s\n"), res_all.res_counter.name());
          return false;
       } else {
@@ -3079,7 +3079,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
       }
       break;
    case R_CLIENT:
-      if (!(res = (URES *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_CLIENT, res_all.res_client.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Client resource %s\n"), res_all.res_client.name());
          return false;
       } else {
@@ -3104,7 +3104,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
        * in by run_conf.c during pass 2, so here we jam the pointer
        * into the Schedule resource.
        */
-      if (!(res = (URES *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
+      if (!(res = (UnionOfResources *)GetResWithName(R_SCHEDULE, res_all.res_client.name()))) {
          Emsg1(M_ERROR, 0, _("Cannot find Schedule resource %s\n"), res_all.res_client.name());
          return false;
       } else {
@@ -3142,7 +3142,7 @@ static bool update_resource_pointer(int type, ResourceItem *items)
  */
 bool save_resource(int type, ResourceItem *items, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = type - R_FIRST;
 
    switch (type) {
@@ -3184,7 +3184,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    /*
     * Common
     */
-   res = (URES *)malloc(resources[rindex].size);
+   res = (UnionOfResources *)malloc(resources[rindex].size);
    memcpy(res, &res_all, resources[rindex].size);
    if (!res_head[rindex]) {
       res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -3364,14 +3364,14 @@ static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass
  */
 static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = R_DEVICE - R_FIRST;
    bool found = false;
 
    if (pass == 1) {
       lex_get_token(lc, T_NAME);
       if (!res_head[rindex]) {
-         res = (URES *)malloc(resources[rindex].size);
+         res = (UnionOfResources *)malloc(resources[rindex].size);
          memset(res, 0, resources[rindex].size);
          res->res_dev.hdr.name = bstrdup(lc->str);
          res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -3389,7 +3389,7 @@ static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
             }
          }
          if (!found) {
-            res = (URES *)malloc(resources[rindex].size);
+            res = (UnionOfResources *)malloc(resources[rindex].size);
             memset(res, 0, resources[rindex].size);
             res->res_dev.hdr.name = bstrdup(lc->str);
             next->next = (CommonResourceHeader *)res;
@@ -4393,7 +4393,7 @@ static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool h
    }
 }
 
-void init_dir_config(CONFIG *config, const char *configfile, int exit_code)
+void init_dir_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -4412,7 +4412,7 @@ void init_dir_config(CONFIG *config, const char *configfile, int exit_code)
    config->set_config_include_dir("bareos-dir.d");
 }
 
-bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code)
+bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    init_dir_config(config, configfile, exit_code);
 

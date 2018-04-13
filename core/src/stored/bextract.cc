@@ -33,7 +33,7 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 
-extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 static void do_extract(char *devname);
 static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);

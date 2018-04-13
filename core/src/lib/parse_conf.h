@@ -386,7 +386,7 @@ typedef void (PRINT_RES_HANDLER)(ResourceItem *items, int i, PoolMem &cfg_str, b
 /*
  * New C++ configuration routines
  */
-class DLL_IMP_EXP CONFIG {
+class DLL_IMP_EXP ConfigurationParser {
 public:
    /*
     * Members
@@ -468,7 +468,7 @@ protected:
    int get_resource_table_index(int resource_type);
 };
 
-CONFIG *new_config_parser();
+ConfigurationParser *new_config_parser();
 
 DLL_IMP_EXP void prtmsg(void *sock, const char *fmt, ...);
 

@@ -32,7 +32,7 @@
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
 
-extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 typedef struct s_id_ctx {
    int64_t *Id;                       /* ids to be modified */
@@ -66,7 +66,7 @@ static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 #endif
 
 DirectorResource *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
 

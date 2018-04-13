@@ -620,7 +620,7 @@ public:
  * Define the Union of all the above
  * resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    DirectorResource res_dir;
    ConsoleResource res_con;
    ProfileResource res_profile;
@@ -636,15 +636,15 @@ union URES {
    DeviceResource res_dev;
    CommonResourceHeader hdr;
 
-   URES() {
+   UnionOfResources() {
       new (&hdr) CommonResourceHeader();
       Dmsg1(900, "hdr:        %p \n", &hdr);
       Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
       Dmsg1(900, "res_con.hdr %p\n", &res_con.hdr);
    }
-   ~URES() {}
+   ~UnionOfResources() {}
 };
 
-void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
+void init_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool propagate_jobdefs(int res_type, JobResource *res);
 bool validate_resource(int type, ResourceItem *items, BareosResource *res);

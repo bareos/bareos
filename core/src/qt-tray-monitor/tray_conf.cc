@@ -60,7 +60,7 @@ static CommonResourceHeader **res_head = sres_head;
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-URES res_all;
+UnionOfResources res_all;
 int32_t res_all_size = sizeof(res_all);
 
 /*
@@ -180,7 +180,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *soc
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
    PoolMem buf;
-   URES *res = (URES *)reshdr;
+   UnionOfResources *res = (UnionOfResources *)reshdr;
    BareosResource *resclass;
    bool recurse = true;
 
@@ -215,7 +215,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *soc
 void free_resource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres; /* next resource if linked */
-   URES *res = (URES *)sres;
+   UnionOfResources *res = (UnionOfResources *)sres;
 
    if (res == NULL)
       return;
@@ -283,7 +283,7 @@ void free_resource(CommonResourceHeader *sres, int type)
  */
 bool save_resource(int type, ResourceItem *items, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = type - R_FIRST;
    int i;
    int error = 0;
@@ -345,7 +345,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(resources[rindex].size);
+      res = (UnionOfResources *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -372,7 +372,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
    return (error == 0);
 }
 
-void init_tmon_config(CONFIG *config, const char *configfile, int exit_code)
+void init_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -391,7 +391,7 @@ void init_tmon_config(CONFIG *config, const char *configfile, int exit_code)
    config->set_config_include_dir("tray-monitor.d");
 }
 
-bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
+bool parse_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    init_tmon_config(config, configfile, exit_code);
    return config->parse_config();

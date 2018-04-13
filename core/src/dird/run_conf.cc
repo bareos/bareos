@@ -180,7 +180,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
    utime_t utime;
    CommonResourceHeader *res;
    RunResource **run = (RunResource **)(item->value);
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lc->options |= LOPT_NO_IDENT;      /* Want only "strings" */
 

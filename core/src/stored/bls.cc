@@ -34,7 +34,7 @@
 #include "findlib/find.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 static void do_blocks(char *infname);
 static void do_jobs(char *infname);

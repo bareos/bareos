@@ -46,7 +46,7 @@
 
 /* Globals that dird.c exports */
 extern DirectorResource *me;                   /**< Our Global resource */
-extern CONFIG *my_config;            /**< Our Global config */
+extern ConfigurationParser *my_config;            /**< Our Global config */
 
 /* Used in ua_prune.c and ua_purge.c */
 

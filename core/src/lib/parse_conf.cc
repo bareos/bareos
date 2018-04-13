@@ -61,7 +61,7 @@
 /*
  * Define the Union of all the common resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    MessagesResource  res_msgs;
    CommonResourceHeader hdr;
 };
@@ -80,15 +80,15 @@ void prtmsg(void *sock, const char *fmt, ...)
    va_end(arg_ptr);
 }
 
-CONFIG *new_config_parser()
+ConfigurationParser *new_config_parser()
 {
-   CONFIG *config;
-   config = (CONFIG *)malloc(sizeof(CONFIG));
-   memset(config, 0, sizeof(CONFIG));
+   ConfigurationParser *config;
+   config = (ConfigurationParser *)malloc(sizeof(ConfigurationParser));
+   memset(config, 0, sizeof(ConfigurationParser));
    return config;
 }
 
-void CONFIG::init(const char *cf,
+void ConfigurationParser::init(const char *cf,
                   LEX_ERROR_HANDLER *scan_error,
                   LEX_WARNING_HANDLER *scan_warning,
                   INIT_RES_HANDLER *init_res,
@@ -121,17 +121,17 @@ void CONFIG::init(const char *cf,
    res_head_ = res_head;
 }
 
-void CONFIG::set_default_config_filename(const char *filename)
+void ConfigurationParser::set_default_config_filename(const char *filename)
 {
    config_default_filename_ = bstrdup(filename);
 }
 
-void CONFIG::set_config_include_dir(const char* rel_path)
+void ConfigurationParser::set_config_include_dir(const char* rel_path)
 {
    config_include_dir_ = bstrdup(rel_path);
 }
 
-bool CONFIG::parse_config()
+bool ConfigurationParser::parse_config()
 {
    static bool first = true;
    int errstat;
@@ -152,7 +152,7 @@ bool CONFIG::parse_config()
    return parse_config_file(config_path.c_str(), NULL, scan_error_, scan_warning_, err_type_);
 }
 
-bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error,
+bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error,
                                LEX_WARNING_HANDLER *scan_warning, int32_t err_type)
 {
    bool result = true;
@@ -298,7 +298,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
                level--;
                state = p_none;
                Dmsg0(900, "T_EOB => define new resource\n");
-               if (((URES *)res_all_)->hdr.name == NULL) {
+               if (((UnionOfResources *)res_all_)->hdr.name == NULL) {
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
                }
@@ -353,12 +353,12 @@ bail_out:
    return false;
 }
 
-const char *CONFIG::get_resource_type_name(int code)
+const char *ConfigurationParser::get_resource_type_name(int code)
 {
    return res_to_str(code);
 }
 
-int CONFIG::get_resource_table_index(int resource_type)
+int ConfigurationParser::get_resource_table_index(int resource_type)
 {
    int rindex = -1;
 
@@ -369,7 +369,7 @@ int CONFIG::get_resource_table_index(int resource_type)
    return rindex;
 }
 
-ResourceTable *CONFIG::get_resource_table(int resource_type)
+ResourceTable *ConfigurationParser::get_resource_table(int resource_type)
 {
    ResourceTable *result = NULL;
    int rindex = get_resource_table_index(resource_type);
@@ -381,7 +381,7 @@ ResourceTable *CONFIG::get_resource_table(int resource_type)
    return result;
 }
 
-ResourceTable *CONFIG::get_resource_table(const char *resource_type_name)
+ResourceTable *ConfigurationParser::get_resource_table(const char *resource_type_name)
 {
    ResourceTable *result = NULL;
    int i;
@@ -395,7 +395,7 @@ ResourceTable *CONFIG::get_resource_table(const char *resource_type_name)
    return result;
 }
 
-int CONFIG::get_resource_item_index(ResourceItem *items, const char *item)
+int ConfigurationParser::get_resource_item_index(ResourceItem *items, const char *item)
 {
    int result = -1;
    int i;
@@ -410,7 +410,7 @@ int CONFIG::get_resource_item_index(ResourceItem *items, const char *item)
    return result;
 }
 
-ResourceItem *CONFIG::get_resource_item(ResourceItem *items, const char *item)
+ResourceItem *ConfigurationParser::get_resource_item(ResourceItem *items, const char *item)
 {
    ResourceItem *result = NULL;
    int i = -1;
@@ -423,7 +423,7 @@ ResourceItem *CONFIG::get_resource_item(ResourceItem *items, const char *item)
    return result;
 }
 
-const char *CONFIG::get_default_configdir()
+const char *ConfigurationParser::get_default_configdir()
 {
 #if defined(HAVE_WIN32)
    HRESULT hr;
@@ -469,7 +469,7 @@ static inline void set_env(const char *key, const char *value)
 }
 #endif
 
-bool CONFIG::get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename)
+bool ConfigurationParser::get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename)
 {
    bool found = false;
 
@@ -490,7 +490,7 @@ bool CONFIG::get_config_file(PoolMem &full_path, const char *config_dir, const c
    return found;
 }
 
-bool CONFIG::get_config_include_path(PoolMem &full_path, const char *config_dir)
+bool ConfigurationParser::get_config_include_path(PoolMem &full_path, const char *config_dir)
 {
    bool found = false;
 
@@ -521,7 +521,7 @@ bool CONFIG::get_config_include_path(PoolMem &full_path, const char *config_dir)
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-bool CONFIG::find_config_path(PoolMem &full_path)
+bool ConfigurationParser::find_config_path(PoolMem &full_path)
 {
    bool found = false;
    PoolMem config_dir;
@@ -587,7 +587,7 @@ bool CONFIG::find_config_path(PoolMem &full_path)
    return found;
 }
 
-void CONFIG::free_resources()
+void ConfigurationParser::free_resources()
 {
    for (int i = r_first_; i<= r_last_; i++) {
       free_resource(res_head_[i-r_first_], i);
@@ -612,7 +612,7 @@ void CONFIG::free_resources()
 
 }
 
-CommonResourceHeader **CONFIG::save_resources()
+CommonResourceHeader **ConfigurationParser::save_resources()
 {
    int num = r_last_ - r_first_ + 1;
    CommonResourceHeader **res = (CommonResourceHeader **)malloc(num*sizeof(CommonResourceHeader *));
@@ -625,7 +625,7 @@ CommonResourceHeader **CONFIG::save_resources()
    return res;
 }
 
-CommonResourceHeader **CONFIG::new_res_head()
+CommonResourceHeader **ConfigurationParser::new_res_head()
 {
    int size = (r_last_ - r_first_ + 1) * sizeof(CommonResourceHeader *);
    CommonResourceHeader **res = (CommonResourceHeader **)malloc(size);
@@ -638,14 +638,14 @@ CommonResourceHeader **CONFIG::new_res_head()
 /*
  * Initialize the static structure to zeros, then apply all the default values.
  */
-void CONFIG::init_resource(int type,
+void ConfigurationParser::init_resource(int type,
                            ResourceItem *items,
                            int pass,
                            std::function<void *(void *res)> initres) {
-   URES *res_all;
+   UnionOfResources *res_all;
 
    memset(res_all_, 0, res_all_size_);
-   res_all = ((URES *)res_all_);
+   res_all = ((UnionOfResources *)res_all_);
    if (initres != nullptr) {
       initres(res_all);
    }
@@ -863,7 +863,7 @@ void CONFIG::init_resource(int type,
    }
 }
 
-bool CONFIG::remove_resource(int type, const char *name)
+bool ConfigurationParser::remove_resource(int type, const char *name)
 {
    int rindex = type - r_first_;
    CommonResourceHeader *last;
@@ -899,7 +899,7 @@ bool CONFIG::remove_resource(int type, const char *name)
    return false;
 }
 
-void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
+void ConfigurationParser::dump_resources(void sendit(void *sock, const char *fmt, ...),
                             void *sock, bool hide_sensitive_data)
 {
    for (int i = r_first_; i <= r_last_; i++) {
@@ -909,7 +909,7 @@ void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
    }
 }
 
-bool CONFIG::get_path_of_resource(PoolMem &path, const char *component,
+bool ConfigurationParser::get_path_of_resource(PoolMem &path, const char *component,
                                   const char *resourcetype, const char *name, bool set_wildcards)
 {
    PoolMem rel_path(PM_FNAME);
@@ -948,7 +948,7 @@ bool CONFIG::get_path_of_resource(PoolMem &path, const char *component,
    return true;
 }
 
-bool CONFIG::get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
+bool ConfigurationParser::get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
                                       const char *resourcetype, const char *name,
                                       bool error_if_exists, bool create_directories)
 {

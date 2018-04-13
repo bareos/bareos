@@ -83,6 +83,6 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 extern char SD_IMP_EXP *configfile;
 extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
 extern STORES SD_IMP_EXP *me;         /* "Global" daemon resource */
-extern CONFIG SD_IMP_EXP *my_config;  /* Our Global config */
+extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
 
 #endif /* __STORED_H_ */

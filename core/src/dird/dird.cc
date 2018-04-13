@@ -56,7 +56,7 @@ static bool init_sighandler_sighup();
 /* Exported subroutines */
 extern bool do_reload_config();
 extern void invalidate_schedules();
-extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 extern void prtmsg(void *sock, const char *fmt, ...);
 
 /* Imported subroutines */
@@ -76,7 +76,7 @@ static alist *reload_table = NULL;
 
 /* Globals Exported */
 DirectorResource *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = NULL;             /* Our Global config */
 char *configfile = NULL;
 void *start_heap;
 

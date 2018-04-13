@@ -46,7 +46,7 @@
 #include "protos.h"                   /* file daemon prototypes */
 
 extern ClientResource *me;                 /* "Global" Client resource */
-extern CONFIG *my_config;             /* Our Global config */
+extern ConfigurationParser *my_config;             /* Our Global config */
 
 void terminate_filed(int sig);
 

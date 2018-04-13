@@ -41,7 +41,7 @@ MonitorItem::~MonitorItem()
 
 char* MonitorItem::get_name() const
 {
-   return static_cast<URES*>(d->resource)->hdr.name;
+   return static_cast<UnionOfResources*>(d->resource)->hdr.name;
 }
 
 void MonitorItem::writecmd(const char* command)

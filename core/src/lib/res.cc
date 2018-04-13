@@ -32,7 +32,7 @@
 
 /* Forward referenced subroutines */
 
-extern CONFIG *my_config;             /* Our Global config */
+extern ConfigurationParser *my_config;             /* Our Global config */
 
 /*
  * Set default indention e.g. 2 spaces.
@@ -42,7 +42,7 @@ extern CONFIG *my_config;             /* Our Global config */
 /*
  * Define the Union of all the common resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    MessagesResource res_msgs;
    CommonResourceHeader hdr;
 };
@@ -210,7 +210,7 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
         *tsf = NULL;
    POOLMEM *dest;
    int dest_len;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
 
@@ -353,7 +353,7 @@ static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_name(LEX *lc, ResourceItem *item, int index, int pass)
 {
    POOLMEM *msg = get_pool_memory(PM_EMSG);
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (!is_name_valid(lc->str, msg)) {
@@ -381,7 +381,7 @@ static void store_name(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_strname(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    /*
     * Store the name
@@ -406,7 +406,7 @@ static void store_strname(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_str(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -428,7 +428,7 @@ static void store_str(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_stdstr(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -452,7 +452,7 @@ static void store_stdstr(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_dir(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -474,7 +474,7 @@ static void store_dir(LEX *lc, ResourceItem *item, int index, int pass)
 
 static void store_stdstrdir(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -500,7 +500,7 @@ static void store_stdstrdir(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_md5password(LEX *lc, ResourceItem *item, int index, int pass)
 {
    s_password *pwd;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -544,7 +544,7 @@ static void store_md5password(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_clearpassword(LEX *lc, ResourceItem *item, int index, int pass)
 {
    s_password *pwd;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -570,7 +570,7 @@ static void store_clearpassword(LEX *lc, ResourceItem *item, int index, int pass
 static void store_res(LEX *lc, ResourceItem *item, int index, int pass)
 {
    CommonResourceHeader *res;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (pass == 2) {
@@ -603,7 +603,7 @@ static void store_alist_res(LEX *lc, ResourceItem *item, int index, int pass)
    CommonResourceHeader *res;
    int i = 0;
    alist *list;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
    int count = str_to_int32(item->default_value);
 
    if (pass == 2) {
@@ -653,7 +653,7 @@ static void store_alist_res(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_alist_str(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    if (pass == 2) {
       if (!*(item->value)) {
@@ -697,7 +697,7 @@ static void store_alist_str(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_alist_dir(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    if (pass == 2) {
       if (!*(item->alistvalue)) {
@@ -743,7 +743,7 @@ static void store_plugin_names(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
    char *p, *plugin_name, *plugin_names;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    if (pass == 2) {
       lex_get_token(lc, T_STRING);   /* scan next item */
@@ -804,7 +804,7 @@ static void store_defs(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_int16(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_INT16);
    *(item->i16value) = lc->u.int16_val;
@@ -815,7 +815,7 @@ static void store_int16(LEX *lc, ResourceItem *item, int index, int pass)
 
 static void store_int32(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_INT32);
    *(item->i32value) = lc->u.int32_val;
@@ -829,7 +829,7 @@ static void store_int32(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_pint16(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_PINT16);
    *(item->ui16value) = lc->u.pint16_val;
@@ -840,7 +840,7 @@ static void store_pint16(LEX *lc, ResourceItem *item, int index, int pass)
 
 static void store_pint32(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_PINT32);
    *(item->ui32value) = lc->u.pint32_val;
@@ -854,7 +854,7 @@ static void store_pint32(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_int64(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_INT64);
    *(item->i64value) = lc->u.int64_val;
@@ -880,7 +880,7 @@ static void store_int_unit(LEX *lc, ResourceItem *item, int index, int pass,
    int token;
    uint64_t uvalue;
    char bsize[500];
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    Dmsg0(900, "Enter store_unit\n");
    token = lex_get_token(lc, T_SKIP_EOL);
@@ -980,7 +980,7 @@ static void store_time(LEX *lc, ResourceItem *item, int index, int pass)
    int token;
    utime_t utime;
    char period[500];
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    errno = 0;
@@ -1024,7 +1024,7 @@ static void store_time(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_bit(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -1045,7 +1045,7 @@ static void store_bit(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_bool(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -1067,7 +1067,7 @@ static void store_bool(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_label(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
-   URES *res_all = (URES *)my_config->res_all_;
+   UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    /*

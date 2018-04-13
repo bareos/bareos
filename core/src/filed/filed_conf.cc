@@ -65,7 +65,7 @@ static CommonResourceHeader **res_head = sres_head;
  * then move it to allocated memory when the resource
  * scan is complete.
  */
-static URES res_all;
+static UnionOfResources res_all;
 static int32_t res_all_size = sizeof(res_all);
 
 /**
@@ -179,7 +179,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
    PoolMem buf;
-   URES *res = (URES *)reshdr;
+   UnionOfResources *res = (UnionOfResources *)reshdr;
    BareosResource *resclass;
    int recurse = 1;
 
@@ -221,7 +221,7 @@ void dump_resource(int type, CommonResourceHeader *reshdr,
 void free_resource(CommonResourceHeader *sres, int type)
 {
    CommonResourceHeader *nres;
-   URES *res = (URES *)sres;
+   UnionOfResources *res = (UnionOfResources *)sres;
 
    if (res == NULL) {
       return;
@@ -419,7 +419,7 @@ void free_resource(CommonResourceHeader *sres, int type)
  */
 bool save_resource(int type, ResourceItem *items, int pass)
 {
-   URES *res;
+   UnionOfResources *res;
    int rindex = type - R_FIRST;
    int i;
    int error = 0;
@@ -454,7 +454,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
             /*
              * Resources containing another resource
              */
-            if ((res = (URES *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)GetResWithName(R_DIRECTOR, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Director resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_dir.tls_cert.allowed_cns = res_all.res_dir.tls_cert.allowed_cns;
@@ -463,7 +463,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
             }
             break;
          case R_CLIENT:
-            if ((res = (URES *)GetResWithName(R_CLIENT, res_all.res_dir.name())) == NULL) {
+            if ((res = (UnionOfResources *)GetResWithName(R_CLIENT, res_all.res_dir.name())) == NULL) {
                Emsg1(M_ABORT, 0, _("Cannot find Client resource %s\n"), res_all.res_dir.name());
             } else {
                res->res_client.plugin_names = res_all.res_client.plugin_names;
@@ -501,7 +501,7 @@ bool save_resource(int type, ResourceItem *items, int pass)
     * Common
     */
    if (!error) {
-      res = (URES *)malloc(resources[rindex].size);
+      res = (UnionOfResources *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
          res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
@@ -603,7 +603,7 @@ static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
    }
 }
 
-void init_fd_config(CONFIG *config, const char *configfile, int exit_code)
+void init_fd_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    config->init(configfile,
                 NULL,
@@ -622,7 +622,7 @@ void init_fd_config(CONFIG *config, const char *configfile, int exit_code)
    config->set_config_include_dir("bareos-fd.d");
 }
 
-bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
+bool parse_fd_config(ConfigurationParser *config, const char *configfile, int exit_code)
 {
    init_fd_config(config, configfile, exit_code);
    return config->parse_config();

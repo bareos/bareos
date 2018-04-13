@@ -39,7 +39,7 @@
 
 /* Dummy functions */
 void generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value) { }
-extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Global variables */
 static int num_files = 0;
@@ -50,7 +50,7 @@ static int trunc_path = 0;
 static int attrs = 0;
 
 DirectorResource *me = NULL;                    /* Our Global resource */
-CONFIG *my_config = NULL;             /* Our Global config */
+ConfigurationParser *my_config = NULL;             /* Our Global config */
 
 static JobControlRecord *jcr;
 

@@ -181,7 +181,7 @@ public:
    DeviceResource() : BareosResource() {}
 };
 
-union URES {
+union UnionOfResources {
    DirectorResource res_dir;
    NdmpResource res_ndmp;
    STORES res_store;
@@ -190,9 +190,9 @@ union URES {
    AutochangerResource res_changer;
    CommonResourceHeader hdr;
 
-   URES() {new(&hdr) CommonResourceHeader();}
-   ~URES() {}
+   UnionOfResources() {new(&hdr) CommonResourceHeader();}
+   ~UnionOfResources() {}
 };
 
-void init_sd_config(CONFIG *config, const char *configfile, int exit_code);
+void init_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool print_config_schema_json(PoolMem &buffer);

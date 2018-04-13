@@ -39,7 +39,7 @@
 #include "lib/crypto_cache.h"
 
 /* Dummy functions */
-extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
+extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
 /* Exported variables */
 int quit = 0;

@@ -16,7 +16,7 @@ endif
 
 # currently not working, missing qt debug packages
 #ifeq ($(WIN_DEBUG),yes)
-#QMAKE_ARGS += "CONFIG+=debug"
+#QMAKE_ARGS += "ConfigurationParser+=debug"
 #endif
 
 #

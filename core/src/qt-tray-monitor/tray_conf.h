@@ -35,7 +35,7 @@
 #ifndef TRAY_CONF_H_INCLUDED
 #define TRAY_CONF_H_INCLUDED
 
-extern CONFIG *my_config;
+extern ConfigurationParser *my_config;
 
 enum Rescode {
    R_UNKNOWN = 0,
@@ -121,7 +121,7 @@ public:
 /* Define the Union of all the above
  * resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    MonitorResource res_monitor;
    DirectorResource res_dir;
    ClientResource res_client;
@@ -129,15 +129,15 @@ union URES {
    ConsoleFontResource con_font;
    CommonResourceHeader hdr;
 
-   URES() {
+   UnionOfResources() {
       new(&hdr) CommonResourceHeader();
       Dmsg1(900, "hdr:        %p \n", &hdr);
       Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
    }
-   ~URES() {}
+   ~UnionOfResources() {}
 };
 
-void init_tmon_config(CONFIG *config, const char *configfile, int exit_code);
+void init_tmon_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool print_config_schema_json(PoolMem &buffer);
 
 #endif /* TRAY_CONF_H_INCLUDED */

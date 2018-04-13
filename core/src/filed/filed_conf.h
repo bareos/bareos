@@ -108,15 +108,15 @@ public:
 /* Define the Union of all the above
  * resource structure definitions.
  */
-union URES {
+union UnionOfResources {
    DirectorResource res_dir;
    ClientResource res_client;
    MessagesResource res_msgs;
    CommonResourceHeader hdr;
 
-   URES() {new(&hdr) CommonResourceHeader();}
-   ~URES() {}
+   UnionOfResources() {new(&hdr) CommonResourceHeader();}
+   ~UnionOfResources() {}
 };
 
-void init_fd_config(CONFIG *config, const char *configfile, int exit_code);
+void init_fd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool print_config_schema_json(PoolMem &buffer);
