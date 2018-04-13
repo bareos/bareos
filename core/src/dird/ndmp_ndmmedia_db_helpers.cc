@@ -36,16 +36,16 @@
 
 /**
  * Store ndmmedia information into database in MEDIA and JOBMEDIA information.
- * we map the ndm_media fields into the MEDIA_DBR and JOBMEDIA_DBR fields as follows
+ * we map the ndm_media fields into the MediaDbRecord and JobMediaDbRecord fields as follows
  *
  ***********************************************************************************************
- *     NDM_MEDIA                        |        MEDIA_DBR / JOBMEDIA_DBR                      *
+ *     NDM_MEDIA                        |        MediaDbRecord / JobMediaDbRecord                      *
  ***********************************************************************************************
- char     label[NDMMEDIA_LABEL_MAX+1];  |  MEDIA_DBR:      char VolumeName[MAX_NAME_LENGTH];
- unsigned slot_addr;                    |  MEDIA_DBR:      int32_t Slot;
+ char     label[NDMMEDIA_LABEL_MAX+1];  |  MediaDbRecord:      char VolumeName[MAX_NAME_LENGTH];
+ unsigned slot_addr;                    |  MediaDbRecord:      int32_t Slot;
  -----------------------------------------------------------------------------------------------
- unsigned file_mark_offset;             |  JOBMEDIA_DBR:   uint32_t StartBlock;
- uint64_t n_bytes;                      |  JOBMEDIA_DBR:   uint64_t JobBytes;
+ unsigned file_mark_offset;             |  JobMediaDbRecord:   uint32_t StartBlock;
+ uint64_t n_bytes;                      |  JobMediaDbRecord:   uint64_t JobBytes;
  ***********************************************************************************************
 
  Notes:
@@ -54,7 +54,7 @@
  */
 
 
-void ndmmedia_to_bareos_db_records(ndmmedia *media, MEDIA_DBR *mr, JOBMEDIA_DBR *jm)
+void ndmmedia_to_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
 {
    bstrncpy(mr->VolumeName, media->label, NDMMEDIA_LABEL_MAX);
    mr->Slot = media->slot_addr;
@@ -94,7 +94,7 @@ void ndmmedia_to_bareos_db_records(ndmmedia *media, MEDIA_DBR *mr, JOBMEDIA_DBR 
    mr->VolFiles = media->file_mark_offset;
 }
 
-void ndmmedia_from_bareos_db_records(ndmmedia *media, MEDIA_DBR *mr, JOBMEDIA_DBR *jm)
+void ndmmedia_from_bareos_db_records(ndmmedia *media, MediaDbRecord *mr, JobMediaDbRecord *jm)
 {
    bstrncpy(media->label, mr->VolumeName, NDMMEDIA_LABEL_MAX - 1);
    media->valid_label = NDMP9_VALIDITY_VALID;
@@ -114,10 +114,10 @@ void ndmmedia_from_bareos_db_records(ndmmedia *media, MEDIA_DBR *mr, JOBMEDIA_DB
 }
 
 
-bool store_ndmmedia_info_in_database(ndmmedia *media, JCR  *jcr)
+bool store_ndmmedia_info_in_database(ndmmedia *media, JobControlRecord  *jcr)
 {
-   JOBMEDIA_DBR jm;
-   MEDIA_DBR mr;
+   JobMediaDbRecord jm;
+   MediaDbRecord mr;
 
    memset(&jm, 0, sizeof(jm));
    memset(&mr, 0, sizeof(mr));
@@ -161,17 +161,17 @@ bool store_ndmmedia_info_in_database(ndmmedia *media, JCR  *jcr)
 /*
  * get ndmmedia from database for certain job
  */
-bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JCR  *jcr)
+bool get_ndmmedia_info_from_database(ndm_media_table *media_tab, JobControlRecord  *jcr)
 {
 
-   JOBMEDIA_DBR jm;
-   MEDIA_DBR mr;
+   JobMediaDbRecord jm;
+   MediaDbRecord mr;
 
    memset(&jm, 0, sizeof(jm));
    memset(&mr, 0, sizeof(mr));
 
    int VolCount;
-   VOL_PARAMS *VolParams = NULL;
+   VolumeParameters *VolParams = NULL;
    bool retval = false;
 
 

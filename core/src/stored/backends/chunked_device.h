@@ -87,19 +87,19 @@ struct chunk_descriptor {
 
 #include "lib/ordered_cbuf.h"
 
-class chunked_device: public DEVICE {
+class chunked_device: public Device {
 private:
    /*
     * Private Members
     */
-   bool m_io_threads_started;
-   bool m_end_of_media;
-   bool m_readonly;
-   uint8_t m_inflight_chunks;
-   char *m_current_volname;
-   ordered_circbuf *m_cb;
-   alist *m_thread_ids;
-   chunk_descriptor *m_current_chunk;
+   bool io_threads_started_;
+   bool end_of_media_;
+   bool readonly_;
+   uint8_t inflight_chunks_;
+   char *current_volname_;
+   ordered_circbuf *cb_;
+   alist *thread_ids_;
+   chunk_descriptor *current_chunk_;
 
    /*
     * Private Methods
@@ -117,12 +117,12 @@ protected:
    /*
     * Protected Members
     */
-   uint8_t m_io_threads;
-   uint8_t m_io_slots;
-   uint8_t m_retries;
-   uint64_t m_chunk_size;
-   boffset_t m_offset;
-   bool m_use_mmap;
+   uint8_t io_threads_;
+   uint8_t io_slots_;
+   uint8_t retries_;
+   uint64_t chunk_size_;
+   boffset_t offset_;
+   bool use_mmap_;
 
    /*
     * Protected Methods
@@ -135,7 +135,7 @@ protected:
    ssize_t read_chunked(int fd, void *buffer, size_t count);
    ssize_t write_chunked(int fd, const void *buffer, size_t count);
    int close_chunk();
-   bool truncate_chunked_volume(DCR *dcr);
+   bool truncate_chunked_volume(DeviceControlRecord *dcr);
    ssize_t chunked_volume_size();
    bool load_chunk();
 
@@ -145,7 +145,7 @@ protected:
    virtual bool flush_remote_chunk(chunk_io_request *request) = 0;
    virtual bool read_remote_chunk(chunk_io_request *request) = 0;
    virtual ssize_t chunked_remote_volume_size() = 0;
-   virtual bool truncate_remote_chunked_volume(DCR *dcr) = 0;
+   virtual bool truncate_remote_chunked_volume(DeviceControlRecord *dcr) = 0;
 
 public:
    /*
@@ -158,14 +158,14 @@ public:
    bool device_status(bsdDevStatTrig *dst);
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
    virtual int d_close(int fd) = 0;
    virtual int d_open(const char *pathname, int flags, int mode) = 0;
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL) = 0;
-   virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence) = 0;
+   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) = 0;
    virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
-   virtual bool d_truncate(DCR *dcr) = 0;
+   virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
 };
 #endif /* CHUNKED_DEVICE_H */

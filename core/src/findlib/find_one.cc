@@ -49,12 +49,12 @@ extern int32_t path_max;              /* path name max length */
  * However, be careful to zero out the rest of the
  * packet.
  */
-static inline FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
+static inline FindFilesPacket *new_dir_ff_pkt(FindFilesPacket *ff_pkt)
 {
-   FF_PKT *dir_ff_pkt;
+   FindFilesPacket *dir_ff_pkt;
 
-   dir_ff_pkt = (FF_PKT *)bmalloc(sizeof(FF_PKT));
-   memcpy(dir_ff_pkt, ff_pkt, sizeof(FF_PKT));
+   dir_ff_pkt = (FindFilesPacket *)bmalloc(sizeof(FindFilesPacket));
+   memcpy(dir_ff_pkt, ff_pkt, sizeof(FindFilesPacket));
    dir_ff_pkt->fname = bstrdup(ff_pkt->fname);
    dir_ff_pkt->link = bstrdup(ff_pkt->link);
    dir_ff_pkt->sys_fname = get_pool_memory(PM_FNAME);
@@ -72,7 +72,7 @@ static inline FF_PKT *new_dir_ff_pkt(FF_PKT *ff_pkt)
 /**
  * Free the temp directory ff_pkt
  */
-static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
+static void free_dir_ff_pkt(FindFilesPacket *dir_ff_pkt)
 {
    free(dir_ff_pkt->fname);
    free(dir_ff_pkt->link);
@@ -94,12 +94,12 @@ static void free_dir_ff_pkt(FF_PKT *dir_ff_pkt)
  * If we do not have a list of file system types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static bool accept_fstype(FF_PKT *ff, void *dummy)
+static bool accept_fstype(FindFilesPacket *ff, void *dummy)
 {
    return true;
 }
 #else
-static bool accept_fstype(FF_PKT *ff, void *dummy)
+static bool accept_fstype(FindFilesPacket *ff, void *dummy)
 {
    int i;
    char fs[1000];
@@ -131,7 +131,7 @@ static bool accept_fstype(FF_PKT *ff, void *dummy)
  * If we do not have a list of drive types, we accept anything.
  */
 #if defined(HAVE_WIN32)
-static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
+static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
 {
    int i;
    char dt[100];
@@ -157,7 +157,7 @@ static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
    return accept;
 }
 #else
-static inline bool accept_drivetype(FF_PKT *ff, void *dummy)
+static inline bool accept_drivetype(FindFilesPacket *ff, void *dummy)
 {
    return true;
 }
@@ -201,7 +201,7 @@ static bool volume_has_attrlist(const char *fname)
 /**
  * check for BSD nodump flag
  */
-static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
+static inline bool no_dump(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
 #if defined(HAVE_CHFLAGS) && defined(UF_NODUMP)
    if (bit_is_set(FO_HONOR_NODUMP, ff_pkt->flags) &&
@@ -217,7 +217,7 @@ static inline bool no_dump(JCR *jcr, FF_PKT *ff_pkt)
 /**
  * check for sizes
  */
-static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
+static inline bool check_size_matching(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    int64_t begin_size, end_size, difference;
 
@@ -269,7 +269,7 @@ static inline bool check_size_matching(JCR *jcr, FF_PKT *ff_pkt)
 /**
  * Check if a file have changed during backup and display an error
  */
-bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
+bool has_file_changed(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    struct stat statp;
    Dmsg1(500, "has_file_changed fname=%s\n",ff_pkt->fname);
@@ -322,7 +322,7 @@ bool has_file_changed(JCR *jcr, FF_PKT *ff_pkt)
  * For incremental/diffential or accurate backups, we
  * determine if the current file has changed.
  */
-bool check_changes(JCR *jcr, FF_PKT *ff_pkt)
+bool check_changes(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    /*
     * In special mode (like accurate backup), the programmer can
@@ -345,7 +345,7 @@ bool check_changes(JCR *jcr, FF_PKT *ff_pkt)
    return true;
 }
 
-static inline bool have_ignoredir(FF_PKT *ff_pkt)
+static inline bool have_ignoredir(FindFilesPacket *ff_pkt)
 {
    struct stat sb;
    char *ignoredir;
@@ -379,7 +379,7 @@ static inline bool have_ignoredir(FF_PKT *ff_pkt)
 /**
  * Restore file times.
  */
-static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
+static inline void restore_file_times(FindFilesPacket *ff_pkt, char *fname)
 {
 #if defined(HAVE_LUTIMES)
    struct timeval restore_times[2];
@@ -413,8 +413,8 @@ static inline void restore_file_times(FF_PKT *ff_pkt, char *fname)
 /**
  * Handling of a HFS+ attributes.
  */
-static inline int process_hfsattributes(JCR *jcr, FF_PKT *ff_pkt,
-                                        int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_hfsattributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                        int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                         char *fname, bool top_level)
 {
     /*
@@ -440,8 +440,8 @@ static inline int process_hfsattributes(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * Handling of a hardlinked file.
  */
-static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
-                                   int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                   int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                    char *fname, bool top_level, bool *done)
 {
    int rtn_stat = 0;
@@ -485,8 +485,8 @@ static inline int process_hardlink(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * Handling of a regular file.
  */
-static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
-                                       int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_regular_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                       int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                        char *fname, bool top_level)
 {
    int rtn_stat;
@@ -523,8 +523,8 @@ static inline int process_regular_file(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * Handling of a symlink.
  */
-static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
-                                  int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_symlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                  int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                   char *fname, bool top_level)
 {
    int rtn_stat;
@@ -560,8 +560,8 @@ static inline int process_symlink(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * Handling of a directory.
  */
-static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
-                                    int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_directory(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                    int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                     char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
@@ -658,7 +658,7 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
     * be reset after all the files have been restored.
     */
    Dmsg1(300, "Create temp ff packet for dir: %s\n", ff_pkt->fname);
-   FF_PKT *dir_ff_pkt = new_dir_ff_pkt(ff_pkt);
+   FindFilesPacket *dir_ff_pkt = new_dir_ff_pkt(ff_pkt);
 
    /*
     * Do not descend into subdirectories (recurse) if the
@@ -861,8 +861,8 @@ static inline int process_directory(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * Handling of a special file.
  */
-static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
-                                       int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+static inline int process_special_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                                       int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                                        char *fname, bool top_level)
 {
    int rtn_stat;
@@ -908,7 +908,7 @@ static inline int process_special_file(JCR *jcr, FF_PKT *ff_pkt,
 /**
  * See if we need to perform any processing for a given file.
  */
-static inline bool needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
+static inline bool needs_processing(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname)
 {
    int loglevel = M_INFO;
 
@@ -959,8 +959,8 @@ static inline bool needs_processing(JCR *jcr, FF_PKT *ff_pkt, char *fname)
  *    parent_device is the device we are currently on
  *    top_level is 1 when not recursing or 0 when descending into a directory.
  */
-int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
-                  int handle_file(JCR *jcr, FF_PKT *ff, bool top_level),
+int find_one_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
+                  int handle_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level),
                   char *fname, dev_t parent_device, bool top_level)
 {
    int rtn_stat;
@@ -1085,7 +1085,7 @@ int find_one_file(JCR *jcr, FF_PKT *ff_pkt,
    }
 }
 
-int term_find_one(FF_PKT *ff)
+int term_find_one(FindFilesPacket *ff)
 {
    int count;
 

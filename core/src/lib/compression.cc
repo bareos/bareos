@@ -100,19 +100,19 @@ static const char *zlib_strerror(int stat)
 }
 #endif
 
-static inline void unknown_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
+static inline void unknown_compression_algorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
 {
    Jmsg(jcr, M_FATAL, 0, _("%s compression not supported on this platform\n"),
         cmprs_algo_to_text(compression_algorithm));
 }
 
-static inline void non_compatible_compression_algorithm(JCR *jcr, uint32_t compression_algorithm)
+static inline void non_compatible_compression_algorithm(JobControlRecord *jcr, uint32_t compression_algorithm)
 {
    Jmsg(jcr, M_FATAL, 0, _("Illegal compression algorithm %s for compatible mode\n"),
         cmprs_algo_to_text(compression_algorithm));
 }
 
-bool setup_compression_buffers(JCR *jcr,
+bool setup_compression_buffers(JobControlRecord *jcr,
                                bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size)
@@ -272,7 +272,7 @@ bool setup_compression_buffers(JCR *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
+bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
 {
    uint32_t compress_buf_size;
 
@@ -296,7 +296,7 @@ bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
 }
 
 #ifdef HAVE_LIBZ
-static bool compress_with_zlib(JCR *jcr,
+static bool compress_with_zlib(JobControlRecord *jcr,
                                char *rbuf,
                                uint32_t rsize,
                                unsigned char *cbuf,
@@ -338,7 +338,7 @@ static bool compress_with_zlib(JCR *jcr,
 #endif
 
 #ifdef HAVE_LZO
-static bool compress_with_lzo(JCR *jcr,
+static bool compress_with_lzo(JobControlRecord *jcr,
                               char *rbuf,
                               uint32_t rsize,
                               unsigned char *cbuf,
@@ -370,7 +370,7 @@ static bool compress_with_lzo(JCR *jcr,
 #endif
 
 #ifdef HAVE_FASTLZ
-static bool compress_with_fastlz(JCR *jcr,
+static bool compress_with_fastlz(JobControlRecord *jcr,
                                  char *rbuf,
                                  uint32_t rsize,
                                  unsigned char *cbuf,
@@ -411,7 +411,7 @@ static bool compress_with_fastlz(JCR *jcr,
 }
 #endif
 
-bool compress_data(JCR *jcr,
+bool compress_data(JobControlRecord *jcr,
                    uint32_t compression_algorithm,
                    char *rbuf,
                    uint32_t rsize,
@@ -458,7 +458,7 @@ bool compress_data(JCR *jcr,
 }
 
 #ifdef HAVE_LIBZ
-static bool decompress_with_zlib(JCR *jcr,
+static bool decompress_with_zlib(JobControlRecord *jcr,
                                  const char *last_fname,
                                  char **data,
                                  uint32_t *length,
@@ -536,7 +536,7 @@ static bool decompress_with_zlib(JCR *jcr,
 }
 #endif
 #ifdef HAVE_LZO
-static bool decompress_with_lzo(JCR *jcr,
+static bool decompress_with_lzo(JobControlRecord *jcr,
                                 const char *last_fname,
                                 char **data,
                                 uint32_t *length,
@@ -600,7 +600,7 @@ static bool decompress_with_lzo(JCR *jcr,
 #endif
 
 #ifdef HAVE_FASTLZ
-static bool decompress_with_fastlz(JCR *jcr,
+static bool decompress_with_fastlz(JobControlRecord *jcr,
                                    const char *last_fname,
                                    char **data,
                                    uint32_t *length,
@@ -694,7 +694,7 @@ cleanup:
 }
 #endif
 
-bool decompress_data(JCR *jcr,
+bool decompress_data(JobControlRecord *jcr,
                      const char *last_fname,
                      int32_t stream,
                      char **data,
@@ -795,7 +795,7 @@ bool decompress_data(JCR *jcr,
    }
 }
 
-void cleanup_compression(JCR *jcr)
+void cleanup_compression(JobControlRecord *jcr)
 {
    if (jcr->compress.deflate_buffer) {
       free_pool_memory(jcr->compress.deflate_buffer);
@@ -839,7 +839,7 @@ const char *cmprs_algo_to_text(uint32_t compression_algorithm)
    return "Unknown";
 }
 
-bool setup_compression_buffers(JCR *jcr,
+bool setup_compression_buffers(JobControlRecord *jcr,
                                bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size)
@@ -847,13 +847,13 @@ bool setup_compression_buffers(JCR *jcr,
    return true;
 }
 
-bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size)
+bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size)
 {
    *decompress_buf_size = 0;
    return true;
 }
 
-bool compress_data(JCR *jcr,
+bool compress_data(JobControlRecord *jcr,
                    uint32_t compression_algorithm,
                    char *rbuf,
                    uint32_t rsize,
@@ -864,7 +864,7 @@ bool compress_data(JCR *jcr,
    return true;
 }
 
-bool decompress_data(JCR *jcr,
+bool decompress_data(JobControlRecord *jcr,
                      const char *last_fname,
                      int32_t stream,
                      char **data,
@@ -875,7 +875,7 @@ bool decompress_data(JCR *jcr,
    return false;
 }
 
-void cleanup_compression(JCR *jcr)
+void cleanup_compression(JobControlRecord *jcr)
 {
 }
 #endif /* defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ) */

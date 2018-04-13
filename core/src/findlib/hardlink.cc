@@ -33,7 +33,7 @@
 /**
  * Lookup a inode/dev in the list of hardlinked files.
  */
-CurLink *lookup_hardlink(JCR *jcr, FF_PKT *ff_pkt, ino_t ino, dev_t dev)
+CurLink *lookup_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, ino_t ino, dev_t dev)
 {
    CurLink *hl;
    uint64_t binary_search_key[2];
@@ -54,7 +54,7 @@ CurLink *lookup_hardlink(JCR *jcr, FF_PKT *ff_pkt, ino_t ino, dev_t dev)
    return hl;
 }
 
-CurLink *new_hardlink(JCR *jcr, FF_PKT *ff_pkt, char *fname, ino_t ino, dev_t dev)
+CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname, ino_t ino, dev_t dev)
 {
    int len;
    CurLink *hl = NULL;
@@ -92,7 +92,7 @@ CurLink *new_hardlink(JCR *jcr, FF_PKT *ff_pkt, char *fname, ino_t ino, dev_t de
  * When the current file is a hardlink, the backup code can compute
  * the checksum and store it into the CurLink structure.
  */
-void ff_pkt_set_link_digest(FF_PKT *ff_pkt, int32_t digest_stream,
+void ff_pkt_set_link_digest(FindFilesPacket *ff_pkt, int32_t digest_stream,
                             const char *digest, uint32_t len)
 {
    if (ff_pkt->linked && !ff_pkt->linked->digest) {     /* is a hardlink */

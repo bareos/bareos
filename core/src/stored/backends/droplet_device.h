@@ -36,14 +36,14 @@ private:
    /*
     * Private Members
     */
-   char *m_configstring;
-   const char *m_profile;
-   const char *m_location;
-   const char *m_canned_acl;
-   const char *m_storage_class;
-   const char *m_bucketname;
-   dpl_ctx_t *m_ctx;
-   dpl_sysmd_t m_sysmd;
+   char *configstring_;
+   const char *profile_;
+   const char *location_;
+   const char *canned_acl_;
+   const char *storage_class_;
+   const char *bucketname_;
+   dpl_ctx_t *ctx_;
+   dpl_sysmd_t sysmd_;
 
    /*
     * Private Methods
@@ -56,7 +56,7 @@ private:
    bool flush_remote_chunk(chunk_io_request *request);
    bool read_remote_chunk(chunk_io_request *request);
    ssize_t chunked_remote_volume_size();
-   bool truncate_remote_chunked_volume(DCR *dcr);
+   bool truncate_remote_chunked_volume(DeviceControlRecord *dcr);
 
 public:
    /*
@@ -66,14 +66,14 @@ public:
    ~droplet_device();
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
    int d_close(int fd);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DCR *dcr);
+   bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* OBJECTSTORE_DEVICE_H */

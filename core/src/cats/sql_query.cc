@@ -33,11 +33,11 @@
 
 static const int dbglvl = 100;
 
-const char *B_DB::get_predefined_query_name(B_DB::SQL_QUERY_ENUM query) {
+const char *BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY_ENUM query) {
   return query_names[query];
 }
 
-const char *B_DB::get_predefined_query(B_DB::SQL_QUERY_ENUM query) {
+const char *BareosDb::get_predefined_query(BareosDb::SQL_QUERY_ENUM query) {
    if(!queries) {
       Emsg0(M_ERROR, 0, "No SQL queries defined. This should not happen.");
       return NULL;
@@ -46,7 +46,7 @@ const char *B_DB::get_predefined_query(B_DB::SQL_QUERY_ENUM query) {
    return queries[query];
 }
 
-void B_DB::fill_query(B_DB::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::fill_query(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
@@ -55,7 +55,7 @@ void B_DB::fill_query(B_DB::SQL_QUERY_ENUM predefined_query, ...)
    va_end(arg_ptr);
 }
 
-void B_DB::fill_query(POOL_MEM &query, B_DB::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::fill_query(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
@@ -64,7 +64,7 @@ void B_DB::fill_query(POOL_MEM &query, B_DB::SQL_QUERY_ENUM predefined_query, ..
    va_end(arg_ptr);
 }
 
-void B_DB::fill_query(POOLMEM *&query, B_DB::SQL_QUERY_ENUM predefined_query, ...)
+void BareosDb::fill_query(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
 
@@ -75,9 +75,9 @@ void B_DB::fill_query(POOLMEM *&query, B_DB::SQL_QUERY_ENUM predefined_query, ..
 
 
 
-void B_DB::fill_query_va_list(POOLMEM *&query, B_DB::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
+void BareosDb::fill_query_va_list(POOLMEM *&query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
 {
-   POOL_MEM query_tmp(PM_MESSAGE);
+   PoolMem query_tmp(PM_MESSAGE);
 
    fill_query_va_list(query_tmp, predefined_query, arg_ptr);
    pm_memcpy(query, query_tmp, query_tmp.strlen()+1);
@@ -85,7 +85,7 @@ void B_DB::fill_query_va_list(POOLMEM *&query, B_DB::SQL_QUERY_ENUM predefined_q
 
 
 
-void B_DB::fill_query_va_list(POOL_MEM &query, B_DB::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
+void BareosDb::fill_query_va_list(PoolMem &query, BareosDb::SQL_QUERY_ENUM predefined_query, va_list arg_ptr)
 {
    const char *query_name;
    const char *query_template;
@@ -104,10 +104,10 @@ void B_DB::fill_query_va_list(POOL_MEM &query, B_DB::SQL_QUERY_ENUM predefined_q
 
 
 
-bool B_DB::sql_query(B_DB::SQL_QUERY_ENUM predefined_query, ...)
+bool BareosDb::sql_query(BareosDb::SQL_QUERY_ENUM predefined_query, ...)
 {
    va_list arg_ptr;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    va_start(arg_ptr, predefined_query);
    fill_query_va_list(query, predefined_query, arg_ptr);
@@ -117,7 +117,7 @@ bool B_DB::sql_query(B_DB::SQL_QUERY_ENUM predefined_query, ...)
 }
 
 
-bool B_DB::sql_query(const char *query, int flags)
+bool BareosDb::sql_query(const char *query, int flags)
 {
    bool retval;
 
@@ -133,7 +133,7 @@ bool B_DB::sql_query(const char *query, int flags)
    return retval;
 }
 
-bool B_DB::sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval;
 

@@ -81,11 +81,11 @@ static char changerdrivesresponse[] =
 /**
  * Establish a connection with the Storage daemon and perform authentication.
  */
-bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
+bool connect_to_storage_daemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose)
 {
-   BSOCK *sd;
-   STORERES *store;
+   BareosSocket *sd;
+   StoreResource *store;
    utime_t heart_beat;
 
    if (jcr->store_bsock) {
@@ -138,9 +138,9 @@ bool connect_to_storage_daemon(JCR *jcr, int retry_interval,
 /**
  * Open a connection to a SD.
  */
-BSOCK *open_sd_bsock(UAContext *ua)
+BareosSocket *open_sd_bsock(UaContext *ua)
 {
-   STORERES *store = ua->jcr->res.wstore;
+   StoreResource *store = ua->jcr->res.wstore;
 
    if (!ua->jcr->store_bsock) {
       ua->send_msg(_("Connecting to Storage daemon %s at %s:%d ...\n"),
@@ -156,7 +156,7 @@ BSOCK *open_sd_bsock(UAContext *ua)
 /**
  * Close a connection to a SD.
  */
-void close_sd_bsock(UAContext *ua)
+void close_sd_bsock(UaContext *ua)
 {
    if (ua->jcr->store_bsock) {
       ua->jcr->store_bsock->signal(BNET_TERMINATE);
@@ -169,10 +169,10 @@ void close_sd_bsock(UAContext *ua)
 /**
  * We get the volume name from the SD
  */
-char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t drive)
+char *get_volume_name_from_SD(UaContext *ua, slot_number_t Slot, drive_number_t drive)
 {
-   BSOCK *sd;
-   STORERES *store = ua->jcr->res.wstore;
+   BareosSocket *sd;
+   StoreResource *store = ua->jcr->res.wstore;
    char dev_name[MAX_NAME_LENGTH];
    char *VolName = NULL;
    int rtn_slot;
@@ -243,7 +243,7 @@ char *get_volume_name_from_SD(UAContext *ua, slot_number_t Slot, drive_number_t 
  *
  * If a drive is loaded, the slot *should* be empty
  */
-dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan)
+dlist *native_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan)
 {
    int nr_fields;
    char *bp;
@@ -251,7 +251,7 @@ dlist *native_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool sc
    char *field1, *field2, *field3, *field4, *field5;
    vol_list_t *vl = NULL;
    dlist *vol_list;
-   BSOCK *sd = NULL;
+   BareosSocket *sd = NULL;
 
    ua->jcr->res.wstore = store;
    if (!(sd = open_sd_bsock(ua))) {
@@ -524,10 +524,10 @@ parse_error:
 /**
  * We get the number of slots in the changer from the SD
  */
-slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
+slot_number_t native_get_num_slots(UaContext *ua, StoreResource *store)
 {
    char dev_name[MAX_NAME_LENGTH];
-   BSOCK *sd;
+   BareosSocket *sd;
    slot_number_t slots = 0;
 
    ua->jcr->res.wstore = store;
@@ -558,10 +558,10 @@ slot_number_t native_get_num_slots(UAContext *ua, STORERES *store)
 /**
  * We get the number of drives in the changer from the SD
  */
-drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
+drive_number_t native_get_num_drives(UaContext *ua, StoreResource *store)
 {
    char dev_name[MAX_NAME_LENGTH];
-   BSOCK *sd;
+   BareosSocket *sd;
    drive_number_t drives = 0;
 
    ua->jcr->res.wstore = store;
@@ -594,10 +594,10 @@ drive_number_t native_get_num_drives(UAContext *ua, STORERES *store)
  * Director already removed the Job and thinks it finished but the Storage
  * Daemon still thinks its active.
  */
-bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
+bool cancel_storage_daemon_job(UaContext *ua, StoreResource *store, char *JobId)
 {
-   BSOCK *sd;
-   JCR *control_jcr;
+   BareosSocket *sd;
+   JobControlRecord *control_jcr;
 
    control_jcr = new_control_jcr("*JobCancel*", JT_SYSTEM);
 
@@ -627,10 +627,10 @@ bool cancel_storage_daemon_job(UAContext *ua, STORERES *store, char *JobId)
  * if we are interactive or not e.g. when doing an interactive cancel
  * or a system invoked one.
  */
-bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
+bool cancel_storage_daemon_job(UaContext *ua, JobControlRecord *jcr, bool interactive)
 {
-   BSOCK *sd;
-   USTORERES store;
+   BareosSocket *sd;
+   UnifiedStoreResource store;
 
    if (!ua->jcr->res.wstorage) {
       if (jcr->res.rstorage) {
@@ -674,7 +674,7 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
 
    /*
     * An interactive cancel means we need to send a signal to the actual
-    * controlling JCR of the Job to let it know it got canceled.
+    * controlling JobControlRecord of the Job to let it know it got canceled.
     */
    if (interactive) {
       jcr->my_thread_send_signal(TIMEOUT_SIGNAL);
@@ -688,10 +688,10 @@ bool cancel_storage_daemon_job(UAContext *ua, JCR *jcr, bool interactive)
  * non interactive version this builds a ua context and calls
  * the interactive one with the interactive flag set to false.
  */
-void cancel_storage_daemon_job(JCR *jcr)
+void cancel_storage_daemon_job(JobControlRecord *jcr)
 {
-   UAContext *ua;
-   JCR *control_jcr;
+   UaContext *ua;
+   JobControlRecord *control_jcr;
 
    if (jcr->sd_canceled) {
       return;                   /* cancel only once */
@@ -715,10 +715,10 @@ bail_out:
 /**
  * Get the status of a remote storage daemon.
  */
-void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
+void do_native_storage_status(UaContext *ua, StoreResource *store, char *cmd)
 {
-   BSOCK *sd;
-   USTORERES lstore;
+   BareosSocket *sd;
+   UnifiedStoreResource lstore;
 
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
@@ -750,8 +750,8 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
 
    } else {
       int cnt = 0;
-      DEVICERES *device;
-      POOL_MEM devicenames;
+      DeviceResource *device;
+      PoolMem devicenames;
 
       /*
        * Build a list of devicenames that belong to this storage defintion.
@@ -786,10 +786,10 @@ void do_native_storage_status(UAContext *ua, STORERES *store, char *cmd)
  * Ask the autochanger to move a volume from one slot to another.
  * You have to update the database slots yourself afterwards.
  */
-bool native_transfer_volume(UAContext *ua, STORERES *store,
+bool native_transfer_volume(UaContext *ua, StoreResource *store,
                             slot_number_t src_slot, slot_number_t dst_slot)
 {
-   BSOCK *sd = NULL;
+   BareosSocket *sd = NULL;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
@@ -834,10 +834,10 @@ bool native_transfer_volume(UAContext *ua, STORERES *store,
 /**
  * Ask the autochanger to perform a mount, umount or release operation.
  */
-bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
+bool native_autochanger_volume_operation(UaContext *ua, StoreResource *store,
                                          const char *operation, drive_number_t drive, slot_number_t slot)
 {
-   BSOCK *sd = NULL;
+   BareosSocket *sd = NULL;
    bool retval = true;
    char dev_name[MAX_NAME_LENGTH];
 
@@ -877,9 +877,9 @@ bool native_autochanger_volume_operation(UAContext *ua, STORERES *store,
  * sends request to report secure erase command
  * and receives the command or "*None*" of not set
  */
-bool send_secure_erase_req_to_sd(JCR *jcr) {
+bool send_secure_erase_req_to_sd(JobControlRecord *jcr) {
    int32_t n;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    if (!jcr->SDSecureEraseCmd) {
       jcr->SDSecureEraseCmd = get_pool_memory(PM_NAME);
@@ -901,9 +901,9 @@ bool send_secure_erase_req_to_sd(JCR *jcr) {
    return true;
 }
 
-bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
+bool send_bwlimit_to_sd(JobControlRecord *jcr, const char *Job)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    sd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
    if (!response(jcr, sd, OKBandwidth, "Bandwidth", DISPLAY_ERROR)) {
@@ -917,10 +917,10 @@ bool send_bwlimit_to_sd(JCR *jcr, const char *Job)
 /**
  * resolve a host on a storage daemon
  */
-bool do_storage_resolve(UAContext *ua, STORERES *store)
+bool do_storage_resolve(UaContext *ua, StoreResource *store)
 {
-   BSOCK *sd;
-   USTORERES lstore;
+   BareosSocket *sd;
+   UnifiedStoreResource lstore;
 
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
@@ -950,12 +950,12 @@ bool do_storage_resolve(UAContext *ua, STORERES *store)
 /**
  * send Job specific plugin options to a storage daemon
  */
-bool do_storage_plugin_options(JCR *jcr)
+bool do_storage_plugin_options(JobControlRecord *jcr)
 {
    int i;
-   POOL_MEM cur_plugin_options(PM_MESSAGE);
+   PoolMem cur_plugin_options(PM_MESSAGE);
    const char *plugin_options;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    if (jcr->res.job &&
        jcr->res.job->SdPluginOptions &&

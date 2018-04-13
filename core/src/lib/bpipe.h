@@ -24,7 +24,7 @@
  * Bi-directional pipe structure
  */
 
-class BPIPE {
+class Bpipe {
 public:
    pid_t worker_pid;
    time_t worker_stime;

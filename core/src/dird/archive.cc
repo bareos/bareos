@@ -33,7 +33,7 @@
 
 static const int dbglvl = 100;
 
-bool do_archive_init(JCR *jcr)
+bool do_archive_init(JobControlRecord *jcr)
 {
    free_rstorage(jcr);
    if (!allow_duplicate_job(jcr)) {
@@ -47,7 +47,7 @@ bool do_archive_init(JCR *jcr)
  * Returns: false on failure
  *          true  on success
  */
-bool do_archive(JCR *jcr)
+bool do_archive(JobControlRecord *jcr)
 {
    jcr->jr.JobId = jcr->JobId;
 
@@ -67,7 +67,7 @@ bool do_archive(JCR *jcr)
 /**
  * Release resources allocated during archive.
  */
-void archive_cleanup(JCR *jcr, int TermCode)
+void archive_cleanup(JobControlRecord *jcr, int TermCode)
 {
    char sdt[50], edt[50], schedt[50];
    char term_code[100];

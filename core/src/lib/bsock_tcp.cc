@@ -50,7 +50,7 @@
 #define socketClose(fd)           ::close(fd)
 #endif
 
-BSOCK_TCP::BSOCK_TCP() : BSOCK()
+BSOCK_TCP::BSOCK_TCP() : BareosSocket()
 {
 }
 
@@ -59,7 +59,7 @@ BSOCK_TCP::~BSOCK_TCP()
    destroy();
 }
 
-BSOCK *BSOCK_TCP::clone()
+BareosSocket *BSOCK_TCP::clone()
 {
    BSOCK_TCP *clone;
    POOLMEM *o_msg, *o_errmsg;
@@ -67,7 +67,7 @@ BSOCK *BSOCK_TCP::clone()
    clone = New(BSOCK_TCP);
 
    /*
-    * Copy the data from the original BSOCK but preserve the msg and errmsg buffers.
+    * Copy the data from the original BareosSocket but preserve the msg and errmsg buffers.
     */
    o_msg = clone->msg;
    o_errmsg = clone->errmsg;
@@ -75,20 +75,20 @@ BSOCK *BSOCK_TCP::clone()
    clone->msg = o_msg;
    clone->errmsg = o_errmsg;
 
-   clone->SetTlsConnection(BSOCK::GetTlsConnection());
+   clone->SetTlsConnection(BareosSocket::GetTlsConnection());
 
-   if (m_who) {
-      clone->set_who(bstrdup(m_who));
+   if (who_) {
+      clone->set_who(bstrdup(who_));
    }
-   if (m_host) {
-      clone->set_host(bstrdup(m_host));
+   if (host_) {
+      clone->set_host(bstrdup(host_));
    }
    if (src_addr) {
       clone->src_addr = New(IPADDR(*(src_addr)));
    }
-   clone->m_cloned = true;
+   clone->cloned_ = true;
 
-   return (BSOCK *)clone;
+   return (BareosSocket *)clone;
 }
 
 /*
@@ -96,7 +96,7 @@ BSOCK *BSOCK_TCP::clone()
  * Note, you must have called the constructor prior to calling
  * this routine.
  */
-bool BSOCK_TCP::connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
+bool BSOCK_TCP::connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
                         utime_t heart_beat, const char *name, char *host,
                         char *service, int port, bool verbose)
 {
@@ -149,7 +149,7 @@ bail_out:
 /*
  * Finish initialization of the pocket structure.
  */
-void BSOCK_TCP::fin_init(JCR * jcr, int sockfd, const char *who, const char *host,
+void BSOCK_TCP::fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host,
                          int port, struct sockaddr *lclient_addr)
 {
    Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
@@ -164,9 +164,9 @@ void BSOCK_TCP::fin_init(JCR * jcr, int sockfd, const char *who, const char *hos
  * Open a TCP connection to the server
  *
  * Returns NULL
- * Returns BSOCK * pointer on success
+ * Returns BareosSocket * pointer on success
  */
-bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
+bool BSOCK_TCP::open(JobControlRecord *jcr, const char *name, char *host, char *service,
                      int port, utime_t heart_beat, int *fatal)
 {
    int sockfd = -1;
@@ -217,7 +217,7 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
       }
    }
 
-   if (m_use_keepalive) {
+   if (use_keepalive_) {
       value = 1;
    } else {
       value = 0;
@@ -281,7 +281,7 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
       /*
        * Keep socket from timing out from inactivity
        */
-      set_keepalive(jcr, sockfd, m_use_keepalive, heart_beat, heart_beat);
+      set_keepalive(jcr, sockfd, use_keepalive_, heart_beat, heart_beat);
 
       /*
        * Connect to server
@@ -320,12 +320,12 @@ bool BSOCK_TCP::open(JCR *jcr, const char *name, char *host, char *service,
 
    fin_init(jcr, sockfd, name, host, port, ipaddr->get_sockaddr());
    free_addresses(addr_list);
-   m_fd = sockfd;
+   fd_ = sockfd;
    return true;
 }
 
 
-bool BSOCK_TCP::set_keepalive(JCR *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
+bool BSOCK_TCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
 {
    int value = int(enable);
 
@@ -402,16 +402,16 @@ bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
          b_errno = errno;
       }
       if (rc < 0) {
-         if (!m_suppress_error_msgs) {
-            Qmsg5(m_jcr, M_ERROR, 0,
+         if (!suppress_error_msgs_) {
+            Qmsg5(jcr_, M_ERROR, 0,
                   _("Write error sending %d bytes to %s:%s:%d: ERR=%s\n"),
-                  msglen, m_who,
-                  m_host, m_port, this->bstrerror());
+                  msglen, who_,
+                  host_, port_, this->bstrerror());
          }
       } else {
-         Qmsg5(m_jcr, M_ERROR, 0,
+         Qmsg5(jcr_, M_ERROR, 0,
                _("Wrote %d bytes to %s:%s:%d, but only %d accepted.\n"),
-               msglen, m_who, m_host, m_port, rc);
+               msglen, who_, host_, port_, rc);
       }
       ok = false;
    }
@@ -449,23 +449,23 @@ bool BSOCK_TCP::send()
    int32_t *hdr = (int32_t *)(msg - (int)header_length);
 
    if (errors) {
-      if (!m_suppress_error_msgs) {
-         Qmsg4(m_jcr, M_ERROR, 0,  _("Socket has errors=%d on call to %s:%s:%d\n"),
-             errors, m_who, m_host, m_port);
+      if (!suppress_error_msgs_) {
+         Qmsg4(jcr_, M_ERROR, 0,  _("Socket has errors=%d on call to %s:%s:%d\n"),
+             errors, who_, host_, port_);
       }
       return false;
    }
 
    if (is_terminated()) {
-      if (!m_suppress_error_msgs) {
-         Qmsg4(m_jcr, M_ERROR, 0,  _("Socket is terminated=%d on call to %s:%s:%d\n"),
-             is_terminated(), m_who, m_host, m_port);
+      if (!suppress_error_msgs_) {
+         Qmsg4(jcr_, M_ERROR, 0,  _("Socket is terminated=%d on call to %s:%s:%d\n"),
+             is_terminated(), who_, host_, port_);
       }
       return false;
    }
 
-   if (m_use_locking) {
-      P(m_mutex);
+   if (use_locking_) {
+      P(mutex_);
    }
 
    /*
@@ -503,8 +503,8 @@ bool BSOCK_TCP::send()
       }
    }
 
-   if (m_use_locking) {
-      V(m_mutex);
+   if (use_locking_) {
+      V(mutex_);
    }
 
    return ok;
@@ -538,8 +538,8 @@ int32_t BSOCK_TCP::recv()
       return BNET_HARDEOF;
    }
 
-   if (m_use_locking) {
-      P(m_mutex);
+   if (use_locking_) {
+      P(mutex_);
    }
 
    read_seqno++;            /* bump sequence number */
@@ -567,8 +567,8 @@ int32_t BSOCK_TCP::recv()
    if (nbytes != header_length) {
       errors++;
       b_errno = EIO;
-      Qmsg5(m_jcr, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
-            header_length, nbytes, m_who, m_host, m_port);
+      Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
+            header_length, nbytes, who_, host_, port_);
       nbytes = BNET_ERROR;
       goto get_out;
    }
@@ -588,9 +588,9 @@ int32_t BSOCK_TCP::recv()
     */
    if (pktsiz < 0 || pktsiz > max_packet_size) {
       if (pktsiz > 0) {            /* if packet too big */
-         Qmsg3(m_jcr, M_FATAL, 0,
+         Qmsg3(jcr_, M_FATAL, 0,
                _("Packet size too big from \"%s:%s:%d. Terminating connection.\n"),
-               m_who, m_host, m_port);
+               who_, host_, port_);
          pktsiz = BNET_TERMINATE;  /* hang up */
       }
       if (pktsiz == BNET_TERMINATE) {
@@ -624,8 +624,8 @@ int32_t BSOCK_TCP::recv()
          b_errno = errno;
       }
       errors++;
-      Qmsg4(m_jcr, M_ERROR, 0, _("Read error from %s:%s:%d: ERR=%s\n"),
-            m_who, m_host, m_port, this->bstrerror());
+      Qmsg4(jcr_, M_ERROR, 0, _("Read error from %s:%s:%d: ERR=%s\n"),
+            who_, host_, port_, this->bstrerror());
       nbytes = BNET_ERROR;
       goto get_out;
    }
@@ -635,8 +635,8 @@ int32_t BSOCK_TCP::recv()
    if (nbytes != pktsiz) {
       b_errno = EIO;
       errors++;
-      Qmsg5(m_jcr, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
-            pktsiz, nbytes, m_who, m_host, m_port);
+      Qmsg5(jcr_, M_ERROR, 0, _("Read expected %d got %d from %s:%s:%d\n"),
+            pktsiz, nbytes, who_, host_, port_);
       nbytes = BNET_ERROR;
       goto get_out;
    }
@@ -654,8 +654,8 @@ int32_t BSOCK_TCP::recv()
    Dsm_check(300);
 
 get_out:
-   if (m_use_locking) {
-      V(m_mutex);
+   if (use_locking_) {
+      V(mutex_);
    }
 
    return nbytes;                  /* return actual length of message */
@@ -666,7 +666,7 @@ int BSOCK_TCP::get_peer(char *buf, socklen_t buflen)
 #if !defined(HAVE_WIN32)
     if (peer_addr.sin_family == 0) {
         socklen_t salen = sizeof(peer_addr);
-        int rval = (getpeername)(m_fd, (struct sockaddr *)&peer_addr, &salen);
+        int rval = (getpeername)(fd_, (struct sockaddr *)&peer_addr, &salen);
         if (rval < 0) return rval;
     }
     if (!inet_ntop(peer_addr.sin_family, &peer_addr.sin_addr, buf, buflen))
@@ -693,7 +693,7 @@ bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
    int opt;
 
    opt = IPTOS_THROUGHPUT;
-   setsockopt(m_fd, IPPROTO_IP, IP_TOS, (sockopt_val_t)&opt, sizeof(opt));
+   setsockopt(fd_, IPPROTO_IP, IP_TOS, (sockopt_val_t)&opt, sizeof(opt));
 #endif
 
    if (size != 0) {
@@ -703,7 +703,7 @@ bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
    }
    start_size = dbuf_size;
    if ((msg = realloc_pool_memory(msg, dbuf_size + 100)) == NULL) {
-      Qmsg0(get_jcr(), M_FATAL, 0, _("Could not malloc BSOCK data buffer\n"));
+      Qmsg0(get_jcr(), M_FATAL, 0, _("Could not malloc BareosSocket data buffer\n"));
       return false;
    }
 
@@ -718,7 +718,7 @@ bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
    }
 
    if (rw & BNET_SETBUF_READ) {
-      while ((dbuf_size > TAPE_BSIZE) && (setsockopt(m_fd, SOL_SOCKET,
+      while ((dbuf_size > TAPE_BSIZE) && (setsockopt(fd_, SOL_SOCKET,
               SO_RCVBUF, (sockopt_val_t) & dbuf_size, sizeof(dbuf_size)) < 0)) {
          berrno be;
          Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
@@ -737,7 +737,7 @@ bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
    }
    start_size = dbuf_size;
    if (rw & BNET_SETBUF_WRITE) {
-      while ((dbuf_size > TAPE_BSIZE) && (setsockopt(m_fd, SOL_SOCKET,
+      while ((dbuf_size > TAPE_BSIZE) && (setsockopt(fd_, SOL_SOCKET,
               SO_SNDBUF, (sockopt_val_t) & dbuf_size, sizeof(dbuf_size)) < 0)) {
          berrno be;
          Qmsg1(get_jcr(), M_ERROR, 0, _("sockopt error: %s\n"), be.bstrerror());
@@ -767,7 +767,7 @@ int BSOCK_TCP::set_nonblocking()
    /*
     * Get current flags
     */
-   if ((oflags = fcntl(m_fd, F_GETFL, 0)) < 0) {
+   if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"), be.bstrerror());
    }
@@ -775,20 +775,20 @@ int BSOCK_TCP::set_nonblocking()
    /*
     * Set O_NONBLOCK flag
     */
-   if ((fcntl(m_fd, F_SETFL, oflags|O_NONBLOCK)) < 0) {
+   if ((fcntl(fd_, F_SETFL, oflags|O_NONBLOCK)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
-   m_blocking = 0;
+   blocking_ = 0;
    return oflags;
 #else
    int flags;
    u_long ioctlArg = 1;
 
-   flags = m_blocking;
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 0;
+   flags = blocking_;
+   ioctlsocket(fd_, FIONBIO, &ioctlArg);
+   blocking_ = 0;
 
    return flags;
 #endif
@@ -807,7 +807,7 @@ int BSOCK_TCP::set_blocking()
    /*
     * Get current flags
     */
-   if ((oflags = fcntl(m_fd, F_GETFL, 0)) < 0) {
+   if ((oflags = fcntl(fd_, F_GETFL, 0)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_GETFL error. ERR=%s\n"), be.bstrerror());
    }
@@ -815,20 +815,20 @@ int BSOCK_TCP::set_blocking()
    /*
     * Set O_NONBLOCK flag
     */
-   if ((fcntl(m_fd, F_SETFL, oflags & ~O_NONBLOCK)) < 0) {
+   if ((fcntl(fd_, F_SETFL, oflags & ~O_NONBLOCK)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
-   m_blocking = 1;
+   blocking_ = 1;
    return oflags;
 #else
    int flags;
    u_long ioctlArg = 0;
 
-   flags = m_blocking;
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 1;
+   flags = blocking_;
+   ioctlsocket(fd_, FIONBIO, &ioctlArg);
+   blocking_ = 1;
 
    return flags;
 #endif
@@ -840,23 +840,23 @@ int BSOCK_TCP::set_blocking()
 void BSOCK_TCP::restore_blocking(int flags)
 {
 #ifndef HAVE_WIN32
-   if ((fcntl(m_fd, F_SETFL, flags)) < 0) {
+   if ((fcntl(fd_, F_SETFL, flags)) < 0) {
       berrno be;
       Qmsg1(get_jcr(), M_ABORT, 0, _("fcntl F_SETFL error. ERR=%s\n"), be.bstrerror());
    }
 
-   m_blocking = (flags & O_NONBLOCK) ? true : false;
+   blocking_ = (flags & O_NONBLOCK) ? true : false;
 #else
    u_long ioctlArg = flags;
 
-   ioctlsocket(m_fd, FIONBIO, &ioctlArg);
-   m_blocking = 1;
+   ioctlsocket(fd_, FIONBIO, &ioctlArg);
+   blocking_ = 1;
 #endif
 }
 
 /*
  * Wait for a specified time for data to appear on
- * the BSOCK connection.
+ * the BareosSocket connection.
  *
  * Returns: 1 if data available
  *          0 if timeout
@@ -867,7 +867,7 @@ int BSOCK_TCP::wait_data(int sec, int usec)
    int msec;
 
    msec = (sec * 1000) + (usec / 1000);
-   switch (wait_for_readable_fd(m_fd, msec, true)) {
+   switch (wait_for_readable_fd(fd_, msec, true)) {
    case 0:
       b_errno = 0;
       return 0;
@@ -888,7 +888,7 @@ int BSOCK_TCP::wait_data_intr(int sec, int usec)
    int msec;
 
    msec = (sec * 1000) + (usec / 1000);
-   switch (wait_for_readable_fd(m_fd, msec, false)) {
+   switch (wait_for_readable_fd(fd_, msec, false)) {
    case 0:
       b_errno = 0;
       return 0;
@@ -907,11 +907,11 @@ int BSOCK_TCP::wait_data_intr(int sec, int usec)
 
 void BSOCK_TCP::close()
 {
-   if (!m_cloned) {
+   if (!cloned_) {
       clear_locking();
    }
 
-   if (!m_cloned) {
+   if (!cloned_) {
       /*
        * Shutdown tls cleanly.
        */
@@ -920,10 +920,10 @@ void BSOCK_TCP::close()
          free_tls();
       }
       if (is_timed_out()) {
-         shutdown(m_fd, SHUT_RDWR);   /* discard any pending I/O */
+         shutdown(fd_, SHUT_RDWR);   /* discard any pending I/O */
       }
-      socketClose(m_fd);      /* normal close */
-      m_fd = -1;
+      socketClose(fd_);      /* normal close */
+      fd_ = -1;
    }
 
    return;
@@ -941,13 +941,13 @@ void BSOCK_TCP::destroy()
       free_pool_memory(errmsg);
       errmsg = NULL;
    }
-   if (m_who) {
-      free(m_who);
-      m_who = NULL;
+   if (who_) {
+      free(who_);
+      who_ = NULL;
    }
-   if (m_host) {
-      free(m_host);
-      m_host = NULL;
+   if (host_) {
+      free(host_);
+      host_ = NULL;
    }
    if (src_addr) {
       free(src_addr);
@@ -976,7 +976,7 @@ int32_t BSOCK_TCP::read_nbytes(char *ptr, int32_t nbytes)
    nleft = nbytes;
    while (nleft > 0) {
       errno = 0;
-      nread = socketRead(m_fd, ptr, nleft);
+      nread = socketRead(fd_, ptr, nleft);
       if (is_timed_out() || is_terminated()) {
          return -1;
       }
@@ -1031,7 +1031,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
    int32_t nleft, nwritten;
 
    if (is_spooling()) {
-      nwritten = write(m_spool_fd, ptr, nbytes);
+      nwritten = write(spool_fd_, ptr, nbytes);
       if (nwritten != nbytes) {
          berrno be;
          b_errno = errno;
@@ -1054,7 +1054,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
    while (nleft > 0) {
       do {
          errno = 0;
-         nwritten = socketWrite(m_fd, ptr, nleft);
+         nwritten = socketWrite(fd_, ptr, nleft);
          if (is_timed_out() || is_terminated()) {
             return -1;
          }
@@ -1085,7 +1085,7 @@ int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
        * the CPU and try again.
        */
       if (nwritten == -1 && errno == EAGAIN) {
-         wait_for_writable_fd(m_fd, 1, false);
+         wait_for_writable_fd(fd_, 1, false);
          continue;
       }
 

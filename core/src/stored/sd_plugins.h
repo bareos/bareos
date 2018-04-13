@@ -133,8 +133,8 @@ extern "C" {
 /**
  * Bareos interface version and function pointers
  */
-class DCR;
-struct DEV_RECORD;
+class DeviceControlRecord;
+struct DeviceRecord;
 
 typedef struct s_sdbareosFuncs {
    uint32_t size;
@@ -148,14 +148,14 @@ typedef struct s_sdbareosFuncs {
                      int type, utime_t mtime, const char *fmt, ...);
    bRC (*DebugMessage)(bpContext *ctx, const char *file, int line,
                        int level, const char *fmt, ...);
-   char *(*EditDeviceCodes)(DCR *dcr, POOLMEM *&omsg,
+   char *(*EditDeviceCodes)(DeviceControlRecord *dcr, POOLMEM *&omsg,
                             const char *imsg, const char *cmd);
    char *(*LookupCryptoKey)(const char *VolumeName);
-   bool (*UpdateVolumeInfo)(DCR *dcr);
-   void (*UpdateTapeAlert)(DCR *dcr, uint64_t flags);
-   DEV_RECORD *(*new_record)(bool with_data);
-   void (*copy_record_state)(DEV_RECORD *dst, DEV_RECORD *src);
-   void (*free_record)(DEV_RECORD *rec);
+   bool (*UpdateVolumeInfo)(DeviceControlRecord *dcr);
+   void (*UpdateTapeAlert)(DeviceControlRecord *dcr, uint64_t flags);
+   DeviceRecord *(*new_record)(bool with_data);
+   void (*copy_record_state)(DeviceRecord *dst, DeviceRecord *src);
+   void (*free_record)(DeviceRecord *rec);
 } bsdFuncs;
 
 /*
@@ -164,11 +164,11 @@ typedef struct s_sdbareosFuncs {
 #ifdef STORAGE_DAEMON
 void load_sd_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_sd_plugins(void);
-int list_sd_plugins(POOL_MEM &msg);
-void dispatch_new_plugin_options(JCR *jcr);
-void new_plugins(JCR *jcr);
-void free_plugins(JCR *jcr);
-bRC generate_plugin_event(JCR *jcr, bsdEventType event,
+int list_sd_plugins(PoolMem &msg);
+void dispatch_new_plugin_options(JobControlRecord *jcr);
+void new_plugins(JobControlRecord *jcr);
+void free_plugins(JobControlRecord *jcr);
+bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 

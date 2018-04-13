@@ -51,7 +51,7 @@ static void *do_batch(void *);
 
 
 /* Local variables */
-static B_DB *db;
+static BareosDb *db;
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
@@ -247,7 +247,7 @@ int main (int argc, char *argv[])
    i = nb;
    while (--i >= 0) {
       pthread_t thid;
-      JCR *bjcr = new_jcr(sizeof(JCR), NULL);
+      JobControlRecord *bjcr = new_jcr(sizeof(JobControlRecord), NULL);
       bjcr->bsr = NULL;
       bjcr->VolSessionId = 1;
       bjcr->VolSessionTime = (uint32_t)time(NULL);
@@ -302,7 +302,7 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-static void fill_attr(ATTR_DBR *ar, char *data)
+static void fill_attr(AttributesDbRecord *ar, char *data)
 {
    char *p;
    char *b;
@@ -335,10 +335,10 @@ static void fill_attr(ATTR_DBR *ar, char *data)
 
 static void *do_batch(void *jcr)
 {
-   JCR *bjcr = (JCR *)jcr;
+   JobControlRecord *bjcr = (JobControlRecord *)jcr;
    char data[1024];
    int lineno = 0;
-   struct ATTR_DBR ar;
+   struct AttributesDbRecord ar;
    memset(&ar, 0, sizeof(ar));
    btime_t begin = get_current_btime();
    char *datafile = bjcr->where;

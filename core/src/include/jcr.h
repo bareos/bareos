@@ -25,7 +25,7 @@
  *
  */
 /** @file
- * Bareos JCR Structure definition for Daemons and the Library
+ * Bareos JobControlRecord Structure definition for Daemons and the Library
  *
  *  This definition consists of a "Global" definition common
  *  to all daemons and used by the library routines, and a
@@ -182,15 +182,15 @@ enum {
 /**
  * Forward referenced structures
  */
-class JCR;
-class BSOCK;
-struct FF_PKT;
-class B_DB;
-struct ATTR_DBR;
+class JobControlRecord;
+class BareosSocket;
+struct FindFilesPacket;
+class BareosDb;
+struct AttributesDbRecord;
 struct save_pkt;
 struct bpContext;
 #ifdef HAVE_WIN32
-struct CP_THREAD_CTX;
+struct CopyThreadContext;
 #endif
 
 #ifdef FILE_DAEMON
@@ -199,7 +199,7 @@ class BareosAccurateFilelist;
 struct acl_data_t;
 struct xattr_data_t;
 
-struct CRYPTO_CTX {
+struct CryptoContext {
    bool pki_sign;                         /**< Enable PKI Signatures? */
    bool pki_encrypt;                      /**< Enable PKI Encryption? */
    DIGEST *digest;                        /**< Last file's digest context */
@@ -214,24 +214,24 @@ struct CRYPTO_CTX {
 #endif
 
 #ifdef DIRECTOR_DAEMON
-struct RESOURCES {
-   JOBRES *job;                           /**< Job resource */
-   JOBRES *verify_job;                    /**< Job resource of verify previous job */
-   JOBRES *previous_job;                  /**< Job resource of migration previous job */
-   STORERES *rstore;                      /**< Selected read storage */
-   STORERES *wstore;                      /**< Selected write storage */
-   STORERES *pstore;                      /**< Selected paired storage (saved wstore or rstore) */
-   CLIENTRES *client;                     /**< Client resource */
-   POOLRES *pool;                         /**< Pool resource = write for migration */
-   POOLRES *rpool;                        /**< Read pool. Used only in migration */
-   POOLRES *full_pool;                    /**< Full backup pool resource */
-   POOLRES *vfull_pool;                   /**< Virtual Full backup pool resource */
-   POOLRES *inc_pool;                     /**< Incremental backup pool resource */
-   POOLRES *diff_pool;                    /**< Differential backup pool resource */
-   POOLRES *next_pool;                    /**< Next Pool used for migration/copy and virtual backup */
-   FILESETRES *fileset;                   /**< FileSet resource */
-   CATRES *catalog;                       /**< Catalog resource */
-   MSGSRES *messages;                     /**< Default message handler */
+struct Resources {
+   JobResource *job;                           /**< Job resource */
+   JobResource *verify_job;                    /**< Job resource of verify previous job */
+   JobResource *previous_job;                  /**< Job resource of migration previous job */
+   StoreResource *rstore;                      /**< Selected read storage */
+   StoreResource *wstore;                      /**< Selected write storage */
+   StoreResource *pstore;                      /**< Selected paired storage (saved wstore or rstore) */
+   ClientResource *client;                     /**< Client resource */
+   PoolResource *pool;                         /**< Pool resource = write for migration */
+   PoolResource *rpool;                        /**< Read pool. Used only in migration */
+   PoolResource *full_pool;                    /**< Full backup pool resource */
+   PoolResource *vfull_pool;                   /**< Virtual Full backup pool resource */
+   PoolResource *inc_pool;                     /**< Incremental backup pool resource */
+   PoolResource *diff_pool;                    /**< Differential backup pool resource */
+   PoolResource *next_pool;                    /**< Next Pool used for migration/copy and virtual backup */
+   FilesetResource *fileset;                   /**< FileSet resource */
+   CatalogResource *catalog;                       /**< Catalog resource */
+   MessagesResource *messages;                     /**< Default message handler */
    POOLMEM *pool_source;                  /**< Where pool came from */
    POOLMEM *npool_source;                 /**< Where next pool came from */
    POOLMEM *rpool_source;                 /**< Where migrate read pool came from */
@@ -250,7 +250,7 @@ struct RESOURCES {
 };
 #endif
 
-struct CMPRS_CTX {
+struct CompressionContext {
    POOLMEM *deflate_buffer;               /**< Buffer used for deflation (compression) */
    POOLMEM *inflate_buffer;               /**< Buffer used for inflation (decompression) */
    uint32_t deflate_buffer_size;          /**< Length of deflation buffer */
@@ -269,30 +269,30 @@ struct CMPRS_CTX {
 };
 
 struct job_callback_item {
-   void (*job_end_cb)(JCR *jcr, void *);
+   void (*job_end_cb)(JobControlRecord *jcr, void *);
    void *ctx;
 };
 
-typedef void (JCR_free_HANDLER)(JCR *jcr);
+typedef void (JCR_free_HANDLER)(JobControlRecord *jcr);
 
 /**
- * Job Control Record (JCR)
+ * Job Control Record (JobControlRecord)
  */
-class DLL_IMP_EXP JCR {
+class DLL_IMP_EXP JobControlRecord {
 private:
    pthread_mutex_t mutex;                 /**< Jcr mutex */
    volatile int32_t _use_count;           /**< Use count */
-   int32_t m_JobType;                     /**< Backup, restore, verify ... */
-   int32_t m_JobLevel;                    /**< Job level */
-   int32_t m_Protocol;                    /**< Backup Protocol */
+   int32_t JobType_;                     /**< Backup, restore, verify ... */
+   int32_t JobLevel_;                    /**< Job level */
+   int32_t Protocol_;                    /**< Backup Protocol */
    bool my_thread_killable;               /**< Can we kill the thread? */
 public:
-      JCR() {
-            Dmsg0(100, "Contruct JCR\n");
+      JobControlRecord() {
+            Dmsg0(100, "Contruct JobControlRecord\n");
       }
 
-      ~JCR() {
-            Dmsg0(100, "Destruct JCR\n");
+      ~JobControlRecord() {
+            Dmsg0(100, "Destruct JobControlRecord\n");
       }
 
    void lock() {P(mutex); };
@@ -306,22 +306,22 @@ public:
    bool is_canceled() { return job_canceled(this); };
    bool is_terminated_ok() { return job_terminated_successfully(this); };
    bool is_incomplete() { return JobStatus == JS_Incomplete; };
-   bool is_JobLevel(int32_t JobLevel) { return JobLevel == m_JobLevel; };
-   bool is_JobType(int32_t JobType) { return JobType == m_JobType; };
+   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; };
+   bool is_JobType(int32_t JobType) { return JobType == JobType_; };
    bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; };
-   void setJobLevel(int32_t JobLevel) { m_JobLevel = JobLevel; };
-   void setJobType(int32_t JobType) { m_JobType = JobType; };
-   void setJobProtocol(int32_t JobProtocol) { m_Protocol = JobProtocol; };
+   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; };
+   void setJobType(int32_t JobType) { JobType_ = JobType; };
+   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; };
    void forceJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; };
    void setJobStarted();
-   int32_t getJobType() const { return m_JobType; };
-   int32_t getJobLevel() const { return m_JobLevel; };
+   int32_t getJobType() const { return JobType_; };
+   int32_t getJobLevel() const { return JobLevel_; };
    int32_t getJobStatus() const { return JobStatus; };
-   int32_t getJobProtocol() const { return m_Protocol; };
+   int32_t getJobProtocol() const { return Protocol_; };
    bool no_client_used() const {
-      return (m_JobType == JT_MIGRATE ||
-              m_JobType == JT_COPY ||
-              m_JobLevel == L_VIRTUAL_FULL);
+      return (JobType_ == JT_MIGRATE ||
+              JobType_ == JT_COPY ||
+              JobLevel_ == L_VIRTUAL_FULL);
    };
    bool is_plugin() const {
       return (cmd_plugin ||
@@ -338,13 +338,13 @@ public:
    bool is_killable() const { return my_thread_killable; };
 
    /*
-    * Global part of JCR common to all daemons
+    * Global part of JobControlRecord common to all daemons
     */
-   dlink link;                            /**< JCR chain link */
+   dlink link;                            /**< JobControlRecord chain link */
    pthread_t my_thread_id;                /**< Id of thread controlling jcr */
-   BSOCK *dir_bsock;                      /**< Director bsock or NULL if we are him */
-   BSOCK *store_bsock;                    /**< Storage connection socket */
-   BSOCK *file_bsock;                     /**< File daemon connection socket */
+   BareosSocket *dir_bsock;                      /**< Director bsock or NULL if we are him */
+   BareosSocket *store_bsock;                    /**< Storage connection socket */
+   BareosSocket *file_bsock;                     /**< File daemon connection socket */
    JCR_free_HANDLER *daemon_free_jcr;     /**< Local free routine */
    dlist *msg_queue;                      /**< Queued messages */
    pthread_mutex_t msg_queue_mutex;       /**< message queue mutex */
@@ -381,11 +381,11 @@ public:
    POOLMEM *RestoreBootstrap;             /**< Bootstrap file to restore */
    POOLMEM *stime;                        /**< start time for incremental/differential */
    char *sd_auth_key;                     /**< SD auth key */
-   MSGSRES *jcr_msgs;                     /**< Copy of message resource -- actually used */
+   MessagesResource *jcr_msgs;                     /**< Copy of message resource -- actually used */
    uint32_t ClientId;                     /**< Client associated with Job */
    char *where;                           /**< Prefix to restore files to */
    char *RegexWhere;                      /**< File relocation in restore */
-   alist *where_bregexp;                  /**< BREGEXP alist for path manipulation */
+   alist *where_bregexp;                  /**< BareosRegex alist for path manipulation */
    int32_t cached_pnl;                    /**< Cached path length */
    POOLMEM *cached_path;                  /**< Cached path */
    bool passive_client;                   /**< Client is a passive client e.g. doesn't initiate any network connection */
@@ -401,9 +401,9 @@ public:
    bool HasBase;                          /**< True if job use base jobs */
    bool rerunning;                        /**< Rerunning an incomplete job */
    bool job_started;                      /**< Set when the job is actually started */
-   bool suppress_output;                  /**< Set if this JCR should not output any Jmsgs */
-   JCR *cjcr;                             /**< Controlling JCR when this is a slave JCR being
-                                           * controlled by another JCR used for sending
+   bool suppress_output;                  /**< Set if this JobControlRecord should not output any Jmsgs */
+   JobControlRecord *cjcr;                             /**< Controlling JobControlRecord when this is a slave JobControlRecord being
+                                           * controlled by another JobControlRecord used for sending
                                            * normal and fatal errors.
                                            */
    std::shared_ptr<TLS_CONTEXT> tls_ctx;  /* JOB specific TLS-PSK-Context --
@@ -411,17 +411,17 @@ public:
                                            */
 
    int32_t buf_size;                      /**< Length of buffer */
-   CMPRS_CTX compress;                    /**< Compression ctx */
+   CompressionContext compress;                    /**< Compression ctx */
 #ifdef HAVE_WIN32
-   CP_THREAD_CTX *cp_thread;              /**< Copy Thread ctx */
+   CopyThreadContext *cp_thread;              /**< Copy Thread ctx */
 #endif
    POOLMEM *attr;                         /**< Attribute string from SD */
-   B_DB *db;                              /**< database pointer */
-   B_DB *db_batch;                        /**< database pointer for batch and accurate */
+   BareosDb *db;                              /**< database pointer */
+   BareosDb *db_batch;                        /**< database pointer for batch and accurate */
    uint64_t nb_base_files;                /**< Number of base files */
    uint64_t nb_base_files_used;           /**< Number of useful files in base */
 
-   ATTR_DBR *ar;                          /**< DB attribute record */
+   AttributesDbRecord *ar;                          /**< DB attribute record */
    guid_list *id_list;                    /**< User/group id to name list */
 
    alist *plugin_ctx_list;                /**< List of contexts for plugins */
@@ -432,13 +432,13 @@ public:
    htable *path_list;                     /**< Directory list (used by findlib) */
 
    /*
-    * Daemon specific part of JCR
+    * Daemon specific part of JobControlRecord
     * This should be empty in the library
     */
 
 #ifdef DIRECTOR_DAEMON
    /*
-    * Director Daemon specific data part of JCR
+    * Director Daemon specific data part of JobControlRecord
     */
    pthread_t SD_msg_chan;                 /**< Message channel thread id */
    bool SD_msg_chan_started;              /**< Message channel thread started */
@@ -446,10 +446,10 @@ public:
    pthread_cond_t term_wait;              /**< Wait for job termination */
    pthread_cond_t nextrun_ready;          /**< Wait for job next run to become ready */
    workq_ele_t *work_item;                /**< Work queue item if scheduled */
-   BSOCK *ua;                             /**< User agent */
-   RESOURCES res;                         /**< Resources assigned */
+   BareosSocket *ua;                             /**< User agent */
+   Resources res;                         /**< Resources assigned */
    TREE_ROOT *restore_tree_root;          /**< Selected files to restore (some protocols need this info) */
-   BSR *bsr;                              /**< Bootstrap record -- has everything */
+   BootStrapRecord *bsr;                              /**< Bootstrap record -- has everything */
    char *backup_format;                   /**< Backup format used when doing a NDMP backup */
    char *plugin_options;                  /**< User set options for plugin */
    uint32_t SDJobFiles;                   /**< Number of files written, this job */
@@ -462,9 +462,9 @@ public:
    uint32_t MediaId;                      /**< DB record IDs associated with this job */
    uint32_t FileIndex;                    /**< Last FileIndex processed */
    utime_t MaxRunSchedTime;               /**< Max run time in seconds from Initial Scheduled time */
-   JOB_DBR jr;                            /**< Job DB record for current job */
-   JOB_DBR previous_jr;                   /**< Previous job database record */
-   JCR *mig_jcr;                          /**< JCR for migration/copy job */
+   JobDbRecord jr;                            /**< Job DB record for current job */
+   JobDbRecord previous_jr;                   /**< Previous job database record */
+   JobControlRecord *mig_jcr;                          /**< JobControlRecord for migration/copy job */
    char FSCreateTime[MAX_TIME_LENGTH];    /**< FileSet CreateTime as returned from DB */
    char since[MAX_TIME_LENGTH];           /**< Since time */
    char PrevJob[MAX_NAME_LENGTH];         /**< Previous job name assiciated with since time */
@@ -500,7 +500,7 @@ public:
    bool VSS;                              /**< VSS used by FD */
    bool Encrypt;                          /**< Encryption used by FD */
    bool stats_enabled;                    /**< Keep all job records in a table for long term statistics */
-   bool no_maxtime;                       /**< Don't check Max*Time for this JCR */
+   bool no_maxtime;                       /**< Don't check Max*Time for this JobControlRecord */
    bool keep_sd_auth_key;                 /**< Clear or not the SD auth key after connection*/
    bool use_accurate_chksum;              /**< Use or not checksum option in accurate code */
    bool sd_canceled;                      /**< Set if SD canceled */
@@ -512,7 +512,7 @@ public:
 
 #ifdef FILE_DAEMON
    /*
-    * File Daemon specific part of JCR
+    * File Daemon specific part of JobControlRecord
     */
    uint32_t num_files_examined;           /**< Files examined this job */
    POOLMEM *last_fname;                   /**< Last file saved/verified */
@@ -526,7 +526,7 @@ public:
    long Ticket;                           /**< Ticket */
    char *big_buf;                         /**< I/O buffer */
    int32_t replace;                       /**< Replace options */
-   FF_PKT *ff;                            /**< Find Files packet */
+   FindFilesPacket *ff;                            /**< Find Files packet */
    char PrevJob[MAX_NAME_LENGTH];         /**< Previous job name assiciated with since time */
    uint32_t ExpectedFiles;                /**< Expected restore files */
    uint32_t StartFile;
@@ -535,11 +535,11 @@ public:
    uint32_t EndBlock;
    pthread_t heartbeat_id;                /**< Id of heartbeat thread */
    volatile bool hb_started;              /**< Heartbeat running */
-   std::shared_ptr<BSOCK> hb_bsock;       /**< Duped SD socket */
-   std::shared_ptr<BSOCK> hb_dir_bsock;   /**< Duped DIR socket */
+   std::shared_ptr<BareosSocket> hb_bsock;       /**< Duped SD socket */
+   std::shared_ptr<BareosSocket> hb_dir_bsock;   /**< Duped DIR socket */
    alist *RunScripts;                     /**< Commands to run before and after job */
-   CRYPTO_CTX crypto;                     /**< Crypto ctx */
-   DIRRES *director;                      /**< Director resource */
+   CryptoContext crypto;                     /**< Crypto ctx */
+   DirectorResource *director;                      /**< Director resource */
    bool enable_vss;                       /**< VSS used by FD */
    bool got_metadata;                     /**< Set when found job_metadata */
    bool multi_restore;                    /**< Dir can do multiple storage restore */
@@ -552,22 +552,22 @@ public:
 
 #ifdef STORAGE_DAEMON
    /*
-    * Storage Daemon specific part of JCR
+    * Storage Daemon specific part of JobControlRecord
     */
-   JCR *next_dev;                         /**< Next JCR attached to device */
-   JCR *prev_dev;                         /**< Previous JCR attached to device */
+   JobControlRecord *next_dev;                         /**< Next JobControlRecord attached to device */
+   JobControlRecord *prev_dev;                         /**< Previous JobControlRecord attached to device */
    char *dir_auth_key;                    /**< Dir auth key */
    pthread_cond_t job_start_wait;         /**< Wait for FD to start Job */
    pthread_cond_t job_end_wait;           /**< Wait for Job to end */
    int32_t type;
-   DCR *read_dcr;                         /**< Device context for reading */
-   DCR *dcr;                              /**< Device context record */
+   DeviceControlRecord *read_dcr;                         /**< Device context for reading */
+   DeviceControlRecord *dcr;                              /**< Device context record */
    alist *dcrs;                           /**< List of dcrs open */
    POOLMEM *job_name;                     /**< Base Job name (not unique) */
    POOLMEM *fileset_name;                 /**< FileSet */
    POOLMEM *fileset_md5;                  /**< MD5 for FileSet */
    POOLMEM *backup_format;                /**< Backup format used when doing a NDMP backup */
-   VOL_LIST *VolList;                     /**< List to read */
+   VolumeList *VolList;                     /**< List to read */
    int32_t NumWriteVolumes;               /**< Number of volumes written */
    int32_t NumReadVolumes;                /**< Total number of volumes to read */
    int32_t CurReadVolume;                 /**< Current read volume number */
@@ -581,7 +581,7 @@ public:
    int64_t spool_size;                    /**< Spool size for this job */
    bool spool_data;                       /**< Set to spool data */
    int32_t CurVol;                        /**< Current Volume count */
-   DIRRES *director;                      /**< Director resource */
+   DirectorResource *director;                      /**< Director resource */
    alist *plugin_options;                 /**< Specific Plugin Options sent by DIR */
    alist *write_store;                    /**< List of write storage devices sent by DIR */
    alist *read_store;                     /**< List of read devices sent by DIR */
@@ -596,7 +596,7 @@ public:
     * Parameters for Open Read Session
     */
    READ_CTX *rctx;                        /**< Read context used to keep track of what is processed or not */
-   BSR *bsr;                              /**< Bootstrap record -- has everything */
+   BootStrapRecord *bsr;                              /**< Bootstrap record -- has everything */
    bool mount_next_volume;                /**< Set to cause next volume mount */
    uint32_t read_VolSessionId;
    uint32_t read_VolSessionTime;
@@ -623,7 +623,7 @@ public:
  *   define this *invalid* jcr address and stuff it in the tsd
  *   when the jcr is not valid.
  */
-#define INVALID_JCR ((JCR *)(-1))
+#define INVALID_JCR ((JobControlRecord *)(-1))
 
 /*
  * Structure for all daemons that keeps some summary
@@ -653,26 +653,26 @@ extern DLL_IMP_EXP dlist *last_jobs;
  */
 DLL_IMP_EXP extern int get_next_jobid_from_list(char **p, uint32_t *JobId);
 DLL_IMP_EXP extern bool init_jcr_subsystem(int timeout);
-DLL_IMP_EXP extern JCR *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
-DLL_IMP_EXP extern JCR *get_jcr_by_id(uint32_t JobId);
-DLL_IMP_EXP extern JCR *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
-DLL_IMP_EXP extern JCR *get_jcr_by_partial_name(char *Job);
-DLL_IMP_EXP extern JCR *get_jcr_by_full_name(char *Job);
-DLL_IMP_EXP extern JCR *get_next_jcr(JCR *jcr);
-DLL_IMP_EXP extern void set_jcr_job_status(JCR *jcr, int JobStatus);
+DLL_IMP_EXP extern JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr);
+DLL_IMP_EXP extern JobControlRecord *get_jcr_by_id(uint32_t JobId);
+DLL_IMP_EXP extern JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime);
+DLL_IMP_EXP extern JobControlRecord *get_jcr_by_partial_name(char *Job);
+DLL_IMP_EXP extern JobControlRecord *get_jcr_by_full_name(char *Job);
+DLL_IMP_EXP extern JobControlRecord *get_next_jcr(JobControlRecord *jcr);
+DLL_IMP_EXP extern void set_jcr_job_status(JobControlRecord *jcr, int JobStatus);
 DLL_IMP_EXP extern int DLL_IMP_EXP num_jobs_run;
 
 #ifdef DEBUG
-DLL_IMP_EXP extern void b_free_jcr(const char *file, int line, JCR *jcr);
+DLL_IMP_EXP extern void b_free_jcr(const char *file, int line, JobControlRecord *jcr);
 #define free_jcr(jcr) b_free_jcr(__FILE__, __LINE__, (jcr))
 #else
-extern void free_jcr(JCR *jcr);
+extern void free_jcr(JobControlRecord *jcr);
 #endif
 
 /*
  * Used to display specific job information after a fatal signal
  */
-typedef void (dbg_jcr_hook_t)(JCR *jcr, FILE *fp);
+typedef void (dbg_jcr_hook_t)(JobControlRecord *jcr, FILE *fp);
 DLL_IMP_EXP extern void dbg_jcr_add_hook(dbg_jcr_hook_t *fct);
 
 #endif /** __JCR_H_ */

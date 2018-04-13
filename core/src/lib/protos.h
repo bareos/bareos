@@ -28,15 +28,15 @@
 #ifndef __LIBPROTOS_H
 #define __LIBPROTOS_H
 
-class JCR;
+class JobControlRecord;
 
 /* attr.cc */
-DLL_IMP_EXP ATTR *new_attr(JCR *jcr);
-DLL_IMP_EXP void free_attr(ATTR *attr);
-DLL_IMP_EXP int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ATTR *attr);
-DLL_IMP_EXP void build_attr_output_fnames(JCR *jcr, ATTR *attr);
-DLL_IMP_EXP const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr);
-DLL_IMP_EXP void print_ls_output(JCR *jcr, ATTR *attr);
+DLL_IMP_EXP Attributes *new_attr(JobControlRecord *jcr);
+DLL_IMP_EXP void free_attr(Attributes *attr);
+DLL_IMP_EXP int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
+DLL_IMP_EXP void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr);
+DLL_IMP_EXP const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
+DLL_IMP_EXP void print_ls_output(JobControlRecord *jcr, Attributes *attr);
 
 /* attribs.cc */
 DLL_IMP_EXP void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
@@ -51,34 +51,34 @@ DLL_IMP_EXP int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool
 DLL_IMP_EXP int base64_to_bin(char *dest, int destlen, char *src, int srclen);
 
 /* bget_msg.cc */
-DLL_IMP_EXP int bget_msg(BSOCK *sock);
+DLL_IMP_EXP int bget_msg(BareosSocket *sock);
 
 /* bnet.cc */
-DLL_IMP_EXP int32_t bnet_recv(BSOCK *bsock);
-DLL_IMP_EXP bool bnet_send(BSOCK *bsock);
-DLL_IMP_EXP bool bnet_fsend(BSOCK *bs, const char *fmt, ...);
-DLL_IMP_EXP bool bnet_set_buffer_size(BSOCK *bs, uint32_t size, int rw);
-DLL_IMP_EXP bool bnet_sig(BSOCK *bs, int sig);
-DLL_IMP_EXP bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock,
+DLL_IMP_EXP int32_t bnet_recv(BareosSocket *bsock);
+DLL_IMP_EXP bool bnet_send(BareosSocket *bsock);
+DLL_IMP_EXP bool bnet_fsend(BareosSocket *bs, const char *fmt, ...);
+DLL_IMP_EXP bool bnet_set_buffer_size(BareosSocket *bs, uint32_t size, int rw);
+DLL_IMP_EXP bool bnet_sig(BareosSocket *bs, int sig);
+DLL_IMP_EXP bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock,
                      alist *verify_list);
-DLL_IMP_EXP bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock,
+DLL_IMP_EXP bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock,
                      bool verify_peer, alist *verify_list);
-DLL_IMP_EXP int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen);
-DLL_IMP_EXP BSOCK *dup_bsock(BSOCK *bsock);
-DLL_IMP_EXP const char *bnet_strerror(BSOCK *bsock);
-DLL_IMP_EXP const char *bnet_sig_to_ascii(BSOCK *bsock);
-DLL_IMP_EXP int bnet_wait_data(BSOCK *bsock, int sec);
-DLL_IMP_EXP int bnet_wait_data_intr(BSOCK *bsock, int sec);
-DLL_IMP_EXP bool is_bnet_stop(BSOCK *bsock);
-DLL_IMP_EXP int is_bnet_error(BSOCK *bsock);
-DLL_IMP_EXP void bnet_suppress_error_messages(BSOCK *bsock, bool flag);
+DLL_IMP_EXP int bnet_get_peer(BareosSocket *bs, char *buf, socklen_t buflen);
+DLL_IMP_EXP BareosSocket *dup_bsock(BareosSocket *bsock);
+DLL_IMP_EXP const char *bnet_strerror(BareosSocket *bsock);
+DLL_IMP_EXP const char *bnet_sig_to_ascii(BareosSocket *bsock);
+DLL_IMP_EXP int bnet_wait_data(BareosSocket *bsock, int sec);
+DLL_IMP_EXP int bnet_wait_data_intr(BareosSocket *bsock, int sec);
+DLL_IMP_EXP bool is_bnet_stop(BareosSocket *bsock);
+DLL_IMP_EXP int is_bnet_error(BareosSocket *bsock);
+DLL_IMP_EXP void bnet_suppress_error_messages(BareosSocket *bsock, bool flag);
 DLL_IMP_EXP dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr);
-DLL_IMP_EXP int bnet_set_blocking(BSOCK *sock);
-DLL_IMP_EXP int bnet_set_nonblocking(BSOCK *sock);
-DLL_IMP_EXP void bnet_restore_blocking(BSOCK *sock, int flags);
+DLL_IMP_EXP int bnet_set_blocking(BareosSocket *sock);
+DLL_IMP_EXP int bnet_set_nonblocking(BareosSocket *sock);
+DLL_IMP_EXP void bnet_restore_blocking(BareosSocket *sock, int flags);
 DLL_IMP_EXP int net_connect(int port);
-DLL_IMP_EXP BSOCK *bnet_bind(int port);
-DLL_IMP_EXP BSOCK *bnet_accept(BSOCK *bsock, char *who);
+DLL_IMP_EXP BareosSocket *bnet_bind(int port);
+DLL_IMP_EXP BareosSocket *bnet_accept(BareosSocket *bsock, char *who);
 
 /* bnet_server_tcp.cc */
 DLL_IMP_EXP void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
@@ -91,17 +91,17 @@ DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
 DLL_IMP_EXP void bnet_stop_thread_server_tcp(pthread_t tid);
 
 /* bpipe.cc */
-DLL_IMP_EXP BPIPE *open_bpipe(char *prog, int wait, const char *mode,
+DLL_IMP_EXP Bpipe *open_bpipe(char *prog, int wait, const char *mode,
                   bool dup_stderr = true);
-DLL_IMP_EXP int close_wpipe(BPIPE *bpipe);
-DLL_IMP_EXP int close_bpipe(BPIPE *bpipe);
+DLL_IMP_EXP int close_wpipe(Bpipe *bpipe);
+DLL_IMP_EXP int close_bpipe(Bpipe *bpipe);
 
 /* bsys.cc */
 DLL_IMP_EXP char *bstrinlinecpy(char *dest, const char *src);
 DLL_IMP_EXP char *bstrncpy(char *dest, const char *src, int maxlen);
-DLL_IMP_EXP char *bstrncpy(char *dest, POOL_MEM &src, int maxlen);
+DLL_IMP_EXP char *bstrncpy(char *dest, PoolMem &src, int maxlen);
 DLL_IMP_EXP char *bstrncat(char *dest, const char *src, int maxlen);
-DLL_IMP_EXP char *bstrncat(char *dest, POOL_MEM &src, int maxlen);
+DLL_IMP_EXP char *bstrncat(char *dest, PoolMem &src, int maxlen);
 DLL_IMP_EXP bool bstrcmp(const char *s1, const char *s2);
 DLL_IMP_EXP bool bstrncmp(const char *s1, const char *s2, int n);
 DLL_IMP_EXP bool bstrcasecmp(const char *s1, const char *s2);
@@ -134,55 +134,55 @@ DLL_IMP_EXP int Zdeflate(char *in, int in_len, char *out, int &out_len);
 DLL_IMP_EXP int Zinflate(char *in, int in_len, char *out, int &out_len);
 DLL_IMP_EXP void stack_trace();
 DLL_IMP_EXP int safer_unlink(const char *pathname, const char *regex);
-DLL_IMP_EXP int secure_erase(JCR *jcr, const char *pathname);
+DLL_IMP_EXP int secure_erase(JobControlRecord *jcr, const char *pathname);
 DLL_IMP_EXP void set_secure_erase_cmdline(const char *cmdline);
 DLL_IMP_EXP bool path_exists(const char *path);
-DLL_IMP_EXP bool path_exists(POOL_MEM &path);
+DLL_IMP_EXP bool path_exists(PoolMem &path);
 DLL_IMP_EXP bool path_is_directory(const char *path);
-DLL_IMP_EXP bool path_is_directory(POOL_MEM &path);
+DLL_IMP_EXP bool path_is_directory(PoolMem &path);
 DLL_IMP_EXP bool path_contains_directory(const char *path);
-DLL_IMP_EXP bool path_contains_directory(POOL_MEM &path);
+DLL_IMP_EXP bool path_contains_directory(PoolMem &path);
 DLL_IMP_EXP bool path_is_absolute(const char *path);
-DLL_IMP_EXP bool path_is_absolute(POOL_MEM &path);
-DLL_IMP_EXP bool path_get_directory(POOL_MEM &directory, POOL_MEM &path);
+DLL_IMP_EXP bool path_is_absolute(PoolMem &path);
+DLL_IMP_EXP bool path_get_directory(PoolMem &directory, PoolMem &path);
 DLL_IMP_EXP bool path_append(char *path, const char *extra, unsigned int max_path);
-DLL_IMP_EXP bool path_append(POOL_MEM &path, const char *extra);
-DLL_IMP_EXP bool path_append(POOL_MEM &path, POOL_MEM &extra);
+DLL_IMP_EXP bool path_append(PoolMem &path, const char *extra);
+DLL_IMP_EXP bool path_append(PoolMem &path, PoolMem &extra);
 DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
-DLL_IMP_EXP bool path_create(POOL_MEM &path, mode_t mode = 0750);
+DLL_IMP_EXP bool path_create(PoolMem &path, mode_t mode = 0750);
 
 /* compression.cc */
 DLL_IMP_EXP const char *cmprs_algo_to_text(uint32_t compression_algorithm);
-DLL_IMP_EXP bool setup_compression_buffers(JCR *jcr, bool compatible,
+DLL_IMP_EXP bool setup_compression_buffers(JobControlRecord *jcr, bool compatible,
                                uint32_t compression_algorithm,
                                uint32_t *compress_buf_size);
-DLL_IMP_EXP bool setup_decompression_buffers(JCR *jcr, uint32_t *decompress_buf_size);
-DLL_IMP_EXP bool compress_data(JCR *jcr, uint32_t compression_algorithm, char *rbuf,
+DLL_IMP_EXP bool setup_decompression_buffers(JobControlRecord *jcr, uint32_t *decompress_buf_size);
+DLL_IMP_EXP bool compress_data(JobControlRecord *jcr, uint32_t compression_algorithm, char *rbuf,
                    uint32_t rsize, unsigned char *cbuf,
                    uint32_t max_compress_len, uint32_t *compress_len);
-DLL_IMP_EXP bool decompress_data(JCR *jcr, const char *last_fname, int32_t stream,
+DLL_IMP_EXP bool decompress_data(JobControlRecord *jcr, const char *last_fname, int32_t stream,
                      char **data, uint32_t *length, bool want_data_stream);
-DLL_IMP_EXP void cleanup_compression(JCR *jcr);
+DLL_IMP_EXP void cleanup_compression(JobControlRecord *jcr);
 
 /* cram-md5.cc */
-DLL_IMP_EXP bool cram_md5_respond(BSOCK *bs, const char *password, uint32_t *remote_tls_policy, bool *compatible);
-DLL_IMP_EXP bool cram_md5_challenge(BSOCK *bs, const char *password, uint32_t local_tls_policy, bool compatible);
+DLL_IMP_EXP bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *remote_tls_policy, bool *compatible);
+DLL_IMP_EXP bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t local_tls_policy, bool compatible);
 DLL_IMP_EXP void hmac_md5(uint8_t *text, int text_len, uint8_t *key, int key_len, uint8_t *hmac);
 
 /* crypto.cc */
 DLL_IMP_EXP int init_crypto(void);
 DLL_IMP_EXP int cleanup_crypto(void);
-DLL_IMP_EXP DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type);
+DLL_IMP_EXP DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type);
 DLL_IMP_EXP bool crypto_digest_update(DIGEST *digest, const uint8_t *data, uint32_t length);
 DLL_IMP_EXP bool crypto_digest_finalize(DIGEST *digest, uint8_t *dest, uint32_t *length);
 DLL_IMP_EXP void crypto_digest_free(DIGEST *digest);
-DLL_IMP_EXP SIGNATURE *crypto_sign_new(JCR *jcr);
+DLL_IMP_EXP SIGNATURE *crypto_sign_new(JobControlRecord *jcr);
 DLL_IMP_EXP crypto_error_t crypto_sign_get_digest(SIGNATURE *sig, X509_KEYPAIR *keypair,
                                       crypto_digest_t &algorithm, DIGEST **digest);
 DLL_IMP_EXP crypto_error_t crypto_sign_verify(SIGNATURE *sig, X509_KEYPAIR *keypair, DIGEST *digest);
 DLL_IMP_EXP int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair);
 DLL_IMP_EXP int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length);
-DLL_IMP_EXP SIGNATURE *crypto_sign_decode(JCR *jcr, const uint8_t *sigData, uint32_t length);
+DLL_IMP_EXP SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length);
 DLL_IMP_EXP void crypto_sign_free(SIGNATURE *sig);
 DLL_IMP_EXP CRYPTO_SESSION *crypto_session_new(crypto_cipher_t cipher, alist *pubkeys);
 DLL_IMP_EXP void crypto_session_free(CRYPTO_SESSION *cs);
@@ -208,7 +208,7 @@ DLL_IMP_EXP const char *crypto_strerror(crypto_error_t error);
 /* crypto_openssl.cc */
 #ifdef HAVE_OPENSSL
 DLL_IMP_EXP void openssl_post_errors(int code, const char *errstring);
-DLL_IMP_EXP void openssl_post_errors(JCR *jcr, int code, const char *errstring);
+DLL_IMP_EXP void openssl_post_errors(JobControlRecord *jcr, int code, const char *errstring);
 DLL_IMP_EXP int openssl_init_threads(void);
 DLL_IMP_EXP void openssl_cleanup_threads(void);
 DLL_IMP_EXP int openssl_seed_prng(void);
@@ -252,16 +252,16 @@ DLL_IMP_EXP void unlock_last_jobs_list();
 DLL_IMP_EXP bool read_last_jobs_list(int fd, uint64_t addr);
 DLL_IMP_EXP uint64_t write_last_jobs_list(int fd, uint64_t addr);
 DLL_IMP_EXP void write_state_file(char *dir, const char *progname, int port);
-DLL_IMP_EXP void register_job_end_callback(JCR *jcr, void job_end_cb(JCR *jcr,void *), void *ctx);
+DLL_IMP_EXP void register_job_end_callback(JobControlRecord *jcr, void job_end_cb(JobControlRecord *jcr,void *), void *ctx);
 DLL_IMP_EXP void lock_jobs();
 DLL_IMP_EXP void unlock_jobs();
-DLL_IMP_EXP JCR *jcr_walk_start();
-DLL_IMP_EXP JCR *jcr_walk_next(JCR *prev_jcr);
-DLL_IMP_EXP void jcr_walk_end(JCR *jcr);
+DLL_IMP_EXP JobControlRecord *jcr_walk_start();
+DLL_IMP_EXP JobControlRecord *jcr_walk_next(JobControlRecord *prev_jcr);
+DLL_IMP_EXP void jcr_walk_end(JobControlRecord *jcr);
 DLL_IMP_EXP int job_count();
-DLL_IMP_EXP JCR *get_jcr_from_tsd();
-DLL_IMP_EXP void set_jcr_in_tsd(JCR *jcr);
-DLL_IMP_EXP void remove_jcr_from_tsd(JCR *jcr);
+DLL_IMP_EXP JobControlRecord *get_jcr_from_tsd();
+DLL_IMP_EXP void set_jcr_in_tsd(JobControlRecord *jcr);
+DLL_IMP_EXP void remove_jcr_from_tsd(JobControlRecord *jcr);
 DLL_IMP_EXP uint32_t get_jobid_from_tsd();
 DLL_IMP_EXP uint32_t get_jobid_from_tid(pthread_t tid);
 
@@ -287,17 +287,17 @@ DLL_IMP_EXP void lex_set_error_handler_error_type(LEX *lf, int err_type);
 
 /* message.cc */
 DLL_IMP_EXP void my_name_is(int argc, char *argv[], const char *name);
-DLL_IMP_EXP void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback = NULL);
+DLL_IMP_EXP void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
 DLL_IMP_EXP void term_msg(void);
-DLL_IMP_EXP void close_msg(JCR *jcr);
-DLL_IMP_EXP void add_msg_dest(MSGSRES *msg, int dest, int type,
+DLL_IMP_EXP void close_msg(JobControlRecord *jcr);
+DLL_IMP_EXP void add_msg_dest(MessagesResource *msg, int dest, int type,
                   char *where, char *mail_cmd, char *timestamp_format);
-DLL_IMP_EXP void rem_msg_dest(MSGSRES *msg, int dest, int type, char *where);
-DLL_IMP_EXP void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt, ...);
-DLL_IMP_EXP void dispatch_message(JCR *jcr, int type, utime_t mtime, char *buf);
+DLL_IMP_EXP void rem_msg_dest(MessagesResource *msg, int dest, int type, char *where);
+DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+DLL_IMP_EXP void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
 DLL_IMP_EXP void init_console_msg(const char *wd);
-DLL_IMP_EXP void free_msgs_res(MSGSRES *msgs);
-DLL_IMP_EXP void dequeue_messages(JCR *jcr);
+DLL_IMP_EXP void free_msgs_res(MessagesResource *msgs);
+DLL_IMP_EXP void dequeue_messages(JobControlRecord *jcr);
 DLL_IMP_EXP void set_trace(int trace_flag);
 DLL_IMP_EXP bool get_trace(void);
 DLL_IMP_EXP void set_hangup(int hangup_value);
@@ -321,7 +321,7 @@ DLL_IMP_EXP int wait_for_readable_fd(int fd, int sec, bool ignore_interupts);
 DLL_IMP_EXP int wait_for_writable_fd(int fd, int sec, bool ignore_interupts);
 
 /* pythonlib.cc */
-DLL_IMP_EXP int generate_daemon_event(JCR *jcr, const char *event);
+DLL_IMP_EXP int generate_daemon_event(JobControlRecord *jcr, const char *event);
 
 /* scan.cc */
 DLL_IMP_EXP void strip_leading_space(char *str);
@@ -367,11 +367,11 @@ DLL_IMP_EXP void init_signals(void terminate(int sig));
 DLL_IMP_EXP void init_stack_dump(void);
 
 /* timers.cc */
-DLL_IMP_EXP btimer_t *start_child_timer(JCR *jcr, pid_t pid, uint32_t wait);
+DLL_IMP_EXP btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait);
 DLL_IMP_EXP void stop_child_timer(btimer_t *wid);
-DLL_IMP_EXP btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait);
+DLL_IMP_EXP btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait);
 DLL_IMP_EXP void stop_thread_timer(btimer_t *wid);
-DLL_IMP_EXP btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
+DLL_IMP_EXP btimer_t *start_bsock_timer(BareosSocket *bs, uint32_t wait);
 DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
 
 /* tls_openssl.cc */
@@ -382,18 +382,18 @@ DLL_IMP_EXP int hex2bin(char *str, unsigned char *out, unsigned int max_out_len)
 DLL_IMP_EXP void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx);
 
 #ifdef HAVE_TLS
-DLL_IMP_EXP bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn,
+DLL_IMP_EXP bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn,
                                  const char *host);
-DLL_IMP_EXP bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn,
+DLL_IMP_EXP bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn,
                                alist *verify_list);
-DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(std::shared_ptr<TLS_Context> ctx, int fd, bool server);
-DLL_IMP_EXP bool tls_bsock_accept(BSOCK *bsock);
-DLL_IMP_EXP int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes);
-DLL_IMP_EXP int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes);
+DLL_IMP_EXP TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> ctx, int fd, bool server);
+DLL_IMP_EXP bool tls_bsock_accept(BareosSocket *bsock);
+DLL_IMP_EXP int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes);
+DLL_IMP_EXP int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes);
 #endif /* HAVE_TLS */
-DLL_IMP_EXP void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
-DLL_IMP_EXP bool tls_bsock_connect(BSOCK *bsock);
-DLL_IMP_EXP void tls_bsock_shutdown(BSOCK *bsock);
+DLL_IMP_EXP void tls_log_conninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who);
+DLL_IMP_EXP bool tls_bsock_connect(BareosSocket *bsock);
+DLL_IMP_EXP void tls_bsock_shutdown(BareosSocket *bsock);
 DLL_IMP_EXP void free_tls_connection(TLS_CONNECTION *tls_conn);
 DLL_IMP_EXP bool get_tls_require(TLS_CONTEXT *ctx);
 DLL_IMP_EXP void set_tls_require(TLS_CONTEXT *ctx, bool value);
@@ -402,14 +402,14 @@ DLL_IMP_EXP void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool get_tls_verify_peer(TLS_CONTEXT *ctx);
 
 /* util.cc */
-DLL_IMP_EXP void escape_string(POOL_MEM &snew, char *old, int len);
+DLL_IMP_EXP void escape_string(PoolMem &snew, char *old, int len);
 DLL_IMP_EXP bool is_buf_zero(char *buf, int len);
 DLL_IMP_EXP void lcase(char *str);
 DLL_IMP_EXP void bash_spaces(char *str);
-DLL_IMP_EXP void bash_spaces(POOL_MEM &pm);
+DLL_IMP_EXP void bash_spaces(PoolMem &pm);
 DLL_IMP_EXP void unbash_spaces(char *str);
-DLL_IMP_EXP void unbash_spaces(POOL_MEM &pm);
-DLL_IMP_EXP const char* indent_multiline_string(POOL_MEM &resultbuffer, const char *multilinestring, const char *separator);
+DLL_IMP_EXP void unbash_spaces(PoolMem &pm);
+DLL_IMP_EXP const char* indent_multiline_string(PoolMem &resultbuffer, const char *multilinestring, const char *separator);
 DLL_IMP_EXP char *encode_time(utime_t time, char *buf);
 DLL_IMP_EXP bool convert_timeout_to_timespec(timespec &timeout, int timeout_in_seconds);
 DLL_IMP_EXP char *encode_mode(mode_t mode, char *buf);
@@ -418,7 +418,7 @@ DLL_IMP_EXP void jobstatus_to_ascii(int JobStatus, char *msg, int maxlen);
 DLL_IMP_EXP void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen);
 DLL_IMP_EXP int run_program(char *prog, int wait, POOLMEM *&results);
 DLL_IMP_EXP int run_program_full_output(char *prog, int wait, POOLMEM *&results);
-DLL_IMP_EXP char *action_on_purge_to_string(int aop, POOL_MEM &ret);
+DLL_IMP_EXP char *action_on_purge_to_string(int aop, PoolMem &ret);
 DLL_IMP_EXP const char *job_type_to_str(int type);
 DLL_IMP_EXP const char *job_status_to_str(int stat);
 DLL_IMP_EXP const char *job_level_to_str(int level);
@@ -426,7 +426,7 @@ DLL_IMP_EXP const char *volume_status_to_str(const char *status);
 DLL_IMP_EXP void make_session_key(char *key, char *seed, int mode);
 DLL_IMP_EXP void encode_session_key(char *encode, char *session, char *key, int maxlen);
 DLL_IMP_EXP void decode_session_key(char *decode, char *session, char *key, int maxlen);
-DLL_IMP_EXP POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
+DLL_IMP_EXP POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t job_code_callback = NULL);
 DLL_IMP_EXP void set_working_directory(char *wd);
 DLL_IMP_EXP const char *last_path_separator(const char *str);
 

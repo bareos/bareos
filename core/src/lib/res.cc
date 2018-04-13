@@ -43,8 +43,8 @@ extern CONFIG *my_config;             /* Our Global config */
  * Define the Union of all the common resource structure definitions.
  */
 union URES {
-   MSGSRES res_msgs;
-   RES hdr;
+   MessagesResource res_msgs;
+   CommonResourceHeader hdr;
 };
 
 static int res_locked = 0;            /* resource chain lock count -- for debug */
@@ -59,16 +59,16 @@ void b_LockRes(const char *file, int line)
    char ed1[50];
 
    Pmsg4(000, "LockRes  locked=%d w_active=%d at %s:%d\n",
-         res_locked, my_config->m_res_lock.w_active, file, line);
+         res_locked, my_config->res_lock_.w_active, file, line);
 
    if (res_locked) {
       Pmsg2(000, "LockRes writerid=%lu myid=%s\n",
-            my_config->m_res_lock.writer_id,
+            my_config->res_lock_.writer_id,
             edit_pthread(pthread_self(), ed1, sizeof(ed1)));
    }
 #endif
 
-   if ((errstat = rwl_writelock(&my_config->m_res_lock)) != 0) {
+   if ((errstat = rwl_writelock(&my_config->res_lock_)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writelock failure at %s:%d:  ERR=%s\n"),
             file, line, strerror(errstat));
    }
@@ -80,30 +80,30 @@ void b_UnlockRes(const char *file, int line)
 {
    int errstat;
 
-   if ((errstat = rwl_writeunlock(&my_config->m_res_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&my_config->res_lock_)) != 0) {
       Emsg3(M_ABORT, 0, _("rwl_writeunlock failure at %s:%d:. ERR=%s\n"),
             file, line, strerror(errstat));
    }
    res_locked--;
 #ifdef TRACE_RES
    Pmsg4(000, "UnLockRes locked=%d wactive=%d at %s:%d\n",
-         res_locked, my_config->m_res_lock.w_active, file, line);
+         res_locked, my_config->res_lock_.w_active, file, line);
 #endif
 }
 
 /*
  * Return resource of type rcode that matches name
  */
-RES *GetResWithName(int rcode, const char *name, bool lock)
+CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock)
 {
-   RES *res;
-   int rindex = rcode - my_config->m_r_first;
+   CommonResourceHeader *res;
+   int rindex = rcode - my_config->r_first_;
 
    if (lock) {
       LockRes();
    }
 
-   res = my_config->m_res_head[rindex];
+   res = my_config->res_head_[rindex];
    while (res) {
       if (bstrcmp(res->name, name)) {
          break;
@@ -123,13 +123,13 @@ RES *GetResWithName(int rcode, const char *name, bool lock)
  * call second arg (res) is NULL, on subsequent
  * calls, it is called with previous value.
  */
-RES *GetNextRes(int rcode, RES *res)
+CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res)
 {
-   RES *nres;
-   int rindex = rcode - my_config->m_r_first;
+   CommonResourceHeader *nres;
+   int rindex = rcode - my_config->r_first_;
 
    if (res == NULL) {
-      nres = my_config->m_res_head[rindex];
+      nres = my_config->res_head_[rindex];
    } else {
       nres = res->next;
    }
@@ -139,10 +139,10 @@ RES *GetNextRes(int rcode, RES *res)
 
 const char *res_to_str(int rcode)
 {
-   if (rcode < my_config->m_r_first || rcode > my_config->m_r_last) {
+   if (rcode < my_config->r_first_ || rcode > my_config->r_last_) {
       return _("***UNKNOWN***");
    } else {
-      return my_config->m_resources[rcode - my_config->m_r_first].name;
+      return my_config->resources_[rcode - my_config->r_first_].name;
    }
 }
 
@@ -152,7 +152,7 @@ const char *res_to_str(int rcode)
  * (WARNING, ERROR, FATAL, INFO, ...) with an appropriate
  * destination (MAIL, FILE, OPERATOR, ...)
  */
-static void scan_types(LEX *lc, MSGSRES *msg, int dest_code,
+static void scan_types(LEX *lc, MessagesResource *msg, int dest_code,
                        char *where, char *cmd, char *timestamp_format)
 {
    int i;
@@ -203,14 +203,14 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code,
 /*
  * Store Messages Destination information
  */
-static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_msgs(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    char *cmd = NULL,
         *tsf = NULL;
    POOLMEM *dest;
    int dest_len;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    Dmsg2(900, "store_msgs pass=%d code=%d\n", pass, item->code);
 
@@ -221,7 +221,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
       case MD_STDERR:
       case MD_CONSOLE:
       case MD_CATALOG:
-         scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL, tsf);
+         scan_types(lc, (MessagesResource *)(item->value), item->code, NULL, NULL, tsf);
          break;
       case MD_SYSLOG: {            /* syslog */
          char *p;
@@ -265,11 +265,11 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             dest_len = lc->str_len;
             token = lex_get_token(lc, T_SKIP_EOL);
 
-            scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL, NULL);
+            scan_types(lc, (MessagesResource *)(item->value), item->code, dest, NULL, NULL);
             free_pool_memory(dest);
             Dmsg0(900, "done with dest codes\n");
          } else {
-            scan_types(lc, (MSGSRES *)(item->value), item->code, NULL, NULL, NULL);
+            scan_types(lc, (MessagesResource *)(item->value), item->code, NULL, NULL, NULL);
          }
          break;
       }
@@ -311,7 +311,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             break;
          }
          Dmsg1(900, "mail_cmd=%s\n", NPRT(cmd));
-         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, cmd, tsf);
+         scan_types(lc, (MessagesResource *)(item->value), item->code, dest, cmd, tsf);
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
@@ -331,7 +331,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             scan_err1(lc, _("expected an =, got: %s"), lc->str);
             return;
          }
-         scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL, tsf);
+         scan_types(lc, (MessagesResource *)(item->value), item->code, dest, NULL, tsf);
          free_pool_memory(dest);
          Dmsg0(900, "done with dest codes\n");
          break;
@@ -350,10 +350,10 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
  * This routine is ONLY for resource names
  * Store a name at specified address.
  */
-static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_name(LEX *lc, ResourceItem *item, int index, int pass)
 {
    POOLMEM *msg = get_pool_memory(PM_EMSG);
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (!is_name_valid(lc->str, msg)) {
@@ -379,9 +379,9 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
  * Store a name string at specified address
  * A name string is limited to MAX_RES_NAME_LENGTH
  */
-static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_strname(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    /*
     * Store the name
@@ -404,9 +404,9 @@ static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a string at specified address
  */
-static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_str(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -426,9 +426,9 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a string at specified address
  */
-static void store_stdstr(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_stdstr(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -450,9 +450,9 @@ static void store_stdstr(LEX *lc, RES_ITEM *item, int index, int pass)
  * shell expansion except if the string begins with a vertical
  * bar (i.e. it will likely be passed to the shell later).
  */
-static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_dir(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -472,9 +472,9 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all->hdr.inherit_content);
 }
 
-static void store_stdstrdir(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_stdstrdir(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -497,10 +497,10 @@ static void store_stdstrdir(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a password at specified address in MD5 coding
  */
-static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_md5password(LEX *lc, ResourceItem *item, int index, int pass)
 {
    s_password *pwd;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -541,10 +541,10 @@ static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a password at specified address in MD5 coding
  */
-static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_clearpassword(LEX *lc, ResourceItem *item, int index, int pass)
 {
    s_password *pwd;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_STRING);
    if (pass == 1) {
@@ -567,10 +567,10 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
  * If we are in pass 2, do a lookup of the
  * resource.
  */
-static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_res(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   RES *res;
-   URES *res_all = (URES *)my_config->m_res_all;
+   CommonResourceHeader *res;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (pass == 2) {
@@ -598,12 +598,12 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
  *
  * If we are in pass 2, do a lookup of the resource.
  */
-static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_res(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   RES *res;
+   CommonResourceHeader *res;
    int i = 0;
    alist *list;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
    int count = str_to_int32(item->default_value);
 
    if (pass == 2) {
@@ -650,10 +650,10 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a string in an alist.
  */
-static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_str(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    if (pass == 2) {
       if (!*(item->value)) {
@@ -694,10 +694,10 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
  * with a vertical bar (i.e. it will likely be passed to the
  * shell later).
  */
-static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_alist_dir(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    if (pass == 2) {
       if (!*(item->alistvalue)) {
@@ -739,11 +739,11 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a list of plugin names to load by the daemon on startup.
  */
-static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_plugin_names(LEX *lc, ResourceItem *item, int index, int pass)
 {
    alist *list;
    char *p, *plugin_name, *plugin_names;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    if (pass == 2) {
       lex_get_token(lc, T_STRING);   /* scan next item */
@@ -782,9 +782,9 @@ static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
  * Note, here item points to the main resource (e.g. Job, not
  *  the jobdefs, which we look up).
  */
-static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_defs(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   RES *res;
+   CommonResourceHeader *res;
 
    lex_get_token(lc, T_NAME);
    if (pass == 2) {
@@ -802,9 +802,9 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store an integer at specified address
  */
-static void store_int16(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_int16(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_INT16);
    *(item->i16value) = lc->u.int16_val;
@@ -813,9 +813,9 @@ static void store_int16(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all->hdr.inherit_content);
 }
 
-static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_int32(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_INT32);
    *(item->i32value) = lc->u.int32_val;
@@ -827,9 +827,9 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a positive integer at specified address
  */
-static void store_pint16(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_pint16(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_PINT16);
    *(item->ui16value) = lc->u.pint16_val;
@@ -838,9 +838,9 @@ static void store_pint16(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all->hdr.inherit_content);
 }
 
-static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_pint32(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_PINT32);
    *(item->ui32value) = lc->u.pint32_val;
@@ -852,9 +852,9 @@ static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store an 64 bit integer at specified address
  */
-static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_int64(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_INT64);
    *(item->i64value) = lc->u.int64_val;
@@ -874,13 +874,13 @@ enum unit_type {
 /*
  * Store a size in bytes
  */
-static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
+static void store_int_unit(LEX *lc, ResourceItem *item, int index, int pass,
                            bool size32, enum unit_type type)
 {
    int token;
    uint64_t uvalue;
    char bsize[500];
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    Dmsg0(900, "Enter store_unit\n");
    token = lex_get_token(lc, T_SKIP_EOL);
@@ -951,7 +951,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
 /*
  * Store a size in bytes
  */
-static void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_size32(LEX *lc, ResourceItem *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, true /* 32 bit */, STORE_SIZE);
 }
@@ -959,7 +959,7 @@ static void store_size32(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a size in bytes
  */
-static void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_size64(LEX *lc, ResourceItem *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, false /* not 32 bit */, STORE_SIZE);
 }
@@ -967,7 +967,7 @@ static void store_size64(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a speed in bytes/s
  */
-static void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_speed(LEX *lc, ResourceItem *item, int index, int pass)
 {
    store_int_unit(lc, item, index, pass, false /* 64 bit */, STORE_SPEED);
 }
@@ -975,12 +975,12 @@ static void store_speed(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a time period in seconds
  */
-static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_time(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    utime_t utime;
    char period[500];
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    errno = 0;
@@ -1022,9 +1022,9 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a yes/no in a bit field
  */
-static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_bit(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -1043,9 +1043,9 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store a bool in a bit field
  */
-static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_bool(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -1064,10 +1064,10 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 /*
  * Store Tape Label Type (BAREOS, ANSI, IBM)
  */
-static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_label(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
-   URES *res_all = (URES *)my_config->m_res_all;
+   URES *res_all = (URES *)my_config->res_all_;
 
    lex_get_token(lc, T_NAME);
    /*
@@ -1122,7 +1122,7 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
  *   = { ipv4 { addr = doof.nowaytoheavenxyz.uhu; } }
  *   = { ipv4 { port = 4711 } }
  */
-static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    int exist;
@@ -1233,7 +1233,7 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
    }
 }
 
-static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses_address(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1250,7 +1250,7 @@ static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pa
    }
 }
 
-static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
+static void store_addresses_port(LEX * lc, ResourceItem * item, int index, int pass)
 {
    int token;
    char errmsg[1024];
@@ -1270,7 +1270,7 @@ static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
 /*
  * Generic store resource dispatcher.
  */
-bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
+bool store_resource(int type, LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (type) {
    case CFG_TYPE_STR:
@@ -1370,7 +1370,7 @@ bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass)
    return true;
 }
 
-void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited)
+void indent_config_item(PoolMem &cfg_str, int level, const char *config_item, bool inherited)
 {
    for (int i = 0; i < level; i++) {
       pm_strcat(cfg_str, DEFAULT_INDENT_STRING);
@@ -1382,10 +1382,10 @@ void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, b
    pm_strcat(cfg_str, config_item);
 }
 
-static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str, bool inherited)
+static inline void print_config_size(ResourceItem *item, PoolMem &cfg_str, bool inherited)
 {
-   POOL_MEM temp;
-   POOL_MEM volspec;   /* vol specification string*/
+   PoolMem temp;
+   PoolMem volspec;   /* vol specification string*/
    int64_t bytes = *(item->ui64value);
    int factor;
 
@@ -1428,10 +1428,10 @@ static inline void print_config_size(RES_ITEM *item, POOL_MEM &cfg_str, bool inh
    indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 }
 
-static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str, bool inherited)
+static inline void print_config_time(ResourceItem *item, PoolMem &cfg_str, bool inherited)
 {
-   POOL_MEM temp;
-   POOL_MEM timespec;
+   PoolMem temp;
+   PoolMem timespec;
    utime_t secs = *(item->utimevalue);
    int factor;
 
@@ -1481,11 +1481,11 @@ static inline void print_config_time(RES_ITEM *item, POOL_MEM &cfg_str, bool inh
    indent_config_item(cfg_str, 1, temp.c_str(), inherited);
 }
 
-bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
+bool MessagesResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM cfg_str;    /* configuration as string  */
-   POOL_MEM temp;
-   MSGSRES *msgres;
+   PoolMem cfg_str;    /* configuration as string  */
+   PoolMem temp;
+   MessagesResource *msgres;
    DEST *d;
 
    msgres = this;
@@ -1495,7 +1495,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    pm_strcat(cfg_str, temp.c_str());
 
    if (msgres->mail_cmd) {
-      POOL_MEM esc;
+      PoolMem esc;
 
       escape_string(esc, msgres->mail_cmd, strlen(msgres->mail_cmd));
       Mmsg(temp, "   MailCommand = \"%s\"\n", esc.c_str());
@@ -1503,7 +1503,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    }
 
    if (msgres->operator_cmd) {
-      POOL_MEM esc;
+      PoolMem esc;
 
       escape_string(esc, msgres->operator_cmd, strlen(msgres->operator_cmd));
       Mmsg(temp, "   OperatorCommand = \"%s\"\n", esc.c_str());
@@ -1511,7 +1511,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    }
 
    if (msgres->timestamp_format) {
-      POOL_MEM esc;
+      PoolMem esc;
 
       escape_string(esc, msgres->timestamp_format, strlen(msgres->timestamp_format));
       Mmsg(temp, "   TimestampFormat = \"%s\"\n", esc.c_str());
@@ -1521,8 +1521,8 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    for (d = msgres->dest_chain; d; d = d->next) {
       int nr_set = 0;
       int nr_unset = 0;
-      POOL_MEM t; /* number of set   types */
-      POOL_MEM u; /* number of unset types */
+      PoolMem t; /* number of set   types */
+      PoolMem u; /* number of unset types */
 
       for (int i = 0; msg_destinations[i].code; i++) {
          if (msg_destinations[i].code == d->dest_code) {
@@ -1563,7 +1563,7 @@ bool MSGSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbos
    return true;
 }
 
-static inline bool has_default_value(RES_ITEM *item)
+static inline bool has_default_value(ResourceItem *item)
 {
    bool is_default = false;
 
@@ -1669,11 +1669,11 @@ static inline bool has_default_value(RES_ITEM *item)
    return is_default;
 }
 
-bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
+bool BareosResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM cfg_str;
-   POOL_MEM temp;
-   RES_ITEM *items;
+   PoolMem cfg_str;
+   PoolMem temp;
+   ResourceItem *items;
    int i = 0;
    int rindex;
    bool inherited = false;
@@ -1681,25 +1681,25 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
    /*
     * If entry is not used, then there is nothing to print.
     */
-   if (this->hdr.rcode < (uint32_t)my_config->m_r_first ||
+   if (this->hdr.rcode < (uint32_t)my_config->r_first_ ||
        this->hdr.refcnt <= 0) {
       return true;
    }
-   rindex = this->hdr.rcode - my_config->m_r_first;
+   rindex = this->hdr.rcode - my_config->r_first_;
 
    /*
     * Make sure the resource class has any items.
     */
-   if (!my_config->m_resources[rindex].items) {
+   if (!my_config->resources_[rindex].items) {
       return true;
    }
 
-   memcpy(my_config->m_res_all, this, my_config->m_resources[rindex].size);
+   memcpy(my_config->res_all_, this, my_config->resources_[rindex].size);
 
    pm_strcat(cfg_str, res_to_str(this->hdr.rcode));
    pm_strcat(cfg_str, " {\n");
 
-   items = my_config->m_resources[rindex].items;
+   items = my_config->resources_[rindex].items;
 
    for (i = 0; items[i].name; i++) {
       bool print_item = false;
@@ -1719,9 +1719,9 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
          continue;
       }
 
-      if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->m_omit_defaults) {
+      if ((items[i].flags & CFG_ITEM_REQUIRED) || !my_config->omit_defaults_) {
          /*
-          * Always print required items or if my_config->m_omit_defaults is false
+          * Always print required items or if my_config->omit_defaults_ is false
           */
          print_item = true;
       }
@@ -1894,9 +1894,9 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
           * Each member of the list is comma-separated
           */
          int cnt = 0;
-         RES *res;
+         CommonResourceHeader *res;
          alist *list;
-         POOL_MEM res_names;
+         PoolMem res_names;
 
          list = *(items[i].alistvalue);
          if (list != NULL) {
@@ -1920,7 +1920,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
          break;
       }
       case CFG_TYPE_RES: {
-         RES *res;
+         CommonResourceHeader *res;
 
          res = *(items[i].resvalue);
          if (res != NULL && res->name != NULL) {
@@ -1939,7 +1939,7 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
          break;
       case CFG_TYPE_MSGS:
          /*
-          * We ignore these items as they are printed in a special way in MSGSRES::print_config()
+          * We ignore these items as they are printed in a special way in MessagesResource::print_config()
           */
          break;
       case CFG_TYPE_ADDRESSES: {
@@ -1973,8 +1973,8 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
          /*
           * This is a non-generic type call back to the daemon to get things printed.
           */
-         if (my_config->m_print_res) {
-            my_config->m_print_res(items, i, cfg_str, hide_sensitive_data, inherited);
+         if (my_config->print_res_) {
+            my_config->print_res_(items, i, cfg_str, hide_sensitive_data, inherited);
          }
          break;
       }
@@ -2001,10 +2001,10 @@ bool BRSRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose
  *     [ "deprecated": true, ]
  *     [ "equals": true, ]
  *     ...
- *     "type": "RES_ITEM"
+ *     "type": "ResourceItem"
  *   }
  */
-json_t *json_item(RES_ITEM *item)
+json_t *json_item(ResourceItem *item)
 {
    json_t *json = json_object();
 
@@ -2051,7 +2051,7 @@ json_t *json_item(s_kw *item)
    return json;
 }
 
-json_t *json_items(RES_ITEM items[])
+json_t *json_items(ResourceItem items[])
 {
    json_t *json = json_object();
 
@@ -2065,7 +2065,7 @@ json_t *json_items(RES_ITEM items[])
 }
 #endif
 
-static DATATYPE_NAME datatype_names[] = {
+static DatatypeName datatype_names[] = {
    /*
     * Standard resource types. handlers in res.c
     */
@@ -2078,7 +2078,7 @@ static DATATYPE_NAME datatype_names[] = {
    { CFG_TYPE_AUTOPASSWORD, "AUTOPASSWORD", "Password stored in clear when needed otherwise hashed" },
    { CFG_TYPE_NAME, "NAME", "Name" },
    { CFG_TYPE_STRNAME, "STRNAME", "String name" },
-   { CFG_TYPE_RES, "RES", "Resource" },
+   { CFG_TYPE_RES, "CommonResourceHeader", "Resource" },
    { CFG_TYPE_ALIST_RES, "RESOURCE_LIST", "Resource list" },
    { CFG_TYPE_ALIST_STR, "STRING_LIST", "string list" },
    { CFG_TYPE_ALIST_DIR, "DIRECTORY_LIST", "directory list" },
@@ -2108,7 +2108,7 @@ static DATATYPE_NAME datatype_names[] = {
    { CFG_TYPE_AUDIT, "AUDIT_COMMAND_LIST", "Auditing Command List" },
    { CFG_TYPE_AUTHPROTOCOLTYPE, "AUTH_PROTOCOL_TYPE", "Authentication Protocol" },
    { CFG_TYPE_AUTHTYPE, "AUTH_TYPE", "Authentication Type" },
-   { CFG_TYPE_DEVICE, "DEVICE", "Device resource" },
+   { CFG_TYPE_DEVICE, "Device", "Device resource" },
    { CFG_TYPE_JOBTYPE, "JOB_TYPE", "Type of Job" },
    { CFG_TYPE_PROTOCOLTYPE, "PROTOCOL_TYPE", "Protocol" },
    { CFG_TYPE_LEVEL, "BACKUP_LEVEL", "Backup Level" },
@@ -2157,7 +2157,7 @@ static DATATYPE_NAME datatype_names[] = {
    { 0, NULL, NULL }
 };
 
-DATATYPE_NAME *get_datatype(int number)
+DatatypeName *get_datatype(int number)
 {
    int size = sizeof(datatype_names) / sizeof(datatype_names[0]);
 

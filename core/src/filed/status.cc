@@ -36,10 +36,10 @@ extern void *start_heap;
 extern bool GetWindowsVersionString(char *buf, int maxsiz);
 
 /* Forward referenced functions */
-static void list_terminated_jobs(STATUS_PKT *sp);
-static void list_running_jobs(STATUS_PKT *sp);
-static void list_status_header(STATUS_PKT *sp);
-static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp);
+static void list_terminated_jobs(StatusPacket *sp);
+static void list_running_jobs(StatusPacket *sp);
+static void list_status_header(StatusPacket *sp);
+static void sendit(PoolMem &msg, int len, StatusPacket *sp);
 static const char *level_to_str(int level);
 
 /* Static variables */
@@ -64,18 +64,18 @@ static int privs = 0;
 /**
  * General status generator
  */
-static void output_status(STATUS_PKT *sp)
+static void output_status(StatusPacket *sp)
 {
    list_status_header(sp);
    list_running_jobs(sp);
    list_terminated_jobs(sp);
 }
 
-static void list_status_header(STATUS_PKT *sp)
+static void list_status_header(StatusPacket *sp)
 {
    int len;
    char dt[MAX_TIME_LENGTH];
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char b1[32], b2[32], b3[32], b4[32], b5[35];
 #if defined(HAVE_WIN32)
    char buf[300];
@@ -163,12 +163,12 @@ static void list_status_header(STATUS_PKT *sp)
    }
 }
 
-static void list_running_jobs_plain(STATUS_PKT *sp)
+static void list_running_jobs_plain(StatusPacket *sp)
 {
-   JCR *njcr;
+   JobControlRecord *njcr;
    int len, sec, bps;
    bool found = false;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
 
    /*
@@ -198,7 +198,7 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
          len = Mmsg(msg, _("%s (director) connected at: %s\n"), njcr->director->name(), dt);
       } else {
          /*
-          * This should only occur shortly, until the JCR values are set.
+          * This should only occur shortly, until the JobControlRecord values are set.
           */
          len = Mmsg(msg, _("Unknown connection, started at: %s\n"), dt);
       }
@@ -232,7 +232,7 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
       found = true;
       if (njcr->store_bsock) {
          len = Mmsg(msg, "    SDReadSeqNo=%" lld " fd=%d\n",
-                    njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
+                    njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
          sendit(msg, len, sp);
       } else {
          len = Mmsg(msg, _("    SDSocket closed.\n"));
@@ -250,11 +250,11 @@ static void list_running_jobs_plain(STATUS_PKT *sp)
    sendit(msg, len, sp);
 }
 
-static void list_running_jobs_api(STATUS_PKT *sp)
+static void list_running_jobs_api(StatusPacket *sp)
 {
-   JCR *njcr;
+   JobControlRecord *njcr;
    int len, sec, bps;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH], b1[32], b2[32], b3[32], b4[32];
 
    /*
@@ -305,7 +305,7 @@ static void list_running_jobs_api(STATUS_PKT *sp)
 
       if (njcr->store_bsock) {
          len = Mmsg(msg, " SDReadSeqNo=%" lld "\n fd=%d\n",
-             njcr->store_bsock->read_seqno, njcr->store_bsock->m_fd);
+             njcr->store_bsock->read_seqno, njcr->store_bsock->fd_);
          sendit(msg, len, sp);
       } else {
          len = Mmsg(msg, _(" SDSocket=closed\n"));
@@ -315,7 +315,7 @@ static void list_running_jobs_api(STATUS_PKT *sp)
    endeach_jcr(njcr);
 }
 
-static void  list_running_jobs(STATUS_PKT *sp)
+static void  list_running_jobs(StatusPacket *sp)
 {
    if (sp->api) {
       list_running_jobs_api(sp);
@@ -324,11 +324,11 @@ static void  list_running_jobs(STATUS_PKT *sp)
    }
 }
 
-static void list_terminated_jobs(STATUS_PKT *sp)
+static void list_terminated_jobs(StatusPacket *sp)
 {
    int len;
    struct s_last_job *je;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char level[10], dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
@@ -436,9 +436,9 @@ static void list_terminated_jobs(STATUS_PKT *sp)
 /**
  * Send to bsock (Director or Console)
  */
-static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
+static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 {
-   BSOCK *bs = sp->bs;
+   BareosSocket *bs = sp->bs;
 
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
@@ -452,10 +452,10 @@ static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
 /**
  * Status command from Director
  */
-bool status_cmd(JCR *jcr)
+bool status_cmd(JobControlRecord *jcr)
 {
-   BSOCK *user = jcr->dir_bsock;
-   STATUS_PKT sp;
+   BareosSocket *user = jcr->dir_bsock;
+   StatusPacket sp;
 
    user->fsend("\n");
    sp.bs = user;
@@ -469,13 +469,13 @@ bool status_cmd(JCR *jcr)
 /**
  * .status command from Director
  */
-bool qstatus_cmd(JCR *jcr)
+bool qstatus_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *cmd;
-   JCR *njcr;
+   JobControlRecord *njcr;
    s_last_job* job;
-   STATUS_PKT sp;
+   StatusPacket sp;
 
    sp.bs = dir;
    cmd = get_memory(dir->msglen+1);
@@ -584,7 +584,7 @@ int bareosstat = 0;
  */
 char *bareos_status(char *buf, int buf_len)
 {
-   JCR *njcr;
+   JobControlRecord *njcr;
    const char *termstat = _("Bareos Client: Idle");
    struct s_last_job *job;
    int status = 0;                      /* Idle */

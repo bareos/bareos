@@ -37,12 +37,12 @@
  * Auto Prune Jobs and Files. This is called at the end of every
  *   Job.  We do not prune volumes here.
  */
-void do_autoprune(JCR *jcr)
+void do_autoprune(JobControlRecord *jcr)
 {
-   UAContext *ua;
-   JOBRES *job;
-   CLIENTRES *client;
-   POOLRES *pool;
+   UaContext *ua;
+   JobResource *job;
+   ClientResource *client;
+   PoolResource *pool;
    bool pruned;
 
    if (!jcr->res.client) {            /* temp -- remove me */
@@ -76,16 +76,16 @@ void do_autoprune(JCR *jcr)
  * Prune at least one Volume in current Pool. This is called from catreq.c => next_vol.c
  * when the Storage daemon is asking for another volume and no appendable volumes are available.
  */
-void prune_volumes(JCR *jcr, bool InChanger,
-                   MEDIA_DBR *mr, STORERES *store)
+void prune_volumes(JobControlRecord *jcr, bool InChanger,
+                   MediaDbRecord *mr, StoreResource *store)
 {
    int i;
    int count;
-   POOL_DBR spr;
-   UAContext *ua;
+   PoolDbRecord spr;
+   UaContext *ua;
    dbid_list ids;
    struct del_ctx prune_list;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[100], ed3[50];
 
    Dmsg1(100, "Prune volumes PoolId=%d\n", jcr->jr.PoolId);
@@ -159,7 +159,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
 
    /* Visit each Volume and Prune it until we find one that is purged */
    for (i=0; i<ids.num_ids; i++) {
-      MEDIA_DBR lmr;
+      MediaDbRecord lmr;
 
       memset(&lmr, 0, sizeof(lmr));
       lmr.MediaId = ids.DBId[i];
@@ -216,7 +216,7 @@ void prune_volumes(JCR *jcr, bool InChanger,
           */
          if (lmr.PoolId == mr->PoolId) {
             Dmsg2(100, "Got Vol=%s MediaId=%d purged.\n", lmr.VolumeName, (int)lmr.MediaId);
-            memcpy(mr, &lmr, sizeof(MEDIA_DBR));
+            memcpy(mr, &lmr, sizeof(MediaDbRecord));
             set_storageid_in_mr(store, mr);
             break;                        /* got a volume */
          }

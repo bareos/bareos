@@ -68,7 +68,7 @@ static char Device_update[] =
 static char OK_msg[] =
    "1000 OK\n";
 
-static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
+static void set_jcr_sd_job_status(JobControlRecord *jcr, int SDJobStatus)
 {
    bool set_waittime = false;
 
@@ -134,20 +134,20 @@ static void set_jcr_sd_job_status(JCR *jcr, int SDJobStatus)
  *    could be checked. This is followed by Job=Jobname <user-defined>
  *    info. The identifier is used to dispatch the message to the right
  *    place (Job message, catalog request, ...). The Job is used to lookup
- *    the JCR so that the action is performed on the correct jcr, and
+ *    the JobControlRecord so that the action is performed on the correct jcr, and
  *    the rest of the message is up to the user.  Note, DevUpd uses
- *    *System* for the Job name, and hence no JCR is obtained. This
+ *    *System* for the Job name, and hence no JobControlRecord is obtained. This
  *    is a *rare* case where a jcr is not really needed.
  *
  */
-int bget_dirmsg(BSOCK *bs, bool allow_any_message)
+int bget_dirmsg(BareosSocket *bs, bool allow_any_message)
 {
    int32_t n = BNET_TERMINATE;
    char Job[MAX_NAME_LENGTH];
    char MsgType[20];
    int type;
    utime_t mtime;                     /* message time */
-   JCR *jcr = bs->jcr();
+   JobControlRecord *jcr = bs->jcr();
    char *msg;
 
    for ( ; !bs->is_stop() && !bs->is_timed_out(); ) {
@@ -296,10 +296,10 @@ int bget_dirmsg(BSOCK *bs, bool allow_any_message)
          continue;
       }
 #ifdef needed
-      /* No JCR for Device Updates! */
+      /* No JobControlRecord for Device Updates! */
       if (bs->msg[0] = 'D') {         /* Device update */
-         DEVICE *dev;
-         POOL_MEM dev_name, changer_name, media_type, volume_name;
+         Device *dev;
+         PoolMem dev_name, changer_name, media_type, volume_name;
          int dev_open, dev_append, dev_read, dev_labeled;
          int dev_offline, dev_autochanger, dev_autoselect;
          int dev_num_writers, dev_max_writers, dev_reserved;
@@ -320,7 +320,7 @@ int bget_dirmsg(BSOCK *bs, bool allow_any_message)
             Emsg1(M_ERROR, 0, _("Malformed message: %s\n"), bs->msg);
          } else {
             unbash_spaces(dev_name);
-            dev = (DEVICE *)GetResWithName(R_DEVICE, dev_name.c_str());
+            dev = (Device *)GetResWithName(R_DEVICE, dev_name.c_str());
             if (!dev) {
                continue;
             }
@@ -377,7 +377,7 @@ static char *find_msg_start(char *msg)
  *  Returns: false on failure
  *           true  on success
  */
-bool response(JCR *jcr, BSOCK *bs, char *resp, const char *cmd, e_prtmsg prtmsg)
+bool response(JobControlRecord *jcr, BareosSocket *bs, char *resp, const char *cmd, e_prtmsg prtmsg)
 {
    int n;
 

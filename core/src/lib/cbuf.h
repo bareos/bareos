@@ -29,16 +29,16 @@
 
 #define QSIZE 10              /**< # of pointers in the queue */
 
-class DLL_IMP_EXP circbuf : public SMARTALLOC {
-   int m_size;
-   int m_next_in;
-   int m_next_out;
-   int m_capacity;
-   bool m_flush;
-   pthread_mutex_t m_lock;    /**< Lock the structure */
-   pthread_cond_t m_notfull;  /**< Full -> not full condition */
-   pthread_cond_t m_notempty; /**< Empty -> not empty condition */
-   void **m_data;             /**< Circular buffer of pointers */
+class DLL_IMP_EXP circbuf : public SmartAlloc {
+   int size_;
+   int next_in_;
+   int next_out_;
+   int capacity_;
+   bool flush_;
+   pthread_mutex_t lock_;    /**< Lock the structure */
+   pthread_cond_t notfull_;  /**< Full -> not full condition */
+   pthread_cond_t notempty_; /**< Empty -> not empty condition */
+   void **data_;             /**< Circular buffer of pointers */
 
 public:
    circbuf(int capacity = QSIZE);
@@ -49,10 +49,10 @@ public:
    void *dequeue();
    int next_slot();
    int flush();
-   bool full() { return m_size == m_capacity; };
-   bool empty() { return m_size == 0; };
-   bool is_flushing() { return m_flush; };
-   int capacity() const { return m_capacity; };
+   bool full() { return size_ == capacity_; };
+   bool empty() { return size_ == 0; };
+   bool is_flushing() { return flush_; };
+   int capacity() const { return capacity_; };
 };
 
 /**
@@ -60,7 +60,7 @@ public:
  */
 inline circbuf::circbuf(int capacity)
 {
-   m_data = NULL;
+   data_ = NULL;
    init(capacity);
 }
 

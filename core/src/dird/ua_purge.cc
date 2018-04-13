@@ -36,10 +36,10 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static bool purge_files_from_client(UAContext *ua, CLIENTRES *client);
-static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client);
-static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client);
-static bool action_on_purge_cmd(UAContext *ua, const char *cmd);
+static bool purge_files_from_client(UaContext *ua, ClientResource *client);
+static bool purge_jobs_from_client(UaContext *ua, ClientResource *client);
+static bool purge_quota_from_client(UaContext *ua, ClientResource *client);
+static bool action_on_purge_cmd(UaContext *ua, const char *cmd);
 
 static const char *select_jobsfiles_from_client =
    "SELECT JobId FROM Job "
@@ -54,13 +54,13 @@ static const char *select_jobs_from_client =
  * Purge records from database
  *
  */
-bool purge_cmd(UAContext *ua, const char *cmd)
+bool purge_cmd(UaContext *ua, const char *cmd)
 {
    int i;
-   CLIENTRES *client;
-   MEDIA_DBR mr;
-   JOB_DBR  jr;
-   POOL_MEM cmd_holder(PM_MESSAGE);
+   ClientResource *client;
+   MediaDbRecord mr;
+   JobDbRecord  jr;
+   PoolMem cmd_holder(PM_MESSAGE);
    const char *permission_denied_message = _("Permission denied: need full %s permission.\n");
 
    static const char *keywords[] = {
@@ -258,11 +258,11 @@ bool purge_cmd(UAContext *ua, const char *cmd)
  * the JobIds meeting the prune conditions, then delete all File records
  * pointing to each of those JobIds.
  */
-static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_files_from_client(UaContext *ua, ClientResource *client)
 {
    struct del_ctx del;
-   POOL_MEM query(PM_MESSAGE);
-   CLIENT_DBR cr;
+   PoolMem query(PM_MESSAGE);
+   ClientDbRecord cr;
    char ed1[50];
 
    memset(&cr, 0, sizeof(cr));
@@ -309,11 +309,11 @@ static bool purge_files_from_client(UAContext *ua, CLIENTRES *client)
  * temporary tables are needed. We simply make an in memory list of
  * the JobIds then delete the Job, Files, and JobMedia records in that list.
  */
-static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_jobs_from_client(UaContext *ua, ClientResource *client)
 {
    struct del_ctx del;
-   POOL_MEM query(PM_MESSAGE);
-   CLIENT_DBR cr;
+   PoolMem query(PM_MESSAGE);
+   ClientDbRecord cr;
    char ed1[50];
 
    memset(&cr, 0, sizeof(cr));
@@ -360,9 +360,9 @@ static bool purge_jobs_from_client(UAContext *ua, CLIENTRES *client)
 /**
  * Remove File records from a list of JobIds
  */
-void purge_files_from_jobs(UAContext *ua, char *jobs)
+void purge_files_from_jobs(UaContext *ua, char *jobs)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    Mmsg(query, "DELETE FROM File WHERE JobId IN (%s)", jobs);
    ua->db->sql_query(query.c_str());
@@ -387,9 +387,9 @@ void purge_files_from_jobs(UAContext *ua, char *jobs)
  * Delete jobs (all records) from the catalog in groups of 1000
  *  at a time.
  */
-void purge_job_list_from_catalog(UAContext *ua, del_ctx &del)
+void purge_job_list_from_catalog(UaContext *ua, del_ctx &del)
 {
-   POOL_MEM jobids(PM_MESSAGE);
+   PoolMem jobids(PM_MESSAGE);
    char ed1[50];
 
    for (int i=0; del.num_ids; ) {
@@ -418,9 +418,9 @@ void purge_job_list_from_catalog(UAContext *ua, del_ctx &del)
  * Delete files from a list of jobs in groups of 1000
  *  at a time.
  */
-void purge_files_from_job_list(UAContext *ua, del_ctx &del)
+void purge_files_from_job_list(UaContext *ua, del_ctx &del)
 {
-   POOL_MEM jobids(PM_MESSAGE);
+   PoolMem jobids(PM_MESSAGE);
    char ed1[50];
    /*
     * OK, now we have the list of JobId's to be pruned, send them
@@ -456,9 +456,9 @@ void purge_files_from_job_list(UAContext *ua, del_ctx &del)
  * end up creating it!
  */
 
-static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client)
+static bool purge_quota_from_client(UaContext *ua, ClientResource *client)
 {
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
 
    memset(&cr, 0, sizeof(cr));
    bstrncpy(cr.Name, client->name(), sizeof(cr.Name));
@@ -492,14 +492,14 @@ static bool purge_quota_from_client(UAContext *ua, CLIENTRES *client)
  *  => Search through PriorJobId in jobid and
  *                    PriorJobId in PriorJobId (jobid)
  */
-void upgrade_copies(UAContext *ua, char *jobs)
+void upgrade_copies(UaContext *ua, char *jobs)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    db_lock(ua->db);
 
    /* Do it in two times for mysql */
-   ua->db->fill_query(query, B_DB::SQL_QUERY_uap_upgrade_copies_oldest_job, JT_JOB_COPY, jobs, jobs);
+   ua->db->fill_query(query, BareosDb::SQL_QUERY_uap_upgrade_copies_oldest_job, JT_JOB_COPY, jobs, jobs);
 
    ua->db->sql_query(query.c_str());
    Dmsg1(050, "Upgrade copies Log sql=%s\n", query.c_str());
@@ -519,9 +519,9 @@ void upgrade_copies(UAContext *ua, char *jobs)
 /**
  * Remove all records from catalog for a list of JobIds
  */
-void purge_jobs_from_catalog(UAContext *ua, char *jobs)
+void purge_jobs_from_catalog(UaContext *ua, char *jobs)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    /* Delete (or purge) records associated with the job */
    purge_files_from_jobs(ua, jobs);
@@ -559,16 +559,16 @@ void purge_jobs_from_catalog(UAContext *ua, char *jobs)
    Dmsg1(050, "Delete Job sql=%s\n", query.c_str());
 }
 
-void purge_files_from_volume(UAContext *ua, MEDIA_DBR *mr )
+void purge_files_from_volume(UaContext *ua, MediaDbRecord *mr )
 {} /* ***FIXME*** implement */
 
 /**
  * Returns: 1 if Volume purged
  *          0 if Volume not purged
  */
-bool purge_jobs_from_volume(UAContext *ua, MEDIA_DBR *mr, bool force)
+bool purge_jobs_from_volume(UaContext *ua, MediaDbRecord *mr, bool force)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    db_list_ctx lst;
    char *jobids=NULL;
    int i;
@@ -630,9 +630,9 @@ bail_out:
  *   the console, he has been warned, and we go ahead and purge
  *   the volume anyway, if possible).
  */
-bool is_volume_purged(UAContext *ua, MEDIA_DBR *mr, bool force)
+bool is_volume_purged(UaContext *ua, MediaDbRecord *mr, bool force)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    struct s_count_ctx cnt;
    bool purged = false;
    char ed1[50];
@@ -671,9 +671,9 @@ bail_out:
  * Called here to send the appropriate commands to the SD
  *  to do truncate on purge.
  */
-static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
+static void do_truncate_on_purge(UaContext *ua, MediaDbRecord *mr,
                                  char *pool, char *storage,
-                                 drive_number_t drive, BSOCK *sd)
+                                 drive_number_t drive, BareosSocket *sd)
 {
    bool ok=false;
    uint64_t VolBytes = 0;
@@ -752,20 +752,20 @@ static void do_truncate_on_purge(UAContext *ua, MEDIA_DBR *mr,
  * Implement Bareos bconsole command  purge action
  * purge action= pool= volume= storage= devicetype=
  */
-static bool action_on_purge_cmd(UAContext *ua, const char *cmd)
+static bool action_on_purge_cmd(UaContext *ua, const char *cmd)
 {
    bool allpools = false;
    drive_number_t drive = -1;
    int nb = 0;
    uint32_t *results = NULL;
    const char *action = "all";
-   STORERES *store = NULL;
-   POOLRES *pool = NULL;
-   MEDIA_DBR mr;
-   POOL_DBR pr;
-   BSOCK *sd = NULL;
+   StoreResource *store = NULL;
+   PoolResource *pool = NULL;
+   MediaDbRecord mr;
+   PoolDbRecord pr;
+   BareosSocket *sd = NULL;
    char esc[MAX_NAME_LENGTH * 2 + 1];
-   POOL_MEM buf(PM_MESSAGE),
+   PoolMem buf(PM_MESSAGE),
             volumes(PM_MESSAGE);
 
    memset(&mr, 0, sizeof(mr));
@@ -896,9 +896,9 @@ bail_out:
  * If volume status is Append, Full, Used, or Error, mark it Purged
  * Purged volumes can then be recycled (if enabled).
  */
-bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
+bool mark_media_purged(UaContext *ua, MediaDbRecord *mr)
 {
-   JCR *jcr = ua->jcr;
+   JobControlRecord *jcr = ua->jcr;
    bool status;
 
    status = bstrcmp(mr->VolStatus, "Append") ||
@@ -921,7 +921,7 @@ bool mark_media_purged(UAContext *ua, MEDIA_DBR *mr)
        * If the RecyclePool is defined, move the volume there
        */
       if (mr->RecyclePoolId && mr->RecyclePoolId != mr->PoolId) {
-         POOL_DBR oldpr, newpr;
+         PoolDbRecord oldpr, newpr;
          memset(&oldpr, 0, sizeof(oldpr));
          memset(&newpr, 0, sizeof(newpr));
          newpr.PoolId = mr->RecyclePoolId;

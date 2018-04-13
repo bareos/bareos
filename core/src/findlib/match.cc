@@ -58,7 +58,7 @@ static const int fnmode = 0;
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 
-bool match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool))
+bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_save(JobControlRecord *, FindFilesPacket *ff_pkt, bool))
 {
    ff->file_save = file_save;
 
@@ -82,7 +82,7 @@ bool match_files(JCR *jcr, FF_PKT *ff, int file_save(JCR *, FF_PKT *ff_pkt, bool
  * Done doing filename matching, release all
  *  resources used.
  */
-void term_include_exclude_files(FF_PKT *ff)
+void term_include_exclude_files(FindFilesPacket *ff)
 {
    struct s_included_file *inc, *next_inc;
    struct s_excluded_file *exc, *next_exc;
@@ -115,7 +115,7 @@ void term_include_exclude_files(FF_PKT *ff)
 /**
  * Add a filename to list of included files
  */
-void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
+void add_fname_to_include_list(FindFilesPacket *ff, int prefixed, const char *fname)
 {
    int len, j;
    struct s_included_file *inc;
@@ -422,7 +422,7 @@ void add_fname_to_include_list(FF_PKT *ff, int prefixed, const char *fname)
  * We add an exclude name to either the exclude path
  *  list or the exclude filename list.
  */
-void add_fname_to_exclude_list(FF_PKT *ff, const char *fname)
+void add_fname_to_exclude_list(FindFilesPacket *ff, const char *fname)
 {
    int len;
    struct s_excluded_file *exc, **list;
@@ -457,7 +457,7 @@ void add_fname_to_exclude_list(FF_PKT *ff, const char *fname)
 /**
  * Get next included file
  */
-struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_file *ainc)
+struct s_included_file *get_next_included_file(FindFilesPacket *ff, struct s_included_file *ainc)
 {
    struct s_included_file *inc;
 
@@ -481,7 +481,7 @@ struct s_included_file *get_next_included_file(FF_PKT *ff, struct s_included_fil
  * Walk through the included list to see if this
  *  file is included possibly with wild-cards.
  */
-bool file_is_included(FF_PKT *ff, const char *file)
+bool file_is_included(FindFilesPacket *ff, const char *file)
 {
    struct s_included_file *inc = ff->included_files_list;
    int len;
@@ -537,7 +537,7 @@ static bool file_in_excluded_list(struct s_excluded_file *exc, const char *file)
  *  file is excluded, or if it matches a component
  *  of an excluded directory.
  */
-bool file_is_excluded(FF_PKT *ff, const char *file)
+bool file_is_excluded(FindFilesPacket *ff, const char *file)
 {
    const char *p;
 

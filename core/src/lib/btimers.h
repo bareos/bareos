@@ -37,8 +37,8 @@ struct btimer_t {
    bool killed;
    pid_t pid;                         /**< process id if TYPE_CHILD */
    pthread_t tid;                     /**< thread id if TYPE_PTHREAD */
-   BSOCK *bsock;                      /**< Pointer to BSOCK */
-   JCR *jcr;                          /**< Pointer to job control record */
+   BareosSocket *bsock;                      /**< Pointer to BareosSocket */
+   JobControlRecord *jcr;                          /**< Pointer to job control record */
 };
 
 #endif /* __BTIMERS_H_ */

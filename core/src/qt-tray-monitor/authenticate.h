@@ -1,10 +1,10 @@
 #ifndef AUTHENTICATE_H_INCLUDED
 #define AUTHENTICATE_H_INCLUDED
 
-class MONITORRES;
+class MonitorResource;
 class MonitorItem;
-class JCR;
+class JobControlRecord;
 
-bool authenticate_with_daemon(MonitorItem *item, JCR *jcr);
+bool authenticate_with_daemon(MonitorItem *item, JobControlRecord *jcr);
 
 #endif // AUTHENTICATE_H_INCLUDED

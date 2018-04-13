@@ -77,7 +77,7 @@ int main()
    FILE *fp;
    int pos;
    ConfigFile *ini = new ConfigFile();
-   POOL_MEM *buf;
+   PoolMem *buf;
 
    nok(ini->register_items(test_items, 5), "Check bad sizeof ini_items");
    ok(ini->register_items(test_items, sizeof(struct ini_items)), "Check sizeof ini_items");
@@ -165,7 +165,7 @@ int main()
       );
    fclose(fp);
 
-   buf = new POOL_MEM(PM_BSOCK);
+   buf = new PoolMem(PM_BSOCK);
    ok(ini->unserialize("test2.cfg"), "Test dynamic parse");
    ok(ini->serialize("test4.cfg"), "Try to dump the item table in a file");
    ok(ini->serialize(buf) > 0, "Try to dump the item table in a buffer");

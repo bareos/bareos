@@ -51,11 +51,11 @@ static char OK_hello[] =
  * This is the channel across which we will send error
  * messages and job status information.
  */
-bool authenticate_director(JCR *jcr)
+bool authenticate_director(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *dirname;
-   DIRRES *director = NULL;
+   DirectorResource *director = NULL;
 
    /*
     * Sanity check.
@@ -81,7 +81,7 @@ bool authenticate_director(JCR *jcr)
    }
 
    unbash_spaces(dirname);
-   director = (DIRRES *)GetResWithName(R_DIRECTOR, dirname);
+   director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname);
    jcr->director = director;
 
    if (!director) {
@@ -114,9 +114,9 @@ bool authenticate_director(JCR *jcr)
  *
  * This is used for SD-SD replication of data.
  */
-bool authenticate_storagedaemon(JCR *jcr)
+bool authenticate_storagedaemon(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    s_password password;
 
    password.encoding = p_encoding_md5;
@@ -143,9 +143,9 @@ bool authenticate_storagedaemon(JCR *jcr)
  *
  * This is used for SD-SD replication of data.
  */
-bool authenticate_with_storagedaemon(JCR *jcr)
+bool authenticate_with_storagedaemon(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    s_password password;
 
    const char *identity =
@@ -172,9 +172,9 @@ bool authenticate_with_storagedaemon(JCR *jcr)
  *
  * This is used for FD backups or restores.
  */
-bool authenticate_filedaemon(JCR *jcr)
+bool authenticate_filedaemon(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    s_password password;
 
    password.encoding = p_encoding_md5;
@@ -197,9 +197,9 @@ bool authenticate_filedaemon(JCR *jcr)
  *
  * This is used for passive FD backups or restores.
  */
-bool authenticate_with_filedaemon(JCR *jcr)
+bool authenticate_with_filedaemon(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    s_password password;
 
    password.encoding = p_encoding_md5;

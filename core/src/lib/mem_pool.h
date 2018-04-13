@@ -80,19 +80,19 @@ enum {
    PM_FNAME = 2,                      /* File name buffer */
    PM_MESSAGE = 3,                    /* Daemon message */
    PM_EMSG = 4,                       /* Error message */
-   PM_BSOCK = 5,                      /* BSOCK buffer */
-   PM_RECORD = 6                      /* DEV_RECORD buffer */
+   PM_BSOCK = 5,                      /* BareosSocket buffer */
+   PM_RECORD = 6                      /* DeviceRecord buffer */
 };
 
 #define PM_MAX PM_RECORD              /* Number of types */
 
-class DLL_IMP_EXP POOL_MEM {
+class DLL_IMP_EXP PoolMem {
    char *mem;
 public:
-   POOL_MEM() { mem = get_pool_memory(PM_NAME); *mem = 0; }
-   POOL_MEM(int pool) { mem = get_pool_memory(pool); *mem = 0; }
-   POOL_MEM(const char *str) { mem = get_pool_memory(PM_NAME); *mem = 0; strcpy(str); }
-   ~POOL_MEM() { free_pool_memory(mem); mem = NULL; }
+   PoolMem() { mem = get_pool_memory(PM_NAME); *mem = 0; }
+   PoolMem(int pool) { mem = get_pool_memory(pool); *mem = 0; }
+   PoolMem(const char *str) { mem = get_pool_memory(PM_NAME); *mem = 0; strcpy(str); }
+   ~PoolMem() { free_pool_memory(mem); mem = NULL; }
    char *c_str() const { return mem; }
    POOLMEM *&addr() { return mem; }
    int size() const { return sizeof_pool_memory(mem); }
@@ -102,9 +102,9 @@ public:
    }
    int32_t max_size();
    void realloc_pm(int32_t size);
-   int strcpy(POOL_MEM &str);
+   int strcpy(PoolMem &str);
    int strcpy(const char *str);
-   int strcat(POOL_MEM &str);
+   int strcat(PoolMem &str);
    int strcat(const char *str);
    void toLower();
    size_t strlen() { return ::strlen(mem); };
@@ -113,17 +113,17 @@ public:
 };
 
 DLL_IMP_EXP int pm_strcat(POOLMEM *&pm, const char *str);
-DLL_IMP_EXP int pm_strcat(POOLMEM *&pm, POOL_MEM &str);
-DLL_IMP_EXP int pm_strcat(POOL_MEM &pm, const char *str);
-DLL_IMP_EXP int pm_strcat(POOL_MEM *&pm, const char *str);
+DLL_IMP_EXP int pm_strcat(POOLMEM *&pm, PoolMem &str);
+DLL_IMP_EXP int pm_strcat(PoolMem &pm, const char *str);
+DLL_IMP_EXP int pm_strcat(PoolMem *&pm, const char *str);
 
 DLL_IMP_EXP int pm_strcpy(POOLMEM *&pm, const char *str);
-DLL_IMP_EXP int pm_strcpy(POOLMEM *&pm, POOL_MEM &str);
-DLL_IMP_EXP int pm_strcpy(POOL_MEM &pm, const char *str);
-DLL_IMP_EXP int pm_strcpy(POOL_MEM *&pm, const char *str);
+DLL_IMP_EXP int pm_strcpy(POOLMEM *&pm, PoolMem &str);
+DLL_IMP_EXP int pm_strcpy(PoolMem &pm, const char *str);
+DLL_IMP_EXP int pm_strcpy(PoolMem *&pm, const char *str);
 
 DLL_IMP_EXP int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n);
-DLL_IMP_EXP int pm_memcpy(POOLMEM *&pm, POOL_MEM &data, int32_t n);
-DLL_IMP_EXP int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n);
-DLL_IMP_EXP int pm_memcpy(POOL_MEM *&pm, const char *data, int32_t n);
+DLL_IMP_EXP int pm_memcpy(POOLMEM *&pm, PoolMem &data, int32_t n);
+DLL_IMP_EXP int pm_memcpy(PoolMem &pm, const char *data, int32_t n);
+DLL_IMP_EXP int pm_memcpy(PoolMem *&pm, const char *data, int32_t n);
 #endif

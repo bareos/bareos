@@ -220,14 +220,14 @@ struct idpkt {
  *  - SDport
  *  - password
  */
-static inline bool is_same_storage_daemon(STORERES *rstore, STORERES *wstore)
+static inline bool is_same_storage_daemon(StoreResource *rstore, StoreResource *wstore)
 {
    return rstore->SDport == wstore->SDport &&
           bstrcasecmp(rstore->address, wstore->address) &&
           bstrcasecmp(rstore->password.value, wstore->password.value);
 }
 
-bool set_migration_wstorage(JCR *jcr, POOLRES *pool, POOLRES *next_pool, const char *where)
+bool set_migration_wstorage(JobControlRecord *jcr, PoolResource *pool, PoolResource *next_pool, const char *where)
 {
    if (!next_pool) {
       Jmsg(jcr, M_FATAL, 0, _("No Next Pool specification found in Pool \"%s\".\n"),
@@ -254,11 +254,11 @@ bool set_migration_wstorage(JCR *jcr, POOLRES *pool, POOLRES *next_pool, const c
  * NextPool's search code and to permit do_migration_init()
  * to return with NextPool set in jcr struct.
  */
-static inline bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
+static inline bool set_migration_next_pool(JobControlRecord *jcr, PoolResource **retpool)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
    char ed1[100];
-   POOLRES *pool;
+   PoolResource *pool;
    const char *storage_source;
 
    /*
@@ -276,7 +276,7 @@ static inline bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
    /*
     * Get the pool resource corresponding to the original job
     */
-   pool = (POOLRES *)GetResWithName(R_POOL, pr.Name);
+   pool = (PoolResource *)GetResWithName(R_POOL, pr.Name);
    *retpool = pool;
    if (!pool) {
       Jmsg(jcr, M_FATAL, 0, _("Pool resource \"%s\" not found.\n"), pr.Name);
@@ -335,12 +335,12 @@ static inline bool set_migration_next_pool(JCR *jcr, POOLRES **retpool)
 /**
  * Sanity check that we are not using the same storage for reading and writing.
  */
-static inline bool same_storage(JCR *jcr)
+static inline bool same_storage(JobControlRecord *jcr)
 {
-   STORERES *read_store, *write_store;
+   StoreResource *read_store, *write_store;
 
-   read_store = (STORERES *)jcr->res.rstorage->first();
-   write_store = (STORERES *)jcr->res.wstorage->first();
+   read_store = (StoreResource *)jcr->res.rstorage->first();
+   write_store = (StoreResource *)jcr->res.wstorage->first();
 
    if (!read_store->autochanger && !write_store->autochanger &&
        bstrcmp(read_store->name(), write_store->name())) {
@@ -350,12 +350,12 @@ static inline bool same_storage(JCR *jcr)
    return false;
 }
 
-static inline void start_new_migration_job(JCR *jcr)
+static inline void start_new_migration_job(JobControlRecord *jcr)
 {
    char ed1[50];
    JobId_t jobid;
-   UAContext *ua;
-   POOL_MEM cmd(PM_MESSAGE);
+   UaContext *ua;
+   PoolMem cmd(PM_MESSAGE);
 
    ua = new_ua_context(jcr);
    ua->batch = true;
@@ -539,10 +539,10 @@ static int unique_name_handler(void *ctx, int num_fields, char **row)
  *    true        otherwise
  *    ids.count   number of jobids found (may be zero)
  */
-static bool find_jobids_from_mediaid_list(JCR *jcr, idpkt *ids, const char *type)
+static bool find_jobids_from_mediaid_list(JobControlRecord *jcr, idpkt *ids, const char *type)
 {
    bool ok = false;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    Mmsg(query, sql_jobids_from_mediaid, ids->list);
    ids->count = 0;
@@ -559,12 +559,12 @@ bail_out:
    return ok;
 }
 
-static bool find_mediaid_then_jobids(JCR *jcr, idpkt *ids,
+static bool find_mediaid_then_jobids(JobControlRecord *jcr, idpkt *ids,
                                      const char *query1,
                                      const char *type)
 {
    bool ok = false;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    ids->count = 0;
 
@@ -600,10 +600,10 @@ bail_out:
  *    true        otherwise
  *    ids.count   number of jobids found (may be zero)
  */
-static inline bool find_jobids_of_pool_uncopied_jobs(JCR *jcr, idpkt *ids)
+static inline bool find_jobids_of_pool_uncopied_jobs(JobControlRecord *jcr, idpkt *ids)
 {
    bool ok = false;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    /*
     * Only a copy job is allowed
@@ -628,7 +628,7 @@ bail_out:
    return ok;
 }
 
-static bool regex_find_jobids(JCR *jcr, idpkt *ids,
+static bool regex_find_jobids(JobControlRecord *jcr, idpkt *ids,
                               const char *query1,
                               const char *query2,
                               const char *type)
@@ -640,7 +640,7 @@ static bool regex_find_jobids(JCR *jcr, idpkt *ids,
    char prbuf[500];
    int rc;
    bool ok = false;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    item_chain = New(dlist(item, &item->link));
    if (!jcr->res.job->selection_pattern) {
@@ -756,7 +756,7 @@ bail_out:
  * Returns: false - On error
  *          true - If OK
  */
-static inline bool getJobs_to_migrate(JCR *jcr)
+static inline bool getJobs_to_migrate(JobControlRecord *jcr)
 {
    char *p;
    int status;
@@ -767,7 +767,7 @@ static inline bool getJobs_to_migrate(JCR *jcr)
    db_int64_ctx ctx;
    idpkt ids, mid, jids;
    char ed1[30], ed2[30];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    ids.list = get_pool_memory(PM_MESSAGE);
    ids.list[0] = 0;
@@ -1039,12 +1039,12 @@ bail_out:
  * (storage resources in particular) are available, so these
  * must all be properly defined.
  */
-bool do_migration_init(JCR *jcr)
+bool do_migration_init(JobControlRecord *jcr)
 {
    char ed1[100];
-   POOLRES *pool = NULL;
-   JOBRES *job, *prev_job;
-   JCR *mig_jcr = NULL;            /* newly migrated job */
+   PoolResource *pool = NULL;
+   JobResource *job, *prev_job;
+   JobControlRecord *mig_jcr = NULL;            /* newly migrated job */
 
    apply_pool_overrides(jcr);
 
@@ -1114,8 +1114,8 @@ bool do_migration_init(JCR *jcr)
       Dmsg5(dbglevel, "JobId=%d: Current: Name=%s JobId=%d Type=%c Level=%c\n",
             (int)jcr->JobId, jcr->jr.Name, (int)jcr->jr.JobId, jcr->jr.JobType, jcr->jr.JobLevel);
 
-      job = (JOBRES *)GetResWithName(R_JOB, jcr->jr.Name);
-      prev_job = (JOBRES *)GetResWithName(R_JOB, jcr->previous_jr.Name);
+      job = (JobResource *)GetResWithName(R_JOB, jcr->jr.Name);
+      prev_job = (JobResource *)GetResWithName(R_JOB, jcr->previous_jr.Name);
 
       if (!job) {
          Jmsg(jcr, M_FATAL, 0, _("Job resource not found for \"%s\".\n"), jcr->jr.Name);
@@ -1163,7 +1163,7 @@ bool do_migration_init(JCR *jcr)
       /*
        * Create a migration jcr
        */
-      mig_jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+      mig_jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
       jcr->mig_jcr = mig_jcr;
       memcpy(&mig_jcr->previous_jr, &jcr->previous_jr, sizeof(mig_jcr->previous_jr));
 
@@ -1203,7 +1203,7 @@ bool do_migration_init(JCR *jcr)
       }
 
       /*
-       * Keep track that the mig_jcr has a controlling JCR.
+       * Keep track that the mig_jcr has a controlling JobControlRecord.
        */
       mig_jcr->cjcr = jcr;
 
@@ -1289,11 +1289,11 @@ bool do_migration_init(JCR *jcr)
  * Returns:  false on failure
  *           true  on success
  */
-static inline bool do_actual_migration(JCR *jcr)
+static inline bool do_actual_migration(JobControlRecord *jcr)
 {
    char ed1[100];
    bool retval = false;
-   JCR *mig_jcr = jcr->mig_jcr;
+   JobControlRecord *mig_jcr = jcr->mig_jcr;
 
    ASSERT(mig_jcr);
 
@@ -1335,8 +1335,8 @@ static inline bool do_actual_migration(JCR *jcr)
    }
 
    Dmsg2(dbglevel, "Read store=%s, write store=%s\n",
-         ((STORERES *)jcr->res.rstorage->first())->name(),
-         ((STORERES *)jcr->res.wstorage->first())->name());
+         ((StoreResource *)jcr->res.rstorage->first())->name(),
+         ((StoreResource *)jcr->res.wstorage->first())->name());
 
    if (jcr->remote_replicate) {
 
@@ -1496,9 +1496,9 @@ static inline bool do_actual_migration(JCR *jcr)
     * to replicate to the other.
     */
    if (jcr->remote_replicate) {
-      STORERES *wstore = mig_jcr->res.wstore;
-      STORERES *rstore = jcr->res.rstore;
-      POOL_MEM command(PM_MESSAGE);
+      StoreResource *wstore = mig_jcr->res.wstore;
+      StoreResource *rstore = jcr->res.rstore;
+      PoolMem command(PM_MESSAGE);
       uint32_t tls_need = 0;
 
       if (jcr->max_bandwidth > 0) {
@@ -1507,7 +1507,7 @@ static inline bool do_actual_migration(JCR *jcr)
 
       /*
        * Start the job prior to starting the message thread below
-       * to avoid two threads from using the BSOCK structure at
+       * to avoid two threads from using the BareosSocket structure at
        * the same time.
        */
       if (!mig_jcr->store_bsock->fsend("listen")) {
@@ -1543,7 +1543,7 @@ static inline bool do_actual_migration(JCR *jcr)
 
    /*
     * Start the job prior to starting the message thread below
-    * to avoid two threads from using the BSOCK structure at
+    * to avoid two threads from using the BareosSocket structure at
     * the same time.
     */
    if (!jcr->store_bsock->fsend("run")) {
@@ -1613,7 +1613,7 @@ bail_out:
 /**
  * Select the Jobs to Migrate/Copy using the getJobs_to_migrate function and then exit.
  */
-static inline bool do_migration_selection(JCR *jcr)
+static inline bool do_migration_selection(JobControlRecord *jcr)
 {
    bool retval;
 
@@ -1628,7 +1628,7 @@ static inline bool do_migration_selection(JCR *jcr)
    return retval;
 }
 
-bool do_migration(JCR *jcr)
+bool do_migration(JobControlRecord *jcr)
 {
    /*
     * See if this is a control job e.g. the one that selects the Jobs to Migrate or Copy or
@@ -1642,11 +1642,11 @@ bool do_migration(JCR *jcr)
    }
 }
 
-static inline void generate_migrate_summary(JCR *jcr, MEDIA_DBR *mr, int msg_type, const char *term_msg)
+static inline void generate_migrate_summary(JobControlRecord *jcr, MediaDbRecord *mr, int msg_type, const char *term_msg)
 {
    double kbps;
    utime_t RunTime;
-   JCR *mig_jcr = jcr->mig_jcr;
+   JobControlRecord *mig_jcr = jcr->mig_jcr;
    char term_code[100], sd_term_msg[100];
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], elapsed[50];
@@ -1763,14 +1763,14 @@ static inline void generate_migrate_summary(JCR *jcr, MEDIA_DBR *mr, int msg_typ
 /**
  * Release resources allocated during backup.
  */
-void migration_cleanup(JCR *jcr, int TermCode)
+void migration_cleanup(JobControlRecord *jcr, int TermCode)
 {
    char ec1[30];
    const char *term_msg;
    int msg_type = M_INFO;
-   MEDIA_DBR mr;
-   JCR *mig_jcr = jcr->mig_jcr;
-   POOL_MEM query(PM_MESSAGE);
+   MediaDbRecord mr;
+   JobControlRecord *mig_jcr = jcr->mig_jcr;
+   PoolMem query(PM_MESSAGE);
 
    memset(&mr, 0, sizeof(mr));
    Dmsg2(100, "Enter migrate_cleanup %d %c\n", TermCode, TermCode);
@@ -1821,7 +1821,7 @@ void migration_cleanup(JCR *jcr, int TermCode)
       jcr->db->sql_query(query.c_str());
 
       if (jcr->is_terminated_ok()) {
-         UAContext *ua;
+         UaContext *ua;
 
          switch (jcr->getJobType()) {
          case JT_MIGRATE:

@@ -86,23 +86,23 @@ struct s_jt {
  * Definition of the contents of each Resource
  * Needed for forward references
  */
-class SCHEDRES;
-class CLIENTRES;
-class FILESETRES;
-class POOLRES;
-class RUNRES;
-class DEVICERES;
-class RUNSCRIPTRES;
+class ScheduleResource;
+class ClientResource;
+class FilesetResource;
+class PoolResource;
+class RunResource;
+class DeviceResource;
+class RunScriptResource;
 
 /*
  * Print configuration file schema in json format
  */
-bool print_config_schema_json(POOL_MEM &buff);
+bool print_config_schema_json(PoolMem &buff);
 
 /*
  *   Director Resource
  */
-class DIRRES: public TLSRES {
+class DirectorResource: public TlsResource {
 public:
    dlist *DIRaddrs;
    dlist *DIRsrc_addr;                /* Address to source connections from */
@@ -114,7 +114,7 @@ public:
    char *pid_directory;               /* PidDirectory */
    char *subsys_directory;            /* SubsysDirectory */
    alist *backend_directories;        /* Backend Directories */
-   MSGSRES *messages;                 /* Daemon message handler */
+   MessagesResource *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;        /* Max concurrent jobs for whole director */
    uint32_t MaxConnections;           /* Max concurrent connections */
    uint32_t MaxConsoleConnections;    /* Max concurrent console connections */
@@ -139,7 +139,7 @@ public:
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    s_password keyencrkey;             /* Key Encryption Key */
 
-   DIRRES() : TLSRES() {}
+   DirectorResource() : TlsResource() {}
 };
 
 /*
@@ -147,11 +147,11 @@ public:
  *
  * This resource is a bit different from the other resources
  * because it is not defined in the Director
- * by DEVICE { ... }, but rather by a "reference" such as
- * DEVICE = xxx; Then when the Director connects to the
+ * by Device { ... }, but rather by a "reference" such as
+ * Device = xxx; Then when the Director connects to the
  * SD, it requests the information about the device.
  */
-class DEVICERES : public BRSRES {
+class DeviceResource : public BareosResource {
 public:
    bool found;                        /**< found with SD */
    int32_t num_writers;               /**< number of writers */
@@ -170,7 +170,7 @@ public:
    char VolumeName[MAX_NAME_LENGTH];
    char MediaType[MAX_NAME_LENGTH];
 
-   DEVICERES() : BRSRES() {}
+   DeviceResource() : BareosResource() {}
 };
 
 /**
@@ -194,7 +194,7 @@ enum {
 /**
  * Profile Resource
  */
-class PROFILERES : public BRSRES {
+class ProfileResource : public BareosResource {
 public:
    alist *ACL_lists[Num_ACL];         /**< Pointers to ACLs */
 };
@@ -202,7 +202,7 @@ public:
 /**
  * Console Resource
  */
-class CONRES : public TLSRES {
+class ConsoleResource : public TlsResource {
 public:
    alist *ACL_lists[Num_ACL];         /**< Pointers to ACLs */
    alist *profiles;                   /**< Pointers to profile resources */
@@ -211,7 +211,7 @@ public:
 /**
  * Catalog Resource
  */
-class CATRES : public BRSRES {
+class CatalogResource : public BareosResource {
 public:
    uint32_t db_port;                  /**< Port */
    char *db_address;                  /**< Hostname for remote access */
@@ -232,7 +232,7 @@ public:
 
    /**< Methods */
    char *display(POOLMEM *dst);       /**< Get catalog information */
-   CATRES() : BRSRES() { }
+   CatalogResource() : BareosResource() { }
 };
 
 /**
@@ -245,7 +245,7 @@ struct runtime_job_status_t;
 /**
  * Client Resource
  */
-class CLIENTRES: public TLSRES {
+class ClientResource: public TlsResource {
 public:
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -263,7 +263,7 @@ public:
    char *address;                     /* Hostname for remote access to Client */
    char *lanaddress;                  /* Hostname for remote access to Client if behind NAT in LAN */
    char *username;                    /* Username to use for authentication if protocol supports it */
-   CATRES *catalog;                   /* Catalog resource */
+   CatalogResource *catalog;                   /* Catalog resource */
    int32_t MaxConcurrentJobs;         /* Maximum concurrent jobs */
    bool passive;                      /* Passive Client */
    bool conn_from_dir_to_fd;          /* Connect to Client */
@@ -275,13 +275,13 @@ public:
    bool ndmp_use_lmdb;                /* NDMP Protocol specific use LMDB for the FHDB or not */
    int64_t max_bandwidth;             /* Limit speed on this client */
    runtime_client_status_t *rcs;      /* Runtime Client Status */
-   CLIENTRES() : TLSRES() {}
+   ClientResource() : TlsResource() {}
 };
 
 /**
  * Store Resource
  */
-class STORERES : public TLSRES {
+class StoreResource : public TlsResource {
 public:
    uint32_t Protocol;                 /* Protocol to use to connect */
    uint32_t AuthType;                 /* Authentication Type to use for protocol */
@@ -304,17 +304,17 @@ public:
    utime_t heartbeat_interval;        /**< Interval to send heartbeats */
    utime_t cache_status_interval;     /**< Interval to cache the vol_list in the rss */
    runtime_storage_status_t *rss;     /**< Runtime Storage Status */
-   STORERES *paired_storage;          /**< Paired storage configuration item for protocols like NDMP */
+   StoreResource *paired_storage;          /**< Paired storage configuration item for protocols like NDMP */
 
    /* Methods */
    char *dev_name() const;
 
-   STORERES() : TLSRES() {}
+   StoreResource() : TlsResource() {}
 };
 
-inline char *STORERES::dev_name() const
+inline char *StoreResource::dev_name() const
 {
-   DEVICERES *dev = (DEVICERES *)device->first();
+   DeviceResource *dev = (DeviceResource *)device->first();
    return dev->name();
 }
 
@@ -323,20 +323,20 @@ inline char *STORERES::dev_name() const
  * storage pointer and the text of where the pointer was
  * found.
  */
-class USTORERES {
+class UnifiedStoreResource {
 public:
-   STORERES *store;
+   StoreResource *store;
    POOLMEM *store_source;
 
    /* Methods */
-   USTORERES() { store = NULL; store_source = get_pool_memory(PM_MESSAGE);
+   UnifiedStoreResource() { store = NULL; store_source = get_pool_memory(PM_MESSAGE);
               *store_source = 0; };
-   ~USTORERES() { destroy(); }
+   ~UnifiedStoreResource() { destroy(); }
    void set_source(const char *where);
    void destroy();
 };
 
-inline void USTORERES::destroy()
+inline void UnifiedStoreResource::destroy()
 {
    if (store_source) {
       free_pool_memory(store_source);
@@ -344,7 +344,7 @@ inline void USTORERES::destroy()
    }
 }
 
-inline void USTORERES::set_source(const char *where)
+inline void UnifiedStoreResource::set_source(const char *where)
 {
    if (!store_source) {
       store_source = get_pool_memory(PM_MESSAGE);
@@ -355,7 +355,7 @@ inline void USTORERES::set_source(const char *where)
 /**
  * Job Resource
  */
-class JOBRES : public BRSRES {
+class JobResource : public BareosResource {
 public:
    uint32_t Protocol;                 /**< Protocol to use to connect */
    uint32_t JobType;                  /**< Job type (backup, verify, restore) */
@@ -397,21 +397,21 @@ public:
    int32_t AlwaysIncrementalKeepNumber;/**< Number of incrementals that are always left and not consolidated */
    int32_t MaxFullConsolidations;     /**< Number of consolidate jobs to be started that will include a full */
 
-   MSGSRES *messages;                 /**< How and where to send messages */
-   SCHEDRES *schedule;                /**< When -- Automatic schedule */
-   CLIENTRES *client;                 /**< Who to backup */
-   FILESETRES *fileset;               /**< What to backup -- Fileset */
-   CATRES *catalog;                   /**< Which Catalog to use */
+   MessagesResource *messages;                 /**< How and where to send messages */
+   ScheduleResource *schedule;                /**< When -- Automatic schedule */
+   ClientResource *client;                 /**< Who to backup */
+   FilesetResource *fileset;               /**< What to backup -- Fileset */
+   CatalogResource *catalog;                   /**< Which Catalog to use */
    alist *storage;                    /**< Where is device -- list of Storage to be used */
-   POOLRES *pool;                     /**< Where is media -- Media Pool */
-   POOLRES *full_pool;                /**< Pool for Full backups */
-   POOLRES *vfull_pool;               /**< Pool for Virtual Full backups */
-   POOLRES *inc_pool;                 /**< Pool for Incremental backups */
-   POOLRES *diff_pool;                /**< Pool for Differental backups */
-   POOLRES *next_pool;                /**< Next Pool for Copy/Migration Jobs and Virtual backups */
+   PoolResource *pool;                     /**< Where is media -- Media Pool */
+   PoolResource *full_pool;                /**< Pool for Full backups */
+   PoolResource *vfull_pool;               /**< Pool for Virtual Full backups */
+   PoolResource *inc_pool;                 /**< Pool for Incremental backups */
+   PoolResource *diff_pool;                /**< Pool for Differental backups */
+   PoolResource *next_pool;                /**< Next Pool for Copy/Migration Jobs and Virtual backups */
    char *selection_pattern;
-   JOBRES *verify_job;                /**< Job name to verify */
-   JOBRES *jobdefs;                   /**< Job defaults */
+   JobResource *verify_job;                /**< Job name to verify */
+   JobResource *jobdefs;                   /**< Job defaults */
    alist *run_cmds;                   /**< Run commands */
    alist *RunScripts;                 /**< Run {client} program {after|before} Job */
    alist *FdPluginOptions;            /**< Generic FD plugin options used by this Job */
@@ -420,7 +420,7 @@ public:
    alist *base;                       /**< Base jobs */
 
    bool allow_mixed_priority;         /**< Allow jobs with higher priority concurrently with this */
-   bool where_use_regexp;             /**< true if RestoreWhere is a BREGEXP */
+   bool where_use_regexp;             /**< true if RestoreWhere is a BareosRegex */
    bool RescheduleOnError;            /**< Set to reschedule on error */
    bool RescheduleIncompleteJobs;     /**< Set to reschedule incomplete Jobs */
    bool PrefixLinks;                  /**< Prefix soft links with Where path */
@@ -449,7 +449,7 @@ public:
    /* Methods */
    bool validate();
 
-   JOBRES() : BRSRES() {}
+   JobResource() : BareosResource() {}
 };
 
 #undef  MAX_FOPTS
@@ -458,7 +458,7 @@ public:
 /**
  * File options structure
  */
-struct FOPTS {
+struct FileOptions {
    char opts[MAX_FOPTS];              /**< Options string */
    alist regex;                       /**< Regex string(s) */
    alist regexdir;                    /**< Regex string(s) for directories */
@@ -479,9 +479,9 @@ struct FOPTS {
 /**
  * This is either an include item or an exclude item
  */
-struct INCEXE {
-   FOPTS *current_opts;               /**< Points to current options structure */
-   FOPTS **opts_list;                 /**< Options list */
+struct IncludeExcludeItem {
+   FileOptions *current_opts;               /**< Points to current options structure */
+   FileOptions **opts_list;                 /**< Options list */
    int32_t num_opts;                  /**< Number of options items */
    alist name_list;                   /**< Filename list -- holds char * */
    alist plugin_list;                 /**< Filename list for plugins */
@@ -491,12 +491,12 @@ struct INCEXE {
 /**
  * FileSet Resource
  */
-class FILESETRES : public BRSRES {
+class FilesetResource : public BareosResource {
 public:
    bool new_include;                  /**< Set if new include used */
-   INCEXE **include_items;            /**< Array of incexe structures */
+   IncludeExcludeItem **include_items;            /**< Array of incexe structures */
    int32_t num_includes;              /**< Number in array */
-   INCEXE **exclude_items;
+   IncludeExcludeItem **exclude_items;
    int32_t num_excludes;
    bool have_MD5;                     /**< Set if MD5 initialized */
    MD5_CTX md5c;                      /**< MD5 of include/exclude */
@@ -505,41 +505,41 @@ public:
    bool enable_vss;                   /**< Enable Volume Shadow Copy */
 
    /* Methods */
-   bool print_config(POOL_MEM& buf, bool hide_sensitive_data = false, bool verbose = false);
+   bool print_config(PoolMem& buf, bool hide_sensitive_data = false, bool verbose = false);
 
-   FILESETRES() : BRSRES() {}
+   FilesetResource() : BareosResource() {}
 };
 
 /**
  * Schedule Resource
  */
-class SCHEDRES: public BRSRES {
+class ScheduleResource: public BareosResource {
 public:
-   RUNRES *run;
+   RunResource *run;
    bool enabled;                      /* Set if schedule is enabled */
 
-   SCHEDRES() : BRSRES() {}
+   ScheduleResource() : BareosResource() {}
 };
 
 /**
  * Counter Resource
  */
-class COUNTERRES: public BRSRES {
+class CounterResource: public BareosResource {
 public:
    int32_t MinValue;                  /* Minimum value */
    int32_t MaxValue;                  /* Maximum value */
    int32_t CurrentValue ;             /* Current value */
-   COUNTERRES *WrapCounter;           /* Wrap counter name */
-   CATRES *Catalog;                   /* Where to store */
+   CounterResource *WrapCounter;           /* Wrap counter name */
+   CatalogResource *Catalog;                   /* Where to store */
    bool created;                      /* Created in DB */
 
-   COUNTERRES() : BRSRES() {}
+   CounterResource() : BareosResource() {}
 };
 
 /**
  * Pool Resource
  */
-class POOLRES: public BRSRES {
+class PoolResource: public BareosResource {
 public:
    char *pool_type;                   /* Pool type */
    char *label_format;                /* Label format string */
@@ -554,7 +554,7 @@ public:
    utime_t MigrationTime;             /* Time to migrate to next pool */
    uint64_t MigrationHighBytes;       /* When migration starts */
    uint64_t MigrationLowBytes;        /* When migration stops */
-   POOLRES *NextPool;                 /* Next pool for migration */
+   PoolResource *NextPool;                 /* Next pool for migration */
    alist *storage;                    /* Where is device -- list of Storage to be used */
    bool use_catalog;                  /* Maintain catalog for media */
    bool catalog_files;                /* Maintain file entries in catalog */
@@ -565,23 +565,23 @@ public:
    bool AutoPrune;                    /* Default for pool auto prune */
    bool Recycle;                      /* Default for media recycle yes/no */
    uint32_t action_on_purge;          /* Action on purge, e.g. truncate the disk volume */
-   POOLRES *RecyclePool;              /* RecyclePool destination when media is purged */
-   POOLRES *ScratchPool;              /* ScratchPool source when requesting media */
-   CATRES *catalog;                   /* Catalog to be used */
+   PoolResource *RecyclePool;              /* RecyclePool destination when media is purged */
+   PoolResource *ScratchPool;              /* ScratchPool source when requesting media */
+   CatalogResource *catalog;                   /* Catalog to be used */
    utime_t FileRetention;             /* File retention period in seconds */
    utime_t JobRetention;              /* Job retention period in seconds */
    uint32_t MinBlocksize;             /* Minimum Blocksize */
    uint32_t MaxBlocksize;             /* Maximum Blocksize */
 
-   POOLRES() : BRSRES() {}
+   PoolResource() : BareosResource() {}
 };
 
 /**
  * Run structure contained in Schedule Resource
  */
-class RUNRES: public BRSRES {
+class RunResource: public BareosResource {
 public:
-   RUNRES *next;                      /**< points to next run record */
+   RunResource *next;                      /**< points to next run record */
    uint32_t level;                    /**< level override */
    int32_t Priority;                  /**< priority override */
    uint32_t job_type;
@@ -592,14 +592,14 @@ public:
    bool accurate;                     /**< accurate */
    bool accurate_set;                 /**< accurate given */
 
-   POOLRES *pool;                     /**< Pool override */
-   POOLRES *full_pool;                /**< Full Pool override */
-   POOLRES *vfull_pool;               /**< Virtual Full Pool override */
-   POOLRES *inc_pool;                 /**< Incr Pool override */
-   POOLRES *diff_pool;                /**< Diff Pool override */
-   POOLRES *next_pool;                /**< Next Pool override */
-   STORERES *storage;                 /**< Storage override */
-   MSGSRES *msgs;                     /**< Messages override */
+   PoolResource *pool;                     /**< Pool override */
+   PoolResource *full_pool;                /**< Full Pool override */
+   PoolResource *vfull_pool;               /**< Virtual Full Pool override */
+   PoolResource *inc_pool;                 /**< Incr Pool override */
+   PoolResource *diff_pool;                /**< Diff Pool override */
+   PoolResource *next_pool;                /**< Next Pool override */
+   StoreResource *storage;                 /**< Storage override */
+   MessagesResource *msgs;                     /**< Messages override */
    char *since;
    uint32_t level_no;
    uint32_t minute;                   /* minute to run job */
@@ -613,7 +613,7 @@ public:
    char woy[nbytes_for_bits(54 + 1)];   /* week of year */
    bool last_set;                       /* last week of month */
 
-   RUNRES() : BRSRES() {}
+   RunResource() : BareosResource() {}
 };
 
 /**
@@ -621,23 +621,23 @@ public:
  * resource structure definitions.
  */
 union URES {
-   DIRRES res_dir;
-   CONRES res_con;
-   PROFILERES res_profile;
-   CLIENTRES res_client;
-   STORERES res_store;
-   CATRES res_cat;
-   JOBRES res_job;
-   FILESETRES res_fs;
-   SCHEDRES res_sch;
-   POOLRES res_pool;
-   MSGSRES res_msgs;
-   COUNTERRES res_counter;
-   DEVICERES res_dev;
-   RES hdr;
+   DirectorResource res_dir;
+   ConsoleResource res_con;
+   ProfileResource res_profile;
+   ClientResource res_client;
+   StoreResource res_store;
+   CatalogResource res_cat;
+   JobResource res_job;
+   FilesetResource res_fs;
+   ScheduleResource res_sch;
+   PoolResource res_pool;
+   MessagesResource res_msgs;
+   CounterResource res_counter;
+   DeviceResource res_dev;
+   CommonResourceHeader hdr;
 
    URES() {
-      new (&hdr) RES();
+      new (&hdr) CommonResourceHeader();
       Dmsg1(900, "hdr:        %p \n", &hdr);
       Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
       Dmsg1(900, "res_con.hdr %p\n", &res_con.hdr);
@@ -646,5 +646,5 @@ union URES {
 };
 
 void init_dir_config(CONFIG *config, const char *configfile, int exit_code);
-bool propagate_jobdefs(int res_type, JOBRES *res);
-bool validate_resource(int type, RES_ITEM *items, BRSRES *res);
+bool propagate_jobdefs(int res_type, JobResource *res);
+bool validate_resource(int type, ResourceItem *items, BareosResource *res);

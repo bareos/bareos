@@ -70,13 +70,13 @@ static inline backend_interface_mapping_t *lookup_backend_interface_mapping(int 
    return NULL;
 }
 
-DEVICE *init_backend_dev(JCR *jcr, int device_type)
+Device *init_backend_dev(JobControlRecord *jcr, int device_type)
 {
    struct stat st;
    char *backend_dir;
    void *dl_handle = NULL;
-   POOL_MEM shared_library_name(PM_FNAME);
-   POOL_MEM error(PM_FNAME);
+   PoolMem shared_library_name(PM_FNAME);
+   PoolMem error(PM_FNAME);
    backend_interface_mapping_t *backend_interface_mapping;
    backend_shared_library_t *backend_shared_library;
    t_backend_instantiate backend_instantiate;
@@ -91,7 +91,7 @@ DEVICE *init_backend_dev(JCR *jcr, int device_type)
 
    backend_interface_mapping = lookup_backend_interface_mapping(device_type);
    if (backend_interface_mapping == NULL) {
-      return (DEVICE *)NULL;
+      return (Device *)NULL;
    }
 
    /*
@@ -185,7 +185,7 @@ DEVICE *init_backend_dev(JCR *jcr, int device_type)
    } else {
       Jmsg(jcr, M_ERROR_TERM, 0, _("Unable to load any shared library for libbareossd-%s%s\n"),
            backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-      return (DEVICE *)NULL;
+      return (Device *)NULL;
    }
 }
 

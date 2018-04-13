@@ -28,17 +28,17 @@
 #ifndef GENERIC_TAPE_DEVICE_H
 #define GENERIC_TAPE_DEVICE_H
 
-class generic_tape_device: public DEVICE {
+class generic_tape_device: public Device {
 public:
    generic_tape_device() {};
    virtual ~generic_tape_device() {};
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
-   virtual void open_device(DCR *dcr, int omode);
+   virtual void open_device(DeviceControlRecord *dcr, int omode);
    virtual char *status_dev();
-   virtual bool eod(DCR *dcr);
+   virtual bool eod(DeviceControlRecord *dcr);
    virtual void set_ateof();
    virtual void set_ateot();
    virtual bool offline();
@@ -51,19 +51,19 @@ public:
    virtual void lock_door();
    virtual void unlock_door();
    virtual void clrerror(int func);
-   virtual void set_os_device_parameters(DCR *dcr);
+   virtual void set_os_device_parameters(DeviceControlRecord *dcr);
    virtual int32_t get_os_tape_file();
-   virtual bool rewind(DCR *dcr);
-   virtual bool update_pos(DCR *dcr);
-   virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool mount_backend(DCR *dcr, int timeout);
-   virtual bool unmount_backend(DCR *dcr, int timeout);
+   virtual bool rewind(DeviceControlRecord *dcr);
+   virtual bool update_pos(DeviceControlRecord *dcr);
+   virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
+   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout);
+   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout);
    virtual int d_close(int);
    virtual int d_open(const char *pathname, int flags, int mode);
    virtual int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    virtual ssize_t d_read(int fd, void *buffer, size_t count);
    virtual ssize_t d_write(int fd, const void *buffer, size_t count);
-   virtual bool d_truncate(DCR *dcr);
+   virtual bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* GENERIC_TAPE_DEVICE_H */

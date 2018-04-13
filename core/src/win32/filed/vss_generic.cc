@@ -109,7 +109,7 @@ class IXMLDOMDocument;
 
 #include "vss.h"
 
-static void JmsgVssApiStatus(JCR *jcr, int msg_status, HRESULT hr, const char *apiName)
+static void JmsgVssApiStatus(JobControlRecord *jcr, int msg_status, HRESULT hr, const char *apiName)
 {
    const char *errmsg;
 
@@ -162,7 +162,7 @@ static void JmsgVssApiStatus(JCR *jcr, int msg_status, HRESULT hr, const char *a
 #define VSS_WS_FAILED_AT_BACKUPSHUTDOWN (VSS_WRITER_STATE)15
 #endif
 
-static void JmsgVssWriterStatus(JCR *jcr, int msg_status, VSS_WRITER_STATE eWriterStatus, char *writer_name)
+static void JmsgVssWriterStatus(JobControlRecord *jcr, int msg_status, VSS_WRITER_STATE eWriterStatus, char *writer_name)
 {
    const char *errmsg;
 
@@ -412,10 +412,10 @@ static inline const wchar_t *GetStringFromWriterStatus(VSS_WRITER_STATE eWriterS
  */
 VSSClientGeneric::VSSClientGeneric()
 {
-   m_hLib = LoadLibraryA("VSSAPI.DLL");
-   if (m_hLib) {
-      m_CreateVssBackupComponents = (t_CreateVssBackupComponents) GetProcAddress(m_hLib, VSSVBACK_ENTRY);
-      m_VssFreeSnapshotProperties = (t_VssFreeSnapshotProperties) GetProcAddress(m_hLib, "VssFreeSnapshotProperties");
+   hLib_ = LoadLibraryA("VSSAPI.DLL");
+   if (hLib_) {
+      CreateVssBackupComponents_ = (t_CreateVssBackupComponents) GetProcAddress(hLib_, VSSVBACK_ENTRY);
+      VssFreeSnapshotProperties_ = (t_VssFreeSnapshotProperties) GetProcAddress(hLib_, "VssFreeSnapshotProperties");
    }
 }
 
@@ -424,8 +424,8 @@ VSSClientGeneric::VSSClientGeneric()
  */
 VSSClientGeneric::~VSSClientGeneric()
 {
-   if (m_hLib) {
-      FreeLibrary(m_hLib);
+   if (hLib_) {
+      FreeLibrary(hLib_);
    }
 }
 
@@ -438,34 +438,34 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    VMP_snapshots = 0;
    HRESULT hr = S_OK;
    CComPtr<IVssAsync> pAsync1;
-   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)pVssObject_;
 
-   if (!(m_CreateVssBackupComponents && m_VssFreeSnapshotProperties)) {
-      Dmsg2(0, "VSSClientGeneric::Initialize: m_CreateVssBackupComponents=0x%08X, m_VssFreeSnapshotProperties=0x%08X\n",
-            m_CreateVssBackupComponents, m_VssFreeSnapshotProperties);
-      Jmsg(m_jcr, M_FATAL, 0, "Entry point CreateVssBackupComponents or VssFreeSnapshotProperties missing.\n");
+   if (!(CreateVssBackupComponents_ && VssFreeSnapshotProperties_)) {
+      Dmsg2(0, "VSSClientGeneric::Initialize: CreateVssBackupComponents_=0x%08X, VssFreeSnapshotProperties_=0x%08X\n",
+            CreateVssBackupComponents_, VssFreeSnapshotProperties_);
+      Jmsg(jcr_, M_FATAL, 0, "Entry point CreateVssBackupComponents or VssFreeSnapshotProperties missing.\n");
       return false;
    }
 
    /*
     * Initialize COM
     */
-   if (!m_bCoInitializeCalled) {
+   if (!bCoInitializeCalled_) {
       hr = CoInitializeEx(NULL, COINIT_MULTITHREADED);
       if (FAILED(hr)) {
          Dmsg1(0, "VSSClientGeneric::Initialize: CoInitializeEx returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitializeEx");
+         JmsgVssApiStatus(jcr_, M_FATAL, hr, "CoInitializeEx");
          errno = b_errno_win32;
          return false;
       }
-      m_bCoInitializeCalled = true;
+      bCoInitializeCalled_ = true;
    }
 
    /*
     * Initialize COM security
     */
    if (!initialize_com_security()) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CoInitializeSecurity");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "CoInitializeSecurity");
       return false;
    }
 
@@ -474,18 +474,18 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
     */
    if (pVssObj) {
       pVssObj->Release();
-      m_pVssObject = NULL;
+      pVssObject_ = NULL;
    }
 
    /*
     * Create new internal backup components object
     */
-   hr = m_CreateVssBackupComponents((IVssBackupComponents**)&m_pVssObject);
+   hr = CreateVssBackupComponents_((IVssBackupComponents**)&pVssObject_);
    if (FAILED(hr)) {
       berrno be;
       Dmsg2(0, "VSSClientGeneric::Initialize: CreateVssBackupComponents returned 0x%08X. ERR=%s\n",
             hr, be.bstrerror(b_errno_win32));
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "CreateVssBackupComponents");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "CreateVssBackupComponents");
       errno = b_errno_win32;
       return false;
    }
@@ -493,7 +493,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * Define shorthand VssObject with time
     */
-   pVssObj = (IVssBackupComponents *)m_pVssObject;
+   pVssObj = (IVssBackupComponents *)pVssObject_;
 
    if (!bDuringRestore) {
 #if defined(B_VSS_W2K3) || defined(B_VSS_VISTA)
@@ -501,7 +501,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
          hr = pVssObj->SetContext(dwContext);
          if (FAILED(hr)) {
             Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->SetContext returned 0x%08X\n", hr);
-            JmsgVssApiStatus(m_jcr, M_FATAL, hr, "SetContext");
+            JmsgVssApiStatus(jcr_, M_FATAL, hr, "SetContext");
             errno = b_errno_win32;
             return false;
          }
@@ -514,7 +514,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       hr = pVssObj->InitializeForBackup();
       if (FAILED(hr)) {
          Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->InitializeForBackup returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "InitializeForBackup");
+         JmsgVssApiStatus(jcr_, M_FATAL, hr, "InitializeForBackup");
          errno = b_errno_win32;
          return false;
       }
@@ -526,10 +526,10 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
        * give back a bRC_Skip it means this will not be performed by any plugin
        * and we should do the generic handling ourself in the core.
        */
-      if (generate_plugin_event(m_jcr, bEventVssSetBackupState) != bRC_Skip) {
+      if (generate_plugin_event(jcr_, bEventVssSetBackupState) != bRC_Skip) {
          VSS_BACKUP_TYPE backup_type;
 
-         switch (m_jcr->getJobLevel()) {
+         switch (jcr_->getJobLevel()) {
          case L_FULL:
             backup_type = VSS_BT_FULL;
             break;
@@ -540,7 +540,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
             backup_type = VSS_BT_INCREMENTAL;
             break;
          default:
-            Dmsg1(0, "VSSClientGeneric::Initialize: unknown backup level %d\n", m_jcr->getJobLevel());
+            Dmsg1(0, "VSSClientGeneric::Initialize: unknown backup level %d\n", jcr_->getJobLevel());
             backup_type = VSS_BT_FULL;
             break;
          }
@@ -553,7 +553,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
                      );
          if (FAILED(hr)) {
             Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->SetBackupState returned 0x%08X\n", hr);
-            JmsgVssApiStatus(m_jcr, M_FATAL, hr, "SetBackupState");
+            JmsgVssApiStatus(jcr_, M_FATAL, hr, "SetBackupState");
             errno = b_errno_win32;
             return false;
          }
@@ -565,7 +565,7 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
       hr = pVssObj->GatherWriterMetadata(&pAsync1.p);
       if (FAILED(hr)) {
          Dmsg1(0, "VSSClientGeneric::Initialize: IVssBackupComponents->GatherWriterMetadata returned 0x%08X\n", hr);
-         JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterMetadata");
+         JmsgVssApiStatus(jcr_, M_FATAL, hr, "GatherWriterMetadata");
          errno = b_errno_win32;
          return false;
       }
@@ -585,12 +585,12 @@ bool VSSClientGeneric::Initialize(DWORD dwContext, bool bDuringRestore)
    /*
     * We are during restore now?
     */
-   m_bDuringRestore = bDuringRestore;
+   bDuringRestore_ = bDuringRestore;
 
    /*
     * Keep the context
     */
-   m_dwContext = dwContext;
+   dwContext_ = dwContext;
 
    return true;
 }
@@ -627,7 +627,7 @@ bool VSSClientGeneric::WaitAndCheckForAsyncOperation(IVssAsync* pAsync)
       return true;
    }
 
-   JmsgVssApiStatus(m_jcr, M_FATAL, hr, "Query Async Status after 10 minute wait");
+   JmsgVssApiStatus(jcr_, M_FATAL, hr, "Query Async Status after 10 minute wait");
 
    return false;
 }
@@ -665,14 +665,14 @@ void VSSClientGeneric::AddDriveSnapshots(IVssBackupComponents *pVssObj, char *sz
             Dmsg2(200, "%s added to snapshotset (Drive %s:\\)\n", szBuf, szDrive);
             free_pool_memory(szBuf);
          }
-         wcsncpy(m_wszUniqueVolumeName[szDriveLetters[i]-'A'], (LPWSTR)volume.c_str(), MAX_PATH);
+         wcsncpy(wszUniqueVolumeName_[szDriveLetters[i]-'A'], (LPWSTR)volume.c_str(), MAX_PATH);
       } else {
          szDriveLetters[i] = tolower(szDriveLetters[i]);
       }
       if (onefs_disabled) {
          AddVolumeMountPointSnapshots(pVssObj, (LPWSTR)volume.c_str());
       } else {
-         Jmsg(m_jcr, M_INFO, 0, "VolumeMountpoints are not processed as onefs = yes.\n");
+         Jmsg(jcr_, M_INFO, 0, "VolumeMountpoints are not processed as onefs = yes.\n");
       }
    }
 }
@@ -730,7 +730,7 @@ void VSSClientGeneric::AddVolumeMountPointSnapshots(IVssBackupComponents *pVssOb
    free_pool_memory(mp);
 }
 
-void VSSClientGeneric::ShowVolumeMountPointStats(JCR *jcr)
+void VSSClientGeneric::ShowVolumeMountPointStats(JobControlRecord *jcr)
 {
    if (VMPs) {
       Jmsg(jcr, M_INFO, 0, _("Volume Mount Points found: %d, added to snapshotset: %d\n"), VMPs, VMP_snapshots);
@@ -747,28 +747,28 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    /*
     * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx.
     */
-   if (!m_pVssObject || m_bBackupIsInitialized) {
-      Jmsg(m_jcr, M_FATAL, 0, "No pointer to VssObject or Backup is not Initialized\n");
+   if (!pVssObject_ || bBackupIsInitialized_) {
+      Jmsg(jcr_, M_FATAL, 0, "No pointer to VssObject or Backup is not Initialized\n");
       errno = ENOSYS;
       return false;
    }
 
-   m_uidCurrentSnapshotSet = GUID_NULL;
+   uidCurrentSnapshotSet_ = GUID_NULL;
 
-   pVssObj = (IVssBackupComponents *)m_pVssObject;
+   pVssObj = (IVssBackupComponents *)pVssObject_;
 
    /*
     * startSnapshotSet
     */
-   hr = pVssObj->StartSnapshotSet(&m_uidCurrentSnapshotSet);
+   hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
    while ((unsigned)hr == VSS_E_SNAPSHOT_SET_IN_PROGRESS) {
       bmicrosleep(5,0);
-      Jmsg(m_jcr, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
-      hr = pVssObj->StartSnapshotSet(&m_uidCurrentSnapshotSet);
+      Jmsg(jcr_, M_INFO, 0, "VSS_E_SNAPSHOT_SET_IN_PROGRESS, retrying ...\n");
+      hr = pVssObj->StartSnapshotSet(&uidCurrentSnapshotSet_);
    }
 
    if (FAILED(hr)) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "StartSnapshotSet");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "StartSnapshotSet");
       errno = ENOSYS;
       return false;
    }
@@ -783,10 +783,10 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    /*
     * PrepareForBackup
     */
-   generate_plugin_event(m_jcr, bEventVssPrepareSnapshot);
+   generate_plugin_event(jcr_, bEventVssPrepareSnapshot);
    hr = pVssObj->PrepareForBackup(&pAsync1.p);
    if (FAILED(hr)) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "PrepareForBackup");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "PrepareForBackup");
       errno = b_errno_win32;
       return false;
    }
@@ -812,7 +812,7 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
     */
    hr = pVssObj->DoSnapshotSet(&pAsync2.p);
    if (FAILED(hr)) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "DoSnapshotSet");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "DoSnapshotSet");
       errno = b_errno_win32;
       return false;
    }
@@ -836,9 +836,9 @@ bool VSSClientGeneric::CreateSnapshots(char *szDriveLetters, bool onefs_disabled
    /*
     * Query snapshot info.
     */
-   QuerySnapshotSet(m_uidCurrentSnapshotSet);
+   QuerySnapshotSet(uidCurrentSnapshotSet_);
 
-   m_bBackupIsInitialized = true;
+   bBackupIsInitialized_ = true;
 
    return true;
 }
@@ -848,16 +848,16 @@ bool VSSClientGeneric::CloseBackup()
    bool bRet = false;
    HRESULT hr;
    BSTR xml;
-   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)pVssObject_;
 
-   if (!m_pVssObject) {
-      Jmsg(m_jcr, M_FATAL, 0, "VssOject is NULL.\n");
+   if (!pVssObject_) {
+      Jmsg(jcr_, M_FATAL, 0, "VssOject is NULL.\n");
       errno = ENOSYS;
       return bRet;
    }
    CComPtr<IVssAsync> pAsync;
 
-   m_bBackupIsInitialized = false;
+   bBackupIsInitialized_ = false;
 
    hr = pVssObj->BackupComplete(&pAsync.p);
    if (SUCCEEDED(hr)) {
@@ -867,7 +867,7 @@ bool VSSClientGeneric::CloseBackup()
       WaitAndCheckForAsyncOperation(pAsync.p);
       bRet = true;
    } else {
-      JmsgVssApiStatus(m_jcr, M_ERROR, hr, "BackupComplete");
+      JmsgVssApiStatus(jcr_, M_ERROR, hr, "BackupComplete");
       errno = b_errno_win32;
       pVssObj->AbortBackup();
    }
@@ -879,41 +879,41 @@ bool VSSClientGeneric::CloseBackup()
 
    hr = pVssObj->SaveAsXML(&xml);
    if (SUCCEEDED(hr)) {
-      m_metadata = xml;
+      metadata_ = xml;
    } else {
-      m_metadata = NULL;
+      metadata_ = NULL;
    }
 
    /*
     * FIXME?: The docs http://msdn.microsoft.com/en-us/library/aa384582%28v=VS.85%29.aspx say this isn't required...
     */
-   if (m_uidCurrentSnapshotSet != GUID_NULL) {
+   if (uidCurrentSnapshotSet_ != GUID_NULL) {
       VSS_ID idNonDeletedSnapshotID = GUID_NULL;
       LONG lSnapshots;
 
-      pVssObj->DeleteSnapshots(m_uidCurrentSnapshotSet,
+      pVssObj->DeleteSnapshots(uidCurrentSnapshotSet_,
                                VSS_OBJECT_SNAPSHOT_SET,
                                false,
                                &lSnapshots,
                                &idNonDeletedSnapshotID);
 
-      m_uidCurrentSnapshotSet = GUID_NULL;
+      uidCurrentSnapshotSet_ = GUID_NULL;
    }
 
-   if (m_bWriterStatusCurrent) {
-      m_bWriterStatusCurrent = false;
+   if (bWriterStatusCurrent_) {
+      bWriterStatusCurrent_ = false;
       pVssObj->FreeWriterStatus();
    }
 
    pVssObj->Release();
-   m_pVssObject = NULL;
+   pVssObject_ = NULL;
 
    /*
     * Call CoUninitialize if the CoInitializeEx was performed sucesfully
     */
-   if (m_bCoInitializeCalled) {
+   if (bCoInitializeCalled_) {
       CoUninitialize();
-      m_bCoInitializeCalled = false;
+      bCoInitializeCalled_ = false;
    }
 
    return bRet;
@@ -921,12 +921,12 @@ bool VSSClientGeneric::CloseBackup()
 
 wchar_t *VSSClientGeneric::GetMetadata()
 {
-   return m_metadata;
+   return metadata_;
 }
 
 bool VSSClientGeneric::CloseRestore()
 {
-   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)pVssObject_;
    CComPtr<IVssAsync> pAsync;
 
    if (!pVssObj) {
@@ -941,21 +941,21 @@ bool VSSClientGeneric::CloseRestore()
  */
 void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
 {
-   if (!(m_CreateVssBackupComponents && m_VssFreeSnapshotProperties)) {
-      Jmsg(m_jcr, M_FATAL, 0, "CreateVssBackupComponents or VssFreeSnapshotProperties API is NULL.\n");
+   if (!(CreateVssBackupComponents_ && VssFreeSnapshotProperties_)) {
+      Jmsg(jcr_, M_FATAL, 0, "CreateVssBackupComponents or VssFreeSnapshotProperties API is NULL.\n");
       errno = ENOSYS;
       return;
    }
 
-   memset(m_szShadowCopyName,0,sizeof (m_szShadowCopyName));
+   memset(szShadowCopyName_,0,sizeof (szShadowCopyName_));
 
-   if (snapshotSetID == GUID_NULL || m_pVssObject == NULL) {
-      Jmsg(m_jcr, M_FATAL, 0, "snapshotSetID == NULL or VssObject is NULL.\n");
+   if (snapshotSetID == GUID_NULL || pVssObject_ == NULL) {
+      Jmsg(jcr_, M_FATAL, 0, "snapshotSetID == NULL or VssObject is NULL.\n");
       errno = ENOSYS;
       return;
    }
 
-   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)pVssObject_;
 
    /*
     * Get list all shadow copies.
@@ -970,7 +970,7 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
     * If there are no shadow copies, just return
     */
    if (FAILED(hr)) {
-      Jmsg(m_jcr, M_FATAL, 0, "No Volume Shadow copies made.\n");
+      Jmsg(jcr_, M_FATAL, 0, "No Volume Shadow copies made.\n");
       errno = b_errno_win32;
       return;
    }
@@ -997,15 +997,15 @@ void VSSClientGeneric::QuerySnapshotSet(GUID snapshotSetID)
       /*
        * Print the shadow copy (if not filtered out)
        */
-      if (Snap.m_SnapshotSetId == snapshotSetID)  {
+      if (Snap.SnapshotSetId_ == snapshotSetID)  {
          for (int ch='A'-'A';ch<='Z'-'A';ch++) {
-            if (wcscmp(Snap.m_pwszOriginalVolumeName, m_wszUniqueVolumeName[ch]) == 0) {
-               wcsncpy(m_szShadowCopyName[ch],Snap.m_pwszSnapshotDeviceObject, MAX_PATH-1);
+            if (wcscmp(Snap.pwszOriginalVolumeName_, wszUniqueVolumeName_[ch]) == 0) {
+               wcsncpy(szShadowCopyName_[ch],Snap.pwszSnapshotDeviceObject_, MAX_PATH-1);
                break;
             }
          }
       }
-      m_VssFreeSnapshotProperties(&Snap);
+      VssFreeSnapshotProperties_(&Snap);
    }
    errno = 0;
 }
@@ -1018,16 +1018,16 @@ bool VSSClientGeneric::CheckWriterStatus()
    /*
     * See http://msdn.microsoft.com/en-us/library/windows/desktop/aa382870%28v=vs.85%29.aspx
     */
-   IVssBackupComponents *pVssObj = (IVssBackupComponents *)m_pVssObject;
+   IVssBackupComponents *pVssObj = (IVssBackupComponents *)pVssObject_;
    if (!pVssObj) {
-      Jmsg(m_jcr, M_FATAL, 0, "Cannot get IVssBackupComponents pointer.\n");
+      Jmsg(jcr_, M_FATAL, 0, "Cannot get IVssBackupComponents pointer.\n");
       errno = ENOSYS;
       return false;
    }
    DestroyWriterInfo();
 
-   if (m_bWriterStatusCurrent) {
-      m_bWriterStatusCurrent = false;
+   if (bWriterStatusCurrent_) {
+      bWriterStatusCurrent_ = false;
       pVssObj->FreeWriterStatus();
    }
 
@@ -1038,7 +1038,7 @@ bool VSSClientGeneric::CheckWriterStatus()
 
    HRESULT hr = pVssObj->GatherWriterStatus(&pAsync.p);
    if (FAILED(hr)) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatus");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "GatherWriterStatus");
       errno = b_errno_win32;
       return false;
    }
@@ -1051,13 +1051,13 @@ bool VSSClientGeneric::CheckWriterStatus()
       return false;
    }
 
-   m_bWriterStatusCurrent = true;
+   bWriterStatusCurrent_ = true;
 
    unsigned cWriters = 0;
 
    hr = pVssObj->GetWriterStatusCount(&cWriters);
    if (FAILED(hr)) {
-      JmsgVssApiStatus(m_jcr, M_FATAL, hr, "GatherWriterStatusCount");
+      JmsgVssApiStatus(jcr_, M_FATAL, hr, "GatherWriterStatusCount");
       errno = b_errno_win32;
       return false;
    }
@@ -1088,7 +1088,7 @@ bool VSSClientGeneric::CheckWriterStatus()
           /*
            * Api failed
            */
-          JmsgVssApiStatus(m_jcr, M_WARNING, hr, "GetWriterStatus");
+          JmsgVssApiStatus(jcr_, M_WARNING, hr, "GetWriterStatus");
           nState = 0;         /* Unknown writer state -- API failed */
       } else {
           switch(eWriterStatus) {
@@ -1108,7 +1108,7 @@ bool VSSClientGeneric::CheckWriterStatus()
               * Writer status problem
               */
              wchar_2_UTF8(szBuf, bstrWriterName.p);
-             JmsgVssWriterStatus(m_jcr, M_WARNING, eWriterStatus, szBuf);
+             JmsgVssWriterStatus(jcr_, M_WARNING, eWriterStatus, szBuf);
              nState = -1;       /* bad writer state */
              break;
           default:

@@ -76,7 +76,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_NAME),
+   PoolMem buf(PM_NAME),
             more(PM_NAME);
 
    while (1) {
@@ -121,7 +121,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_NAME),
+   PoolMem buf(PM_NAME),
             more(PM_NAME);
 
    while (1) {
@@ -218,7 +218,7 @@ LEX *lex_close_file(LEX *lf)
 static inline LEX *lex_add(LEX *lf,
                            const char *filename,
                            FILE *fd,
-                           BPIPE *bpipe,
+                           Bpipe *bpipe,
                            LEX_ERROR_HANDLER *scan_error,
                            LEX_WARNING_HANDLER *scan_warning)
 {
@@ -289,7 +289,7 @@ LEX *lex_open_file(LEX *lf,
                    LEX_WARNING_HANDLER *scan_warning)
 {
    FILE *fd;
-   BPIPE *bpipe = NULL;
+   Bpipe *bpipe = NULL;
    char *bpipe_filename = NULL;
 
    if (filename[0] == '|') {

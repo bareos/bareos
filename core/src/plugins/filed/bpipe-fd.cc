@@ -112,7 +112,7 @@ static pFuncs pluginFuncs = {
  */
 struct plugin_ctx {
    boffset_t offset;
-   BPIPE *pfd;                        /* bpipe() descriptor */
+   Bpipe *pfd;                        /* bpipe() descriptor */
    char *plugin_options;              /* Override of plugin options passed in */
    char *fname;                       /* Filename to "backup/restore" */
    char *reader;                      /* Reader program for backup */

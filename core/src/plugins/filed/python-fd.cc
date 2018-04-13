@@ -68,7 +68,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap);
 static bRC setAcl(bpContext *ctx, acl_pkt *ap);
 static bRC getXattr(bpContext *ctx, xattr_pkt *xp);
 static bRC setXattr(bpContext *ctx, xattr_pkt *xp);
-static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options);
+static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_options);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
 static bRC PyLoadModule(bpContext *ctx, void *value);
@@ -368,7 +368,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 {
    bRC retval = bRC_Error;
    bool event_dispatched = false;
-   POOL_MEM plugin_options(PM_FNAME);
+   PoolMem plugin_options(PM_FNAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
@@ -893,12 +893,12 @@ static inline void set_string(char **destination, char *value)
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options)
+static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_options)
 {
    bool found;
    int i, cnt;
    bool keep_existing;
-   POOL_MEM plugin_definition(PM_FNAME);
+   PoolMem plugin_definition(PM_FNAME);
    char *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
@@ -1051,7 +1051,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
        * If we didn't consume this parameter we add it to the plugin_options list.
        */
       if (!found) {
-         POOL_MEM option(PM_FNAME);
+         PoolMem option(PM_FNAME);
 
          if (cnt) {
             Mmsg(option, ":%s=%s", argument, argument_value);
@@ -3243,7 +3243,7 @@ static inline char *PyGetByteArrayValue(PyObject *object)
 static PyObject *PyRestoreObject_repr(PyRestoreObject *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "RestoreObject(object_name=\"%s\", object=\"%s\", plugin_name=\"%s\", "
              "object_type=%d, object_len=%d, object_full_len=%d, "
@@ -3330,7 +3330,7 @@ static void PyRestoreObject_dealloc(PyRestoreObject *self)
 static PyObject *PyStatPacket_repr(PyStatPacket *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "StatPacket(dev=%ld, ino=%lld, mode=%04o, nlink=%d, "
              "uid=%ld, gid=%ld, rdev=%ld, size=%lld, "
@@ -3450,7 +3450,7 @@ static inline const char *print_flags_bitmap(PyObject *bitmap)
 static PyObject *PySavePacket_repr(PySavePacket *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "SavePacket(fname=\"%s\", link=\"%s\", type=%ld, flags=%s, "
              "no_read=%d, portable=%d, accurate_found=%d, "
@@ -3562,7 +3562,7 @@ static void PySavePacket_dealloc(PySavePacket *self)
 static PyObject *PyRestorePacket_repr(PyRestorePacket *self)
 {
    PyObject *stat_repr, *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    stat_repr = PyObject_Repr(self->statp);
    Mmsg(buf, "RestorePacket(stream=%d, data_stream=%ld, type=%ld, file_index=%ld, "
@@ -3658,7 +3658,7 @@ static void PyRestorePacket_dealloc(PyRestorePacket *self)
 static PyObject *PyIoPacket_repr(PyIoPacket *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "IoPacket(func=%d, count=%ld, flags=%ld, mode=%04o, "
              "buf=\"%s\", fname=\"%s\", status=%ld, io_errno=%ld, lerror=%ld, "
@@ -3749,7 +3749,7 @@ static void PyIoPacket_dealloc(PyIoPacket *self)
 static PyObject *PyAclPacket_repr(PyAclPacket *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "AclPacket(fname=\"%s\", content=\"%s\")",
         self->fname, PyGetByteArrayValue(self->content));
@@ -3805,7 +3805,7 @@ static void PyAclPacket_dealloc(PyAclPacket *self)
 static PyObject *PyXattrPacket_repr(PyXattrPacket *self)
 {
    PyObject *s;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(buf, "XattrPacket(fname=\"%s\", name=\"%s\", value=\"%s\")",
         self->fname, PyGetByteArrayValue(self->name), PyGetByteArrayValue(self->value));

@@ -41,8 +41,8 @@
 #define O_CTG 0
 #endif
 
-static int separate_path_and_file(JCR *jcr, char *fname, char *ofile);
-static int path_already_seen(JCR *jcr, char *path, int pnl);
+static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofile);
+static int path_already_seen(JobControlRecord *jcr, char *path, int pnl);
 
 /**
  * Create the file, or the directory
@@ -62,7 +62,7 @@ static int path_already_seen(JCR *jcr, char *path, int pnl);
  *
  * So, we return with the file descriptor open for normal files.
  */
-int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
+int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace)
 {
    mode_t new_mode, parent_mode;
    int flags;
@@ -479,7 +479,7 @@ int create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
  *           0  no path
  *           -1 filename is zero length
  */
-static int separate_path_and_file(JCR *jcr, char *fname, char *ofile)
+static int separate_path_and_file(JobControlRecord *jcr, char *fname, char *ofile)
 {
    char *f, *p, *q;
    int fnl, pnl;
@@ -523,7 +523,7 @@ static int separate_path_and_file(JCR *jcr, char *fname, char *ofile)
  * Primitive caching of path to prevent recreating a pathname
  *   each time as long as we remain in the same directory.
  */
-static int path_already_seen(JCR *jcr, char *path, int pnl)
+static int path_already_seen(JobControlRecord *jcr, char *path, int pnl)
 {
    if (!jcr->cached_path) {
       jcr->cached_path = get_pool_memory(PM_FNAME);

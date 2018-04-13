@@ -44,7 +44,7 @@
  * daemon accessed via the NDMP protocol or query the TAPE and ROBOT
  * agent of a native NDMP server.
  */
-void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
+void do_ndmp_storage_status(UaContext *ua, StoreResource *store, char *cmd)
 {
    /*
     * See if the storage is just a NDMP instance of a normal storage daemon.
@@ -107,7 +107,7 @@ static void cleanup_ndmp_session(struct ndm_session *ndmp_sess)
 /**
  * Generic function to run a storage Job on a remote NDMP server.
  */
-static bool ndmp_run_storage_job(JCR *jcr, STORERES *store, struct ndm_session *ndmp_sess, struct ndm_job_param *ndmp_job)
+static bool ndmp_run_storage_job(JobControlRecord *jcr, StoreResource *store, struct ndm_session *ndmp_sess, struct ndm_job_param *ndmp_job)
 {
    NIS *nis;
 
@@ -171,7 +171,7 @@ bail_out:
 /**
  * Generic function to get the current element status of a NDMP robot.
  */
-static bool get_robot_element_status(JCR *jcr, STORERES *store, struct ndm_session **ndmp_sess)
+static bool get_robot_element_status(JobControlRecord *jcr, StoreResource *store, struct ndm_session **ndmp_sess)
 {
    struct ndm_job_param ndmp_job;
 
@@ -243,7 +243,7 @@ static void fill_volume_name(vol_list_t *vl, struct smc_element_descriptor *edp)
  * the fact if things are full or empty as that data is kind of volatile
  * and you should use a vol_list for that.
  */
-static void ndmp_fill_storage_mappings(STORERES *store, struct ndm_session *ndmp_sess)
+static void ndmp_fill_storage_mappings(StoreResource *store, struct ndm_session *ndmp_sess)
 {
    drive_number_t drive;
    slot_number_t slot,
@@ -323,7 +323,7 @@ static void ndmp_fill_storage_mappings(STORERES *store, struct ndm_session *ndmp
 /**
  * Get the current content of the autochanger as a generic vol_list dlist.
  */
-dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan)
+dlist *ndmp_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan)
 {
    struct ndm_session *ndmp_sess;
    struct smc_ctrl_block *smc;
@@ -502,7 +502,7 @@ dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan
 /**
  * Update the mapping table from logical to physical storage addresses.
  */
-bool ndmp_update_storage_mappings(JCR* jcr, STORERES *store)
+bool ndmp_update_storage_mappings(JobControlRecord* jcr, StoreResource *store)
 {
    struct ndm_session *ndmp_sess;
 
@@ -521,7 +521,7 @@ bool ndmp_update_storage_mappings(JCR* jcr, STORERES *store)
 /**
  * Update the mapping table from logical to physical storage addresses.
  */
-bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
+bool ndmp_update_storage_mappings(UaContext *ua, StoreResource *store)
 {
    struct ndm_session *ndmp_sess;
 
@@ -539,7 +539,7 @@ bool ndmp_update_storage_mappings(UAContext *ua, STORERES *store)
 /**
  * Number of slots in a NDMP autochanger.
  */
-slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store)
+slot_number_t ndmp_get_num_slots(UaContext *ua, StoreResource *store)
 {
    slot_number_t slots = 0;
    storage_mapping_t *mapping;
@@ -573,7 +573,7 @@ slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store)
 /**
  * Number of drives in a NDMP autochanger.
  */
-drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store)
+drive_number_t ndmp_get_num_drives(UaContext *ua, StoreResource *store)
 {
    drive_number_t drives = 0;
    storage_mapping_t *mapping;
@@ -606,7 +606,7 @@ drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store)
 /**
  * Move a volume from one slot to an other in a NDMP autochanger.
  */
-bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
+bool ndmp_transfer_volume(UaContext *ua, StoreResource *store,
                           slot_number_t src_slot, slot_number_t dst_slot)
 {
    bool retval = false;
@@ -688,11 +688,11 @@ bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
 /**
  * Lookup the name of a drive in a NDMP autochanger.
  */
-char *lookup_ndmp_drive(STORERES *store, drive_number_t drivenumber)
+char *lookup_ndmp_drive(StoreResource *store, drive_number_t drivenumber)
 {
    int cnt = 0;
    char *tapedevice;
-   RES *tapedeviceres;
+   CommonResourceHeader *tapedeviceres;
 
    if (store->device) {
       foreach_alist(tapedeviceres, store->device) {
@@ -710,7 +710,7 @@ char *lookup_ndmp_drive(STORERES *store, drive_number_t drivenumber)
 /**
  * Perform an autochanger operation in a NDMP autochanger.
  */
-bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const char *operation,
+bool ndmp_autochanger_volume_operation(UaContext *ua, StoreResource *store, const char *operation,
                                        drive_number_t drive, slot_number_t slot)
 {
    drive_number_t drive_mapping;
@@ -815,8 +815,8 @@ bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store, const cha
 /**
  * Label a volume in a NDMP autochanger.
  */
-bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
-                             MEDIA_DBR *omr, POOL_DBR *pr, bool relabel,
+bool ndmp_send_label_request(UaContext *ua, StoreResource *store, MediaDbRecord *mr,
+                             MediaDbRecord *omr, PoolDbRecord *pr, bool relabel,
                              drive_number_t drive, slot_number_t slot)
 {
    bool retval = false;
@@ -905,45 +905,45 @@ bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
 /**
  * Dummy entry points when NDMP not enabled.
  */
-void do_ndmp_storage_status(UAContext *ua, STORERES *store, char *cmd)
+void do_ndmp_storage_status(UaContext *ua, StoreResource *store, char *cmd)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }
 
-dlist *ndmp_get_vol_list(UAContext *ua, STORERES *store, bool listall, bool scan)
+dlist *ndmp_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return (dlist *)NULL;
 }
 
-slot_number_t ndmp_get_num_slots(UAContext *ua, STORERES *store)
+slot_number_t ndmp_get_num_slots(UaContext *ua, StoreResource *store)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return 0;
 }
 
-drive_number_t ndmp_get_num_drives(UAContext *ua, STORERES *store)
+drive_number_t ndmp_get_num_drives(UaContext *ua, StoreResource *store)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return 0;
 }
 
-bool ndmp_transfer_volume(UAContext *ua, STORERES *store,
+bool ndmp_transfer_volume(UaContext *ua, StoreResource *store,
                           slot_number_t src_slot, slot_number_t dst_slot)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool ndmp_autochanger_volume_operation(UAContext *ua, STORERES *store,
+bool ndmp_autochanger_volume_operation(UaContext *ua, StoreResource *store,
                                        const char *operation, drive_number_t drive, slot_number_t slot)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool ndmp_send_label_request(UAContext *ua, STORERES *store, MEDIA_DBR *mr,
-                             MEDIA_DBR *omr, POOL_DBR *pr, bool relabel,
+bool ndmp_send_label_request(UaContext *ua, StoreResource *store, MediaDbRecord *mr,
+                             MediaDbRecord *omr, PoolDbRecord *pr, bool relabel,
                              drive_number_t drive, slot_number_t slot)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));

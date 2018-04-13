@@ -131,7 +131,7 @@ int db_list_handler(void *ctx, int num_fields, char **row)
  * specific context passed from db_check_max_connections to db_max_connections_handler.
  */
 struct max_connections_context {
-   B_DB *db;
+   BareosDb *db;
    uint32_t nr_connections;
 };
 
@@ -165,9 +165,9 @@ static inline int db_max_connections_handler(void *ctx, int num_fields, char **r
 /**
  * Check catalog max_connections setting
  */
-bool B_DB::check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs)
+bool BareosDb::check_max_connections(JobControlRecord *jcr, uint32_t max_concurrent_jobs)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    struct max_connections_context context;
 
    /*
@@ -208,7 +208,7 @@ bool B_DB::check_max_connections(JCR *jcr, uint32_t max_concurrent_jobs)
 /*
  * Check that the tables correspond to the version we want
  */
-bool B_DB::check_tables_version(JCR *jcr)
+bool BareosDb::check_tables_version(JobControlRecord *jcr)
 {
    uint32_t bareos_db_version = 0;
    const char *query = "SELECT VersionId FROM Version";
@@ -233,12 +233,12 @@ bool B_DB::check_tables_version(JCR *jcr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::QueryDB(const char *file, int line, JCR *jcr, const char *select_cmd)
+bool BareosDb::QueryDB(const char *file, int line, JobControlRecord *jcr, const char *select_cmd)
 {
    sql_free_result();
    Dmsg1(1000, "query: %s\n", select_cmd);
    if (!sql_query(select_cmd, QF_STORE_RESULT)) {
-      m_msg(file, line, errmsg, _("query %s failed:\n%s\n"), select_cmd, sql_strerror());
+      msg_(file, line, errmsg, _("query %s failed:\n%s\n"), select_cmd, sql_strerror());
       j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd);
@@ -254,12 +254,12 @@ bool B_DB::QueryDB(const char *file, int line, JCR *jcr, const char *select_cmd)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::InsertDB(const char *file, int line, JCR *jcr, const char *select_cmd)
+bool BareosDb::InsertDB(const char *file, int line, JobControlRecord *jcr, const char *select_cmd)
 {
    int num_rows;
 
    if (!sql_query(select_cmd)) {
-      m_msg(file, line, errmsg,  _("insert %s failed:\n%s\n"), select_cmd, sql_strerror());
+      msg_(file, line, errmsg,  _("insert %s failed:\n%s\n"), select_cmd, sql_strerror());
       j_msg(file, line, jcr, M_FATAL, 0, "%s", errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd);
@@ -269,7 +269,7 @@ bool B_DB::InsertDB(const char *file, int line, JCR *jcr, const char *select_cmd
    num_rows = sql_affected_rows();
    if (num_rows != 1) {
       char ed1[30];
-      m_msg(file, line, errmsg, _("Insertion problem: affected_rows=%s\n"),
+      msg_(file, line, errmsg, _("Insertion problem: affected_rows=%s\n"),
          edit_uint64(num_rows, ed1));
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", select_cmd);
@@ -285,12 +285,12 @@ bool B_DB::InsertDB(const char *file, int line, JCR *jcr, const char *select_cmd
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::UpdateDB(const char *file, int line, JCR *jcr, const char *update_cmd, int nr_afr)
+bool BareosDb::UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *update_cmd, int nr_afr)
 {
    int num_rows;
 
    if (!sql_query(update_cmd)) {
-      m_msg(file, line, errmsg, _("update %s failed:\n%s\n"), update_cmd, sql_strerror());
+      msg_(file, line, errmsg, _("update %s failed:\n%s\n"), update_cmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", update_cmd);
@@ -302,7 +302,7 @@ bool B_DB::UpdateDB(const char *file, int line, JCR *jcr, const char *update_cmd
       num_rows = sql_affected_rows();
       if (num_rows < nr_afr) {
          char ed1[30];
-         m_msg(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
+         msg_(file, line, errmsg, _("Update failed: affected_rows=%s for %s\n"),
                edit_uint64(num_rows, ed1), update_cmd);
          if (verbose) {
 //          j_msg(file, line, jcr, M_INFO, 0, "%s\n", update_cmd);
@@ -321,11 +321,11 @@ bool B_DB::UpdateDB(const char *file, int line, JCR *jcr, const char *update_cmd
  * Returns: -1 on error
  *           n number of rows affected
  */
-int B_DB::DeleteDB(const char *file, int line, JCR *jcr, const char *delete_cmd)
+int BareosDb::DeleteDB(const char *file, int line, JobControlRecord *jcr, const char *delete_cmd)
 {
 
    if (!sql_query(delete_cmd)) {
-      m_msg(file, line, errmsg, _("delete %s failed:\n%s\n"), delete_cmd, sql_strerror());
+      msg_(file, line, errmsg, _("delete %s failed:\n%s\n"), delete_cmd, sql_strerror());
       j_msg(file, line, jcr, M_ERROR, 0, "%s", errmsg);
       if (verbose) {
          j_msg(file, line, jcr, M_INFO, 0, "%s\n", delete_cmd);
@@ -343,7 +343,7 @@ int B_DB::DeleteDB(const char *file, int line, JCR *jcr, const char *delete_cmd)
  * Returns: -1 on failure
  *          count on success
  */
-int B_DB::get_sql_record_max(JCR *jcr)
+int BareosDb::get_sql_record_max(JobControlRecord *jcr)
 {
    SQL_ROW row;
    int retval = 0;
@@ -366,7 +366,7 @@ int B_DB::get_sql_record_max(JCR *jcr)
 /**
  * Return pre-edited error message
  */
-char *B_DB::strerror()
+char *BareosDb::strerror()
 {
    return errmsg;
 }
@@ -376,7 +376,7 @@ char *B_DB::strerror()
  *  and filename parts. They are returned in pool memory
  *  in the mdb structure.
  */
-void B_DB::split_path_and_file(JCR *jcr, const char *filename)
+void BareosDb::split_path_and_file(JobControlRecord *jcr, const char *filename)
 {
    const char *p, *f;
 
@@ -445,7 +445,7 @@ static int max_length(int max_length)
 /**
  * List dashes as part of header for listing SQL results in a table
  */
-void B_DB::list_dashes(OUTPUT_FORMATTER *send)
+void BareosDb::list_dashes(OUTPUT_FORMATTER *send)
 {
    int len;
    int num_fields;
@@ -471,18 +471,18 @@ void B_DB::list_dashes(OUTPUT_FORMATTER *send)
 /**
  * List result handler used by queries done with db_big_sql_query()
  */
-int B_DB::list_result(void *vctx, int nb_col, char **row)
+int BareosDb::list_result(void *vctx, int nb_col, char **row)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    char ewc[30];
-   POOL_MEM key;
-   POOL_MEM value;
+   PoolMem key;
+   PoolMem value;
    int num_fields;
    SQL_FIELD *field;
    e_list_type type;
    OUTPUT_FORMATTER *send;
    int col_len, max_len = 0;
-   LIST_CTX *pctx = (LIST_CTX *)vctx;
+   ListContext *pctx = (ListContext *)vctx;
 
    /*
     * Get pointers from context.
@@ -705,8 +705,8 @@ int B_DB::list_result(void *vctx, int nb_col, char **row)
 
 int list_result(void *vctx, int nb_col, char **row)
 {
-   LIST_CTX *pctx = (LIST_CTX *)vctx;
-   B_DB *mdb = pctx->mdb;
+   ListContext *pctx = (ListContext *)vctx;
+   BareosDb *mdb = pctx->mdb;
 
    return mdb->list_result(vctx, nb_col, row);
 }
@@ -716,12 +716,12 @@ int list_result(void *vctx, int nb_col, char **row)
  *
  * Return number of rows
  */
-int B_DB::list_result(JCR *jcr, OUTPUT_FORMATTER *send, e_list_type type)
+int BareosDb::list_result(JobControlRecord *jcr, OUTPUT_FORMATTER *send, e_list_type type)
 {
    SQL_ROW row;
    char ewc[30];
-   POOL_MEM key;
-   POOL_MEM value;
+   PoolMem key;
+   PoolMem value;
    int num_fields;
    SQL_FIELD *field;
    bool filters_enabled;
@@ -965,7 +965,7 @@ int B_DB::list_result(JCR *jcr, OUTPUT_FORMATTER *send, e_list_type type)
  *
  * Return number of rows
  */
-int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
+int list_result(JobControlRecord *jcr, BareosDb *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 {
    return mdb->list_result(jcr, send, type);
 }
@@ -973,7 +973,7 @@ int list_result(JCR *jcr, B_DB *mdb, OUTPUT_FORMATTER *send, e_list_type type)
 /**
  * Open a new connexion to mdb catalog. This function is used by batch and accurate mode.
  */
-bool B_DB::open_batch_connection(JCR *jcr)
+bool BareosDb::open_batch_connection(JobControlRecord *jcr)
 {
    bool multi_db;
 
@@ -989,9 +989,9 @@ bool B_DB::open_batch_connection(JCR *jcr)
    return true;
 }
 
-void B_DB::db_debug_print(FILE *fp)
+void BareosDb::db_debug_print(FILE *fp)
 {
-   fprintf(fp, "B_DB=%p db_name=%s db_user=%s connected=%s\n",
+   fprintf(fp, "BareosDb=%p db_name=%s db_user=%s connected=%s\n",
            this, NPRTB(get_db_name()), NPRTB(get_db_user()), is_connected() ? "true" : "false");
    fprintf(fp, "\tcmd=\"%s\" changes=%i\n", NPRTB(cmd), changes);
 
@@ -1001,11 +1001,11 @@ void B_DB::db_debug_print(FILE *fp)
 /**
  * !!! WARNING !!! Use this function only when bareos is stopped.
  * ie, after a fatal signal and before exiting the program
- * Print information about a B_DB object.
+ * Print information about a BareosDb object.
  */
-void db_debug_print(JCR *jcr, FILE *fp)
+void db_debug_print(JobControlRecord *jcr, FILE *fp)
 {
-   B_DB *mdb = jcr->db;
+   BareosDb *mdb = jcr->db;
 
    if (!mdb) {
       return;

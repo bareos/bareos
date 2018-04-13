@@ -35,26 +35,26 @@
 
 struct ua_cmdstruct {
    const char *key; /**< Command */
-   bool (*func)(UAContext *ua, const char *cmd); /**< Handler */
+   bool (*func)(UaContext *ua, const char *cmd); /**< Handler */
    const char *help; /**< Main purpose */
    const char *usage; /**< All arguments to build usage */
    const bool use_in_rs; /**< Can use it in Console RunScript */
    const bool audit_event; /**< Log an audit event when this Command is executed */
 };
 
-class UAContext {
+class UaContext {
 public:
    /*
     * Members
     */
-   BSOCK *UA_sock;
-   BSOCK *sd;
-   JCR *jcr;
-   B_DB *db;
-   B_DB *shared_db;                   /**< Shared database connection used by multiple ua's */
-   B_DB *private_db;                  /**< Private database connection only used by this ua */
-   CATRES *catalog;
-   CONRES *cons;                      /**< Console resource */
+   BareosSocket *UA_sock;
+   BareosSocket *sd;
+   JobControlRecord *jcr;
+   BareosDb *db;
+   BareosDb *shared_db;                   /**< Shared database connection used by multiple ua's */
+   BareosDb *private_db;                  /**< Private database connection only used by this ua */
+   CatalogResource *catalog;
+   ConsoleResource *cons;                      /**< Console resource */
    POOLMEM *cmd;                      /**< Return command/name buffer */
    POOLMEM *args;                     /**< Command line arguments */
    POOLMEM *errmsg;                   /**< Store error message */
@@ -111,16 +111,16 @@ public:
    /*
     * Resource retrieval methods including check on ACL.
     */
-   bool is_res_allowed(RES *res);
-   RES *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
-   POOLRES *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
-   STORERES *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
-   STORERES *GetStoreResWithId(DBId_t id, bool audit_event = true, bool lock = true);
-   CLIENTRES *GetClientResWithName(const char *name, bool audit_event = true, bool lock = true);
-   JOBRES *GetJobResWithName(const char *name, bool audit_event = true, bool lock = true);
-   FILESETRES *GetFileSetResWithName(const char *name, bool audit_event = true, bool lock = true);
-   CATRES *GetCatalogResWithName(const char *name, bool audit_event = true, bool lock = true);
-   SCHEDRES *GetScheduleResWithName(const char *name, bool audit_event = true, bool lock = true);
+   bool is_res_allowed(CommonResourceHeader *res);
+   CommonResourceHeader *GetResWithName(int rcode, const char *name, bool audit_event = false, bool lock = true);
+   PoolResource *GetPoolResWithName(const char *name, bool audit_event = true, bool lock = true);
+   StoreResource *GetStoreResWithName(const char *name, bool audit_event = true, bool lock = true);
+   StoreResource *GetStoreResWithId(DBId_t id, bool audit_event = true, bool lock = true);
+   ClientResource *GetClientResWithName(const char *name, bool audit_event = true, bool lock = true);
+   JobResource *GetJobResWithName(const char *name, bool audit_event = true, bool lock = true);
+   FilesetResource *GetFileSetResWithName(const char *name, bool audit_event = true, bool lock = true);
+   CatalogResource *GetCatalogResWithName(const char *name, bool audit_event = true, bool lock = true);
+   ScheduleResource *GetScheduleResWithName(const char *name, bool audit_event = true, bool lock = true);
 
    /*
     * Audit event methods.
@@ -141,20 +141,20 @@ public:
 /*
  * Context for insert_tree_handler()
  */
-struct TREE_CTX {
+struct TreeContext {
    TREE_ROOT *root;                   /**< Root */
    TREE_NODE *node;                   /**< Current node */
    TREE_NODE *avail_node;             /**< Unused node last insert */
    int cnt;                           /**< Count for user feedback */
    bool all;                          /**< If set mark all as default */
-   UAContext *ua;
+   UaContext *ua;
    uint32_t FileEstimate;             /**< Estimate of number of files */
    uint32_t FileCount;                /**< Current count of files */
    uint32_t LastCount;                /**< Last count of files */
    uint32_t DeltaCount;               /**< Trigger for printing */
 };
 
-struct NAME_LIST {
+struct NameList {
    char **name;                       /**< List of names */
    int num_ids;                       /**< Ids stored */
    int max_ids;                       /**< Size of array */
@@ -165,7 +165,7 @@ struct NAME_LIST {
 /*
  * Context for restore job.
  */
-struct RESTORE_CTX {
+struct RestoreContext {
    utime_t JobTDate;
    uint32_t TotalFiles;
    JobId_t JobId;
@@ -175,9 +175,9 @@ struct RESTORE_CTX {
    char last_jobid[20];
    POOLMEM *JobIds;                   /**< User entered string of JobIds */
    POOLMEM *BaseJobIds;               /**< Base jobids */
-   STORERES *store;
-   JOBRES *restore_job;
-   POOLRES *pool;
+   StoreResource *store;
+   JobResource *restore_job;
+   PoolResource *pool;
    int restore_jobs;
    uint32_t selected_files;
    char *comment;
@@ -185,7 +185,7 @@ struct RESTORE_CTX {
    char *RegexWhere;
    char *replace;
    char *plugin_options;
-   RBSR *bsr;
+   RestoreBootstrapRecord *bsr;
    POOLMEM *fname;                    /**< Filename only */
    POOLMEM *path;                     /**< Path only */
    POOLMEM *query;
@@ -193,13 +193,13 @@ struct RESTORE_CTX {
    int pnl;                           /**< Path length */
    bool found;
    bool all;                          /**< Mark all as default */
-   NAME_LIST name_list;
+   NameList name_list;
 };
 
 /*
  * Context for run job.
  */
-class RUN_CTX {
+class RunContext {
 public:
    char *backup_format;
    char *bootstrap;
@@ -223,15 +223,15 @@ public:
    char *where;
    const char *replace;
    const char *verify_list;
-   JOBRES *job;
-   JOBRES *verify_job;
-   JOBRES *previous_job;
-   USTORERES *store;
-   CLIENTRES *client;
-   FILESETRES *fileset;
-   POOLRES *pool;
-   POOLRES *next_pool;
-   CATRES *catalog;
+   JobResource *job;
+   JobResource *verify_job;
+   JobResource *previous_job;
+   UnifiedStoreResource *store;
+   ClientResource *client;
+   FilesetResource *fileset;
+   PoolResource *pool;
+   PoolResource *next_pool;
+   CatalogResource *catalog;
    int Priority;
    int files;
    bool level_override;
@@ -249,8 +249,8 @@ public:
    /*
     * Methods
     */
-   RUN_CTX() { memset(this, 0, sizeof(RUN_CTX));
-               store = new USTORERES; };
-   ~RUN_CTX() { delete store; };
+   RunContext() { memset(this, 0, sizeof(RunContext));
+               store = new UnifiedStoreResource; };
+   ~RunContext() { delete store; };
 };
 #endif

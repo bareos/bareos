@@ -988,7 +988,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
    int buf_length, data_length;
    int SubstituteNameLength, PrintNameLength;   /* length in bytes */
    REPARSE_DATA_BUFFER *rdb;
-   POOL_MEM szDestDir(PM_FNAME);
+   PoolMem szDestDir(PM_FNAME);
    POOLMEM *buf, *szJunctionW, *szPrintName, *szSubstituteName;
 
    /*
@@ -3422,7 +3422,7 @@ HANDLE CreateChildProcess(const char *cmdline, HANDLE in, HANDLE out, HANDLE err
       return INVALID_HANDLE_VALUE;
    }
 
-   POOL_MEM cmdLine(PM_FNAME);
+   PoolMem cmdLine(PM_FNAME);
    Mmsg(cmdLine, "%s /c %s%s", comspec, exeFile, argStart);
 
    free(exeFile);
@@ -3468,12 +3468,12 @@ static void CloseHandleIfValid(HANDLE handle)
    }
 }
 
-BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
+Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    int mode_read, mode_write;
    SECURITY_ATTRIBUTES saAttr;
    BOOL fSuccess;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    HANDLE hChildStdinRd,
           hChildStdinWr,
           hChildStdinWrDup,
@@ -3488,8 +3488,8 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
    hChildStdoutWr = INVALID_HANDLE_VALUE;
    hChildStdoutRdDup = INVALID_HANDLE_VALUE;
 
-   bpipe = (BPIPE *)malloc(sizeof(BPIPE));
-   memset((void *)bpipe, 0, sizeof(BPIPE));
+   bpipe = (Bpipe *)malloc(sizeof(Bpipe));
+   memset((void *)bpipe, 0, sizeof(Bpipe));
    mode_read = (mode[0] == 'r');
    mode_write = (mode[0] == 'w' || mode[1] == 'w');
 
@@ -3622,7 +3622,7 @@ int kill(int pid, int signal)
    return rval;
 }
 
-int close_bpipe(BPIPE *bpipe)
+int close_bpipe(Bpipe *bpipe)
 {
    int rval = 0;
    int32_t remaining_wait = bpipe->wait;
@@ -3686,7 +3686,7 @@ int close_bpipe(BPIPE *bpipe)
    return rval;
 }
 
-int close_wpipe(BPIPE *bpipe)
+int close_wpipe(Bpipe *bpipe)
 {
     int result = 1;
 

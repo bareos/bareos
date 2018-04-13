@@ -33,7 +33,7 @@
  * generic_tape_device::
  *         |
  *         v
- *      DEVICE::
+ *      Device::
  *
  */
 /**
@@ -61,9 +61,9 @@ unix_tape_device::unix_tape_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_TAPE_DEV:

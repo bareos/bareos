@@ -55,7 +55,7 @@ static pthread_t tcp_server_tid;
  */
 static void *handle_connection_request(void *arg)
 {
-   BSOCK *bs = (BSOCK *)arg;
+   BareosSocket *bs = (BareosSocket *)arg;
    char name[MAX_NAME_LENGTH];
    char tbuf[MAX_TIME_LENGTH];
 

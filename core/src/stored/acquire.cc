@@ -34,9 +34,9 @@
 static int const rdbglvl = 100;
 
 /* Forward referenced functions */
-static void attach_dcr_to_dev(DCR *dcr);
-static void detach_dcr_from_dev(DCR *dcr);
-static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol);
+static void attach_dcr_to_dev(DeviceControlRecord *dcr);
+static void detach_dcr_from_dev(DeviceControlRecord *dcr);
+static void set_dcr_from_vol(DeviceControlRecord *dcr, VolumeList *vol);
 
 /**
  * Acquire device for reading.
@@ -47,13 +47,13 @@ static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol);
  *  Returns: NULL if failed for any reason
  *           dcr  if successful
  */
-bool acquire_device_for_read(DCR *dcr)
+bool acquire_device_for_read(DeviceControlRecord *dcr)
 {
-   DEVICE *dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev;
+   JobControlRecord *jcr = dcr->jcr;
    bool retval = false;
    bool tape_previously_mounted;
-   VOL_LIST *vol;
+   VolumeList *vol;
    bool try_autochanger = true;
    int i;
    int vol_label_status;
@@ -107,8 +107,8 @@ bool acquire_device_for_read(DCR *dcr)
     */
    Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
    if (dcr->media_type[0] && !bstrcmp(dcr->media_type, dev->device->media_type)) {
-      RCTX rctx;
-      DIRSTORE *store;
+      ReserveContext rctx;
+      DirectorStorage *store;
       int status;
 
       Jmsg3(jcr, M_INFO, 0, _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
@@ -121,14 +121,14 @@ bool acquire_device_for_read(DCR *dcr)
       dev->dunblock(DEV_UNLOCKED);
 
       lock_reservations();
-      memset(&rctx, 0, sizeof(RCTX));
+      memset(&rctx, 0, sizeof(ReserveContext));
       rctx.jcr = jcr;
       jcr->read_dcr = dcr;
       jcr->reserve_msgs = New(alist(10, not_owned_by_alist));
       rctx.any_drive = true;
       rctx.device_name = vol->device;
-      store = new DIRSTORE;
-      memset(store, 0, sizeof(DIRSTORE));
+      store = new DirectorStorage;
+      memset(store, 0, sizeof(DirectorStorage));
       store->name[0] = 0; /* No dir name */
       bstrncpy(store->media_type, vol->MediaType, sizeof(store->media_type));
       bstrncpy(store->pool_name, dcr->pool_name, sizeof(store->pool_name));
@@ -389,10 +389,10 @@ get_out:
  *   Note, normally reserve_device_for_append() is called
  *   before this routine.
  */
-DCR *acquire_device_for_append(DCR *dcr)
+DeviceControlRecord *acquire_device_for_append(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    bool retval = false;
    bool have_vol = false;
 
@@ -483,11 +483,11 @@ get_out:
  * Note, if we were spooling, we may enter with the device blocked.
  * We unblock at the end, only if it was us who blocked the device.
  */
-bool release_device(DCR *dcr)
+bool release_device(DeviceControlRecord *dcr)
 {
    utime_t now;
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
    bool retval = true;
    char tbuf[100];
    int was_blocked = BST_NOT_BLOCKED;
@@ -514,7 +514,7 @@ bool release_device(DCR *dcr)
    dcr->clear_reserved();
 
    if (dev->can_read()) {
-      VOLUME_CAT_INFO *vol = &dev->VolCatInfo;
+      VolumeCatalogInfo *vol = &dev->VolCatInfo;
 
       dev->clear_read();              /* clear read bit */
       Dmsg2(150, "dir_update_vol_info. label=%d Vol=%s\n",
@@ -590,7 +590,7 @@ bool release_device(DCR *dcr)
       if (!dcr->device->drive_tapealert_enabled && dcr->device->alert_command) {
          int status = 1;
          POOLMEM *alert, *line;
-         BPIPE *bpipe;
+         Bpipe *bpipe;
 
          alert = get_pool_memory(PM_FNAME);
          line = get_pool_memory(PM_FNAME);
@@ -659,7 +659,7 @@ bool release_device(DCR *dcr)
 /**
  * Clean up the device for reuse without freeing the memory
  */
-bool clean_device(DCR *dcr)
+bool clean_device(DeviceControlRecord *dcr)
 {
    bool retval;
 
@@ -671,16 +671,16 @@ bool clean_device(DCR *dcr)
 }
 
 /**
- * DCR Constructor.
+ * DeviceControlRecord Constructor.
  */
-DCR::DCR()
+DeviceControlRecord::DeviceControlRecord()
 {
-   POOL_MEM errmsg(PM_MESSAGE);
+   PoolMem errmsg(PM_MESSAGE);
    int errstat;
 
    tid = pthread_self();
    spool_fd = -1;
-   if ((errstat = pthread_mutex_init(&m_mutex, NULL)) != 0) {
+   if ((errstat = pthread_mutex_init(&mutex_, NULL)) != 0) {
       berrno be;
 
       Mmsg(errmsg, _("Unable to init mutex: ERR=%s\n"), be.bstrerror(errstat));
@@ -696,9 +696,9 @@ DCR::DCR()
 }
 
 /**
- * Setup DCR with a new device.
+ * Setup DeviceControlRecord with a new device.
  */
-void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksizes)
+void setup_new_dcr_device(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, BlockSizes *blocksizes)
 {
    dcr->jcr = jcr;                 /* point back to jcr */
 
@@ -744,7 +744,7 @@ void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksize
 
       /*
        * Initialize the auto deflation/inflation which can
-       * be disabled per DCR when we want to. e.g. when we want to
+       * be disabled per DeviceControlRecord when we want to. e.g. when we want to
        * send the data as part of a replication stream in which we
        * don't want to first inflate the data to then again
        * do deflation for sending it to the other storage daemon.
@@ -763,15 +763,15 @@ void setup_new_dcr_device(JCR *jcr, DCR *dcr, DEVICE *dev, BLOCKSIZES *blocksize
  *  dcrs at the same time.
  */
 #ifdef needed
-static void remove_dcr_from_dcrs(DCR *dcr)
+static void remove_dcr_from_dcrs(DeviceControlRecord *dcr)
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    if (jcr->dcrs) {
       int i = 0;
-      DCR *ldcr;
+      DeviceControlRecord *ldcr;
       int num = jcr->dcrs->size();
       for (i=0; i < num; i++) {
-         ldcr = (DCR *)jcr->dcrs->get(i);
+         ldcr = (DeviceControlRecord *)jcr->dcrs->get(i);
          if (ldcr == dcr) {
             jcr->dcrs->remove(i);
             if (jcr->dcr == dcr) {
@@ -783,12 +783,12 @@ static void remove_dcr_from_dcrs(DCR *dcr)
 }
 #endif
 
-static void attach_dcr_to_dev(DCR *dcr)
+static void attach_dcr_to_dev(DeviceControlRecord *dcr)
 {
-   DEVICE *dev;
-   JCR *jcr;
+   Device *dev;
+   JobControlRecord *jcr;
 
-   P(dcr->m_mutex);
+   P(dcr->mutex_);
    dev = dcr->dev;
    jcr = dcr->jcr;
    if (jcr) Dmsg1(500, "JobId=%u enter attach_dcr_to_dev\n", (uint32_t)jcr->JobId);
@@ -801,15 +801,15 @@ static void attach_dcr_to_dev(DCR *dcr)
       dev->Unlock();
       dcr->attached_to_dev = true;
    }
-   V(dcr->m_mutex);
+   V(dcr->mutex_);
 }
 
 /**
- * DCR is locked before calling this routine
+ * DeviceControlRecord is locked before calling this routine
  */
-static void locked_detach_dcr_from_dev(DCR *dcr)
+static void locked_detach_dcr_from_dev(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    Dmsg0(500, "Enter detach_dcr_from_dev\n"); /* jcr is NULL in some cases */
 
    /* Detach this dcr only if attached */
@@ -829,22 +829,22 @@ static void locked_detach_dcr_from_dev(DCR *dcr)
 }
 
 
-static void detach_dcr_from_dev(DCR *dcr)
+static void detach_dcr_from_dev(DeviceControlRecord *dcr)
 {
-   P(dcr->m_mutex);
+   P(dcr->mutex_);
    locked_detach_dcr_from_dev(dcr);
-   V(dcr->m_mutex);
+   V(dcr->mutex_);
 }
 
 /**
  * Free up all aspects of the given dcr -- i.e. dechain it,
  *  release allocated memory, zap pointers, ...
  */
-void free_dcr(DCR *dcr)
+void free_dcr(DeviceControlRecord *dcr)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
-   P(dcr->m_mutex);
+   P(dcr->mutex_);
    jcr = dcr->jcr;
 
    locked_detach_dcr_from_dev(dcr);
@@ -865,15 +865,15 @@ void free_dcr(DCR *dcr)
       jcr->read_dcr = NULL;
    }
 
-   V(dcr->m_mutex);
+   V(dcr->mutex_);
 
-   pthread_mutex_destroy(&dcr->m_mutex);
+   pthread_mutex_destroy(&dcr->mutex_);
    pthread_mutex_destroy(&dcr->r_mutex);
 
    delete dcr;
 }
 
-static void set_dcr_from_vol(DCR *dcr, VOL_LIST *vol)
+static void set_dcr_from_vol(DeviceControlRecord *dcr, VolumeList *vol)
 {
    /*
     * Note, if we want to be able to work from a .bsr file only

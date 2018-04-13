@@ -40,30 +40,30 @@ static char OK_replicate[] =
 
 /* Forward referenced functions */
 
-void possible_incomplete_job(JCR *jcr, int32_t last_file_index)
+void possible_incomplete_job(JobControlRecord *jcr, int32_t last_file_index)
 {
 }
 
 /**
  * Append Data sent from File daemon
  */
-bool do_append_data(JCR *jcr, BSOCK *bs, const char *what)
+bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what)
 {
    int32_t n, file_index, stream, last_file_index, job_elapsed;
    bool ok = true;
    char buf1[100];
-   DCR *dcr = jcr->dcr;
-   DEVICE *dev;
+   DeviceControlRecord *dcr = jcr->dcr;
+   Device *dev;
    POOLMEM *rec_data;
    char ec[50];
 
    if (!dcr) {
-      Jmsg0(jcr, M_FATAL, 0, _("DCR is NULL!!!\n"));
+      Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
       return false;
    }
    dev = dcr->dev;
    if (!dev) {
-      Jmsg0(jcr, M_FATAL, 0, _("DEVICE is NULL!!!\n"));
+      Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
       return false;
    }
 
@@ -352,14 +352,14 @@ bail_out:
 /**
  * Send attributes and digest to Director for Catalog
  */
-bool send_attrs_to_dir(JCR *jcr, DEV_RECORD *rec)
+bool send_attrs_to_dir(JobControlRecord *jcr, DeviceRecord *rec)
 {
    if (rec->maskedStream == STREAM_UNIX_ATTRIBUTES    ||
        rec->maskedStream == STREAM_UNIX_ATTRIBUTES_EX ||
        rec->maskedStream == STREAM_RESTORE_OBJECT     ||
        crypto_digest_stream_type(rec->maskedStream) != CRYPTO_DIGEST_NONE) {
       if (!jcr->no_attributes) {
-         BSOCK *dir = jcr->dir_bsock;
+         BareosSocket *dir = jcr->dir_bsock;
          if (are_attributes_spooled(jcr)) {
             dir->set_spooling();
          }

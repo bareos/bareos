@@ -71,10 +71,10 @@ static bRC setup_record_translation(bpContext *ctx, void *value);
 static bRC handle_read_translation(bpContext *ctx, void *value);
 static bRC handle_write_translation(bpContext *ctx, void *value);
 
-static bool setup_auto_deflation(bpContext *ctx, DCR *dcr);
-static bool setup_auto_inflation(bpContext *ctx, DCR *dcr);
-static bool auto_deflate_record(bpContext *ctx, DCR *dcr);
-static bool auto_inflate_record(bpContext *ctx, DCR *dcr);
+static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr);
+static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr);
+static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr);
+static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr);
 
 /**
  * Is the SD in compatible mode or not.
@@ -310,7 +310,7 @@ bail_out:
 
 static bRC setup_record_translation(bpContext *ctx, void *value)
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
    bool did_setup = false;
    const char *inflate_in = SETTING_UNSET;
    const char *inflate_out = SETTING_UNSET;
@@ -320,7 +320,7 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       return bRC_Error;
    }
@@ -414,13 +414,13 @@ static bRC setup_record_translation(bpContext *ctx, void *value)
 
 static bRC handle_read_translation(bpContext *ctx, void *value)
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
    bool swap_record = false;
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       return bRC_Error;
    }
@@ -453,13 +453,13 @@ static bRC handle_read_translation(bpContext *ctx, void *value)
 
 static bRC handle_write_translation(bpContext *ctx, void *value)
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
    bool swap_record = false;
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       return bRC_Error;
    }
@@ -493,9 +493,9 @@ static bRC handle_write_translation(bpContext *ctx, void *value)
 /**
  * Setup deflate for auto deflate of data streams.
  */
-static bool setup_auto_deflation(bpContext *ctx, DCR *dcr)
+static bool setup_auto_deflation(bpContext *ctx, DeviceControlRecord *dcr)
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    bool retval = false;
    uint32_t compress_buf_size = 0;
    const char *compressorname = COMPRESSOR_NAME_UNSET;
@@ -585,9 +585,9 @@ bail_out:
 /**
  * Setup inflation for auto inflation of data streams.
  */
-static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
+static bool setup_auto_inflation(bpContext *ctx, DeviceControlRecord *dcr)
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    uint32_t decompress_buf_size;
 
    if (jcr->buf_size == 0) {
@@ -618,12 +618,12 @@ static bool setup_auto_inflation(bpContext *ctx, DCR *dcr)
 /**
  * Perform automatic compression of certain stream types when enabled in the config.
  */
-static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
+static bool auto_deflate_record(bpContext *ctx, DeviceControlRecord *dcr)
 {
    ser_declare;
    bool retval = false;
    comp_stream_header ch;
-   DEV_RECORD *rec, *nrec;
+   DeviceRecord *rec, *nrec;
    struct plugin_ctx *p_ctx;
    unsigned char *data = NULL;
    bool intermediate_value = false;
@@ -665,16 +665,16 @@ static bool auto_deflate_record(bpContext *ctx, DCR *dcr)
    }
 
    /*
-    * Clone the data from the original DEV_RECORD to the converted one.
+    * Clone the data from the original DeviceRecord to the converted one.
     * As we use the compression buffers for the data we need a new
-    * DEV_RECORD without a new memory buffer so we call new_record here
+    * DeviceRecord without a new memory buffer so we call new_record here
     * with the with_data boolean set explicitly to false.
     */
    nrec = bfuncs->new_record(false);
    bfuncs->copy_record_state(nrec, rec);
 
    /*
-    * Setup the converted DEV_RECORD to point with its data buffer to the compression buffer.
+    * Setup the converted DeviceRecord to point with its data buffer to the compression buffer.
     */
    nrec->data = dcr->jcr->compress.deflate_buffer;
    switch (rec->maskedStream) {
@@ -774,9 +774,9 @@ bail_out:
 /**
  * Inflate (uncompress) the content of a read record and return the data as an alternative datastream.
  */
-static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
+static bool auto_inflate_record(bpContext *ctx, DeviceControlRecord *dcr)
 {
-   DEV_RECORD *rec, *nrec;
+   DeviceRecord *rec, *nrec;
    bool retval = false;
    struct plugin_ctx *p_ctx;
    bool intermediate_value = false;
@@ -817,9 +817,9 @@ static bool auto_inflate_record(bpContext *ctx, DCR *dcr)
    }
 
    /*
-    * Clone the data from the original DEV_RECORD to the converted one.
+    * Clone the data from the original DeviceRecord to the converted one.
     * As we use the compression buffers for the data we need a new
-    * DEV_RECORD without a new memory buffer so we call new_record here
+    * DeviceRecord without a new memory buffer so we call new_record here
     * with the with_data boolean set explicitly to false.
     */
    nrec = bfuncs->new_record(false);

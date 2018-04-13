@@ -79,7 +79,7 @@ typedef int (*custom_function_insert_t)(void*, const char*, int);
 typedef char* (*custom_function_error_t)(void*);
 typedef int (*custom_function_end_t)(void*, const char*);
 
-B_DB_DBI::B_DB_DBI(JCR *jcr,
+BareosDbDBI::BareosDbDBI(JobControlRecord *jcr,
                    const char *db_driver,
                    const char *db_name,
                    const char *db_user,
@@ -96,17 +96,17 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    char *p;
    char new_db_driver[10];
    char db_driverdir[256];
-   DBI_FIELD_GET *field;
+   DbiFieldGet *field;
 
    p = (char *)(db_driver + 4);
    if (bstrcasecmp(p, "mysql")) {
-      m_db_type = SQL_TYPE_MYSQL;
+      db_type_ = SQL_TYPE_MYSQL;
       bstrncpy(new_db_driver, "mysql", sizeof(new_db_driver));
    } else if (bstrcasecmp(p, "postgresql")) {
-      m_db_type = SQL_TYPE_POSTGRESQL;
+      db_type_ = SQL_TYPE_POSTGRESQL;
       bstrncpy(new_db_driver, "pgsql", sizeof(new_db_driver));
    } else if (bstrcasecmp(p, "sqlite3")) {
-      m_db_type = SQL_TYPE_SQLITE3;
+      db_type_ = SQL_TYPE_SQLITE3;
       bstrncpy(new_db_driver, "sqlite3", sizeof(new_db_driver));
    } else {
       Jmsg(jcr, M_ABORT, 0, _("Unknown database type: %s\n"), p);
@@ -121,36 +121,36 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    /*
     * Initialize the parent class members.
     */
-   m_db_interface_type = SQL_INTERFACE_TYPE_DBI;
-   m_db_name = bstrdup(db_name);
-   m_db_user = bstrdup(db_user);
+   db_interface_type_ = SQL_INTERFACE_TYPE_DBI;
+   db_name_ = bstrdup(db_name);
+   db_user_ = bstrdup(db_user);
    if (db_password) {
-      m_db_password = bstrdup(db_password);
+      db_password_ = bstrdup(db_password);
    }
    if (db_address) {
-      m_db_address = bstrdup(db_address);
+      db_address_ = bstrdup(db_address);
    }
    if (db_socket) {
-      m_db_socket = bstrdup(db_socket);
+      db_socket_ = bstrdup(db_socket);
    }
    if (db_driverdir) {
-      m_db_driverdir = bstrdup(db_driverdir);
+      db_driverdir_ = bstrdup(db_driverdir);
    }
-   m_db_driver = bstrdup(new_db_driver);
-   m_db_port = db_port;
+   db_driver_ = bstrdup(new_db_driver);
+   db_port_ = db_port;
    if (disable_batch_insert) {
-      m_disabled_batch_insert = true;
-      m_have_batch_insert = false;
+      disabled_batch_insert_ = true;
+      have_batch_insert_ = false;
    } else {
-      m_disabled_batch_insert = false;
+      disabled_batch_insert_ = false;
 #if defined(USE_BATCH_FILE_INSERT)
 #ifdef HAVE_DBI_BATCH_FILE_INSERT
-      m_have_batch_insert = true;
+      have_batch_insert_ = true;
 #else
-      m_have_batch_insert = false;
+      have_batch_insert_ = false;
 #endif /* HAVE_DBI_BATCH_FILE_INSERT */
 #else
-      m_have_batch_insert = false;
+      have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
    errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
@@ -158,35 +158,35 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    cmd = get_pool_memory(PM_EMSG); /* get command buffer */
    cached_path = get_pool_memory(PM_FNAME);
    cached_path_id = 0;
-   m_ref_count = 1;
+   ref_count_ = 1;
    fname = get_pool_memory(PM_FNAME);
    path = get_pool_memory(PM_FNAME);
    esc_name = get_pool_memory(PM_FNAME);
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
-   m_allow_transactions = mult_db_connections;
-   m_is_private = need_private;
-   m_try_reconnect = try_reconnect;
-   m_exit_on_fatal = exit_on_fatal;
+   allow_transactions_ = mult_db_connections;
+   is_private_ = need_private;
+   try_reconnect_ = try_reconnect;
+   exit_on_fatal_ = exit_on_fatal;
 
    /*
     * Initialize the private members.
     */
-   m_db_handle = NULL;
-   m_result = NULL;
-   m_field_get = NULL;
+   db_handle_ = NULL;
+   result_ = NULL;
+   field_get_ = NULL;
 
    /*
     * Put the db in the list.
     */
    if (db_list == NULL) {
-      db_list = New(dlist(this, &this->m_link));
+      db_list = New(dlist(this, &this->link_));
       dbi_getvalue_list = New(dlist(field, &field->link));
    }
    db_list->append(this);
 }
 
-B_DB_DBI::~B_DB_DBI()
+BareosDbDBI::~BareosDbDBI()
 {
 }
 
@@ -196,7 +196,7 @@ B_DB_DBI::~B_DB_DBI()
  *
  * DO NOT close the database or delete mdb here  !!!!
  */
-bool B_DB_DBI::open_database(JCR *jcr)
+bool BareosDbDBI::open_database(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
@@ -209,62 +209,62 @@ bool B_DB_DBI::open_database(JCR *jcr)
    char *new_db_dir = NULL;
 
    P(mutex);
-   if (m_connected) {
+   if (connected_) {
       retval = true;
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&m_lock)) != 0) {
+   if ((errstat=rwl_init(&lock_)) != 0) {
       berrno be;
       Mmsg1(&errmsg, _("Unable to initialize DB lock. ERR=%s\n"),
             be.bstrerror(errstat));
       goto bail_out;
    }
 
-   if (m_db_port) {
-      bsnprintf(buf, sizeof(buf), "%d", m_db_port);
+   if (db_port_) {
+      bsnprintf(buf, sizeof(buf), "%d", db_port_);
       port = buf;
    } else {
       port = NULL;
    }
 
-   numdrivers = dbi_initialize_r(m_db_driverdir, &(m_instance));
+   numdrivers = dbi_initialize_r(db_driverdir_, &(instance_));
    if (numdrivers < 0) {
       Mmsg2(&errmsg, _("Unable to locate the DBD drivers to DBI interface in: \n"
                                "db_driverdir=%s. It is probaly not found any drivers\n"),
-                               m_db_driverdir,numdrivers);
+                               db_driverdir_,numdrivers);
       goto bail_out;
    }
-   m_db_handle = (void **)dbi_conn_new_r(m_db_driver, m_instance);
+   db_handle_ = (void **)dbi_conn_new_r(db_driver_, instance_);
    /*
     * Can be many types of databases
     */
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_MYSQL:
-      dbi_conn_set_option(m_db_handle, "host", m_db_address);      /* default = localhost */
-      dbi_conn_set_option(m_db_handle, "port", port);              /* default port */
-      dbi_conn_set_option(m_db_handle, "username", m_db_user);     /* login name */
-      dbi_conn_set_option(m_db_handle, "password", m_db_password); /* password */
-      dbi_conn_set_option(m_db_handle, "dbname", m_db_name);       /* database name */
+      dbi_conn_set_option(db_handle_, "host", db_address_);      /* default = localhost */
+      dbi_conn_set_option(db_handle_, "port", port);              /* default port */
+      dbi_conn_set_option(db_handle_, "username", db_user_);     /* login name */
+      dbi_conn_set_option(db_handle_, "password", db_password_); /* password */
+      dbi_conn_set_option(db_handle_, "dbname", db_name_);       /* database name */
       break;
    case SQL_TYPE_POSTGRESQL:
-      dbi_conn_set_option(m_db_handle, "host", m_db_address);
-      dbi_conn_set_option(m_db_handle, "port", port);
-      dbi_conn_set_option(m_db_handle, "username", m_db_user);
-      dbi_conn_set_option(m_db_handle, "password", m_db_password);
-      dbi_conn_set_option(m_db_handle, "dbname", m_db_name);
+      dbi_conn_set_option(db_handle_, "host", db_address_);
+      dbi_conn_set_option(db_handle_, "port", port);
+      dbi_conn_set_option(db_handle_, "username", db_user_);
+      dbi_conn_set_option(db_handle_, "password", db_password_);
+      dbi_conn_set_option(db_handle_, "dbname", db_name_);
       break;
    case SQL_TYPE_SQLITE3:
       len = strlen(working_directory) + 5;
       new_db_dir = (char *)malloc(len);
       strcpy(new_db_dir, working_directory);
       strcat(new_db_dir, "/");
-      len = strlen(m_db_name) + 5;
+      len = strlen(db_name_) + 5;
       new_db_name = (char *)malloc(len);
-      strcpy(new_db_name, m_db_name);
+      strcpy(new_db_name, db_name_);
       strcat(new_db_name, ".db");
-      dbi_conn_set_option(m_db_handle, "sqlite3_dbdir", new_db_dir);
-      dbi_conn_set_option(m_db_handle, "dbname", new_db_name);
+      dbi_conn_set_option(db_handle_, "sqlite3_dbdir", new_db_dir);
+      dbi_conn_set_option(db_handle_, "dbname", new_db_name);
       Dmsg2(500, "SQLITE: %s %s\n", new_db_dir, new_db_name);
       free(new_db_dir);
       free(new_db_name);
@@ -275,12 +275,12 @@ bool B_DB_DBI::open_database(JCR *jcr)
     * If connection fails, try at 5 sec intervals for 30 seconds.
     */
    for (int retry=0; retry < 6; retry++) {
-      dbstat = dbi_conn_connect(m_db_handle);
+      dbstat = dbi_conn_connect(db_handle_);
       if (dbstat == 0) {
          break;
       }
 
-      dbi_conn_error(m_db_handle, &dbi_errmsg);
+      dbi_conn_error(db_handle_, &dbi_errmsg);
       Dmsg1(50, "dbi error: %s\n", dbi_errmsg);
 
       bmicrosleep(5, 0);
@@ -289,22 +289,22 @@ bool B_DB_DBI::open_database(JCR *jcr)
    if (dbstat != 0 ) {
       Mmsg3(&errmsg, _("Unable to connect to DBI interface. Type=%s Database=%s User=%s\n"
          "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
-         m_db_driver, m_db_name, m_db_user);
+         db_driver_, db_name_, db_user_);
       goto bail_out;
    }
 
    Dmsg0(50, "dbi_real_connect done\n");
    Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n",
-         m_db_user, m_db_name,
-        (m_db_password == NULL) ? "(NULL)" : m_db_password);
+         db_user_, db_name_,
+        (db_password_ == NULL) ? "(NULL)" : db_password_);
 
-   m_connected = true;
+   connected_ = true;
 
    if (!check_tables_version(jcr, this)) {
       goto bail_out;
    }
 
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_MYSQL:
       /*
        * Set connection timeout to 8 days specialy for batch mode
@@ -330,25 +330,25 @@ bail_out:
    return retval;
 }
 
-void B_DB_DBI::close_database(JCR *jcr)
+void BareosDbDBI::close_database(JobControlRecord *jcr)
 {
-   if (m_connected) {
+   if (connected_) {
       end_transaction(jcr);
    }
    P(mutex);
-   m_ref_count--;
-   if (m_ref_count == 0) {
-      if (m_connected) {
+   ref_count_--;
+   if (ref_count_ == 0) {
+      if (connected_) {
          sql_free_result();
       }
       db_list->remove(this);
-      if (m_connected && m_db_handle) {
-         dbi_shutdown_r(m_instance);
-         m_db_handle = NULL;
-         m_instance = NULL;
+      if (connected_ && db_handle_) {
+         dbi_shutdown_r(instance_);
+         db_handle_ = NULL;
+         instance_ = NULL;
       }
-      if (rwl_is_init(&m_lock)) {
-         rwl_destroy(&m_lock);
+      if (rwl_is_init(&lock_)) {
+         rwl_destroy(&lock_);
       }
       free_pool_memory(errmsg);
       free_pool_memory(cmd);
@@ -358,26 +358,26 @@ void B_DB_DBI::close_database(JCR *jcr)
       free_pool_memory(esc_name);
       free_pool_memory(esc_path);
       free_pool_memory(esc_obj);
-      if (m_db_driver) {
-         free(m_db_driver);
+      if (db_driver_) {
+         free(db_driver_);
       }
-      if (m_db_name) {
-         free(m_db_name);
+      if (db_name_) {
+         free(db_name_);
       }
-      if (m_db_user) {
-         free(m_db_user);
+      if (db_user_) {
+         free(db_user_);
       }
-      if (m_db_password) {
-         free(m_db_password);
+      if (db_password_) {
+         free(db_password_);
       }
-      if (m_db_address) {
-         free(m_db_address);
+      if (db_address_) {
+         free(db_address_);
       }
-      if (m_db_socket) {
-         free(m_db_socket);
+      if (db_socket_) {
+         free(db_socket_);
       }
-      if (m_db_driverdir) {
-         free(m_db_driverdir);
+      if (db_driverdir_) {
+         free(db_driverdir_);
       }
       delete this;
       if (db_list->size() == 0) {
@@ -388,12 +388,12 @@ void B_DB_DBI::close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_DBI::validate_connection(void)
+bool BareosDbDBI::validate_connection(void)
 {
    bool retval;
 
    db_lock(this);
-   if (dbi_conn_ping(m_db_handle) == 1) {
+   if (dbi_conn_ping(db_handle_) == 1) {
       retval = true;
       goto bail_out;
    } else {
@@ -417,7 +417,7 @@ bail_out:
  * We need copy the value of pointer to snew because libdbi change the
  * pointer
  */
-void B_DB_DBI::escape_string(JCR *jcr, char *snew, char *old, int len)
+void BareosDbDBI::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    char *inew;
    char *pnew;
@@ -433,7 +433,7 @@ void B_DB_DBI::escape_string(JCR *jcr, char *snew, char *old, int len)
       /*
        * Escape the correct size of old
        */
-      dbi_conn_escape_string_copy(m_db_handle, inew, &pnew);
+      dbi_conn_escape_string_copy(db_handle_, inew, &pnew);
       free(inew);
       /*
        * Copy the escaped string to snew
@@ -446,9 +446,9 @@ void B_DB_DBI::escape_string(JCR *jcr, char *snew, char *old, int len)
 
 /**
  * Escape binary object so that DBI is happy
- * Memory is stored in B_DB struct, no need to free it
+ * Memory is stored in BareosDb struct, no need to free it
  */
-char *B_DB_DBI::escape_object(JCR *jcr, char *old, int len)
+char *BareosDbDBI::escape_object(JobControlRecord *jcr, char *old, int len)
 {
    size_t new_len;
    char *pnew;
@@ -456,7 +456,7 @@ char *B_DB_DBI::escape_object(JCR *jcr, char *old, int len)
    if (len == 0) {
       esc_obj[0] = 0;
    } else {
-      new_len = dbi_conn_escape_string_copy(m_db_handle, esc_obj, &pnew);
+      new_len = dbi_conn_escape_string_copy(db_handle_, esc_obj, &pnew);
       esc_obj = check_pool_memory_size(esc_obj, new_len+1);
       memcpy(esc_obj, pnew, new_len);
    }
@@ -467,7 +467,7 @@ char *B_DB_DBI::escape_object(JCR *jcr, char *old, int len)
 /**
  * Unescape binary object so that DBI is happy
  */
-void B_DB_DBI::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+void BareosDbDBI::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                                POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
@@ -486,18 +486,18 @@ void B_DB_DBI::unescape_object(JCR *jcr, char *from, int32_t expected_len,
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_DBI::start_transaction(JCR *jcr)
+void BareosDbDBI::start_transaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
    }
    if (!jcr->ar) {
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
    }
 
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_SQLITE3:
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
@@ -505,13 +505,13 @@ void B_DB_DBI::start_transaction(JCR *jcr)
       /*
        * Allow only 10,000 changes per transaction
        */
-      if (m_transaction && changes > 10000) {
+      if (transaction_ && changes > 10000) {
          end_transaction(jcr);
       }
-      if (!m_transaction) {
+      if (!transaction_) {
          sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start SQLite transaction\n");
-         m_transaction = true;
+         transaction_ = true;
       }
       db_unlock(this);
       break;
@@ -520,7 +520,7 @@ void B_DB_DBI::start_transaction(JCR *jcr)
        * This is turned off because transactions break
        * if multiple simultaneous jobs are run.
        */
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
@@ -528,18 +528,18 @@ void B_DB_DBI::start_transaction(JCR *jcr)
       /*
        * Allow only 25,000 changes per transaction
        */
-      if (m_transaction && changes > 25000) {
+      if (transaction_ && changes > 25000) {
          end_transaction(jcr);
       }
-      if (!m_transaction) {
+      if (!transaction_) {
          sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start PosgreSQL transaction\n");
-         m_transaction = true;
+         transaction_ = true;
       }
       db_unlock(this);
       break;
    case SQL_TYPE_INGRES:
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
@@ -547,13 +547,13 @@ void B_DB_DBI::start_transaction(JCR *jcr)
       /*
        * Allow only 25,000 changes per transaction
        */
-      if (m_transaction && changes > 25000) {
+      if (transaction_ && changes > 25000) {
          end_transaction(jcr);
       }
-      if (!m_transaction) {
+      if (!transaction_) {
          sql_query_without_handler("BEGIN");  /* begin transaction */
          Dmsg0(400, "Start Ingres transaction\n");
-         m_transaction = true;
+         transaction_ = true;
       }
       db_unlock(this);
       break;
@@ -562,7 +562,7 @@ void B_DB_DBI::start_transaction(JCR *jcr)
    }
 }
 
-void B_DB_DBI::end_transaction(JCR *jcr)
+void BareosDbDBI::end_transaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
@@ -572,44 +572,44 @@ void B_DB_DBI::end_transaction(JCR *jcr)
       jcr->cached_attribute = false;
    }
 
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_SQLITE3:
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
       db_lock(this);
-      if (m_transaction) {
+      if (transaction_) {
          sql_query_without_handler("COMMIT"); /* end transaction */
-         m_transaction = false;
+         transaction_ = false;
          Dmsg1(400, "End SQLite transaction changes=%d\n", changes);
       }
       changes = 0;
       db_unlock(this);
       break;
    case SQL_TYPE_POSTGRESQL:
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
       db_lock(this);
-      if (m_transaction) {
+      if (transaction_) {
          sql_query_without_handler("COMMIT"); /* end transaction */
-         m_transaction = false;
+         transaction_ = false;
          Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
       }
       changes = 0;
       db_unlock(this);
       break;
    case SQL_TYPE_INGRES:
-      if (!m_allow_transactions) {
+      if (!allow_transactions_) {
          return;
       }
 
       db_lock(this);
-      if (m_transaction) {
+      if (transaction_) {
          sql_query_without_handler("COMMIT"); /* end transaction */
-         m_transaction = false;
+         transaction_ = false;
          Dmsg1(400, "End Ingres transaction changes=%d\n", changes);
       }
       changes = 0;
@@ -624,7 +624,7 @@ void B_DB_DBI::end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_DBI::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbDBI::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    bool retval = true;
    SQL_ROW row;
@@ -645,7 +645,7 @@ bool B_DB_DBI::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *resu
       Dmsg0(500, "sql_query_with_handler invoking handler\n");
       while ((row = sql_fetch_row()) != NULL) {
          Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
-         if (result_handler(ctx, m_num_fields, row))
+         if (result_handler(ctx, num_fields_, row))
             break;
       }
       sql_free_result();
@@ -665,7 +665,7 @@ bail_out:
  *  Returns:  true on success
  *            false on failure
  */
-bool B_DB_DBI::sql_query_without_handler(const char *query, int flags)
+bool BareosDbDBI::sql_query_without_handler(const char *query, int flags)
 {
    bool retval = false;
    const char *dbi_errmsg;
@@ -675,39 +675,39 @@ bool B_DB_DBI::sql_query_without_handler(const char *query, int flags)
    /*
     * We are starting a new query.  reset everything.
     */
-   m_num_rows = -1;
-   m_row_number = -1;
-   m_field_number = -1;
+   num_rows_ = -1;
+   row_number_ = -1;
+   field_number_ = -1;
 
-   if (m_result) {
-      dbi_result_free(m_result);  /* hmm, someone forgot to free?? */
-      m_result = NULL;
+   if (result_) {
+      dbi_result_free(result_);  /* hmm, someone forgot to free?? */
+      result_ = NULL;
    }
 
-   m_result = (void **)dbi_conn_query(m_db_handle, query);
+   result_ = (void **)dbi_conn_query(db_handle_, query);
 
-   if (!m_result) {
-      Dmsg2(50, "Query failed: %s %p\n", query, m_result);
+   if (!result_) {
+      Dmsg2(50, "Query failed: %s %p\n", query, result_);
       goto bail_out;
    }
 
-   m_status = (dbi_error_flag) dbi_conn_error(m_db_handle, &dbi_errmsg);
-   if (m_status == DBI_ERROR_NONE) {
+   status_ = (dbi_error_flag) dbi_conn_error(db_handle_, &dbi_errmsg);
+   if (status_ == DBI_ERROR_NONE) {
       Dmsg1(500, "we have a result\n", query);
 
       /*
        * How many fields in the set?
        * num_fields starting at 1
        */
-      m_num_fields = dbi_result_get_numfields(m_result);
-      Dmsg1(500, "we have %d fields\n", m_num_fields);
+      num_fields_ = dbi_result_get_numfields(result_);
+      Dmsg1(500, "we have %d fields\n", num_fields_);
       /*
        * If no result num_rows is 0
        */
-      m_num_rows = dbi_result_get_numrows(m_result);
-      Dmsg1(500, "we have %d rows\n", m_num_rows);
+      num_rows_ = dbi_result_get_numrows(result_);
+      Dmsg1(500, "we have %d rows\n", num_rows_);
 
-      m_status = (dbi_error_flag) 0;                  /* succeed */
+      status_ = (dbi_error_flag) 0;                  /* succeed */
    } else {
       Dmsg1(50, "Result status failed: %s\n", query);
       goto bail_out;
@@ -718,30 +718,30 @@ bool B_DB_DBI::sql_query_without_handler(const char *query, int flags)
    goto ok_out;
 
 bail_out:
-   m_status = (dbi_error_flag) dbi_conn_error(m_db_handle, &dbi_errmsg);
-   //dbi_conn_error(m_db_handle, &dbi_errmsg);
+   status_ = (dbi_error_flag) dbi_conn_error(db_handle_, &dbi_errmsg);
+   //dbi_conn_error(db_handle_, &dbi_errmsg);
    Dmsg4(500, "sql_query_without_handler we failed dbi error: "
-                   "'%s' '%p' '%d' flag '%d''\n", dbi_errmsg, m_result, m_result, m_status);
-   dbi_result_free(m_result);
-   m_result = NULL;
-   m_status = (dbi_error_flag) 1;                   /* failed */
+                   "'%s' '%p' '%d' flag '%d''\n", dbi_errmsg, result_, result_, status_);
+   dbi_result_free(result_);
+   result_ = NULL;
+   status_ = (dbi_error_flag) 1;                   /* failed */
 
 ok_out:
    return retval;
 }
 
-void B_DB_DBI::sql_free_result(void)
+void BareosDbDBI::sql_free_result(void)
 {
-   DBI_FIELD_GET *f;
+   DbiFieldGet *f;
 
    db_lock(this);
-   if (m_result) {
-      dbi_result_free(m_result);
-      m_result = NULL;
+   if (result_) {
+      dbi_result_free(result_);
+      result_ = NULL;
    }
-   if (m_rows) {
-      free(m_rows);
-      m_rows = NULL;
+   if (rows_) {
+      free(rows_);
+      rows_ = NULL;
    }
    /*
     * Now is time to free all value return by dbi_get_value
@@ -755,11 +755,11 @@ void B_DB_DBI::sql_free_result(void)
       free(f->value);
       free(f);
    }
-   if (m_fields) {
-      free(m_fields);
-      m_fields = NULL;
+   if (fields_) {
+      free(fields_);
+      fields_ = NULL;
    }
-   m_num_rows = m_num_fields = 0;
+   num_rows_ = num_fields_ = 0;
    db_unlock(this);
 }
 
@@ -874,69 +874,69 @@ static char *dbi_getvalue(dbi_result *result, int row_number, unsigned int colum
    return buf;
 }
 
-SQL_ROW B_DB_DBI::sql_fetch_row(void)
+SQL_ROW BareosDbDBI::sql_fetch_row(void)
 {
    int j;
    SQL_ROW row = NULL; /* by default, return NULL */
 
    Dmsg0(500, "sql_fetch_row start\n");
-   if ((!m_rows || m_rows_size < m_num_fields) && m_num_rows > 0) {
-      if (m_rows) {
+   if ((!rows_ || rows_size_ < num_fields_) && num_rows_ > 0) {
+      if (rows_) {
          Dmsg0(500, "sql_fetch_row freeing space\n");
-         Dmsg2(500, "sql_fetch_row row: '%p' num_fields: '%d'\n", m_rows, m_num_fields);
-         if (m_num_rows != 0) {
-            for (j = 0; j < m_num_fields; j++) {
-               Dmsg2(500, "sql_fetch_row row '%p' '%d'\n", m_rows[j], j);
-                  if (m_rows[j]) {
-                     free(m_rows[j]);
+         Dmsg2(500, "sql_fetch_row row: '%p' num_fields: '%d'\n", rows_, num_fields_);
+         if (num_rows_ != 0) {
+            for (j = 0; j < num_fields_; j++) {
+               Dmsg2(500, "sql_fetch_row row '%p' '%d'\n", rows_[j], j);
+                  if (rows_[j]) {
+                     free(rows_[j]);
                   }
             }
          }
-         free(m_rows);
+         free(rows_);
       }
-      Dmsg1(500, "we need space for %d bytes\n", sizeof(char *) * m_num_fields);
-      m_rows = (SQL_ROW)malloc(sizeof(char *) * m_num_fields);
-      m_rows_size = m_num_fields;
+      Dmsg1(500, "we need space for %d bytes\n", sizeof(char *) * num_fields_);
+      rows_ = (SQL_ROW)malloc(sizeof(char *) * num_fields_);
+      rows_size_ = num_fields_;
 
       /*
        * Now reset the row_number now that we have the space allocated
        */
-      m_row_number = 1;
+      row_number_ = 1;
    }
 
    /*
     * If still within the result set
     */
-   if (m_row_number <= m_num_rows && m_row_number != DBI_ERROR_BADPTR) {
-      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (1..%d)\n", m_row_number, m_num_rows);
+   if (row_number_ <= num_rows_ && row_number_ != DBI_ERROR_BADPTR) {
+      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (1..%d)\n", row_number_, num_rows_);
       /*
        * Get each value from this row
        */
-      for (j = 0; j < m_num_fields; j++) {
-         m_rows[j] = dbi_getvalue(m_result, m_row_number, j);
+      for (j = 0; j < num_fields_; j++) {
+         rows_[j] = dbi_getvalue(result_, row_number_, j);
          /*
           * Allocate space to queue row
           */
-         m_field_get = (DBI_FIELD_GET *)malloc(sizeof(DBI_FIELD_GET));
+         field_get_ = (DbiFieldGet *)malloc(sizeof(DbiFieldGet));
          /*
           * Store the pointer in queue
           */
-         m_field_get->value = m_rows[j];
+         field_get_->value = rows_[j];
          Dmsg4(500, "sql_fetch_row row[%d] field: '%p' in queue: '%p' has value: '%s'\n",
-               j, m_rows[j], m_field_get->value, m_rows[j]);
+               j, rows_[j], field_get_->value, rows_[j]);
          /*
           * Insert in queue to future free
           */
-         dbi_getvalue_list->append(m_field_get);
+         dbi_getvalue_list->append(field_get_);
       }
       /*
        * Increment the row number for the next call
        */
-      m_row_number++;
+      row_number_++;
 
-      row = m_rows;
+      row = rows_;
    } else {
-      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (1..%d)\n", m_row_number, m_num_rows);
+      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (1..%d)\n", row_number_, num_rows_);
    }
 
    Dmsg1(500, "sql_fetch_row finishes returning %p\n", row);
@@ -944,24 +944,24 @@ SQL_ROW B_DB_DBI::sql_fetch_row(void)
    return row;
 }
 
-const char *B_DB_DBI::sql_strerror(void)
+const char *BareosDbDBI::sql_strerror(void)
 {
    const char *dbi_errmsg;
 
-   dbi_conn_error(m_db_handle, &dbi_errmsg);
+   dbi_conn_error(db_handle_, &dbi_errmsg);
 
    return dbi_errmsg;
 }
 
-void B_DB_DBI::sql_data_seek(int row)
+void BareosDbDBI::sql_data_seek(int row)
 {
    /*
     * Set the row number to be returned on the next call to sql_fetch_row
     */
-   m_row_number = row;
+   row_number_ = row;
 }
 
-int B_DB_DBI::sql_affected_rows(void)
+int BareosDbDBI::sql_affected_rows(void)
 {
 #if 0
    return dbi_result_get_numrows_affected(result);
@@ -970,7 +970,7 @@ int B_DB_DBI::sql_affected_rows(void)
 #endif
 }
 
-uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbDBI::sql_insert_autokey_record(const char *query, const char *table_name)
 {
    char sequence[30];
    uint64_t id = 0;
@@ -982,8 +982,8 @@ uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *tabl
       return 0;
    }
 
-   m_num_rows = sql_affected_rows();
-   if (m_num_rows != 1) {
+   num_rows_ = sql_affected_rows();
+   if (num_rows_ != 1) {
       return 0;
    }
 
@@ -1006,7 +1006,7 @@ uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *tabl
     *
     * everything else can use the PostgreSQL formula.
     */
-   if (m_db_type == SQL_TYPE_POSTGRESQL) {
+   if (db_type_ == SQL_TYPE_POSTGRESQL) {
       if (bstrcasecmp(table_name, "basefiles")) {
          bstrncpy(sequence, "basefiles_baseid", sizeof(sequence));
       } else {
@@ -1017,9 +1017,9 @@ uint64_t B_DB_DBI::sql_insert_autokey_record(const char *query, const char *tabl
       }
 
       bstrncat(sequence, "_seq", sizeof(sequence));
-      id = dbi_conn_sequence_last(m_db_handle, NT_(sequence));
+      id = dbi_conn_sequence_last(db_handle_, NT_(sequence));
    } else {
-      id = dbi_conn_sequence_last(m_db_handle, NT_(table_name));
+      id = dbi_conn_sequence_last(db_handle_, NT_(table_name));
    }
 
    return id;
@@ -1050,7 +1050,7 @@ static int dbi_getisnull(dbi_result *result, int row_number, int column_number) 
    }
 }
 
-SQL_FIELD *B_DB_DBI::sql_fetch_field(void)
+SQL_FIELD *BareosDbDBI::sql_fetch_field(void)
 {
    int i, j;
    int dbi_index;
@@ -1060,34 +1060,34 @@ SQL_FIELD *B_DB_DBI::sql_fetch_field(void)
 
    Dmsg0(500, "sql_fetch_field starts\n");
 
-   if (!m_fields || m_fields_size < m_num_fields) {
-      if (m_fields) {
-         free(m_fields);
-         m_fields = NULL;
+   if (!fields_ || fields_size_ < num_fields_) {
+      if (fields_) {
+         free(fields_);
+         fields_ = NULL;
       }
-      Dmsg1(500, "allocating space for %d fields\n", m_num_fields);
-      m_fields = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * m_num_fields);
-      m_fields_size = m_num_fields;
+      Dmsg1(500, "allocating space for %d fields\n", num_fields_);
+      fields_ = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * num_fields_);
+      fields_size_ = num_fields_;
 
-      for (i = 0; i < m_num_fields; i++) {
+      for (i = 0; i < num_fields_; i++) {
          /*
           * num_fields is starting at 1, increment i by 1
           */
          dbi_index = i + 1;
          Dmsg1(500, "filling field %d\n", i);
-         m_fields[i].name = (char *)dbi_result_get_field_name(m_result, dbi_index);
-         m_fields[i].type = dbi_result_get_field_type_idx(m_result, dbi_index);
-         m_fields[i].flags = dbi_result_get_field_attribs_idx(m_result, dbi_index);
+         fields_[i].name = (char *)dbi_result_get_field_name(result_, dbi_index);
+         fields_[i].type = dbi_result_get_field_type_idx(result_, dbi_index);
+         fields_[i].flags = dbi_result_get_field_attribs_idx(result_, dbi_index);
 
          /*
           * For a given column, find the max length.
           */
          max_length = 0;
-         for (j = 0; j < m_num_rows; j++) {
-            if (dbi_getisnull(m_result, j, dbi_index)) {
+         for (j = 0; j < num_rows_; j++) {
+            if (dbi_getisnull(result_, j, dbi_index)) {
                 this_length = 4;        /* "NULL" */
             } else {
-               cbuf = dbi_getvalue(m_result, j, dbi_index);
+               cbuf = dbi_getvalue(result_, j, dbi_index);
                this_length = cstrlen(cbuf);
                /*
                 * cbuf is always free
@@ -1099,20 +1099,20 @@ SQL_FIELD *B_DB_DBI::sql_fetch_field(void)
                max_length = this_length;
             }
          }
-         m_fields[i].max_length = max_length;
+         fields_[i].max_length = max_length;
 
          Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               m_fields[i].name, m_fields[i].max_length, m_fields[i].type, m_fields[i].flags);
+               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
 
    /*
     * Increment field number for the next time around
     */
-   return &m_fields[m_field_number++];
+   return &fields_[field_number_++];
 }
 
-bool B_DB_DBI::sql_field_is_not_null(int field_type)
+bool BareosDbDBI::sql_field_is_not_null(int field_type)
 {
    switch (field_type) {
    case (1 << 0):
@@ -1122,7 +1122,7 @@ bool B_DB_DBI::sql_field_is_not_null(int field_type)
    }
 }
 
-bool B_DB_DBI::sql_field_is_numeric(int field_type)
+bool BareosDbDBI::sql_field_is_numeric(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -1188,7 +1188,7 @@ static char *postgresql_copy_escape(char *dest, char *src, size_t len)
  * Returns true if OK
  *         false if failed
  */
-bool B_DB_DBI::sql_batch_start(JCR *jcr)
+bool BareosDbDBI::sql_batch_start(JobControlRecord *jcr)
 {
    bool retval = true;
    const char *query = "COPY batch FROM STDIN";
@@ -1196,7 +1196,7 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
    Dmsg0(500, "sql_batch_start started\n");
 
    db_lock(this);
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_MYSQL:
       if (!sql_query_without_handler("CREATE TEMPORARY TABLE batch ("
                                      "FileIndex integer,"
@@ -1227,34 +1227,34 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
       /*
        * We are starting a new query.  reset everything.
        */
-      m_num_rows = -1;
-      m_row_number = -1;
-      m_field_number = -1;
+      num_rows_ = -1;
+      row_number_ = -1;
+      field_number_ = -1;
 
       sql_free_result();
 
       for (int i=0; i < 10; i++) {
          sql_query_without_handler(query);
-         if (m_result) {
+         if (result_) {
             break;
          }
          bmicrosleep(5, 0);
       }
-      if (!m_result) {
+      if (!result_) {
          Dmsg1(50, "Query failed: %s\n", query);
          goto bail_out;
       }
 
-      m_status = (dbi_error_flag)dbi_conn_error(m_db_handle, NULL);
-      //m_status = DBI_ERROR_NONE;
+      status_ = (dbi_error_flag)dbi_conn_error(db_handle_, NULL);
+      //status_ = DBI_ERROR_NONE;
 
-      if (m_status == DBI_ERROR_NONE) {
+      if (status_ == DBI_ERROR_NONE) {
          /*
           * How many fields in the set?
           */
-         m_num_fields = dbi_result_get_numfields(m_result);
-         m_num_rows = dbi_result_get_numrows(m_result);
-         m_status = (dbi_error_flag) 1;
+         num_fields_ = dbi_result_get_numfields(result_);
+         num_rows_ = dbi_result_get_numrows(result_);
+         status_ = (dbi_error_flag) 1;
       } else {
          Dmsg1(50, "Result status failed: %s\n", query);
          goto bail_out;
@@ -1280,9 +1280,9 @@ bool B_DB_DBI::sql_batch_start(JCR *jcr)
 
 bail_out:
    Mmsg1(&errmsg, _("error starting batch mode: %s"), sql_strerror());
-   m_status = (dbi_error_flag) 0;
+   status_ = (dbi_error_flag) 0;
    sql_free_result();
-   m_result = NULL;
+   result_ = NULL;
    retval = false;
 
 ok_out:
@@ -1293,18 +1293,18 @@ ok_out:
 /**
  * Set error to something to abort operation
  */
-bool B_DB_DBI::sql_batch_end(JCR *jcr, const char *error)
+bool BareosDbDBI::sql_batch_end(JobControlRecord *jcr, const char *error)
 {
    int res = 0;
    int count = 30;
    int (*custom_function)(void*, const char*) = NULL;
-   dbi_conn_t *myconn = (dbi_conn_t *)(m_db_handle);
+   dbi_conn_t *myconn = (dbi_conn_t *)(db_handle_);
 
    Dmsg0(500, "sql_batch_start started\n");
 
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_MYSQL:
-      m_status = (dbi_error_flag) 0;
+      status_ = (dbi_error_flag) 0;
       break;
    case SQL_TYPE_POSTGRESQL:
       custom_function = (custom_function_end_t)dbi_driver_specific_function(dbi_conn_get_driver(myconn), "PQputCopyEnd");
@@ -1315,17 +1315,17 @@ bool B_DB_DBI::sql_batch_end(JCR *jcr, const char *error)
 
       if (res == 1) {
          Dmsg0(500, "ok\n");
-         m_status = (dbi_error_flag) 1;
+         status_ = (dbi_error_flag) 1;
       }
 
       if (res <= 0) {
          Dmsg0(500, "we failed\n");
-         m_status = (dbi_error_flag) 0;
+         status_ = (dbi_error_flag) 0;
          //Mmsg1(&errmsg, _("error ending batch mode: %s"), PQerrorMessage(myconn));
        }
       break;
    case SQL_TYPE_SQLITE3:
-      m_status = (dbi_error_flag) 0;
+      status_ = (dbi_error_flag) 0;
       break;
    }
 
@@ -1339,11 +1339,11 @@ bool B_DB_DBI::sql_batch_end(JCR *jcr, const char *error)
  * In near future is better split in small functions
  * and refactory.
  */
-bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
+bool BareosDbDBI::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    int res;
    int count=30;
-   dbi_conn_t *myconn = (dbi_conn_t *)(m_db_handle);
+   dbi_conn_t *myconn = (dbi_conn_t *)(db_handle_);
    int (*custom_function)(void*, const char*, int) = NULL;
    char* (*custom_function_error)(void*) = NULL;
    size_t len;
@@ -1361,7 +1361,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
       digest = ar->Digest;
    }
 
-   switch (m_db_type) {
+   switch (db_type_) {
    case SQL_TYPE_MYSQL:
       db_escape_string(jcr, esc_name, fname, fnl);
       db_escape_string(jcr, esc_path, path, pnl);
@@ -1401,7 +1401,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
          if (res == 1) {
             Dmsg0(500, "ok\n");
             changes++;
-            m_status = (dbi_error_flag) 1;
+            status_ = (dbi_error_flag) 1;
          }
 
          if (res <= 0) {
@@ -1442,7 +1442,7 @@ bool B_DB_DBI::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
 
 bail_out:
    Mmsg1(&errmsg, _("error inserting batch mode: %s"), sql_strerror());
-   m_status = (dbi_error_flag) 0;
+   status_ = (dbi_error_flag) 0;
    sql_free_result();
    return false;
 }
@@ -1452,7 +1452,7 @@ bail_out:
  * never have errors, or it is really fatal.
  */
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
+extern "C" BareosDb CATS_IMP_EXP *backend_instantiate(JobControlRecord *jcr,
                                                   const char *db_driver,
                                                   const char *db_name,
                                                   const char *db_user,
@@ -1466,7 +1466,7 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   bool exit_on_fatal,
                                                   bool need_private)
 #else
-B_DB *db_init_database(JCR *jcr,
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -1482,7 +1482,7 @@ B_DB *db_init_database(JCR *jcr,
                        bool need_private)
 #endif
 {
-   B_DB_DBI *mdb = NULL;
+   BareosDbDBI *mdb = NULL;
 
    if (!db_driver) {
       Jmsg(jcr, M_ABORT, 0, _("Driver type not specified in Catalog resource.\n"));
@@ -1516,7 +1516,7 @@ B_DB *db_init_database(JCR *jcr,
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_DBI(jcr,
+   mdb = New(BareosDbDBI(jcr,
                       db_driver,
                       db_name,
                       db_user,

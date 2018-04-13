@@ -30,32 +30,32 @@
 
 #include <api/glfs.h>
 
-class gfapi_device: public DEVICE {
+class gfapi_device: public Device {
 private:
-   char *m_gfapi_configstring;
-   char *m_gfapi_uri;
-   char *m_transport;
-   char *m_servername;
-   char *m_volumename;
-   char *m_basedir;
-   int m_serverport;
-   glfs_t *m_glfs;
-   glfs_fd_t *m_gfd;
-   POOLMEM *m_virtual_filename;
+   char *gfapi_configstring_;
+   char *gfapi_uri_;
+   char *transport_;
+   char *servername_;
+   char *volumename_;
+   char *basedir_;
+   int serverport_;
+   glfs_t *glfs_;
+   glfs_fd_t *gfd_;
+   POOLMEM *virtual_filename_;
 
 public:
    gfapi_device();
    ~gfapi_device();
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DCR *dcr);
+   bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* GFAPI_DEVICE_H */

@@ -46,10 +46,10 @@
  *   files are stored as they come in including the Fhinfo and Fhnode date that is needed
  *   for direct access recovery (DAR) and Directory DAR (DDAR)
  */
-void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
+void ndmp_store_attribute_record(JobControlRecord *jcr, char *fname, char *linked_fname,
                                  char *attributes, int8_t FileType, uint64_t Node, uint64_t Fhinfo)
 {
-   ATTR_DBR *ar;
+   AttributesDbRecord *ar;
    bool ndmp_bareos_backup;
 
    ndmp_bareos_backup = (jcr->getJobProtocol() == PT_NDMP_BAREOS);
@@ -58,7 +58,7 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
     * so we need to create an attribute record
     */
    if (!jcr->ar) {
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
       jcr->ar->Digest = NULL;
    }
 
@@ -103,7 +103,7 @@ void ndmp_store_attribute_record(JCR *jcr, char *fname, char *linked_fname,
 }
 
 void ndmp_convert_fstat(ndmp9_file_stat *fstat, int32_t FileIndex,
-      int8_t *FileType, POOL_MEM &attribs)
+      int8_t *FileType, PoolMem &attribs)
 {
    struct stat statp;
 

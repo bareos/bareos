@@ -79,8 +79,8 @@ static inline slot_number_t count_enabled_slots(char *slot_list,
  * See if a selected slot list has the wanted content and
  * deselect any slot which has not.
  */
-static inline void validate_slot_list(UAContext *ua,
-                                      STORERES *store,
+static inline void validate_slot_list(UaContext *ua,
+                                      StoreResource *store,
                                       changer_vol_list_t *vol_list,
                                       char *slot_list,
                                       slot_content content)
@@ -232,8 +232,8 @@ static inline bool slot_lists_overlap(char *src_slot_list,
  * of the autochanger after the scan as that may move some
  * volumes around. We free the old list and return the new.
  */
-static inline changer_vol_list_t *scan_slots_for_volnames(UAContext *ua,
-                                                          STORERES *store,
+static inline changer_vol_list_t *scan_slots_for_volnames(UaContext *ua,
+                                                          StoreResource *store,
                                                           drive_number_t drive,
                                                           changer_vol_list_t *vol_list,
                                                           char *src_slot_list)
@@ -420,8 +420,8 @@ static inline changer_vol_list_t *scan_slots_for_volnames(UAContext *ua,
 /**
  * Convert a volume name into a slot selection.
  */
-static inline bool get_slot_list_using_volname(UAContext *ua,
-                                               STORERES *store,
+static inline bool get_slot_list_using_volname(UaContext *ua,
+                                               StoreResource *store,
                                                const char *volumename,
                                                changer_vol_list_t *vol_list,
                                                char *wanted_slot_list,
@@ -512,8 +512,8 @@ static inline bool get_slot_list_using_volname(UAContext *ua,
 /**
  * Convert a number of volume names into a slot selection.
  */
-static inline slot_number_t get_slot_list_using_volnames(UAContext *ua,
-                                                         STORERES *store,
+static inline slot_number_t get_slot_list_using_volnames(UaContext *ua,
+                                                         StoreResource *store,
                                                          int arg,
                                                          changer_vol_list_t *vol_list,
                                                          char *wanted_slot_list,
@@ -576,7 +576,7 @@ static inline slot_number_t get_slot_list_using_volnames(UAContext *ua,
  * and slot content. All slots which have the wanted
  * slot type and wanted slot content are selected.
  */
-static inline slot_number_t auto_fill_slot_selection(STORERES *store,
+static inline slot_number_t auto_fill_slot_selection(StoreResource *store,
                                                      changer_vol_list_t *vol_list,
                                                      char *slot_list,
                                                      slot_type type,
@@ -628,7 +628,7 @@ static inline slot_number_t auto_fill_slot_selection(STORERES *store,
  * Verify if all slots in the given slot list are of a certain
  * type and have a given content.
  */
-static inline bool verify_slot_list(STORERES *store,
+static inline bool verify_slot_list(StoreResource *store,
                                     changer_vol_list_t *vol_list,
                                     char *slot_list,
                                     slot_type type,
@@ -764,8 +764,8 @@ static inline bool update_internal_slot_list(changer_vol_list_t *vol_list,
 /**
  * Unload a volume currently loaded in a drive.
  */
-static bool release_loaded_volume(UAContext *ua,
-                                  STORERES *store,
+static bool release_loaded_volume(UaContext *ua,
+                                  StoreResource *store,
                                   drive_number_t drive,
                                   changer_vol_list_t *vol_list)
 {
@@ -839,9 +839,9 @@ static bool release_loaded_volume(UAContext *ua,
  * to a destination slot by walking the two filled
  * slot lists and marking every visited slot.
  */
-static char *move_volumes_in_autochanger(UAContext *ua,
+static char *move_volumes_in_autochanger(UaContext *ua,
                                          enum e_move_op operation,
-                                         STORERES *store,
+                                         StoreResource *store,
                                          changer_vol_list_t *vol_list,
                                          char *src_slot_list,
                                          char *dst_slot_list,
@@ -973,10 +973,10 @@ static char *move_volumes_in_autochanger(UAContext *ua,
  * - export of normal slots into export slots
  * - move from one normal slot to another normal slot
  */
-static bool perform_move_operation(UAContext *ua, enum e_move_op operation)
+static bool perform_move_operation(UaContext *ua, enum e_move_op operation)
 {
    bool scan;
-   USTORERES store;
+   UnifiedStoreResource store;
    changer_vol_list_t *vol_list;
    char *src_slot_list = NULL,
         *dst_slot_list = NULL,
@@ -1310,7 +1310,7 @@ bail_out:
 /**
  * Import volumes from Import/Export Slots into normal Slots.
  */
-bool import_cmd(UAContext *ua, const char *cmd)
+bool import_cmd(UaContext *ua, const char *cmd)
 {
    return perform_move_operation(ua, VOLUME_IMPORT);
 }
@@ -1318,7 +1318,7 @@ bool import_cmd(UAContext *ua, const char *cmd)
 /**
  * Export volumes from normal slots to Import/Export Slots.
  */
-bool export_cmd(UAContext *ua, const char *cmd)
+bool export_cmd(UaContext *ua, const char *cmd)
 {
    return perform_move_operation(ua, VOLUME_EXPORT);
 }
@@ -1326,7 +1326,7 @@ bool export_cmd(UAContext *ua, const char *cmd)
 /**
  * Move volume from one slot to another.
  */
-bool move_cmd(UAContext *ua, const char *cmd)
+bool move_cmd(UaContext *ua, const char *cmd)
 {
    return perform_move_operation(ua, VOLUME_MOVE);
 }

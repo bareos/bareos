@@ -53,7 +53,7 @@
 #define lchmod chmod
 #endif
 
-static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
+static bool makedir(JobControlRecord *jcr, char *path, mode_t mode, int *created)
 {
    struct stat statp;
 
@@ -86,7 +86,7 @@ static bool makedir(JCR *jcr, char *path, mode_t mode, int *created)
    return true;
 }
 
-static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t mode)
+static void set_own_mod(Attributes *attr, char *path, uid_t owner, gid_t group, mode_t mode)
 {
    if (lchown(path, owner, group) != 0 && attr->uid == 0
 #ifdef AFS
@@ -114,7 +114,7 @@ static void set_own_mod(ATTR *attr, char *path, uid_t owner, gid_t group, mode_t
  * owner and group are to set on any created dirs
  * keep_dir_modes if set means don't change mode bits if dir exists
  */
-bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
+bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mode,
               uid_t owner, gid_t group, bool keep_dir_modes)
 {
    struct stat statp;
@@ -128,7 +128,7 @@ bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode,
    int ndir = 0;
    int i = 0;
    int max_dirs = (int)sizeof(new_dir);
-   JCR *jcr = attr->jcr;
+   JobControlRecord *jcr = attr->jcr;
 
    if (stat(path, &statp) == 0) {     /* Does dir exist? */
       if (!S_ISDIR(statp.st_mode)) {

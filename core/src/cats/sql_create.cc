@@ -52,10 +52,10 @@ static const int dbglevel = 100;
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::create_job_record(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::create_job_record(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval = false;;
-   POOL_MEM buf;
+   PoolMem buf;
    char dt[MAX_TIME_LENGTH];
    time_t stime;
    int len;
@@ -106,7 +106,7 @@ bool B_DB::create_job_record(JCR *jcr, JOB_DBR *jr)
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
+bool BareosDb::create_jobmedia_record(JobControlRecord *jcr, JobMediaDbRecord *jm)
 {
    bool retval = false;
    int count;
@@ -163,7 +163,7 @@ bool B_DB::create_jobmedia_record(JCR *jcr, JOBMEDIA_DBR *jm)
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::create_pool_record(JCR *jcr, POOL_DBR *pr)
+bool BareosDb::create_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
 {
    bool retval = false;
    char ed1[30], ed2[30], ed3[50], ed4[50], ed5[50];
@@ -231,7 +231,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::create_device_record(JCR *jcr, DEVICE_DBR *dr)
+bool BareosDb::create_device_record(JobControlRecord *jcr, DeviceDbRecord *dr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -303,7 +303,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success with id in sr->StorageId
  */
-bool B_DB::create_storage_record(JCR *jcr, STORAGE_DBR *sr)
+bool BareosDb::create_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
 {
    SQL_ROW row;
    bool retval = false;
@@ -371,7 +371,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::create_mediatype_record(JCR *jcr, MEDIATYPE_DBR *mr)
+bool BareosDb::create_mediatype_record(JobControlRecord *jcr, MediaTypeDbRecord *mr)
 {
    bool retval = false;
    int num_rows;
@@ -420,7 +420,7 @@ bail_out:
  * Returns: false on failure
  *          true on success with id in mr->MediaId
  */
-bool B_DB::create_media_record(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::create_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50], ed7[50], ed8[50];
@@ -519,7 +519,7 @@ bail_out:
  * Returns: false on failure
  *          true on success with id in cr->ClientId
  */
-bool B_DB::create_client_record(JCR *jcr, CLIENT_DBR *cr)
+bool BareosDb::create_client_record(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -592,7 +592,7 @@ bail_out:
  * Returns: false on failure
  *          true on success with id in cr->ClientId
  */
-bool B_DB::create_path_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_path_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    bool retval = false;
    SQL_ROW row;
@@ -676,17 +676,17 @@ bail_out:
  * Returns: false on failure
  *          true on success with counter filled in
  */
-bool B_DB::create_counter_record(JCR *jcr, COUNTER_DBR *cr)
+bool BareosDb::create_counter_record(JobControlRecord *jcr, CounterDbRecord *cr)
 {
    bool retval = false;
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   COUNTER_DBR mcr;
+   CounterDbRecord mcr;
 
    db_lock(this);
    memset(&mcr, 0, sizeof(mcr));
    bstrncpy(mcr.Counter, cr->Counter, sizeof(mcr.Counter));
    if (get_counter_record(jcr, &mcr)) {
-      memcpy(cr, &mcr, sizeof(COUNTER_DBR));
+      memcpy(cr, &mcr, sizeof(CounterDbRecord));
       retval = true;
       goto bail_out;
    }
@@ -715,7 +715,7 @@ bail_out:
  * Returns: false on failure
  *          true on success with FileSetId in record
  */
-bool B_DB::create_fileset_record(JCR *jcr, FILESET_DBR *fsr)
+bool BareosDb::create_fileset_record(JobControlRecord *jcr, FileSetDbRecord *fsr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -768,7 +768,7 @@ bool B_DB::create_fileset_record(JCR *jcr, FILESET_DBR *fsr)
 
    bstrutime(fsr->cCreateTime, sizeof(fsr->cCreateTime), fsr->CreateTime);
    if (fsr->FileSetText) {
-      POOL_MEM esc_filesettext(PM_MESSAGE);
+      PoolMem esc_filesettext(PM_MESSAGE);
 
       len = strlen(fsr->FileSetText);
       esc_filesettext.check_size(len * 2 + 1);
@@ -812,7 +812,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::write_batch_file_records(JCR *jcr)
+bool BareosDb::write_batch_file_records(JobControlRecord *jcr)
 {
    bool retval = false;
    int JobStatus = jcr->JobStatus;
@@ -883,7 +883,7 @@ bail_out:
 }
 
 /**
- * Create File record in B_DB
+ * Create File record in BareosDb
  *
  * In order to reduce database size, we store the File attributes,
  * the FileName, and the Path separately.  In principle, there
@@ -898,7 +898,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_batch_file_attributes_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    ASSERT(ar->FileType != FT_BASE);
 
@@ -930,7 +930,7 @@ bool B_DB::create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 }
 
 /**
- * Create File record in B_DB
+ * Create File record in BareosDb
  *
  * In order to reduce database size, we store the File attributes,
  * the FileName, and the Path separately.  In principle, there
@@ -941,7 +941,7 @@ bool B_DB::create_batch_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_file_attributes_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    bool retval = false;
 
@@ -976,7 +976,7 @@ bail_out:
  * Returns: false on failure
  *          true on success with fileid filled in
  */
-bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_file_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    bool retval = false;
    static const char *no_digest = "0";
@@ -1017,7 +1017,7 @@ bool B_DB::create_file_record(JCR *jcr, ATTR_DBR *ar)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_attributes_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_attributes_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    bool retval;
 
@@ -1053,11 +1053,11 @@ bool B_DB::create_attributes_record(JCR *jcr, ATTR_DBR *ar)
 }
 
 /**
- * Create Base File record in B_DB
+ * Create Base File record in BareosDb
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_base_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
+bool BareosDb::create_base_file_attributes_record(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    bool retval;
    Dmsg1(dbglevel, "create_base_file Fname=%s\n", ar->fname);
@@ -1085,9 +1085,9 @@ bool B_DB::create_base_file_attributes_record(JCR *jcr, ATTR_DBR *ar)
 /**
  * Cleanup the base file temporary tables
  */
-void B_DB::cleanup_base_file(JCR *jcr)
+void BareosDb::cleanup_base_file(JobControlRecord *jcr)
 {
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
    Mmsg(buf, "DROP TABLE new_basefile%lld", (uint64_t) jcr->JobId);
    sql_query(buf.c_str());
 
@@ -1101,7 +1101,7 @@ void B_DB::cleanup_base_file(JCR *jcr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::commit_base_file_attributes_record(JCR *jcr)
+bool BareosDb::commit_base_file_attributes_record(JobControlRecord *jcr)
 {
    bool retval;
    char ed1[50];
@@ -1134,10 +1134,10 @@ bool B_DB::commit_base_file_attributes_record(JCR *jcr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_base_file_list(JCR *jcr, char *jobids)
+bool BareosDb::create_base_file_list(JobControlRecord *jcr, char *jobids)
 {
    bool retval = false;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    db_lock(this);
 
@@ -1162,11 +1162,11 @@ bail_out:
 }
 
 /**
- * Create Restore Object record in B_DB
+ * Create Restore Object record in BareosDb
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_restore_object_record(JCR *jcr, ROBJECT_DBR *ro)
+bool BareosDb::create_restore_object_record(JobControlRecord *jcr, RestoreObjectDbRecord *ro)
 {
    bool retval = false;
    int plug_name_len;
@@ -1213,7 +1213,7 @@ bool B_DB::create_restore_object_record(JCR *jcr, ROBJECT_DBR *ro)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_quota_record(JCR *jcr, CLIENT_DBR *cr)
+bool BareosDb::create_quota_record(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval = false;
    char ed1[50];
@@ -1259,7 +1259,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem)
+bool BareosDb::create_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
 {
    bool retval = false;
    char ed1[50], ed2[50];
@@ -1309,7 +1309,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, char *name, char *value)
+bool BareosDb::create_ndmp_environment_string(JobControlRecord *jcr, JobDbRecord *jr, char *name, char *value)
 {
    bool retval = false;
    char ed1[50], ed2[50];
@@ -1339,7 +1339,7 @@ bool B_DB::create_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, char *name, cha
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_job_statistics(JCR *jcr, JOB_STATS_DBR *jsr)
+bool BareosDb::create_job_statistics(JobControlRecord *jcr, JobStatisticsDbRecord *jsr)
 {
    time_t stime;
    bool retval = false;
@@ -1383,7 +1383,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_device_statistics(JCR *jcr, DEVICE_STATS_DBR *dsr)
+bool BareosDb::create_device_statistics(JobControlRecord *jcr, DeviceStatisticsDbRecord *dsr)
 {
    time_t stime;
    bool retval = false;
@@ -1439,7 +1439,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::create_tapealert_statistics(JCR *jcr, TAPEALERT_STATS_DBR *tsr)
+bool BareosDb::create_tapealert_statistics(JobControlRecord *jcr, TapealertStatsDbRecord *tsr)
 {
    time_t stime;
    bool retval = false;

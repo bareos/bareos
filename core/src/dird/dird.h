@@ -45,7 +45,7 @@
 #include "jobq.h"
 
 /* Globals that dird.c exports */
-extern DIRRES *me;                   /**< Our Global resource */
+extern DirectorResource *me;                   /**< Our Global resource */
 extern CONFIG *my_config;            /**< Our Global config */
 
 /* Used in ua_prune.c and ua_purge.c */

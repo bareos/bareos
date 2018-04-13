@@ -36,7 +36,7 @@
 /**
  * Open a fifo device
  */
-void unix_fifo_device::open_device(DCR *dcr, int omode)
+void unix_fifo_device::open_device(DeviceControlRecord *dcr, int omode)
 {
    file_size = 0;
    int timeout = max_open_wait;
@@ -72,16 +72,16 @@ void unix_fifo_device::open_device(DCR *dcr, int omode)
       /*
        * Try non-blocking open
        */
-      m_fd = d_open(dev_name, oflags | O_NONBLOCK, 0);
-      if (m_fd < 0) {
+      fd_ = d_open(dev_name, oflags | O_NONBLOCK, 0);
+      if (fd_ < 0) {
          berrno be;
          dev_errno = errno;
          Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
                prt_name, omode, oflags, errno, be.bstrerror());
       } else {
-         d_close(m_fd);
-         m_fd = d_open(dev_name, oflags, 0); /* open normally */
-         if (m_fd < 0) {
+         d_close(fd_);
+         fd_ = d_open(dev_name, oflags, 0); /* open normally */
+         if (fd_ < 0) {
             berrno be;
             dev_errno = errno;
             Dmsg5(100, "Open error on %s omode=%d oflags=%x errno=%d: ERR=%s\n",
@@ -117,12 +117,12 @@ void unix_fifo_device::open_device(DCR *dcr, int omode)
       tid = 0;
    }
 
-   Dmsg1(100, "open dev: fifo %d opened\n", m_fd);
+   Dmsg1(100, "open dev: fifo %d opened\n", fd_);
 }
 
-bool unix_fifo_device::eod(DCR *dcr)
+bool unix_fifo_device::eod(DeviceControlRecord *dcr)
 {
-   if (m_fd < 0) {
+   if (fd_ < 0) {
       dev_errno = EBADF;
       Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), prt_name);
       return false;
@@ -144,10 +144,10 @@ bool unix_fifo_device::eod(DCR *dcr)
 /**
  * (Un)mount the device (For a FILE device)
  */
-static bool do_mount(DCR *dcr, bool mount, int dotimeout)
+static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
 {
-   DEVRES *device = dcr->dev->device;
-   POOL_MEM ocmd(PM_FNAME);
+   DeviceResource *device = dcr->dev->device;
+   PoolMem ocmd(PM_FNAME);
    POOLMEM *results;
    DIR* dp;
    char *icmd;
@@ -272,7 +272,7 @@ get_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool unix_fifo_device::mount_backend(DCR *dcr, int timeout)
+bool unix_fifo_device::mount_backend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
@@ -289,7 +289,7 @@ bool unix_fifo_device::mount_backend(DCR *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool unix_fifo_device::unmount_backend(DCR *dcr, int timeout)
+bool unix_fifo_device::unmount_backend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
@@ -325,12 +325,12 @@ int unix_fifo_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-boffset_t unix_fifo_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t unix_fifo_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
    return -1;
 }
 
-bool unix_fifo_device::d_truncate(DCR *dcr)
+bool unix_fifo_device::d_truncate(DeviceControlRecord *dcr)
 {
    return true;
 }
@@ -344,9 +344,9 @@ unix_fifo_device::unix_fifo_device()
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_FIFO_DEV:

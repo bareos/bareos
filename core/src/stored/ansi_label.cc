@@ -53,10 +53,10 @@ static bool same_label_names(char *bareos_name, char *ansi_name);
  *    VOL_NAME_ERROR    Wrong name in VOL1 record
  *    VOL_LABEL_ERROR   Probably an ANSI label, but something wrong
  */
-int read_ansi_ibm_label(DCR *dcr)
+int read_ansi_ibm_label(DeviceControlRecord *dcr)
 {
-   DEVICE * volatile dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device * volatile dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    char label[80];                    /* tape label */
    int status, i;
    char *VolName = dcr->VolumeName;
@@ -288,10 +288,10 @@ static const char *labels[] = {"HDR", "EOF", "EOV"};
  * Returns:  true of OK
  *           false if error
  */
-bool write_ansi_ibm_labels(DCR *dcr, int type, const char *VolName)
+bool write_ansi_ibm_labels(DeviceControlRecord *dcr, int type, const char *VolName)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    char ansi_volname[7];              /* 6 char + \0 */
    char label[80];                    /* tape label */
    char date[20];                     /* ansi date buffer */

@@ -33,10 +33,10 @@
 
 static const int dbglvl = 150;
 
-ATTR *new_attr(JCR *jcr)
+Attributes *new_attr(JobControlRecord *jcr)
 {
-   ATTR *attr = (ATTR *)malloc(sizeof(ATTR));
-   memset(attr, 0, sizeof(ATTR));
+   Attributes *attr = (Attributes *)malloc(sizeof(Attributes));
+   memset(attr, 0, sizeof(Attributes));
    attr->ofname = get_pool_memory(PM_FNAME);
    attr->olname = get_pool_memory(PM_FNAME);
    attr->attrEx = get_pool_memory(PM_FNAME);
@@ -45,7 +45,7 @@ ATTR *new_attr(JCR *jcr)
    return attr;
 }
 
-void free_attr(ATTR *attr)
+void free_attr(Attributes *attr)
 {
    free_pool_memory(attr->olname);
    free_pool_memory(attr->ofname);
@@ -53,7 +53,7 @@ void free_attr(ATTR *attr)
    free(attr);
 }
 
-int unpack_attributes_record(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ATTR *attr)
+int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr)
 {
    char *p;
    int object_len;
@@ -155,7 +155,7 @@ static void strip_double_slashes(char *fname)
  * Build attr->ofname from attr->fname and
  *       attr->olname from attr->olname
  */
-void build_attr_output_fnames(JCR *jcr, ATTR *attr)
+void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr)
 {
    /*
     * Prepend the where directory so that the
@@ -241,7 +241,7 @@ void build_attr_output_fnames(JCR *jcr, ATTR *attr)
 extern char *getuser(uid_t uid, char *name, int len);
 extern char *getgroup(gid_t gid, char *name, int len);
 
-static const char *attr_stat_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
+static const char *attr_stat_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr)
 {
    char buf[5000];
    char ec1[30];
@@ -270,7 +270,7 @@ static const char *attr_stat_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr
    return resultbuffer.c_str();
 }
 
-static const char *attr_file_to_str(POOL_MEM &resultbuffer, ATTR *attr)
+static const char *attr_file_to_str(PoolMem &resultbuffer, Attributes *attr)
 {
    resultbuffer.strcat(attr->ofname);
    if (attr->type == FT_LNK) {
@@ -281,7 +281,7 @@ static const char *attr_file_to_str(POOL_MEM &resultbuffer, ATTR *attr)
 }
 
 
-const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
+const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr)
 {
    attr_stat_to_str(resultbuffer, jcr, attr);
    resultbuffer.strcat("\n");
@@ -291,7 +291,7 @@ const char *attr_to_str(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
 }
 
 
-static const char *attr_to_ls_output(POOL_MEM &resultbuffer, JCR *jcr, ATTR *attr)
+static const char *attr_to_ls_output(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr)
 {
    attr_stat_to_str(resultbuffer, jcr, attr);
    resultbuffer.strcat("  ");
@@ -304,9 +304,9 @@ static const char *attr_to_ls_output(POOL_MEM &resultbuffer, JCR *jcr, ATTR *att
 /**
  * Print an ls style message, also send M_RESTORED
  */
-void print_ls_output(JCR *jcr, ATTR *attr)
+void print_ls_output(JobControlRecord *jcr, Attributes *attr)
 {
-   POOL_MEM resultbuffer(PM_MESSAGE);
+   PoolMem resultbuffer(PM_MESSAGE);
    attr_to_ls_output(resultbuffer, jcr, attr);
    Dmsg1(dbglvl, "%s", resultbuffer.c_str());
    Jmsg(jcr, M_RESTORED, 1, "%s", resultbuffer.c_str());

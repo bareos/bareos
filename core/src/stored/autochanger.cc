@@ -32,10 +32,10 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 /* Forward referenced functions */
-static bool lock_changer(DCR *dcr);
-static bool unlock_changer(DCR *dcr);
-static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set);
-static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd,
+static bool lock_changer(DeviceControlRecord *dcr);
+static bool unlock_changer(DeviceControlRecord *dcr);
+static bool unload_other_drive(DeviceControlRecord *dcr, slot_number_t slot, bool lock_set);
+static char *transfer_edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd,
                                         slot_number_t src_slot, slot_number_t dst_slot);
 
 /**
@@ -44,14 +44,14 @@ static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *im
 bool init_autochangers()
 {
    bool OK = true;
-   AUTOCHANGERRES *changer;
+   AutochangerResource *changer;
    drive_number_t logical_drive_number;
 
    /*
     * Ensure that the media_type for each device is the same
     */
    foreach_res(changer, R_AUTOCHANGER) {
-      DEVRES *device;
+      DeviceResource *device;
 
       logical_drive_number = 0;
       foreach_alist(device, changer->device) {
@@ -105,14 +105,14 @@ bool init_autochangers()
  *         -1 on error on autochanger
  *         -2 on error locking the autochanger
  */
-int autoload_device(DCR *dcr, int writing, BSOCK *dir)
+int autoload_device(DeviceControlRecord *dcr, int writing, BareosSocket *dir)
 {
    POOLMEM *changer;
    int rtn_stat = -1;                 /* error status */
    slot_number_t slot;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    drive_number_t drive;
-   DEVICE * volatile dev = dcr->dev;
+   Device * volatile dev = dcr->dev;
 
    if (!dev->is_autochanger()) {
       Dmsg1(100, "Device %s is not an autochanger\n", dev->print_name());
@@ -190,7 +190,7 @@ int autoload_device(DCR *dcr, int writing, BSOCK *dir)
        */
       loaded = get_autochanger_loaded_slot(dcr);
       if (loaded != slot) {
-         POOL_MEM results(PM_MESSAGE);
+         PoolMem results(PM_MESSAGE);
 
          if (!lock_changer(dcr)) {
             rtn_stat = -2;
@@ -272,14 +272,14 @@ bail_out:
  *
  * Note, this is safe to do without releasing the drive since it does not attempt load/unload a slot.
  */
-slot_number_t get_autochanger_loaded_slot(DCR *dcr, bool lock_set)
+slot_number_t get_autochanger_loaded_slot(DeviceControlRecord *dcr, bool lock_set)
 {
    int status;
    POOLMEM *changer;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    slot_number_t loaded;
-   DEVICE *dev = dcr->dev;
-   POOL_MEM results(PM_MESSAGE);
+   Device *dev = dcr->dev;
+   PoolMem results(PM_MESSAGE);
    uint32_t timeout = dcr->device->max_changer_wait;
    drive_number_t drive = dcr->dev->drive;
 
@@ -366,9 +366,9 @@ slot_number_t get_autochanger_loaded_slot(DCR *dcr, bool lock_set)
    return loaded;
 }
 
-static bool lock_changer(DCR *dcr)
+static bool lock_changer(DeviceControlRecord *dcr)
 {
-   AUTOCHANGERRES *changer_res = dcr->device->changer_res;
+   AutochangerResource *changer_res = dcr->device->changer_res;
 
    if (changer_res) {
       int errstat;
@@ -391,9 +391,9 @@ static bool lock_changer(DCR *dcr)
    return true;
 }
 
-static bool unlock_changer(DCR *dcr)
+static bool unlock_changer(DeviceControlRecord *dcr)
 {
-   AUTOCHANGERRES *changer_res = dcr->device->changer_res;
+   AutochangerResource *changer_res = dcr->device->changer_res;
 
    if (changer_res) {
       int errstat;
@@ -416,10 +416,10 @@ static bool unlock_changer(DCR *dcr)
  *           loaded  < 0 -- check if anything to do
  *           loaded  > 0 -- load slot == loaded
  */
-bool unload_autochanger(DCR *dcr, slot_number_t loaded, bool lock_set)
+bool unload_autochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool lock_set)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    slot_number_t slot;
    uint32_t timeout = dcr->device->max_changer_wait;
    bool retval = true;
@@ -457,7 +457,7 @@ bool unload_autochanger(DCR *dcr, slot_number_t loaded, bool lock_set)
 
    if (loaded > 0) {
       int status;
-      POOL_MEM results(PM_MESSAGE);
+      PoolMem results(PM_MESSAGE);
       POOLMEM *changer = get_pool_memory(PM_FNAME);
 
       Jmsg(jcr, M_INFO, 0,
@@ -508,13 +508,13 @@ bool unload_autochanger(DCR *dcr, slot_number_t loaded, bool lock_set)
 /**
  * Unload the slot if mounted in a different drive
  */
-static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set)
+static bool unload_other_drive(DeviceControlRecord *dcr, slot_number_t slot, bool lock_set)
 {
-   DEVICE *dev = NULL;
-   DEVICE *dev_save;
+   Device *dev = NULL;
+   Device *dev_save;
    bool found = false;
-   AUTOCHANGERRES *changer = dcr->dev->device->changer_res;
-   DEVRES *device;
+   AutochangerResource *changer = dcr->dev->device->changer_res;
+   DeviceResource *device;
    int retries = 0;                /* wait for device retries */
 
    if (!changer) {
@@ -587,15 +587,15 @@ static bool unload_other_drive(DCR *dcr, slot_number_t slot, bool lock_set)
 /**
  * Unconditionally unload a specified drive
  */
-bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set)
+bool unload_dev(DeviceControlRecord *dcr, Device *dev, bool lock_set)
 {
    int status;
-   DEVICE *save_dev;
+   Device *save_dev;
    bool retval = true;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    slot_number_t save_slot;
    uint32_t timeout = dcr->device->max_changer_wait;
-   AUTOCHANGERRES *changer = dcr->dev->device->changer_res;
+   AutochangerResource *changer = dcr->dev->device->changer_res;
 
    if (!changer) {
       return false;
@@ -633,7 +633,7 @@ bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set)
    dcr->VolCatInfo.Slot = dev->get_slot();
 
    POOLMEM *changer_cmd = get_pool_memory(PM_FNAME);
-   POOL_MEM results(PM_MESSAGE);
+   PoolMem results(PM_MESSAGE);
 
    Jmsg(jcr, M_INFO, 0,
         _("3307 Issuing autochanger \"unload slot %hd, drive %hd\" command.\n"),
@@ -687,12 +687,12 @@ bool unload_dev(DCR *dcr, DEVICE *dev, bool lock_set)
  * List the Volumes that are in the autoloader possibly with their barcodes.
  * We assume that it is always the Console that is calling us.
  */
-bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
+bool autochanger_cmd(DeviceControlRecord *dcr, BareosSocket *dir, const char *cmd)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    uint32_t timeout = dcr->device->max_changer_wait;
    POOLMEM *changer;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    int len = sizeof_pool_memory(dir->msg) - 1;
    int status;
    int retries = 1; /* Number of retries on failing slot count */
@@ -708,7 +708,7 @@ bool autochanger_cmd(DCR *dcr, BSOCK *dir, const char *cmd)
    }
 
    if (bstrcmp(cmd, "drives")) {
-      AUTOCHANGERRES *changer_res = dcr->device->changer_res;
+      AutochangerResource *changer_res = dcr->device->changer_res;
       drive_number_t drives = 1;
       if (changer_res) {
          drives = changer_res->device->size();
@@ -799,12 +799,12 @@ bail_out:
  * Transfer a volume from src_slot to dst_slot.
  * We assume that it is always the Console that is calling us.
  */
-bool autochanger_transfer_cmd(DCR *dcr, BSOCK *dir, slot_number_t src_slot, slot_number_t dst_slot)
+bool autochanger_transfer_cmd(DeviceControlRecord *dcr, BareosSocket *dir, slot_number_t src_slot, slot_number_t dst_slot)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    uint32_t timeout = dcr->device->max_changer_wait;
    POOLMEM *changer;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    int len = sizeof_pool_memory(dir->msg) - 1;
    int status;
 
@@ -878,7 +878,7 @@ bail_out:
  *  imsg = input string containing edit codes (%x)
  *  cmd = command string (transfer)
  */
-static char *transfer_edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd,
+static char *transfer_edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd,
                                         slot_number_t src_slot, slot_number_t dst_slot)
 {
    const char *p;

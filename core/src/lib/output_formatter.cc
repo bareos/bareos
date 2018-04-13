@@ -59,7 +59,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
 
    filters = NULL;
    hidden_columns = NULL;
-   result_message_plain = new POOL_MEM(PM_MESSAGE);
+   result_message_plain = new PoolMem(PM_MESSAGE);
 #if HAVE_JANSSON
    result_json = json_object();
    result_stack_json = New(alist(10, false));
@@ -218,7 +218,7 @@ void OUTPUT_FORMATTER::array_end(const char *name)
 
 void OUTPUT_FORMATTER::decoration(const char *fmt, ...)
 {
-   POOL_MEM string;
+   PoolMem string;
    va_list arg_ptr;
 
    switch (api) {
@@ -248,7 +248,7 @@ void OUTPUT_FORMATTER::object_key_value_bool(const char *key, bool value,
 void OUTPUT_FORMATTER::object_key_value_bool(const char *key, const char *key_fmt,
                                              bool value, const char *value_fmt)
 {
-   POOL_MEM string;
+   PoolMem string;
 
    switch (api) {
 #if HAVE_JANSSON
@@ -287,7 +287,7 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value,
 void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
                                         uint64_t value, const char *value_fmt)
 {
-   POOL_MEM string;
+   PoolMem string;
 
    switch (api) {
 #if HAVE_JANSSON
@@ -323,8 +323,8 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
                                         const char *value, const char *value_fmt,
                                         int wrap)
 {
-   POOL_MEM string;
-   POOL_MEM wvalue(value);
+   PoolMem string;
+   PoolMem wvalue(value);
    rewrap(wvalue, wrap);
 
    switch (api) {
@@ -347,12 +347,12 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
    }
 }
 
-void OUTPUT_FORMATTER::rewrap(POOL_MEM &string, int wrap)
+void OUTPUT_FORMATTER::rewrap(PoolMem &string, int wrap)
 {
    char *p, *q;
    int open = 0;
    int charsinline = 0;
-   POOL_MEM rewrap_string(PM_MESSAGE);
+   PoolMem rewrap_string(PM_MESSAGE);
 
    /*
     * wrap < 0: no modification
@@ -614,7 +614,7 @@ void OUTPUT_FORMATTER::clear_hidden_columns()
 bool OUTPUT_FORMATTER::process_text_buffer()
 {
    bool retval = false;
-   POOL_MEM error_msg;
+   PoolMem error_msg;
    size_t string_length = 0;
 
    string_length = result_message_plain->strlen();
@@ -640,7 +640,7 @@ bool OUTPUT_FORMATTER::process_text_buffer()
    return retval;
 }
 
-void OUTPUT_FORMATTER::message(const char *type, POOL_MEM &message)
+void OUTPUT_FORMATTER::message(const char *type, PoolMem &message)
 {
    switch (api) {
 #if HAVE_JANSSON
@@ -712,7 +712,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
 #if JANSSON_VERSION_HEX < 0x020400
    json_t *json_bool = NULL;
 #endif
-   POOL_MEM lkey(key);
+   PoolMem lkey(key);
 
    lkey.toLower();
    json_obj = (json_t *)result_stack_json->last();
@@ -741,7 +741,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
 bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 {
    json_t *json_obj = NULL;
-   POOL_MEM lkey(key);
+   PoolMem lkey(key);
 
    lkey.toLower();
    json_obj = (json_t *)result_stack_json->last();
@@ -756,7 +756,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
 bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
 {
    json_t *json_obj = NULL;
-   POOL_MEM lkey(key);
+   PoolMem lkey(key);
 
    lkey.toLower();
    json_obj = (json_t *)result_stack_json->last();
@@ -769,7 +769,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
    return true;
 }
 
-void OUTPUT_FORMATTER::json_add_message(const char *type, POOL_MEM &message)
+void OUTPUT_FORMATTER::json_add_message(const char *type, PoolMem &message)
 {
    json_t *message_type_array;
    json_t *message_json=json_string(message.c_str());
@@ -799,7 +799,7 @@ bool OUTPUT_FORMATTER::json_has_error_message()
 
 bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
 {
-   POOL_MEM json_error_message;
+   PoolMem json_error_message;
 
    json_error_message.bsprintf(json_error_message_template, message);
    return send_func(send_ctx, json_error_message.c_str());
@@ -812,7 +812,7 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
    json_t *data_obj = NULL;
    json_t *meta_obj = NULL;
    json_t *range_obj = NULL;
-   POOL_MEM error_msg;
+   PoolMem error_msg;
    char *string;
    size_t string_length = 0;
 

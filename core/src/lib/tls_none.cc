@@ -50,7 +50,7 @@ TLS_CONTEXT *new_tls_context(const char *ca_certfile,
 /**
  * Get connection info and log it into joblog
  */
-void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
+void tls_log_conninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
    Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
 }
 
@@ -118,6 +118,6 @@ TLS_CONNECTION *new_tls_connection(TLS_CONTEXT *ctx, int fd, bool server) {
 void free_tls_connection(TLS_CONNECTION *tls_conn) {
 }
 
-void tls_bsock_shutdown(BSOCK *bsock) {
+void tls_bsock_shutdown(BareosSocket *bsock) {
 }
 #endif /* HAVE_TLS */

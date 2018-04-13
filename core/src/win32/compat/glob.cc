@@ -544,7 +544,7 @@ static int glob_strcmp( const char *pattern, const char *text, int flags )
 GLOB_INLINE
 int GLOB_ISDIR( const char *path, const struct dirent *ent )
 {
-    POOL_MEM fullpath(path);
+    PoolMem fullpath(path);
 
     path_append(fullpath, ent->d_name);
     return path_is_directory(fullpath);

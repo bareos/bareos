@@ -48,9 +48,9 @@ static int read_vol_list_lock_count = 0;
 #endif
 
 /* Forward referenced functions */
-static void free_vol_item(VOLRES *vol);
-static void free_read_vol_item(VOLRES *vol);
-static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName);
+static void free_vol_item(VolumeReservationItem *vol);
+static void free_read_vol_item(VolumeReservationItem *vol);
+static VolumeReservationItem *new_vol_item(DeviceControlRecord *dcr, const char *VolumeName);
 static void debug_list_volumes(const char *imsg);
 
 /**
@@ -58,8 +58,8 @@ static void debug_list_volumes(const char *imsg);
  */
 static int compare_by_volumename(void *item1, void *item2)
 {
-   VOLRES *vol1 = (VOLRES *)item1;
-   VOLRES *vol2 = (VOLRES *)item2;
+   VolumeReservationItem *vol1 = (VolumeReservationItem *)item1;
+   VolumeReservationItem *vol2 = (VolumeReservationItem *)item2;
 
    ASSERT(vol1->vol_name);
    ASSERT(vol2->vol_name);
@@ -72,8 +72,8 @@ static int compare_by_volumename(void *item1, void *item2)
  */
 static int read_compare(void *item1, void *item2)
 {
-   VOLRES *vol1 = (VOLRES *)item1;
-   VOLRES *vol2 = (VOLRES *)item2;
+   VolumeReservationItem *vol1 = (VolumeReservationItem *)item1;
+   VolumeReservationItem *vol2 = (VolumeReservationItem *)item2;
 
    ASSERT(vol1->vol_name);
    ASSERT(vol2->vol_name);
@@ -155,8 +155,8 @@ void _unlock_read_volumes()
 /**
  * Add a volume to the read list.
  *
- * Note, we use VOLRES because it simplifies the code
- * even though, the only part of VOLRES that we need is
+ * Note, we use VolumeReservationItem because it simplifies the code
+ * even though, the only part of VolumeReservationItem that we need is
  * the volume name.  The same volume may be in the list
  * multiple times, but each one is distinguished by the
  * JobId.  We use JobId, VolumeName as the key.
@@ -164,15 +164,15 @@ void _unlock_read_volumes()
  * We can get called multiple times for the same volume because
  * when parsing the bsr, the volume name appears multiple times.
  */
-void add_read_volume(JCR *jcr, const char *VolumeName)
+void add_read_volume(JobControlRecord *jcr, const char *VolumeName)
 {
-   VOLRES *nvol, *vol;
+   VolumeReservationItem *nvol, *vol;
 
    nvol = new_vol_item(NULL, VolumeName);
    nvol->set_jobid(jcr->JobId);
    nvol->set_reading();
    lock_read_volumes();
-   vol = (VOLRES *)read_vol_list->binary_insert(nvol, read_compare);
+   vol = (VolumeReservationItem *)read_vol_list->binary_insert(nvol, read_compare);
    if (vol != nvol) {
       free_read_vol_item(nvol);
       Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
@@ -185,9 +185,9 @@ void add_read_volume(JCR *jcr, const char *VolumeName)
 /**
  * Remove a given volume name from the read list.
  */
-void remove_read_volume(JCR *jcr, const char *VolumeName)
+void remove_read_volume(JobControlRecord *jcr, const char *VolumeName)
 {
-   VOLRES vol, *fvol;
+   VolumeReservationItem vol, *fvol;
 
    lock_read_volumes();
 
@@ -195,7 +195,7 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
    vol.vol_name = bstrdup(VolumeName);
    vol.set_jobid(jcr->JobId);
 
-   fvol = (VOLRES *)read_vol_list->binary_search(&vol, read_compare);
+   fvol = (VolumeReservationItem *)read_vol_list->binary_search(&vol, read_compare);
    free(vol.vol_name);
 
    if (fvol) {
@@ -212,12 +212,12 @@ void remove_read_volume(JCR *jcr, const char *VolumeName)
 /**
  * Search for a Volume name in the read Volume list.
  *
- * Returns: VOLRES entry on success
+ * Returns: VolumeReservationItem entry on success
  *          NULL if the Volume is not in the list
  */
-static VOLRES *find_read_volume(const char *VolumeName)
+static VolumeReservationItem *find_read_volume(const char *VolumeName)
 {
-   VOLRES vol, *fvol;
+   VolumeReservationItem vol, *fvol;
 
    if (read_vol_list->empty()) {
       Dmsg0(dbglvl, "find_read_vol: read_vol_list empty.\n");
@@ -235,7 +235,7 @@ static VOLRES *find_read_volume(const char *VolumeName)
    /*
     * Note, we do want a simple compare_by_volumename on volume name only here
     */
-   fvol = (VOLRES *)read_vol_list->binary_search(&vol, compare_by_volumename);
+   fvol = (VolumeReservationItem *)read_vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
 
    Dmsg2(dbglvl, "find_read_vol=%s found=%d\n", VolumeName, fvol!=NULL);
@@ -254,8 +254,8 @@ enum {
 
 static void debug_list_volumes(const char *imsg)
 {
-   VOLRES *vol;
-   POOL_MEM msg(PM_MESSAGE);
+   VolumeReservationItem *vol;
+   PoolMem msg(PM_MESSAGE);
 
    foreach_vol(vol) {
       if (vol->dev) {
@@ -274,12 +274,12 @@ static void debug_list_volumes(const char *imsg)
  * Create a Volume item to put in the Volume list
  * Ensure that the device points to it.
  */
-static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName)
+static VolumeReservationItem *new_vol_item(DeviceControlRecord *dcr, const char *VolumeName)
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
-   vol = (VOLRES *)malloc(sizeof(VOLRES));
-   memset(vol, 0, sizeof(VOLRES));
+   vol = (VolumeReservationItem *)malloc(sizeof(VolumeReservationItem));
+   memset(vol, 0, sizeof(VolumeReservationItem));
    vol->vol_name = bstrdup(VolumeName);
    if (dcr) {
       vol->dev = dcr->dev;
@@ -292,9 +292,9 @@ static VOLRES *new_vol_item(DCR *dcr, const char *VolumeName)
    return vol;
 }
 
-static void free_vol_item(VOLRES *vol)
+static void free_vol_item(VolumeReservationItem *vol)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    vol->dec_use_count();
    vol->Lock();
@@ -314,9 +314,9 @@ static void free_vol_item(VOLRES *vol)
    }
 }
 
-static void free_read_vol_item(VOLRES *vol)
+static void free_read_vol_item(VolumeReservationItem *vol)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    vol->dec_use_count();
    vol->Lock();
@@ -384,13 +384,13 @@ static void free_read_vol_item(VOLRES *vol)
  *  drive and can move from drive to drive or be unused given certain specific
  *  conditions of the drive.  The key is that the drive must "own" the Volume.
  *
- *  Return: VOLRES entry on success
+ *  Return: VolumeReservationItem entry on success
  *          NULL volume busy on another drive
  */
-VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
+VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *VolumeName)
 {
-   VOLRES *vol, *nvol;
-   DEVICE * volatile dev = dcr->dev;
+   VolumeReservationItem *vol, *nvol;
+   Device * volatile dev = dcr->dev;
 
    if (job_canceled(dcr->jcr)) {
       return NULL;
@@ -483,7 +483,7 @@ VOLRES *reserve_volume(DCR *dcr, const char *VolumeName)
       /*
        * Now try to insert the new Volume
        */
-      vol = (VOLRES *)vol_list->binary_insert(nvol, compare_by_volumename);
+      vol = (VolumeReservationItem *)vol_list->binary_insert(nvol, compare_by_volumename);
    }
 
    if (vol != nvol) {
@@ -584,7 +584,7 @@ get_out:
  * Start walk of vol chain
  * The proper way to walk the vol chain is:
  *
- * VOLRES *vol;
+ * VolumeReservationItem *vol;
  * foreach_vol(vol) {
  *    ...
  * }
@@ -595,11 +595,11 @@ get_out:
  *
  * free_vol_item(vol);
  */
-VOLRES *vol_walk_start()
+VolumeReservationItem *vol_walk_start()
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
    lock_volumes();
-   vol = (VOLRES *)vol_list->first();
+   vol = (VolumeReservationItem *)vol_list->first();
    if (vol) {
       vol->inc_use_count();
       Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
@@ -613,12 +613,12 @@ VOLRES *vol_walk_start()
 /**
  * Get next vol from chain, and release current one
  */
-VOLRES *vol_walk_next(VOLRES *prev_vol)
+VolumeReservationItem *vol_walk_next(VolumeReservationItem *prev_vol)
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    lock_volumes();
-   vol = (VOLRES *)vol_list->next(prev_vol);
+   vol = (VolumeReservationItem *)vol_list->next(prev_vol);
    if (vol) {
       vol->inc_use_count();
       Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
@@ -635,7 +635,7 @@ VOLRES *vol_walk_next(VOLRES *prev_vol)
 /**
  * Release last vol referenced
  */
-void vol_walk_end(VOLRES *vol)
+void vol_walk_end(VolumeReservationItem *vol)
 {
    if (vol) {
       lock_volumes();
@@ -650,7 +650,7 @@ void vol_walk_end(VOLRES *vol)
  * Start walk of vol chain
  * The proper way to walk the vol chain is:
  *
- * VOLRES *vol;
+ * VolumeReservationItem *vol;
  * foreach_read_vol(vol) {
  *    ...
  * }
@@ -661,11 +661,11 @@ void vol_walk_end(VOLRES *vol)
  *
  * free_read_vol_item(vol);
  */
-VOLRES *read_vol_walk_start()
+VolumeReservationItem *read_vol_walk_start()
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
    lock_read_volumes();
-   vol = (VOLRES *)read_vol_list->first();
+   vol = (VolumeReservationItem *)read_vol_list->first();
    if (vol) {
       vol->inc_use_count();
       Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
@@ -679,12 +679,12 @@ VOLRES *read_vol_walk_start()
 /*
  * Get next vol from chain, and release current one
  */
-VOLRES *read_vol_walk_next(VOLRES *prev_vol)
+VolumeReservationItem *read_vol_walk_next(VolumeReservationItem *prev_vol)
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    lock_read_volumes();
-   vol = (VOLRES *)read_vol_list->next(prev_vol);
+   vol = (VolumeReservationItem *)read_vol_list->next(prev_vol);
    if (vol) {
       vol->inc_use_count();
       Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
@@ -701,7 +701,7 @@ VOLRES *read_vol_walk_next(VOLRES *prev_vol)
 /*
  * Release last vol referenced
  */
-void read_vol_walk_end(VOLRES *vol)
+void read_vol_walk_end(VolumeReservationItem *vol)
 {
    if (vol) {
       lock_read_volumes();
@@ -715,12 +715,12 @@ void read_vol_walk_end(VOLRES *vol)
 /**
  * Search for a Volume name in the Volume list.
  *
- * Returns: VOLRES entry on success
+ * Returns: VolumeReservationItem entry on success
  *          NULL if the Volume is not in the list
  */
-static VOLRES *find_volume(const char *VolumeName)
+static VolumeReservationItem *find_volume(const char *VolumeName)
 {
-   VOLRES vol, *fvol;
+   VolumeReservationItem vol, *fvol;
 
    if (vol_list->empty()) {
       return NULL;
@@ -728,7 +728,7 @@ static VOLRES *find_volume(const char *VolumeName)
    /* Do not lock reservations here */
    lock_volumes();
    vol.vol_name = bstrdup(VolumeName);
-   fvol = (VOLRES *)vol_list->binary_search(&vol, compare_by_volumename);
+   fvol = (VolumeReservationItem *)vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
    Dmsg2(dbglvl, "find_vol=%s found=%d\n", VolumeName, fvol!=NULL);
 
@@ -750,9 +750,9 @@ static VOLRES *find_volume(const char *VolumeName)
  * Returns: true if the Volume found and "removed" from the list
  *          false if the Volume is not in the list or is in use
  */
-bool volume_unused(DCR *dcr)
+bool volume_unused(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
 
    if (!dev->vol) {
       Dmsg1(dbglvl, "vol_unused: no vol on %s\n", dev->print_name());
@@ -797,9 +797,9 @@ bool volume_unused(DCR *dcr)
 /**
  * Unconditionally release the volume entry
  */
-bool free_volume(DEVICE *dev)
+bool free_volume(Device *dev)
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    lock_volumes();
    vol = dev->vol;
@@ -847,7 +847,7 @@ bool free_volume(DEVICE *dev)
  */
 void create_volume_lists()
 {
-   VOLRES *vol = NULL;
+   VolumeReservationItem *vol = NULL;
    if (vol_list == NULL) {
       vol_list = New(dlist(vol, &vol->link));
    }
@@ -861,7 +861,7 @@ void create_volume_lists()
  */
 static inline void free_volume_list(const char *what, dlist *vollist)
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    foreach_dlist(vol, vollist) {
       if (vol->dev) {
@@ -900,9 +900,9 @@ void free_volume_lists()
 /**
  * Determine if caller can write on volume
  */
-bool DCR::can_i_write_volume()
+bool DeviceControlRecord::can_i_write_volume()
 {
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    vol = find_read_volume(VolumeName);
    if (vol) {
@@ -916,10 +916,10 @@ bool DCR::can_i_write_volume()
 /**
  * Determine if caller can read or write volume
  */
-bool DCR::can_i_use_volume()
+bool DeviceControlRecord::can_i_use_volume()
 {
    bool rtn = true;
-   VOLRES *vol;
+   VolumeReservationItem *vol;
 
    if (job_canceled(jcr)) {
       return false;
@@ -964,21 +964,21 @@ get_out:
  * we can take note and act accordingly (probably redo the
  * search at least a few times).
  */
-dlist *dup_vol_list(JCR *jcr)
+dlist *dup_vol_list(JobControlRecord *jcr)
 {
    dlist *temp_vol_list;
-   VOLRES *vol = NULL;
+   VolumeReservationItem *vol = NULL;
 
    Dmsg0(dbglvl, "lock volumes\n");
 
    Dmsg0(dbglvl, "duplicate vol list\n");
    temp_vol_list = New(dlist(vol, &vol->link));
    foreach_vol(vol) {
-      VOLRES *nvol, *tvol;
+      VolumeReservationItem *nvol, *tvol;
 
       tvol = new_vol_item(NULL, vol->vol_name);
       tvol->dev = vol->dev;
-      nvol = (VOLRES *)temp_vol_list->binary_insert(tvol, compare_by_volumename);
+      nvol = (VolumeReservationItem *)temp_vol_list->binary_insert(tvol, compare_by_volumename);
       if (tvol != nvol) {
          tvol->dev = NULL;                   /* don't zap dev entry */
          free_vol_item(tvol);

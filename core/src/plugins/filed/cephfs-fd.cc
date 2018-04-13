@@ -1202,7 +1202,7 @@ static inline bool cephfs_makedirs(plugin_ctx *p_ctx, const char *directory)
    char *bp;
    struct stat st;
    bool retval = false;
-   POOL_MEM new_directory(PM_FNAME);
+   PoolMem new_directory(PM_FNAME);
 
    pm_strcpy(new_directory, directory);
 
@@ -1345,7 +1345,7 @@ static bRC createFile(bpContext *ctx, struct restore_pkt *rp)
          /*
           * File doesn't exist see if we need to create the parent directory.
           */
-         POOL_MEM parent_dir(PM_FNAME);
+         PoolMem parent_dir(PM_FNAME);
          char *bp;
 
          pm_strcpy(parent_dir, rp->ofname);
@@ -1497,7 +1497,7 @@ static const char *xattr_acl_skiplist[3] = {
    NULL
 };
 
-static inline uint32_t serialize_acl_stream(POOL_MEM *buf, uint32_t expected_serialize_len, uint32_t offset,
+static inline uint32_t serialize_acl_stream(PoolMem *buf, uint32_t expected_serialize_len, uint32_t offset,
                                             const char *acl_name, uint32_t acl_name_length,
                                             char *xattr_value, uint32_t xattr_value_length)
 {
@@ -1539,7 +1539,7 @@ static bRC getAcl(bpContext *ctx, acl_pkt *ap)
    int32_t xattr_value_length;
    uint32_t content_length = 0;
    uint32_t expected_serialize_len;
-   POOL_MEM xattr_value(PM_MESSAGE),
+   PoolMem xattr_value(PM_MESSAGE),
             serialized_acls(PM_MESSAGE);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
@@ -1628,7 +1628,7 @@ static bRC setAcl(bpContext *ctx, acl_pkt *ap)
    unser_declare;
    uint32_t acl_name_length;
    uint32_t xattr_value_length;
-   POOL_MEM xattr_value(PM_MESSAGE),
+   PoolMem xattr_value(PM_MESSAGE),
             acl_name(PM_MESSAGE);
 
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
@@ -1676,7 +1676,7 @@ static bRC getXattr(bpContext *ctx, xattr_pkt *xp)
    bool skip_xattr;
    int status, current_size;
    int32_t xattr_value_length;
-   POOL_MEM xattr_value(PM_MESSAGE);
+   PoolMem xattr_value(PM_MESSAGE);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {

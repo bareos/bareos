@@ -267,7 +267,7 @@ static inline bool gfapi_makedirs(glfs_t *glfs, const char *directory)
    char *bp;
    struct stat st;
    bool retval = false;
-   POOL_MEM new_directory(PM_FNAME);
+   PoolMem new_directory(PM_FNAME);
 
    pm_strcpy(new_directory, directory);
    len = strlen(new_directory.c_str());
@@ -327,7 +327,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
    /*
     * Parse the gluster URI.
     */
-   if (!m_gfapi_configstring) {
+   if (!gfapi_configstring_) {
       char *bp, *next_option;
       bool done;
 
@@ -337,9 +337,9 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
-      m_gfapi_configstring = bstrdup(dev_options);
+      gfapi_configstring_ = bstrdup(dev_options);
 
-      bp = m_gfapi_configstring;
+      bp = gfapi_configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -354,7 +354,7 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
             if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
                switch (device_options[i].type) {
                case argument_uri:
-                  m_gfapi_uri = bp + device_options[i].compare_size;
+                  gfapi_uri_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                default:
@@ -372,18 +372,18 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          bp = next_option;
       }
 
-      if (!m_gfapi_uri) {
+      if (!gfapi_uri_) {
          Mmsg0(errmsg, _("No GFAPI URI configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      if (!parse_gfapi_devicename(m_gfapi_uri,
-                                  &m_transport,
-                                  &m_servername,
-                                  &m_volumename,
-                                  &m_basedir,
-                                  &m_serverport)) {
+      if (!parse_gfapi_devicename(gfapi_uri_,
+                                  &transport_,
+                                  &servername_,
+                                  &volumename_,
+                                  &basedir_,
+                                  &serverport_)) {
          Mmsg1(errmsg, _("Unable to parse device URI %s.\n"), dev_options);
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
@@ -393,25 +393,25 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
    /*
     * See if we need to setup a Gluster context.
     */
-   if (!m_glfs) {
-      m_glfs = glfs_new(m_volumename);
-      if (!m_glfs) {
-         Mmsg1(errmsg, _("Unable to create new Gluster context for volumename %s.\n"), m_volumename);
+   if (!glfs_) {
+      glfs_ = glfs_new(volumename_);
+      if (!glfs_) {
+         Mmsg1(errmsg, _("Unable to create new Gluster context for volumename %s.\n"), volumename_);
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      status = glfs_set_volfile_server(m_glfs, (m_transport) ? m_transport : "tcp", m_servername, m_serverport);
+      status = glfs_set_volfile_server(glfs_, (transport_) ? transport_ : "tcp", servername_, serverport_);
       if (status < 0) {
          Mmsg3(errmsg, _("Unable to initialize Gluster management server for transport %s, servername %s, serverport %d\n"),
-               (m_transport) ? m_transport : "tcp", m_servername, m_serverport);
+               (transport_) ? transport_ : "tcp", servername_, serverport_);
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      status = glfs_init(m_glfs);
+      status = glfs_init(glfs_);
       if (status < 0) {
-         Mmsg1(errmsg, _("Unable to initialize Gluster for volumename %s.\n"), m_volumename);
+         Mmsg1(errmsg, _("Unable to initialize Gluster for volumename %s.\n"), volumename_);
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
@@ -420,26 +420,26 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
    /*
     * See if we don't have a file open already.
     */
-   if (m_gfd) {
-      glfs_close(m_gfd);
-      m_gfd = NULL;
+   if (gfd_) {
+      glfs_close(gfd_);
+      gfd_ = NULL;
    }
 
    /*
     * See if we store in an explicit directory.
     */
-   if (m_basedir) {
+   if (basedir_) {
       struct stat st;
 
       /*
        * Make sure the dir exists if one is defined.
        */
-      Mmsg(m_virtual_filename, "/%s", m_basedir);
-      if (glfs_stat(m_glfs, m_virtual_filename, &st) != 0) {
+      Mmsg(virtual_filename_, "/%s", basedir_);
+      if (glfs_stat(glfs_, virtual_filename_, &st) != 0) {
          switch (errno) {
          case ENOENT:
-            if (!gfapi_makedirs(m_glfs, m_virtual_filename)) {
-               Mmsg1(errmsg, _("Specified glusterfs directory %s cannot be created.\n"), m_virtual_filename);
+            if (!gfapi_makedirs(glfs_, virtual_filename_)) {
+               Mmsg1(errmsg, _("Specified glusterfs directory %s cannot be created.\n"), virtual_filename_);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;
             }
@@ -449,27 +449,27 @@ int gfapi_device::d_open(const char *pathname, int flags, int mode)
          }
       } else {
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified glusterfs directory %s is not a directory.\n"), m_virtual_filename);
+            Mmsg1(errmsg, _("Specified glusterfs directory %s is not a directory.\n"), virtual_filename_);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
       }
 
-      Mmsg(m_virtual_filename, "/%s/%s", m_basedir, getVolCatName());
+      Mmsg(virtual_filename_, "/%s/%s", basedir_, getVolCatName());
    } else {
-      Mmsg(m_virtual_filename, "%s", getVolCatName());
+      Mmsg(virtual_filename_, "%s", getVolCatName());
    }
 
    /*
     * See if the O_CREAT flag is set as glfs_open doesn't support that flag and you have to call glfs_creat then.
     */
    if (flags & O_CREAT) {
-      m_gfd = glfs_creat(m_glfs, m_virtual_filename, flags, mode);
+      gfd_ = glfs_creat(glfs_, virtual_filename_, flags, mode);
    } else {
-      m_gfd = glfs_open(m_glfs, m_virtual_filename, flags);
+      gfd_ = glfs_open(glfs_, virtual_filename_, flags);
    }
 
-   if (!m_gfd) {
+   if (!gfd_) {
       goto bail_out;
    }
 
@@ -479,9 +479,9 @@ bail_out:
    /*
     * Cleanup the Gluster context.
     */
-   if (m_glfs) {
-      glfs_fini(m_glfs);
-      m_glfs = NULL;
+   if (glfs_) {
+      glfs_fini(glfs_);
+      glfs_ = NULL;
    }
 
    return -1;
@@ -492,8 +492,8 @@ bail_out:
  */
 ssize_t gfapi_device::d_read(int fd, void *buffer, size_t count)
 {
-   if (m_gfd) {
-      return glfs_read(m_gfd, buffer, count, 0);
+   if (gfd_) {
+      return glfs_read(gfd_, buffer, count, 0);
    } else {
       errno = EBADF;
       return -1;
@@ -505,8 +505,8 @@ ssize_t gfapi_device::d_read(int fd, void *buffer, size_t count)
  */
 ssize_t gfapi_device::d_write(int fd, const void *buffer, size_t count)
 {
-   if (m_gfd) {
-      return glfs_write(m_gfd, buffer, count, 0);
+   if (gfd_) {
+      return glfs_write(gfd_, buffer, count, 0);
    } else {
       errno = EBADF;
       return -1;
@@ -515,11 +515,11 @@ ssize_t gfapi_device::d_write(int fd, const void *buffer, size_t count)
 
 int gfapi_device::d_close(int fd)
 {
-   if (m_gfd) {
+   if (gfd_) {
       int status;
 
-      status = glfs_close(m_gfd);
-      m_gfd = NULL;
+      status = glfs_close(gfd_);
+      gfd_ = NULL;
       return status;
    } else {
       errno = EBADF;
@@ -532,22 +532,22 @@ int gfapi_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-boffset_t gfapi_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t gfapi_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
-   if (m_gfd) {
-      return glfs_lseek(m_gfd, offset, whence);
+   if (gfd_) {
+      return glfs_lseek(gfd_, offset, whence);
    } else {
       errno = EBADF;
       return -1;
    }
 }
 
-bool gfapi_device::d_truncate(DCR *dcr)
+bool gfapi_device::d_truncate(DeviceControlRecord *dcr)
 {
    struct stat st;
 
-   if (m_gfd) {
-      if (glfs_ftruncate(m_gfd, 0) != 0) {
+   if (gfd_) {
+      if (glfs_ftruncate(gfd_, 0) != 0) {
          berrno be;
 
          Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror());
@@ -563,7 +563,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
        * 3. open new file with same mode
        * 4. change ownership to original
        */
-      if (glfs_fstat(m_gfd, &st) != 0) {
+      if (glfs_fstat(gfd_, &st) != 0) {
          berrno be;
 
          Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), prt_name, be.bstrerror());
@@ -572,19 +572,19 @@ bool gfapi_device::d_truncate(DCR *dcr)
       }
 
       if (st.st_size != 0) {             /* glfs_truncate() didn't work */
-         glfs_close(m_gfd);
-         glfs_unlink(m_glfs, m_virtual_filename);
+         glfs_close(gfd_);
+         glfs_unlink(glfs_, virtual_filename_);
 
          /*
           * Recreate the file -- of course, empty
           */
          oflags = O_CREAT | O_RDWR | O_BINARY;
-         m_gfd = glfs_creat(m_glfs, m_virtual_filename, oflags, st.st_mode);
-         if (!m_gfd) {
+         gfd_ = glfs_creat(glfs_, virtual_filename_, oflags, st.st_mode);
+         if (!gfd_) {
             berrno be;
 
             dev_errno = errno;
-            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), m_virtual_filename, be.bstrerror());
+            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_, be.bstrerror());
             Emsg0(M_FATAL, 0, errmsg);
 
             return false;
@@ -593,7 +593,7 @@ bool gfapi_device::d_truncate(DCR *dcr)
          /*
           * Reset proper owner
           */
-         glfs_chown(m_glfs, m_virtual_filename, st.st_uid, st.st_gid);
+         glfs_chown(glfs_, virtual_filename_, st.st_uid, st.st_gid);
       }
    }
 
@@ -602,41 +602,41 @@ bool gfapi_device::d_truncate(DCR *dcr)
 
 gfapi_device::~gfapi_device()
 {
-   if (m_gfd) {
-      glfs_close(m_gfd);
-      m_gfd = NULL;
+   if (gfd_) {
+      glfs_close(gfd_);
+      gfd_ = NULL;
    }
 
-   if (!m_glfs) {
-      glfs_fini(m_glfs);
-      m_glfs = NULL;
+   if (!glfs_) {
+      glfs_fini(glfs_);
+      glfs_ = NULL;
    }
 
-   if (m_gfapi_configstring) {
-      free(m_gfapi_configstring);
-      m_gfapi_configstring = NULL;
+   if (gfapi_configstring_) {
+      free(gfapi_configstring_);
+      gfapi_configstring_ = NULL;
    }
 
-   free_pool_memory(m_virtual_filename);
+   free_pool_memory(virtual_filename_);
 }
 
 gfapi_device::gfapi_device()
 {
-   m_gfapi_configstring = NULL;
-   m_transport = NULL;
-   m_servername = NULL;
-   m_volumename = NULL;
-   m_basedir = NULL;
-   m_serverport = 0;
-   m_glfs = NULL;
-   m_gfd = NULL;
-   m_virtual_filename = get_pool_memory(PM_FNAME);
+   gfapi_configstring_ = NULL;
+   transport_ = NULL;
+   servername_ = NULL;
+   volumename_ = NULL;
+   basedir_ = NULL;
+   serverport_ = 0;
+   glfs_ = NULL;
+   gfd_ = NULL;
+   virtual_filename_ = get_pool_memory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_GFAPI_DEV:

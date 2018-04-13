@@ -34,7 +34,7 @@
 
 static const int dbglvl = 100;
 
-bool do_admin_init(JCR *jcr)
+bool do_admin_init(JobControlRecord *jcr)
 {
    free_rstorage(jcr);
    if (!allow_duplicate_job(jcr)) {
@@ -48,7 +48,7 @@ bool do_admin_init(JCR *jcr)
  * Returns: false on failure
  *          true  on success
  */
-bool do_admin(JCR *jcr)
+bool do_admin(JobControlRecord *jcr)
 {
 
    jcr->jr.JobId = jcr->JobId;
@@ -69,7 +69,7 @@ bool do_admin(JCR *jcr)
 /**
  * Release resources allocated during backup.
  */
-void admin_cleanup(JCR *jcr, int TermCode)
+void admin_cleanup(JobControlRecord *jcr, int TermCode)
 {
    char sdt[50], edt[50], schedt[50];
    char term_code[100];

@@ -45,19 +45,19 @@ int32_t path_max;              /* path name max length */
 #undef bmalloc
 #define bmalloc(x) sm_malloc(__FILE__, __LINE__, x)
 #endif
-static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level);
+static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static const int fnmode = 0;
 
 /**
  * Initialize the find files "global" variables
  */
-FF_PKT *init_find_files()
+FindFilesPacket *init_find_files()
 {
-  FF_PKT *ff;
+  FindFilesPacket *ff;
 
-  ff = (FF_PKT *)bmalloc(sizeof(FF_PKT));
-  memset(ff, 0, sizeof(FF_PKT));
+  ff = (FindFilesPacket *)bmalloc(sizeof(FindFilesPacket));
+  memset(ff, 0, sizeof(FindFilesPacket));
 
   ff->sys_fname = get_pool_memory(PM_FNAME);
 
@@ -83,7 +83,7 @@ FF_PKT *init_find_files()
  * provide for full/incremental saves, and setting
  * of save_time. For additional options, see above
  */
-void set_find_options(FF_PKT *ff, bool incremental, time_t save_time)
+void set_find_options(FindFilesPacket *ff, bool incremental, time_t save_time)
 {
   Dmsg0(dbglvl, "Enter set_find_options()\n");
   ff->incremental = incremental;
@@ -91,7 +91,7 @@ void set_find_options(FF_PKT *ff, bool incremental, time_t save_time)
   Dmsg0(dbglvl, "Leave set_find_options()\n");
 }
 
-void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
+void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRecord *jcr, FindFilesPacket *ff))
 {
    Dmsg0(dbglvl, "Enter set_find_changed_function()\n");
    ff->check_fct = check_fct;
@@ -103,9 +103,9 @@ void set_find_changed_function(FF_PKT *ff, bool check_fct(JCR *jcr, FF_PKT *ff))
  * will be passed back to the callback subroutine as the last
  * argument.
  */
-int find_files(JCR *jcr, FF_PKT *ff,
-               int file_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level),
-               int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level))
+int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
+               int file_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
+               int plugin_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level))
 {
    ff->file_save = file_save;
    ff->plugin_save = plugin_save;
@@ -201,7 +201,7 @@ int find_files(JCR *jcr, FF_PKT *ff,
  * Test if the currently selected directory (in ff->fname) is
  * explicitly in the Include list or explicitly in the Exclude list.
  */
-bool is_in_fileset(FF_PKT *ff)
+bool is_in_fileset(FindFilesPacket *ff)
 {
    int i;
    char *fname;
@@ -235,7 +235,7 @@ bool is_in_fileset(FF_PKT *ff)
    return false;
 }
 
-bool accept_file(FF_PKT *ff)
+bool accept_file(FindFilesPacket *ff)
 {
    int i, j, k;
    int fnm_flags;
@@ -389,7 +389,7 @@ bool accept_file(FF_PKT *ff)
  * The code comes here for each file examined.
  * We filter the files, then call the user's callback if the file is included.
  */
-static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
+static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
    if (top_level) {
       return ff->file_save(jcr, ff, top_level);   /* accept file */
@@ -436,7 +436,7 @@ static int our_callback(JCR *jcr, FF_PKT *ff, bool top_level)
 /**
  * Terminate find_files() and release all allocated memory
  */
-int term_find_files(FF_PKT *ff)
+int term_find_files(FindFilesPacket *ff)
 {
    int hard_links = 0;
 
@@ -532,7 +532,7 @@ findINCEXE *new_preexclude(findFILESET *fileset)
    return fileset->incexe;
 }
 
-findFOPTS *start_options(FF_PKT *ff)
+findFOPTS *start_options(FindFilesPacket *ff)
 {
    int state = ff->fileset->state;
    findINCEXE *incexe = ff->fileset->incexe;
@@ -561,7 +561,7 @@ findFOPTS *start_options(FF_PKT *ff)
 /**
  * Used by plugins to define a new options block
  */
-void new_options(FF_PKT *ff, findINCEXE *incexe)
+void new_options(FindFilesPacket *ff, findINCEXE *incexe)
 {
    findFOPTS *fo;
 

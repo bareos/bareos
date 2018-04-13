@@ -64,14 +64,14 @@
 /**
  * Entry points when compiled without support for XATTRs or on an unsupported platform.
  */
-bxattr_exit_code build_xattr_streams(JCR *jcr,
+bxattr_exit_code build_xattr_streams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
-                                     FF_PKT *ff_pkt)
+                                     FindFilesPacket *ff_pkt)
 {
    return bxattr_exit_fatal;
 }
 
-bxattr_exit_code parse_xattr_streams(JCR *jcr,
+bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      int stream,
                                      char *content,
@@ -83,11 +83,11 @@ bxattr_exit_code parse_xattr_streams(JCR *jcr,
 /**
  * Send a XATTR stream to the SD.
  */
-bxattr_exit_code send_xattr_stream(JCR *jcr,
+bxattr_exit_code send_xattr_stream(JobControlRecord *jcr,
                                    xattr_data_t *xattr_data,
                                    int stream)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    POOLMEM *msgsave;
 #ifdef FD_NO_SEND_TEST
    return bxattr_exit_ok;
@@ -178,7 +178,7 @@ void xattr_drop_internal_table(alist *xattr_value_list)
  * This is repeated 1 or more times.
  *
  */
-uint32_t serialize_xattr_stream(JCR *jcr,
+uint32_t serialize_xattr_stream(JobControlRecord *jcr,
                                 xattr_data_t *xattr_data,
                                 uint32_t expected_serialize_len,
                                 alist *xattr_value_list)
@@ -228,7 +228,7 @@ uint32_t serialize_xattr_stream(JCR *jcr,
    return xattr_data->u.build->content_length;
 }
 
-bxattr_exit_code unserialize_xattr_stream(JCR *jcr,
+bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr,
                                           xattr_data_t *xattr_data,
                                           char *content,
                                           uint32_t content_length,
@@ -349,9 +349,9 @@ static int os_default_xattr_streams[1] = {
 #define llistea listea
 #endif
 
-static bxattr_exit_code aix_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code aix_build_xattr_streams(JobControlRecord *jcr,
                                                 xattr_data_t *xattr_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    char *bp;
    bool skip_xattr;
@@ -613,7 +613,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code aix_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code aix_parse_xattr_streams(JobControlRecord *jcr,
                                                 xattr_data_t *xattr_data,
                                                 int stream,
                                                 char *content,
@@ -677,10 +677,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         aix_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         aix_parse_xattr_streams;
 
@@ -719,9 +719,9 @@ static xattr_naming_space xattr_naming_spaces[] = {
    }
 };
 
-static bxattr_exit_code irix_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code irix_build_xattr_streams(JobControlRecord *jcr,
                                                  xattr_data_t *xattr_data,
-                                                 FF_PKT *ff_pkt)
+                                                 FindFilesPacket *ff_pkt)
 {
    char dummy[32];
    int cnt, length, xattr_count = 0;
@@ -945,7 +945,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code irix_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code irix_parse_xattr_streams(JobControlRecord *jcr,
                                                  xattr_data_t *xattr_data,
                                                  int stream,
                                                  char *content,
@@ -1051,10 +1051,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         irix_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         irix_parse_xattr_streams;
 
@@ -1142,9 +1142,9 @@ static const char *xattr_skiplist[1] = {
    #endif
 #endif
 
-static bxattr_exit_code generic_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code generic_build_xattr_streams(JobControlRecord *jcr,
                                                     xattr_data_t *xattr_data,
-                                                    FF_PKT *ff_pkt)
+                                                    FindFilesPacket *ff_pkt)
 {
    char *bp;
    bool skip_xattr;
@@ -1420,7 +1420,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code generic_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code generic_parse_xattr_streams(JobControlRecord *jcr,
                                                     xattr_data_t *xattr_data,
                                                     int stream,
                                                     char *content,
@@ -1480,10 +1480,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         generic_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         generic_parse_xattr_streams;
 
@@ -1566,9 +1566,9 @@ static const char *xattr_skiplist[1] = {
 };
 #endif
 
-static bxattr_exit_code bsd_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code bsd_build_xattr_streams(JobControlRecord *jcr,
                                                 xattr_data_t *xattr_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    bool skip_xattr;
    char *xattr_list = NULL;
@@ -1907,7 +1907,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code bsd_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code bsd_parse_xattr_streams(JobControlRecord *jcr,
                                                 xattr_data_t *xattr_data,
                                                 int stream,
                                                 char *content,
@@ -1993,10 +1993,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         bsd_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         bsd_parse_xattr_streams;
 
@@ -2029,9 +2029,9 @@ static const char *xattr_skiplist[1] = {
    NULL
 };
 
-static bxattr_exit_code tru64_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code tru64_build_xattr_streams(JobControlRecord *jcr,
                                                   xattr_data_t *xattr_data,
-                                                  FF_PKT *ff_pkt)
+                                                  FindFilesPacket *ff_pkt)
 {
    int cnt;
    char *bp,
@@ -2251,7 +2251,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code tru64_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code tru64_parse_xattr_streams(JobControlRecord *jcr,
                                                   xattr_data_t *xattr_data,
                                                   int stream,
                                                   char *content,
@@ -2354,10 +2354,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         tru64_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         tru64_parse_xattr_streams;
 
@@ -2623,7 +2623,7 @@ static bool acl_is_trivial(int count, aclent_t *entries)
 }
 #endif /* HAVE_ACL && !HAVE_EXTENDED_ACL */
 
-static bxattr_exit_code solaris_save_xattr_acl(JCR *jcr,
+static bxattr_exit_code solaris_save_xattr_acl(JobControlRecord *jcr,
                                                xattr_data_t *xattr_data,
                                                int fd,
                                                const char *attrname,
@@ -2752,7 +2752,7 @@ bail_out:
 /**
  * Forward declaration for recursive function call.
  */
-static bxattr_exit_code solaris_save_xattrs(JCR *jcr,
+static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
                                             xattr_data_t *xattr_data,
                                             const char *xattr_namespace,
                                             const char *attr_parent);
@@ -2772,7 +2772,7 @@ static bxattr_exit_code solaris_save_xattrs(JCR *jcr,
  * acl_string is an acl text when a non trivial acl is set on the xattr.
  * actual_xattr_data is the content of the xattr file.
  */
-static bxattr_exit_code solaris_save_xattr(JCR *jcr,
+static bxattr_exit_code solaris_save_xattr(JobControlRecord *jcr,
                                            xattr_data_t *xattr_data,
                                            int fd,
                                            const char *xattr_namespace,
@@ -3094,7 +3094,7 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code solaris_save_xattrs(JCR *jcr,
+static bxattr_exit_code solaris_save_xattrs(JobControlRecord *jcr,
                                             xattr_data_t *xattr_data,
                                             const char *xattr_namespace,
                                             const char *attr_parent)
@@ -3282,7 +3282,7 @@ bail_out:
 }
 
 #ifdef HAVE_ACL
-static bxattr_exit_code solaris_restore_xattr_acl(JCR *jcr,
+static bxattr_exit_code solaris_restore_xattr_acl(JobControlRecord *jcr,
                                                   xattr_data_t *xattr_data,
                                                   int fd,
                                                   const char *attrname,
@@ -3345,7 +3345,7 @@ static bxattr_exit_code solaris_restore_xattr_acl(JCR *jcr,
 }
 #endif /* HAVE_ACL */
 
-static bxattr_exit_code solaris_restore_xattrs(JCR *jcr,
+static bxattr_exit_code solaris_restore_xattrs(JobControlRecord *jcr,
                                                xattr_data_t *xattr_data,
                                                bool is_extensible,
                                                char *content,
@@ -3748,9 +3748,9 @@ bail_out:
    return retval;
 }
 
-static bxattr_exit_code solaris_build_xattr_streams(JCR *jcr,
+static bxattr_exit_code solaris_build_xattr_streams(JobControlRecord *jcr,
                                                     xattr_data_t *xattr_data,
-                                                    FF_PKT *ff_pkt)
+                                                    FindFilesPacket *ff_pkt)
 {
    char cwd[PATH_MAX];
    bxattr_exit_code retval = bxattr_exit_ok;
@@ -3776,7 +3776,7 @@ static bxattr_exit_code solaris_build_xattr_streams(JCR *jcr,
    return retval;
 }
 
-static bxattr_exit_code solaris_parse_xattr_streams(JCR *jcr,
+static bxattr_exit_code solaris_parse_xattr_streams(JobControlRecord *jcr,
                                                     xattr_data_t *xattr_data,
                                                     int stream,
                                                     char *content,
@@ -3835,10 +3835,10 @@ bail_out:
  * Function pointers to the build and parse function to use for these xattrs.
  */
 static bxattr_exit_code (*os_build_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data, FF_PKT *ff_pkt) =
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data, FindFilesPacket *ff_pkt) =
                         solaris_build_xattr_streams;
 static bxattr_exit_code (*os_parse_xattr_streams)
-                        (JCR *jcr, xattr_data_t *xattr_data,
+                        (JobControlRecord *jcr, xattr_data_t *xattr_data,
                          int stream, char *content, uint32_t content_length) =
                         solaris_parse_xattr_streams;
 
@@ -3847,9 +3847,9 @@ static bxattr_exit_code (*os_parse_xattr_streams)
 /**
  * Entry points when compiled with support for XATTRs on a supported platform.
  */
-bxattr_exit_code build_xattr_streams(JCR *jcr,
+bxattr_exit_code build_xattr_streams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
-                                     FF_PKT *ff_pkt)
+                                     FindFilesPacket *ff_pkt)
 {
    /*
     * See if we are changing from one device to another.
@@ -3877,7 +3877,7 @@ bxattr_exit_code build_xattr_streams(JCR *jcr,
    }
 }
 
-bxattr_exit_code parse_xattr_streams(JCR *jcr,
+bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr,
                                      xattr_data_t *xattr_data,
                                      int stream,
                                      char *content,

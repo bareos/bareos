@@ -75,15 +75,15 @@
  *  Returns: true  on success
  *           false on failure
  */
-bool fixup_device_block_write_error(DCR *dcr, int retries)
+bool fixup_device_block_write_error(DeviceControlRecord *dcr, int retries)
 {
    char PrevVolName[MAX_NAME_LENGTH];
-   DEV_BLOCK *block;
+   DeviceBlock *block;
    char b1[30], b2[30];
    time_t wait_time;
    char dt[MAX_TIME_LENGTH];
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
    int blocked = dev->blocked();         /* save any previous blocked status */
    bool ok = false;
 
@@ -154,9 +154,9 @@ bool fixup_device_block_write_error(DCR *dcr, int retries)
     * Walk through all attached jcrs indicating the volume has changed
     */
    Dmsg1(100, "Notify vol change. Volume=%s\n", dev->getVolCatName());
-   DCR *mdcr;
+   DeviceControlRecord *mdcr;
    foreach_dlist(mdcr, dev->attached_dcrs) {
-      JCR *mjcr = mdcr->jcr;
+      JobControlRecord *mjcr = mdcr->jcr;
       if (mjcr->JobId == 0) {
          continue;                 /* ignore console */
       }
@@ -201,9 +201,9 @@ bail_out:
    return ok;                               /* device locked */
 }
 
-void set_start_vol_position(DCR *dcr)
+void set_start_vol_position(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    /* Set new start position */
    if (dev->is_tape()) {
       dcr->StartBlock = dev->block_num;
@@ -219,9 +219,9 @@ void set_start_vol_position(DCR *dcr)
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
  */
-void set_new_volume_parameters(DCR *dcr)
+void set_new_volume_parameters(DeviceControlRecord *dcr)
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    if (dcr->NewVol && !dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
       Jmsg1(jcr, M_ERROR, 0, "%s", jcr->errmsg);
    }
@@ -235,7 +235,7 @@ void set_new_volume_parameters(DCR *dcr)
  *  concerning this job.  The global changes were made earlier
  *  in the dev structure.
  */
-void set_new_file_parameters(DCR *dcr)
+void set_new_file_parameters(DeviceControlRecord *dcr)
 {
    set_start_vol_position(dcr);
 
@@ -260,9 +260,9 @@ void set_new_file_parameters(DCR *dcr)
  *   Returns: false on failure
  *            true  on success
  */
-bool first_open_device(DCR *dcr)
+bool first_open_device(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    bool ok = true;
 
    Dmsg0(120, "start open_output_device()\n");
@@ -300,9 +300,9 @@ bail_out:
 /**
  * Make sure device is open, if not do so
  */
-bool open_device(DCR *dcr)
+bool open_device(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    /* Open device */
    int mode;
    if (dev->has_cap(CAP_STREAM)) {
@@ -326,10 +326,10 @@ bool open_device(DCR *dcr)
 /**
  * Position to the first file on this volume
  */
-BSR *position_device_to_first_file(JCR *jcr, DCR *dcr)
+BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceControlRecord *dcr)
 {
-   BSR *bsr = NULL;
-   DEVICE *dev = dcr->dev;
+   BootStrapRecord *bsr = NULL;
+   Device *dev = dcr->dev;
    uint32_t file, block;
    /*
     * Now find and position to first file and block
@@ -353,10 +353,10 @@ BSR *position_device_to_first_file(JCR *jcr, DCR *dcr)
  * Returns: true  if at end of volume
  *          false otherwise
  */
-bool try_device_repositioning(JCR *jcr, DEV_RECORD *rec, DCR *dcr)
+bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr)
 {
-   BSR *bsr;
-   DEVICE *dev = dcr->dev;
+   BootStrapRecord *bsr;
+   Device *dev = dcr->dev;
 
    bsr = find_next_bsr(jcr->bsr, dev);
    if (bsr == NULL && jcr->bsr->mount_next_volume) {

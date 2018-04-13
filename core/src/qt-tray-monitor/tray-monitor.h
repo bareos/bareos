@@ -44,9 +44,9 @@ struct cl_opts
 };
 
 class MonitorItem;
-class MONITORRES;
+class MonitorResource;
 
 void refresh_item();
-const MONITORRES* getMonitor();
+const MonitorResource* getMonitor();
 
 #endif  /* TRAY_MONITOR_H */

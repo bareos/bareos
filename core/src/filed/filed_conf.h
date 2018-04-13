@@ -50,7 +50,7 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-class DIRRES : public TLSRES {
+class DirectorResource : public TlsResource {
 public:
    char *address;                     /* Director address or zero */
    uint32_t port;                     /* Director port */
@@ -61,10 +61,10 @@ public:
    alist *allowed_job_cmds;           /* Only allow the following Job commands to be executed */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (per director) */
 
-   DIRRES() : TLSRES() {}
+   DirectorResource() : TlsResource() {}
 };
 
-class CLIENTRES : public TLSRES {
+class ClientResource : public TlsResource {
 public:
    dlist *FDaddrs;
    dlist *FDsrc_addr;                 /* Address to source connections from */
@@ -74,7 +74,7 @@ public:
    char *plugin_directory;            /* Plugin directory */
    alist *plugin_names;
    char *scripts_directory;
-   MSGSRES *messages;                 /* Daemon message handler */
+   MessagesResource *messages;                 /* Daemon message handler */
    uint32_t MaxConcurrentJobs;
    uint32_t MaxConnections;
    utime_t SDConnectTimeout;          /* Timeout in seconds */
@@ -102,21 +102,21 @@ public:
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 
-   CLIENTRES() : TLSRES() {};
+   ClientResource() : TlsResource() {};
 };
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
-   DIRRES res_dir;
-   CLIENTRES res_client;
-   MSGSRES res_msgs;
-   RES hdr;
+   DirectorResource res_dir;
+   ClientResource res_client;
+   MessagesResource res_msgs;
+   CommonResourceHeader hdr;
 
-   URES() {new(&hdr) RES();}
+   URES() {new(&hdr) CommonResourceHeader();}
    ~URES() {}
 };
 
 void init_fd_config(CONFIG *config, const char *configfile, int exit_code);
-bool print_config_schema_json(POOL_MEM &buffer);
+bool print_config_schema_json(PoolMem &buffer);

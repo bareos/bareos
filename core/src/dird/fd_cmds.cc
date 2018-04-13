@@ -82,15 +82,15 @@ static char OKgetSecureEraseCmd[] =
    "2000 OK FDSecureEraseCmd %s\n";
 
 /* Forward referenced functions */
-static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd);
+static bool send_list_item(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd);
 
 /* External functions */
-extern DIRRES *director;
+extern DirectorResource *director;
 
 #define INC_LIST 0
 #define EXC_LIST 1
 
-static inline utime_t get_heartbeat_interval(CLIENTRES *res)
+static inline utime_t get_heartbeat_interval(ClientResource *res)
 {
    utime_t heartbeat;
 
@@ -109,11 +109,11 @@ static inline utime_t get_heartbeat_interval(CLIENTRES *res)
  * Try connecting every retry_interval (default 10 sec), and
  * give up after max_retry_time (default 30 mins).
  */
-static inline bool connect_outbound_to_file_daemon(JCR *jcr, int retry_interval,
+static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int retry_interval,
                                                    int max_retry_time, bool verbose)
 {
    bool result = false;
-   BSOCK *fd = NULL;
+   BareosSocket *fd = NULL;
    utime_t heart_beat;
 
    if (!is_connecting_to_client_allowed(jcr)) {
@@ -149,7 +149,7 @@ static inline bool connect_outbound_to_file_daemon(JCR *jcr, int retry_interval,
    return result;
 }
 
-bool connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bool verbose)
+bool connect_to_file_daemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose)
 {
    bool result = false;
 
@@ -194,9 +194,9 @@ bool connect_to_file_daemon(JCR *jcr, int retry_interval, int max_retry_time, bo
    return result;
 }
 
-int send_job_info(JCR *jcr)
+int send_job_info(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    char ed1[30];
 
    /*
@@ -222,7 +222,7 @@ int send_job_info(JCR *jcr)
          jcr->setJobStatus(JS_ErrorTerminated);
          return 0;
       } else if (jcr->db) {
-         CLIENT_DBR cr;
+         ClientDbRecord cr;
 
          memset(&cr, 0, sizeof(cr));
          bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
@@ -243,7 +243,7 @@ int send_job_info(JCR *jcr)
    return 1;
 }
 
-bool send_previous_restore_objects(JCR *jcr)
+bool send_previous_restore_objects(JobControlRecord *jcr)
 {
    int JobLevel;
 
@@ -264,9 +264,9 @@ bool send_previous_restore_objects(JCR *jcr)
    return true;
 }
 
-bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
+bool send_bwlimit_to_fd(JobControlRecord *jcr, const char *Job)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
 
    if (jcr->FDVersion >= FD_VERSION_4) {
       fd->fsend(bandwidthcmd, jcr->max_bandwidth, Job);
@@ -279,10 +279,10 @@ bool send_bwlimit_to_fd(JCR *jcr, const char *Job)
    return true;
 }
 
-bool send_secure_erase_req_to_fd(JCR *jcr)
+bool send_secure_erase_req_to_fd(JobControlRecord *jcr)
 {
    int32_t n;
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
 
    if (!jcr->FDSecureEraseCmd) {
       jcr->FDSecureEraseCmd = get_pool_memory(PM_NAME);
@@ -308,11 +308,11 @@ bool send_secure_erase_req_to_fd(JCR *jcr)
    return true;
 }
 
-static inline void send_since_time(JCR *jcr)
+static inline void send_since_time(JobControlRecord *jcr)
 {
    char ed1[50];
    utime_t stime;
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
 
    stime = str_to_utime(jcr->stime);
    fd->fsend(levelcmd, "", NT_("since_utime "), edit_uint64(stime, ed1), 0,
@@ -327,10 +327,10 @@ static inline void send_since_time(JCR *jcr)
  * Send level command to FD.
  * Used for backup jobs and estimate command.
  */
-bool send_level_command(JCR *jcr)
+bool send_level_command(JobControlRecord *jcr)
 {
    int JobLevel;
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    const char *accurate = jcr->accurate ? "accurate_" : "";
    const char *not_accurate = "";
    const char *rerunning = jcr->rerunning ? " rerunning " : " ";
@@ -375,11 +375,11 @@ bool send_level_command(JCR *jcr)
 /**
  * Send either an Included or an Excluded list to FD
  */
-static bool send_fileset(JCR *jcr)
+static bool send_fileset(JobControlRecord *jcr)
 {
-   FILESETRES *fileset = jcr->res.fileset;
-   BSOCK *fd = jcr->file_bsock;
-   STORERES *store = jcr->res.wstore;
+   FilesetResource *fileset = jcr->res.fileset;
+   BareosSocket *fd = jcr->file_bsock;
+   StoreResource *store = jcr->res.wstore;
    int num;
    bool include = true;
 
@@ -391,7 +391,7 @@ static bool send_fileset(JCR *jcr)
       }
       for (int i = 0; i < num; i++) {
          char *item;
-         INCEXE *ie;
+         IncludeExcludeItem *ie;
 
          if (include) {
             ie = fileset->include_items[i];
@@ -406,7 +406,7 @@ static bool send_fileset(JCR *jcr)
          }
 
          for (int j = 0; j < ie->num_opts; j++) {
-            FOPTS *fo = ie->opts_list[j];
+            FileOptions *fo = ie->opts_list[j];
             bool enhanced_wild = false;
 
             for (int k = 0; fo->opts[k] != '\0'; k++) {
@@ -549,9 +549,9 @@ bail_out:
 
 }
 
-static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
+static bool send_list_item(JobControlRecord *jcr, const char *code, char *item, BareosSocket *fd)
 {
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    FILE *ffd;
    char buf[2000];
    int optlen, status;
@@ -626,9 +626,9 @@ static bool send_list_item(JCR *jcr, const char *code, char *item, BSOCK *fd)
 /**
  * Send include list to File daemon
  */
-bool send_include_list(JCR *jcr)
+bool send_include_list(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    if (jcr->res.fileset->new_include) {
       fd->fsend(filesetcmd, jcr->res.fileset->enable_vss ? " vss=1" : "");
       return send_fileset(jcr);
@@ -642,7 +642,7 @@ bool send_include_list(JCR *jcr)
  *   is part of the FileSet sent with the
  *   "include_list" above.
  */
-bool send_exclude_list(JCR *jcr)
+bool send_exclude_list(JobControlRecord *jcr)
 {
    return true;
 }
@@ -674,12 +674,12 @@ static inline bool have_client_runscripts(alist *run_scripts)
  * 2) Then, we send a "RunBeforeNow" command to the FD to tell him to do the
  *    first run_script() call. (ie ClientRunBeforeJob)
  */
-int send_runscripts_commands(JCR *jcr)
+int send_runscripts_commands(JobControlRecord *jcr)
 {
    int result;
    RUNSCRIPT *cmd;
    POOLMEM *msg, *ehost;
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    bool has_before_jobs = false;
 
    /*
@@ -756,8 +756,8 @@ bail_out:
    return 0;
 }
 
-struct OBJ_CTX {
-   JCR *jcr;
+struct RestoreObjectContext {
+   JobControlRecord *jcr;
    int count;
 };
 
@@ -766,10 +766,10 @@ struct OBJ_CTX {
  */
 static int restore_object_handler(void *ctx, int num_fields, char **row)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
    bool is_compressed;
-   OBJ_CTX *octx = (OBJ_CTX *)ctx;
-   JCR *jcr = octx->jcr;
+   RestoreObjectContext *octx = (RestoreObjectContext *)ctx;
+   JobControlRecord *jcr = octx->jcr;
 
    fd = jcr->file_bsock;
    if (jcr->is_job_canceled()) {
@@ -829,9 +829,9 @@ static int restore_object_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-bool send_plugin_options(JCR *jcr)
+bool send_plugin_options(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    POOLMEM *msg;
 
    if (jcr->plugin_options) {
@@ -851,10 +851,10 @@ bool send_plugin_options(JCR *jcr)
    return true;
 }
 
-static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
+static inline void send_global_restore_objects(JobControlRecord *jcr, RestoreObjectContext *octx)
 {
    char ed1[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!jcr->JobIds || !jcr->JobIds[0]) {
       return;
@@ -863,38 +863,38 @@ static inline void send_global_restore_objects(JCR *jcr, OBJ_CTX *octx)
    /*
     * Send restore objects for all jobs involved
     */
-   jcr->db->fill_query(query, B_DB::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
+   jcr->db->fill_query(query, BareosDb::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_RESTORE_FIRST);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   jcr->db->fill_query(query, B_DB::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
+   jcr->db->fill_query(query, BareosDb::SQL_QUERY_get_restore_objects, jcr->JobIds, FT_PLUGIN_CONFIG);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
    /*
     * Send config objects for the current restore job
     */
-   jcr->db->fill_query(query, B_DB::SQL_QUERY_get_restore_objects, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
+   jcr->db->fill_query(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(jcr->JobId, ed1), FT_PLUGIN_CONFIG_FILLED);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 
-static inline void send_job_specific_restore_objects(JCR *jcr, JobId_t JobId, OBJ_CTX *octx)
+static inline void send_job_specific_restore_objects(JobControlRecord *jcr, JobId_t JobId, RestoreObjectContext *octx)
 {
    char ed1[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    /*
     * Send restore objects for specific JobId.
     */
-   jcr->db->fill_query(query, B_DB::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
+   jcr->db->fill_query(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_RESTORE_FIRST);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 
-   jcr->db->fill_query(query, B_DB::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
+   jcr->db->fill_query(query, BareosDb::SQL_QUERY_get_restore_objects, edit_uint64(JobId, ed1), FT_PLUGIN_CONFIG);
    jcr->db->sql_query(query.c_str(), restore_object_handler, (void *)octx);
 }
 
-bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global)
+bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global)
 {
-   BSOCK *fd;
-   OBJ_CTX octx;
+   BareosSocket *fd;
+   RestoreObjectContext octx;
 
    octx.jcr = jcr;
    octx.count = 0;
@@ -925,12 +925,12 @@ bool send_restore_objects(JCR *jcr, JobId_t JobId, bool send_global)
  * Read the attributes from the File daemon for
  * a Verify job and store them in the catalog.
  */
-int get_attributes_and_put_in_catalog(JCR *jcr)
+int get_attributes_and_put_in_catalog(JobControlRecord *jcr)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
    int n = 0;
-   ATTR_DBR *ar = NULL;
-   POOL_MEM digest(PM_MESSAGE);
+   AttributesDbRecord *ar = NULL;
+   PoolMem digest(PM_MESSAGE);
 
    fd = jcr->file_bsock;
    jcr->jr.FirstIndex = 1;
@@ -951,7 +951,7 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
       uint32_t file_index;
       int stream, len;
       char *p, *fn;
-      POOL_MEM Digest(PM_MESSAGE);    /* Either Verify opts or MD5/SHA1 digest */
+      PoolMem Digest(PM_MESSAGE);    /* Either Verify opts or MD5/SHA1 digest */
 
       if ((len = sscanf(fd->msg, "%ld %d %s", &file_index, &stream, Digest.c_str())) != 3) {
          Jmsg(jcr, M_FATAL, 0, _("<filed: bad attributes, expected 3 fields got %d\n"
@@ -1011,8 +1011,8 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
          size_t length;
 
          /*
-          * First, get STREAM_UNIX_ATTRIBUTES and fill ATTR_DBR structure
-          * Next, we CAN have a CRYPTO_DIGEST, so we fill ATTR_DBR with it (or not)
+          * First, get STREAM_UNIX_ATTRIBUTES and fill AttributesDbRecord structure
+          * Next, we CAN have a CRYPTO_DIGEST, so we fill AttributesDbRecord with it (or not)
           * When we get a new STREAM_UNIX_ATTRIBUTES, we known that we can add file to the catalog
           * At the end, we have to add the last file
           */
@@ -1057,9 +1057,9 @@ int get_attributes_and_put_in_catalog(JCR *jcr)
 /**
  * Cancel a job running in the File daemon
  */
-bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
+bool cancel_file_daemon_job(UaContext *ua, JobControlRecord *jcr)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
 
    ua->jcr->res.client = jcr->res.client;
    if (!connect_to_file_daemon(ua->jcr, 10, me->FDConnectTimeout, true)) {
@@ -1084,9 +1084,9 @@ bool cancel_file_daemon_job(UAContext *ua, JCR *jcr)
 /**
  * Get the status of a remote File Daemon.
  */
-void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+void do_native_client_status(UaContext *ua, ClientResource *client, char *cmd)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
 
    /*
     * Connect to File daemon
@@ -1135,9 +1135,9 @@ void do_native_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
 /**
  * resolve a host on a filedaemon
  */
-void do_client_resolve(UAContext *ua, CLIENTRES *client)
+void do_client_resolve(UaContext *ua, ClientResource *client)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
 
    /*
     * Connect to File daemon
@@ -1189,13 +1189,13 @@ void do_client_resolve(UAContext *ua, CLIENTRES *client)
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
  */
-void *handle_filed_connection(CONNECTION_POOL *connections, BSOCK *fd,
+void *handle_filed_connection(CONNECTION_POOL *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version)
 {
-   CLIENTRES *client_resource;
+   ClientResource *client_resource;
    CONNECTION *connection = NULL;
 
-   client_resource = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
+   client_resource = (ClientResource *)GetResWithName(R_CLIENT, client_name);
    if (!client_resource) {
       Emsg1(M_WARNING, 0, "Client \"%s\" tries to connect, "
                           "but no matching resource is defined.\n", client_name);

@@ -31,15 +31,15 @@
 #include "stored.h"
 
 /* Forward referenced subroutines */
-static void make_unique_data_spool_filename(DCR *dcr, POOLMEM *&name);
-static bool open_data_spool_file(DCR *dcr);
-static bool close_data_spool_file(DCR *dcr, bool end_of_spool);
-static bool despool_data(DCR *dcr, bool commit);
-static int  read_block_from_spool_file(DCR *dcr);
-static bool open_attr_spool_file(JCR *jcr, BSOCK *bs);
-static bool close_attr_spool_file(JCR *jcr, BSOCK *bs);
-static bool write_spool_header(DCR *dcr);
-static bool write_spool_data(DCR *dcr);
+static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name);
+static bool open_data_spool_file(DeviceControlRecord *dcr);
+static bool close_data_spool_file(DeviceControlRecord *dcr, bool end_of_spool);
+static bool despool_data(DeviceControlRecord *dcr, bool commit);
+static int  read_block_from_spool_file(DeviceControlRecord *dcr);
+static bool open_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs);
+static bool close_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs);
+static bool write_spool_header(DeviceControlRecord *dcr);
+static bool write_spool_data(DeviceControlRecord *dcr);
 
 struct spool_stats_t {
    uint32_t data_jobs;                /* current jobs spooling data */
@@ -72,7 +72,7 @@ enum {
 void list_spool_stats(void sendit(const char *msg, int len, void *sarg), void *arg)
 {
    char ed1[30], ed2[30];
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    int len;
 
    len = Mmsg(msg, _("Spooling statistics:\n"));
@@ -95,7 +95,7 @@ void list_spool_stats(void sendit(const char *msg, int len, void *sarg), void *a
    }
 }
 
-bool begin_data_spool(DCR *dcr)
+bool begin_data_spool(DeviceControlRecord *dcr)
 {
    bool status = true;
 
@@ -115,7 +115,7 @@ bool begin_data_spool(DCR *dcr)
    return status;
 }
 
-bool discard_data_spool(DCR *dcr)
+bool discard_data_spool(DeviceControlRecord *dcr)
 {
    if (dcr->spooling) {
       Dmsg0(100, "Data spooling discarded\n");
@@ -125,7 +125,7 @@ bool discard_data_spool(DCR *dcr)
    return true;
 }
 
-bool commit_data_spool(DCR *dcr)
+bool commit_data_spool(DeviceControlRecord *dcr)
 {
    bool status;
 
@@ -143,7 +143,7 @@ bool commit_data_spool(DCR *dcr)
    return true;
 }
 
-static void make_unique_data_spool_filename(DCR *dcr, POOLMEM *&name)
+static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name)
 {
    const char *dir;
 
@@ -157,7 +157,7 @@ static void make_unique_data_spool_filename(DCR *dcr, POOLMEM *&name)
         dcr->jcr->JobId, dcr->jcr->Job, dcr->device->name());
 }
 
-static bool open_data_spool_file(DCR *dcr)
+static bool open_data_spool_file(DeviceControlRecord *dcr)
 {
    int spool_fd;
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
@@ -179,7 +179,7 @@ static bool open_data_spool_file(DCR *dcr)
    return true;
 }
 
-static bool close_data_spool_file(DCR *dcr, bool end_of_spool)
+static bool close_data_spool_file(DeviceControlRecord *dcr, bool end_of_spool)
 {
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
@@ -218,16 +218,16 @@ static const char *spool_name = "*spool*";
  * NB! This routine locks the device, but if committing will
  *     not unlock it. If not committing, it will be unlocked.
  */
-static bool despool_data(DCR *dcr, bool commit)
+static bool despool_data(DeviceControlRecord *dcr, bool commit)
 {
-   DEVICE *rdev;
-   DCR *rdcr;
+   Device *rdev;
+   DeviceControlRecord *rdcr;
    bool ok = true;
-   DEV_BLOCK *block;
-   JCR *jcr = dcr->jcr;
+   DeviceBlock *block;
+   JobControlRecord *jcr = dcr->jcr;
    int status;
    char ec1[50];
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    Dmsg0(100, "Despooling data\n");
    if (jcr->dcr->job_spool_size == 0) {
@@ -265,8 +265,8 @@ static bool despool_data(DCR *dcr, bool commit)
     * We create a dev structure to read from the spool file
     * in rdev and rdcr.
     */
-   rdev = (DEVICE *)malloc(sizeof(DEVICE));
-   memset(rdev, 0, sizeof(DEVICE));
+   rdev = (Device *)malloc(sizeof(Device));
+   memset(rdev, 0, sizeof(Device));
    rdev->dev_name = get_memory(strlen(spool_name)+1);
    bstrncpy(rdev->dev_name, spool_name, sizeof_pool_memory(rdev->dev_name));
    rdev->errmsg = get_pool_memory(PM_EMSG);
@@ -412,13 +412,13 @@ static bool despool_data(DCR *dcr, bool commit)
  *          RB_EOT when file done
  *          RB_ERROR on error
  */
-static int read_block_from_spool_file(DCR *dcr)
+static int read_block_from_spool_file(DeviceControlRecord *dcr)
 {
    uint32_t rlen;
    ssize_t status;
    spool_hdr hdr;
-   DEV_BLOCK *block = dcr->block;
-   JCR *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
+   JobControlRecord *jcr = dcr->jcr;
 
    rlen = sizeof(hdr);
    status = read(dcr->spool_fd, (char *)&hdr, (size_t)rlen);
@@ -468,11 +468,11 @@ static int read_block_from_spool_file(DCR *dcr)
  *  Returns: true on success or EOT
  *           false on hard error
  */
-bool write_block_to_spool_file(DCR *dcr)
+bool write_block_to_spool_file(DeviceControlRecord *dcr)
 {
    uint32_t wlen, hlen;               /* length to write */
    bool despool = false;
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
 
    if (job_canceled(dcr->jcr)) {
       return false;
@@ -537,12 +537,12 @@ bool write_block_to_spool_file(DCR *dcr)
    return true;
 }
 
-static bool write_spool_header(DCR *dcr)
+static bool write_spool_header(DeviceControlRecord *dcr)
 {
    spool_hdr hdr;
    ssize_t status;
-   DEV_BLOCK *block = dcr->block;
-   JCR *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
+   JobControlRecord *jcr = dcr->jcr;
 
    hdr.FirstIndex = block->FirstIndex;
    hdr.LastIndex = block->LastIndex;
@@ -589,11 +589,11 @@ static bool write_spool_header(DCR *dcr)
    return false;
 }
 
-static bool write_spool_data(DCR *dcr)
+static bool write_spool_data(DeviceControlRecord *dcr)
 {
    ssize_t status;
-   DEV_BLOCK *block = dcr->block;
-   JCR *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
+   JobControlRecord *jcr = dcr->jcr;
 
    /*
     * Write data
@@ -646,9 +646,9 @@ static bool write_spool_data(DCR *dcr)
    return false;
 }
 
-bool are_attributes_spooled(JCR *jcr)
+bool are_attributes_spooled(JobControlRecord *jcr)
 {
-   return jcr->spool_attributes && jcr->dir_bsock->m_spool_fd != -1;
+   return jcr->spool_attributes && jcr->dir_bsock->spool_fd_ != -1;
 }
 
 /**
@@ -658,7 +658,7 @@ bool are_attributes_spooled(JCR *jcr)
  *  The actual spooling is turned on and off in
  *  append.c only during writing of the attributes.
  */
-bool begin_attribute_spool(JCR *jcr)
+bool begin_attribute_spool(JobControlRecord *jcr)
 {
    if (!jcr->no_attributes && jcr->spool_attributes) {
       return open_attr_spool_file(jcr, jcr->dir_bsock);
@@ -666,7 +666,7 @@ bool begin_attribute_spool(JCR *jcr)
    return true;
 }
 
-bool discard_attribute_spool(JCR *jcr)
+bool discard_attribute_spool(JobControlRecord *jcr)
 {
    if (are_attributes_spooled(jcr)) {
       return close_attr_spool_file(jcr, jcr->dir_bsock);
@@ -687,7 +687,7 @@ static void update_attr_spool_size(ssize_t size)
    V(mutex);
 }
 
-static void make_unique_spool_filename(JCR *jcr, POOLMEM *&name, int fd)
+static void make_unique_spool_filename(JobControlRecord *jcr, POOLMEM *&name, int fd)
 {
    Mmsg(name, "%s/%s.attr.%s.%d.spool", working_directory, my_name, jcr->Job, fd);
 }
@@ -698,14 +698,14 @@ static void make_unique_spool_filename(JCR *jcr, POOLMEM *&name, int fd)
  *  return an error, and the higher level routine will transmit
  *  the data record by record -- using bsock->despool().
  */
-static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
+static bool blast_attr_spool_file(JobControlRecord *jcr, boffset_t size)
 {
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
    /*
     * Send full spool file name
     */
-   make_unique_spool_filename(jcr, name, jcr->dir_bsock->m_fd);
+   make_unique_spool_filename(jcr, name, jcr->dir_bsock->fd_);
    bash_spaces(name);
    jcr->dir_bsock->fsend("BlastAttr Job=%s File=%s\n", jcr->Job, name);
    free_pool_memory(name);
@@ -723,17 +723,17 @@ static bool blast_attr_spool_file(JCR *jcr, boffset_t size)
    return true;
 }
 
-bool commit_attribute_spool(JCR *jcr)
+bool commit_attribute_spool(JobControlRecord *jcr)
 {
    boffset_t size, data_end;
    char ec1[30];
    char tbuf[MAX_TIME_LENGTH];
-   BSOCK *dir;
+   BareosSocket *dir;
 
    Dmsg1(100, "Commit attributes at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
    if (are_attributes_spooled(jcr)) {
       dir = jcr->dir_bsock;
-      if ((size = lseek(dir->m_spool_fd, 0, SEEK_END)) == -1) {
+      if ((size = lseek(dir->spool_fd_, 0, SEEK_END)) == -1) {
          berrno be;
 
          Jmsg(jcr, M_FATAL, 0, _("lseek on attributes file failed: ERR=%s\n"), be.bstrerror());
@@ -748,7 +748,7 @@ bool commit_attribute_spool(JCR *jcr)
           * Check and truncate to last valid data_end if necssary
           */
          if (size > data_end) {
-            if (ftruncate(dir->m_spool_fd, data_end) != 0) {
+            if (ftruncate(dir->spool_fd_, data_end) != 0) {
                berrno be;
 
                Jmsg(jcr, M_FATAL, 0, _("Truncate on attributes file failed: ERR=%s\n"), be.bstrerror());
@@ -795,13 +795,13 @@ bail_out:
    return false;
 }
 
-static bool open_attr_spool_file(JCR *jcr, BSOCK *bs)
+static bool open_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
 {
    POOLMEM *name = get_pool_memory(PM_MESSAGE);
 
-   make_unique_spool_filename(jcr, name, bs->m_fd);
-   bs->m_spool_fd = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
-   if (bs->m_spool_fd == -1) {
+   make_unique_spool_filename(jcr, name, bs->fd_);
+   bs->spool_fd_ = open(name, O_CREAT | O_TRUNC | O_RDWR | O_BINARY, 0640);
+   if (bs->spool_fd_ == -1) {
       berrno be;
 
       Jmsg(jcr, M_FATAL, 0, _("fopen attr spool file %s failed: ERR=%s\n"), name, be.bstrerror());
@@ -819,13 +819,13 @@ static bool open_attr_spool_file(JCR *jcr, BSOCK *bs)
    return true;
 }
 
-static bool close_attr_spool_file(JCR *jcr, BSOCK *bs)
+static bool close_attr_spool_file(JobControlRecord *jcr, BareosSocket *bs)
 {
    POOLMEM *name;
    char tbuf[MAX_TIME_LENGTH];
 
    Dmsg1(100, "Close attr spool file at %s\n", bstrftimes(tbuf, sizeof(tbuf), (utime_t)time(NULL)));
-   if (bs->m_spool_fd == -1) {
+   if (bs->spool_fd_ == -1) {
       return true;
    }
 
@@ -836,12 +836,12 @@ static bool close_attr_spool_file(JCR *jcr, BSOCK *bs)
    spool_stats.total_attr_jobs++;
    V(mutex);
 
-   make_unique_spool_filename(jcr, name, bs->m_fd);
+   make_unique_spool_filename(jcr, name, bs->fd_);
 
-   close(bs->m_spool_fd);
+   close(bs->spool_fd_);
    secure_erase(jcr, name);
    free_pool_memory(name);
-   bs->m_spool_fd = -1;
+   bs->spool_fd_ = -1;
    bs->clear_spooling();
 
    return true;

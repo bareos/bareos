@@ -83,7 +83,7 @@ ndmp_backup_format_option *ndmp_lookup_backup_format_options(const char *backup_
 /**
  * Validation functions.
  */
-bool ndmp_validate_client(JCR *jcr)
+bool ndmp_validate_client(JobControlRecord *jcr)
 {
    switch (jcr->res.client->Protocol) {
    case APT_NDMPV2:
@@ -106,7 +106,7 @@ bool ndmp_validate_client(JCR *jcr)
    return true;
 }
 
-static inline bool ndmp_validate_storage(JCR *jcr, STORERES *store)
+static inline bool ndmp_validate_storage(JobControlRecord *jcr, StoreResource *store)
 {
    switch (store->Protocol) {
    case APT_NDMPV2:
@@ -128,9 +128,9 @@ static inline bool ndmp_validate_storage(JCR *jcr, STORERES *store)
    return true;
 }
 
-bool ndmp_validate_storage(JCR *jcr)
+bool ndmp_validate_storage(JobControlRecord *jcr)
 {
-   STORERES *store;
+   StoreResource *store;
 
    if (jcr->res.wstorage) {
       foreach_alist(store, jcr->res.wstorage) {
@@ -149,7 +149,7 @@ bool ndmp_validate_storage(JCR *jcr)
    return true;
 }
 
-bool ndmp_validate_job(JCR *jcr, struct ndm_job_param *job)
+bool ndmp_validate_job(JobControlRecord *jcr, struct ndm_job_param *job)
 {
    int n_err, i;
    char audit_buffer[256];
@@ -178,7 +178,7 @@ bool ndmp_validate_job(JCR *jcr, struct ndm_job_param *job)
  * Fill a ndmagent structure with the correct info. Instead of calling ndmagent_from_str
  * we fill the structure ourself from info provides in a resource.
  */
-static inline bool fill_ndmp_agent_config(JCR *jcr,
+static inline bool fill_ndmp_agent_config(JobControlRecord *jcr,
                                           struct ndmagent *agent,
                                           uint32_t protocol,
                                           uint32_t authtype,
@@ -314,9 +314,9 @@ int native_to_ndmp_loglevel(int NdmpLoglevel, int debuglevel, NIS *nis)
    return level;
 }
 
-bool ndmp_build_client_job(JCR *jcr,
-                           CLIENTRES *client,
-                           STORERES *store,
+bool ndmp_build_client_job(JobControlRecord *jcr,
+                           ClientResource *client,
+                           StoreResource *store,
                            int operation,
                            struct ndm_job_param *job)
 {
@@ -389,8 +389,8 @@ bail_out:
 
 
 
-bool ndmp_build_storage_job(JCR *jcr,
-                            STORERES *store,
+bool ndmp_build_storage_job(JobControlRecord *jcr,
+                            StoreResource *store,
                             bool init_tape,
                             bool init_robot,
                             int operation,
@@ -442,9 +442,9 @@ bail_out:
    return false;
 }
 
-bool ndmp_build_client_and_storage_job(JCR *jcr,
-                            STORERES *store,
-                            CLIENTRES *client,
+bool ndmp_build_client_and_storage_job(JobControlRecord *jcr,
+                            StoreResource *store,
+                            ClientResource *client,
                             bool init_tape,
                             bool init_robot,
                             int operation,
@@ -576,7 +576,7 @@ extern "C" void ndmp_client_status_handler(struct ndmlog *log, char *tag, int le
  * operation. Callback is the above ndmp_client_status_handler which prints
  * the data to the user context.
  */
-void ndmp_do_query(UAContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
+void ndmp_do_query(UaContext *ua, ndm_job_param *ndmp_job, int NdmpLoglevel)
 {
    NIS *nis;
    struct ndm_session ndmp_sess;
@@ -658,7 +658,7 @@ bail_out:
  * Output the status of a NDMP client. Query the DATA agent of a
  * native NDMP server to give some info.
  */
-void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd)
 {
    struct ndm_job_param ndmp_job;
 
@@ -681,7 +681,7 @@ void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
                                                                me->ndmp_loglevel);
 }
 #else
-void do_ndmp_client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd)
 {
    Jmsg(ua->jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

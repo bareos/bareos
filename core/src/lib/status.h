@@ -27,7 +27,7 @@
  * Status packet definition that is used in both the SD and FD. It
  * permits Win32 to call output_status() and get the output back
  * at the callback address line by line, and for Linux code,
- * the output can be sent directly to a BSOCK.
+ * the output can be sent directly to a BareosSocket.
  */
 
 #ifndef __STATUS_H_
@@ -36,15 +36,15 @@
 /**
  * Packet to send to output_status()
  */
-class STATUS_PKT {
+class StatusPacket {
 public:
-  BSOCK *bs;                       /* used on Unix machines */
+  BareosSocket *bs;                       /* used on Unix machines */
   void *context;                   /* Win32 */
   void (*callback)(const char *msg, int len, void *context);  /* Win32 */
   bool api;                        /* set if we want API output */
 
   /* Methods */
-  STATUS_PKT() { memset(this, 0, sizeof(STATUS_PKT)); };
-  ~STATUS_PKT() { };
+  StatusPacket() { memset(this, 0, sizeof(StatusPacket)); };
+  ~StatusPacket() { };
 };
 #endif

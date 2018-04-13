@@ -48,7 +48,7 @@ static void destructor_child_timer(watchdog_t *self);
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t *start_child_timer(JCR *jcr, pid_t pid, uint32_t wait)
+btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
 {
    btimer_t *wid;
 
@@ -128,7 +128,7 @@ static void callback_child_timer(watchdog_t *self)
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait)
+btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait)
 {
    char ed1[50];
    btimer_t *wid;
@@ -154,12 +154,12 @@ btimer_t *start_thread_timer(JCR *jcr, pthread_t tid, uint32_t wait)
 }
 
 /*
- * Start a timer on a BSOCK. kill it after wait seconds.
+ * Start a timer on a BareosSocket. kill it after wait seconds.
  *
  *  Returns: btimer_t *(pointer to btimer_t struct) on success
  *           NULL on failure
  */
-btimer_t *start_bsock_timer(BSOCK *bsock, uint32_t wait)
+btimer_t *start_bsock_timer(BareosSocket *bsock, uint32_t wait)
 {
    char ed1[50];
    btimer_t *wid;

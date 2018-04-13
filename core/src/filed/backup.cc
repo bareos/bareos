@@ -55,11 +55,11 @@ const bool have_xattr = false;
 #endif
 
 /* Forward referenced functions */
-int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
-static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
+int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
                      DIGEST *digest, DIGEST *signature_digest);
-bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream);
-static void close_vss_backup_session(JCR *jcr);
+bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
+static void close_vss_backup_session(JobControlRecord *jcr);
 
 /**
  * Find all the requested files and send them
@@ -72,19 +72,19 @@ static void close_vss_backup_session(JCR *jcr);
  * reacts accordingly (at the moment it has nothing to do
  * except echo the heartbeat to the Director).
  */
-bool blast_data_to_storage_daemon(JCR *jcr, char *addr, crypto_cipher_t cipher)
+bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher)
 {
-   BSOCK *sd;
+   BareosSocket *sd;
    bool ok = true;
 
    sd = jcr->store_bsock;
 
    jcr->setJobStatus(JS_Running);
 
-   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->m_fd);
+   Dmsg1(300, "filed: opened data connection %d to stored\n", sd->fd_);
 
    LockRes();
-   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    uint32_t buf_size;
    if (client) {
@@ -108,13 +108,13 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr, crypto_cipher_t cipher)
       return false;
    }
 
-   set_find_options((FF_PKT *)jcr->ff, jcr->incremental, jcr->mtime);
+   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
 
    /**
     * In accurate mode, we overload the find_one check function
     */
    if (jcr->accurate) {
-      set_find_changed_function((FF_PKT *)jcr->ff, accurate_check_file);
+      set_find_changed_function((FindFilesPacket *)jcr->ff, accurate_check_file);
    }
 
    start_heartbeat_monitor(jcr);
@@ -138,7 +138,7 @@ bool blast_data_to_storage_daemon(JCR *jcr, char *addr, crypto_cipher_t cipher)
    /**
     * Subroutine save_file() is called for each file
     */
-   if (!find_files(jcr, (FF_PKT *)jcr->ff, save_file, plugin_save)) {
+   if (!find_files(jcr, (FindFilesPacket *)jcr->ff, save_file, plugin_save)) {
       ok = false;                     /* error */
       jcr->setJobStatus(JS_ErrorTerminated);
    }
@@ -193,7 +193,7 @@ static inline bool save_rsrc_and_finder(b_save_ctx &bsctx)
 {
    char flags[FOPTS_BYTES];
    int rsrc_stream;
-   BSOCK *sd = bsctx.jcr->store_bsock;
+   BareosSocket *sd = bsctx.jcr->store_bsock;
    bool retval = false;
 
    if (bsctx.ff_pkt->hfsinfo.rsrclength > 0) {
@@ -332,7 +332,7 @@ static inline bool terminate_signing_digest(b_save_ctx &bsctx)
    uint32_t size = 0;
    bool retval = false;
    SIGNATURE *signature = NULL;
-   BSOCK *sd = bsctx.jcr->store_bsock;
+   BareosSocket *sd = bsctx.jcr->store_bsock;
 
    if ((signature = crypto_sign_new(bsctx.jcr)) == NULL) {
       Jmsg(bsctx.jcr, M_FATAL, 0, _("Failed to allocate memory for crypto signature.\n"));
@@ -392,7 +392,7 @@ static inline bool terminate_digest(b_save_ctx &bsctx)
 {
    uint32_t size;
    bool retval = false;
-   BSOCK *sd = bsctx.jcr->store_bsock;
+   BareosSocket *sd = bsctx.jcr->store_bsock;
 
    sd->fsend("%ld %d 0", bsctx.jcr->JobFiles, bsctx.digest_stream);
    Dmsg1(300, "filed>stored:header %s", sd->msg);
@@ -427,7 +427,7 @@ bail_out:
    return retval;
 }
 
-static inline bool do_backup_acl(JCR *jcr, FF_PKT *ff_pkt)
+static inline bool do_backup_acl(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    bacl_exit_code retval;
 
@@ -461,7 +461,7 @@ static inline bool do_backup_acl(JCR *jcr, FF_PKT *ff_pkt)
    return true;
 }
 
-static inline bool do_backup_xattr(JCR *jcr, FF_PKT *ff_pkt)
+static inline bool do_backup_xattr(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    bxattr_exit_code retval;
 
@@ -504,7 +504,7 @@ static inline bool do_backup_xattr(JCR *jcr, FF_PKT *ff_pkt)
  *          0 if error
  *         -1 to ignore file/directory (not used here)
  */
-int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    bool do_read = false;
    bool plugin_started = false;
@@ -514,7 +514,7 @@ int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    b_save_ctx bsctx;
    bool has_file_data = false;
    struct save_pkt sp;          /* use by option plugin */
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    if (jcr->is_canceled() || jcr->is_incomplete()) {
       return 0;
@@ -902,7 +902,7 @@ bail_out:
  */
 static inline bool send_data_to_sd(b_ctx *bctx)
 {
-   BSOCK *sd = bctx->jcr->store_bsock;
+   BareosSocket *sd = bctx->jcr->store_bsock;
    bool need_more_data;
 
    /*
@@ -1037,7 +1037,7 @@ static inline bool send_data_to_sd(b_ctx *bctx)
 static DWORD WINAPI send_efs_data(PBYTE pbData, PVOID pvCallbackContext, ULONG ulLength)
 {
    b_ctx *bctx = (b_ctx *)pvCallbackContext;
-   BSOCK *sd = bctx->jcr->store_bsock;
+   BareosSocket *sd = bctx->jcr->store_bsock;
 
    if (ulLength == 0) {
       return ERROR_SUCCESS;
@@ -1107,7 +1107,7 @@ bail_out:
 static inline bool send_plain_data(b_ctx &bctx)
 {
    bool retval = false;
-   BSOCK *sd = bctx.jcr->store_bsock;
+   BareosSocket *sd = bctx.jcr->store_bsock;
 
    /*
     * Read the file data
@@ -1133,11 +1133,11 @@ bail_out:
  * Currently this is not a problem as the only other stream, resource forks,
  * are not handled as sparse files.
  */
-static int send_data(JCR *jcr, int stream, FF_PKT *ff_pkt,
+static int send_data(JobControlRecord *jcr, int stream, FindFilesPacket *ff_pkt,
                      DIGEST *digest, DIGEST *signing_digest)
 {
    b_ctx bctx;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 #ifdef FD_NO_SEND_TEST
    return 1;
 #endif
@@ -1284,10 +1284,10 @@ bail_out:
    return 0;
 }
 
-bool encode_and_send_attributes(JCR *jcr, FF_PKT *ff_pkt, int &data_stream)
+bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream)
 {
-   BSOCK *sd = jcr->store_bsock;
-   POOL_MEM attribs(PM_NAME),
+   BareosSocket *sd = jcr->store_bsock;
+   PoolMem attribs(PM_NAME),
             attribsExBuf(PM_NAME);
    char *attribsEx = NULL;
    int attr_stream;
@@ -1508,7 +1508,7 @@ static bool do_strip(int count, char *in)
  * in handling vendor migrations where files have been restored with
  * a vendor product into a subdirectory.
  */
-void strip_path(FF_PKT *ff_pkt)
+void strip_path(FindFilesPacket *ff_pkt)
 {
    if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
       Dmsg1(200, "No strip for %s\n", ff_pkt->fname);
@@ -1552,7 +1552,7 @@ rtn:
    Dmsg3(100, "fname=%s stripped=%s link=%s\n", ff_pkt->fname_save, ff_pkt->fname, ff_pkt->link);
 }
 
-void unstrip_path(FF_PKT *ff_pkt)
+void unstrip_path(FindFilesPacket *ff_pkt)
 {
    if (!bit_is_set(FO_STRIPPATH, ff_pkt->flags) || ff_pkt->strip_path <= 0) {
       return;
@@ -1569,7 +1569,7 @@ void unstrip_path(FF_PKT *ff_pkt)
    }
 }
 
-static void close_vss_backup_session(JCR *jcr)
+static void close_vss_backup_session(JobControlRecord *jcr)
 {
 #if defined(WIN32_VSS)
    /*
@@ -1601,7 +1601,7 @@ static void close_vss_backup_session(JCR *jcr)
        */
       wchar_t *metadata = jcr->pVSSClient->GetMetadata();
       if (metadata) {
-         FF_PKT *ff_pkt = jcr->ff;
+         FindFilesPacket *ff_pkt = jcr->ff;
          ff_pkt->fname = (char *)"*all*"; /* for all plugins */
          ff_pkt->type = FT_RESTORE_FIRST;
          ff_pkt->LinkFI = 0;

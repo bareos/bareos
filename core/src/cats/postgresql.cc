@@ -58,7 +58,7 @@ static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
+BareosDbPostgresql::BareosDbPostgresql(JobControlRecord *jcr,
                                  const char *db_driver,
                                  const char *db_name,
                                  const char *db_user,
@@ -76,38 +76,38 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    /*
     * Initialize the parent class members.
     */
-   m_db_interface_type = SQL_INTERFACE_TYPE_POSTGRESQL;
-   m_db_type = SQL_TYPE_POSTGRESQL;
-   m_db_driver = bstrdup("PostgreSQL");
-   m_db_name = bstrdup(db_name);
-   m_db_user = bstrdup(db_user);
+   db_interface_type_ = SQL_INTERFACE_TYPE_POSTGRESQL;
+   db_type_ = SQL_TYPE_POSTGRESQL;
+   db_driver_ = bstrdup("PostgreSQL");
+   db_name_ = bstrdup(db_name);
+   db_user_ = bstrdup(db_user);
    if (db_password) {
-      m_db_password = bstrdup(db_password);
+      db_password_ = bstrdup(db_password);
    }
    if (db_address) {
-      m_db_address = bstrdup(db_address);
+      db_address_ = bstrdup(db_address);
    }
    if (db_socket) {
-      m_db_socket = bstrdup(db_socket);
+      db_socket_ = bstrdup(db_socket);
    }
-   m_db_port = db_port;
+   db_port_ = db_port;
    if (disable_batch_insert) {
-      m_disabled_batch_insert = true;
-      m_have_batch_insert = false;
+      disabled_batch_insert_ = true;
+      have_batch_insert_ = false;
    } else {
-      m_disabled_batch_insert = false;
+      disabled_batch_insert_ = false;
 #if defined(USE_BATCH_FILE_INSERT)
 #if defined(HAVE_POSTGRESQL_BATCH_FILE_INSERT) || defined(HAVE_PQISTHREADSAFE)
 #ifdef HAVE_PQISTHREADSAFE
-      m_have_batch_insert = PQisthreadsafe();
+      have_batch_insert_ = PQisthreadsafe();
 #else
-      m_have_batch_insert = true;
+      have_batch_insert_ = true;
 #endif /* HAVE_PQISTHREADSAFE */
 #else
-      m_have_batch_insert = true;
+      have_batch_insert_ = true;
 #endif /* HAVE_POSTGRESQL_BATCH_FILE_INSERT || HAVE_PQISTHREADSAFE */
 #else
-      m_have_batch_insert = false;
+      have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
    errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
@@ -115,31 +115,31 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    cmd = get_pool_memory(PM_EMSG); /* get command buffer */
    cached_path = get_pool_memory(PM_FNAME);
    cached_path_id = 0;
-   m_ref_count = 1;
+   ref_count_ = 1;
    fname = get_pool_memory(PM_FNAME);
    path = get_pool_memory(PM_FNAME);
    esc_name = get_pool_memory(PM_FNAME);
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
-   m_buf =  get_pool_memory(PM_FNAME);
-   m_allow_transactions = mult_db_connections;
-   m_is_private = need_private;
-   m_try_reconnect = try_reconnect;
-   m_exit_on_fatal = exit_on_fatal;
-   m_last_hash_key = 0;
-   m_last_query_text = NULL;
+   buf_ =  get_pool_memory(PM_FNAME);
+   allow_transactions_ = mult_db_connections;
+   is_private_ = need_private;
+   try_reconnect_ = try_reconnect;
+   exit_on_fatal_ = exit_on_fatal;
+   last_hash_key_ = 0;
+   last_query_text_ = NULL;
 
    /*
     * Initialize the private members.
     */
-   m_db_handle = NULL;
-   m_result = NULL;
+   db_handle_ = NULL;
+   result_ = NULL;
 
    /*
     * Put the db in the list.
     */
    if (db_list == NULL) {
-      db_list = New(dlist(this, &this->m_link));
+      db_list = New(dlist(this, &this->link_));
    }
    db_list->append(this);
 
@@ -147,14 +147,14 @@ B_DB_POSTGRESQL::B_DB_POSTGRESQL(JCR *jcr,
    queries = query_definitions;
 }
 
-B_DB_POSTGRESQL::~B_DB_POSTGRESQL()
+BareosDbPostgresql::~BareosDbPostgresql()
 {
 }
 
 /**
  * Check that the database correspond to the encoding we want
  */
-bool B_DB_POSTGRESQL::check_database_encoding(JCR *jcr)
+bool BareosDbPostgresql::check_database_encoding(JobControlRecord *jcr)
 {
    SQL_ROW row;
    bool retval = false;
@@ -193,26 +193,26 @@ bool B_DB_POSTGRESQL::check_database_encoding(JCR *jcr)
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_POSTGRESQL::open_database(JCR *jcr)
+bool BareosDbPostgresql::open_database(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
    char buf[10], *port;
 
    P(mutex);
-   if (m_connected) {
+   if (connected_) {
       retval = true;
       goto bail_out;
    }
 
-   if ((errstat = rwl_init(&m_lock)) != 0) {
+   if ((errstat = rwl_init(&lock_)) != 0) {
       berrno be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
    }
 
-   if (m_db_port) {
-      bsnprintf(buf, sizeof(buf), "%d", m_db_port);
+   if (db_port_) {
+      bsnprintf(buf, sizeof(buf), "%d", db_port_);
       port = buf;
    } else {
       port = NULL;
@@ -225,18 +225,18 @@ bool B_DB_POSTGRESQL::open_database(JCR *jcr)
       /*
        * Connect to the database
        */
-      m_db_handle = PQsetdbLogin(m_db_address,   /* default = localhost */
+      db_handle_ = PQsetdbLogin(db_address_,   /* default = localhost */
                                  port,           /* default port */
                                  NULL,           /* pg options */
                                  NULL,           /* tty, ignored */
-                                 m_db_name,      /* database name */
-                                 m_db_user,      /* login name */
-                                 m_db_password); /* password */
+                                 db_name_,      /* database name */
+                                 db_user_,      /* login name */
+                                 db_password_); /* password */
 
       /*
        * If no connect, try once more in case it is a timing problem
        */
-      if (PQstatus(m_db_handle) == CONNECTION_OK) {
+      if (PQstatus(db_handle_) == CONNECTION_OK) {
          break;
       }
 
@@ -244,17 +244,17 @@ bool B_DB_POSTGRESQL::open_database(JCR *jcr)
    }
 
    Dmsg0(50, "pg_real_connect done\n");
-   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", m_db_user, m_db_name,
-        (m_db_password == NULL) ? "(NULL)" : m_db_password);
+   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
+        (db_password_ == NULL) ? "(NULL)" : db_password_);
 
-   if (PQstatus(m_db_handle) != CONNECTION_OK) {
+   if (PQstatus(db_handle_) != CONNECTION_OK) {
       Mmsg2(errmsg, _("Unable to connect to PostgreSQL server. Database=%s User=%s\n"
                        "Possible causes: SQL server not running; password incorrect; max_connections exceeded.\n"),
-            m_db_name, m_db_user);
+            db_name_, db_user_);
       goto bail_out;
    }
 
-   m_connected = true;
+   connected_ = true;
    if (!check_tables_version(jcr)) {
       goto bail_out;
    }
@@ -281,23 +281,23 @@ bail_out:
    return retval;
 }
 
-void B_DB_POSTGRESQL::close_database(JCR *jcr)
+void BareosDbPostgresql::close_database(JobControlRecord *jcr)
 {
-   if (m_connected) {
+   if (connected_) {
       end_transaction(jcr);
    }
    P(mutex);
-   m_ref_count--;
-   if (m_ref_count == 0) {
-      if (m_connected) {
+   ref_count_--;
+   if (ref_count_ == 0) {
+      if (connected_) {
          sql_free_result();
       }
       db_list->remove(this);
-      if (m_connected && m_db_handle) {
-         PQfinish(m_db_handle);
+      if (connected_ && db_handle_) {
+         PQfinish(db_handle_);
       }
-      if (rwl_is_init(&m_lock)) {
-         rwl_destroy(&m_lock);
+      if (rwl_is_init(&lock_)) {
+         rwl_destroy(&lock_);
       }
       free_pool_memory(errmsg);
       free_pool_memory(cmd);
@@ -307,24 +307,24 @@ void B_DB_POSTGRESQL::close_database(JCR *jcr)
       free_pool_memory(esc_name);
       free_pool_memory(esc_path);
       free_pool_memory(esc_obj);
-      free_pool_memory(m_buf);
-      if (m_db_driver) {
-         free(m_db_driver);
+      free_pool_memory(buf_);
+      if (db_driver_) {
+         free(db_driver_);
       }
-      if (m_db_name) {
-         free(m_db_name);
+      if (db_name_) {
+         free(db_name_);
       }
-      if (m_db_user) {
-         free(m_db_user);
+      if (db_user_) {
+         free(db_user_);
       }
-      if (m_db_password) {
-         free(m_db_password);
+      if (db_password_) {
+         free(db_password_);
       }
-      if (m_db_address) {
-         free(m_db_address);
+      if (db_address_) {
+         free(db_address_);
       }
-      if (m_db_socket) {
-         free(m_db_socket);
+      if (db_socket_) {
+         free(db_socket_);
       }
       delete this;
       if (db_list->size() == 0) {
@@ -335,7 +335,7 @@ void B_DB_POSTGRESQL::close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_POSTGRESQL::validate_connection(void)
+bool BareosDbPostgresql::validate_connection(void)
 {
    bool retval = false;
 
@@ -347,8 +347,8 @@ bool B_DB_POSTGRESQL::validate_connection(void)
       /*
        * Try resetting the connection.
        */
-      PQreset(m_db_handle);
-      if (PQstatus(m_db_handle) != CONNECTION_OK) {
+      PQreset(db_handle_);
+      if (PQstatus(db_handle_) != CONNECTION_OK) {
          goto bail_out;
       }
 
@@ -379,11 +379,11 @@ bail_out:
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void B_DB_POSTGRESQL::escape_string(JCR *jcr, char *snew, char *old, int len)
+void BareosDbPostgresql::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    int error;
 
-   PQescapeStringConn(m_db_handle, snew, old, len, &error);
+   PQescapeStringConn(db_handle_, snew, old, len, &error);
    if (error) {
       Jmsg(jcr, M_FATAL, 0, _("PQescapeStringConn returned non-zero.\n"));
       /* error on encoding, probably invalid multibyte encoding in the source string
@@ -396,12 +396,12 @@ void B_DB_POSTGRESQL::escape_string(JCR *jcr, char *snew, char *old, int len)
  * Escape binary so that PostgreSQL is happy
  *
  */
-char *B_DB_POSTGRESQL::escape_object(JCR *jcr, char *old, int len)
+char *BareosDbPostgresql::escape_object(JobControlRecord *jcr, char *old, int len)
 {
    size_t new_len;
    unsigned char *obj;
 
-   obj = PQescapeByteaConn(m_db_handle, (unsigned const char *)old, len, &new_len);
+   obj = PQescapeByteaConn(db_handle_, (unsigned const char *)old, len, &new_len);
    if (!obj) {
       Jmsg(jcr, M_FATAL, 0, _("PQescapeByteaConn returned NULL.\n"));
    }
@@ -419,7 +419,7 @@ char *B_DB_POSTGRESQL::escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object so that PostgreSQL is happy
  *
  */
-void B_DB_POSTGRESQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+void BareosDbPostgresql::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                                       POOLMEM *&dest, int32_t *dest_len)
 {
    size_t new_len;
@@ -452,20 +452,20 @@ void B_DB_POSTGRESQL::unescape_object(JCR *jcr, char *from, int32_t expected_len
  * much more efficient. Usually started when inserting
  * file attributes.
  */
-void B_DB_POSTGRESQL::start_transaction(JCR *jcr)
+void BareosDbPostgresql::start_transaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
    }
    if (!jcr->ar) {
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
    }
 
    /*
     * This is turned off because transactions break
     * if multiple simultaneous jobs are run.
     */
-   if (!m_allow_transactions) {
+   if (!allow_transactions_) {
       return;
    }
 
@@ -473,18 +473,18 @@ void B_DB_POSTGRESQL::start_transaction(JCR *jcr)
    /*
     * Allow only 25,000 changes per transaction
     */
-   if (m_transaction && changes > 25000) {
+   if (transaction_ && changes > 25000) {
       end_transaction(jcr);
    }
-   if (!m_transaction) {
+   if (!transaction_) {
       sql_query_without_handler("BEGIN");  /* begin transaction */
       Dmsg0(400, "Start PosgreSQL transaction\n");
-      m_transaction = true;
+      transaction_ = true;
    }
    db_unlock(this);
 }
 
-void B_DB_POSTGRESQL::end_transaction(JCR *jcr)
+void BareosDbPostgresql::end_transaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
@@ -494,14 +494,14 @@ void B_DB_POSTGRESQL::end_transaction(JCR *jcr)
       jcr->cached_attribute = false;
    }
 
-   if (!m_allow_transactions) {
+   if (!allow_transactions_) {
       return;
    }
 
    db_lock(this);
-   if (m_transaction) {
+   if (transaction_) {
       sql_query_without_handler("COMMIT"); /* end transaction */
-      m_transaction = false;
+      transaction_ = false;
       Dmsg1(400, "End PostgreSQL transaction changes=%d\n", changes);
    }
    changes = 0;
@@ -512,11 +512,11 @@ void B_DB_POSTGRESQL::end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_POSTGRESQL::big_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::big_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = false;
-   bool in_transaction = m_transaction;
+   bool in_transaction = transaction_;
 
    Dmsg1(500, "big_sql_query starts with '%s'\n", query);
 
@@ -535,10 +535,10 @@ bool B_DB_POSTGRESQL::big_sql_query(const char *query, DB_RESULT_HANDLER *result
       sql_query_without_handler("BEGIN");
    }
 
-   Mmsg(m_buf, "DECLARE _bac_cursor CURSOR FOR %s", query);
+   Mmsg(buf_, "DECLARE _bac_cursor CURSOR FOR %s", query);
 
-   if (!sql_query_without_handler(m_buf)) {
-      Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), m_buf, sql_strerror());
+   if (!sql_query_without_handler(buf_)) {
+      Mmsg(errmsg, _("Query failed: %s: ERR=%s\n"), buf_, sql_strerror());
       Dmsg0(50, "sql_query_without_handler failed\n");
       goto bail_out;
    }
@@ -548,14 +548,14 @@ bool B_DB_POSTGRESQL::big_sql_query(const char *query, DB_RESULT_HANDLER *result
          goto bail_out;
       }
       while ((row = sql_fetch_row()) != NULL) {
-         Dmsg1(500, "Fetching %d rows\n", m_num_rows);
-         if (result_handler(ctx, m_num_fields, row))
+         Dmsg1(500, "Fetching %d rows\n", num_rows_);
+         if (result_handler(ctx, num_fields_, row))
             break;
       }
-      PQclear(m_result);
-      m_result = NULL;
+      PQclear(result_);
+      result_ = NULL;
 
-   } while (m_num_rows > 0);
+   } while (num_rows_ > 0);
 
    sql_query_without_handler("CLOSE _bac_cursor");
 
@@ -576,7 +576,7 @@ bail_out:
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_POSTGRESQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbPostgresql::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    SQL_ROW row;
    bool retval = true;
@@ -597,7 +597,7 @@ bool B_DB_POSTGRESQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLE
       Dmsg0(500, "sql_query_with_handler invoking handler\n");
       while ((row = sql_fetch_row()) != NULL) {
          Dmsg0(500, "sql_query_with_handler sql_fetch_row worked\n");
-         if (result_handler(ctx, m_num_fields, row))
+         if (result_handler(ctx, num_fields_, row))
             break;
       }
       sql_free_result();
@@ -618,7 +618,7 @@ bail_out:
  * Returns:  true  on success
  *           false on failure
  */
-bool B_DB_POSTGRESQL::sql_query_without_handler(const char *query, int flags)
+bool BareosDbPostgresql::sql_query_without_handler(const char *query, int flags)
 {
    int i;
    bool retry = true;
@@ -630,25 +630,25 @@ bool B_DB_POSTGRESQL::sql_query_without_handler(const char *query, int flags)
     * We are starting a new query. reset everything.
     */
 retry_query:
-   m_num_rows = -1;
-   m_row_number = -1;
-   m_field_number = -1;
+   num_rows_ = -1;
+   row_number_ = -1;
+   field_number_ = -1;
 
-   if (m_result) {
-      PQclear(m_result);  /* hmm, someone forgot to free?? */
-      m_result = NULL;
+   if (result_) {
+      PQclear(result_);  /* hmm, someone forgot to free?? */
+      result_ = NULL;
    }
 
    for (i = 0; i < 10; i++) {
-      m_result = PQexec(m_db_handle, query);
-      if (m_result) {
+      result_ = PQexec(db_handle_, query);
+      if (result_) {
          break;
       }
       bmicrosleep(5, 0);
    }
 
-   m_status = PQresultStatus(m_result);
-   switch (m_status) {
+   status_ = PQresultStatus(result_);
+   switch (status_) {
    case PGRES_TUPLES_OK:
    case PGRES_COMMAND_OK:
       Dmsg0(500, "we have a result\n");
@@ -656,46 +656,46 @@ retry_query:
       /*
        * How many fields in the set?
        */
-      m_num_fields = (int)PQnfields(m_result);
-      Dmsg1(500, "we have %d fields\n", m_num_fields);
+      num_fields_ = (int)PQnfields(result_);
+      Dmsg1(500, "we have %d fields\n", num_fields_);
 
-      m_num_rows = PQntuples(m_result);
-      Dmsg1(500, "we have %d rows\n", m_num_rows);
+      num_rows_ = PQntuples(result_);
+      Dmsg1(500, "we have %d rows\n", num_rows_);
 
-      m_row_number = 0;      /* we can start to fetch something */
-      m_status = 0;          /* succeed */
+      row_number_ = 0;      /* we can start to fetch something */
+      status_ = 0;          /* succeed */
       retval = true;
       break;
    case PGRES_FATAL_ERROR:
       Dmsg1(50, "Result status fatal: %s\n", query);
-      if (m_exit_on_fatal) {
+      if (exit_on_fatal_) {
          /*
           * Any fatal error should result in the daemon exiting.
           */
          Emsg0(M_FATAL, 0, "Fatal database error\n");
       }
 
-      if (m_try_reconnect && !m_transaction) {
+      if (try_reconnect_ && !transaction_) {
          /*
           * Only try reconnecting when no transaction is pending.
           * Reconnecting within a transaction will lead to an aborted
           * transaction anyway so we better follow our old error path.
           */
          if (retry) {
-            PQreset(m_db_handle);
+            PQreset(db_handle_);
 
             /*
              * See if we got a working connection again.
              */
-            if (PQstatus(m_db_handle) == CONNECTION_OK) {
+            if (PQstatus(db_handle_) == CONNECTION_OK) {
                /*
                 * Reset the connection settings.
                 */
-               PQexec(m_db_handle, "SET datestyle TO 'ISO, YMD'");
-               PQexec(m_db_handle, "SET cursor_tuple_fraction=1");
-               m_result = PQexec(m_db_handle, "SET standard_conforming_strings=on");
+               PQexec(db_handle_, "SET datestyle TO 'ISO, YMD'");
+               PQexec(db_handle_, "SET cursor_tuple_fraction=1");
+               result_ = PQexec(db_handle_, "SET standard_conforming_strings=on");
 
-               switch (PQresultStatus(m_result)) {
+               switch (PQresultStatus(result_)) {
                case PGRES_COMMAND_OK:
                   retry = false;
                   goto retry_query;
@@ -716,79 +716,79 @@ retry_query:
 
 bail_out:
    Dmsg0(500, "we failed\n");
-   PQclear(m_result);
-   m_result = NULL;
-   m_status = 1;                   /* failed */
+   PQclear(result_);
+   result_ = NULL;
+   status_ = 1;                   /* failed */
 
 ok_out:
    return retval;
 }
 
-void B_DB_POSTGRESQL::sql_free_result(void)
+void BareosDbPostgresql::sql_free_result(void)
 {
    db_lock(this);
-   if (m_result) {
-      PQclear(m_result);
-      m_result = NULL;
+   if (result_) {
+      PQclear(result_);
+      result_ = NULL;
    }
-   if (m_rows) {
-      free(m_rows);
-      m_rows = NULL;
+   if (rows_) {
+      free(rows_);
+      rows_ = NULL;
    }
-   if (m_fields) {
-      free(m_fields);
-      m_fields = NULL;
+   if (fields_) {
+      free(fields_);
+      fields_ = NULL;
    }
-   m_num_rows = m_num_fields = 0;
+   num_rows_ = num_fields_ = 0;
    db_unlock(this);
 }
 
-SQL_ROW B_DB_POSTGRESQL::sql_fetch_row(void)
+SQL_ROW BareosDbPostgresql::sql_fetch_row(void)
 {
    int j;
    SQL_ROW row = NULL; /* by default, return NULL */
 
    Dmsg0(500, "sql_fetch_row start\n");
 
-   if (m_num_fields == 0) {     /* No field, no row */
+   if (num_fields_ == 0) {     /* No field, no row */
       Dmsg0(500, "sql_fetch_row finishes returning NULL, no fields\n");
       return NULL;
    }
 
-   if (!m_rows || m_rows_size < m_num_fields) {
-      if (m_rows) {
+   if (!rows_ || rows_size_ < num_fields_) {
+      if (rows_) {
          Dmsg0(500, "sql_fetch_row freeing space\n");
-         free(m_rows);
+         free(rows_);
       }
-      Dmsg1(500, "we need space for %d bytes\n", sizeof(char *) * m_num_fields);
-      m_rows = (SQL_ROW)malloc(sizeof(char *) * m_num_fields);
-      m_rows_size = m_num_fields;
+      Dmsg1(500, "we need space for %d bytes\n", sizeof(char *) * num_fields_);
+      rows_ = (SQL_ROW)malloc(sizeof(char *) * num_fields_);
+      rows_size_ = num_fields_;
 
       /*
        * Now reset the row_number now that we have the space allocated
        */
-      m_row_number = 0;
+      row_number_ = 0;
    }
 
    /*
     * If still within the result set
     */
-   if (m_row_number >= 0 && m_row_number < m_num_rows) {
-      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (0..%d)\n", m_row_number, m_num_rows);
+   if (row_number_ >= 0 && row_number_ < num_rows_) {
+      Dmsg2(500, "sql_fetch_row row number '%d' is acceptable (0..%d)\n", row_number_, num_rows_);
       /*
        * Get each value from this row
        */
-      for (j = 0; j < m_num_fields; j++) {
-         m_rows[j] = PQgetvalue(m_result, m_row_number, j);
-         Dmsg2(500, "sql_fetch_row field '%d' has value '%s'\n", j, m_rows[j]);
+      for (j = 0; j < num_fields_; j++) {
+         rows_[j] = PQgetvalue(result_, row_number_, j);
+         Dmsg2(500, "sql_fetch_row field '%d' has value '%s'\n", j, rows_[j]);
       }
       /*
        * Increment the row number for the next call
        */
-      m_row_number++;
-      row = m_rows;
+      row_number_++;
+      row = rows_;
    } else {
-      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (0..%d)\n", m_row_number, m_num_rows);
+      Dmsg2(500, "sql_fetch_row row number '%d' is NOT acceptable (0..%d)\n", row_number_, num_rows_);
    }
 
    Dmsg1(500, "sql_fetch_row finishes returning %p\n", row);
@@ -796,25 +796,25 @@ SQL_ROW B_DB_POSTGRESQL::sql_fetch_row(void)
    return row;
 }
 
-const char *B_DB_POSTGRESQL::sql_strerror(void)
+const char *BareosDbPostgresql::sql_strerror(void)
 {
-   return PQerrorMessage(m_db_handle);
+   return PQerrorMessage(db_handle_);
 }
 
-void B_DB_POSTGRESQL::sql_data_seek(int row)
+void BareosDbPostgresql::sql_data_seek(int row)
 {
    /*
     * Set the row number to be returned on the next call to sql_fetch_row
     */
-   m_row_number = row;
+   row_number_ = row;
 }
 
-int B_DB_POSTGRESQL::sql_affected_rows(void)
+int BareosDbPostgresql::sql_affected_rows(void)
 {
-   return (unsigned) str_to_int32(PQcmdTuples(m_result));
+   return (unsigned) str_to_int32(PQcmdTuples(result_));
 }
 
-uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbPostgresql::sql_insert_autokey_record(const char *query, const char *table_name)
 {
    int i;
    uint64_t id = 0;
@@ -829,8 +829,8 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
       return 0;
    }
 
-   m_num_rows = sql_affected_rows();
-   if (m_num_rows != 1) {
+   num_rows_ = sql_affected_rows();
+   if (num_rows_ != 1) {
       return 0;
    }
 
@@ -867,7 +867,7 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
 
    Dmsg1(500, "sql_insert_autokey_record executing query '%s'\n", getkeyval_query);
    for (i = 0; i < 10; i++) {
-      pg_result = PQexec(m_db_handle, getkeyval_query);
+      pg_result = PQexec(db_handle_, getkeyval_query);
       if (pg_result) {
          break;
       }
@@ -886,7 +886,7 @@ uint64_t B_DB_POSTGRESQL::sql_insert_autokey_record(const char *query, const cha
       Dmsg2(500, "got value '%s' which became %d\n", PQgetvalue(pg_result, 0, 0), id);
    } else {
       Dmsg1(50, "Result status failed: %s\n", getkeyval_query);
-      Mmsg1(errmsg, _("error fetching currval: %s\n"), PQerrorMessage(m_db_handle));
+      Mmsg1(errmsg, _("error fetching currval: %s\n"), PQerrorMessage(db_handle_));
    }
 
 bail_out:
@@ -895,7 +895,7 @@ bail_out:
    return id;
 }
 
-SQL_FIELD *B_DB_POSTGRESQL::sql_fetch_field(void)
+SQL_FIELD *BareosDbPostgresql::sql_fetch_field(void)
 {
    int i, j;
    int max_length;
@@ -903,50 +903,50 @@ SQL_FIELD *B_DB_POSTGRESQL::sql_fetch_field(void)
 
    Dmsg0(500, "sql_fetch_field starts\n");
 
-   if (!m_fields || m_fields_size < m_num_fields) {
-      if (m_fields) {
-         free(m_fields);
-         m_fields = NULL;
+   if (!fields_ || fields_size_ < num_fields_) {
+      if (fields_) {
+         free(fields_);
+         fields_ = NULL;
       }
-      Dmsg1(500, "allocating space for %d fields\n", m_num_fields);
-      m_fields = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * m_num_fields);
-      m_fields_size = m_num_fields;
+      Dmsg1(500, "allocating space for %d fields\n", num_fields_);
+      fields_ = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * num_fields_);
+      fields_size_ = num_fields_;
 
-      for (i = 0; i < m_num_fields; i++) {
+      for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
-         m_fields[i].name = PQfname(m_result, i);
-         m_fields[i].type = PQftype(m_result, i);
-         m_fields[i].flags = 0;
+         fields_[i].name = PQfname(result_, i);
+         fields_[i].type = PQftype(result_, i);
+         fields_[i].flags = 0;
 
          /*
           * For a given column, find the max length.
           */
          max_length = 0;
-         for (j = 0; j < m_num_rows; j++) {
-            if (PQgetisnull(m_result, j, i)) {
+         for (j = 0; j < num_rows_; j++) {
+            if (PQgetisnull(result_, j, i)) {
                 this_length = 4;        /* "NULL" */
             } else {
-                this_length = cstrlen(PQgetvalue(m_result, j, i));
+                this_length = cstrlen(PQgetvalue(result_, j, i));
             }
 
             if (max_length < this_length) {
                max_length = this_length;
             }
          }
-         m_fields[i].max_length = max_length;
+         fields_[i].max_length = max_length;
 
          Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-               m_fields[i].name, m_fields[i].max_length, m_fields[i].type, m_fields[i].flags);
+               fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
       }
    }
 
    /*
     * Increment field number for the next time around
     */
-   return &m_fields[m_field_number++];
+   return &fields_[field_number_++];
 }
 
-bool B_DB_POSTGRESQL::sql_field_is_not_null(int field_type)
+bool BareosDbPostgresql::sql_field_is_not_null(int field_type)
 {
    switch (field_type) {
    case 1:
@@ -956,7 +956,7 @@ bool B_DB_POSTGRESQL::sql_field_is_not_null(int field_type)
    }
 }
 
-bool B_DB_POSTGRESQL::sql_field_is_numeric(int field_type)
+bool BareosDbPostgresql::sql_field_is_numeric(int field_type)
 {
    /*
     * TEMP: the following is taken from select OID, typname from pg_type;
@@ -1020,7 +1020,7 @@ static char *pgsql_copy_escape(char *dest, char *src, size_t len)
    return dest;
 }
 
-bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
+bool BareosDbPostgresql::sql_batch_start(JobControlRecord *jcr)
 {
    const char *query = "COPY batch FROM STDIN";
 
@@ -1043,32 +1043,32 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
    /*
     * We are starting a new query.  reset everything.
     */
-   m_num_rows = -1;
-   m_row_number = -1;
-   m_field_number = -1;
+   num_rows_ = -1;
+   row_number_ = -1;
+   field_number_ = -1;
 
    sql_free_result();
 
    for (int i=0; i < 10; i++) {
-      m_result = PQexec(m_db_handle, query);
-      if (m_result) {
+      result_ = PQexec(db_handle_, query);
+      if (result_) {
          break;
       }
       bmicrosleep(5, 0);
    }
-   if (!m_result) {
+   if (!result_) {
       Dmsg1(50, "Query failed: %s\n", query);
       goto bail_out;
    }
 
-   m_status = PQresultStatus(m_result);
-   if (m_status == PGRES_COPY_IN) {
+   status_ = PQresultStatus(result_);
+   if (status_ == PGRES_COPY_IN) {
       /*
        * How many fields in the set?
        */
-      m_num_fields = (int) PQnfields(m_result);
-      m_num_rows = 0;
-      m_status = 1;
+      num_fields_ = (int) PQnfields(result_);
+      num_rows_ = 0;
+      status_ = 1;
    } else {
       Dmsg1(50, "Result status failed: %s\n", query);
       goto bail_out;
@@ -1079,17 +1079,17 @@ bool B_DB_POSTGRESQL::sql_batch_start(JCR *jcr)
    return true;
 
 bail_out:
-   Mmsg1(errmsg, _("error starting batch mode: %s"), PQerrorMessage(m_db_handle));
-   m_status = 0;
-   PQclear(m_result);
-   m_result = NULL;
+   Mmsg1(errmsg, _("error starting batch mode: %s"), PQerrorMessage(db_handle_));
+   status_ = 0;
+   PQclear(result_);
+   result_ = NULL;
    return false;
 }
 
 /**
  * Set error to something to abort operation
  */
-bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
+bool BareosDbPostgresql::sql_batch_end(JobControlRecord *jcr, const char *error)
 {
    int res;
    int count=30;
@@ -1098,28 +1098,28 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
    Dmsg0(500, "sql_batch_end started\n");
 
    do {
-      res = PQputCopyEnd(m_db_handle, error);
+      res = PQputCopyEnd(db_handle_, error);
    } while (res == 0 && --count > 0);
 
    if (res == 1) {
       Dmsg0(500, "ok\n");
-      m_status = 1;
+      status_ = 1;
    }
 
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
-      m_status = 0;
-      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
+      status_ = 0;
+      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
       Dmsg1(500, "failure %s\n", errmsg);
    }
 
    /*
     * Check command status and return to normal libpq state
     */
-   pg_result = PQgetResult(m_db_handle);
+   pg_result = PQgetResult(db_handle_);
    if (PQresultStatus(pg_result) != PGRES_COMMAND_OK) {
-      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(m_db_handle));
-      m_status = 0;
+      Mmsg1(errmsg, _("error ending batch mode: %s"), PQerrorMessage(db_handle_));
+      status_ = 0;
    }
 
    PQclear(pg_result);
@@ -1129,7 +1129,7 @@ bool B_DB_POSTGRESQL::sql_batch_end(JCR *jcr, const char *error)
    return true;
 }
 
-bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
+bool BareosDbPostgresql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    int res;
    int count=30;
@@ -1156,19 +1156,19 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
               edit_uint64(ar->Fhnode,ed3));
 
    do {
-      res = PQputCopyData(m_db_handle, cmd, len);
+      res = PQputCopyData(db_handle_, cmd, len);
    } while (res == 0 && --count > 0);
 
    if (res == 1) {
       Dmsg0(500, "ok\n");
       changes++;
-      m_status = 1;
+      status_ = 1;
    }
 
    if (res <= 0) {
       Dmsg0(500, "we failed\n");
-      m_status = 0;
-      Mmsg1(errmsg, _("error copying in batch mode: %s"), PQerrorMessage(m_db_handle));
+      status_ = 0;
+      Mmsg1(errmsg, _("error copying in batch mode: %s"), PQerrorMessage(db_handle_));
       Dmsg1(500, "failure %s\n", errmsg);
    }
 
@@ -1182,7 +1182,7 @@ bool B_DB_POSTGRESQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * never have errors, or it is really fatal.
  */
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
+extern "C" BareosDb CATS_IMP_EXP *backend_instantiate(JobControlRecord *jcr,
                                                   const char *db_driver,
                                                   const char *db_name,
                                                   const char *db_user,
@@ -1196,7 +1196,7 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   bool exit_on_fatal,
                                                   bool need_private)
 #else
-B_DB *db_init_database(JCR *jcr,
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -1211,7 +1211,7 @@ B_DB *db_init_database(JCR *jcr,
                        bool need_private)
 #endif
 {
-   B_DB_POSTGRESQL *mdb = NULL;
+   BareosDbPostgresql *mdb = NULL;
 
    if (!db_user) {
       Jmsg(jcr, M_FATAL, 0, _("A user name for PostgreSQL must be supplied.\n"));
@@ -1236,7 +1236,7 @@ B_DB *db_init_database(JCR *jcr,
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_POSTGRESQL(jcr,
+   mdb = New(BareosDbPostgresql(jcr,
                              db_driver,
                              db_name,
                              db_user,

@@ -235,7 +235,7 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
    va_list ap;
    int len, maxlen;
    ConfigFile *ini;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    while (1) {
       maxlen = buf.size() - 1;
@@ -279,7 +279,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    va_list ap;
    int len, maxlen;
    ConfigFile *ini;
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    while (1) {
       maxlen = buf.size() - 1;
@@ -411,7 +411,7 @@ bool ConfigFile::serialize(const char *fname)
    FILE *fp;
    int32_t len;
    bool ret = false;
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
 
    if (!items) {
       return ret;
@@ -434,10 +434,10 @@ bool ConfigFile::serialize(const char *fname)
 /*
  * Dump the item table format to a text file (used by plugin)
  */
-int ConfigFile::serialize(POOL_MEM *buf)
+int ConfigFile::serialize(PoolMem *buf)
 {
    int len;
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
 
    if (!items) {
       char *p;
@@ -474,10 +474,10 @@ int ConfigFile::serialize(POOL_MEM *buf)
 /*
  * Dump the item table content to a text file (used by director)
  */
-int ConfigFile::dump_results(POOL_MEM *buf)
+int ConfigFile::dump_results(PoolMem *buf)
 {
    int len;
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
 
    if (!items) {
       char *p;

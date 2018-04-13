@@ -38,7 +38,7 @@
 
 
 /* Forward referenced functions */
-static inline bool extract_post_backup_stats_ndmp_native(JCR *jcr,
+static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
                                              char *filesystem,
                                              struct ndm_session *sess);
 
@@ -56,16 +56,16 @@ static inline bool extract_post_backup_stats_ndmp_native(JCR *jcr,
 int ndmp_load_next(struct ndm_session *sess) {
 
    NIS *nis = (NIS *)sess->param->log.ctx;
-   JCR *jcr = nis->jcr;
+   JobControlRecord *jcr = nis->jcr;
    struct ndm_media_table	*media_tab;
    media_tab = &sess->control_acb->job.media_tab;
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
    char *unwanted_volumes = (char *)"";
    bool create = false;
    bool prune = false;
    struct ndmmedia *media;
    int index = 1;
-   STORERES *store = jcr->res.wstore;
+   StoreResource *store = jcr->res.wstore;
 
    /*
     * get the poolid for pool name
@@ -144,13 +144,13 @@ bail_out:
 /*
  * Run a NDMP backup session for NDMP_NATIVE backup
  */
-bool do_ndmp_backup_ndmp_native(JCR *jcr)
+bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
 {
    unsigned int cnt;
    int i, status;
    char ed1[100];
    NIS *nis = NULL;
-   FILESETRES *fileset;
+   FilesetResource *fileset;
    struct ndm_job_param ndmp_job;
    struct ndm_session ndmp_sess;
    bool session_initialized = false;
@@ -204,7 +204,7 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
     */
 
    status = 0;
-   STORERES *store = jcr->res.wstore;
+   StoreResource *store = jcr->res.wstore;
    int drive = 0;
 
    /*
@@ -266,8 +266,8 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
    for (i = 0; i < fileset->num_includes; i++) {
       int j;
       char *item;
-      INCEXE *ie = fileset->include_items[i];
-      POOL_MEM virtual_filename(PM_FNAME);
+      IncludeExcludeItem *ie = fileset->include_items[i];
+      PoolMem virtual_filename(PM_FNAME);
 
       /*
        * Loop over each file = entry of the fileset.
@@ -311,7 +311,7 @@ bool do_ndmp_backup_ndmp_native(JCR *jcr)
          memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
          /*
-          * We can use the same private pointer used in the logging with the JCR in
+          * We can use the same private pointer used in the logging with the JobControlRecord in
           * the file index generation. We don't setup a index_log.deliver
           * function as we catch the index information via callbacks.
           */
@@ -483,7 +483,7 @@ ok_out:
 /*
  * Setup a NDMP backup session.
  */
-bool do_ndmp_backup_init_ndmp_native(JCR *jcr)
+bool do_ndmp_backup_init_ndmp_native(JobControlRecord *jcr)
 {
    free_rstorage(jcr);                   /* we don't read so release */
 
@@ -530,7 +530,7 @@ bool do_ndmp_backup_init_ndmp_native(JCR *jcr)
 /*
  * Extract any post backup statistics for native NDMP
  */
-static inline bool extract_post_backup_stats_ndmp_native(JCR *jcr,
+static inline bool extract_post_backup_stats_ndmp_native(JobControlRecord *jcr,
                                              char *filesystem,
                                              struct ndm_session *sess)
 {
@@ -631,13 +631,13 @@ static inline bool extract_post_backup_stats_ndmp_native(JCR *jcr,
 
 #else
 
-bool do_ndmp_backup_init_ndmp_native(JCR *jcr)
+bool do_ndmp_backup_init_ndmp_native(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool do_ndmp_backup_ndmp_native(JCR *jcr)
+bool do_ndmp_backup_ndmp_native(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

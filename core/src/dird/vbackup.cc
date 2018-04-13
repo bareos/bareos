@@ -40,12 +40,12 @@
 
 static const int dbglevel = 10;
 
-static bool create_bootstrap_file(JCR *jcr, char *jobids);
+static bool create_bootstrap_file(JobControlRecord *jcr, char *jobids);
 
 /**
  * Called here before the job is run to do the job specific setup.
  */
-bool do_native_vbackup_init(JCR *jcr)
+bool do_native_vbackup_init(JobControlRecord *jcr)
 {
    const char *storage_source;
 
@@ -147,10 +147,10 @@ bool do_native_vbackup_init(JCR *jcr)
  * Returns:  false on failure
  *           true  on success
  */
-bool do_native_vbackup(JCR *jcr)
+bool do_native_vbackup(JobControlRecord *jcr)
 {
    char *p;
-   BSOCK *sd;
+   BareosSocket *sd;
    char *jobids;
    char ed1[100];
    int JobLevel_of_first_job;
@@ -167,8 +167,8 @@ bool do_native_vbackup(JCR *jcr)
 
    Dmsg2(100, "rstorage=%p wstorage=%p\n", jcr->res.rstorage, jcr->res.wstorage);
    Dmsg2(100, "Read store=%s, write store=%s\n",
-         ((STORERES *)jcr->res.rstorage->first())->name(),
-         ((STORERES *)jcr->res.wstorage->first())->name());
+         ((StoreResource *)jcr->res.rstorage->first())->name(),
+         ((StoreResource *)jcr->res.wstorage->first())->name());
 
    /*
     * Print Job Start message
@@ -310,7 +310,7 @@ bool do_native_vbackup(JCR *jcr)
 
    /*
     * Start the job prior to starting the message thread below
-    * to avoid two threads from using the BSOCK structure at
+    * to avoid two threads from using the BareosSocket structure at
     * the same time.
     */
    if (!sd->fsend("run")) {
@@ -343,7 +343,7 @@ bool do_native_vbackup(JCR *jcr)
     * Remove the successfully consolidated jobids from the database
     */
     if (jcr->res.job->AlwaysIncremental && jcr->res.job->AlwaysIncrementalJobRetention) {
-      UAContext *ua;
+      UaContext *ua;
       ua = new_ua_context(jcr);
       purge_jobs_from_catalog(ua, jobids);
       Jmsg(jcr, M_INFO, 0, _("purged JobIds %s as they were consolidated into Job %s\n"), jobids,  edit_uint64(jcr->JobId, ed1) );
@@ -360,14 +360,14 @@ bail_out:
 /**
  * Release resources allocated during backup.
  */
-void native_vbackup_cleanup(JCR *jcr, int TermCode, int JobLevel)
+void native_vbackup_cleanup(JobControlRecord *jcr, int TermCode, int JobLevel)
 {
    char ec1[30], ec2[30];
    char term_code[100];
    const char *term_msg;
    int msg_type = M_INFO;
-   CLIENT_DBR cr;
-   POOL_MEM query(PM_MESSAGE);
+   ClientDbRecord cr;
+   PoolMem query(PM_MESSAGE);
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
@@ -472,7 +472,7 @@ static int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
 {
    JobId_t JobId;
    int FileIndex;
-   RBSR *bsr = (RBSR *)ctx;
+   RestoreBootstrapRecord *bsr = (RestoreBootstrapRecord *)ctx;
 
    JobId = str_to_int64(row[3]);
    FileIndex = str_to_int64(row[2]);
@@ -480,10 +480,10 @@ static int insert_bootstrap_handler(void *ctx, int num_fields, char **row)
    return 0;
 }
 
-static bool create_bootstrap_file(JCR *jcr, char *jobids)
+static bool create_bootstrap_file(JobControlRecord *jcr, char *jobids)
 {
-   RESTORE_CTX rx;
-   UAContext *ua;
+   RestoreContext rx;
+   UaContext *ua;
 
    memset(&rx, 0, sizeof(rx));
    rx.bsr = new_bsr();

@@ -44,18 +44,18 @@
 /**
  * Submit general SQL query
  */
-bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit,
                           e_list_type type, bool verbose)
 {
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool B_DB::list_sql_query(JCR *jcr, B_DB::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose)
+bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose)
 {
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool B_DB::list_sql_query(JCR *jcr, const char *query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    bool retval = false;
@@ -81,13 +81,13 @@ bail_out:
    return retval;
 }
 
-bool B_DB::list_sql_query(JCR *jcr, B_DB::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    return list_sql_query(jcr, get_predefined_query(query), sendit, type, description, verbose);
 }
 
-void B_DB::list_pool_records(JCR *jcr, POOL_DBR *pdbr, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_pool_records(JobControlRecord *jcr, PoolDbRecord *pdbr, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
@@ -132,10 +132,10 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_client_records(JCR *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_client_records(JobControlRecord *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    db_lock(this);
-   POOL_MEM clientfilter(PM_MESSAGE);
+   PoolMem clientfilter(PM_MESSAGE);
 
    if (clientname) {
       clientfilter.bsprintf("WHERE Name = '%s'", clientname);
@@ -163,7 +163,7 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_storage_records(JCR *jcr, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_storage_records(JobControlRecord *jcr, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    db_lock(this);
 
@@ -187,12 +187,12 @@ bail_out:
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId
  */
-void B_DB::list_media_records(JCR *jcr, MEDIA_DBR *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM select(PM_MESSAGE);
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem select(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    escape_string(jcr, esc, mdbr->VolumeName, strlen(mdbr->VolumeName));
 
@@ -247,7 +247,7 @@ bail_out:
 
 
 
-void B_DB::list_jobmedia_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_jobmedia_records(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -291,7 +291,7 @@ bail_out:
 }
 
 
-void B_DB::list_volumes_of_jobid(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -325,10 +325,10 @@ bail_out:
 
 
 
-void B_DB::list_copies_records(JCR *jcr, const char *range, const char *JobIds,
+void BareosDb::list_copies_records(JobControlRecord *jcr, const char *range, const char *JobIds,
                                OUTPUT_FORMATTER *send, e_list_type type)
 {
-   POOL_MEM str_jobids(PM_MESSAGE);
+   PoolMem str_jobids(PM_MESSAGE);
 
    if (JobIds && JobIds[0]) {
       Mmsg(str_jobids, " AND (Job.PriorJobId IN (%s) OR Job.JobId IN (%s)) ",
@@ -367,10 +367,10 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_log_records(JCR *jcr, const char *clientname, const char *range,
+void BareosDb::list_log_records(JobControlRecord *jcr, const char *clientname, const char *range,
                             bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
-   POOL_MEM client_filter(PM_MESSAGE);
+   PoolMem client_filter(PM_MESSAGE);
 
    if (clientname) {
       Mmsg(client_filter, "AND Client.Name = '%s' ", clientname);
@@ -424,7 +424,7 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_joblog_records(JCR *jcr, uint32_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -466,7 +466,7 @@ bail_out:
  * list job statistics records for certain jobid
  *
  */
-void B_DB::list_jobstatistics_records(JCR *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -494,16 +494,16 @@ bail_out:
 }
 
 /**
- * List Job record(s) that match JOB_DBR
+ * List Job record(s) that match JobDbRecord
  */
-void B_DB::list_job_records(JCR *jcr, JOB_DBR *jr, const char *range, const char *clientname, int jobstatus,
+void BareosDb::list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname, int jobstatus,
                             int joblevel, const char *volumename, utime_t since_time, bool last, bool count,
                             OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
    char esc[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM temp(PM_MESSAGE),
+   PoolMem temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
 
@@ -579,7 +579,7 @@ bail_out:
 /**
  * List Job totals
  */
-void B_DB::list_job_totals(JCR *jcr, JOB_DBR *jr, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OUTPUT_FORMATTER *sendit)
 {
    db_lock(this);
 
@@ -619,10 +619,10 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_files_for_job(JobControlRecord *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
 {
    char ed1[50];
-   LIST_CTX lctx(jcr, this, sendit, NF_LIST);
+   ListContext lctx(jcr, this, sendit, NF_LIST);
 
    db_lock(this);
 
@@ -665,10 +665,10 @@ bail_out:
    db_unlock(this);
 }
 
-void B_DB::list_base_files_for_job(JCR *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
 {
    char ed1[50];
-   LIST_CTX lctx(jcr, this, sendit, NF_LIST);
+   ListContext lctx(jcr, this, sendit, NF_LIST);
 
    db_lock(this);
 
@@ -708,7 +708,7 @@ bail_out:
 /**
  * List fileset
  */
-void B_DB::list_filesets(JCR *jcr, JOB_DBR *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 

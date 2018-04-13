@@ -72,13 +72,13 @@ const char *FI_to_ascii(char *buf, int fi)
 }
 
 
-static const char *compression_to_str(POOL_MEM &resultbuffer,
+static const char *compression_to_str(PoolMem &resultbuffer,
                                       const char *compression_algorithm,
                                       uint32_t data_length,
                                       uint16_t compression_level,
                                       uint16_t compression_algorithm_version)
 {
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
    tmp.bsprintf("%s, level=%u, version=%u, length=%u",
                 compression_algorithm, compression_level,
                 compression_algorithm_version, data_length);
@@ -86,11 +86,11 @@ static const char *compression_to_str(POOL_MEM &resultbuffer,
    return resultbuffer.c_str();
 }
 
-static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
+static const char *record_compression_to_str(PoolMem &resultbuffer, const DeviceRecord *rec)
 {
    int32_t maskedStream = rec->maskedStream;
    POOLMEM *buf = rec->data;
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
    unser_declare;
 
    if (maskedStream == STREAM_SPARSE_GZIP_DATA ||
@@ -166,7 +166,7 @@ static const char *record_compression_to_str(POOL_MEM &resultbuffer, const DEV_R
    return resultbuffer.c_str();
 }
 
-static const char *record_digest_to_str(POOL_MEM &resultbuffer, const DEV_RECORD *rec)
+static const char *record_digest_to_str(PoolMem &resultbuffer, const DeviceRecord *rec)
 {
    char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
@@ -238,7 +238,7 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
       case STREAM_COMPRESSED_DATA:
          return "contCOMPRESSED";
       case STREAM_UNIX_ATTRIBUTES_EX:
-         return "contUNIX-ATTR-EX";
+         return "contUNIX-Attributes-EX";
       case STREAM_RESTORE_OBJECT:
          return "contRESTORE-OBJECT";
       case STREAM_SPARSE_DATA:
@@ -254,7 +254,7 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
       case STREAM_MACOS_FORK_DATA:
          return "contMACOS-RSRC";
       case STREAM_HFSPLUS_ATTRIBUTES:
-         return "contHFSPLUS-ATTR";
+         return "contHFSPLUS-Attributes";
       case STREAM_SHA256_DIGEST:
          return "contSHA256";
       case STREAM_SHA512_DIGEST:
@@ -305,7 +305,7 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
    case STREAM_COMPRESSED_DATA:
       return "COMPRESSED";
    case STREAM_UNIX_ATTRIBUTES_EX:
-      return "UNIX-ATTR-EX";
+      return "UNIX-Attributes-EX";
    case STREAM_RESTORE_OBJECT:
       return "RESTORE-OBJECT";
    case STREAM_SPARSE_DATA:
@@ -323,7 +323,7 @@ const char *stream_to_ascii(char *buf, int stream, int fi)
    case STREAM_MACOS_FORK_DATA:
       return "MACOS-RSRC";
    case STREAM_HFSPLUS_ATTRIBUTES:
-      return "HFSPLUS-ATTR";
+      return "HFSPLUS-Attributes";
    case STREAM_SHA256_DIGEST:
       return "SHA256";
    case STREAM_SHA512_DIGEST:
@@ -381,9 +381,9 @@ static const char *findex_to_str(int32_t index, char *buf, size_t bufsz)
 }
 
 
-static const char *record_unix_attributes_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+static const char *record_unix_attributes_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec)
 {
-   ATTR *attr = new_attr(NULL);
+   Attributes *attr = new_attr(NULL);
 
    if (!unpack_attributes_record(jcr, rec->Stream, rec->data, rec->data_len, attr)) {
       resultbuffer.bsprintf("ERROR");
@@ -400,7 +400,7 @@ static const char *record_unix_attributes_to_str(POOL_MEM &resultbuffer, JCR *jc
 }
 
 
-static const char *get_record_short_info(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+static const char *get_record_short_info(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec)
 {
    switch (rec->maskedStream) {
    case STREAM_UNIX_ATTRIBUTES:
@@ -438,9 +438,9 @@ static const char *get_record_short_info(POOL_MEM &resultbuffer, JCR *jcr, const
    return resultbuffer.c_str();
 }
 
-const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *rec)
+const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec)
 {
-   POOL_MEM record_info_buf(PM_MESSAGE);
+   PoolMem record_info_buf(PM_MESSAGE);
    char stream_buf[100];
 
    resultbuffer.bsprintf("FileIndex=%-5d Stream=%-2d %-25s DataLen=%-5d",
@@ -452,7 +452,7 @@ const char *record_to_str(POOL_MEM &resultbuffer, JCR *jcr, const DEV_RECORD *re
    return resultbuffer.c_str();
 }
 
-void dump_record(const char *tag, const DEV_RECORD *rec)
+void dump_record(const char *tag, const DeviceRecord *rec)
 {
    char stream[128];
    char findex[128];
@@ -486,12 +486,12 @@ void dump_record(const char *tag, const DEV_RECORD *rec)
 /**
  * Return a new record entity
  */
-DEV_RECORD *new_record(bool with_data)
+DeviceRecord *new_record(bool with_data)
 {
-   DEV_RECORD *rec;
+   DeviceRecord *rec;
 
-   rec = (DEV_RECORD *)get_pool_memory(PM_RECORD);
-   memset(rec, 0, sizeof(DEV_RECORD));
+   rec = (DeviceRecord *)get_pool_memory(PM_RECORD);
+   memset(rec, 0, sizeof(DeviceRecord));
    if (with_data) {
       rec->data = get_pool_memory(PM_MESSAGE);
       rec->own_mempool = true;
@@ -501,7 +501,7 @@ DEV_RECORD *new_record(bool with_data)
    return rec;
 }
 
-void empty_record(DEV_RECORD *rec)
+void empty_record(DeviceRecord *rec)
 {
    rec->File = rec->Block = 0;
    rec->VolSessionId = rec->VolSessionTime = 0;
@@ -516,7 +516,7 @@ void empty_record(DEV_RECORD *rec)
    rec->state = st_none;
 }
 
-void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src)
+void copy_record_state(DeviceRecord *dst, DeviceRecord *src)
 {
    bool own_mempool;
    int32_t Stream, maskedStream;
@@ -532,7 +532,7 @@ void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src)
    data_len = dst->data_len;
    own_mempool = dst->own_mempool;
 
-   memcpy(dst, src, sizeof(DEV_RECORD));
+   memcpy(dst, src, sizeof(DeviceRecord));
 
    dst->Stream = Stream;
    dst->maskedStream = maskedStream;
@@ -544,7 +544,7 @@ void copy_record_state(DEV_RECORD *dst, DEV_RECORD *src)
 /**
  * Free the record entity
  */
-void free_record(DEV_RECORD *rec)
+void free_record(DeviceRecord *rec)
 {
    Dmsg0(950, "Enter free_record.\n");
    if (rec->data && rec->own_mempool) {
@@ -555,7 +555,7 @@ void free_record(DEV_RECORD *rec)
    Dmsg0(950, "Leave free_record.\n");
 }
 
-static inline ssize_t write_header_to_block(DEV_BLOCK *block, const DEV_RECORD *rec, int32_t Stream)
+static inline ssize_t write_header_to_block(DeviceBlock *block, const DeviceRecord *rec, int32_t Stream)
 {
    ser_declare;
 
@@ -596,7 +596,7 @@ static inline ssize_t write_header_to_block(DEV_BLOCK *block, const DEV_RECORD *
    return WRITE_RECHDR_LENGTH;
 }
 
-static inline ssize_t write_data_to_block(DEV_BLOCK *block, const DEV_RECORD *rec)
+static inline ssize_t write_data_to_block(DeviceBlock *block, const DeviceRecord *rec)
 {
    uint32_t len;
 
@@ -636,7 +636,7 @@ static inline ssize_t write_data_to_block(DEV_BLOCK *block, const DEV_RECORD *re
  * Returns: false means the block could not be written to tape/disk.
  *          true on success (all bytes written to the block).
  */
-bool DCR::write_record()
+bool DeviceControlRecord::write_record()
 {
    bool retval = false;
    bool translated_record = false;
@@ -654,7 +654,7 @@ bool DCR::write_record()
    /*
     * The record got translated when we got an after_rec pointer after calling the
     * bsdEventWriteRecordTranslation plugin event. If no translation has taken place
-    * we just point the after_rec pointer to same DEV_RECORD as in the before_rec pointer.
+    * we just point the after_rec pointer to same DeviceRecord as in the before_rec pointer.
     */
    if (!after_rec) {
       after_rec = before_rec;
@@ -708,12 +708,12 @@ bail_out:
  *  non-zero), and 2. The remaining bytes to write may not
  *  all fit into the block.
  */
-bool write_record_to_block(DCR *dcr, DEV_RECORD *rec)
+bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    ssize_t n;
    bool retval = false;
    char buf1[100], buf2[100];
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
 
    /*
     * After this point the record is in nrec not rec e.g. its either converted
@@ -854,12 +854,12 @@ bail_out:
  *  Returns: false on failure
  *           true  on success (all bytes can be written)
  */
-bool can_write_record_to_block(DEV_BLOCK *block, const DEV_RECORD *rec)
+bool can_write_record_to_block(DeviceBlock *block, const DeviceRecord *rec)
 {
    return block_write_navail(block) >= WRITE_RECHDR_LENGTH + rec->remainder;
 }
 
-uint64_t get_record_address(const DEV_RECORD *rec)
+uint64_t get_record_address(const DeviceRecord *rec)
 {
    return ((uint64_t)rec->File)<<32 | rec->Block;
 }
@@ -873,7 +873,7 @@ uint64_t get_record_address(const DEV_RECORD *rec)
  *                routine may have to be called again with a new
  *                block if the entire record was not read.
  */
-bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
+bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    ser_declare;
    uint32_t remlen;
@@ -894,8 +894,8 @@ bool read_record_from_block(DCR *dcr, DEV_RECORD *rec)
    if (dcr->block->dev->is_tape()) {
       set_bit(REC_ISTAPE, rec->state_bits);
    }
-   rec->Block = ((DEVICE *)(dcr->block->dev))->EndBlock;
-   rec->File = ((DEVICE *)(dcr->block->dev))->EndFile;
+   rec->Block = ((Device *)(dcr->block->dev))->EndBlock;
+   rec->File = ((Device *)(dcr->block->dev))->EndFile;
 
    /*
     * Get the header. There is always a full header, otherwise we find it in the next block.

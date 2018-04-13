@@ -480,7 +480,7 @@ static const char *pool_name(int pool)
       "FNAME ",
       "MSG   ",
       "EMSG  ",
-      "BSOCK ",
+      "BareosSocket ",
       "RECORD"
    };
 
@@ -529,7 +529,7 @@ int pm_strcat(POOLMEM *&pm, const char *str)
    return pmlen + len - 1;
 }
 
-int pm_strcat(POOLMEM *&pm, POOL_MEM &str)
+int pm_strcat(POOLMEM *&pm, PoolMem &str)
 {
    int pmlen = strlen(pm);
    int len = strlen(str.c_str()) + 1;
@@ -539,7 +539,7 @@ int pm_strcat(POOLMEM *&pm, POOL_MEM &str)
    return pmlen + len - 1;
 }
 
-int pm_strcat(POOL_MEM &pm, const char *str)
+int pm_strcat(PoolMem &pm, const char *str)
 {
    int pmlen = strlen(pm.c_str());
    int len;
@@ -552,7 +552,7 @@ int pm_strcat(POOL_MEM &pm, const char *str)
    return pmlen + len - 1;
 }
 
-int pm_strcat(POOL_MEM *&pm, const char *str)
+int pm_strcat(PoolMem *&pm, const char *str)
 {
    int pmlen = strlen(pm->c_str());
    int len;
@@ -581,7 +581,7 @@ int pm_strcpy(POOLMEM *&pm, const char *str)
    return len - 1;
 }
 
-int pm_strcpy(POOLMEM *&pm, POOL_MEM &str)
+int pm_strcpy(POOLMEM *&pm, PoolMem &str)
 {
    int len = strlen(str.c_str()) + 1;
 
@@ -590,7 +590,7 @@ int pm_strcpy(POOLMEM *&pm, POOL_MEM &str)
    return len - 1;
 }
 
-int pm_strcpy(POOL_MEM &pm, const char *str)
+int pm_strcpy(PoolMem &pm, const char *str)
 {
    int len;
 
@@ -602,7 +602,7 @@ int pm_strcpy(POOL_MEM &pm, const char *str)
    return len - 1;
 }
 
-int pm_strcpy(POOL_MEM *&pm, const char *str)
+int pm_strcpy(PoolMem *&pm, const char *str)
 {
    int len;
 
@@ -625,33 +625,33 @@ int pm_memcpy(POOLMEM *&pm, const char *data, int32_t n)
    return n;
 }
 
-int pm_memcpy(POOLMEM *&pm, POOL_MEM &data, int32_t n)
+int pm_memcpy(POOLMEM *&pm, PoolMem &data, int32_t n)
 {
    pm = check_pool_memory_size(pm, n);
    memcpy(pm, data.c_str(), n);
    return n;
 }
 
-int pm_memcpy(POOL_MEM &pm, const char *data, int32_t n)
+int pm_memcpy(PoolMem &pm, const char *data, int32_t n)
 {
    pm.check_size(n);
    memcpy(pm.c_str(), data, n);
    return n;
 }
 
-int pm_memcpy(POOL_MEM *&pm, const char *data, int32_t n)
+int pm_memcpy(PoolMem *&pm, const char *data, int32_t n)
 {
    pm->check_size(n);
    memcpy(pm->c_str(), data, n);
    return n;
 }
 
-/* ==============  CLASS POOL_MEM   ============== */
+/* ==============  CLASS PoolMem   ============== */
 
 /*
  * Return the size of a memory buffer
  */
-int32_t POOL_MEM::max_size()
+int32_t PoolMem::max_size()
 {
    int32_t size;
    char *cp = mem;
@@ -662,7 +662,7 @@ int32_t POOL_MEM::max_size()
    return size;
 }
 
-void POOL_MEM::realloc_pm(int32_t size)
+void PoolMem::realloc_pm(int32_t size)
 {
    char *cp = mem;
    char *buf;
@@ -686,12 +686,12 @@ void POOL_MEM::realloc_pm(int32_t size)
    V(mutex);
 }
 
-int POOL_MEM::strcat(POOL_MEM &str)
+int PoolMem::strcat(PoolMem &str)
 {
    return strcat(str.c_str());
 }
 
-int POOL_MEM::strcat(const char *str)
+int PoolMem::strcat(const char *str)
 {
    int pmlen = strlen();
    int len;
@@ -704,12 +704,12 @@ int POOL_MEM::strcat(const char *str)
    return pmlen + len - 1;
 }
 
-int POOL_MEM::strcpy(POOL_MEM &str)
+int PoolMem::strcpy(PoolMem &str)
 {
    return strcpy(str.c_str());
 }
 
-int POOL_MEM::strcpy(const char *str)
+int PoolMem::strcpy(const char *str)
 {
    int len;
 
@@ -721,12 +721,12 @@ int POOL_MEM::strcpy(const char *str)
    return len - 1;
 }
 
-void POOL_MEM::toLower()
+void PoolMem::toLower()
 {
    lcase(mem);
 }
 
-int POOL_MEM::bsprintf(const char *fmt, ...)
+int PoolMem::bsprintf(const char *fmt, ...)
 {
    int len;
    va_list arg_ptr;
@@ -737,7 +737,7 @@ int POOL_MEM::bsprintf(const char *fmt, ...)
 }
 
 #ifdef HAVE_VA_COPY
-int POOL_MEM::bvsprintf(const char *fmt, va_list arg_ptr)
+int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
 {
    int maxlen, len;
    va_list ap;
@@ -756,7 +756,7 @@ again:
 
 #else /* no va_copy() -- brain damaged version of variable arguments */
 
-int POOL_MEM::bvsprintf(const char *fmt, va_list arg_ptr)
+int PoolMem::bvsprintf(const char *fmt, va_list arg_ptr)
 {
    int maxlen, len;
 

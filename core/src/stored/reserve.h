@@ -33,10 +33,10 @@
  *      the Pool Name, and the Pool Type.
  *
  *    Ensure that the device exists and is opened, then store
- *      the media and pool info in the JCR.  This class is used
+ *      the media and pool info in the JobControlRecord.  This class is used
  *      only temporarily in this file.
  */
-class DIRSTORE {
+class DirectorStorage {
 public:
    alist *device;
    bool append;
@@ -47,13 +47,13 @@ public:
 };
 
 /* Reserve context */
-class RCTX {
+class ReserveContext {
 public:
-   JCR *jcr;
+   JobControlRecord *jcr;
    char *device_name;
-   DIRSTORE *store;
-   DEVRES *device;
-   DEVICE *low_use_drive;             /**< Low use drive candidate */
+   DirectorStorage *store;
+   DeviceResource *device;
+   Device *low_use_drive;             /**< Low use drive candidate */
    int num_writers;                   /**< for selecting low use drive */
    bool try_low_use_drive;            /**< see if low use drive available */
    bool any_drive;                    /**< Accept any drive if set */

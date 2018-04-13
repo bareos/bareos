@@ -31,7 +31,7 @@
 #include "bareos.h"
 //#include "windows.h"
 
-struct FILESET {
+struct FileSet {
    alist mylist;
 };
 
@@ -98,9 +98,9 @@ void test_foreach_alist(alist *list)
 
 void test_alist_init_destroy()
 {
-   FILESET *fileset;
-   fileset = (FILESET *)malloc(sizeof(FILESET));
-   memset(fileset, 0, sizeof(FILESET));
+   FileSet *fileset;
+   fileset = (FileSet *)malloc(sizeof(FileSet));
+   memset(fileset, 0, sizeof(FileSet));
    fileset->mylist.init();
 
    alist_fill(&(fileset->mylist), 20);

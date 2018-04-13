@@ -48,16 +48,16 @@ typedef struct s_name_ctx {
    int max_ids;                       /* size of array */
    int num_del;                       /* number deleted */
    int tot_ids;                       /* total to process */
-} NAME_LIST;
+} NameList;
 
 /*
  * Global variables
  */
 static bool fix = false;
 static bool batch = false;
-static B_DB *db;
+static BareosDb *db;
 static ID_LIST id_list;
-static NAME_LIST name_list;
+static NameList name_list;
 static char buf[20000];
 static bool quit = false;
 static const char *idx_tmp_name;
@@ -65,7 +65,7 @@ static const char *idx_tmp_name;
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
 #endif
 
-DIRRES *me = NULL;                    /* Our Global resource */
+DirectorResource *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
 #define MAX_ID_LIST_LEN 10000000
@@ -196,12 +196,12 @@ static void toggle_verbose()
 }
 
 
-static void print_catalog_details(CATRES *catalog, const char *working_dir)
+static void print_catalog_details(CatalogResource *catalog, const char *working_dir)
 {
    POOLMEM *catalog_details = get_pool_memory(PM_MESSAGE);
 
    /*
-    * Instantiate a B_DB class and see what db_type gets assigned to it.
+    * Instantiate a BareosDb class and see what db_type gets assigned to it.
     */
    db = db_init_database(NULL,
                          catalog->db_driver,
@@ -489,7 +489,7 @@ static int delete_id_list(const char *query, ID_LIST *id_list)
  */
 static int name_list_handler(void *ctx, int num_fields, char **row)
 {
-   NAME_LIST *name = (NAME_LIST *)ctx;
+   NameList *name = (NameList *)ctx;
 
    if (name->num_ids == MAX_ID_LIST_LEN) {
       return 1;
@@ -510,7 +510,7 @@ static int name_list_handler(void *ctx, int num_fields, char **row)
 /*
  * Construct name list
  */
-static int make_name_list(const char *query, NAME_LIST *name_list)
+static int make_name_list(const char *query, NameList *name_list)
 {
    name_list->num_ids = 0;
    name_list->num_del = 0;
@@ -526,7 +526,7 @@ static int make_name_list(const char *query, NAME_LIST *name_list)
 /*
  * Print names in the list
  */
-static void print_name_list(NAME_LIST *name_list)
+static void print_name_list(NameList *name_list)
 {
    for (int i=0; i < name_list->num_ids; i++) {
       printf("%s\n", name_list->name[i]);
@@ -536,7 +536,7 @@ static void print_name_list(NAME_LIST *name_list)
 /*
  * Free names in the list
  */
-static void free_name_list(NAME_LIST *name_list)
+static void free_name_list(NameList *name_list)
 {
    for (int i=0; i < name_list->num_ids; i++) {
       free(name_list->name[i]);
@@ -710,7 +710,7 @@ static void eliminate_orphaned_file_records()
 static void eliminate_orphaned_path_records()
 {
    db_int64_ctx lctx;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    lctx.count = 0;
    idx_tmp_name = NULL;
@@ -726,7 +726,7 @@ static void eliminate_orphaned_path_records()
       }
    }
 
-   db->fill_query(query, B_DB::SQL_QUERY_get_orphaned_paths_0);
+   db->fill_query(query, BareosDb::SQL_QUERY_get_orphaned_paths_0);
 
    printf(_("Checking for orphaned Path entries. This may take some time!\n"));
    if (verbose > 1) {
@@ -1051,11 +1051,11 @@ static void repair_bad_filenames()
 
 static void repair_bad_paths()
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    int i;
 
    printf(_("Checking for Paths without a trailing slash\n"));
-   db->fill_query(query, B_DB::SQL_QUERY_get_bad_paths_0);
+   db->fill_query(query, BareosDb::SQL_QUERY_get_bad_paths_0);
    if (verbose > 1) {
       printf("%s\n", query.c_str());
    }
@@ -1244,7 +1244,7 @@ int main (int argc, char *argv[])
    OSDependentInit();
 
    if (configfile || (argc == 0)) {
-      CATRES *catalog = NULL;
+      CatalogResource *catalog = NULL;
       int found = 0;
       if (argc > 0) {
          Pmsg0(0, _("Warning skipping the additional parameters for working directory/dbname/user/password/host.\n"));
@@ -1271,7 +1271,7 @@ int main (int argc, char *argv[])
          exit(1);
       } else {
          LockRes();
-         me = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+         me = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
          UnlockRes();
          if (!me) {
             Pmsg0(0, _("Error no Director resource defined.\n"));

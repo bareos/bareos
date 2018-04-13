@@ -82,17 +82,17 @@ static std::map<SSL_CTX *, sharedPskCredentials> psk_client_credentials;
 /*
  * TLS Context Structures
  */
-class TLS_Context {
+class TlsContext {
  public:
    SSL_CTX *openssl;
    CRYPTO_PEM_PASSWD_CB *pem_callback;
    const void *pem_userdata;
-   TLS_Context() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr) {
-    Dmsg0(100, "Construct TLS_Context\n");
+   TlsContext() : openssl(nullptr), pem_callback(nullptr), pem_userdata(nullptr) {
+    Dmsg0(100, "Construct TlsContext\n");
    }
 
-   ~TLS_Context() {
-      Dmsg0(100, "Destruct TLS_Context\n");
+   ~TlsContext() {
+      Dmsg0(100, "Destruct TlsContext\n");
       if (openssl != nullptr) {
          try {
             psk_server_credentials.erase(openssl);
@@ -109,15 +109,15 @@ class TLS_Context {
    }
 };
 
-class TLS_Connection {
-   std::shared_ptr<TLS_Context> tls_ctx_;
+class TlsConnection {
+   std::shared_ptr<TlsContext> tls_ctx_;
    SSL *openssl_;
 
  public:
-   std::shared_ptr<TLS_Context> GetTls() { return tls_ctx_; }
+   std::shared_ptr<TlsContext> GetTls() { return tls_ctx_; }
    SSL *GetSsl() { return openssl_; }
 
-   TLS_Connection(std::shared_ptr<TLS_Context> tls_ctx,
+   TlsConnection(std::shared_ptr<TlsContext> tls_ctx,
                   int fd,
                   unsigned int (*psk_client_callback)(SSL *ssl,
                                                       const char *hint,
@@ -162,14 +162,14 @@ class TLS_Connection {
       SSL_set_mode(openssl_, SSL_MODE_ENABLE_PARTIAL_WRITE | SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
    }
 
-   ~TLS_Connection() {
-      Dmsg0(100, "Destruct TLS_Connection\n");
+   ~TlsConnection() {
+      Dmsg0(100, "Destruct TlsConnection\n");
       SSL_free(openssl_);
    }
 };
 
 #if (OPENSSL_VERSION_NUMBER >= 0x00907000L) && (OPENSSL_VERSION_NUMBER < 0x10100000L)
-struct TLS_CRL_Reload_Context {
+struct TlsCrlReloadContext {
    time_t mtime;
    char *crl_file_name;
    X509_CRL *crls[MAX_CRLS];
@@ -180,10 +180,10 @@ struct TLS_CRL_Reload_Context {
  */
 static int crl_reloader_new(X509_LOOKUP *ctx)
 {
-   TLS_CRL_Reload_Context *data;
+   TlsCrlReloadContext *data;
 
-   data = (TLS_CRL_Reload_Context *)malloc(sizeof(TLS_CRL_Reload_Context));
-   memset(data, 0, sizeof(TLS_CRL_Reload_Context));
+   data = (TlsCrlReloadContext *)malloc(sizeof(TlsCrlReloadContext));
+   memset(data, 0, sizeof(TlsCrlReloadContext));
 
    ctx->method_data = (char *)data;
    return 1;
@@ -192,10 +192,10 @@ static int crl_reloader_new(X509_LOOKUP *ctx)
 static void crl_reloader_free(X509_LOOKUP *ctx)
 {
    int cnt;
-   TLS_CRL_Reload_Context *data;
+   TlsCrlReloadContext *data;
 
    if (ctx->method_data) {
-      data = (TLS_CRL_Reload_Context *)ctx->method_data;
+      data = (TlsCrlReloadContext *)ctx->method_data;
 
       if (data->crl_file_name) {
          free(data->crl_file_name);
@@ -220,9 +220,9 @@ static int crl_reloader_reload_file(X509_LOOKUP *ctx)
    int cnt, ok = 0;
    struct stat st;
    BIO *in = NULL;
-   TLS_CRL_Reload_Context *data;
+   TlsCrlReloadContext *data;
 
-   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   data = (TlsCrlReloadContext *)ctx->method_data;
    if (!data->crl_file_name) {
       goto bail_out;
    }
@@ -285,10 +285,10 @@ bail_out:
 static int crl_reloader_reload_if_newer(X509_LOOKUP *ctx)
 {
    int ok = 0;
-   TLS_CRL_Reload_Context *data;
+   TlsCrlReloadContext *data;
    struct stat st;
 
-   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   data = (TlsCrlReloadContext *)ctx->method_data;
    if (!data->crl_file_name) {
       return ok;
    }
@@ -315,9 +315,9 @@ bail_out:
 static int crl_reloader_file_load(X509_LOOKUP *ctx, const char *argp)
 {
    int ok = 0;
-   TLS_CRL_Reload_Context *data;
+   TlsCrlReloadContext *data;
 
-   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   data = (TlsCrlReloadContext *)ctx->method_data;
    if (data->crl_file_name) {
       free(data->crl_file_name);
    }
@@ -375,13 +375,13 @@ static int crl_entry_expired(X509_CRL *crl)
 static int crl_reloader_get_by_subject(X509_LOOKUP *ctx, int type, X509_NAME *name, X509_OBJECT *ret)
 {
    int cnt, ok = 0;
-   TLS_CRL_Reload_Context *data = NULL;
+   TlsCrlReloadContext *data = NULL;
 
    if (type != X509_LU_CRL) {
       return ok;
    }
 
-   data = (TLS_CRL_Reload_Context *)ctx->method_data;
+   data = (TlsCrlReloadContext *)ctx->method_data;
    if (!data->crls[0]) {
       return ok;
    }
@@ -868,7 +868,7 @@ void free_tls_context(std::shared_ptr<TLS_CONTEXT> &ctx) {
  * if this is a connection belonging to a job (jcr != NULL)
  *
  */
-void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
+void tls_log_conninfo(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host, int port, const char *who) {
    if (tls_conn == nullptr) {
       Qmsg(jcr, M_INFO, 0, _("Cleartext connection to %s at %s:%d established\n"), who, host, port);
    } else {
@@ -891,7 +891,7 @@ void tls_log_conninfo(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host, int 
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    SSL *ssl = tls_conn->GetSsl();
    X509 *cert;
@@ -934,7 +934,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int i, j;
    int extensions;
@@ -1066,11 +1066,11 @@ success:
  * Returns: Pointer to TLS_CONNECTION instance on success
  *          NULL on failure;
  */
-TLS_CONNECTION *new_tls_connection(std::shared_ptr<TLS_Context> tls_ctx,
+TLS_CONNECTION *new_tls_connection(std::shared_ptr<TlsContext> tls_ctx,
                                                    int fd,
                                                    bool server) {
-   return new TLS_Connection(tls_ctx, fd, psk_client_cb, psk_server_cb);
-//    return make_shared<TLS_Connection>(tls_ctx, fd, psk_client_cb, psk_server_cb);
+   return new TlsConnection(tls_ctx, fd, psk_client_cb, psk_server_cb);
+//    return make_shared<TlsConnection>(tls_ctx, fd, psk_client_cb, psk_server_cb);
 }
 
 /*
@@ -1084,7 +1084,7 @@ void free_tls_connection(TLS_CONNECTION *tls_conn)
 }
 
 /* Does all the manual labor for tls_bsock_accept() and tls_bsock_connect() */
-static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
+static inline bool openssl_bsock_session_start(BareosSocket *bsock, bool server)
 {
    TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int err;
@@ -1117,10 +1117,10 @@ static inline bool openssl_bsock_session_start(BSOCK *bsock, bool server)
          status = false;
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         wait_for_readable_fd(bsock->m_fd, 10000, false);
+         wait_for_readable_fd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_WANT_WRITE:
-         wait_for_writable_fd(bsock->m_fd, 10000, false);
+         wait_for_writable_fd(bsock->fd_, 10000, false);
          break;
       default:
          /* Socket Error Occurred */
@@ -1149,7 +1149,7 @@ cleanup:
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BSOCK *bsock)
+bool tls_bsock_connect(BareosSocket *bsock)
 {
    return openssl_bsock_session_start(bsock, false);
 }
@@ -1159,7 +1159,7 @@ bool tls_bsock_connect(BSOCK *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BSOCK *bsock)
+bool tls_bsock_accept(BareosSocket *bsock)
 {
    return openssl_bsock_session_start(bsock, true);
 }
@@ -1167,7 +1167,7 @@ bool tls_bsock_accept(BSOCK *bsock)
 /*
  * Shutdown TLS_CONNECTION instance
  */
-void tls_bsock_shutdown(BSOCK *bsock)
+void tls_bsock_shutdown(BareosSocket *bsock)
 {
    /*
     * SSL_shutdown must be called twice to fully complete the process -
@@ -1213,7 +1213,7 @@ void tls_bsock_shutdown(BSOCK *bsock)
 }
 
 /* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
-static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
+static inline int openssl_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
     TLS_CONNECTION *tls_conn = bsock->GetTlsConnection();
    int flags;
@@ -1258,10 +1258,10 @@ static inline int openssl_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, b
          openssl_post_errors(bsock->get_jcr(), M_FATAL, _("TLS read/write failure."));
          goto cleanup;
       case SSL_ERROR_WANT_READ:
-         wait_for_readable_fd(bsock->m_fd, 10000, false);
+         wait_for_readable_fd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_WANT_WRITE:
-         wait_for_writable_fd(bsock->m_fd, 10000, false);
+         wait_for_writable_fd(bsock->fd_, 10000, false);
          break;
       case SSL_ERROR_ZERO_RETURN:
          /* TLS connection was cleanly shut down */
@@ -1294,12 +1294,12 @@ cleanup:
    return nbytes - nleft;
 }
 
-int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return openssl_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
-int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return openssl_bsock_readwrite(bsock, ptr, nbytes, false);
 }

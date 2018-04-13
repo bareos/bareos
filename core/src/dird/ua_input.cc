@@ -38,10 +38,10 @@
  * If subprompt is set, we send a BNET_SUB_PROMPT signal otherwise
  *   send a BNET_TEXT_INPUT signal.
  */
-bool get_cmd(UAContext *ua, const char *prompt, bool subprompt)
+bool get_cmd(UaContext *ua, const char *prompt, bool subprompt)
 {
    int status;
-   BSOCK *sock = ua->UA_sock;
+   BareosSocket *sock = ua->UA_sock;
 
    ua->cmd[0] = 0;
    if (!sock || ua->batch) {          /* No UA or batch mode */
@@ -81,7 +81,7 @@ bool get_cmd(UAContext *ua, const char *prompt, bool subprompt)
  *  Returns:  false if failure
  *            true  if success => value in ua->pint32_val
  */
-bool get_pint(UAContext *ua, const char *prompt)
+bool get_pint(UaContext *ua, const char *prompt)
 {
    double dval;
    ua->pint32_val = 0;
@@ -139,7 +139,7 @@ bool is_yesno(char *val, bool *ret)
  *           true  if success => ua->pint32_val == 1 for yes
  *                               ua->pint32_val == 0 for no
  */
-bool get_yesno(UAContext *ua, const char *prompt)
+bool get_yesno(UaContext *ua, const char *prompt)
 {
    int len;
    bool ret;
@@ -176,7 +176,7 @@ bool get_yesno(UAContext *ua, const char *prompt)
  *                 or user enters "yes"
  *           false otherwise
  */
-bool get_confirmation(UAContext *ua, const char *prompt)
+bool get_confirmation(UaContext *ua, const char *prompt)
 {
    if (find_arg(ua, NT_("yes")) >= 0) {
       return true;
@@ -198,7 +198,7 @@ bool get_confirmation(UAContext *ua, const char *prompt)
  * Returns: 0, 1, 2 if OK
  *          -1 on error
  */
-int get_enabled(UAContext *ua, const char *val)
+int get_enabled(UaContext *ua, const char *val)
 {
    int Enabled = -1;
 
@@ -220,7 +220,7 @@ int get_enabled(UAContext *ua, const char *val)
    return Enabled;
 }
 
-void parse_ua_args(UAContext *ua)
+void parse_ua_args(UaContext *ua)
 {
    parse_args(ua->cmd, ua->args, &ua->argc, ua->argk, ua->argv, MAX_CMD_ARGS);
 }
@@ -229,7 +229,7 @@ void parse_ua_args(UAContext *ua)
  * Check if the comment has legal characters
  * If ua is non-NULL send the message
  */
-bool is_comment_legal(UAContext *ua, const char *name)
+bool is_comment_legal(UaContext *ua, const char *name)
 {
    int len;
    const char *p;

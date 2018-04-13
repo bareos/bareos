@@ -102,7 +102,7 @@ extern void *b_malloc(const char *file, int line, size_t size);
  * using subclass with virtual functions
  */
 
-class SMARTALLOC
+class SmartAlloc
 {
 public:
 
@@ -149,7 +149,7 @@ void *operator new[](size_t s) throw() { (void)s; return 0; }
 
 #define New(type) new type
 
-class SMARTALLOC
+class SmartAlloc
 {
    public:
       void *operator new(size_t s) {

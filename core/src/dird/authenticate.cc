@@ -60,9 +60,9 @@ static char Dir_sorry[] =
 /**
  * Authenticate with a remote Storage daemon
  */
-bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
+bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *store)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
 
@@ -117,10 +117,10 @@ bool authenticate_with_storage_daemon(JCR *jcr, STORERES *store)
 /**
  * Authenticate with a remote File daemon
  */
-bool authenticate_with_file_daemon(JCR *jcr)
+bool authenticate_with_file_daemon(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
-   CLIENTRES *client = jcr->res.client;
+   BareosSocket *fd = jcr->file_bsock;
+   ClientResource *client = jcr->res.client;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
 
@@ -189,13 +189,13 @@ if (!auth_success) {
 /**
  * Authenticate File daemon connection
  */
-bool authenticate_file_daemon(BSOCK *fd, char *client_name)
+bool authenticate_file_daemon(BareosSocket *fd, char *client_name)
 {
-   CLIENTRES *client;
+   ClientResource *client;
    bool auth_success = false;
 
    unbash_spaces(client_name);
-   client = (CLIENTRES *)GetResWithName(R_CLIENT, client_name);
+   client = (ClientResource *)GetResWithName(R_CLIENT, client_name);
    if (client) {
       if (is_connect_from_client_allowed(client)) {
          auth_success = fd->authenticate_inbound_connection(
@@ -223,7 +223,7 @@ bool authenticate_file_daemon(BSOCK *fd, char *client_name)
  */
 static inline bool count_console_connections()
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    unsigned int cnt = 0;
 
    foreach_jcr(jcr) {
@@ -239,11 +239,11 @@ static inline bool count_console_connections()
 /**
  * Authenticate user agent.
  */
-bool authenticate_user_agent(UAContext *uac)
+bool authenticate_user_agent(UaContext *uac)
 {
    char name[MAX_NAME_LENGTH];
-   CONRES *cons = NULL;
-   BSOCK *ua = uac->UA_sock;
+   ConsoleResource *cons = NULL;
+   BareosSocket *ua = uac->UA_sock;
    bool auth_success = false;
 
    if (sscanf(ua->msg, "Hello %127s calling\n", name) != 1) {
@@ -265,7 +265,7 @@ bool authenticate_user_agent(UAContext *uac)
           NULL, "Console", "*UserAgent*", me->password, me);
    } else {
       unbash_spaces(name);
-      cons = (CONRES *)GetResWithName(R_CONSOLE, name);
+      cons = (ConsoleResource *)GetResWithName(R_CONSOLE, name);
       if (cons) {
          auth_success =
              ua->authenticate_inbound_connection(NULL, "Console", name, cons->password, cons);

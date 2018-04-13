@@ -31,7 +31,7 @@
 #define __CATS_BACKENDS_H_ 1
 
 extern "C" {
-typedef B_DB *(*t_backend_instantiate)(JCR *jcr,
+typedef BareosDb *(*t_backend_instantiate)(JobControlRecord *jcr,
                                        const char *db_driver,
                                        const char *db_name,
                                        const char *db_user,

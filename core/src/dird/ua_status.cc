@@ -35,24 +35,24 @@
 
 extern void *start_heap;
 
-static void list_scheduled_jobs(UAContext *ua);
-static void list_running_jobs(UAContext *ua);
-static void list_terminated_jobs(UAContext *ua);
-static void list_connected_clients(UAContext *ua);
-static void do_director_status(UAContext *ua);
-static void do_scheduler_status(UAContext *ua);
-static bool do_subscription_status(UAContext *ua);
-static void do_all_status(UAContext *ua);
-static void status_slots(UAContext *ua, STORERES *store);
-static void status_content_api(UAContext *ua, STORERES *store);
-static void status_content_json(UAContext *ua, STORERES *store);
+static void list_scheduled_jobs(UaContext *ua);
+static void list_running_jobs(UaContext *ua);
+static void list_terminated_jobs(UaContext *ua);
+static void list_connected_clients(UaContext *ua);
+static void do_director_status(UaContext *ua);
+static void do_scheduler_status(UaContext *ua);
+static bool do_subscription_status(UaContext *ua);
+static void do_all_status(UaContext *ua);
+static void status_slots(UaContext *ua, StoreResource *store);
+static void status_content_api(UaContext *ua, StoreResource *store);
+static void status_content_json(UaContext *ua, StoreResource *store);
 
 static char OKdotstatus[] =
    "1000 OK .status\n";
 static char DotStatusJob[] =
    "JobId=%s JobStatus=%c JobErrors=%d\n";
 
-static void client_status(UAContext *ua, CLIENTRES *client, char *cmd)
+static void client_status(UaContext *ua, ClientResource *client, char *cmd)
 {
    switch (client->Protocol) {
    case APT_NATIVE:
@@ -71,11 +71,11 @@ static void client_status(UAContext *ua, CLIENTRES *client, char *cmd)
 /**
  * .status command
  */
-bool dot_status_cmd(UAContext *ua, const char *cmd)
+bool dot_status_cmd(UaContext *ua, const char *cmd)
 {
-   STORERES *store;
-   CLIENTRES *client;
-   JCR* njcr = NULL;
+   StoreResource *store;
+   ClientResource *client;
+   JobControlRecord* njcr = NULL;
    s_last_job* job;
    char ed1[50];
    char *statuscmd = NULL;
@@ -144,10 +144,10 @@ bool dot_status_cmd(UAContext *ua, const char *cmd)
 /**
  * status command
  */
-bool status_cmd(UAContext *ua, const char *cmd)
+bool status_cmd(UaContext *ua, const char *cmd)
 {
-   STORERES *store;
-   CLIENTRES *client;
+   StoreResource *store;
+   ClientResource *client;
    int item, i;
    bool autochangers_only;
 
@@ -247,10 +247,10 @@ bool status_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-static void do_all_status(UAContext *ua)
+static void do_all_status(UaContext *ua)
 {
-   STORERES *store, **unique_store;
-   CLIENTRES *client, **unique_client;
+   StoreResource *store, **unique_store;
+   ClientResource *client, **unique_client;
    int i, j;
    bool found;
    int32_t previous_JobStatus = 0;
@@ -263,7 +263,7 @@ static void do_all_status(UAContext *ua)
    foreach_res(store, R_STORAGE) {
       i++;
    }
-   unique_store = (STORERES **) malloc(i * sizeof(STORERES));
+   unique_store = (StoreResource **) malloc(i * sizeof(StoreResource));
    /* Find Unique Storage address/port */
    i = 0;
    foreach_res(store, R_STORAGE) {
@@ -300,7 +300,7 @@ static void do_all_status(UAContext *ua)
    foreach_res(client, R_CLIENT) {
       i++;
    }
-   unique_client = (CLIENTRES **)malloc(i * sizeof(CLIENTRES));
+   unique_client = (ClientResource **)malloc(i * sizeof(ClientResource));
    /* Find Unique Client address/port */
    i = 0;
    foreach_res(client, R_CLIENT) {
@@ -333,13 +333,13 @@ static void do_all_status(UAContext *ua)
 
 }
 
-void list_dir_status_header(UAContext *ua)
+void list_dir_status_header(UaContext *ua)
 {
    int len, cnt;
-   CATRES *catalog;
+   CatalogResource *catalog;
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
-   POOL_MEM msg(PM_FNAME),
+   PoolMem msg(PM_FNAME),
             dbdrivers(PM_FNAME);
 
    cnt = 0;
@@ -372,16 +372,16 @@ void list_dir_status_header(UAContext *ua)
    }
 }
 
-static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
-                                   POOL_MEM &overview, int *max_date_len,
+static bool show_scheduled_preview(UaContext *ua, ScheduleResource *sched,
+                                   PoolMem &overview, int *max_date_len,
                                    struct tm tm, time_t time_to_check)
 {
    int date_len, hour, mday, wday, month, wom, woy, yday;
    bool is_last_week = false;                      /* Are we in the last week of a month? */
    char dt[MAX_TIME_LENGTH];
    time_t runtime;
-   RUNRES *run;
-   POOL_MEM temp(PM_NAME);
+   RunResource *run;
+   PoolMem temp(PM_NAME);
 
    hour = tm.tm_hour;
    mday = tm.tm_mday - 1;
@@ -514,7 +514,7 @@ static bool show_scheduled_preview(UAContext *ua, SCHEDRES *sched,
  * Return true if (number of clients < number of subscriptions), else
  * return false
  */
-static bool do_subscription_status(UAContext *ua)
+static bool do_subscription_status(UaContext *ua)
 {
    int available;
    bool retval = false;
@@ -547,7 +547,7 @@ bail_out:
    return retval;
 }
 
-static void do_scheduler_status(UAContext *ua)
+static void do_scheduler_status(UaContext *ua)
 {
    int i;
    int max_date_len = 0;
@@ -558,10 +558,10 @@ static void do_scheduler_status(UAContext *ua)
    const int seconds_per_day = 86400;            /* Number of seconds in one day */
    const int seconds_per_hour = 3600;            /* Number of seconds in one hour */
    struct tm tm;
-   CLIENTRES *client = NULL;
-   JOBRES *job = NULL;
-   SCHEDRES *sched;
-   POOL_MEM overview(PM_MESSAGE);
+   ClientResource *client = NULL;
+   JobResource *job = NULL;
+   ScheduleResource *sched;
+   PoolMem overview(PM_MESSAGE);
 
    now = time(NULL);                             /* Initialize to now */
    time_to_check = now;
@@ -752,7 +752,7 @@ start_again:
    ua->send_msg("====\n");
 }
 
-static void do_director_status(UAContext *ua)
+static void do_director_status(UaContext *ua)
 {
    list_dir_status_header(ua);
 
@@ -776,7 +776,7 @@ static void do_director_status(UAContext *ua)
    ua->send_msg("====\n");
 }
 
-static void prt_runhdr(UAContext *ua)
+static void prt_runhdr(UaContext *ua)
 {
    if (!ua->api) {
       ua->send_msg(_("\nScheduled Jobs:\n"));
@@ -788,22 +788,22 @@ static void prt_runhdr(UAContext *ua)
 /* Scheduling packet */
 struct sched_pkt {
    dlink link;                        /* keep this as first item!!! */
-   JOBRES *job;
+   JobResource *job;
    int level;
    int priority;
    utime_t runtime;
-   POOLRES *pool;
-   STORERES *store;
+   PoolResource *pool;
+   StoreResource *store;
 };
 
-static void prt_runtime(UAContext *ua, sched_pkt *sp)
+static void prt_runtime(UaContext *ua, sched_pkt *sp)
 {
    char dt[MAX_TIME_LENGTH];
    const char *level_ptr;
    bool ok = false;
    bool close_db = false;
-   JCR *jcr = ua->jcr;
-   MEDIA_DBR mr;
+   JobControlRecord *jcr = ua->jcr;
+   MediaDbRecord mr;
    int orig_jobtype;
 
    memset(&mr, 0, sizeof(mr));
@@ -881,11 +881,11 @@ static int compare_by_runtime_priority(void *item1, void *item2)
 /**
  * Find all jobs to be run in roughly the next 24 hours.
  */
-static void list_scheduled_jobs(UAContext *ua)
+static void list_scheduled_jobs(UaContext *ua)
 {
    utime_t runtime;
-   RUNRES *run;
-   JOBRES *job;
+   RunResource *run;
+   JobResource *job;
    int level, num_jobs = 0;
    int priority;
    bool hdr_printed = false;
@@ -916,7 +916,7 @@ static void list_scheduled_jobs(UAContext *ua)
          continue;
       }
       for (run = NULL; (run = find_next_run(run, job, runtime, days)); ) {
-         USTORERES store;
+         UnifiedStoreResource store;
          level = job->JobLevel;
          if (run->level) {
             level = run->level;
@@ -953,9 +953,9 @@ static void list_scheduled_jobs(UAContext *ua)
    Dmsg0(200, "Leave list_sched_jobs_runs()\n");
 }
 
-static void list_running_jobs(UAContext *ua)
+static void list_running_jobs(UaContext *ua)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    int njobs = 0;
    const char *msg;
    char *emsg;                        /* edited message */
@@ -1181,7 +1181,7 @@ static void list_running_jobs(UAContext *ua)
    Dmsg0(200, "leave list_run_jobs()\n");
 }
 
-static void list_terminated_jobs(UAContext *ua)
+static void list_terminated_jobs(UaContext *ua)
 {
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
    char level[10];
@@ -1273,7 +1273,7 @@ static void list_terminated_jobs(UAContext *ua)
 }
 
 
-static void list_connected_clients(UAContext *ua)
+static void list_connected_clients(UaContext *ua)
 {
    CONNECTION *connection = NULL;
    alist *connections = NULL;
@@ -1299,11 +1299,11 @@ static void list_connected_clients(UAContext *ua)
    ua->send->array_end("client-connection");
 }
 
-static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_name)
+static void content_send_info_api(UaContext *ua, char type, int Slot, char *vol_name)
 {
    char ed1[50], ed2[50], ed3[50];
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
    /* Type|Slot|RealSlot|Volume|Bytes|Status|MediaType|Pool|LastW|Expire */
    const char *slot_api_full_format="%c|%hd|%hd|%s|%s|%s|%s|%s|%s|%s\n";
 
@@ -1329,10 +1329,10 @@ static void content_send_info_api(UAContext *ua, char type, int Slot, char *vol_
    }
 }
 
-static void content_send_info_json(UAContext *ua, const char *type, int Slot, char *vol_name)
+static void content_send_info_json(UaContext *ua, const char *type, int Slot, char *vol_name)
 {
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
 
    memset(&pr, 0, sizeof(pr));
    memset(&mr, 0, sizeof(mr));
@@ -1407,7 +1407,7 @@ static void content_send_info_json(UAContext *ua, const char *type, int Slot, ch
  * S|2||||||||
  * S|3|3|vol4|15869952|Append|LTO1-ANSI|Inc|1250858907|1282394907
  */
-static void status_content_api(UAContext *ua, STORERES *store)
+static void status_content_api(UaContext *ua, StoreResource *store)
 {
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
@@ -1503,7 +1503,7 @@ bail_out:
    return;
 }
 
-static void status_content_json(UAContext *ua, STORERES *store)
+static void status_content_json(UaContext *ua, StoreResource *store)
 {
    vol_list_t *vl1, *vl2;
    changer_vol_list_t *vol_list = NULL;
@@ -1615,10 +1615,10 @@ bail_out:
 /**
  * Print slots from AutoChanger
  */
-static void status_slots(UAContext *ua, STORERES *store)
+static void status_slots(UaContext *ua, StoreResource *store)
 {
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
    char *slot_list;
    vol_list_t *vl1, *vl2;
    slot_number_t max_slots;

@@ -48,7 +48,7 @@
  * -----------------------------------------------------------------------
  */
 /* Update the attributes record by adding the file digest */
-bool B_DB::add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest, int type)
+bool BareosDb::add_digest_to_file_record(JobControlRecord *jcr, FileId_t FileId, char *digest, int type)
 {
    bool retval;
    char ed1[50];
@@ -68,7 +68,7 @@ bool B_DB::add_digest_to_file_record(JCR *jcr, FileId_t FileId, char *digest, in
 /* Mark the file record as being visited during database
  * verify compare. Stuff JobId into the MarkId field
  */
-bool B_DB::mark_file_record(JCR *jcr, FileId_t FileId, JobId_t JobId)
+bool BareosDb::mark_file_record(JobControlRecord *jcr, FileId_t FileId, JobId_t JobId)
 {
    bool retval;
    char ed1[50], ed2[50];
@@ -88,7 +88,7 @@ bool B_DB::mark_file_record(JCR *jcr, FileId_t FileId, JobId_t JobId)
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::update_job_start_record(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::update_job_start_record(JobControlRecord *jcr, JobDbRecord *jr)
 {
    char dt[MAX_TIME_LENGTH];
    time_t stime;
@@ -120,7 +120,7 @@ bool B_DB::update_job_start_record(JCR *jcr, JOB_DBR *jr)
 /**
  * Update Long term statistics with all jobs that were run before age seconds
  */
-int B_DB::update_stats(JCR *jcr, utime_t age)
+int BareosDb::update_stats(JobControlRecord *jcr, utime_t age)
 {
    char ed1[30];
    int rows;
@@ -146,7 +146,7 @@ int B_DB::update_stats(JCR *jcr, utime_t age)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_job_end_record(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::update_job_end_record(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char dt[MAX_TIME_LENGTH];
@@ -197,13 +197,13 @@ bool B_DB::update_job_end_record(JCR *jcr, JOB_DBR *jr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_client_record(JCR *jcr, CLIENT_DBR *cr)
+bool BareosDb::update_client_record(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval = false;
    char ed1[50], ed2[50];
    char esc_clientname[MAX_ESCAPE_NAME_LENGTH];
    char esc_uname[MAX_ESCAPE_NAME_LENGTH];
-   CLIENT_DBR tcr;
+   ClientDbRecord tcr;
 
    db_lock(this);
    memcpy(&tcr, cr, sizeof(tcr));
@@ -233,7 +233,7 @@ bail_out:
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_counter_record(JCR *jcr, COUNTER_DBR *cr)
+bool BareosDb::update_counter_record(JobControlRecord *jcr, CounterDbRecord *cr)
 {
    bool retval;
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -248,7 +248,7 @@ bool B_DB::update_counter_record(JCR *jcr, COUNTER_DBR *cr)
    return retval;
 }
 
-bool B_DB::update_pool_record(JCR *jcr, POOL_DBR *pr)
+bool BareosDb::update_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
@@ -285,7 +285,7 @@ bool B_DB::update_pool_record(JCR *jcr, POOL_DBR *pr)
    return retval;
 }
 
-bool B_DB::update_storage_record(JCR *jcr, STORAGE_DBR *sr)
+bool BareosDb::update_storage_record(JobControlRecord *jcr, StorageDbRecord *sr)
 {
    bool retval;
    char ed1[50];
@@ -306,7 +306,7 @@ bool B_DB::update_storage_record(JCR *jcr, STORAGE_DBR *sr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_media_record(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::update_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval;
    char dt[MAX_TIME_LENGTH];
@@ -400,7 +400,7 @@ bool B_DB::update_media_record(JCR *jcr, MEDIA_DBR *mr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::update_media_defaults(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50];
@@ -453,7 +453,7 @@ bool B_DB::update_media_defaults(JCR *jcr, MEDIA_DBR *mr)
  *
  * This routine assumes the database is already locked.
  */
-void B_DB::make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr)
+void BareosDb::make_inchanger_unique(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    char ed1[50], ed2[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -489,7 +489,7 @@ void B_DB::make_inchanger_unique(JCR *jcr, MEDIA_DBR *mr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_quota_gracetime(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::update_quota_gracetime(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char ed1[50], ed2[50];
@@ -515,7 +515,7 @@ bool B_DB::update_quota_gracetime(JCR *jcr, JOB_DBR *jr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_quota_softlimit(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::update_quota_softlimit(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval;
    char ed1[50], ed2[50];
@@ -540,7 +540,7 @@ bool B_DB::update_quota_softlimit(JCR *jcr, JOB_DBR *jr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::reset_quota_record(JCR *jcr, CLIENT_DBR *cr)
+bool BareosDb::reset_quota_record(JobControlRecord *jcr, ClientDbRecord *cr)
 {
    bool retval;
    char ed1[50];
@@ -564,7 +564,7 @@ bool B_DB::reset_quota_record(JCR *jcr, CLIENT_DBR *cr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::update_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem, int level)
+bool BareosDb::update_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem, int level)
 {
    bool retval;
    char ed1[50], ed2[50], ed3[50];

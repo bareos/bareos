@@ -651,7 +651,7 @@ extern "C" int bndmp_fhdb_mem_add_node(struct ndmlog *ixlog, int tagc,
       int8_t FileType = 0;
       N_TREE_ROOT *fhdb_root;
       N_TREE_NODE *wanted_node;
-      POOL_MEM attribs(PM_FNAME);
+      PoolMem attribs(PM_FNAME);
       htable *meta_data = ((struct fhdb_state *)nis->fhdb_state)->out_of_order_metadata;
 
       Dmsg1(100, "bndmp_fhdb_mem_add_node: New node [%llu]\n", node);
@@ -790,7 +790,7 @@ void ndmp_fhdb_mem_process_db(struct ndmlog *ixlog)
    if (fhdb_root) {
       if (nis->jcr->ar) {
          N_TREE_NODE *node, *parent;
-         POOL_MEM fname, tmp;
+         PoolMem fname, tmp;
 
          /*
           * Store the toplevel entry of the tree.

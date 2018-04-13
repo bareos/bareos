@@ -44,34 +44,34 @@
 #define DEFAULT_USERNAME "client.admin"
 #endif
 
-class rados_device: public DEVICE {
+class rados_device: public Device {
 private:
    /*
     * Private Members
     */
-   char *m_rados_configstring;
-   char *m_rados_conffile;
-   char *m_rados_poolname;
+   char *rados_configstring_;
+   char *rados_conffile_;
+   char *rados_poolname_;
 #if LIBRADOS_VERSION_CODE < 17408
-   char *m_rados_clientid;
+   char *rados_clientid_;
 #else
-   char *m_rados_clustername;
-   char *m_rados_username;
+   char *rados_clustername_;
+   char *rados_username_;
 #endif
-   bool m_cluster_initialized;
+   bool cluster_initialized_;
 #ifdef HAVE_RADOS_STRIPER
-   bool m_stripe_volume;
-   uint64_t m_stripe_unit;
-   uint32_t m_stripe_count;
-   uint64_t m_object_size;
+   bool stripe_volume_;
+   uint64_t stripe_unit_;
+   uint32_t stripe_count_;
+   uint64_t object_size_;
 #endif
-   rados_t m_cluster;
-   rados_ioctx_t m_ctx;
+   rados_t cluster_;
+   rados_ioctx_t ctx_;
 #ifdef HAVE_RADOS_STRIPER
-   rados_striper_t m_striper;
+   rados_striper_t striper_;
 #endif
-   boffset_t m_offset;
-   POOLMEM *m_virtual_filename;
+   boffset_t offset_;
+   POOLMEM *virtual_filename_;
 
    /*
     * Private Methods
@@ -83,9 +83,9 @@ private:
 #endif
    ssize_t volume_size();
 #ifdef HAVE_RADOS_STRIPER
-   bool truncate_striper_volume(DCR *dcr);
+   bool truncate_striper_volume(DeviceControlRecord *dcr);
 #endif
-   bool truncate_volume(DCR *dcr);
+   bool truncate_volume(DeviceControlRecord *dcr);
 
 public:
    /*
@@ -95,14 +95,14 @@ public:
    ~rados_device();
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DCR *dcr);
+   bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* RADOS_DEVICE_H */

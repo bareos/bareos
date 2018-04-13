@@ -40,14 +40,14 @@ const int dbglvl = 50;
  *   Returns: false if authentication failed
  *            true if OK
  */
-bool cram_md5_challenge(BSOCK *bs, const char *password, uint32_t tls_local_need, bool compatible)
+bool cram_md5_challenge(BareosSocket *bs, const char *password, uint32_t tls_local_need, bool compatible)
 {
    struct timeval t1;
    struct timeval t2;
    struct timezone tz;
    int i;
    bool ok;
-   POOL_MEM chal(PM_NAME),
+   PoolMem chal(PM_NAME),
             host(PM_NAME);
    uint8_t hmac[20];
 
@@ -101,9 +101,9 @@ bool cram_md5_challenge(BSOCK *bs, const char *password, uint32_t tls_local_need
 }
 
 /* Respond to challenge from other end */
-bool cram_md5_respond(BSOCK *bs, const char *password, uint32_t *tls_remote_need, bool *compatible)
+bool cram_md5_respond(BareosSocket *bs, const char *password, uint32_t *tls_remote_need, bool *compatible)
 {
-   POOL_MEM chal(PM_NAME);
+   PoolMem chal(PM_NAME);
    uint8_t hmac[20];
 
    *compatible = false;

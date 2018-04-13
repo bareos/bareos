@@ -124,7 +124,7 @@ static struct s_keyw keyw[] = {
 
 static bool have_hour, have_mday, have_wday, have_month, have_wom;
 static bool have_at, have_woy;
-static RUNRES lrun;
+static RunResource lrun;
 
 static void set_defaults()
 {
@@ -170,7 +170,7 @@ struct s_kw RunFields[] = {
  *   together.
  *
  */
-void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_run(LEX *lc, ResourceItem *item, int index, int pass)
 {
    char *p;
    int i, j;
@@ -178,9 +178,9 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
    int token, state, state2 = 0, code = 0, code2 = 0;
    bool found;
    utime_t utime;
-   RES *res;
-   RUNRES **run = (RUNRES **)(item->value);
-   URES *res_all = (URES *)my_config->m_res_all;
+   CommonResourceHeader *res;
+   RunResource **run = (RunResource **)(item->value);
+   URES *res_all = (URES *)my_config->res_all_;
 
    lc->options |= LOPT_NO_IDENT;      /* Want only "strings" */
 
@@ -252,22 +252,22 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                   }
                   switch(RunFields[i].token) {
                   case 'P':
-                     lrun.pool = (POOLRES *)res;
+                     lrun.pool = (PoolResource *)res;
                      break;
                   case 'f':
-                     lrun.full_pool = (POOLRES *)res;
+                     lrun.full_pool = (PoolResource *)res;
                      break;
                   case 'v':
-                     lrun.vfull_pool = (POOLRES *)res;
+                     lrun.vfull_pool = (PoolResource *)res;
                      break;
                   case 'i':
-                     lrun.inc_pool = (POOLRES *)res;
+                     lrun.inc_pool = (PoolResource *)res;
                      break;
                   case 'd':
-                     lrun.diff_pool = (POOLRES *)res;
+                     lrun.diff_pool = (PoolResource *)res;
                      break;
                   case 'n':
-                     lrun.next_pool = (POOLRES *)res;
+                     lrun.next_pool = (PoolResource *)res;
                      break;
                   }
                }
@@ -281,7 +281,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                                 lc->str);
                      /* NOT REACHED */
                   }
-                  lrun.storage = (STORERES *)res;
+                  lrun.storage = (StoreResource *)res;
                }
                break;
             case 'M':                 /* Messages */
@@ -293,7 +293,7 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
                                 lc->str);
                      /* NOT REACHED */
                   }
-                  lrun.msgs = (MSGSRES *)res;
+                  lrun.msgs = (MessagesResource *)res;
                }
                break;
             case 'm':                 /* Max run sched time */
@@ -729,11 +729,11 @@ void store_run(LEX *lc, RES_ITEM *item, int index, int pass)
     * in the schedule resource.
     */
    if (pass == 2) {
-      RUNRES *tail;
+      RunResource *tail;
 
       /* Create new run record */
-      RUNRES *nrun = (RUNRES *)malloc(sizeof(RUNRES));
-      memcpy(nrun, &lrun, sizeof(RUNRES));
+      RunResource *nrun = (RunResource *)malloc(sizeof(RunResource));
+      memcpy(nrun, &lrun, sizeof(RunResource));
       nrun ->next = NULL;
 
       if (!*run) {                       /* If empty list */

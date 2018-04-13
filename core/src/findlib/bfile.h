@@ -71,7 +71,7 @@ enum {
 /* In bfile.c */
 
 /* Basic Win32 low level I/O file packet */
-struct BFILE {
+struct BareosWinFilePacket {
    bool use_backup_api;               /**< set if using BackupRead/Write */
    bool encrypted;                    /**< set if using ReadEncryptedFileRaw/WriteEncryptedFileRaw */
    int mode;                          /**< set if file is open */
@@ -84,14 +84,14 @@ struct BFILE {
    DWORD lerror;                      /**< Last error code */
    int berrno;                        /**< errno */
    boffset_t offset;                  /**< Delta offset */
-   JCR *jcr;                          /**< jcr for editing job codes */
+   JobControlRecord *jcr;                          /**< jcr for editing job codes */
    PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /**< context for decomposition of win32 backup streams */
    int use_backup_decomp;             /**< set if using BackupRead Stream Decomposition */
    bool reparse_point;                /**< set if reparse point */
    bool cmd_plugin;                   /**< set if we have a command plugin */
 };
 
-HANDLE bget_handle(BFILE *bfd);
+HANDLE bget_handle(BareosWinFilePacket *bfd);
 
 #else   /* Linux/Unix systems */
 
@@ -103,13 +103,13 @@ HANDLE bget_handle(BFILE *bfd);
  */
 
 /* Basic Unix low level I/O file packet */
-struct BFILE {
+struct BareosWinFilePacket {
    int fid;                           /**< file id on Unix */
-   int m_flags;                       /**< open flags */
+   int flags_;                       /**< open flags */
    int berrno;                        /**< errno */
    int32_t lerror;                    /**< not used - simplies Win32 builds */
    boffset_t offset;                  /**< Delta offset */
-   JCR *jcr;                          /**< jcr for editing job codes */
+   JobControlRecord *jcr;                          /**< jcr for editing job codes */
    PROCESS_WIN32_BACKUPAPIBLOCK_CONTEXT win32DecompContext; /**< context for decomposition of win32 backup streams */
    int use_backup_decomp;             /**< set if using BackupRead Stream Decomposition */
    bool reparse_point;                /**< not used in Unix */
@@ -118,23 +118,23 @@ struct BFILE {
 
 #endif
 
-DLL_IMP_EXP void binit(BFILE *bfd);
-DLL_IMP_EXP bool is_bopen(BFILE *bfd);
-DLL_IMP_EXP bool set_win32_backup(BFILE *bfd);
-DLL_IMP_EXP bool set_portable_backup(BFILE *bfd);
-DLL_IMP_EXP bool set_cmd_plugin(BFILE *bfd, JCR *jcr);
+DLL_IMP_EXP void binit(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool is_bopen(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool set_win32_backup(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool set_portable_backup(BareosWinFilePacket *bfd);
+DLL_IMP_EXP bool set_cmd_plugin(BareosWinFilePacket *bfd, JobControlRecord *jcr);
 DLL_IMP_EXP bool have_win32_api();
-DLL_IMP_EXP bool is_portable_backup(BFILE *bfd);
+DLL_IMP_EXP bool is_portable_backup(BareosWinFilePacket *bfd);
 DLL_IMP_EXP bool is_restore_stream_supported(int stream);
 DLL_IMP_EXP bool is_win32_stream(int stream);
-DLL_IMP_EXP int bopen(BFILE *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
-DLL_IMP_EXP int bopen_rsrc(BFILE *bfd, const char *fname, int flags, mode_t mode);
-DLL_IMP_EXP int bclose(BFILE *bfd);
-DLL_IMP_EXP ssize_t bread(BFILE *bfd, void *buf, size_t count);
-DLL_IMP_EXP ssize_t bwrite(BFILE *bfd, void *buf, size_t count);
-DLL_IMP_EXP boffset_t blseek(BFILE *bfd, boffset_t offset, int whence);
+DLL_IMP_EXP int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, dev_t rdev);
+DLL_IMP_EXP int bopen_rsrc(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+DLL_IMP_EXP int bclose(BareosWinFilePacket *bfd);
+DLL_IMP_EXP ssize_t bread(BareosWinFilePacket *bfd, void *buf, size_t count);
+DLL_IMP_EXP ssize_t bwrite(BareosWinFilePacket *bfd, void *buf, size_t count);
+DLL_IMP_EXP boffset_t blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence);
 DLL_IMP_EXP const char *stream_to_ascii(int stream);
 
-DLL_IMP_EXP bool processWin32BackupAPIBlock (BFILE *bfd, void *pBuffer, ssize_t dwSize);
+DLL_IMP_EXP bool processWin32BackupAPIBlock (BareosWinFilePacket *bfd, void *pBuffer, ssize_t dwSize);
 
 #endif /* __BFILE_H */

@@ -38,7 +38,7 @@
 /*=============================================================*/
 
 #if !defined(HAVE_WIN32)
-int enable_backup_privileges(JCR *jcr, int ignore_errors)
+int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors)
  { return 0; }
 #endif
 
@@ -49,10 +49,10 @@ int enable_backup_privileges(JCR *jcr, int ignore_errors)
 /*=============================================================*/
 
 #if defined(HAVE_WIN32)
-void win_error(JCR *jcr, const char *prefix, DWORD lerror);
+void win_error(JobControlRecord *jcr, const char *prefix, DWORD lerror);
 
 static int
-enable_priv(JCR *jcr, HANDLE hToken, const char *name, int ignore_errors)
+enable_priv(JobControlRecord *jcr, HANDLE hToken, const char *name, int ignore_errors)
 {
     TOKEN_PRIVILEGES tkp;
     DWORD lerror;
@@ -89,7 +89,7 @@ enable_priv(JCR *jcr, HANDLE hToken, const char *name, int ignore_errors)
  *  the SE_SECURITY_NAME, but since nothing seems to be working,
  *  we get it hoping to fix the problems.
  */
-int enable_backup_privileges(JCR *jcr, int ignore_errors)
+int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors)
 {
     HANDLE hToken, hProcess;
     int status = 0;

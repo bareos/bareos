@@ -37,10 +37,10 @@
 #include "stored.h"
 
 /* Forward referenced functions */
-static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
+static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *jcr, char *dev_name,
                                    const char *VolumeName, bool readonly);
-static DEVRES *find_device_res(char *device_name, bool readonly);
-static void my_free_jcr(JCR *jcr);
+static DeviceResource *find_device_res(char *device_name, bool readonly);
+static void my_free_jcr(JobControlRecord *jcr);
 
 /* Global variables */
 char SD_IMP_EXP *configfile;
@@ -48,13 +48,13 @@ STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
 CONFIG SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
 /**
- * Setup a "daemon" JCR for the various standalone tools (e.g. bls, bextract, bscan, ...)
+ * Setup a "daemon" JobControlRecord for the various standalone tools (e.g. bls, bextract, bscan, ...)
  */
-JCR *setup_jcr(const char *name, char *dev_name,
-               BSR *bsr, DIRRES *director, DCR *dcr,
+JobControlRecord *setup_jcr(const char *name, char *dev_name,
+               BootStrapRecord *bsr, DirectorResource *director, DeviceControlRecord *dcr,
                const char *VolumeName, bool readonly)
 {
-   JCR *jcr = new_jcr(sizeof(JCR), my_free_jcr);
+   JobControlRecord *jcr = new_jcr(sizeof(JobControlRecord), my_free_jcr);
 
    jcr->bsr = bsr;
    jcr->director = director;
@@ -101,12 +101,12 @@ JCR *setup_jcr(const char *name, char *dev_name,
  *   If the caller wants read access, acquire the device, otherwise,
  *     the caller will do it.
  */
-static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
+static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *jcr, char *dev_name,
                                    const char *VolumeName, bool readonly)
 {
-   DEVICE *dev;
+   Device *dev;
    char *p;
-   DEVRES *device;
+   DeviceResource *device;
    char VolName[MAX_NAME_LENGTH];
 
    init_reservations_lock();
@@ -179,10 +179,10 @@ static bool setup_to_access_device(DCR *dcr, JCR *jcr, char *dev_name,
 }
 
 /**
- * Called here when freeing JCR so that we can get rid
+ * Called here when freeing JobControlRecord so that we can get rid
  *  of "daemon" specific memory allocated.
  */
-static void my_free_jcr(JCR *jcr)
+static void my_free_jcr(JobControlRecord *jcr)
 {
    if (jcr->job_name) {
       free_pool_memory(jcr->job_name);
@@ -228,10 +228,10 @@ static void my_free_jcr(JCR *jcr)
  * Returns: NULL on failure
  *          Device resource pointer on success
  */
-static DEVRES *find_device_res(char *device_name, bool readonly)
+static DeviceResource *find_device_res(char *device_name, bool readonly)
 {
    bool found = false;
-   DEVRES *device;
+   DeviceResource *device;
 
    Dmsg0(900, "Enter find_device_res\n");
    LockRes();
@@ -282,7 +282,7 @@ static DEVRES *find_device_res(char *device_name, bool readonly)
 /**
  * Device got an error, attempt to analyse it
  */
-void display_tape_error_status(JCR *jcr, DEVICE *dev)
+void display_tape_error_status(JobControlRecord *jcr, Device *dev)
 {
    char *status;
 

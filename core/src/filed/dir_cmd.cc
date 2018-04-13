@@ -66,51 +66,51 @@ static bool quit_client_initiate_connection = false;
 static alist *client_initiated_connection_threads = NULL;
 
 /* Imported functions */
-extern bool accurate_cmd(JCR *jcr);
-extern bool status_cmd(JCR *jcr);
-extern bool qstatus_cmd(JCR *jcr);
-extern "C" char *job_code_callback_filed(JCR *jcr, const char* param);
+extern bool accurate_cmd(JobControlRecord *jcr);
+extern bool status_cmd(JobControlRecord *jcr);
+extern bool qstatus_cmd(JobControlRecord *jcr);
+extern "C" char *job_code_callback_filed(JobControlRecord *jcr, const char* param);
 
 /* Forward referenced functions */
-static bool backup_cmd(JCR *jcr);
-static bool bootstrap_cmd(JCR *jcr);
-static bool cancel_cmd(JCR *jcr);
-static bool end_restore_cmd(JCR *jcr);
-static bool estimate_cmd(JCR *jcr);
+static bool backup_cmd(JobControlRecord *jcr);
+static bool bootstrap_cmd(JobControlRecord *jcr);
+static bool cancel_cmd(JobControlRecord *jcr);
+static bool end_restore_cmd(JobControlRecord *jcr);
+static bool estimate_cmd(JobControlRecord *jcr);
 #ifdef DEVELOPER
-static bool exit_cmd(JCR *jcr);
+static bool exit_cmd(JobControlRecord *jcr);
 #endif
-static bool fileset_cmd(JCR *jcr);
-static bool job_cmd(JCR *jcr);
-static bool level_cmd(JCR *jcr);
-static bool pluginoptions_cmd(JCR *jcr);
-static bool runafter_cmd(JCR *jcr);
-static bool runbeforenow_cmd(JCR *jcr);
-static bool runbefore_cmd(JCR *jcr);
-static bool runscript_cmd(JCR *jcr);
-static bool resolve_cmd(JCR *jcr);
-static bool restore_object_cmd(JCR *jcr);
-static bool restore_cmd(JCR *jcr);
-static bool session_cmd(JCR *jcr);
-static bool secureerasereq_cmd(JCR *jcr);
-static bool setauthorization_cmd(JCR *jcr);
-static bool setbandwidth_cmd(JCR *jcr);
-static bool setdebug_cmd(JCR *jcr);
-static bool storage_cmd(JCR *jcr);
-static bool sm_dump_cmd(JCR *jcr);
-static bool verify_cmd(JCR *jcr);
+static bool fileset_cmd(JobControlRecord *jcr);
+static bool job_cmd(JobControlRecord *jcr);
+static bool level_cmd(JobControlRecord *jcr);
+static bool pluginoptions_cmd(JobControlRecord *jcr);
+static bool runafter_cmd(JobControlRecord *jcr);
+static bool runbeforenow_cmd(JobControlRecord *jcr);
+static bool runbefore_cmd(JobControlRecord *jcr);
+static bool runscript_cmd(JobControlRecord *jcr);
+static bool resolve_cmd(JobControlRecord *jcr);
+static bool restore_object_cmd(JobControlRecord *jcr);
+static bool restore_cmd(JobControlRecord *jcr);
+static bool session_cmd(JobControlRecord *jcr);
+static bool secureerasereq_cmd(JobControlRecord *jcr);
+static bool setauthorization_cmd(JobControlRecord *jcr);
+static bool setbandwidth_cmd(JobControlRecord *jcr);
+static bool setdebug_cmd(JobControlRecord *jcr);
+static bool storage_cmd(JobControlRecord *jcr);
+static bool sm_dump_cmd(JobControlRecord *jcr);
+static bool verify_cmd(JobControlRecord *jcr);
 
-static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose);
-static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd);
-static void filed_free_jcr(JCR *jcr);
-static bool open_sd_read_session(JCR *jcr);
-static void set_storage_auth_key(JCR *jcr, char *key);
+static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource *dir_res, bool verbose);
+static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *cmd);
+static void filed_free_jcr(JobControlRecord *jcr);
+static bool open_sd_read_session(JobControlRecord *jcr);
+static void set_storage_auth_key(JobControlRecord *jcr, char *key);
 
 /* Exported functions */
 
 struct s_cmds {
    const char *cmd;
-   bool (*func)(JCR *);
+   bool (*func)(JobControlRecord *);
    bool monitoraccess; /* specify if monitors have access to this function */
 };
 
@@ -320,7 +320,7 @@ static char read_close[] =
 /**
  * See if we are allowed to execute the command issued.
  */
-static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
+static bool validate_command(JobControlRecord *jcr, const char *cmd, alist *allowed_job_cmds)
 {
    char *allowed_job_cmd;
    bool allowed = false;
@@ -346,7 +346,7 @@ static bool validate_command(JCR *jcr, const char *cmd, alist *allowed_job_cmds)
    return allowed;
 }
 
-static inline void cleanup_fileset(JCR *jcr)
+static inline void cleanup_fileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
    findINCEXE *incexe;
@@ -431,7 +431,7 @@ static inline void cleanup_fileset(JCR *jcr)
  */
 static inline bool count_running_jobs()
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    unsigned int cnt = 0;
 
    foreach_jcr(jcr) {
@@ -442,12 +442,12 @@ static inline bool count_running_jobs()
    return (cnt >= me->MaxConcurrentJobs) ? false : true;
 }
 
-JCR *create_new_director_session(BSOCK *dir)
+JobControlRecord *create_new_director_session(BareosSocket *dir)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    const char jobname[12] = "*Director*";
 
-   jcr = new_jcr(sizeof(JCR), filed_free_jcr); /* create JCR */
+   jcr = new_jcr(sizeof(JobControlRecord), filed_free_jcr); /* create JobControlRecord */
    jcr->dir_bsock = dir;
    jcr->ff = init_find_files();
    jcr->start_time = time(NULL);
@@ -474,11 +474,11 @@ JCR *create_new_director_session(BSOCK *dir)
 
 void *process_director_commands(void *p_jcr)
 {
-   JCR *jcr = (JCR *)p_jcr;
+   JobControlRecord *jcr = (JobControlRecord *)p_jcr;
    return process_director_commands(jcr, jcr->dir_bsock);
 }
 
-void *process_director_commands(JCR *jcr, BSOCK *dir)
+void *process_director_commands(JobControlRecord *jcr, BareosSocket *dir)
 {
    bool found;
    bool quit = false;
@@ -566,7 +566,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
     */
    cleanup_fileset(jcr);
 
-   free_jcr(jcr);                     /* destroy JCR record */
+   free_jcr(jcr);                     /* destroy JobControlRecord record */
    Dmsg0(100, "Done with free_jcr\n");
    Dsm_check(100);
    garbage_collect_memory_pool();
@@ -581,7 +581,7 @@ void *process_director_commands(JCR *jcr, BSOCK *dir)
 /**
  * Create a new thread to handle director connection.
  */
-static bool start_process_director_commands(JCR *jcr)
+static bool start_process_director_commands(JobControlRecord *jcr)
 {
    int result = 0;
    pthread_t thread;
@@ -614,9 +614,9 @@ static bool start_process_director_commands(JCR *jcr)
  *  8. SD/FD disconnects while SD despools data and attributes (optional)
  *  9. FD runs ClientRunAfterJob
  */
-void *handle_director_connection(BSOCK *dir)
+void *handle_director_connection(BareosSocket *dir)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
 #ifdef HAVE_WIN32
    prevent_os_suspensions();
@@ -653,9 +653,9 @@ static bool parse_ok_version(const char *string)
 
 void *handle_connection_to_director(void *director_resource)
 {
-   DIRRES *dir_res = (DIRRES *)director_resource;
-   BSOCK *dir_bsock = NULL;
-   JCR *jcr = NULL;
+   DirectorResource *dir_res = (DirectorResource *)director_resource;
+   BareosSocket *dir_bsock = NULL;
+   JobControlRecord *jcr = NULL;
    int data_available = 0;
    int retry_period = 60;
    const int timeout_data = 60;
@@ -720,7 +720,7 @@ void *handle_connection_to_director(void *director_resource)
 bool start_connect_to_director_threads()
 {
    bool result = false;
-   DIRRES *dir_res = NULL;
+   DirectorResource *dir_res = NULL;
    int pthread_create_result = 0;
    if (!client_initiated_connection_threads) {
       client_initiated_connection_threads = New(alist());
@@ -772,7 +772,7 @@ bool stop_connect_to_director_threads(bool wait)
    return result;
 }
 
-static bool sm_dump_cmd(JCR *jcr)
+static bool sm_dump_cmd(JobControlRecord *jcr)
 {
    close_memory_pool();
    sm_dump(false, true);
@@ -783,9 +783,9 @@ static bool sm_dump_cmd(JCR *jcr)
 /**
  * Resolve a hostname
  */
-static bool resolve_cmd(JCR *jcr)
+static bool resolve_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    dlist *addr_list;
    const char *errstr;
    char addresses[2048];
@@ -807,9 +807,9 @@ bail_out:
    return true;
 }
 
-static bool secureerasereq_cmd(JCR *jcr) {
+static bool secureerasereq_cmd(JobControlRecord *jcr) {
    const char *setting;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    setting = me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*";
    Dmsg1(200,"Secure Erase Cmd Request: %s\n", setting);
@@ -817,7 +817,7 @@ static bool secureerasereq_cmd(JCR *jcr) {
 }
 
 #ifdef DEVELOPER
-static bool exit_cmd(JCR *jcr)
+static bool exit_cmd(JobControlRecord *jcr)
 {
    jcr->dir_bsock->fsend("2000 exit OK\n");
    //terminate_filed(0);
@@ -829,11 +829,11 @@ static bool exit_cmd(JCR *jcr)
 /**
  * Cancel a Job
  */
-static bool cancel_cmd(JCR *jcr)
+static bool cancel_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char Job[MAX_NAME_LENGTH];
-   JCR *cjcr;
+   JobControlRecord *cjcr;
 
    if (sscanf(dir->msg, "cancel Job=%127s", Job) == 1) {
       if (!(cjcr=get_jcr_by_full_name(Job))) {
@@ -859,10 +859,10 @@ static bool cancel_cmd(JCR *jcr)
 /**
  * Set new authorization key as requested by the Director
  */
-static bool setauthorization_cmd(JCR *jcr)
+static bool setauthorization_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM sd_auth_key(PM_MESSAGE);
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem sd_auth_key(PM_MESSAGE);
 
    sd_auth_key.check_size(dir->msglen);
    if (sscanf(dir->msg, setauthorizationcmd, sd_auth_key.c_str()) != 1) {
@@ -879,11 +879,11 @@ static bool setauthorization_cmd(JCR *jcr)
 /**
  * Set bandwidth limit as requested by the Director
  */
-static bool setbandwidth_cmd(JCR *jcr)
+static bool setbandwidth_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int64_t bw = 0;
-   JCR *cjcr;
+   JobControlRecord *cjcr;
    char Job[MAX_NAME_LENGTH];
 
    *Job = 0;
@@ -916,9 +916,9 @@ static bool setbandwidth_cmd(JCR *jcr)
 /**
  * Set debug level as requested by the Director
  */
-static bool setdebug_cmd(JCR *jcr)
+static bool setdebug_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int32_t level, trace_flag, hangup_flag, timestamp_flag;
    int scan;
 
@@ -938,7 +938,7 @@ static bool setdebug_cmd(JCR *jcr)
       }
    }
 
-   POOL_MEM tracefilename(PM_FNAME);
+   PoolMem tracefilename(PM_FNAME);
    Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
 
    if (level >= 0) {
@@ -957,9 +957,9 @@ static bool setdebug_cmd(JCR *jcr)
    }
 }
 
-static bool estimate_cmd(JCR *jcr)
+static bool estimate_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char ed1[50], ed2[50];
 
    /*
@@ -992,10 +992,10 @@ static bool estimate_cmd(JCR *jcr)
 /**
  * Get JobId and Storage Daemon Authorization key from Director
  */
-static bool job_cmd(JCR *jcr)
+static bool job_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM sd_auth_key(PM_MESSAGE);
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem sd_auth_key(PM_MESSAGE);
    sd_auth_key.check_size(dir->msglen);
    const char *os_version;
 
@@ -1026,12 +1026,12 @@ static bool job_cmd(JCR *jcr)
 #endif
 }
 
-static bool runbefore_cmd(JCR *jcr)
+static bool runbefore_cmd(JobControlRecord *jcr)
 {
    bool ok;
    POOLMEM *cmd;
    RUNSCRIPT *script;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    if (!me->compatible) {
       dir->fsend(BadRunBeforeJob);
@@ -1070,9 +1070,9 @@ static bool runbefore_cmd(JCR *jcr)
    }
 }
 
-static bool runbeforenow_cmd(JCR *jcr)
+static bool runbeforenow_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    run_scripts(jcr, jcr->RunScripts, "ClientBeforeJob",
               (jcr->director && jcr->director->allowed_script_dirs) ?
@@ -1090,9 +1090,9 @@ static bool runbeforenow_cmd(JCR *jcr)
    }
 }
 
-static bool runafter_cmd(JCR *jcr)
+static bool runafter_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *cmd;
    RUNSCRIPT *script;
 
@@ -1125,11 +1125,11 @@ static bool runafter_cmd(JCR *jcr)
    return dir->fsend(OKRunAfter);
 }
 
-static bool runscript_cmd(JCR *jcr)
+static bool runscript_cmd(JobControlRecord *jcr)
 {
    POOLMEM *msg;
    RUNSCRIPT *cmd;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int on_success, on_failure, fail_on_error;
 
    /*
@@ -1179,9 +1179,9 @@ static bool runscript_cmd(JCR *jcr)
 /**
  * This passes plugin specific options.
  */
-static bool pluginoptions_cmd(JCR *jcr)
+static bool pluginoptions_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *msg;
 
    msg = get_memory(dir->msglen + 1);
@@ -1206,9 +1206,9 @@ static bool pluginoptions_cmd(JCR *jcr)
  * that were backed up (VSS .xml data) and are needed
  * before starting the restore.
  */
-static bool restore_object_cmd(JCR *jcr)
+static bool restore_object_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int32_t FileIndex;
    restore_object_pkt rop;
 
@@ -1300,7 +1300,7 @@ static bool restore_object_cmd(JCR *jcr)
    }
 
    if (debug_level >= 100) {
-      POOL_MEM object_content(PM_MESSAGE);
+      PoolMem object_content(PM_MESSAGE);
 
       /*
        * Convert the object into a null terminated string.
@@ -1343,7 +1343,7 @@ bail_out:
 }
 
 #if defined(WIN32_VSS)
-static inline int count_include_list_file_entries(JCR *jcr)
+static inline int count_include_list_file_entries(JobControlRecord *jcr)
 {
    int cnt = 0;
    findFILESET *fileset;
@@ -1364,9 +1364,9 @@ static inline int count_include_list_file_entries(JCR *jcr)
 /**
  * Director is passing his Fileset
  */
-static bool fileset_cmd(JCR *jcr)
+static bool fileset_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    bool retval;
 #if defined(WIN32_VSS)
    int vss = 0;
@@ -1399,7 +1399,7 @@ static bool fileset_cmd(JCR *jcr)
    return retval;
 }
 
-static void free_bootstrap(JCR *jcr)
+static void free_bootstrap(JobControlRecord *jcr)
 {
    if (jcr->RestoreBootstrap) {
       secure_erase(jcr, jcr->RestoreBootstrap);
@@ -1417,9 +1417,9 @@ static uint32_t bsr_uniq = 0;
  * Deprecated.  The bsr is now sent directly from the
  * Director to the SD.
  */
-static bool bootstrap_cmd(JCR *jcr)
+static bool bootstrap_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *fname = get_pool_memory(PM_FNAME);
    FILE *bs;
 
@@ -1461,9 +1461,9 @@ static bool bootstrap_cmd(JCR *jcr)
 /**
  * Get backup level from Director
  */
-static bool level_cmd(JCR *jcr)
+static bool level_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *level, *buf = NULL;
    int mtime_only;
 
@@ -1599,9 +1599,9 @@ bail_out:
  * Get session parameters from Director -- this is for a Restore command
  * This is deprecated. It is now passed via the bsr.
  */
-static bool session_cmd(JCR *jcr)
+static bool session_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    Dmsg1(100, "SessionCmd: %s", dir->msg);
    if (sscanf(dir->msg, sessioncmd, jcr->VolumeName,
@@ -1616,7 +1616,7 @@ static bool session_cmd(JCR *jcr)
    return dir->fsend(OKsession);
 }
 
-static void set_storage_auth_key(JCR *jcr, char *key)
+static void set_storage_auth_key(JobControlRecord *jcr, char *key)
 {
    /* if no key don't update anything */
    if (!*key) {
@@ -1652,14 +1652,14 @@ static void set_storage_auth_key(JCR *jcr, char *key)
 /**
  * Get address of storage daemon from Director
  */
-static bool storage_cmd(JCR *jcr)
+static bool storage_cmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
    int enable_ssl;                 /* enable ssl to sd */
    char stored_addr[MAX_NAME_LENGTH];
-   POOL_MEM sd_auth_key(PM_MESSAGE);
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd;                      /* storage daemon bsock */
+   PoolMem sd_auth_key(PM_MESSAGE);
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *sd;                      /* storage daemon bsock */
 
    sd = New(BSOCK_TCP);
    if (me->nokeepalive) {
@@ -1742,7 +1742,7 @@ bail_out:
  * We walk the list of include blocks and for each option block
  * check if a certain flag is set and clear that.
  */
-static inline void clear_flag_in_fileset(JCR *jcr, int flag, const char *warning)
+static inline void clear_flag_in_fileset(JobControlRecord *jcr, int flag, const char *warning)
 {
    findFILESET *fileset;
    bool cleared_flag = false;
@@ -1774,7 +1774,7 @@ static inline void clear_flag_in_fileset(JCR *jcr, int flag, const char *warning
  * We walk the list of include blocks and for each option block
  * check if a certain compression flag is set and clear that.
  */
-static inline void clear_compression_flag_in_fileset(JCR *jcr)
+static inline void clear_compression_flag_in_fileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
 
@@ -1826,7 +1826,7 @@ static inline void clear_compression_flag_in_fileset(JCR *jcr)
 /**
  * Find out what encryption cipher to use.
  */
-static inline bool get_wanted_crypto_cipher(JCR *jcr, crypto_cipher_t *cipher)
+static inline bool get_wanted_crypto_cipher(JobControlRecord *jcr, crypto_cipher_t *cipher)
 {
    findFILESET *fileset;
    bool force_encrypt = false;
@@ -1908,13 +1908,13 @@ static inline bool get_wanted_crypto_cipher(JCR *jcr, crypto_cipher_t *cipher)
 /**
  * Do a backup.
  */
-static bool backup_cmd(JCR *jcr)
+static bool backup_cmd(JobControlRecord *jcr)
 {
    int ok = 0;
    int SDJobStatus;
    int32_t FileIndex;
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    crypto_cipher_t cipher = CRYPTO_CIPHER_NONE;
 
    /*
@@ -2101,7 +2101,7 @@ static bool backup_cmd(JCR *jcr)
    /**
     * Send Files to Storage daemon
     */
-   Dmsg1(110, "begin blast ff=%p\n", (FF_PKT *)jcr->ff);
+   Dmsg1(110, "begin blast ff=%p\n", (FindFilesPacket *)jcr->ff);
    if (!blast_data_to_storage_daemon(jcr, NULL, cipher)) {
       jcr->setJobStatus(JS_ErrorTerminated);
       bnet_suppress_error_messages(sd, 1);
@@ -2166,11 +2166,11 @@ cleanup:
  * Do a Verify for Director
  *
  */
-static bool verify_cmd(JCR *jcr)
+static bool verify_cmd(JobControlRecord *jcr)
 {
    char level[100];
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd  = jcr->store_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *sd  = jcr->store_bsock;
 
    /*
     * See if we are allowed to run verify cmds.
@@ -2252,9 +2252,9 @@ static bool verify_cmd(JCR *jcr)
 /**
  * Open connection to Director.
  */
-static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)
+static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource *dir_res, bool verbose)
 {
-   BSOCK *dir = NULL;
+   BareosSocket *dir = NULL;
    utime_t heart_beat;
    int retry_interval = 0;
    int max_retry_time = 0;
@@ -2299,10 +2299,10 @@ static BSOCK *connect_to_director(JCR *jcr, DIRRES *dir_res, bool verbose)
 /**
  * Do a Restore for Director
  */
-static bool restore_cmd(JCR *jcr)
+static bool restore_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    POOLMEM *args;
    bool use_regexwhere = false;
    bool retval;
@@ -2510,16 +2510,16 @@ bail_out:
    return retval;
 }
 
-static bool end_restore_cmd(JCR *jcr)
+static bool end_restore_cmd(JobControlRecord *jcr)
 {
    Dmsg0(5, "end_restore_cmd\n");
    generate_plugin_event(jcr, bEventEndRestoreJob);
    return false;                      /* return and terminate command loop */
 }
 
-static bool open_sd_read_session(JCR *jcr)
+static bool open_sd_read_session(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    if (!sd) {
       Jmsg(jcr, M_FATAL, 0, _("Improper calling sequence.\n"));
@@ -2570,7 +2570,7 @@ static bool open_sd_read_session(JCR *jcr)
 /**
  * Destroy the Job Control Record and associated resources (sockets).
  */
-static void filed_free_jcr(JCR *jcr)
+static void filed_free_jcr(JobControlRecord *jcr)
 {
 #if defined(WIN32_VSS)
    if (jcr->pVSSClient) {
@@ -2621,7 +2621,7 @@ static void filed_free_jcr(JCR *jcr)
  * Returns: false on failure
  *          true on success
  */
-bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
+bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *cmd)
 {
    if (sd->errors) {
       return false;

@@ -51,8 +51,8 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static RES *sres_head[R_LAST - R_FIRST + 1];
-static RES **res_head = sres_head;
+static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader **res_head = sres_head;
 
 /*
  * We build the current resource here as we are
@@ -73,7 +73,7 @@ int32_t res_all_size = sizeof(res_all);
  *
  * name handler value code flags default_value
  */
-static RES_ITEM mon_items[] = {
+static ResourceItem mon_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_monitor.hdr.name), 0, CFG_ITEM_REQUIRED, 0, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_monitor.hdr.desc), 0, 0, 0, NULL, NULL },
    { "RequireSsl", CFG_TYPE_BOOL, ITEM(res_monitor.require_ssl), 0, CFG_ITEM_DEFAULT, "false", NULL, NULL },
@@ -93,7 +93,7 @@ static RES_ITEM mon_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM dir_items[] = {
+static ResourceItem dir_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "DirPort", CFG_TYPE_PINT32, ITEM(res_dir.DIRport), 0, CFG_ITEM_DEFAULT, DIR_DEFAULT_PORT, NULL, NULL },
@@ -110,7 +110,7 @@ static RES_ITEM dir_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM cli_items[] = {
+static ResourceItem cli_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Address", CFG_TYPE_STR, ITEM(res_client.address), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -128,7 +128,7 @@ static RES_ITEM cli_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM store_items[] = {
+static ResourceItem store_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "SdPort", CFG_TYPE_PINT32, ITEM(res_store.SDport), 0, CFG_ITEM_DEFAULT, SD_DEFAULT_PORT, NULL, NULL },
@@ -148,7 +148,7 @@ static RES_ITEM store_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM con_font_items[] = {
+static ResourceItem con_font_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(con_font.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(con_font.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Font", CFG_TYPE_STR, ITEM(con_font.fontface), 0, 0, NULL, NULL, NULL },
@@ -164,24 +164,24 @@ static RES_ITEM con_font_items[] = {
  *
  *  name items rcode res_head
  */
-static RES_TABLE resources[] = {
-   { "Monitor", mon_items, R_MONITOR, sizeof(MONITORRES), [] (void *res){ return new((MONITORRES *) res) MONITORRES(); } },
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } },
-   { "Storage", store_items, R_STORAGE, sizeof(STORERES), [] (void *res){ return new((STORERES *) res) STORERES(); } },
-   { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(CONFONTRES) },
+static ResourceTable resources[] = {
+   { "Monitor", mon_items, R_MONITOR, sizeof(MonitorResource), [] (void *res){ return new((MonitorResource *) res) MonitorResource(); } },
+   { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource *) res) ClientResource(); } },
+   { "Storage", store_items, R_STORAGE, sizeof(StoreResource), [] (void *res){ return new((StoreResource *) res) StoreResource(); } },
+   { "ConsoleFont", con_font_items, R_CONSOLE_FONT, sizeof(ConsoleFontResource) },
    { NULL, NULL, 0, 0 }
 };
 
 /*
  * Dump contents of resource
  */
-void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fmt, ...),
+void dump_resource(int type, CommonResourceHeader *reshdr, void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM buf;
+   PoolMem buf;
    URES *res = (URES *)reshdr;
-   BRSRES *resclass;
+   BareosResource *resclass;
    bool recurse = true;
 
    if (res == NULL) {
@@ -194,7 +194,7 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
    }
    switch (type) {
       default:
-         resclass = (BRSRES *)reshdr;
+         resclass = (BareosResource *)reshdr;
          resclass->print_config(buf);
          break;
    }
@@ -212,9 +212,9 @@ void dump_resource(int type, RES *reshdr, void sendit(void *sock, const char *fm
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(RES *sres, int type)
+void free_resource(CommonResourceHeader *sres, int type)
 {
-   RES *nres; /* next resource if linked */
+   CommonResourceHeader *nres; /* next resource if linked */
    URES *res = (URES *)sres;
 
    if (res == NULL)
@@ -223,7 +223,7 @@ void free_resource(RES *sres, int type)
    /*
     * Common stuff -- free the resource name and description
     */
-   nres = (RES *)res->res_monitor.hdr.next;
+   nres = (CommonResourceHeader *)res->res_monitor.hdr.next;
    if (res->res_monitor.hdr.name) {
       free(res->res_monitor.hdr.name);
    }
@@ -281,7 +281,7 @@ void free_resource(RES *sres, int type)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-bool save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, ResourceItem *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -348,11 +348,11 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       res = (URES *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
-        res_head[rindex] = (RES *)res; /* store first entry */
+        res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n",
                res_to_str(type), res->res_monitor.name(), rindex);
       } else {
-         RES *next, *last;
+         CommonResourceHeader *next, *last;
          /*
           * Add new res to end of chain
           */
@@ -364,7 +364,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
                resources[rindex].name, res->res_monitor.name());
             }
          }
-         last->next = (RES *)res;
+         last->next = (CommonResourceHeader *)res;
          Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
                res_to_str(type), res->res_monitor.name(), rindex, pass);
       }
@@ -401,9 +401,9 @@ bool parse_tmon_config(CONFIG *config, const char *configfile, int exit_code)
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
-   RES_TABLE *resources = my_config->m_resources;
+   ResourceTable *resources = my_config->resources_;
 
    initialize_json();
 
@@ -421,7 +421,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    json_object_set(resource, "bareos-tray-monitor", bareos_tray_monitor);
 
    for (int r = 0; resources[r].name; r++) {
-      RES_TABLE resource = my_config->m_resources[r];
+      ResourceTable resource = my_config->resources_[r];
       json_object_set(bareos_tray_monitor, resource.name, json_items(resource.items));
    }
 
@@ -431,7 +431,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    return true;
 }
 #else
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
    pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
    return false;

@@ -33,7 +33,7 @@
  * Message resource directives
  * name config_data_type value code flags default_value
  */
-static RES_ITEM msgs_items[] = {
+static ResourceItem msgs_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_msgs.hdr.name), 0, 0, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_msgs.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "MailCommand", CFG_TYPE_STR, ITEM(res_msgs.mail_cmd), 0, 0, NULL, NULL, NULL },

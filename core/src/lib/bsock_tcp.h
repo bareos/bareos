@@ -22,7 +22,7 @@
 #ifndef BRS_BSOCK_TCP_H
 #define BRS_BSOCK_TCP_H
 
-class DLL_IMP_EXP BSOCK_TCP : public BSOCK {
+class DLL_IMP_EXP BSOCK_TCP : public BareosSocket {
 private:
    /*
     * the header of a Bareos packet is 32 bit long.
@@ -41,11 +41,11 @@ private:
    static const int32_t max_message_len = max_packet_size - header_length;
 
    /* methods -- in bsock_tcp.c */
-   void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
+   void fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                  struct sockaddr *lclient_addr);
-   bool open(JCR *jcr, const char *name, char *host, char *service,
+   bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
              int port, utime_t heart_beat, int *fatal);
-   bool set_keepalive(JCR *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
+   bool set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval);
    bool send_packet(int32_t *hdr, int32_t pktsiz);
 
 public:
@@ -53,8 +53,8 @@ public:
    ~BSOCK_TCP();
 
    /* methods -- in bsock_tcp.c */
-   BSOCK *clone();
-   bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
+   BareosSocket *clone();
+   bool connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
                 utime_t heart_beat, const char *name, char *host,
                 char *service, int port, bool verbose);
    int32_t recv();

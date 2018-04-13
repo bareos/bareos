@@ -54,14 +54,14 @@ static char OKpassiveclient[] =
    "2000 OK passive client\n";
 
 /* Forward referenced functions */
-static void prt_fname(JCR *jcr);
+static void prt_fname(JobControlRecord *jcr);
 static int missing_handler(void *ctx, int num_fields, char **row);
 
 /**
  * Called here before the job is run to do the job
  *   specific setup.
  */
-bool do_verify_init(JCR *jcr)
+bool do_verify_init(JobControlRecord *jcr)
 {
    int JobLevel;
 
@@ -95,15 +95,15 @@ bool do_verify_init(JCR *jcr)
  *  Returns:  false on failure
  *            true  on success
  */
-bool do_verify(JCR *jcr)
+bool do_verify(JobControlRecord *jcr)
 {
    int JobLevel;
    const char *level;
-   BSOCK *fd = NULL;
-   BSOCK *sd = NULL;
+   BareosSocket *fd = NULL;
+   BareosSocket *sd = NULL;
    int status;
    char ed1[100];
-   JOB_DBR jr;
+   JobDbRecord jr;
    JobId_t verify_jobid = 0;
    const char *Name;
 
@@ -324,7 +324,7 @@ bool do_verify(JCR *jcr)
 
       if (!jcr->passive_client) {
          uint32_t tls_need = 0;
-         STORERES *store = jcr->res.rstore;
+         StoreResource *store = jcr->res.rstore;
 
          /*
           * Send Storage daemon address to the File daemon
@@ -345,7 +345,7 @@ bool do_verify(JCR *jcr)
          }
       } else {
          uint32_t tls_need = 0;
-         CLIENTRES *client = jcr->res.client;
+         ClientResource *client = jcr->res.client;
 
          /*
           * TLS Requirement
@@ -466,7 +466,7 @@ bail_out:
 /**
  * Release resources allocated during verify.
  */
-void verify_cleanup(JCR *jcr, int TermCode)
+void verify_cleanup(JobControlRecord *jcr, int TermCode)
 {
    int JobLevel;
    char sdt[50], edt[50];
@@ -609,14 +609,14 @@ void verify_cleanup(JCR *jcr, int TermCode)
 /**
  * This routine is called only during a Verify
  */
-void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
+void get_attributes_and_compare_to_catalog(JobControlRecord *jcr, JobId_t JobId)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
    int n, len;
-   FILE_DBR fdbr;
+   FileDbRecord fdbr;
    struct stat statf;                 /* file stat */
    struct stat statc;                 /* catalog stat */
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
    POOLMEM *fname = get_pool_memory(PM_FNAME);
    int do_Digest = CRYPTO_DIGEST_NONE;
    int32_t file_index = 0;
@@ -640,7 +640,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
    while ((n=bget_dirmsg(fd)) >= 0 && !job_canceled(jcr)) {
       int stream;
       char *attr, *p, *fn;
-      POOL_MEM Opts_Digest(PM_MESSAGE);   /* Verify Opts or MD5/SHA1 digest */
+      PoolMem Opts_Digest(PM_MESSAGE);   /* Verify Opts or MD5/SHA1 digest */
 
       if (job_canceled(jcr)) {
          goto bail_out;
@@ -687,7 +687,7 @@ void get_attributes_and_compare_to_catalog(JCR *jcr, JobId_t JobId)
          decode_stat(attr, &statf, sizeof(statf), &LinkFIf);  /* decode file stat packet */
          do_Digest = CRYPTO_DIGEST_NONE;
          jcr->fn_printed = false;
-         pm_strcpy(jcr->fname, fname);  /* move filename into JCR */
+         pm_strcpy(jcr->fname, fname);  /* move filename into JobControlRecord */
 
          Dmsg2(040, "dird<filed: stream=%d %s\n", stream, jcr->fname);
          Dmsg1(020, "dird<filed: attr=%s\n", attr);
@@ -885,7 +885,7 @@ bail_out:
  */
 static int missing_handler(void *ctx, int num_fields, char **row)
 {
-   JCR *jcr = (JCR *)ctx;
+   JobControlRecord *jcr = (JobControlRecord *)ctx;
 
    if (job_canceled(jcr)) {
       return 1;
@@ -902,7 +902,7 @@ static int missing_handler(void *ctx, int num_fields, char **row)
 /**
  * Print filename for verify
  */
-static void prt_fname(JCR *jcr)
+static void prt_fname(JobControlRecord *jcr)
 {
    if (!jcr->fn_printed) {
       Jmsg(jcr, M_INFO, 0, _("File: %s\n"), jcr->fname);

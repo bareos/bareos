@@ -39,7 +39,7 @@
  * runtime disabled or at compile time. Or when we run out of
  * pooled connections and need more database connections.
  */
-B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
+BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -53,7 +53,7 @@ B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        bool exit_on_fatal,
                                        bool need_private)
 {
-   B_DB *mdb;
+   BareosDb *mdb;
 
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    Dmsg2(100, "db_sql_get_non_pooled_connection allocating 1 new non pooled database connection to database %s, backend type %s\n",
@@ -94,13 +94,13 @@ static dlist *db_pooling_descriptors = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static void destroy_pool_descriptor(SQL_POOL_DESCRIPTOR *spd, bool flush_only)
+static void destroy_pool_descriptor(SqlPoolDescriptor *spd, bool flush_only)
 {
-   SQL_POOL_ENTRY *spe, *spe_next;
+   SqlPoolEntry *spe, *spe_next;
 
-   spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+   spe = (SqlPoolEntry *)spd->pool_entries->first();
    while (spe) {
-      spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
+      spe_next = (SqlPoolEntry *)spd->pool_entries->get_next(spe);
       if (!flush_only || spe->reference_count == 0) {
          Dmsg3(100, "db_sql_pool_destroy destroy db pool connection %d to %s, backend type %s\n",
                spe->id, spe->db_handle->get_db_name(), spe->db_handle->get_type());
@@ -144,10 +144,10 @@ bool db_sql_pool_initialize(const char *db_drivername,
                             int validate_timeout)
 {
    int cnt;
-   B_DB *mdb;
+   BareosDb *mdb;
    time_t now;
-   SQL_POOL_DESCRIPTOR *spd = NULL;
-   SQL_POOL_ENTRY *spe = NULL;
+   SqlPoolDescriptor *spd = NULL;
+   SqlPoolEntry *spe = NULL;
    bool retval = false;
 
    /*
@@ -181,8 +181,8 @@ bool db_sql_pool_initialize(const char *db_drivername,
    /*
     * Create a new pool descriptor.
     */
-   spd = (SQL_POOL_DESCRIPTOR *)malloc(sizeof(SQL_POOL_DESCRIPTOR));
-   memset(spd, 0, sizeof(SQL_POOL_DESCRIPTOR));
+   spd = (SqlPoolDescriptor *)malloc(sizeof(SqlPoolDescriptor));
+   memset(spd, 0, sizeof(SqlPoolDescriptor));
    spd->pool_entries = New(dlist(spe, &spe->link));
    spd->min_connections = min_connections;
    spd->max_connections = max_connections;
@@ -222,8 +222,8 @@ bool db_sql_pool_initialize(const char *db_drivername,
       /*
        * Push this new connection onto the connection pool.
        */
-      spe = (SQL_POOL_ENTRY *)malloc(sizeof(SQL_POOL_ENTRY));
-      memset(spe, 0, sizeof(SQL_POOL_ENTRY));
+      spe = (SqlPoolEntry *)malloc(sizeof(SqlPoolEntry));
+      memset(spe, 0, sizeof(SqlPoolEntry));
       spe->id = spd->nr_connections++;
       spe->last_update = now;
       spe->db_handle = mdb;
@@ -262,7 +262,7 @@ ok_out:
  */
 void db_sql_pool_destroy(void)
 {
-   SQL_POOL_DESCRIPTOR *spd, *spd_next;
+   SqlPoolDescriptor *spd, *spd_next;
 
    /*
     * See if pooling is enabled.
@@ -272,9 +272,9 @@ void db_sql_pool_destroy(void)
    }
 
    P(mutex);
-   spd = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->first();
+   spd = (SqlPoolDescriptor *)db_pooling_descriptors->first();
    while (spd) {
-      spd_next = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->get_next(spd);
+      spd_next = (SqlPoolDescriptor *)db_pooling_descriptors->get_next(spd);
       destroy_pool_descriptor(spd, false);
       spd = spd_next;
    }
@@ -289,8 +289,8 @@ void db_sql_pool_destroy(void)
  */
 void db_sql_pool_flush(void)
 {
-   SQL_POOL_ENTRY *spe;
-   SQL_POOL_DESCRIPTOR *spd, *spd_next;
+   SqlPoolEntry *spe;
+   SqlPoolDescriptor *spd, *spd_next;
 
    /*
     * See if pooling is enabled.
@@ -300,9 +300,9 @@ void db_sql_pool_flush(void)
    }
 
    P(mutex);
-   spd = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->first();
+   spd = (SqlPoolDescriptor *)db_pooling_descriptors->first();
    while (spd) {
-      spd_next = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->get_next(spd);
+      spd_next = (SqlPoolDescriptor *)db_pooling_descriptors->get_next(spd);
       if (spd->active) {
          /*
           * On a flush all current available pools are invalidated.
@@ -319,20 +319,20 @@ void db_sql_pool_flush(void)
  * Grow the sql connection pool.
  * This function should be called with the mutex held.
  */
-static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
+static inline void sql_pool_grow(SqlPoolDescriptor *spd)
 {
    int cnt, next_id;
-   B_DB *mdb;
+   BareosDb *mdb;
    time_t now;
-   SQL_POOL_ENTRY *spe;
-   B_DB *db_handle;
+   SqlPoolEntry *spe;
+   BareosDb *db_handle;
 
    /*
     * Get the first entry from the list to be able to clone it.
     * If the pool is empty its not initialized ok so we cannot really
     * grow its size.
     */
-   spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+   spe = (SqlPoolEntry *)spd->pool_entries->first();
    if (spe != NULL) {
       /*
        * Save the handle of the first entry so we can clone it later on.
@@ -373,8 +373,8 @@ static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
          /*
           * Push this new connection onto the connection pool.
           */
-         spe = (SQL_POOL_ENTRY *)malloc(sizeof(SQL_POOL_ENTRY));
-         memset(spe, 0, sizeof(SQL_POOL_ENTRY));
+         spe = (SqlPoolEntry *)malloc(sizeof(SqlPoolEntry));
+         memset(spe, 0, sizeof(SqlPoolEntry));
          spe->id = next_id++;
          spe->last_update = now;
          spe->db_handle = mdb;
@@ -392,11 +392,11 @@ static inline void sql_pool_grow(SQL_POOL_DESCRIPTOR *spd)
  * Shrink the sql connection pool.
  * This function should be called with the mutex held.
  */
-static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
+static inline void sql_pool_shrink(SqlPoolDescriptor *spd)
 {
    int cnt;
    time_t now;
-   SQL_POOL_ENTRY *spe, *spe_next;
+   SqlPoolEntry *spe, *spe_next;
 
    time(&now);
    spd->last_update = now;
@@ -429,7 +429,7 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
    /*
     * For debugging purposes get the first entry on the connection pool.
     */
-   spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+   spe = (SqlPoolEntry *)spd->pool_entries->first();
    if (spe) {
       Dmsg3(100, "sql_pool_shrink shrinking connection pool with %d connections to database %s, backend type %s\n",
             cnt, spe->db_handle->get_db_name(), spe->db_handle->get_type());
@@ -438,9 +438,9 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
    /*
     * Loop over all entries on the pool and see if the can be removed.
     */
-   spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+   spe = (SqlPoolEntry *)spd->pool_entries->first();
    while (spe) {
-      spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
+      spe_next = (SqlPoolEntry *)spd->pool_entries->get_next(spe);
 
       /*
         * See if this is a unreferenced connection.
@@ -476,13 +476,13 @@ static inline void sql_pool_shrink(SQL_POOL_DESCRIPTOR *spd)
  * Find the connection pool with the correct connections.
  * This function should be called with the mutex held.
  */
-static inline SQL_POOL_DESCRIPTOR *sql_find_pool_descriptor(const char *db_drivername,
+static inline SqlPoolDescriptor *sql_find_pool_descriptor(const char *db_drivername,
                                                             const char *db_name,
                                                             const char *db_address,
                                                             int db_port)
 {
-   SQL_POOL_DESCRIPTOR *spd;
-   SQL_POOL_ENTRY *spe;
+   SqlPoolDescriptor *spd;
+   SqlPoolEntry *spe;
 
    foreach_dlist(spd, db_pooling_descriptors) {
       if (spd->active) {
@@ -500,9 +500,9 @@ static inline SQL_POOL_DESCRIPTOR *sql_find_pool_descriptor(const char *db_drive
  * Find a free connection in a certain connection pool.
  * This function should be called with the mutex held.
  */
-static inline SQL_POOL_ENTRY *sql_find_free_connection(SQL_POOL_DESCRIPTOR *spd)
+static inline SqlPoolEntry *sql_find_free_connection(SqlPoolDescriptor *spd)
 {
-   SQL_POOL_ENTRY *spe;
+   SqlPoolEntry *spe;
 
    foreach_dlist(spe, spd->pool_entries) {
       if (spe->reference_count == 0) {
@@ -516,9 +516,9 @@ static inline SQL_POOL_ENTRY *sql_find_free_connection(SQL_POOL_DESCRIPTOR *spd)
  * Find a connection in a certain connection pool.
  * This function should be called with the mutex held.
  */
-static inline SQL_POOL_ENTRY *sql_find_first_connection(SQL_POOL_DESCRIPTOR *spd)
+static inline SqlPoolEntry *sql_find_first_connection(SqlPoolDescriptor *spd)
 {
-   SQL_POOL_ENTRY *spe;
+   SqlPoolEntry *spe;
 
    foreach_dlist(spe, spd->pool_entries) {
       return spe;
@@ -529,7 +529,7 @@ static inline SQL_POOL_ENTRY *sql_find_first_connection(SQL_POOL_DESCRIPTOR *spd
 /**
  * Get a new connection from the pool.
  */
-B_DB *db_sql_get_pooled_connection(JCR *jcr,
+BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -544,9 +544,9 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    bool need_private)
 {
    int cnt = 0;
-   SQL_POOL_DESCRIPTOR *wanted_pool;
-   SQL_POOL_ENTRY *use_connection = NULL;
-   B_DB *db_handle = NULL;
+   SqlPoolDescriptor *wanted_pool;
+   SqlPoolEntry *use_connection = NULL;
+   BareosDb *db_handle = NULL;
    time_t now;
 
    now = time(NULL);
@@ -692,10 +692,10 @@ bail_out:
  * The abort flag is set when we encounter a dead or misbehaving connection
  * which needs to be closed right away and should not be reused.
  */
-void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
+void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
 {
-   SQL_POOL_ENTRY *spe, *spe_next;
-   SQL_POOL_DESCRIPTOR *spd, *spd_next;
+   SqlPoolEntry *spe, *spe_next;
+   SqlPoolDescriptor *spd, *spd_next;
    bool found = false;
    time_t now;
 
@@ -714,18 +714,18 @@ void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
     */
    now = time(NULL);
 
-   spd = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->first();
+   spd = (SqlPoolDescriptor *)db_pooling_descriptors->first();
    while (spd) {
-      spd_next = (SQL_POOL_DESCRIPTOR *)db_pooling_descriptors->get_next(spd);
+      spd_next = (SqlPoolDescriptor *)db_pooling_descriptors->get_next(spd);
 
       if (!spd->pool_entries) {
          spd = spd_next;
          continue;
       }
 
-      spe = (SQL_POOL_ENTRY *)spd->pool_entries->first();
+      spe = (SqlPoolEntry *)spd->pool_entries->first();
       while (spe) {
-         spe_next = (SQL_POOL_ENTRY *)spd->pool_entries->get_next(spe);
+         spe_next = (SqlPoolEntry *)spd->pool_entries->get_next(spe);
 
          if (spe->db_handle == mdb) {
             found = true;
@@ -862,7 +862,7 @@ void db_sql_pool_flush(void)
  * Get a new connection from the pool.
  * For non pooling we just call db_sql_get_non_pooled_connection.
  */
-B_DB *db_sql_get_pooled_connection(JCR *jcr,
+BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -895,7 +895,7 @@ B_DB *db_sql_get_pooled_connection(JCR *jcr,
  * Put a connection back onto the pool for reuse.
  * For non pooling we just do a close_database.
  */
-void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort)
+void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort)
 {
    mdb->close_database(jcr);
 }

@@ -28,24 +28,24 @@
 #ifndef WIN32_FIFO_DEVICE_H
 #define WIN32_FIFO_DEVICE_H
 
-class win32_fifo_device: public DEVICE {
+class win32_fifo_device: public Device {
 public:
    win32_fifo_device();
    ~win32_fifo_device();
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
-   void open_device(DCR *dcr, int omode);
-   bool eod(DCR *dcr);
-   bool mount_backend(DCR *dcr, int timeout);
-   bool unmount_backend(DCR *dcr, int timeout);
+   void open_device(DeviceControlRecord *dcr, int omode);
+   bool eod(DeviceControlRecord *dcr);
+   bool mount_backend(DeviceControlRecord *dcr, int timeout);
+   bool unmount_backend(DeviceControlRecord *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   bool d_truncate(DCR *dcr);
+   bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* WIN32_FIFO_DEVICE_H */

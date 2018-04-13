@@ -151,11 +151,11 @@ typedef struct s_dirbareosFuncs {
 #ifdef DIRECTOR_DAEMON
 void load_dir_plugins(const char *plugin_dir, alist *plugin_names);
 void unload_dir_plugins(void);
-int list_dir_plugins(POOL_MEM &msg);
-void dispatch_new_plugin_options(JCR *jcr);
-void new_plugins(JCR *jcr);
-void free_plugins(JCR *jcr);
-bRC generate_plugin_event(JCR *jcr, bDirEventType event,
+int list_dir_plugins(PoolMem &msg);
+void dispatch_new_plugin_options(JobControlRecord *jcr);
+void new_plugins(JobControlRecord *jcr);
+void free_plugins(JobControlRecord *jcr);
+bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType event,
                           void *value = NULL, bool reverse = false);
 #endif
 

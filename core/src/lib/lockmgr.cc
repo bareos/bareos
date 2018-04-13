@@ -122,7 +122,7 @@ typedef enum
  * Note, each mutex can be GRANTED once, and each proc can have only one WANTED
  * mutex.
  */
-class lmgr_node_t: public SMARTALLOC
+class lmgr_node_t: public SmartAlloc
 {
 public:
    dlink link;
@@ -161,7 +161,7 @@ typedef enum {
 /*
  * Object associated with each mutex per thread
  */
-class lmgr_lock_t: public SMARTALLOC
+class lmgr_lock_t: public SmartAlloc
 {
 public:
    dlink link;
@@ -248,7 +248,7 @@ static bool contains_cycle(dlist *g)
    return false;
 }
 
-class lmgr_thread_t: public SMARTALLOC
+class lmgr_thread_t: public SmartAlloc
 {
 public:
    dlink link;

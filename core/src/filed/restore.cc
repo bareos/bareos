@@ -89,16 +89,16 @@ const bool have_fastlz = false;
 #endif
 
 static void free_signature(r_ctx &rctx);
-static bool close_previous_stream(JCR *jcr, r_ctx &rctx);
+static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx);
 
-int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
-                     uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx);
+int32_t extract_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, POOLMEM *buf, int32_t buflen,
+                     uint64_t *addr, char *flags, int32_t stream, RestoreCipherContext *cipher_ctx);
 
 /**
  * Close a bfd check that we are at the expected file offset.
  * Makes use of some code from set_attributes().
  */
-static int bclose_chksize(JCR *jcr, BFILE *bfd, boffset_t osize)
+static int bclose_chksize(JobControlRecord *jcr, BareosWinFilePacket *bfd, boffset_t osize)
 {
    char ec1[50], ec2[50];
    boffset_t fsize;
@@ -114,7 +114,7 @@ static int bclose_chksize(JCR *jcr, BFILE *bfd, boffset_t osize)
    return 0;
 }
 
-static inline bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
+static inline bool restore_finderinfo(JobControlRecord *jcr, POOLMEM *buf, int32_t buflen)
 {
 #ifdef HAVE_DARWIN_OS
    struct attrlist attrList;
@@ -146,7 +146,7 @@ static inline bool restore_finderinfo(JCR *jcr, POOLMEM *buf, int32_t buflen)
  */
 static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    if (!rctx.delayed_streams ||
        rctx.delayed_streams->empty()) {
@@ -166,15 +166,15 @@ static inline void drop_delayed_data_streams(r_ctx &rctx, bool reuse)
 /**
  * Push a data stream onto the delayed restore stack for later processing.
  */
-static inline void push_delayed_data_stream(r_ctx &rctx, BSOCK *sd)
+static inline void push_delayed_data_stream(r_ctx &rctx, BareosSocket *sd)
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    if (!rctx.delayed_streams) {
       rctx.delayed_streams = New(alist(10, owned_by_alist));
    }
 
-   dds = (DELAYED_DATA_STREAM *)malloc(sizeof(DELAYED_DATA_STREAM));
+   dds = (DelayedDataStream *)malloc(sizeof(DelayedDataStream));
    dds->stream = rctx.stream;
    dds->content = (char *)malloc(sd->msglen);
    memcpy(dds->content, sd->msg, sd->msglen);
@@ -187,7 +187,7 @@ static inline void push_delayed_data_stream(r_ctx &rctx, BSOCK *sd)
  * Perform a restore of an ACL using the stream received.
  * This can either be a delayed restore or direct restore.
  */
-static inline bool do_restore_acl(JCR *jcr,
+static inline bool do_restore_acl(JobControlRecord *jcr,
                                   int stream,
                                   char *content,
                                   uint32_t content_length)
@@ -229,7 +229,7 @@ static inline bool do_restore_acl(JCR *jcr,
  * Perform a restore of an XATTR using the stream received.
  * This can either be a delayed restore or direct restore.
  */
-static inline bool do_restore_xattr(JCR *jcr,
+static inline bool do_restore_xattr(JobControlRecord *jcr,
                                     int stream,
                                     char *content,
                                     uint32_t content_length)
@@ -273,9 +273,9 @@ static inline bool do_restore_xattr(JCR *jcr,
  * attributes otherwise we might clear some security flags
  * by setting the attributes.
  */
-static inline bool pop_delayed_data_streams(JCR *jcr, r_ctx &rctx)
+static inline bool pop_delayed_data_streams(JobControlRecord *jcr, r_ctx &rctx)
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    /*
     * See if there is anything todo.
@@ -373,9 +373,9 @@ bail_out:
 /**
  * Restore the requested files.
  */
-void do_restore(JCR *jcr)
+void do_restore(JobControlRecord *jcr)
 {
-   BSOCK *sd;
+   BareosSocket *sd;
    uint32_t VolSessionId, VolSessionTime;
    int32_t file_index;
    char ec1[50];                      /* Buffer printing huge values */
@@ -383,7 +383,7 @@ void do_restore(JCR *jcr)
    int status;
    int64_t rsrc_len = 0;              /* Original length of resource fork */
    r_ctx rctx;
-   ATTR *attr;
+   Attributes *attr;
    /* ***FIXME*** make configurable */
    crypto_digest_t signing_algorithm = have_sha2 ?
                                        CRYPTO_DIGEST_SHA256 : CRYPTO_DIGEST_SHA1;
@@ -406,7 +406,7 @@ void do_restore(JCR *jcr)
    jcr->setJobStatus(JS_Running);
 
    LockRes();
-   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    if (client) {
       buf_size = client->max_network_buffer_size;
@@ -1176,13 +1176,13 @@ ok_out:
    free_attr(rctx.attr);
 }
 
-int do_file_digest(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+int do_file_digest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    Dmsg1(50, "do_file_digest jcr=%p\n", jcr);
    return (digest_file(jcr, ff_pkt, jcr->crypto.digest));
 }
 
-bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *length)
+bool sparse_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char **data, uint32_t *length)
 {
    unser_declare;
    uint64_t faddr;
@@ -1204,7 +1204,7 @@ bool sparse_data(JCR *jcr, BFILE *bfd, uint64_t *addr, char **data, uint32_t *le
    return true;
 }
 
-bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win32_decomp)
+bool store_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length, bool win32_decomp)
 {
    if (jcr->crypto.digest) {
       crypto_digest_update(jcr->crypto.digest, (uint8_t *)data, length);
@@ -1252,8 +1252,8 @@ bool store_data(JCR *jcr, BFILE *bfd, char *data, const int32_t length, bool win
  * The flags specify whether to use sparse files or compression.
  * Return value is the number of bytes written, or -1 on errors.
  */
-int32_t extract_data(JCR *jcr, BFILE *bfd, POOLMEM *buf, int32_t buflen,
-                     uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx)
+int32_t extract_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, POOLMEM *buf, int32_t buflen,
+                     uint64_t *addr, char *flags, int32_t stream, RestoreCipherContext *cipher_ctx)
 {
    char *wbuf;                 /* write buffer */
    uint32_t wsize;             /* write size */
@@ -1320,7 +1320,7 @@ bail_out:
 /**
  * If extracting, close any previous stream
  */
-static bool close_previous_stream(JCR *jcr, r_ctx &rctx)
+static bool close_previous_stream(JobControlRecord *jcr, r_ctx &rctx)
 {
    /*
     * If extracting, it was from previous stream, so

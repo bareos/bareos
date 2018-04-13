@@ -226,7 +226,7 @@ int main (int argc, char *argv[])
    }
 
   if (export_config_schema) {
-      POOL_MEM buffer;
+      PoolMem buffer;
 
       my_config = new_config_parser();
       init_sd_config(my_config, configfile, M_ERROR_TERM);
@@ -249,11 +249,11 @@ int main (int argc, char *argv[])
    }
 
    if (init_crypto() != 0) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Cryptography library initialization failed.\n"));
    }
 
    if (!check_resources()) {
-      Jmsg((JCR *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
+      Jmsg((JobControlRecord *)NULL, M_ERROR_TERM, 0, _("Please correct the configuration in %s\n"), my_config->get_base_config_path());
    }
 
    init_reservations_lock();
@@ -302,7 +302,7 @@ int main (int argc, char *argv[])
 
    start_watchdog();                  /* start watchdog thread */
    if (me->jcr_watchdog_time) {
-      init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+      init_jcr_subsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
    }
 
    start_statistics_thread();
@@ -347,7 +347,7 @@ static int check_resources()
    bool tls_needed;
    const char *configfile = my_config->get_base_config_path();
 
-   if (GetNextRes(R_STORAGE, (RES *)me) != NULL) {
+   if (GetNextRes(R_STORAGE, (CommonResourceHeader *)me) != NULL) {
       Jmsg1(NULL, M_ERROR, 0, _("Only one Storage resource permitted in %s\n"),
          configfile);
       OK = false;
@@ -373,7 +373,7 @@ static int check_resources()
    }
 
    if (!me->messages) {
-      me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+      me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
       if (!me->messages) {
          Jmsg1(NULL, M_ERROR, 0, _("No Messages resource defined in %s. Cannot continue.\n"),
             configfile);
@@ -435,7 +435,7 @@ static int check_resources()
       OK = false;
    }
 
-   DIRRES *director;
+   DirectorResource *director;
    foreach_res(director, R_DIRECTOR) {
       /* tls_require implies tls_enable */
       if (director->tls_cert.require) {
@@ -469,7 +469,7 @@ static int check_resources()
       }
     }
 
-   DEVRES *device;
+   DeviceResource *device;
    foreach_res(device, R_DEVICE) {
       if (device->drive_crypto_enabled && bit_is_set(CAP_LABEL, device->cap_bits)) {
          Jmsg(NULL, M_FATAL, 0, _("LabelMedia enabled is incompatible with tape crypto on Device \"%s\" in %s.\n"),
@@ -592,16 +592,16 @@ get_out2:
 extern "C"
 void *device_initialization(void *arg)
 {
-   DEVRES *device;
-   DCR *dcr;
-   JCR *jcr;
-   DEVICE *dev;
+   DeviceResource *device;
+   DeviceControlRecord *dcr;
+   JobControlRecord *jcr;
+   Device *dev;
    int errstat;
 
    LockRes();
 
    pthread_detach(pthread_self());
-   jcr = new_jcr(sizeof(JCR), stored_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), stored_free_jcr);
    new_plugins(jcr);  /* instantiate plugins */
    jcr->setJobType(JT_SYSTEM);
 
@@ -691,8 +691,8 @@ static
 void terminate_stored(int sig)
 {
    static bool in_here = false;
-   DEVRES *device;
-   JCR *jcr;
+   DeviceResource *device;
+   JobControlRecord *jcr;
 
    if (in_here) {                     /* prevent loops */
       bmicrosleep(2, 0);              /* yield */
@@ -718,7 +718,7 @@ void terminate_stored(int sig)
        *   volume status.
        */
       foreach_jcr(jcr) {
-         BSOCK *fd;
+         BareosSocket *fd;
          if (jcr->JobId == 0) {
             free_jcr(jcr);
             continue;                 /* ignore console */

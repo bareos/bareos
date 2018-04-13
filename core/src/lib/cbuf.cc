@@ -33,29 +33,29 @@
  */
 int circbuf::init(int capacity)
 {
-   if (pthread_mutex_init(&m_lock, NULL) != 0) {
+   if (pthread_mutex_init(&lock_, NULL) != 0) {
       return -1;
    }
 
-   if (pthread_cond_init(&m_notfull, NULL) != 0) {
-      pthread_mutex_destroy(&m_lock);
+   if (pthread_cond_init(&notfull_, NULL) != 0) {
+      pthread_mutex_destroy(&lock_);
       return -1;
    }
 
-   if (pthread_cond_init(&m_notempty, NULL) != 0) {
-      pthread_cond_destroy(&m_notfull);
-      pthread_mutex_destroy(&m_lock);
+   if (pthread_cond_init(&notempty_, NULL) != 0) {
+      pthread_cond_destroy(&notfull_);
+      pthread_mutex_destroy(&lock_);
       return -1;
    }
 
-   m_next_in = 0;
-   m_next_out = 0;
-   m_size = 0;
-   m_capacity = capacity;
-   if (m_data) {
-      free(m_data);
+   next_in_ = 0;
+   next_out_ = 0;
+   size_ = 0;
+   capacity_ = capacity;
+   if (data_) {
+      free(data_);
    }
-   m_data = (void **)malloc(m_capacity * sizeof(void *));
+   data_ = (void **)malloc(capacity_ * sizeof(void *));
 
    return 0;
 }
@@ -65,12 +65,12 @@ int circbuf::init(int capacity)
  */
 void circbuf::destroy()
 {
-   pthread_cond_destroy(&m_notempty);
-   pthread_cond_destroy(&m_notfull);
-   pthread_mutex_destroy(&m_lock);
-   if (m_data) {
-      free(m_data);
-      m_data = NULL;
+   pthread_cond_destroy(&notempty_);
+   pthread_cond_destroy(&notfull_);
+   pthread_mutex_destroy(&lock_);
+   if (data_) {
+      free(data_);
+      data_ = NULL;
    }
 }
 
@@ -79,7 +79,7 @@ void circbuf::destroy()
  */
 int circbuf::enqueue(void *data)
 {
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
    }
 
@@ -87,18 +87,18 @@ int circbuf::enqueue(void *data)
     * Wait while the buffer is full.
     */
    while (full()) {
-      pthread_cond_wait(&m_notfull, &m_lock);
+      pthread_cond_wait(&notfull_, &lock_);
    }
-   m_data[m_next_in++] = data;
-   m_size++;
-   m_next_in %= m_capacity;
+   data_[next_in_++] = data;
+   size_++;
+   next_in_ %= capacity_;
 
    /*
     * Let any waiting consumer know there is data.
     */
-   pthread_cond_broadcast(&m_notempty);
+   pthread_cond_broadcast(&notempty_);
 
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return 0;
 }
@@ -110,35 +110,35 @@ void *circbuf::dequeue()
 {
    void *data = NULL;
 
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return NULL;
    }
 
    /*
     * Wait while there is nothing in the buffer
     */
-   while (empty() && !m_flush) {
-      pthread_cond_wait(&m_notempty, &m_lock);
+   while (empty() && !flush_) {
+      pthread_cond_wait(&notempty_, &lock_);
    }
 
    /*
     * When we are requested to flush and there is no data left return NULL.
     */
-   if (empty() && m_flush) {
+   if (empty() && flush_) {
       goto bail_out;
    }
 
-   data = m_data[m_next_out++];
-   m_size--;
-   m_next_out %= m_capacity;
+   data = data_[next_out_++];
+   size_--;
+   next_out_ %= capacity_;
 
    /*
     * Let all waiting producers know there is room.
     */
-   pthread_cond_broadcast(&m_notfull);
+   pthread_cond_broadcast(&notfull_);
 
 bail_out:
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return data;
 }
@@ -149,7 +149,7 @@ bail_out:
  */
 int circbuf::next_slot()
 {
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
    }
 
@@ -157,12 +157,12 @@ int circbuf::next_slot()
     * Wait while the buffer is full.
     */
    while (full()) {
-      pthread_cond_wait(&m_notfull, &m_lock);
+      pthread_cond_wait(&notfull_, &lock_);
    }
 
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
-   return m_next_in;
+   return next_in_;
 }
 
 /*
@@ -171,21 +171,21 @@ int circbuf::next_slot()
  */
 int circbuf::flush()
 {
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
    }
 
    /*
     * Set the flush flag.
     */
-   m_flush = true;
+   flush_ = true;
 
    /*
     * Let all waiting consumers know there will be no more data.
     */
-   pthread_cond_broadcast(&m_notempty);
+   pthread_cond_broadcast(&notempty_);
 
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return 0;
 }

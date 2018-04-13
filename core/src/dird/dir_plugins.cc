@@ -75,7 +75,7 @@ static bDirFuncs bfuncs = {
  * BAREOS private context
  */
 struct b_plugin_ctx {
-   JCR *jcr;                                        /* jcr for plugin */
+   JobControlRecord *jcr;                                        /* jcr for plugin */
    bRC  rc;                                         /* last return code */
    bool disabled;                                   /* set if plugin disabled */
    char events[nbytes_for_bits(DIR_NR_EVENTS + 1)]; /* enabled events bitmask */
@@ -109,13 +109,13 @@ static inline bool is_plugin_disabled(bpContext *ctx)
 }
 
 #ifdef needed
-static inline bool is_plugin_disabled(JCR *jcr)
+static inline bool is_plugin_disabled(JobControlRecord *jcr)
 {
    return is_plugin_disabled(jcr->ctx);
 }
 #endif
 
-static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
+static bool is_ctx_good(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
 {
    if (!ctx) {
       return false;
@@ -134,7 +134,7 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
    return true;
 }
 
-static inline bool trigger_plugin_event(JCR *jcr, bDirEventType eventType,
+static inline bool trigger_plugin_event(JobControlRecord *jcr, bDirEventType eventType,
                                         bDirEvent *event, bpContext *ctx,
                                         void *value, alist *plugin_ctx_list,
                                         int *index, bRC *rc)
@@ -200,7 +200,7 @@ bail_out:
 /*
  * Create a plugin event
  */
-bRC generate_plugin_event(JCR *jcr, bDirEventType eventType, void *value, bool reverse)
+bRC generate_plugin_event(JobControlRecord *jcr, bDirEventType eventType, void *value, bool reverse)
 {
    int i;
    bDirEvent event;
@@ -332,7 +332,7 @@ void unload_dir_plugins(void)
    dird_plugin_list = NULL;
 }
 
-int list_dir_plugins(POOL_MEM &msg)
+int list_dir_plugins(PoolMem &msg)
 {
    return list_plugins(dird_plugin_list, msg);
 }
@@ -385,7 +385,7 @@ static bool is_plugin_compatible(Plugin *plugin)
 /**
  * Instantiate a new plugin instance.
  */
-static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t instance)
+static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugin, uint32_t instance)
 {
    bpContext *ctx;
    b_plugin_ctx *b_ctx;
@@ -416,7 +416,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t i
  * Send a bDirEventNewPluginOptions event to all plugins configured in
  * jcr->res.Job.DirPluginOptions
  */
-void dispatch_new_plugin_options(JCR *jcr)
+void dispatch_new_plugin_options(JobControlRecord *jcr)
 {
    int i, j, len;
    Plugin *plugin;
@@ -426,7 +426,7 @@ void dispatch_new_plugin_options(JCR *jcr)
    bDirEventType eventType;
    char *bp, *plugin_name, *option;
    const char *plugin_options;
-   POOL_MEM priv_plugin_options(PM_MESSAGE);
+   PoolMem priv_plugin_options(PM_MESSAGE);
 
    if (!dird_plugin_list || dird_plugin_list->empty()) {
       return;
@@ -513,7 +513,7 @@ void dispatch_new_plugin_options(JCR *jcr)
 /**
  * Create a new instance of each plugin for this Job
  */
-void new_plugins(JCR *jcr)
+void new_plugins(JobControlRecord *jcr)
 {
    int i, num;
    Plugin *plugin;
@@ -545,7 +545,7 @@ void new_plugins(JCR *jcr)
 /**
  * Free the plugin instances for this Job
  */
-void free_plugins(JCR *jcr)
+void free_plugins(JobControlRecord *jcr)
 {
    bpContext *ctx;
 
@@ -573,7 +573,7 @@ void free_plugins(JCR *jcr)
  */
 static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 {
-   JCR *jcr = NULL;
+   JobControlRecord *jcr = NULL;
    bRC retval = bRC_OK;
 
    if (!value) {
@@ -623,7 +623,7 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
          Dmsg1(dbglvl, "dir-plugin: return bDirVarClient=%s\n", NPRT(*((char **)value)));
          break;
       case bDirVarNumVols:
-         POOL_DBR pr;
+         PoolDbRecord pr;
 
          memset(&pr, 0, sizeof(pr));
          bstrncpy(pr.Name, jcr->res.pool->hdr.name, sizeof(pr.Name));
@@ -742,7 +742,7 @@ static bRC bareosGetValue(bpContext *ctx, brDirVariable var, void *value)
 
 static bRC bareosSetValue(bpContext *ctx, bwDirVariable var, void *value)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
    if (!value || !ctx) {
       return bRC_Error;
@@ -818,7 +818,7 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
 static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
 {
    int cnt;
-   JCR *jcr, *njcr;
+   JobControlRecord *jcr, *njcr;
    bpContext *nctx;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
@@ -853,9 +853,9 @@ bail_out:
 static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    if (ctx) {
       jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
@@ -875,7 +875,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    va_start(arg_ptr, fmt);
    buffer.bvsprintf(fmt, arg_ptr);
@@ -887,7 +887,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
 
 #ifdef TEST_PROGRAM
 
-bool db_get_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pdbr)
+bool db_get_pool_record(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pdbr)
 {
    return true;
 }
@@ -895,9 +895,9 @@ bool db_get_pool_record(JCR *jcr, B_DB *db, POOL_DBR *pdbr)
 int main(int argc, char *argv[])
 {
    char plugin_dir[PATH_MAX];
-   JCR mjcr1, mjcr2;
-   JCR *jcr1 = &mjcr1;
-   JCR *jcr2 = &mjcr2;
+   JobControlRecord mjcr1, mjcr2;
+   JobControlRecord *jcr1 = &mjcr1;
+   JobControlRecord *jcr2 = &mjcr2;
 
    my_name_is(argc, argv, "plugtest");
    init_msg(NULL, NULL);

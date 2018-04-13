@@ -27,7 +27,7 @@
 
 static int dbglvl = 100;
 
-bool accurate_mark_file_as_seen(JCR *jcr, char *fname)
+bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname)
 {
    accurate_payload *temp;
 
@@ -46,7 +46,7 @@ bool accurate_mark_file_as_seen(JCR *jcr, char *fname)
    return true;
 }
 
-bool accurate_unmark_file_as_seen(JCR *jcr, char *fname)
+bool accurate_unmark_file_as_seen(JobControlRecord *jcr, char *fname)
 {
    accurate_payload *temp;
 
@@ -65,7 +65,7 @@ bool accurate_unmark_file_as_seen(JCR *jcr, char *fname)
    return true;
 }
 
-bool accurate_mark_all_files_as_seen(JCR *jcr)
+bool accurate_mark_all_files_as_seen(JobControlRecord *jcr)
 {
    if (!jcr->accurate || !jcr->file_list) {
       return false;
@@ -75,7 +75,7 @@ bool accurate_mark_all_files_as_seen(JCR *jcr)
    return true;
 }
 
-bool accurate_unmark_all_files_as_seen(JCR *jcr)
+bool accurate_unmark_all_files_as_seen(JobControlRecord *jcr)
 {
    if (!jcr->accurate || !jcr->file_list) {
       return false;
@@ -85,7 +85,7 @@ bool accurate_unmark_all_files_as_seen(JCR *jcr)
    return true;
 }
 
-static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **payload)
+static inline bool accurate_lookup(JobControlRecord *jcr, char *fname, accurate_payload **payload)
 {
    bool found = false;
 
@@ -98,7 +98,7 @@ static inline bool accurate_lookup(JCR *jcr, char *fname, accurate_payload **pay
    return found;
 }
 
-void accurate_free(JCR *jcr)
+void accurate_free(JobControlRecord *jcr)
 {
    if (jcr->file_list) {
       delete jcr->file_list;
@@ -109,7 +109,7 @@ void accurate_free(JCR *jcr)
 /**
  * Send the deleted or the base file list and cleanup.
  */
-bool accurate_finish(JCR *jcr)
+bool accurate_finish(JobControlRecord *jcr)
 {
    bool retval = true;
 
@@ -145,7 +145,7 @@ bool accurate_finish(JCR *jcr)
  * Returns: true   if file has changed (must be backed up)
  *          false  file not changed
  */
-bool accurate_check_file(JCR *jcr, FF_PKT *ff_pkt)
+bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt)
 {
    char *opts;
    char *fname;
@@ -334,7 +334,7 @@ bail_out:
    return status;
 }
 
-bool accurate_cmd(JCR *jcr)
+bool accurate_cmd(JobControlRecord *jcr)
 {
    uint32_t number_of_previous_files;
    int fname_length,
@@ -342,7 +342,7 @@ bool accurate_cmd(JCR *jcr)
        chksum_length;
    char *fname, *lstat, *chksum;
    uint16_t delta_seq;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    if (job_canceled(jcr)) {
       return true;

@@ -121,7 +121,7 @@ static const char *modes[] = {
    "OPEN_WRITE_ONLY"
 };
 
-const char *DEVICE::mode_to_str(int mode)
+const char *Device::mode_to_str(int mode)
 {
    static char buf[100];
 
@@ -133,12 +133,12 @@ const char *DEVICE::mode_to_str(int mode)
    return modes[mode - 1];
 }
 
-static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
+static inline Device *init_dev_(JobControlRecord *jcr, DeviceResource *device, bool new_init)
 {
    struct stat statp;
    int errstat;
-   DCR *dcr = NULL;
-   DEVICE *dev = NULL;
+   DeviceControlRecord *dcr = NULL;
+   Device *dev = NULL;
    uint32_t max_bs;
 
    Dmsg1(400, "max_block_size in device res is %u\n", device->max_block_size);
@@ -402,7 +402,7 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
 }
 
 /**
- * Allocate and initialize the DEVICE structure
+ * Allocate and initialize the Device structure
  * Note, if dev is non-NULL, it is already allocated,
  * thus we neither allocate it nor free it. This allows
  * the caller to put the packet in shared memory.
@@ -411,11 +411,11 @@ static inline DEVICE *m_init_dev(JCR *jcr, DEVRES *device, bool new_init)
  * (e.g. /dev/nst0), and for a file, the device name
  * is the directory in which the file will be placed.
  */
-DEVICE *init_dev(JCR *jcr, DEVRES *device)
+Device *init_dev(JobControlRecord *jcr, DeviceResource *device)
 {
-   DEVICE *dev;
+   Device *dev;
 
-   dev = m_init_dev(jcr, device, false);
+   dev = init_dev_(jcr, device, false);
    return dev;
 }
 
@@ -426,10 +426,10 @@ DEVICE *init_dev(JCR *jcr, DEVRES *device)
  *
  * If dev->device->max_block_size is zero, do nothing and leave dev->max_block_size as it is.
  */
-void DEVICE::set_blocksizes(DCR *dcr) {
+void Device::set_blocksizes(DeviceControlRecord *dcr) {
 
-   DEVICE* dev = this;
-   JCR* jcr = dcr->jcr;
+   Device* dev = this;
+   JobControlRecord* jcr = dcr->jcr;
    uint32_t max_bs;
 
    Dmsg4(100, "Device %s has dev->device->max_block_size of %u and dev->max_block_size of %u, dcr->VolMaxBlocksize is %u\n",
@@ -498,9 +498,9 @@ void DEVICE::set_blocksizes(DCR *dcr) {
  * to read labels as we want to always use that blocksize when
  * writing volume labels
  */
-void DEVICE::set_label_blocksize(DCR *dcr)
+void Device::set_label_blocksize(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = this;
+   Device *dev = this;
    Dmsg3(100, "setting minblocksize to %u, "
               "maxblocksize to label_block_size=%u, on device %s\n",
          dev->device->label_block_size, dev->device->label_block_size, dev->print_name());
@@ -534,7 +534,7 @@ void DEVICE::set_label_blocksize(DCR *dcr)
  * In the case of a file, the full name is the device name
  * (archive_name) with the VolName concatenated.
  */
-bool DEVICE::open(DCR *dcr, int omode)
+bool Device::open(DeviceControlRecord *dcr, int omode)
 {
    char preserve[ST_BYTES];
 
@@ -543,7 +543,7 @@ bool DEVICE::open(DCR *dcr, int omode)
       if (open_mode == omode) {
          return true;
       } else {
-         d_close(m_fd);
+         d_close(fd_);
          clear_opened();
          Dmsg0(100, "Close fd for mode change.\n");
 
@@ -589,12 +589,12 @@ bool DEVICE::open(DCR *dcr, int omode)
     */
    copy_set_bits(ST_MAX, preserve, state);
 
-   Dmsg2(100, "preserve=%08o fd=%d\n", preserve, m_fd);
+   Dmsg2(100, "preserve=%08o fd=%d\n", preserve, fd_);
 
-   return m_fd >= 0;
+   return fd_ >= 0;
 }
 
-void DEVICE::set_mode(int mode)
+void Device::set_mode(int mode)
 {
    switch (mode) {
    case CREATE_READ_WRITE:
@@ -617,9 +617,9 @@ void DEVICE::set_mode(int mode)
 /**
  * Open a device.
  */
-void DEVICE::open_device(DCR *dcr, int omode)
+void Device::open_device(DeviceControlRecord *dcr, int omode)
 {
-   POOL_MEM archive_name(PM_FNAME);
+   PoolMem archive_name(PM_FNAME);
 
    get_autochanger_loaded_slot(dcr);
 
@@ -657,7 +657,7 @@ void DEVICE::open_device(DCR *dcr, int omode)
    Dmsg3(100, "open disk: mode=%s open(%s, %08o, 0640)\n", mode_to_str(omode),
          archive_name.c_str(), oflags);
 
-   if ((m_fd = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
+   if ((fd_ = d_open(archive_name.c_str(), oflags, 0640)) < 0) {
       berrno be;
       dev_errno = errno;
       Mmsg2(errmsg, _("Could not open: %s, ERR=%s\n"), archive_name.c_str(),
@@ -665,13 +665,13 @@ void DEVICE::open_device(DCR *dcr, int omode)
       Dmsg1(100, "open failed: %s", errmsg);
    }
 
-   if (m_fd >= 0) {
+   if (fd_ >= 0) {
       dev_errno = 0;
       file = 0;
       file_addr = 0;
    }
 
-   Dmsg1(100, "open dev: disk fd=%d opened\n", m_fd);
+   Dmsg1(100, "open dev: disk fd=%d opened\n", fd_);
 }
 
 /**
@@ -680,9 +680,9 @@ void DEVICE::open_device(DCR *dcr, int omode)
  * Returns: true  on success
  *          false on failure
  */
-bool DEVICE::rewind(DCR *dcr)
+bool Device::rewind(DeviceControlRecord *dcr)
 {
-   Dmsg3(400, "rewind res=%d fd=%d %s\n", num_reserved(), m_fd, print_name());
+   Dmsg3(400, "rewind res=%d fd=%d %s\n", num_reserved(), fd_, print_name());
 
    /*
     * Remove EOF/EOT flags
@@ -695,7 +695,7 @@ bool DEVICE::rewind(DCR *dcr)
    file_size = 0;
    file_addr = 0;
 
-   if (m_fd < 0) {
+   if (fd_ < 0) {
       return false;
    }
 
@@ -716,7 +716,7 @@ bool DEVICE::rewind(DCR *dcr)
 /**
  * Called to indicate that we have just read an EOF from the device.
  */
-void DEVICE::set_ateof()
+void Device::set_ateof()
 {
    set_eof();
    file_addr = 0;
@@ -727,7 +727,7 @@ void DEVICE::set_ateof()
 /**
  * Called to indicate we are now at the end of the volume, and writing is not possible.
  */
-void DEVICE::set_ateot()
+void Device::set_ateot()
 {
    /*
     * Make volume effectively read-only
@@ -744,11 +744,11 @@ void DEVICE::set_ateot()
  * Returns: true  on succes
  *          false on error
  */
-bool DEVICE::eod(DCR *dcr)
+bool Device::eod(DeviceControlRecord *dcr)
 {
    boffset_t pos;
 
-   if (m_fd < 0) {
+   if (fd_ < 0) {
       dev_errno = EBADF;
       Mmsg1(errmsg, _("Bad call to eod. Device %s not open\n"), print_name());
       return false;
@@ -792,7 +792,7 @@ bool DEVICE::eod(DCR *dcr)
  * Returns: true  on succes
  *          false on error
  */
-bool DEVICE::update_pos(DCR *dcr)
+bool Device::update_pos(DeviceControlRecord *dcr)
 {
    boffset_t pos;
    bool ok = true;
@@ -826,7 +826,7 @@ bool DEVICE::update_pos(DCR *dcr)
    return ok;
 }
 
-char *DEVICE::status_dev()
+char *Device::status_dev()
 {
    char *status;
 
@@ -849,9 +849,9 @@ char *DEVICE::status_dev()
    return status;
 }
 
-bool DEVICE::offline_or_rewind()
+bool Device::offline_or_rewind()
 {
-   if (m_fd < 0) {
+   if (fd_ < 0) {
       return false;
    }
    if (has_cap(CAP_OFFLINEUNMOUNT)) {
@@ -869,17 +869,17 @@ bool DEVICE::offline_or_rewind()
    }
 }
 
-void DEVICE::set_slot(slot_number_t slot)
+void Device::set_slot(slot_number_t slot)
 {
-   m_slot = slot;
+   slot_ = slot;
    if (vol) {
       vol->clear_slot();
    }
 }
 
-void DEVICE::clear_slot()
+void Device::clear_slot()
 {
-   m_slot = -1;
+   slot_ = -1;
    if (vol) {
       vol->set_slot(-1);
    }
@@ -891,7 +891,7 @@ void DEVICE::clear_slot()
  * Returns: false on failure
  *          true  on success
  */
-bool DEVICE::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
+bool Device::reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock)
 {
    if (!is_open()) {
       dev_errno = EBADF;
@@ -921,10 +921,10 @@ bool DEVICE::reposition(DCR *dcr, uint32_t rfile, uint32_t rblock)
 /**
  * Set to unload the current volume in the drive.
  */
-void DEVICE::set_unload()
+void Device::set_unload()
 {
-   if (!m_unload && VolHdr.VolumeName[0] != 0) {
-       m_unload = true;
+   if (!unload_ && VolHdr.VolumeName[0] != 0) {
+       unload_ = true;
        memcpy(UnloadVolName, VolHdr.VolumeName, sizeof(UnloadVolName));
    }
 }
@@ -932,7 +932,7 @@ void DEVICE::set_unload()
 /**
  * Clear volume header.
  */
-void DEVICE::clear_volhdr()
+void Device::clear_volhdr()
 {
    Dmsg1(100, "Clear volhdr vol=%s\n", VolHdr.VolumeName);
    memset(&VolHdr, 0, sizeof(VolHdr));
@@ -942,7 +942,7 @@ void DEVICE::clear_volhdr()
 /**
  * Close the device.
  */
-bool DEVICE::close(DCR *dcr)
+bool Device::close(DeviceControlRecord *dcr)
 {
    bool retval = true;
    int status;
@@ -965,7 +965,7 @@ bool DEVICE::close(DCR *dcr)
        * Fall through wanted
        */
    default:
-      status = d_close(m_fd);
+      status = d_close(fd_);
       if (status < 0) {
          berrno be;
 
@@ -1023,7 +1023,7 @@ bail_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool DEVICE::mount(DCR *dcr, int timeout)
+bool Device::mount(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
    Dmsg0(190, "Enter mount\n");
@@ -1058,7 +1058,7 @@ bool DEVICE::mount(DCR *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool DEVICE::unmount(DCR *dcr, int timeout)
+bool Device::unmount(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
    Dmsg0(100, "Enter unmount\n");
@@ -1103,13 +1103,13 @@ bail_out:
  *  imsg = input string containing edit codes (%x)
  *
  */
-void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
+void Device::edit_mount_codes(PoolMem &omsg, const char *imsg)
 {
    const char *p;
    const char *str;
    char add[20];
 
-   POOL_MEM archive_name(PM_FNAME);
+   PoolMem archive_name(PM_FNAME);
 
    omsg.c_str()[0] = 0;
    Dmsg1(800, "edit_mount_codes: %s\n", imsg);
@@ -1146,7 +1146,7 @@ void DEVICE::edit_mount_codes(POOL_MEM &omsg, const char *imsg)
 /**
  * Return the last timer interval (ms) or 0 if something goes wrong
  */
-btime_t DEVICE::get_timer_count()
+btime_t Device::get_timer_count()
 {
    btime_t temp = last_timer;
    last_timer = get_current_btime();
@@ -1158,13 +1158,13 @@ btime_t DEVICE::get_timer_count()
 /**
  * Read from device.
  */
-ssize_t DEVICE::read(void *buf, size_t len)
+ssize_t Device::read(void *buf, size_t len)
 {
    ssize_t read_len ;
 
    get_timer_count();
 
-   read_len = d_read(m_fd, buf, len);
+   read_len = d_read(fd_, buf, len);
 
    last_tick = get_timer_count();
 
@@ -1181,13 +1181,13 @@ ssize_t DEVICE::read(void *buf, size_t len)
 /**
  * Write to device.
  */
-ssize_t DEVICE::write(const void *buf, size_t len)
+ssize_t Device::write(const void *buf, size_t len)
 {
    ssize_t write_len ;
 
    get_timer_count();
 
-   write_len = d_write(m_fd, buf, len);
+   write_len = d_write(fd_, buf, len);
 
    last_tick = get_timer_count();
 
@@ -1204,7 +1204,7 @@ ssize_t DEVICE::write(const void *buf, size_t len)
 /**
  * Return the resource name for the device
  */
-const char *DEVICE::name() const
+const char *Device::name() const
 {
    return device->name();
 }
@@ -1212,7 +1212,7 @@ const char *DEVICE::name() const
 /**
  * Free memory allocated for the device
  */
-void DEVICE::term()
+void Device::term()
 {
    Dmsg1(900, "term dev: %s\n", print_name());
 
@@ -1242,7 +1242,7 @@ void DEVICE::term()
       free_pool_memory(errmsg);
       errmsg = NULL;
    }
-   pthread_mutex_destroy(&m_mutex);
+   pthread_mutex_destroy(&mutex_);
    pthread_cond_destroy(&wait);
    pthread_cond_destroy(&wait_next_vol);
    pthread_mutex_destroy(&spool_mutex);
@@ -1260,10 +1260,10 @@ void DEVICE::term()
 /**
  * This routine initializes the device wait timers
  */
-void init_device_wait_timers(DCR *dcr)
+void init_device_wait_timers(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    /* ******FIXME******* put these on config variables */
    dev->min_wait = 60 * 60;
@@ -1282,7 +1282,7 @@ void init_device_wait_timers(DCR *dcr)
    jcr->num_wait = 0;
 }
 
-void init_jcr_device_wait_timers(JCR *jcr)
+void init_jcr_device_wait_timers(JobControlRecord *jcr)
 {
    /* ******FIXME******* put these on config variables */
    jcr->min_wait = 60 * 60;
@@ -1299,7 +1299,7 @@ void init_jcr_device_wait_timers(JCR *jcr)
  * Returns: true if time doubled
  *          false if max time expired
  */
-bool double_dev_wait_time(DEVICE *dev)
+bool double_dev_wait_time(Device *dev)
 {
    dev->wait_sec *= 2;               /* Double wait time */
    if (dev->wait_sec > dev->max_wait) { /* But not longer than maxtime */
@@ -1313,7 +1313,7 @@ bool double_dev_wait_time(DEVICE *dev)
    return true;
 }
 
-DEVICE::DEVICE()
+Device::Device()
 {
-   m_fd = -1;
+   fd_ = -1;
 }

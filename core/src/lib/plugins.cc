@@ -215,7 +215,7 @@ bool load_plugins(void *binfo,
 {
    struct stat statp;
    bool found = false;
-   POOL_MEM fname(PM_FNAME);
+   PoolMem fname(PM_FNAME);
    bool need_slash = false;
    int len;
 
@@ -231,7 +231,7 @@ bool load_plugins(void *binfo,
     */
    if (plugin_names && plugin_names->size()) {
       char *name;
-      POOL_MEM plugin_name(PM_FNAME);
+      PoolMem plugin_name(PM_FNAME);
 
       foreach_alist(name, plugin_names) {
          /*
@@ -383,7 +383,7 @@ void unload_plugin(alist *plugin_list, Plugin *plugin, int index)
    free(plugin);
 }
 
-int list_plugins(alist *plugin_list, POOL_MEM &msg)
+int list_plugins(alist *plugin_list, PoolMem &msg)
 {
    int i, len = 0;
    Plugin *plugin;

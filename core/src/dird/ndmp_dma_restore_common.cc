@@ -84,7 +84,7 @@ void add_to_namelist(struct ndm_job_param *job,
                                    uint64_t fhinfo)
 {
    ndmp9_name nl;
-   POOL_MEM destination_path;
+   PoolMem destination_path;
 
    memset(&nl, 0, sizeof(ndmp9_name));
 
@@ -140,7 +140,7 @@ int ndmp_env_handler(void *ctx, int num_fields, char **row)
 /*
  * Extract any post backup statistics.
  */
-bool extract_post_restore_stats(JCR *jcr,
+bool extract_post_restore_stats(JobControlRecord *jcr,
                                 struct ndm_session *sess)
 {
    bool retval = true;
@@ -178,7 +178,7 @@ bool extract_post_restore_stats(JCR *jcr,
 /**
  * Cleanup a NDMP restore session.
  */
-void ndmp_restore_cleanup(JCR *jcr, int TermCode)
+void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
 {
    char term_code[100];
    const char *term_msg;
@@ -240,7 +240,7 @@ void ndmp_restore_cleanup(JCR *jcr, int TermCode)
 
 #else  /* HAVE_NDMP */
 
-void ndmp_restore_cleanup(JCR *jcr, int TermCode)
+void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

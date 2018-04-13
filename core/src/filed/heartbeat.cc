@@ -47,8 +47,8 @@ extern bool no_signals;
 extern "C" void *sd_heartbeat_thread(void *arg)
 {
    int32_t n;
-   JCR *jcr = (JCR *)arg;
-   std::shared_ptr<BSOCK> sd, dir;
+   JobControlRecord *jcr = (JobControlRecord *)arg;
+   std::shared_ptr<BareosSocket> sd, dir;
    time_t last_heartbeat = time(NULL);
    time_t now;
 
@@ -63,8 +63,8 @@ extern "C" void *sd_heartbeat_thread(void *arg)
    jcr->hb_bsock = sd;
    jcr->hb_started = true;
    jcr->hb_dir_bsock = dir;
-   dir->m_suppress_error_msgs = true;
-   sd->m_suppress_error_msgs = true;
+   dir->suppress_error_msgs_ = true;
+   sd->suppress_error_msgs_ = true;
 
    /* Hang reading the socket to the SD, and every time we get
     * a heartbeat or we get a wait timeout (5 seconds), we
@@ -110,7 +110,7 @@ extern "C" void *sd_heartbeat_thread(void *arg)
 }
 
 /* Startup the heartbeat thread -- see above */
-void start_heartbeat_monitor(JCR *jcr)
+void start_heartbeat_monitor(JobControlRecord *jcr)
 {
    /*
     * If no signals are set, do not start the heartbeat because
@@ -126,7 +126,7 @@ void start_heartbeat_monitor(JCR *jcr)
 }
 
 /* Terminate the heartbeat thread. Used for both SD and DIR */
-void stop_heartbeat_monitor(JCR *jcr)
+void stop_heartbeat_monitor(JobControlRecord *jcr)
 {
    int cnt = 0;
    if (no_signals) {
@@ -180,8 +180,8 @@ void stop_heartbeat_monitor(JCR *jcr)
  */
 extern "C" void *dir_heartbeat_thread(void *arg)
 {
-   JCR *jcr = (JCR *)arg;
-   BSOCK *dir;
+   JobControlRecord *jcr = (JobControlRecord *)arg;
+   BareosSocket *dir;
    time_t last_heartbeat = time(NULL);
 
    pthread_detach(pthread_self());
@@ -193,7 +193,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
 
    jcr->hb_bsock.reset(dir);
    jcr->hb_started = true;
-   dir->m_suppress_error_msgs = true;
+   dir->suppress_error_msgs_ = true;
 
    while (!dir->is_stop()) {
       time_t now, next;
@@ -218,7 +218,7 @@ extern "C" void *dir_heartbeat_thread(void *arg)
 /**
  * Same as above but we don't listen to the SD
  */
-void start_dir_heartbeat(JCR *jcr)
+void start_dir_heartbeat(JobControlRecord *jcr)
 {
    if (me->heartbeat_interval) {
       jcr->dir_bsock->set_locking();
@@ -226,7 +226,7 @@ void start_dir_heartbeat(JCR *jcr)
    }
 }
 
-void stop_dir_heartbeat(JCR *jcr)
+void stop_dir_heartbeat(JobControlRecord *jcr)
 {
    if (me->heartbeat_interval) {
       stop_heartbeat_monitor(jcr);

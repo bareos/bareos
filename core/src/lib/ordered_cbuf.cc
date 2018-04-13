@@ -35,29 +35,29 @@ int ordered_circbuf::init(int capacity)
 {
    struct ocbuf_item *item = NULL;
 
-   if (pthread_mutex_init(&m_lock, NULL) != 0) {
+   if (pthread_mutex_init(&lock_, NULL) != 0) {
       return -1;
    }
 
-   if (pthread_cond_init(&m_notfull, NULL) != 0) {
-      pthread_mutex_destroy(&m_lock);
+   if (pthread_cond_init(&notfull_, NULL) != 0) {
+      pthread_mutex_destroy(&lock_);
       return -1;
    }
 
-   if (pthread_cond_init(&m_notempty, NULL) != 0) {
-      pthread_cond_destroy(&m_notfull);
-      pthread_mutex_destroy(&m_lock);
+   if (pthread_cond_init(&notempty_, NULL) != 0) {
+      pthread_cond_destroy(&notfull_);
+      pthread_mutex_destroy(&lock_);
       return -1;
    }
 
-   m_size = 0;
-   m_capacity = capacity;
-   m_reserved = 0;
-   if (m_data) {
-      m_data->destroy();
-      delete m_data;
+   size_ = 0;
+   capacity_ = capacity;
+   reserved_ = 0;
+   if (data_) {
+      data_->destroy();
+      delete data_;
    }
-   m_data = New(dlist(item, &item->link));
+   data_ = New(dlist(item, &item->link));
 
    return 0;
 }
@@ -67,12 +67,12 @@ int ordered_circbuf::init(int capacity)
  */
 void ordered_circbuf::destroy()
 {
-   pthread_cond_destroy(&m_notempty);
-   pthread_cond_destroy(&m_notfull);
-   pthread_mutex_destroy(&m_lock);
-   if (m_data) {
-      m_data->destroy();
-      delete m_data;
+   pthread_cond_destroy(&notempty_);
+   pthread_cond_destroy(&notfull_);
+   pthread_mutex_destroy(&lock_);
+   if (data_) {
+      data_->destroy();
+      delete data_;
    }
 }
 
@@ -88,19 +88,19 @@ void *ordered_circbuf::enqueue(void *data,
 {
    struct ocbuf_item *new_item, *item;
 
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return NULL;
    }
 
    /*
     * See if we should use a reserved slot and there are actually slots reserved.
     */
-   if (!use_reserved_slot || !m_reserved) {
+   if (!use_reserved_slot || !reserved_) {
       /*
        * Wait while the buffer is full.
        */
       while (full()) {
-         pthread_cond_wait(&m_notfull, &m_lock);
+         pthread_cond_wait(&notfull_, &lock_);
       }
    }
 
@@ -110,7 +110,7 @@ void *ordered_circbuf::enqueue(void *data,
     * circular list to keep the reserved slot counting consistent.
     */
    if (use_reserved_slot) {
-      m_reserved--;
+      reserved_--;
    }
 
    /*
@@ -126,9 +126,9 @@ void *ordered_circbuf::enqueue(void *data,
    new_item->data = data;
    new_item->data_size = data_size;
 
-   item = (struct ocbuf_item *)m_data->binary_insert(new_item, compare);
+   item = (struct ocbuf_item *)data_->binary_insert(new_item, compare);
    if (item == new_item) {
-      m_size++;
+      size_++;
    } else {
       /*
        * Update the data on the ordered circular list with the new data.
@@ -155,10 +155,10 @@ void *ordered_circbuf::enqueue(void *data,
       /*
        * Let any waiting consumer know there is data.
        */
-      pthread_cond_broadcast(&m_notempty);
+      pthread_cond_broadcast(&notempty_);
    }
 
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    /*
     * Return the data that is current e.g. either the new data passed in or
@@ -178,14 +178,14 @@ void *ordered_circbuf::dequeue(bool reserve_slot,
    void *data = NULL;
    struct ocbuf_item *item;
 
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return NULL;
    }
 
    /*
     * Wait while there is nothing in the buffer
     */
-   while ((requeued || empty()) && !m_flush) {
+   while ((requeued || empty()) && !flush_) {
       /*
        * The requeued state is only valid one time so clear it.
        */
@@ -201,16 +201,16 @@ void *ordered_circbuf::dequeue(bool reserve_slot,
        * enqueue with the no_signal flag set.
        */
       if (ts) {
-         pthread_cond_timedwait(&m_notempty, &m_lock, ts);
+         pthread_cond_timedwait(&notempty_, &lock_, ts);
 
          /*
           * See if there is really work to be done.
           * We could be woken by the broadcast but some other iothread
-          * could take the work as we have to wait to reacquire the m_lock.
+          * could take the work as we have to wait to reacquire the lock_.
           * Only one thread will be in the critical section and be able to
           * hold the lock.
           */
-         if (empty() && !m_flush) {
+         if (empty() && !flush_) {
             struct timeval tv;
             struct timezone tz;
 
@@ -225,16 +225,16 @@ void *ordered_circbuf::dequeue(bool reserve_slot,
             continue;
          }
       } else {
-         pthread_cond_wait(&m_notempty, &m_lock);
+         pthread_cond_wait(&notempty_, &lock_);
 
          /*
           * See if there is really work to be done.
           * We could be woken by the broadcast but some other iothread
-          * could take the work as we have to wait to reacquire the m_lock.
+          * could take the work as we have to wait to reacquire the lock_.
           * Only one thread will be in the critical section and be able to
           * hold the lock.
           */
-         if (empty() && !m_flush) {
+         if (empty() && !flush_) {
             continue;
          }
       }
@@ -243,25 +243,25 @@ void *ordered_circbuf::dequeue(bool reserve_slot,
    /*
     * When we are requested to flush and there is no data left return NULL.
     */
-   if (empty() && m_flush) {
+   if (empty() && flush_) {
       goto bail_out;
    }
 
    /*
     * Get the first item from the dlist and remove it.
     */
-   item = (struct ocbuf_item *)m_data->first();
+   item = (struct ocbuf_item *)data_->first();
    if (!item) {
       goto bail_out;
    }
 
-   m_data->remove(item);
-   m_size--;
+   data_->remove(item);
+   size_--;
 
    /*
     * Let all waiting producers know there is room.
     */
-   pthread_cond_broadcast(&m_notfull);
+   pthread_cond_broadcast(&notfull_);
 
    /*
     * Extract the payload and drop the placeholder.
@@ -273,11 +273,11 @@ void *ordered_circbuf::dequeue(bool reserve_slot,
     * Increase the reserved slot count when we are asked to reserve the slot.
     */
    if (reserve_slot) {
-      m_reserved++;
+      reserved_++;
    }
 
 bail_out:
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return data;
 }
@@ -295,7 +295,7 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
    void *retval = NULL;
    struct ocbuf_item *item;
 
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return NULL;
    }
 
@@ -312,7 +312,7 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
     */
    switch (type) {
    case PEEK_FIRST:
-      item = (struct ocbuf_item *)m_data->first();
+      item = (struct ocbuf_item *)data_->first();
       while (item) {
          if (callback(item->data, data) == 0) {
             retval = malloc(item->data_size);
@@ -320,11 +320,11 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
             goto bail_out;
          }
 
-         item = (struct ocbuf_item *)m_data->next(item);
+         item = (struct ocbuf_item *)data_->next(item);
       }
       break;
    case PEEK_LAST:
-      item = (struct ocbuf_item *)m_data->last();
+      item = (struct ocbuf_item *)data_->last();
       while (item) {
          if (callback(item->data, data) == 0) {
             retval = malloc(item->data_size);
@@ -332,24 +332,24 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
             goto bail_out;
          }
 
-         item = (struct ocbuf_item *)m_data->prev(item);
+         item = (struct ocbuf_item *)data_->prev(item);
       }
       break;
    case PEEK_LIST:
-      item = (struct ocbuf_item *)m_data->first();
+      item = (struct ocbuf_item *)data_->first();
       while (item) {
          callback(item->data, data);
-         item = (struct ocbuf_item *)m_data->next(item);
+         item = (struct ocbuf_item *)data_->next(item);
       }
       break;
    case PEEK_CLONE:
-      item = (struct ocbuf_item *)m_data->first();
+      item = (struct ocbuf_item *)data_->first();
       while (item) {
          if (callback(item->data, data) == 0) {
             retval = data;
             break;
          }
-         item = (struct ocbuf_item *)m_data->next(item);
+         item = (struct ocbuf_item *)data_->next(item);
       }
       break;
    default:
@@ -357,7 +357,7 @@ void *ordered_circbuf::peek(enum oc_peek_types type,
    }
 
 bail_out:
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return retval;
 }
@@ -369,7 +369,7 @@ int ordered_circbuf::unreserve_slot()
 {
    int retval = -1;
 
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       goto bail_out;
    }
 
@@ -377,17 +377,17 @@ int ordered_circbuf::unreserve_slot()
     * Make sure any slots are still reserved. Otherwise people
     * are playing games and should pay the price for doing so.
     */
-   if (m_reserved) {
-      m_reserved--;
+   if (reserved_) {
+      reserved_--;
 
       /*
        * Let all waiting producers know there is room.
        */
-      pthread_cond_broadcast(&m_notfull);
+      pthread_cond_broadcast(&notfull_);
 
       retval = 0;
    }
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
 bail_out:
    return retval;
@@ -399,21 +399,21 @@ bail_out:
  */
 int ordered_circbuf::flush()
 {
-   if (pthread_mutex_lock(&m_lock) != 0) {
+   if (pthread_mutex_lock(&lock_) != 0) {
       return -1;
    }
 
    /*
     * Set the flush flag.
     */
-   m_flush = true;
+   flush_ = true;
 
    /*
     * Let all waiting consumers know there will be no more data.
     */
-   pthread_cond_broadcast(&m_notempty);
+   pthread_cond_broadcast(&notempty_);
 
-   pthread_mutex_unlock(&m_lock);
+   pthread_mutex_unlock(&lock_);
 
    return 0;
 }

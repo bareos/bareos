@@ -316,7 +316,7 @@ bool expand_win32_fileset(findFILESET *fileset)
    return true;
 }
 
-static inline int count_include_list_file_entries(FF_PKT *ff)
+static inline int count_include_list_file_entries(FindFilesPacket *ff)
 {
    int cnt = 0;
    findFILESET *fileset;
@@ -346,7 +346,7 @@ static inline int count_include_list_file_entries(FF_PKT *ff)
 #define MAX_VALUE_NAME 16383
 #define REGISTRY_KEY "SYSTEM\\CurrentControlSet\\Control\\BackupRestore\\FilesNotToBackup"
 
-bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
+bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFilesPacket *ff)
 {
    bool retval = false;
    uint32_t wild_count = 0;
@@ -381,7 +381,7 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
 
    retCode = RegOpenKeyEx(HKEY_LOCAL_MACHINE, TEXT(REGISTRY_KEY), 0, KEY_READ, &hKey);
    if (retCode == ERROR_SUCCESS ) {
-      POOL_MEM achClass(PM_MESSAGE),
+      PoolMem achClass(PM_MESSAGE),
                achValue(PM_MESSAGE),
                dwKeyEn(PM_MESSAGE),
                expandedKey(PM_MESSAGE),
@@ -546,15 +546,15 @@ bool exclude_win32_not_to_backup_registry_entries(JCR *jcr, FF_PKT *ff)
 /**
  * Windows specific code for restoring EFS data.
  */
-struct CP_THREAD_SAVE_DATA {
+struct CopyThreadSaveData {
    uint32_t data_len;                     /* Length of Data */
    POOLMEM *data;                         /* Data */
 };
 
-struct CP_THREAD_CTX {
-   BFILE *bfd;                            /* Filehandle */
+struct CopyThreadContext {
+   BareosWinFilePacket *bfd;                            /* Filehandle */
    int nr_save_elements;                  /* Number of save items in save_data */
-   CP_THREAD_SAVE_DATA *save_data;        /* To save data (cached structure build during restore) */
+   CopyThreadSaveData *save_data;        /* To save data (cached structure build during restore) */
    circbuf *cb;                           /* Circular buffer for passing work to copy thread */
    bool started;                          /* Copy thread consuming data */
    bool flushed;                          /* Copy thread flushed data */
@@ -569,13 +569,13 @@ struct CP_THREAD_CTX {
  */
 static DWORD WINAPI receive_efs_data(PBYTE pbData, PVOID pvCallbackContext, PULONG ulLength)
 {
-   CP_THREAD_SAVE_DATA *save_data;
-   CP_THREAD_CTX *context = (CP_THREAD_CTX *)pvCallbackContext;
+   CopyThreadSaveData *save_data;
+   CopyThreadContext *context = (CopyThreadContext *)pvCallbackContext;
 
    /*
     * Dequeue an item from the circular buffer.
     */
-   save_data = (CP_THREAD_SAVE_DATA *)context->cb->dequeue();
+   save_data = (CopyThreadSaveData *)context->cb->dequeue();
 
    if (save_data) {
       if (save_data->data_len > *ulLength) {
@@ -597,7 +597,7 @@ static DWORD WINAPI receive_efs_data(PBYTE pbData, PVOID pvCallbackContext, PULO
  */
 static void copy_cleanup_thread(void *data)
 {
-   CP_THREAD_CTX *context = (CP_THREAD_CTX *)data;
+   CopyThreadContext *context = (CopyThreadContext *)data;
 
    pthread_mutex_unlock(&context->lock);
 }
@@ -607,7 +607,7 @@ static void copy_cleanup_thread(void *data)
  */
 static void *copy_thread(void *data)
 {
-   CP_THREAD_CTX *context = (CP_THREAD_CTX *)data;
+   CopyThreadContext *context = (CopyThreadContext *)data;
 
    if (pthread_mutex_lock(&context->lock) != 0) {
       goto bail_out;
@@ -658,19 +658,19 @@ bail_out:
 /**
  * Create a copy thread that restores the EFS data.
  */
-static inline bool setup_copy_thread(JCR *jcr, BFILE *bfd)
+static inline bool setup_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd)
 {
    int nr_save_elements;
-   CP_THREAD_CTX *new_context;
+   CopyThreadContext *new_context;
 
-   new_context = (CP_THREAD_CTX *)malloc(sizeof(CP_THREAD_CTX));
+   new_context = (CopyThreadContext *)malloc(sizeof(CopyThreadContext));
    new_context->started = false;
    new_context->flushed = false;
    new_context->cb = New(circbuf);
 
    nr_save_elements = new_context->cb->capacity();
-   new_context->save_data = (CP_THREAD_SAVE_DATA *)malloc(nr_save_elements * sizeof(CP_THREAD_SAVE_DATA));
-   memset(new_context->save_data, 0, nr_save_elements * sizeof(CP_THREAD_SAVE_DATA));
+   new_context->save_data = (CopyThreadSaveData *)malloc(nr_save_elements * sizeof(CopyThreadSaveData));
+   memset(new_context->save_data, 0, nr_save_elements * sizeof(CopyThreadSaveData));
    new_context->nr_save_elements = nr_save_elements;
 
    if (pthread_mutex_init(&new_context->lock, NULL) != 0) {
@@ -703,11 +703,11 @@ bail_out:
 /**
  * Send data to the copy thread that restores EFS data.
  */
-int win32_send_to_copy_thread(JCR *jcr, BFILE *bfd, char *data, const int32_t length)
+int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length)
 {
    circbuf *cb;
    int slotnr;
-   CP_THREAD_SAVE_DATA *save_data;
+   CopyThreadSaveData *save_data;
 
    if (!p_WriteEncryptedFileRaw) {
       Jmsg0(jcr, M_FATAL, 0, _("Encrypted file restore but no EFS support functions\n"));
@@ -763,9 +763,9 @@ int win32_send_to_copy_thread(JCR *jcr, BFILE *bfd, char *data, const int32_t le
 /**
  * Flush the copy thread so we can close the BFD.
  */
-void win32_flush_copy_thread(JCR *jcr)
+void win32_flush_copy_thread(JobControlRecord *jcr)
 {
-   CP_THREAD_CTX *context = jcr->cp_thread;
+   CopyThreadContext *context = jcr->cp_thread;
 
    if (pthread_mutex_lock(&context->lock) != 0) {
       return;
@@ -794,7 +794,7 @@ void win32_flush_copy_thread(JCR *jcr)
 /**
  * Cleanup all data allocated for the copy thread.
  */
-void win32_cleanup_copy_thread(JCR *jcr)
+void win32_cleanup_copy_thread(JobControlRecord *jcr)
 {
    int slotnr;
 

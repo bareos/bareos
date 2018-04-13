@@ -40,7 +40,7 @@
 /* Message Digest Structure */
 struct Digest {
    crypto_digest_t type;
-   JCR *jcr;
+   JobControlRecord *jcr;
    union {
       SHA1_CTX sha1;
       MD5_CTX md5;
@@ -49,10 +49,10 @@ struct Digest {
 
 /* Dummy Signature Structure */
 struct Signature {
-   JCR *jcr;
+   JobControlRecord *jcr;
 };
 
-DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
+DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type)
 {
    DIGEST *digest;
 
@@ -123,7 +123,7 @@ void crypto_digest_free(DIGEST *digest)
 }
 
 
-SIGNATURE *crypto_sign_new(JCR *jcr)
+SIGNATURE *crypto_sign_new(JobControlRecord *jcr)
 {
    return NULL;
 }
@@ -149,7 +149,7 @@ int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
    return false;
 }
 
-SIGNATURE *crypto_sign_decode(JCR *jcr, const uint8_t *sigData, uint32_t length)
+SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length)
 {
    return NULL;
 }

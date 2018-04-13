@@ -99,13 +99,13 @@ enum {
 #define is_block_empty(r) (bit_is_set(REC_BLOCK_EMPTY, (r)->state_bits))
 
 /*
- * DEV_RECORD for reading and writing records.
+ * DeviceRecord for reading and writing records.
  * It consists of a Record Header, and the Record Data
  *
  * This is the memory structure for the record header.
  */
-struct BSR;                           /* satisfy forward reference */
-struct DEV_RECORD {
+struct BootStrapRecord;                           /* satisfy forward reference */
+struct DeviceRecord {
    dlink link;                        /**< link for chaining in read_record.c */
    /**<
     * File and Block are always returned during reading and writing records.
@@ -121,9 +121,9 @@ struct DEV_RECORD {
    uint32_t remainder;                /**< Remaining bytes to read/write */
    char state_bits[REC_STATE_BYTES];  /**< State bits */
    rec_state state;                   /**< State of write_record_to_block */
-   BSR *bsr;                          /**< Pointer to bsr that matched */
+   BootStrapRecord *bsr;                          /**< Pointer to bsr that matched */
    POOLMEM *data;                     /**< Record data. This MUST be a memory pool item */
-   int32_t match_stat;                /**< BSR match status */
+   int32_t match_stat;                /**< BootStrapRecord match status */
    uint32_t last_VolSessionId;        /**< Used in sequencing FI for Vbackup */
    uint32_t last_VolSessionTime;
    int32_t last_FileIndex;
@@ -153,7 +153,7 @@ struct DEV_RECORD {
 struct Volume_Label {
   /*
    * The first items in this structure are saved
-   * in the DEVICE buffer, but are not actually written
+   * in the Device buffer, but are not actually written
    * to the tape.
    */
   int32_t LabelType;                  /**< This is written in header only */
@@ -245,7 +245,7 @@ typedef struct Session_Label SESSION_LABEL;
  * Read context used to keep track of what is processed or not.
  */
 struct Read_Context {
-   DEV_RECORD *rec;                   /**< Record currently being processed */
+   DeviceRecord *rec;                   /**< Record currently being processed */
    dlist *recs;                       /**< Linked list of record packets open */
    SESSION_LABEL sessrec;             /**< Start Of Session record info */
    uint32_t records_processed;        /**< Number of records processed from this block */
@@ -253,7 +253,7 @@ struct Read_Context {
 };
 typedef struct Read_Context READ_CTX;
 
-struct DELAYED_DATA_STREAM {
+struct DelayedDataStream {
    int32_t stream;                     /**< stream less new bits */
    char *content;                      /**< stream data */
    uint32_t content_length;            /**< stream length */

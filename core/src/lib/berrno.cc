@@ -42,45 +42,45 @@ extern int execvp_errors[];
 
 const char *berrno::bstrerror()
 {
-   *m_buf = 0;
+   *buf_ = 0;
 #ifdef HAVE_WIN32
-   if (m_berrno & b_errno_win32) {
+   if (berrno_ & b_errno_win32) {
       format_win32_message();
-      return (const char *)m_buf;
+      return (const char *)buf_;
    }
 #else
    int status = 0;
 
-   if (m_berrno & b_errno_exit) {
-      status = (m_berrno & ~b_errno_exit);      /* remove bit */
+   if (berrno_ & b_errno_exit) {
+      status = (berrno_ & ~b_errno_exit);      /* remove bit */
       if (status == 0) {
          return _("Child exited normally.");    /* this really shouldn't happen */
       } else {
          /* Maybe an execvp failure */
          if (status >= 200) {
             if (status < 200 + num_execvp_errors) {
-               m_berrno = execvp_errors[status - 200];
+               berrno_ = execvp_errors[status - 200];
             } else {
                return _("Unknown error during program execvp");
             }
          } else {
-            Mmsg(m_buf, _("Child exited with code %d"), status);
-            return m_buf;
+            Mmsg(buf_, _("Child exited with code %d"), status);
+            return buf_;
          }
-         /* If we drop out here, m_berrno is set to an execvp errno */
+         /* If we drop out here, berrno_ is set to an execvp errno */
       }
    }
-   if (m_berrno & b_errno_signal) {
-      status = (m_berrno & ~b_errno_signal);        /* remove bit */
-      Mmsg(m_buf, _("Child died from signal %d: %s"), status, get_signal_name(status));
-      return m_buf;
+   if (berrno_ & b_errno_signal) {
+      status = (berrno_ & ~b_errno_signal);        /* remove bit */
+      Mmsg(buf_, _("Child died from signal %d: %s"), status, get_signal_name(status));
+      return buf_;
    }
 #endif
    /* Normal errno */
-   if (b_strerror(m_berrno, m_buf, 1024) < 0) {
+   if (b_strerror(berrno_, buf_, 1024) < 0) {
       return _("Invalid errno. No error message possible.");
    }
-   return m_buf;
+   return buf_;
 }
 
 void berrno::format_win32_message()
@@ -95,7 +95,7 @@ void berrno::format_win32_message()
        (LPTSTR)&msg,
        0,
        NULL);
-   pm_strcpy(m_buf, (const char *)msg);
+   pm_strcpy(buf_, (const char *)msg);
    LocalFree(msg);
 #endif
 }

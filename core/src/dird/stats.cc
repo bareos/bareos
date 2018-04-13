@@ -58,9 +58,9 @@ static struct cached_device {
    DBId_t DeviceId;
 } cached_device;
 
-static inline bool lookup_device(JCR *jcr, const char *device_name, DBId_t StorageId, DBId_t *DeviceId)
+static inline bool lookup_device(JobControlRecord *jcr, const char *device_name, DBId_t StorageId, DBId_t *DeviceId)
 {
-   DEVICE_DBR dr;
+   DeviceDbRecord dr;
 
    memset(&dr, 0, sizeof(dr));
 
@@ -127,22 +127,22 @@ static inline void wait_for_next_run()
 extern "C"
 void *statistics_thread_runner(void *arg)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    utime_t now;
-   POOL_MEM current_store(PM_NAME);
+   PoolMem current_store(PM_NAME);
 
    memset(&cached_device, 0, sizeof(struct cached_device));
    pm_strcpy(current_store, "");
 
    /*
-    * Create a dummy JCR for the statistics thread.
+    * Create a dummy JobControlRecord for the statistics thread.
     */
    jcr = new_control_jcr("*StatisticsCollector*", JT_SYSTEM);
 
    /*
     * Open a connection to the database for storing long term statistics.
     */
-   jcr->res.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+   jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
    jcr->db = db_sql_get_pooled_connection(jcr,
                                           jcr->res.catalog->db_driver,
                                           jcr->res.catalog->db_name,
@@ -191,18 +191,18 @@ void *statistics_thread_runner(void *arg)
       }
 
       while (1) {
-         BSOCK *sd;
-         STORERES *store;
+         BareosSocket *sd;
+         StoreResource *store;
          int64_t StorageId;
 
          LockRes();
          if ((current_store.c_str())[0]) {
-            store = (STORERES *)GetResWithName(R_STORAGE, current_store.c_str());
+            store = (StoreResource *)GetResWithName(R_STORAGE, current_store.c_str());
          } else {
             store = NULL;
          }
 
-         store = (STORERES *)GetNextRes(R_STORAGE, (RES *)store);
+         store = (StoreResource *)GetNextRes(R_STORAGE, (CommonResourceHeader *)store);
          if (!store) {
             pm_strcpy(current_store, "");
             UnlockRes();
@@ -247,8 +247,8 @@ void *statistics_thread_runner(void *arg)
             while (bnet_recv(sd) >= 0) {
                Dmsg1(200, "<stored: %s", sd->msg);
                if (bstrncmp(sd->msg, "Devicestats", 10)) {
-                  POOL_MEM DevName(PM_NAME);
-                  DEVICE_STATS_DBR dsr;
+                  PoolMem DevName(PM_NAME);
+                  DeviceStatisticsDbRecord dsr;
 
                   memset(&dsr, 0, sizeof(dsr));
                   if (sscanf(sd->msg, DevStats, &dsr.SampleTime, DevName.c_str(), &dsr.ReadBytes,
@@ -274,8 +274,8 @@ void *statistics_thread_runner(void *arg)
                      Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), sd->msg);
                   }
                } else if (bstrncmp(sd->msg, "Tapealerts", 10)) {
-                  POOL_MEM DevName(PM_NAME);
-                  TAPEALERT_STATS_DBR tsr;
+                  PoolMem DevName(PM_NAME);
+                  TapealertStatsDbRecord tsr;
 
                   memset(&tsr, 0, sizeof(tsr));
                   if (sscanf(sd->msg, TapeAlerts, &tsr.SampleTime, DevName.c_str(), &tsr.AlertFlags) == 3) {
@@ -295,8 +295,8 @@ void *statistics_thread_runner(void *arg)
                      Jmsg1(jcr, M_ERROR, 0, _("Malformed message: %s\n"), sd->msg);
                   }
                } else if (bstrncmp(sd->msg, "Jobstats", 8)) {
-                  POOL_MEM DevName(PM_NAME);
-                  JOB_STATS_DBR jsr;
+                  PoolMem DevName(PM_NAME);
+                  JobStatisticsDbRecord jsr;
 
                   memset(&jsr, 0, sizeof(jsr));
                   if (sscanf(sd->msg, JobStats, &jsr.SampleTime, &jsr.JobId, &jsr.JobFiles, &jsr.JobBytes, DevName.c_str()) == 5) {

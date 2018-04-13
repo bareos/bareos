@@ -55,7 +55,7 @@
  * Returns: 0 on failure
  *          1 on success, jr is unchanged, but stime and job are set
  */
-bool B_DB::find_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM *&stime, char *job)
+bool BareosDb::find_job_start_time(JobControlRecord *jcr, JobDbRecord *jr, POOLMEM *&stime, char *job)
 {
    bool retval = false;
    SQL_ROW row;
@@ -148,7 +148,7 @@ bail_out:
  * Returns: false on failure
  *          true  on success, jr is unchanged, but stime and job are set
  */
-bool B_DB::find_last_job_start_time(JCR *jcr, JOB_DBR *jr, POOLMEM *&stime,
+bool BareosDb::find_last_job_start_time(JobControlRecord *jcr, JobDbRecord *jr, POOLMEM *&stime,
                                     char *job, int JobLevel)
 {
    bool retval = false;
@@ -196,7 +196,7 @@ bail_out:
  *          true  on success, jr is unchanged and stime unchanged
  *                level returned in JobLevel
  */
-bool B_DB::find_failed_job_since(JCR *jcr, JOB_DBR *jr, POOLMEM *stime, int &JobLevel)
+bool BareosDb::find_failed_job_since(JobControlRecord *jcr, JobDbRecord *jr, POOLMEM *stime, int &JobLevel)
 {
    bool retval = false;
    SQL_ROW row;
@@ -240,7 +240,7 @@ bail_out:
  * Returns: true  on success
  *          false on failure
  */
-bool B_DB::find_last_jobid(JCR *jcr, const char *Name, JOB_DBR *jr)
+bool BareosDb::find_last_jobid(JobControlRecord *jcr, const char *Name, JobDbRecord *jr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -340,7 +340,7 @@ bail_out:
  * Returns: 0 on failure
  *          numrows on success
  */
-int B_DB::find_next_volume(JCR *jcr, int item, bool InChanger, MEDIA_DBR *mr, const char *unwanted_volumes)
+int BareosDb::find_next_volume(JobControlRecord *jcr, int item, bool InChanger, MediaDbRecord *mr, const char *unwanted_volumes)
 {
    char ed1[50];
    int num_rows = 0;
@@ -378,8 +378,8 @@ retry_fetch:
                 "ORDER BY LastWritten LIMIT %d",
            edit_int64(mr->PoolId, ed1), esc_type, item);
    } else {
-      POOL_MEM changer(PM_MESSAGE);
-      POOL_MEM order(PM_MESSAGE);
+      PoolMem changer(PM_MESSAGE);
+      PoolMem order(PM_MESSAGE);
 
       /*
        * Find next available volume

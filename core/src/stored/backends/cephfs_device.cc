@@ -62,7 +62,7 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
    int status;
    berrno be;
 
-   if (!m_cephfs_configstring) {
+   if (!cephfs_configstring_) {
       char *bp, *next_option;
       bool done;
 
@@ -72,9 +72,9 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
-      m_cephfs_configstring = bstrdup(dev_options);
+      cephfs_configstring_ = bstrdup(dev_options);
 
-      bp = m_cephfs_configstring;
+      bp = cephfs_configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -89,11 +89,11 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
             if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
                switch (device_options[i].type) {
                case argument_conffile:
-                  m_cephfs_conffile = bp + device_options[i].compare_size;
+                  cephfs_conffile_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_basedir:
-                  m_basedir = bp + device_options[i].compare_size;
+                  basedir_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                default:
@@ -112,29 +112,29 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
       }
    }
 
-   if (!m_cephfs_conffile) {
+   if (!cephfs_conffile_) {
       Mmsg0(errmsg, _("No cephfs config file configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
    }
 
 
-   if (!m_cmount) {
-      status = ceph_create(&m_cmount, NULL);
+   if (!cmount_) {
+      status = ceph_create(&cmount_, NULL);
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to create CEPHFS mount: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      status = ceph_conf_read_file(m_cmount, m_cephfs_conffile);
+      status = ceph_conf_read_file(cmount_, cephfs_conffile_);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to read CEPHFS config %s: ERR=%s\n"), m_cephfs_conffile, be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to read CEPHFS config %s: ERR=%s\n"), cephfs_conffile_, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
-      status = ceph_mount(m_cmount, NULL);
+      status = ceph_mount(cmount_, NULL);
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to mount CEPHFS: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
@@ -145,27 +145,27 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
    /*
     * See if we don't have a file open already.
     */
-   if (m_fd >= 0) {
-      ceph_close(m_cmount, m_fd);
-      m_fd = -1;
+   if (fd_ >= 0) {
+      ceph_close(cmount_, fd_);
+      fd_ = -1;
    }
 
    /*
     * See if we store in an explicit directory.
     */
-   if (m_basedir) {
+   if (basedir_) {
       struct stat st;
 
       /*
        * Make sure the dir exists if one is defined.
        */
-      status = ceph_stat(m_cmount, m_basedir, &st);
+      status = ceph_stat(cmount_, basedir_, &st);
       if (status < 0) {
          switch (status) {
          case -ENOENT:
-            status = ceph_mkdirs(m_cmount, m_basedir, 0750);
+            status = ceph_mkdirs(cmount_, basedir_, 0750);
             if (status < 0) {
-               Mmsg1(errmsg, _("Specified CEPHFS directory %s cannot be created.\n"), m_basedir);
+               Mmsg1(errmsg, _("Specified CEPHFS directory %s cannot be created.\n"), basedir_);
                Emsg0(M_FATAL, 0, errmsg);
                goto bail_out;
             }
@@ -175,19 +175,19 @@ int cephfs_device::d_open(const char *pathname, int flags, int mode)
          }
       } else {
          if (!S_ISDIR(st.st_mode)) {
-            Mmsg1(errmsg, _("Specified CEPHFS directory %s is not a directory.\n"), m_basedir);
+            Mmsg1(errmsg, _("Specified CEPHFS directory %s is not a directory.\n"), basedir_);
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
       }
 
-      Mmsg(m_virtual_filename, "%s/%s", m_basedir, getVolCatName());
+      Mmsg(virtual_filename_, "%s/%s", basedir_, getVolCatName());
    } else {
-      Mmsg(m_virtual_filename, "%s", getVolCatName());
+      Mmsg(virtual_filename_, "%s", getVolCatName());
    }
 
-   m_fd = ceph_open(m_cmount, m_virtual_filename, flags, mode);
-   if (m_fd < 0) {
+   fd_ = ceph_open(cmount_, virtual_filename_, flags, mode);
+   if (fd_ < 0) {
       goto bail_out;
    }
 
@@ -197,11 +197,11 @@ bail_out:
    /*
     * Cleanup the CEPHFS context.
     */
-   if (m_cmount) {
-      ceph_shutdown(m_cmount);
-      m_cmount = NULL;
+   if (cmount_) {
+      ceph_shutdown(cmount_);
+      cmount_ = NULL;
    }
-   m_fd = -1;
+   fd_ = -1;
 
    return -1;
 }
@@ -211,8 +211,8 @@ bail_out:
  */
 ssize_t cephfs_device::d_read(int fd, void *buffer, size_t count)
 {
-   if (m_fd >= 0) {
-      return ceph_read(m_cmount, m_fd, (char *)buffer, count, -1);
+   if (fd_ >= 0) {
+      return ceph_read(cmount_, fd_, (char *)buffer, count, -1);
    } else {
       errno = EBADF;
       return -1;
@@ -224,8 +224,8 @@ ssize_t cephfs_device::d_read(int fd, void *buffer, size_t count)
  */
 ssize_t cephfs_device::d_write(int fd, const void *buffer, size_t count)
 {
-   if (m_fd >= 0) {
-      return ceph_write(m_cmount, m_fd, (char *)buffer, count, -1);
+   if (fd_ >= 0) {
+      return ceph_write(cmount_, fd_, (char *)buffer, count, -1);
    } else {
       errno = EBADF;
       return -1;
@@ -234,11 +234,11 @@ ssize_t cephfs_device::d_write(int fd, const void *buffer, size_t count)
 
 int cephfs_device::d_close(int fd)
 {
-   if (m_fd >= 0) {
+   if (fd_ >= 0) {
       int status;
 
-      status = ceph_close(m_cmount, m_fd);
-      m_fd = -1;
+      status = ceph_close(cmount_, fd_);
+      fd_ = -1;
       return (status < 0) ? -1: 0;
    } else {
       errno = EBADF;
@@ -251,12 +251,12 @@ int cephfs_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-boffset_t cephfs_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t cephfs_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
-   if (m_fd >= 0) {
+   if (fd_ >= 0) {
       boffset_t status;
 
-      status = ceph_lseek(m_cmount, m_fd, offset, whence);
+      status = ceph_lseek(cmount_, fd_, offset, whence);
       if (status >= 0) {
          return status;
       } else {
@@ -270,13 +270,13 @@ boffset_t cephfs_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
    }
 }
 
-bool cephfs_device::d_truncate(DCR *dcr)
+bool cephfs_device::d_truncate(DeviceControlRecord *dcr)
 {
    int status;
    struct stat st;
 
-   if (m_fd >= 0) {
-      status = ceph_ftruncate(m_cmount, m_fd, 0);
+   if (fd_ >= 0) {
+      status = ceph_ftruncate(cmount_, fd_, 0);
       if (status < 0) {
          berrno be;
 
@@ -293,7 +293,7 @@ bool cephfs_device::d_truncate(DCR *dcr)
        * 3. open new file with same mode
        * 4. change ownership to original
        */
-      status = ceph_fstat(m_cmount, m_fd, &st);
+      status = ceph_fstat(cmount_, fd_, &st);
       if (status < 0) {
          berrno be;
 
@@ -303,21 +303,21 @@ bool cephfs_device::d_truncate(DCR *dcr)
       }
 
       if (st.st_size != 0) {             /* ceph_ftruncate() didn't work */
-         ceph_close(m_cmount, m_fd);
-         ceph_unlink(m_cmount, m_virtual_filename);
+         ceph_close(cmount_, fd_);
+         ceph_unlink(cmount_, virtual_filename_);
 
          /*
           * Recreate the file -- of course, empty
           */
          oflags = O_CREAT | O_RDWR | O_BINARY;
-         m_fd = ceph_open(m_cmount, m_virtual_filename, oflags, st.st_mode);
-         if (m_fd < 0) {
+         fd_ = ceph_open(cmount_, virtual_filename_, oflags, st.st_mode);
+         if (fd_ < 0) {
             berrno be;
 
-            dev_errno = -m_fd;;
-            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), m_virtual_filename, be.bstrerror(-m_fd));
+            dev_errno = -fd_;;
+            Mmsg2(errmsg, _("Could not reopen: %s, ERR=%s\n"), virtual_filename_, be.bstrerror(-fd_));
             Emsg0(M_FATAL, 0, errmsg);
-            m_fd = -1;
+            fd_ = -1;
 
             return false;
          }
@@ -325,7 +325,7 @@ bool cephfs_device::d_truncate(DCR *dcr)
          /*
           * Reset proper owner
           */
-         ceph_chown(m_cmount, m_virtual_filename, st.st_uid, st.st_gid);
+         ceph_chown(cmount_, virtual_filename_, st.st_uid, st.st_gid);
       }
    }
 
@@ -334,37 +334,37 @@ bool cephfs_device::d_truncate(DCR *dcr)
 
 cephfs_device::~cephfs_device()
 {
-   if (m_cmount && m_fd >= 0) {
-      ceph_close(m_cmount, m_fd);
-      m_fd = -1;
+   if (cmount_ && fd_ >= 0) {
+      ceph_close(cmount_, fd_);
+      fd_ = -1;
    }
 
-   if (!m_cmount) {
-      ceph_shutdown(m_cmount);
-      m_cmount = NULL;
+   if (!cmount_) {
+      ceph_shutdown(cmount_);
+      cmount_ = NULL;
    }
 
-   if (m_cephfs_configstring) {
-      free(m_cephfs_configstring);
-      m_cephfs_configstring = NULL;
+   if (cephfs_configstring_) {
+      free(cephfs_configstring_);
+      cephfs_configstring_ = NULL;
    }
 
-   free_pool_memory(m_virtual_filename);
+   free_pool_memory(virtual_filename_);
 }
 
 cephfs_device::cephfs_device()
 {
-   m_cephfs_configstring = NULL;
-   m_cephfs_conffile = NULL;
-   m_basedir = NULL;
-   m_cmount = NULL;
-   m_virtual_filename = get_pool_memory(PM_FNAME);
+   cephfs_configstring_ = NULL;
+   cephfs_conffile_ = NULL;
+   basedir_ = NULL;
+   cmount_ = NULL;
+   virtual_filename_ = get_pool_memory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_CEPHFS_DEV:

@@ -41,12 +41,12 @@
  * have a catalog, look for a Job keyword and get the
  * catalog from its client record.
  */
-bool open_client_db(UAContext *ua, bool use_private)
+bool open_client_db(UaContext *ua, bool use_private)
 {
    int i;
-   CATRES *catalog;
-   CLIENTRES *client;
-   JOBRES *job;
+   CatalogResource *catalog;
+   ClientResource *client;
+   JobResource *job;
 
    /*
     * Try for catalog keyword
@@ -109,7 +109,7 @@ bool open_client_db(UAContext *ua, bool use_private)
 /**
  * Open the catalog database.
  */
-bool open_db(UAContext *ua, bool use_private)
+bool open_db(UaContext *ua, bool use_private)
 {
    bool mult_db_conn;
 
@@ -184,7 +184,7 @@ bool open_db(UAContext *ua, bool use_private)
    return true;
 }
 
-void close_db(UAContext *ua)
+void close_db(UaContext *ua)
 {
    if (ua->jcr) {
       ua->jcr->db = NULL;
@@ -208,9 +208,9 @@ void close_db(UAContext *ua)
  *           0  record already exists
  *           1  record created
  */
-int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
+int create_pool(JobControlRecord *jcr, BareosDb *db, PoolResource *pool, e_pool_op op)
 {
-   POOL_DBR  pr;
+   PoolDbRecord  pr;
 
    memset(&pr, 0, sizeof(pr));
 
@@ -241,7 +241,7 @@ int create_pool(JCR *jcr, B_DB *db, POOLRES *pool, e_pool_op op)
  * This is a common routine used to stuff the Pool DB record defaults
  * into the Media DB record just before creating a media (Volume) record.
  */
-void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
+void set_pool_dbr_defaults_in_media_dbr(MediaDbRecord *mr, PoolDbRecord *pr)
 {
    mr->PoolId = pr->PoolId;
    bstrncpy(mr->VolStatus, NT_("Append"), sizeof(mr->VolStatus));
@@ -260,12 +260,12 @@ void set_pool_dbr_defaults_in_media_dbr(MEDIA_DBR *mr, POOL_DBR *pr)
 }
 
 /**
- * Set POOL_DBR.RecyclePoolId and POOL_DBR.ScratchPoolId from Pool resource
+ * Set PoolDbRecord.RecyclePoolId and PoolDbRecord.ScratchPoolId from Pool resource
  * works with set_pooldbr_from_poolres
  */
-bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
+bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *pr, PoolResource *pool)
 {
-   POOL_DBR rpool;
+   PoolDbRecord rpool;
    bool ret = true;
 
    if (pool->RecyclePool) {
@@ -316,7 +316,7 @@ bool set_pooldbr_references(JCR *jcr, B_DB *db, POOL_DBR *pr, POOLRES *pool)
  * Caution : RecyclePoolId isn't setup in this function.
  *           You can use set_pooldbr_recyclepoolid();
  */
-void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
+void set_pooldbr_from_poolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op)
 {
    bstrncpy(pr->PoolType, pool->pool_type, sizeof(pr->PoolType));
    if (op == POOL_OP_CREATE) {
@@ -358,9 +358,9 @@ void set_pooldbr_from_poolres(POOL_DBR *pr, POOLRES *pool, e_pool_op op)
 /**
  * set/update Pool.RecyclePoolId and Pool.ScratchPoolId in Catalog
  */
-int update_pool_references(JCR *jcr, B_DB *db, POOLRES *pool)
+int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *pool)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    if (!pool->RecyclePool && !pool->ScratchPool) {
       return true;

@@ -41,7 +41,7 @@ extern void prtmsg(void *sock, const char *fmt, ...);
 static bool check_resources();
 
 /* Exported variables */
-CLIENTRES *me = NULL;                 /* Our Global resource */
+ClientResource *me = NULL;                 /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
 bool no_signals = false;
@@ -220,7 +220,7 @@ int main (int argc, char *argv[])
    }
 
    if (export_config_schema) {
-      POOL_MEM buffer;
+      PoolMem buffer;
 
       my_config = new_config_parser();
       init_fd_config(my_config, configfile, M_ERROR_TERM);
@@ -280,7 +280,7 @@ int main (int argc, char *argv[])
    if (!no_signals) {
       start_watchdog();               /* start watchdog thread */
       if (me->jcr_watchdog_time) {
-         init_jcr_subsystem(me->jcr_watchdog_time); /* start JCR watchdogs etc. */
+         init_jcr_subsystem(me->jcr_watchdog_time); /* start JobControlRecord watchdogs etc. */
       }
    }
 
@@ -347,13 +347,13 @@ void terminate_filed(int sig)
 static bool check_resources()
 {
    bool OK = true;
-   DIRRES *director;
+   DirectorResource *director;
    bool need_tls;
    const char *configfile = my_config->get_base_config_path();
 
    LockRes();
 
-   me = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   me = (ClientResource *)GetNextRes(R_CLIENT, NULL);
    if (!me) {
       Emsg1(M_FATAL, 0, _("No File daemon resource defined in %s\n"
             "Without that I don't know who I am :-(\n"), configfile);
@@ -366,14 +366,14 @@ static bool check_resources()
          me->MaxConnections = (2 * me->MaxConcurrentJobs) + 2;
       }
 
-      if (GetNextRes(R_CLIENT, (RES *) me) != NULL) {
+      if (GetNextRes(R_CLIENT, (CommonResourceHeader *) me) != NULL) {
          Emsg1(M_FATAL, 0, _("Only one Client resource permitted in %s\n"),
               configfile);
          OK = false;
       }
       my_name_is(0, NULL, me->name());
       if (!me->messages) {
-         me->messages = (MSGSRES *)GetNextRes(R_MSGS, NULL);
+         me->messages = (MessagesResource *)GetNextRes(R_MSGS, NULL);
          if (!me->messages) {
              Emsg1(M_FATAL, 0, _("No Messages resource defined in %s\n"), configfile);
              OK = false;
@@ -495,7 +495,7 @@ static bool check_resources()
 
    /* Verify that a director record exists */
    LockRes();
-   director = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+   director = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
    UnlockRes();
    if (!director) {
       Emsg1(M_FATAL, 0, _("No Director resource defined in %s\n"),

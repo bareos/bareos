@@ -357,13 +357,13 @@ void bnet_thread_server_tcp(dlist *addr_list,
             sockaddr_to_ascii(&cli_addr, buf, sizeof(buf));
             V(mutex);
 
-            BSOCK *bs;
+            BareosSocket *bs;
             bs = New(BSOCK_TCP);
             if (nokeepalive) {
                bs->clear_keepalive();
             }
 
-            bs->m_fd = newsockfd;
+            bs->fd_ = newsockfd;
             bs->set_who(bstrdup("client"));
             bs->set_host(bstrdup(buf));
             bs->set_port(ntohs(fd_ptr->port));

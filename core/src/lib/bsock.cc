@@ -29,7 +29,7 @@
 #include "bareos.h"
 #include "jcr.h"
 
-DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
+DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration) {
    uint32_t merged_policy = 0;
 
 #if defined(HAVE_TLS)
@@ -41,8 +41,8 @@ DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration) {
    return merged_policy;
 }
 
-tls_base_t *SelectTlsFromPolicy(
-   TLSRES *tls_configuration, uint32_t remote_policy) {
+TlsBase *SelectTlsFromPolicy(
+   TlsResource *tls_configuration, uint32_t remote_policy) {
 
    if ((tls_configuration->tls_cert.require && tls_cert_t::enabled(remote_policy))
       || (tls_configuration->tls_cert.enable && tls_cert_t::required(remote_policy))) {
@@ -76,22 +76,22 @@ tls_base_t *SelectTlsFromPolicy(
    return nullptr;
 }
 
-BSOCK::BSOCK() : tls_conn(nullptr) {
-   Dmsg0(100, "Contruct BSOCK\n");
-   m_fd            = -1;
-   m_spool_fd      = -1;
+BareosSocket::BareosSocket() : tls_conn(nullptr) {
+   Dmsg0(100, "Contruct BareosSocket\n");
+   fd_            = -1;
+   spool_fd_      = -1;
    msg             = get_pool_memory(PM_BSOCK);
    errmsg          = get_pool_memory(PM_MESSAGE);
-   m_blocking      = true;
-   m_use_keepalive = true;
+   blocking_      = true;
+   use_keepalive_ = true;
 }
 
-BSOCK::~BSOCK() {
-   Dmsg0(100, "Destruct BSOCK\n");
+BareosSocket::~BareosSocket() {
+   Dmsg0(100, "Destruct BareosSocket\n");
    // free_tls();
 }
 
-void BSOCK::free_tls()
+void BareosSocket::free_tls()
 {
    if (tls_conn != nullptr) {
       free_tls_connection(tls_conn);
@@ -102,7 +102,7 @@ void BSOCK::free_tls()
 /**
  * Copy the address from the configuration dlist that gets passed in
  */
-void BSOCK::set_source_address(dlist *src_addr_list)
+void BareosSocket::set_source_address(dlist *src_addr_list)
 {
    char allbuf[256 * 10];
    IPADDR *addr = NULL;
@@ -127,40 +127,40 @@ void BSOCK::set_source_address(dlist *src_addr_list)
 /**
  * Force read/write to use locking
  */
-bool BSOCK::set_locking()
+bool BareosSocket::set_locking()
 {
    int status;
-   if (m_use_locking) {
+   if (use_locking_) {
       return true;                      /* already set */
    }
-   if ((status = pthread_mutex_init(&m_mutex, NULL)) != 0) {
+   if ((status = pthread_mutex_init(&mutex_, NULL)) != 0) {
       berrno be;
-      Qmsg(m_jcr, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
+      Qmsg(jcr_, M_FATAL, 0, _("Could not init bsock mutex. ERR=%s\n"),
          be.bstrerror(status));
       return false;
    }
-   m_use_locking = true;
+   use_locking_ = true;
    return true;
 }
 
-void BSOCK::clear_locking()
+void BareosSocket::clear_locking()
 {
-   if (!m_use_locking) {
+   if (!use_locking_) {
       return;
    }
-   m_use_locking = false;
-   pthread_mutex_destroy(&m_mutex);
+   use_locking_ = false;
+   pthread_mutex_destroy(&mutex_);
    return;
 }
 
 /**
  * Send a signal
  */
-bool BSOCK::signal(int signal)
+bool BareosSocket::signal(int signal)
 {
    msglen = signal;
    if (signal == BNET_TERMINATE) {
-      m_suppress_error_msgs = true;
+      suppress_error_msgs_ = true;
    }
    return send();
 }
@@ -168,24 +168,24 @@ bool BSOCK::signal(int signal)
 /**
  * Despool spooled attributes
  */
-bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
+bool BareosSocket::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
 {
    int32_t pktsiz;
    size_t nbytes;
    ssize_t last = 0, size = 0;
    int count = 0;
-   JCR *jcr = get_jcr();
+   JobControlRecord *jcr = get_jcr();
 
-   if (lseek(m_spool_fd, 0, SEEK_SET) == -1) {
+   if (lseek(spool_fd_, 0, SEEK_SET) == -1) {
       Qmsg(jcr, M_FATAL, 0, _("attr spool I/O error.\n"));
       return false;
    }
 
 #if defined(HAVE_POSIX_FADVISE) && defined(POSIX_FADV_WILLNEED)
-   posix_fadvise(m_spool_fd, 0, 0, POSIX_FADV_WILLNEED);
+   posix_fadvise(spool_fd_, 0, 0, POSIX_FADV_WILLNEED);
 #endif
 
-   while ((nbytes = read(m_spool_fd, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
+   while ((nbytes = read(spool_fd_, (char *)&pktsiz, sizeof(int32_t))) == sizeof(int32_t)) {
       size += sizeof(int32_t);
       msglen = ntohl(pktsiz);
       if (msglen > 0) {
@@ -193,7 +193,7 @@ bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
             msg = realloc_pool_memory(msg, msglen + 1);
          }
 
-         nbytes = read(m_spool_fd, msg, msglen);
+         nbytes = read(spool_fd_, msg, msglen);
          if (nbytes != (size_t)msglen) {
             berrno be;
             Dmsg2(400, "nbytes=%d msglen=%d\n", nbytes, msglen);
@@ -223,7 +223,7 @@ bool BSOCK::despool(void update_attr_spool_size(ssize_t size), ssize_t tsize)
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
-const char *BSOCK::bstrerror()
+const char *BareosSocket::bstrerror()
 {
    berrno be;
    if (errmsg == NULL) {
@@ -238,7 +238,7 @@ const char *BSOCK::bstrerror()
  * Returns: false on error
  *          true  on success
  */
-bool BSOCK::fsend(const char *fmt, ...)
+bool BareosSocket::fsend(const char *fmt, ...)
 {
    va_list arg_ptr;
    int maxlen;
@@ -264,10 +264,10 @@ bool BSOCK::fsend(const char *fmt, ...)
    return send();
 }
 
-void BSOCK::set_killable(bool killable)
+void BareosSocket::set_killable(bool killable)
 {
-   if (m_jcr) {
-      m_jcr->set_killable(killable);
+   if (jcr_) {
+      jcr_->set_killable(killable);
    }
 }
 
@@ -282,14 +282,14 @@ static char OKhello[] =
 /**
  * Authenticate with Director
  */
-bool BSOCK::authenticate_with_director(JCR *jcr,
+bool BareosSocket::authenticate_with_director(JobControlRecord *jcr,
                                        const char *identity,
                                        s_password &password,
                                        char *response,
                                        int response_len,
-                                       TLSRES *tls_configuration) {
+                                       TlsResource *tls_configuration) {
    char bashed_name[MAX_NAME_LENGTH];
-   BSOCK *dir = this;        /* for readability */
+   BareosSocket *dir = this;        /* for readability */
 
    response[0] = 0;
 
@@ -348,11 +348,11 @@ bail_out:
  * - First make him prove his identity and then prove our identity to the Remote.
  * - First prove our identity to the Remote and then make him prove his identity.
  */
-bool BSOCK::two_way_authenticate(JCR *jcr,
+bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
                                  const char *what,
                                  const char *identity,
                                  s_password &password,
-                                 TLSRES *tls_configuration,
+                                 TlsResource *tls_configuration,
                                  bool initiated_by_remote) {
 
                                   btimer_t *tid       = NULL;
@@ -362,7 +362,7 @@ bool BSOCK::two_way_authenticate(JCR *jcr,
    uint32_t local_tls_policy = GetNeedFromConfiguration(tls_configuration);
    uint32_t remote_tls_policy = 0;
    alist *verify_list = NULL;
-   tls_base_t * selected_local_tls = nullptr;
+   TlsBase * selected_local_tls = nullptr;
 
    if (jcr && job_canceled(jcr)) {
       Dmsg0(dbglvl, "Failed, because job is canceled.\n");
@@ -505,21 +505,21 @@ auth_fatal:
    return auth_success;
 }
 
-bool BSOCK::authenticate_outbound_connection(
-   JCR *jcr,
+bool BareosSocket::authenticate_outbound_connection(
+   JobControlRecord *jcr,
    const char *what,
    const char *identity,
    s_password &password,
-   TLSRES *tls_configuration) {
+   TlsResource *tls_configuration) {
    return two_way_authenticate(jcr, what, identity, password, tls_configuration, false);
 }
 
-bool BSOCK::authenticate_inbound_connection(
-   JCR *jcr,
+bool BareosSocket::authenticate_inbound_connection(
+   JobControlRecord *jcr,
    const char *what,
    const char *identity,
    s_password &password,
-   TLSRES *tls_configuration) {
+   TlsResource *tls_configuration) {
    return two_way_authenticate(jcr, what, identity, password, tls_configuration, true);
 }
 
@@ -527,7 +527,7 @@ bool BSOCK::authenticate_inbound_connection(
 /**
  * Try to limit the bandwidth of a network connection
  */
-void BSOCK::control_bwlimit(int bytes)
+void BareosSocket::control_bwlimit(int bytes)
 {
    btime_t now, temp;
    int64_t usec_sleep;
@@ -543,32 +543,32 @@ void BSOCK::control_bwlimit(int bytes)
     * See if this is the first time we enter here.
     */
    now = get_current_btime();
-   if (m_last_tick == 0) {
-      m_nb_bytes = bytes;
-      m_last_tick = now;
+   if (last_tick_ == 0) {
+      nb_bytes_ = bytes;
+      last_tick_ = now;
       return;
    }
 
    /*
     * Calculate the number of microseconds since the last check.
     */
-   temp = now - m_last_tick;
+   temp = now - last_tick_;
 
    /*
     * Less than 0.1ms since the last call, see the next time
     */
    if (temp < 100) {
-      m_nb_bytes += bytes;
+      nb_bytes_ += bytes;
       return;
    }
 
    /*
     * Keep track of how many bytes are written in this timeslice.
     */
-   m_nb_bytes += bytes;
-   m_last_tick = now;
+   nb_bytes_ += bytes;
+   last_tick_ = now;
    if (debug_level >= 400) {
-      Dmsg3(400, "control_bwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now, temp, m_nb_bytes);
+      Dmsg3(400, "control_bwlimit: now = %lld, since = %lld, nb_bytes = %d\n", now, temp, nb_bytes_);
    }
 
    /*
@@ -581,15 +581,15 @@ void BSOCK::control_bwlimit(int bytes)
    /*
     * Remove what was authorised to be written in temp usecs.
     */
-   m_nb_bytes -= (int64_t)(temp * ((double)m_bwlimit / 1000000.0));
-   if (m_nb_bytes < 0) {
+   nb_bytes_ -= (int64_t)(temp * ((double)bwlimit_ / 1000000.0));
+   if (nb_bytes_ < 0) {
       /*
        * If more was authorized then used but bursting is not enabled
        * reset the counter as these bytes cannot be used later on when
        * we are exceeding our bandwidth.
        */
-      if (!m_use_bursting) {
-         m_nb_bytes = 0;
+      if (!use_bursting_) {
+         nb_bytes_ = 0;
       }
       return;
    }
@@ -597,7 +597,7 @@ void BSOCK::control_bwlimit(int bytes)
    /*
     * What exceed should be converted in sleep time
     */
-   usec_sleep = (int64_t)(m_nb_bytes /((double)m_bwlimit / 1000000.0));
+   usec_sleep = (int64_t)(nb_bytes_ /((double)bwlimit_ / 1000000.0));
    if (usec_sleep > 100) {
       if (debug_level >= 400) {
          Dmsg1(400, "control_bwlimit: sleeping for %lld usecs\n", usec_sleep);
@@ -613,11 +613,11 @@ void BSOCK::control_bwlimit(int bytes)
          /*
           * See if we slept enough or that bmicrosleep() returned early.
           */
-         if ((now - m_last_tick) < usec_sleep) {
-            usec_sleep -= (now - m_last_tick);
+         if ((now - last_tick_) < usec_sleep) {
+            usec_sleep -= (now - last_tick_);
             continue;
          } else {
-            m_last_tick = now;
+            last_tick_ = now;
             break;
          }
       }
@@ -630,10 +630,10 @@ void BSOCK::control_bwlimit(int bytes)
        * the bandwidth and sometimes above it but the average will be near
        * the set bandwidth.
        */
-      if (m_use_bursting) {
-         m_nb_bytes -= (int64_t)(usec_sleep * ((double)m_bwlimit / 1000000.0));
+      if (use_bursting_) {
+         nb_bytes_ -= (int64_t)(usec_sleep * ((double)bwlimit_ / 1000000.0));
       } else {
-         m_nb_bytes = 0;
+         nb_bytes_ = 0;
       }
    }
 }

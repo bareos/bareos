@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 /*
- * Manipulation routines for BREGEXP list
+ * Manipulation routines for BareosRegex list
  *
  * Eric Bollengier, March 2007
  */
@@ -29,11 +29,11 @@
 #include "breg.h"
 #include "mem_pool.h"
 
-BREGEXP *new_bregexp(const char *motif)
+BareosRegex *new_bregexp(const char *motif)
 {
    Dmsg0(500, "bregexp: creating new bregexp object\n");
-   BREGEXP *self = (BREGEXP *)bmalloc(sizeof(BREGEXP));
-   memset(self, 0, sizeof(BREGEXP));
+   BareosRegex *self = (BareosRegex *)bmalloc(sizeof(BareosRegex));
+   memset(self, 0, sizeof(BareosRegex));
 
    if (!self->extract_regexp(motif)) {
       Dmsg0(100, "bregexp: extract_regexp error\n");
@@ -47,9 +47,9 @@ BREGEXP *new_bregexp(const char *motif)
    return self;
 }
 
-void free_bregexp(BREGEXP *self)
+void free_bregexp(BareosRegex *self)
 {
-   Dmsg0(500, "bregexp: freeing BREGEXP object\n");
+   Dmsg0(500, "bregexp: freeing BareosRegex object\n");
 
    if (!self) {
       return;
@@ -69,9 +69,9 @@ void free_bregexp(BREGEXP *self)
  */
 void free_bregexps(alist *bregexps)
 {
-   Dmsg0(500, "bregexp: freeing all BREGEXP object\n");
+   Dmsg0(500, "bregexp: freeing all BareosRegex object\n");
 
-   BREGEXP *elt;
+   BareosRegex *elt;
    foreach_alist(elt, bregexps) {
       free_bregexp(elt);
    }
@@ -81,7 +81,7 @@ void free_bregexps(alist *bregexps)
  */
 bool apply_bregexps(const char *fname, alist *bregexps, char **result)
 {
-   BREGEXP *elt;
+   BareosRegex *elt;
    bool ok=false;
 
    char *ret = (char *) fname;
@@ -95,14 +95,14 @@ bool apply_bregexps(const char *fname, alist *bregexps, char **result)
    return ok;
 }
 
-/* return an alist of BREGEXP or return NULL if it's not a
+/* return an alist of BareosRegex or return NULL if it's not a
  * where=!tmp!opt!ig,!temp!opt!i
  */
 alist *get_bregexps(const char *where)
 {
    char *p = (char *)where;
    alist *list = New(alist(10, not_owned_by_alist));
-   BREGEXP *reg;
+   BareosRegex *reg;
 
    reg = new_bregexp(p);
 
@@ -120,7 +120,7 @@ alist *get_bregexps(const char *where)
    }
 }
 
-bool BREGEXP::extract_regexp(const char *motif)
+bool BareosRegex::extract_regexp(const char *motif)
 {
    if ( !motif ) {
       return false;
@@ -211,7 +211,7 @@ bool BREGEXP::extract_regexp(const char *motif)
 }
 
 /* return regexp->result */
-char *BREGEXP::replace(const char *fname)
+char *BareosRegex::replace(const char *fname)
 {
    success = false;             /* use this.success to known if it's ok */
    int flen = strlen(fname);
@@ -238,14 +238,14 @@ char *BREGEXP::replace(const char *fname)
    return result;
 }
 
-char *BREGEXP::return_fname(const char *fname, int len)
+char *BareosRegex::return_fname(const char *fname, int len)
 {
    result = check_pool_memory_size(result, len+1);
    strcpy(result,fname);
    return result;
 }
 
-int BREGEXP::compute_dest_len(const char *fname, regmatch_t pmatch[])
+int BareosRegex::compute_dest_len(const char *fname, regmatch_t pmatch[])
 {
    int len=0;
    char *p;
@@ -285,7 +285,7 @@ int BREGEXP::compute_dest_len(const char *fname, regmatch_t pmatch[])
    return len;
 }
 
-char *BREGEXP::edit_subst(const char *fname, regmatch_t pmatch[])
+char *BareosRegex::edit_subst(const char *fname, regmatch_t pmatch[])
 {
    int i;
    char *p;
@@ -410,7 +410,7 @@ char *bregexp_build_where(char *dest, int str_size,
 }
 
 
-void BREGEXP::debug()
+void BareosRegex::debug()
 {
    printf("expr=[%s]\n", expr);
    printf("subst=[%s]\n", subst);

@@ -54,7 +54,7 @@ struct dlink {
    void *prev;
 };
 
-class DLL_IMP_EXP dlist : public SMARTALLOC {
+class DLL_IMP_EXP dlist : public SmartAlloc {
    void *head;
    void *tail;
    int16_t loffset;
@@ -189,11 +189,11 @@ inline void *dlist::last() const
 class dlistString
 {
 public:
-   char *c_str() { return m_str; };
+   char *c_str() { return str_; };
 
 private:
-   dlink m_link;
-   char m_str[1];
+   dlink link_;
+   char str_[1];
    /* !!! Don't put anything after this as this space is used
     *     to hold the string in inline
     */

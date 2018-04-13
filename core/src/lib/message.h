@@ -153,7 +153,7 @@ enum {
 /**
  * Queued message item
  */
-struct MQUEUE_ITEM {
+struct MessageQeueItem {
    dlink link;
    int type;
    utime_t mtime;
@@ -161,16 +161,16 @@ struct MQUEUE_ITEM {
 };
 
 extern "C" {
-   typedef char *(*job_code_callback_t)(JCR *, const char *);
+   typedef char *(*job_code_callback_t)(JobControlRecord *, const char *);
 }
 
-DLL_IMP_EXP void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
-DLL_IMP_EXP void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...);
+DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
+DLL_IMP_EXP void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...);
 DLL_IMP_EXP bool get_trace(void);
 DLL_IMP_EXP const char *get_basename(const char *pathname);
 DLL_IMP_EXP void set_log_timestamp_format(const char *format);
 
-typedef bool (*db_log_insert_func)(JCR *jcr, utime_t mtime, char *msg);
+typedef bool (*db_log_insert_func)(JobControlRecord *jcr, utime_t mtime, char *msg);
 extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
 
 extern DLL_IMP_EXP int debug_level;

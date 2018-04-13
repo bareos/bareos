@@ -38,7 +38,7 @@ static int dbglvl = 100;
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
 
-BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files)
+BareosAccurateFilelistLmdb::BareosAccurateFilelistLmdb(JobControlRecord *jcr, uint32_t number_of_files)
 {
    filenr_ = 0;
    pay_load_ = get_pool_memory(PM_MESSAGE);
@@ -385,7 +385,7 @@ bool BareosAccurateFilelistLmdb::send_base_file_list()
 {
    int result;
    int32_t LinkFIc;
-   FF_PKT *ff_pkt;
+   FindFilesPacket *ff_pkt;
    MDB_cursor *cursor;
    MDB_val key, data;
    bool retval = false;
@@ -446,7 +446,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list()
    int result;
    int32_t LinkFIc;
    struct stat statp;
-   FF_PKT *ff_pkt;
+   FindFilesPacket *ff_pkt;
    MDB_cursor *cursor;
    MDB_val key, data;
    bool retval = false;

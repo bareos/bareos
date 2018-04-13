@@ -23,28 +23,28 @@
 #ifndef __BDB_POSTGRESQL_H_
 #define __BDB_POSTGRESQL_H_ 1
 
-class B_DB_POSTGRESQL: public B_DB_PRIV {
+class BareosDbPostgresql: public BareosDbPrivateInterface {
 private:
    /*
     * Members.
     */
-   PGconn *m_db_handle;
-   PGresult *m_result;
-   POOLMEM *m_buf;                          /**< Buffer to manipulate queries */
+   PGconn *db_handle_;
+   PGresult *result_;
+   POOLMEM *buf_;                          /**< Buffer to manipulate queries */
    static const char *query_definitions[];  /**< table of predefined sql queries */
 
 private:
    /*
     * Methods.
     */
-   bool open_database(JCR *jcr);
-   void close_database(JCR *jcr);
+   bool open_database(JobControlRecord *jcr);
+   void close_database(JobControlRecord *jcr);
    bool validate_connection(void);
-   void escape_string(JCR *jcr, char *snew, char *old, int len);
-   char *escape_object(JCR *jcr, char *old, int len);
-   void unescape_object(JCR *jcr, char *from, int32_t expected_len, POOLMEM *&dest, int32_t *len);
-   void start_transaction(JCR *jcr);
-   void end_transaction(JCR *jcr);
+   void escape_string(JobControlRecord *jcr, char *snew, char *old, int len);
+   char *escape_object(JobControlRecord *jcr, char *old, int len);
+   void unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len, POOLMEM *&dest, int32_t *len);
+   void start_transaction(JobControlRecord *jcr);
+   void end_transaction(JobControlRecord *jcr);
    bool big_sql_query(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool sql_query_without_handler(const char *query, int flags = 0);
@@ -57,17 +57,17 @@ private:
    SQL_FIELD *sql_fetch_field(void);
    bool sql_field_is_not_null(int field_type);
    bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JCR *jcr);
-   bool sql_batch_end(JCR *jcr, const char *error);
-   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
+   bool sql_batch_start(JobControlRecord *jcr);
+   bool sql_batch_end(JobControlRecord *jcr, const char *error);
+   bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar);
 
-   bool check_database_encoding(JCR *jcr);
+   bool check_database_encoding(JobControlRecord *jcr);
 
 public:
    /*
     * Methods.
     */
-   B_DB_POSTGRESQL(JCR *jcr,
+   BareosDbPostgresql(JobControlRecord *jcr,
                    const char *db_driver,
                    const char *db_name,
                    const char *db_user,
@@ -81,7 +81,7 @@ public:
                    bool exit_on_fatal,
                    bool need_private
                    );
-   ~B_DB_POSTGRESQL();
+   ~BareosDbPostgresql();
 };
 
 #endif /* __BDB_POSTGRESQL_H_ */

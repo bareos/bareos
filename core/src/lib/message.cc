@@ -74,7 +74,7 @@ void setup_tsd_key();
  * Allow only one thread to tweak d->fd at a time
  */
 static pthread_mutex_t fides_mutex = PTHREAD_MUTEX_INITIALIZER;
-static MSGSRES *daemon_msgs;          /* Global messages */
+static MessagesResource *daemon_msgs;          /* Global messages */
 static char *catalog_db = NULL;       /* Database type */
 static const char *log_timestamp_format = "%d-%b %H:%M";
 static void (*message_callback)(int type, char *msg) = NULL;
@@ -113,12 +113,12 @@ static const char *bstrrpath(const char *start, const char *end)
 /*
  * Some message class methods
  */
-void MSGSRES::lock()
+void MessagesResource::lock()
 {
    P(fides_mutex);
 }
 
-void MSGSRES::unlock()
+void MessagesResource::unlock()
 {
    V(fides_mutex);
 }
@@ -126,10 +126,10 @@ void MSGSRES::unlock()
 /*
  * Wait for not in use variable to be clear
  */
-void MSGSRES::wait_not_in_use()    /* leaves fides_mutex set */
+void MessagesResource::wait_not_in_use()    /* leaves fides_mutex set */
 {
    lock();
-   while (m_in_use || m_closing) {
+   while (in_use_ || closing_) {
       unlock();
       bmicrosleep(0, 200);         /* wait */
       lock();
@@ -256,13 +256,13 @@ void set_db_type(const char *name)
 
 /*
  * Initialize message handler for a daemon or a Job
- * We make a copy of the MSGSRES resource passed, so it belongs
+ * We make a copy of the MessagesResource resource passed, so it belongs
  * to the job or daemon and thus can be modified.
  *
  * NULL for jcr -> initialize global messages for daemon
  * non-NULL     -> initialize jcr using Message resource
  */
-void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
+void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback)
 {
    DEST *d, *dnew, *temp_chain = NULL;
    int i;
@@ -301,8 +301,8 @@ void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
     * If msg is NULL, initialize global chain for STDOUT and syslog
     */
    if (msg == NULL) {
-      daemon_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
-      memset(daemon_msgs, 0, sizeof(MSGSRES));
+      daemon_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
+      memset(daemon_msgs, 0, sizeof(MessagesResource));
       for (i=1; i<=M_MAX; i++) {
          add_msg_dest(daemon_msgs, MD_STDOUT, i, NULL, NULL, NULL);
       }
@@ -329,8 +329,8 @@ void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
    }
 
    if (jcr) {
-      jcr->jcr_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
-      memset(jcr->jcr_msgs, 0, sizeof(MSGSRES));
+      jcr->jcr_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
+      memset(jcr->jcr_msgs, 0, sizeof(MessagesResource));
       jcr->jcr_msgs->dest_chain = temp_chain;
       memcpy(jcr->jcr_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
    } else {
@@ -340,8 +340,8 @@ void init_msg(JCR *jcr, MSGSRES *msg, job_code_callback_t job_code_callback)
       if (daemon_msgs) {
          free_msgs_res(daemon_msgs);
       }
-      daemon_msgs = (MSGSRES *)malloc(sizeof(MSGSRES));
-      memset(daemon_msgs, 0, sizeof(MSGSRES));
+      daemon_msgs = (MessagesResource *)malloc(sizeof(MessagesResource));
+      memset(daemon_msgs, 0, sizeof(MessagesResource));
       daemon_msgs->dest_chain = temp_chain;
       memcpy(daemon_msgs->send_msg, msg->send_msg, sizeof(msg->send_msg));
    }
@@ -390,7 +390,7 @@ void init_console_msg(const char *wd)
  * but in the case of MAIL is a space separated list of
  * email addresses, ...
  */
-void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type,
+void add_msg_dest(MessagesResource *msg, int dest_code, int msg_type,
                   char *where, char *mail_cmd, char *timestamp_format)
 {
    DEST *d;
@@ -442,7 +442,7 @@ void add_msg_dest(MSGSRES *msg, int dest_code, int msg_type,
  *
  * Remove a message destination
  */
-void rem_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where)
+void rem_msg_dest(MessagesResource *msg, int dest_code, int msg_type, char *where)
 {
    DEST *d;
 
@@ -463,7 +463,7 @@ void rem_msg_dest(MSGSRES *msg, int dest_code, int msg_type, char *where)
 /*
  * Create a unique filename for the mail command
  */
-static void make_unique_mail_filename(JCR *jcr, POOLMEM *&name, DEST *d)
+static void make_unique_mail_filename(JobControlRecord *jcr, POOLMEM *&name, DEST *d)
 {
    if (jcr) {
       Mmsg(name, "%s/%s.%s.%d.mail", working_directory, my_name,
@@ -478,9 +478,9 @@ static void make_unique_mail_filename(JCR *jcr, POOLMEM *&name, DEST *d)
 /*
  * Open a mail pipe
  */
-static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
+static Bpipe *open_mail_pipe(JobControlRecord *jcr, POOLMEM *&cmd, DEST *d)
 {
-   BPIPE *bpipe;
+   Bpipe *bpipe;
 
    if (d->mail_cmd) {
       cmd = edit_job_codes(jcr, cmd, d->mail_cmd, d->where, message_job_code_callback);
@@ -508,11 +508,11 @@ static BPIPE *open_mail_pipe(JCR *jcr, POOLMEM *&cmd, DEST *d)
  * Close the messages for this Messages resource, which means to close
  * any open files, and dispatch any pending email messages.
  */
-void close_msg(JCR *jcr)
+void close_msg(JobControlRecord *jcr)
 {
-   MSGSRES *msgs;
+   MessagesResource *msgs;
    DEST *d;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    POOLMEM *cmd, *line;
    int len, status;
 
@@ -673,7 +673,7 @@ rem_temp_file:
 /*
  * Free memory associated with Messages resource
  */
-void free_msgs_res(MSGSRES *msgs)
+void free_msgs_res(MessagesResource *msgs)
 {
    DEST *d, *old;
 
@@ -735,7 +735,7 @@ void term_msg()
    term_last_jobs_list();
 }
 
-static inline bool open_dest_file(JCR *jcr, DEST *d, const char *mode)
+static inline bool open_dest_file(JobControlRecord *jcr, DEST *d, const char *mode)
 {
    d->fd = fopen(d->where, mode);
    if (!d->fd) {
@@ -792,7 +792,7 @@ static struct syslog_facility_name {
     { NULL, -1 }
 };
 
-static inline bool set_syslog_facility(JCR *jcr, DEST *d)
+static inline bool set_syslog_facility(JobControlRecord *jcr, DEST *d)
 {
    int i;
 
@@ -844,14 +844,14 @@ static inline void send_to_syslog(int mode, const char *msg)
 /*
  * Handle sending the message to the appropriate place
  */
-void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
+void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *msg)
 {
    DEST *d;
    char dt[MAX_TIME_LENGTH];
    POOLMEM *mcmd;
    int len, dtlen;
-   MSGSRES *msgs;
-   BPIPE *bpipe;
+   MessagesResource *msgs;
+   Bpipe *bpipe;
    const char *mode;
    bool dt_conversion = false;
 
@@ -909,8 +909,8 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
        */
       if (jcr->suppress_output) {
          /*
-          * See if this JCR has a controlling JCR and if so redirect
-          * this message to the controlling JCR.
+          * See if this JobControlRecord has a controlling JobControlRecord and if so redirect
+          * this message to the controlling JobControlRecord.
           */
          if (jcr->cjcr) {
             jcr = jcr->cjcr;
@@ -1185,7 +1185,7 @@ static void pt_out(char *buf)
     */
    if (trace) {
       if (!trace_fd) {
-         POOL_MEM fn(PM_FNAME);
+         PoolMem fn(PM_FNAME);
 
          Mmsg(fn, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
          trace_fd = fopen(fn.c_str(), "a+b");
@@ -1224,7 +1224,7 @@ void d_msg(const char *file, int line, int level, const char *fmt,...)
    btime_t mtime;
    uint32_t usecs;
    bool details = true;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    if (level < 0) {
@@ -1335,7 +1335,7 @@ void p_msg(const char *file, int line, int level, const char *fmt,...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
 #ifdef FULL_LOCATION
@@ -1406,7 +1406,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
    va_list ap;
    int len, maxlen;
    bool details = true;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    if (level < 0) {
@@ -1416,7 +1416,7 @@ void t_msg(const char *file, int line, int level, const char *fmt,...)
 
    if (level <= debug_level) {
       if (!trace_fd) {
-         POOL_MEM fn(PM_FNAME);
+         PoolMem fn(PM_FNAME);
 
          Mmsg(fn, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
          trace_fd = fopen(fn.c_str(), "a+b");
@@ -1461,7 +1461,7 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG),
             typestr(PM_EMSG);
 
@@ -1545,13 +1545,13 @@ void e_msg(const char *file, int line, int type, int level, const char *fmt,...)
 /*
  * Generate a Job message
  */
-void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
+void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
 {
    va_list ap;
-   MSGSRES *msgs;
+   MessagesResource *msgs;
    int len, maxlen;
    uint32_t JobId = 0;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    Dmsg1(850, "Enter Jmsg type=%d\n", type);
@@ -1562,7 +1562,7 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
     * dir_bsock.
     */
    if (jcr && jcr->JobId == 0 && jcr->dir_bsock) {
-      BSOCK *dir = jcr->dir_bsock;
+      BareosSocket *dir = jcr->dir_bsock;
 
       va_start(ap, fmt);
       dir->msglen = bvsnprintf(dir->msg, sizeof_pool_memory(dir->msg), fmt, ap);
@@ -1691,11 +1691,11 @@ void Jmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
  * If we come here, prefix the message with the file:line-number,
  * then pass it on to the normal Jmsg routine.
  */
-void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...)
+void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
@@ -1721,11 +1721,11 @@ void j_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const 
 /*
  * Edit a message into a Pool memory buffer, with file:lineno
  */
-int m_msg(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
+int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);
@@ -1777,7 +1777,7 @@ int Mmsg(POOLMEM *&pool_buf, const char *fmt, ...)
    return len;
 }
 
-int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
+int Mmsg(PoolMem &pool_buf, const char *fmt, ...)
 {
    int len, maxlen;
    va_list ap;
@@ -1799,7 +1799,7 @@ int Mmsg(POOL_MEM &pool_buf, const char *fmt, ...)
    return len;
 }
 
-int Mmsg(POOL_MEM *&pool_buf, const char *fmt, ...)
+int Mmsg(PoolMem *&pool_buf, const char *fmt, ...)
 {
    int len, maxlen;
    va_list ap;
@@ -1828,12 +1828,12 @@ int Mmsg(POOL_MEM *&pool_buf, const char *fmt, ...)
  * sending a message, it is a bit messy to recursively call
  * yourself when the bnet packet is not reentrant).
  */
-void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
+void Qmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG);
-   MQUEUE_ITEM *item;
+   PoolMem buf(PM_EMSG);
+   MessageQeueItem *item;
 
    while (1) {
       maxlen = buf.max_size() - 1;
@@ -1849,7 +1849,7 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
       break;
    }
 
-   item = (MQUEUE_ITEM *)malloc(sizeof(MQUEUE_ITEM) + len + 1);
+   item = (MessageQeueItem *)malloc(sizeof(MessageQeueItem) + len + 1);
    item->type = type;
    item->mtime = time(NULL);
    strcpy(item->msg, buf.c_str());
@@ -1877,9 +1877,9 @@ void Qmsg(JCR *jcr, int type, utime_t mtime, const char *fmt,...)
 /*
  * Dequeue messages
  */
-void dequeue_messages(JCR *jcr)
+void dequeue_messages(JobControlRecord *jcr)
 {
-   MQUEUE_ITEM *item;
+   MessageQeueItem *item;
 
    if (!jcr->msg_queue) {
       return;
@@ -1903,11 +1903,11 @@ void dequeue_messages(JCR *jcr)
  * If we come here, prefix the message with the file:line-number,
  * then pass it on to the normal Qmsg routine.
  */
-void q_msg(const char *file, int line, JCR *jcr, int type, utime_t mtime, const char *fmt,...)
+void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt,...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_EMSG),
+   PoolMem buf(PM_EMSG),
             more(PM_EMSG);
 
    Mmsg(buf, "%s:%d ", get_basename(file), line);

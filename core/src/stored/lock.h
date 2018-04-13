@@ -43,7 +43,7 @@
 #define give_back_device_lock(d, p) _give_back_device_lock(__FILE__, __LINE__, (d), (p))
 
 /**
- * m_blocked states (mutually exclusive)
+ * blocked_ states (mutually exclusive)
  */
 enum {
    BST_NOT_BLOCKED = 0,               /**< Not blocked */

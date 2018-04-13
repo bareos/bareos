@@ -36,7 +36,7 @@
  * Escape special characters in bareos configuration strings
  * needed for dumping config strings
  */
-void escape_string(POOL_MEM &snew, char *old, int len)
+void escape_string(PoolMem &snew, char *old, int len)
 {
    char *n, *o;
 
@@ -141,7 +141,7 @@ void bash_spaces(char *str)
  * Convert spaces to non-space character.
  * This makes scanf of fields containing spaces easier.
  */
-void bash_spaces(POOL_MEM &pm)
+void bash_spaces(PoolMem &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -167,7 +167,7 @@ void unbash_spaces(char *str)
 /*
  * Convert non-space characters (0x1) back into spaces
  */
-void unbash_spaces(POOL_MEM &pm)
+void unbash_spaces(PoolMem &pm)
 {
    char *str = pm.c_str();
    while (*str) {
@@ -198,12 +198,12 @@ void unbash_spaces(POOL_MEM &pm)
  *                 ->line2
  *                 ->line3
  */
-const char *indent_multiline_string(POOL_MEM &resultbuffer,
+const char *indent_multiline_string(PoolMem &resultbuffer,
                                     const char *multilinestring,
                                     const char *separator)
 {
-   POOL_MEM multiline(multilinestring);
-   POOL_MEM indent(PM_MESSAGE);
+   PoolMem multiline(multilinestring);
+   PoolMem indent(PM_MESSAGE);
    char *p1 = multiline.c_str();
    char *p2 = NULL;
    bool line1 = true;
@@ -515,7 +515,7 @@ const char *job_type_to_str(int type)
 /*
  * Convert ActionOnPurge to string (Truncate, Erase, Destroy)
  */
-char *action_on_purge_to_string(int aop, POOL_MEM &ret)
+char *action_on_purge_to_string(int aop, PoolMem &ret)
 {
    if (aop & ON_PURGE_TRUNCATE) {
       pm_strcpy(ret, _("Truncate"));
@@ -652,7 +652,7 @@ int do_shell_expansion(char *name, int name_len)
    int len, i, status;
    POOLMEM *cmd,
            *line;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    const char *shellcmd;
 
    /*
@@ -848,7 +848,7 @@ void decode_session_key(char *decode, char *session, char *key, int maxlen)
  *  imsg = input string containing edit codes (%x)
  *  to = recipients list
  */
-POOLMEM *edit_job_codes(JCR *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t callback)
+POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *imsg, const char *to, job_code_callback_t callback)
 {
    char *p, *q;
    const char *str;

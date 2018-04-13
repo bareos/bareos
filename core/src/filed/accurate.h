@@ -58,11 +58,11 @@ struct accurate_payload {
 /*
  * Accurate payload storage abstraction classes.
  */
-class BareosAccurateFilelist: public SMARTALLOC {
+class BareosAccurateFilelist: public SmartAlloc {
 protected:
    int64_t filenr_;
    char *seen_bitmap_;
-   JCR *jcr_;
+   JobControlRecord *jcr_;
    int32_t number_of_previous_files_;
 
 public:
@@ -128,7 +128,7 @@ protected:
 public:
    /* methods */
    BareosAccurateFilelistHtable() = delete;
-   BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files);
+   BareosAccurateFilelistHtable(JobControlRecord *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistHtable() {
       destroy();
    };
@@ -173,7 +173,7 @@ protected:
 public:
    /* methods */
    BareosAccurateFilelistLmdb() = delete;
-   BareosAccurateFilelistLmdb(JCR *jcr, uint32_t number_of_files);
+   BareosAccurateFilelistLmdb(JobControlRecord *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistLmdb() {
       destroy();
    }

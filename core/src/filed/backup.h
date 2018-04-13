@@ -25,16 +25,16 @@
 #define __BACKUP_H
 
 struct b_save_ctx {
-   JCR *jcr;                    /* Current Job Control Record */
-   FF_PKT *ff_pkt;              /* File being processed */
+   JobControlRecord *jcr;                    /* Current Job Control Record */
+   FindFilesPacket *ff_pkt;              /* File being processed */
    DIGEST *digest;              /* Encryption Digest */
    DIGEST *signing_digest;      /* Signing Digest */
    int digest_stream;           /* Type of Signing Digest */
 };
 
 struct b_ctx {
-   JCR *jcr;                    /* Current Job Control Record */
-   FF_PKT *ff_pkt;              /* File being processed */
+   JobControlRecord *jcr;                    /* Current Job Control Record */
+   FindFilesPacket *ff_pkt;              /* File being processed */
    POOLMEM *msgsave;            /* Saved sd->msg */
    char *rbuf;                  /* Read buffer */
    char *wbuf;                  /* Write buffer */

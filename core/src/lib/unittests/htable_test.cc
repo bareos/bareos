@@ -91,16 +91,16 @@ TEST(htable, htable) {
 
 }
 
-struct RBLISTJCR {
+struct RbListJobControlRecord {
    char *buf;
 };
 
 static int rblist_compare(void *item1, void *item2)
 {
-   RBLISTJCR *jcr1, *jcr2;
+   RbListJobControlRecord *jcr1, *jcr2;
    int comp;
-   jcr1 = (RBLISTJCR *)item1;
-   jcr2 = (RBLISTJCR *)item2;
+   jcr1 = (RbListJobControlRecord *)item1;
+   jcr2 = (RbListJobControlRecord *)item2;
    comp = strcmp(jcr1->buf, jcr2->buf);
    return comp;
 }

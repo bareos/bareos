@@ -54,18 +54,18 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_arg);
  * a bi-directional pipe so that the user can read from and
  * write to the program.
  */
-BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
+Bpipe *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 {
    char *bargv[MAX_ARGV];
    int bargc, i;
    int readp[2], writep[2];
    POOLMEM *tprog;
    int mode_read, mode_write;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    int save_errno;
 
-   bpipe = (BPIPE *)malloc(sizeof(BPIPE));
-   memset(bpipe, 0, sizeof(BPIPE));
+   bpipe = (Bpipe *)malloc(sizeof(Bpipe));
+   memset(bpipe, 0, sizeof(Bpipe));
    mode_read = (mode[0] == 'r');
    mode_write = (mode[0] == 'w' || mode[1] == 'w');
 
@@ -187,7 +187,7 @@ BPIPE *open_bpipe(char *prog, int wait, const char *mode, bool dup_stderr)
 /*
  * Close the write pipe only
  */
-int close_wpipe(BPIPE *bpipe)
+int close_wpipe(Bpipe *bpipe)
 {
    int status = 1;
 
@@ -207,7 +207,7 @@ int close_wpipe(BPIPE *bpipe)
  * Returns: 0 on success
  *          berrno on failure
  */
-int close_bpipe(BPIPE *bpipe)
+int close_bpipe(Bpipe *bpipe)
 {
    int chldstatus = 0;
    int status = 0;
@@ -351,7 +351,7 @@ static void build_argc_argv(char *cmd, int *bargc, char *bargv[], int max_argv)
  */
 int run_program(char *prog, int wait, POOLMEM *&results)
 {
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    int stat1, stat2;
    char *mode;
 
@@ -414,7 +414,7 @@ int run_program(char *prog, int wait, POOLMEM *&results)
  */
 int run_program_full_output(char *prog, int wait, POOLMEM *&results)
 {
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    int stat1, stat2;
    char *mode;
    POOLMEM* tmp;

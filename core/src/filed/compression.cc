@@ -45,7 +45,7 @@
 /**
  * For compression we enable all used compressors in the fileset.
  */
-bool adjust_compression_buffers(JCR *jcr)
+bool adjust_compression_buffers(JobControlRecord *jcr)
 {
    findFILESET *fileset = jcr->ff->fileset;
    uint32_t compress_buf_size = 0;
@@ -77,7 +77,7 @@ bool adjust_compression_buffers(JCR *jcr)
 /**
  * For decompression we use the same decompression buffer for each algorithm.
  */
-bool adjust_decompression_buffers(JCR *jcr)
+bool adjust_decompression_buffers(JobControlRecord *jcr)
 {
    uint32_t decompress_buf_size;
 
@@ -217,7 +217,7 @@ bail_out:
 
 #else
 
-bool adjust_compression_buffers(JCR *jcr)
+bool adjust_compression_buffers(JobControlRecord *jcr)
 {
    return true;
 }

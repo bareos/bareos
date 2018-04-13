@@ -529,7 +529,7 @@ void ndmp_fhdb_lmdb_unregister(struct ndmlog *ixlog)
 
 static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
 {
-   POOL_MEM temp;
+   PoolMem temp;
    int result = 0;
    MDB_cursor *cursor;
    MDB_val rkey, rdata;
@@ -580,9 +580,9 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
    MDB_cursor *cursor;
    int8_t FileType = 0;
    MDB_val rkey, rdata;
-   POOL_MEM attribs(PM_FNAME);
+   PoolMem attribs(PM_FNAME);
    ndmp9_file_stat ndmp_fstat;
-   POOL_MEM full_path(PM_FNAME);
+   PoolMem full_path(PM_FNAME);
    struct fhdb_payload *payload;
 
    result = mdb_cursor_open(fhdb_state->db_ro_txn, fhdb_state->db_dbi, &cursor);

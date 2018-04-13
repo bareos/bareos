@@ -62,58 +62,58 @@ enum {
 /*
  * Director Resource
  */
-class DIRRES : public TLSRES {
+class DirectorResource : public TlsResource {
 public:
    uint32_t DIRport;                  /* UA server port */
    char *address;                     /* UA server address */
    bool enable_ssl;                   /* Use SSL */
 
-   DIRRES() : TLSRES() {}
+   DirectorResource() : TlsResource() {}
 };
 
 /*
  * Tray Monitor Resource
  */
-class MONITORRES : public TLSRES {
+class MonitorResource : public TlsResource {
 public:
    bool require_ssl;                  /* Require SSL for all connections */
-   MSGSRES *messages;                 /* Daemon message handler */
+   MessagesResource *messages;                 /* Daemon message handler */
    s_password password;               /* UA server password */
    utime_t RefreshInterval;           /* Status refresh interval */
    utime_t FDConnectTimeout;          /* timeout for connect in seconds */
    utime_t SDConnectTimeout;          /* timeout in seconds */
    utime_t DIRConnectTimeout;         /* timeout in seconds */
 
-   MONITORRES() : TLSRES() {}
+   MonitorResource() : TlsResource() {}
 };
 
 /*
  * Client Resource
  */
-class CLIENTRES : public TLSRES {
+class ClientResource : public TlsResource {
 public:
    uint32_t FDport;                   /* Where File daemon listens */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
 
-   CLIENTRES() : TLSRES() {}
+   ClientResource() : TlsResource() {}
 };
 
 /*
  * Store Resource
  */
-class STORERES : public TLSRES {
+class StoreResource : public TlsResource {
 public:
    uint32_t SDport;                   /* port where Directors connect */
    char *address;
    s_password password;
    bool enable_ssl;                   /* Use SSL */
 
-   STORERES() : TLSRES() {}
+   StoreResource() : TlsResource() {}
 };
 
-class CONFONTRES : public BRSRES {
+class ConsoleFontResource : public BareosResource {
 public:
    char *fontface;                    /* Console Font specification */
 };
@@ -122,15 +122,15 @@ public:
  * resource structure definitions.
  */
 union URES {
-   MONITORRES res_monitor;
-   DIRRES res_dir;
-   CLIENTRES res_client;
-   STORERES res_store;
-   CONFONTRES con_font;
-   RES hdr;
+   MonitorResource res_monitor;
+   DirectorResource res_dir;
+   ClientResource res_client;
+   StoreResource res_store;
+   ConsoleFontResource con_font;
+   CommonResourceHeader hdr;
 
    URES() {
-      new(&hdr) RES();
+      new(&hdr) CommonResourceHeader();
       Dmsg1(900, "hdr:        %p \n", &hdr);
       Dmsg1(900, "res_dir.hdr %p\n", &res_dir.hdr);
    }
@@ -138,6 +138,6 @@ union URES {
 };
 
 void init_tmon_config(CONFIG *config, const char *configfile, int exit_code);
-bool print_config_schema_json(POOL_MEM &buffer);
+bool print_config_schema_json(PoolMem &buffer);
 
 #endif /* TRAY_CONF_H_INCLUDED */

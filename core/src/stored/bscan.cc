@@ -41,37 +41,37 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 
 /* Forward referenced functions */
 static void do_scan(void);
-static bool record_cb(DCR *dcr, DEV_RECORD *rec);
-static bool create_file_attributes_record(B_DB *db, JCR *mjcr,
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool create_file_attributes_record(BareosDb *db, JobControlRecord *mjcr,
                                           char *fname, char *lname, int type,
-                                          char *ap, DEV_RECORD *rec);
-static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl);
-static bool update_media_record(B_DB *db, MEDIA_DBR *mr);
-static bool create_pool_record(B_DB *db, POOL_DBR *pr);
-static JCR *create_job_record(B_DB *db, JOB_DBR *mr, SESSION_LABEL *label, DEV_RECORD *rec);
-static bool update_job_record(B_DB *db, JOB_DBR *mr, SESSION_LABEL *elabel, DEV_RECORD *rec);
-static bool create_client_record(B_DB *db, CLIENT_DBR *cr);
-static bool create_fileset_record(B_DB *db, FILESET_DBR *fsr);
-static bool create_jobmedia_record(B_DB *db, JCR *jcr);
-static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId);
-static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type);
+                                          char *ap, DeviceRecord *rec);
+static bool create_media_record(BareosDb *db, MediaDbRecord *mr, VOLUME_LABEL *vl);
+static bool update_media_record(BareosDb *db, MediaDbRecord *mr);
+static bool create_pool_record(BareosDb *db, PoolDbRecord *pr);
+static JobControlRecord *create_job_record(BareosDb *db, JobDbRecord *mr, SESSION_LABEL *label, DeviceRecord *rec);
+static bool update_job_record(BareosDb *db, JobDbRecord *mr, SESSION_LABEL *elabel, DeviceRecord *rec);
+static bool create_client_record(BareosDb *db, ClientDbRecord *cr);
+static bool create_fileset_record(BareosDb *db, FileSetDbRecord *fsr);
+static bool create_jobmedia_record(BareosDb *db, JobControlRecord *jcr);
+static JobControlRecord *create_jcr(JobDbRecord *jr, DeviceRecord *rec, uint32_t JobId);
+static bool update_digest_record(BareosDb *db, char *digest, DeviceRecord *rec, int type);
 
 /* Local variables */
-static DEVICE *dev = NULL;
-static B_DB *db;
-static JCR *bjcr;                     /* jcr for bscan */
-static BSR *bsr = NULL;
-static MEDIA_DBR mr;
-static POOL_DBR pr;
-static JOB_DBR jr;
-static CLIENT_DBR cr;
-static FILESET_DBR fsr;
-static ROBJECT_DBR rop;
-static ATTR_DBR ar;
-static FILE_DBR fr;
+static Device *dev = NULL;
+static BareosDb *db;
+static JobControlRecord *bjcr;                     /* jcr for bscan */
+static BootStrapRecord *bsr = NULL;
+static MediaDbRecord mr;
+static PoolDbRecord pr;
+static JobDbRecord jr;
+static ClientDbRecord cr;
+static FileSetDbRecord fsr;
+static RestoreObjectDbRecord rop;
+static AttributesDbRecord ar;
+static FileDbRecord fr;
 static SESSION_LABEL label;
 static SESSION_LABEL elabel;
-static ATTR *attr;
+static Attributes *attr;
 
 static time_t lasttime = 0;
 
@@ -137,8 +137,8 @@ int main (int argc, char *argv[])
    struct stat stat_buf;
    char *VolumeName = NULL;
    char *DirectorName = NULL;
-   DIRRES *director = NULL;
-   DCR *dcr;
+   DirectorResource *director = NULL;
+   DeviceControlRecord *dcr;
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
    alist *backend_directories = NULL;
 #endif
@@ -299,7 +299,7 @@ int main (int argc, char *argv[])
             working_directory);
    }
 
-   dcr = New(DCR);
+   dcr = New(DeviceControlRecord);
    bjcr = setup_jcr("bscan", argv[0], bsr, director, dcr, VolumeName, true);
    if (!bjcr) {
       exit(1);
@@ -370,15 +370,15 @@ int main (int argc, char *argv[])
  * the end of writing a tape by wiffling through the attached
  * jcrs creating jobmedia records.
  */
-static bool bscan_mount_next_read_volume(DCR *dcr)
+static bool bscan_mount_next_read_volume(DeviceControlRecord *dcr)
 {
    bool status;
-   DEVICE *dev = dcr->dev;
-   DCR *mdcr;
+   Device *dev = dcr->dev;
+   DeviceControlRecord *mdcr;
 
    Dmsg1(100, "Walk attached jcrs. Volume=%s\n", dev->getVolCatName());
    foreach_dlist(mdcr, dev->attached_dcrs) {
-      JCR *mjcr = mdcr->jcr;
+      JobControlRecord *mjcr = mdcr->jcr;
       Dmsg1(000, "========== JobId=%u ========\n", mjcr->JobId);
       if (mjcr->JobId == 0) {
          continue;
@@ -445,7 +445,7 @@ static void do_scan()
  * Returns: true  if OK
  *          false if error
  */
-static inline bool unpack_restore_object(JCR *jcr, int32_t stream, char *rec, int32_t reclen, ROBJECT_DBR *rop)
+static inline bool unpack_restore_object(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, RestoreObjectDbRecord *rop)
 {
    char *bp;
    uint32_t JobFiles;
@@ -480,14 +480,14 @@ static inline bool unpack_restore_object(JCR *jcr, int32_t stream, char *rec, in
  * Returns: true  if OK
  *          false if error
  */
-static bool record_cb(DCR *dcr, DEV_RECORD *rec)
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
-   JCR *mjcr;
+   JobControlRecord *mjcr;
    char ec1[30];
-   DEVICE *dev = dcr->dev;
-   JCR *bjcr = dcr->jcr;
-   DEV_BLOCK *block = dcr->block;
-   POOL_MEM sql_buffer;
+   Device *dev = dcr->dev;
+   JobControlRecord *bjcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
+   PoolMem sql_buffer;
    db_int64_ctx jmr_count;
    char digest[BASE64_SIZE(CRYPTO_DIGEST_MAX_SIZE)];
 
@@ -583,7 +583,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          }
 
          /*
-          * Reset some DCR variables
+          * Reset some DeviceControlRecord variables
           */
          foreach_dlist(dcr, dev->attached_dcrs) {
             dcr->VolFirstIndex = dcr->FileIndex = 0;
@@ -598,9 +598,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       case SOS_LABEL:
          if (bsr && rec->match_stat < 1) {
             /*
-             * Skipping record, because does not match BSR filter
+             * Skipping record, because does not match BootStrapRecord filter
              */
-            Dmsg0(200, _("SOS_LABEL skipped. Record does not match BSR filter.\n"));
+            Dmsg0(200, _("SOS_LABEL skipped. Record does not match BootStrapRecord filter.\n"));
          } else {
             mr.VolJobs++;
             num_jobs++;
@@ -688,9 +688,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
       case EOS_LABEL:
          if (bsr && rec->match_stat < 1) {
             /*
-             * Skipping record, because does not match BSR filter
+             * Skipping record, because does not match BootStrapRecord filter
              */
-            Dmsg0(200, _("EOS_LABEL skipped. Record does not match BSR filter.\n"));
+            Dmsg0(200, _("EOS_LABEL skipped. Record does not match BootStrapRecord filter.\n"));
          } else {
             unser_session_label(&elabel, rec);
 
@@ -737,9 +737,9 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
           * Wiffle through all jobs still open and close them.
           */
          if (update_db) {
-            DCR *mdcr;
+            DeviceControlRecord *mdcr;
             foreach_dlist(mdcr, dev->attached_dcrs) {
-               JCR *mjcr = mdcr->jcr;
+               JobControlRecord *mjcr = mdcr->jcr;
                if (!mjcr || mjcr->JobId == 0) {
                   continue;
                }
@@ -831,7 +831,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
 
       num_restoreobjects++;
 
-      free_jcr(mjcr);                 /* done using JCR */
+      free_jcr(mjcr);                 /* done using JobControlRecord */
       break;
 
    /*
@@ -853,7 +853,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
          mjcr->JobBytes -= sizeof(uint64_t);
       }
 
-      free_jcr(mjcr);                 /* done using JCR */
+      free_jcr(mjcr);                 /* done using JobControlRecord */
       break;
 
    case STREAM_GZIP_DATA:
@@ -872,7 +872,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_SPARSE_GZIP_DATA:
    case STREAM_SPARSE_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len - sizeof(uint64_t); /* Not correct, we should expand it */
-      free_jcr(mjcr);                 /* done using JCR */
+      free_jcr(mjcr);                 /* done using JobControlRecord */
       break;
 
    /*
@@ -881,7 +881,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    case STREAM_WIN32_GZIP_DATA:
    case STREAM_WIN32_COMPRESSED_DATA:
       mjcr->JobBytes += rec->data_len;
-      free_jcr(mjcr);                 /* done using JCR */
+      free_jcr(mjcr);                 /* done using JobControlRecord */
       break;
 
    case STREAM_MD5_DIGEST:
@@ -1009,7 +1009,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
  *  Called from main free_jcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
  */
-static void bscan_free_jcr(JCR *jcr)
+static void bscan_free_jcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start bscan free_jcr\n");
 
@@ -1048,11 +1048,11 @@ static void bscan_free_jcr(JCR *jcr)
  * We got a File Attributes record on the tape.  Now, lookup the Job
  * record, and then create the attributes record.
  */
-static bool create_file_attributes_record(B_DB *db, JCR *mjcr,
+static bool create_file_attributes_record(BareosDb *db, JobControlRecord *mjcr,
                                           char *fname, char *lname, int type,
-                                          char *ap, DEV_RECORD *rec)
+                                          char *ap, DeviceRecord *rec)
 {
-   DCR *dcr = mjcr->read_dcr;
+   DeviceControlRecord *dcr = mjcr->read_dcr;
    ar.fname = fname;
    ar.link = lname;
    ar.ClientId = mjcr->ClientId;
@@ -1090,7 +1090,7 @@ static bool create_file_attributes_record(B_DB *db, JCR *mjcr,
 /**
  * For each Volume we see, we create a Medium record
  */
-static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
+static bool create_media_record(BareosDb *db, MediaDbRecord *mr, VOLUME_LABEL *vl)
 {
    struct date_time dt;
    struct tm tm;
@@ -1150,7 +1150,7 @@ static bool create_media_record(B_DB *db, MEDIA_DBR *mr, VOLUME_LABEL *vl)
 /**
  * Called at end of media to update it
  */
-static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
+static bool update_media_record(BareosDb *db, MediaDbRecord *mr)
 {
    if (!update_db && !update_vol_info) {
       return true;
@@ -1169,7 +1169,7 @@ static bool update_media_record(B_DB *db, MEDIA_DBR *mr)
    return true;
 }
 
-static bool create_pool_record(B_DB *db, POOL_DBR *pr)
+static bool create_pool_record(BareosDb *db, PoolDbRecord *pr)
 {
    pr->NumVols++;
    pr->UseCatalog = 1;
@@ -1194,7 +1194,7 @@ static bool create_pool_record(B_DB *db, POOL_DBR *pr)
 /**
  * Called from SOS to create a client for the current Job
  */
-static bool create_client_record(B_DB *db, CLIENT_DBR *cr)
+static bool create_client_record(BareosDb *db, ClientDbRecord *cr)
 {
    /*
     * Note, update_db can temporarily be set false while
@@ -1222,7 +1222,7 @@ static bool create_client_record(B_DB *db, CLIENT_DBR *cr)
    return true;
 }
 
-static bool create_fileset_record(B_DB *db, FILESET_DBR *fsr)
+static bool create_fileset_record(BareosDb *db, FileSetDbRecord *fsr)
 {
    if (!update_db) {
       return true;
@@ -1256,9 +1256,9 @@ static bool create_fileset_record(B_DB *db, FILESET_DBR *fsr)
  * Simulate the two calls on the database to create the Job record and
  * to update it when the Job actually begins running.
  */
-static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label, DEV_RECORD *rec)
+static JobControlRecord *create_job_record(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *label, DeviceRecord *rec)
 {
-   JCR *mjcr;
+   JobControlRecord *mjcr;
    struct date_time dt;
    struct tm tm;
 
@@ -1282,7 +1282,7 @@ static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label, DEV_R
    jr->VolSessionId = rec->VolSessionId;
    jr->VolSessionTime = rec->VolSessionTime;
 
-   /* Now create a JCR as if starting the Job */
+   /* Now create a JobControlRecord as if starting the Job */
    mjcr = create_jcr(jr, rec, label->JobId);
 
    if (!update_db) {
@@ -1314,12 +1314,12 @@ static JCR *create_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *label, DEV_R
 /**
  * Simulate the database call that updates the Job at Job termination time.
  */
-static bool update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
-                              DEV_RECORD *rec)
+static bool update_job_record(BareosDb *db, JobDbRecord *jr, SESSION_LABEL *elabel,
+                              DeviceRecord *rec)
 {
    struct date_time dt;
    struct tm tm;
-   JCR *mjcr;
+   JobControlRecord *mjcr;
 
    mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
    if (!mjcr) {
@@ -1430,10 +1430,10 @@ static bool update_job_record(B_DB *db, JOB_DBR *jr, SESSION_LABEL *elabel,
    return true;
 }
 
-static bool create_jobmedia_record(B_DB *db, JCR *mjcr)
+static bool create_jobmedia_record(BareosDb *db, JobControlRecord *mjcr)
 {
-   JOBMEDIA_DBR jmr;
-   DCR *dcr = mjcr->read_dcr;
+   JobMediaDbRecord jmr;
+   DeviceControlRecord *dcr = mjcr->read_dcr;
 
    dcr->EndBlock = dev->EndBlock;
    dcr->EndFile  = dev->EndFile;
@@ -1467,9 +1467,9 @@ static bool create_jobmedia_record(B_DB *db, JCR *mjcr)
 /**
  * Simulate the database call that updates the MD5/SHA1 record
  */
-static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int type)
+static bool update_digest_record(BareosDb *db, char *digest, DeviceRecord *rec, int type)
 {
-   JCR *mjcr;
+   JobControlRecord *mjcr;
 
    mjcr = get_jcr_by_session(rec->VolSessionId, rec->VolSessionTime);
    if (!mjcr) {
@@ -1502,16 +1502,16 @@ static bool update_digest_record(B_DB *db, char *digest, DEV_RECORD *rec, int ty
 }
 
 /**
- * Create a JCR as if we are really starting the job
+ * Create a JobControlRecord as if we are really starting the job
  */
-static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
+static JobControlRecord *create_jcr(JobDbRecord *jr, DeviceRecord *rec, uint32_t JobId)
 {
-   JCR *jobjcr;
+   JobControlRecord *jobjcr;
    /*
-    * Transfer as much as possible to the Job JCR. Most important is
+    * Transfer as much as possible to the Job JobControlRecord. Most important is
     *   the JobId and the ClientId.
     */
-   jobjcr = new_jcr(sizeof(JCR), bscan_free_jcr);
+   jobjcr = new_jcr(sizeof(JobControlRecord), bscan_free_jcr);
    jobjcr->setJobType(jr->JobType);
    jobjcr->setJobLevel(jr->JobLevel);
    jobjcr->JobStatus = jr->JobStatus;
@@ -1522,7 +1522,7 @@ static JCR *create_jcr(JOB_DBR *jr, DEV_RECORD *rec, uint32_t JobId)
    jobjcr->VolSessionId = rec->VolSessionId;
    jobjcr->VolSessionTime = rec->VolSessionTime;
    jobjcr->ClientId = jr->ClientId;
-   jobjcr->dcr = jobjcr->read_dcr = New(DCR);
+   jobjcr->dcr = jobjcr->read_dcr = New(DeviceControlRecord);
    setup_new_dcr_device(jobjcr, jobjcr->dcr, dev, NULL);
 
    return jobjcr;

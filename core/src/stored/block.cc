@@ -44,9 +44,9 @@ static const bool no_tape_write_test = true;
 static const bool no_tape_write_test = false;
 #endif
 
-static bool terminate_writing_volume(DCR *dcr);
-static bool do_new_file_bookkeeping(DCR *dcr);
-static void reread_last_block(DCR *dcr);
+static bool terminate_writing_volume(DeviceControlRecord *dcr);
+static bool do_new_file_bookkeeping(DeviceControlRecord *dcr);
+static void reread_last_block(DeviceControlRecord *dcr);
 
 bool forge_on = false;                /* proceed inspite of I/O errors */
 
@@ -54,7 +54,7 @@ bool forge_on = false;                /* proceed inspite of I/O errors */
  * Dump the block header, then walk through
  * the block printing out the record headers.
  */
-void dump_block(DEV_BLOCK *b, const char *msg)
+void dump_block(DeviceBlock *b, const char *msg)
 {
    ser_declare;
    char *p;
@@ -118,11 +118,11 @@ void dump_block(DEV_BLOCK *b, const char *msg)
  * We pass device so that the block can inherit the
  * min and max block sizes.
  */
-DEV_BLOCK *new_block(DEVICE *dev)
+DeviceBlock *new_block(Device *dev)
 {
-   DEV_BLOCK *block = (DEV_BLOCK *)get_memory(sizeof(DEV_BLOCK));
+   DeviceBlock *block = (DeviceBlock *)get_memory(sizeof(DeviceBlock));
 
-   memset(block, 0, sizeof(DEV_BLOCK));
+   memset(block, 0, sizeof(DeviceBlock));
 
    if (dev->max_block_size == 0) {
       block->buf_len = dev->device->label_block_size;
@@ -143,12 +143,12 @@ DEV_BLOCK *new_block(DEVICE *dev)
 /**
  * Duplicate an existing block (eblock)
  */
-DEV_BLOCK *dup_block(DEV_BLOCK *eblock)
+DeviceBlock *dup_block(DeviceBlock *eblock)
 {
-   DEV_BLOCK *block = (DEV_BLOCK *)get_memory(sizeof(DEV_BLOCK));
+   DeviceBlock *block = (DeviceBlock *)get_memory(sizeof(DeviceBlock));
    int buf_len = sizeof_pool_memory(eblock->buf);
 
-   memcpy(block, eblock, sizeof(DEV_BLOCK));
+   memcpy(block, eblock, sizeof(DeviceBlock));
    block->buf = get_memory(buf_len);
    memcpy(block->buf, eblock->buf, buf_len);
    return block;
@@ -158,7 +158,7 @@ DEV_BLOCK *dup_block(DEV_BLOCK *eblock)
  * Only the first block checksum error was reported.
  *   If there are more, report it now.
  */
-void print_block_read_errors(JCR *jcr, DEV_BLOCK *block)
+void print_block_read_errors(JobControlRecord *jcr, DeviceBlock *block)
 {
    if (block->read_errors > 1) {
       Jmsg(jcr, M_ERROR, 0, _("%d block read errors not printed.\n"),
@@ -169,7 +169,7 @@ void print_block_read_errors(JCR *jcr, DEV_BLOCK *block)
 /**
  * Free block
  */
-void free_block(DEV_BLOCK *block)
+void free_block(DeviceBlock *block)
 {
    if (block) {
       Dmsg1(999, "free_block buffer %x\n", block->buf);
@@ -182,7 +182,7 @@ void free_block(DEV_BLOCK *block)
 /**
  * Empty the block -- for writing
  */
-void empty_block(DEV_BLOCK *block)
+void empty_block(DeviceBlock *block)
 {
    block->binbuf = WRITE_BLKHDR_LENGTH;
    block->bufp = block->buf + block->binbuf;
@@ -197,7 +197,7 @@ void empty_block(DEV_BLOCK *block)
  * in the buffer should have already been reserved by
  * init_block.
  */
-static uint32_t ser_block_header(DEV_BLOCK *block, bool do_checksum)
+static uint32_t ser_block_header(DeviceBlock *block, bool do_checksum)
 {
    ser_declare;
    uint32_t CheckSum = 0;
@@ -234,7 +234,7 @@ static uint32_t ser_block_header(DEV_BLOCK *block, bool do_checksum)
  * Returns: false on failure (not a block)
  *          true  on success
  */
-static inline bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block)
+static inline bool unser_block_header(JobControlRecord *jcr, Device *dev, DeviceBlock *block)
 {
    ser_declare;
    char Id[BLKHDR_ID_LENGTH+1];
@@ -353,10 +353,10 @@ static inline bool unser_block_header(JCR *jcr, DEVICE *dev, DEV_BLOCK *block)
  *        : false on failure
  *
  */
-bool DCR::write_block_to_device()
+bool DeviceControlRecord::write_block_to_device()
 {
    bool status = true;
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (dcr->spooling) {
       status = write_block_to_spool_file(dcr);
@@ -427,13 +427,13 @@ bail_out:
  * Returns: true  on success or EOT
  *          false on hard error
  */
-bool DCR::write_block_to_dev()
+bool DeviceControlRecord::write_block_to_dev()
 {
    ssize_t status = 0;
    uint32_t wlen;                     /* length to write */
    int hit_max1, hit_max2;
    bool ok = true;
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
    uint32_t checksum;
 
    if (no_tape_write_test) {
@@ -717,14 +717,14 @@ bool DCR::write_block_to_dev()
    return true;
 }
 
-static void reread_last_block(DCR *dcr)
+static void reread_last_block(DeviceControlRecord *dcr)
 {
 #define CHECK_LAST_BLOCK
 #ifdef  CHECK_LAST_BLOCK
    bool ok = true;
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
-   DEV_BLOCK *block = dcr->block;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
    /*
     * If the device is a tape and it supports backspace record,
     *   we backspace over one or two eof marks depending on
@@ -767,7 +767,7 @@ static void reread_last_block(DCR *dcr)
           */
       }
       if (ok) {
-         DEV_BLOCK *lblock = new_block(dev);
+         DeviceBlock *lblock = new_block(dev);
          /*
           * Note, this can destroy dev->errmsg
           */
@@ -805,9 +805,9 @@ static void reread_last_block(DCR *dcr)
  * If this routine is called, we do our bookkeeping and
  * then assure that the volume will not be written any more.
  */
-static bool terminate_writing_volume(DCR *dcr)
+static bool terminate_writing_volume(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    bool ok = true;
 
    /* Create a JobMedia record to indicated end of tape */
@@ -845,7 +845,7 @@ static bool terminate_writing_volume(DCR *dcr)
     * Walk through all attached dcrs setting flag to call
     * set_new_file_parameters() when that dcr is next used.
     */
-   DCR *mdcr;
+   DeviceControlRecord *mdcr;
    foreach_dlist(mdcr, dev->attached_dcrs) {
       if (mdcr->jcr->JobId == 0) {
          continue;
@@ -876,10 +876,10 @@ static bool terminate_writing_volume(DCR *dcr)
  *  also done for disk files to generate the jobmedia records for
  *  quick seeking.
  */
-static bool do_new_file_bookkeeping(DCR *dcr)
+static bool do_new_file_bookkeeping(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    /*
     * Create a JobMedia record so restore can seek
@@ -906,7 +906,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
     * Walk through all attached dcrs setting flag to call
     * set_new_file_parameters() when that dcr is next used.
     */
-   DCR *mdcr;
+   DeviceControlRecord *mdcr;
    foreach_dlist(mdcr, dev->attached_dcrs) {
       if (mdcr->jcr->JobId == 0) {
          continue;
@@ -923,7 +923,7 @@ static bool do_new_file_bookkeeping(DCR *dcr)
 /**
  * Read block with locking
  */
-bool DCR::read_block_from_device(bool check_block_numbers)
+bool DeviceControlRecord::read_block_from_device(bool check_block_numbers)
 {
    bool ok;
 
@@ -940,12 +940,12 @@ bool DCR::read_block_from_device(bool check_block_numbers)
  *  the block header.  For a file, the block may be partially
  *  or completely in the current buffer.
  */
-bool DCR::read_block_from_dev(bool check_block_numbers)
+bool DeviceControlRecord::read_block_from_dev(bool check_block_numbers)
 {
    ssize_t status;
    int looping;
    int retry;
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (job_canceled(jcr)) {
       Mmsg(dev->errmsg, _("Job failed or canceled.\n"));
@@ -1079,7 +1079,7 @@ reread:
        * Attempt to reposition to re-read the block
        */
       if (dev->is_tape()) {
-         Dmsg0(250, "BSR for reread; block too big for buffer.\n");
+         Dmsg0(250, "BootStrapRecord for reread; block too big for buffer.\n");
          if (!dev->bsr(1)) {
             Mmsg(dev->errmsg, "%s", dev->bstrerror());
             Jmsg(jcr, M_ERROR, 0, "%s", dev->errmsg);

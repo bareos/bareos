@@ -38,18 +38,18 @@
 /**
  * Create a Job Control Record for a control "job", filling in all the appropriate fields.
  */
-JCR *new_control_jcr(const char *base_name, int job_type)
+JobControlRecord *new_control_jcr(const char *base_name, int job_type)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
-   jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
 
    /*
     * The job and defaults are not really used, but we set them up to ensure that
     * everything is correctly initialized.
     */
    LockRes();
-   jcr->res.job = (JOBRES *)GetNextRes(R_JOB, NULL);
+   jcr->res.job = (JobResource *)GetNextRes(R_JOB, NULL);
    set_jcr_defaults(jcr, jcr->res.job);
    UnlockRes();
 
@@ -67,11 +67,11 @@ JCR *new_control_jcr(const char *base_name, int job_type)
 /**
  * Handle Director User Agent commands
  */
-void *handle_UA_client_request(BSOCK *user)
+void *handle_UA_client_request(BareosSocket *user)
 {
    int status;
-   UAContext *ua;
-   JCR *jcr;
+   UaContext *ua;
+   JobControlRecord *jcr;
 
    pthread_detach(pthread_self());
 
@@ -135,18 +135,18 @@ getout:
 }
 
 /**
- * Create a UAContext for a Job that is running so that
+ * Create a UaContext for a Job that is running so that
  *   it can the User Agent routines and
  *   to ensure that the Job gets the proper output.
  *   This is a sort of mini-kludge, and should be
  *   unified at some point.
  */
-UAContext *new_ua_context(JCR *jcr)
+UaContext *new_ua_context(JobControlRecord *jcr)
 {
-   UAContext *ua;
+   UaContext *ua;
 
-   ua = (UAContext *)malloc(sizeof(UAContext));
-   memset(ua, 0, sizeof(UAContext));
+   ua = (UaContext *)malloc(sizeof(UaContext));
+   memset(ua, 0, sizeof(UaContext));
    ua->jcr = jcr;
    ua->db = jcr->db;
    ua->cmd = get_pool_memory(PM_FNAME);
@@ -159,7 +159,7 @@ UAContext *new_ua_context(JCR *jcr)
    return ua;
 }
 
-void free_ua_context(UAContext *ua)
+void free_ua_context(UaContext *ua)
 {
    if (ua->guid) {
       free_guid_list(ua->guid);

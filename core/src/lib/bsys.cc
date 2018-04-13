@@ -89,14 +89,14 @@ int safer_unlink(const char *pathname, const char *regx)
 /*
  * This routine will use an external secure erase program to delete a file.
  */
-int secure_erase(JCR *jcr, const char *pathname)
+int secure_erase(JobControlRecord *jcr, const char *pathname)
 {
    int retval = -1;
 
    if (secure_erase_cmdline) {
       int status;
-      BPIPE *bpipe;
-      POOL_MEM line(PM_NAME),
+      Bpipe *bpipe;
+      PoolMem line(PM_NAME),
                cmdline(PM_MESSAGE);
 
       Mmsg(cmdline,"%s \"%s\"", secure_erase_cmdline, pathname);
@@ -251,7 +251,7 @@ char *bstrncpy(char *dest, const char *src, int maxlen)
 /*
  * Guarantee that the string is properly terminated
  */
-char *bstrncpy(char *dest, POOL_MEM &src, int maxlen)
+char *bstrncpy(char *dest, PoolMem &src, int maxlen)
 {
    strncpy(dest, src.c_str(), maxlen - 1);
    dest[maxlen - 1] = 0;
@@ -278,7 +278,7 @@ char *bstrncat(char *dest, const char *src, int maxlen)
  *  stored in dest, while on Unix systems, it is the maximum characters
  *  that may be copied from src.
  */
-char *bstrncat(char *dest, POOL_MEM &src, int maxlen)
+char *bstrncat(char *dest, PoolMem &src, int maxlen)
 {
    int len = strlen(dest);
    if (len < maxlen - 1) {
@@ -926,7 +926,7 @@ bool path_exists(const char *path)
    return (stat(path, &statp) == 0);
 }
 
-bool path_exists(POOL_MEM &path)
+bool path_exists(PoolMem &path)
 {
    return path_exists(path.c_str());
 }
@@ -946,7 +946,7 @@ bool path_is_directory(const char *path)
    }
 }
 
-bool path_is_directory(POOL_MEM &path)
+bool path_is_directory(PoolMem &path)
 {
    return path_is_directory(path.c_str());
 }
@@ -982,7 +982,7 @@ bool path_is_absolute(const char *path)
    return false;
 }
 
-bool path_is_absolute(POOL_MEM &path)
+bool path_is_absolute(PoolMem &path)
 {
    return path_is_absolute(path.c_str());
 }
@@ -1007,7 +1007,7 @@ bool path_contains_directory(const char *path)
    return false;
 }
 
-bool path_contains_directory(POOL_MEM &path)
+bool path_contains_directory(PoolMem &path)
 {
    return path_contains_directory(path.c_str());
 }
@@ -1016,7 +1016,7 @@ bool path_contains_directory(POOL_MEM &path)
 /*
  * Get directory from path.
  */
-bool path_get_directory(POOL_MEM &directory, POOL_MEM &path)
+bool path_get_directory(PoolMem &directory, PoolMem &path)
 {
    char *dir = NULL;
    int i = path.strlen();
@@ -1069,7 +1069,7 @@ bool path_append(char *path, const char *extra, unsigned int max_path)
    return true;
 }
 
-bool path_append(POOL_MEM &path, const char *extra)
+bool path_append(PoolMem &path, const char *extra)
 {
    unsigned int required_length;
 
@@ -1088,7 +1088,7 @@ bool path_append(POOL_MEM &path, const char *extra)
 /*
  * Append to paths together.
  */
-bool path_append(POOL_MEM &path, POOL_MEM &extra)
+bool path_append(PoolMem &path, PoolMem &extra)
 {
    return path_append(path, extra.c_str());
 }
@@ -1116,7 +1116,7 @@ static bool path_mkdir(char *path, mode_t mode)
 
 /*
  * based on
- * src/findlib/mkpath.c:bool makepath(ATTR *attr, const char *apath, mode_t mode, mode_t parent_mode, ...
+ * src/findlib/mkpath.c:bool makepath(Attributes *attr, const char *apath, mode_t mode, mode_t parent_mode, ...
  */
 bool path_create(const char *apath, mode_t mode)
 {
@@ -1197,7 +1197,7 @@ bail_out:
    return ok;
 }
 
-bool path_create(POOL_MEM &path, mode_t mode)
+bool path_create(PoolMem &path, mode_t mode)
 {
    return path_create(path.c_str(), mode);
 }

@@ -24,7 +24,7 @@
  */
 /**
  * @file
- * BAREOS BREGEXP Structure definition for FileDaemon
+ * BAREOS BareosRegex Structure definition for FileDaemon
  */
 
 #ifndef __BREG_H_
@@ -42,7 +42,7 @@
  *
  * #include "lib/breg.h"
  *
- * BREGEXP *breg = new_bregexp("!/prod!/test!");
+ * BareosRegex *breg = new_bregexp("!/prod!/test!");
  * char *filename = breg->replace("/prod/data.dat");
  *   or
  * char *filename = breg->result;
@@ -52,9 +52,9 @@
 #define BREG_NREGS 11
 
 /**
- * Structure for BREGEXP ressource
+ * Structure for BareosRegex ressource
  */
-class BREGEXP {
+class BareosRegex {
 public:
    POOLMEM *result;             /**< match result */
    bool success;                /**< match is ok */
@@ -75,16 +75,16 @@ public:
    bool extract_regexp(const char *motif);
 };
 
-/* create new BREGEXP and compile regex_t */
-BREGEXP *new_bregexp(const char *motif);
+/* create new BareosRegex and compile regex_t */
+BareosRegex *new_bregexp(const char *motif);
 
 /* launch each bregexp on filename */
 DLL_IMP_EXP int run_bregexp(alist *bregexps, const char *fname);
 
-/* free BREGEXP (and all POOLMEM) */
-DLL_IMP_EXP void free_bregexp(BREGEXP *script);
+/* free BareosRegex (and all POOLMEM) */
+DLL_IMP_EXP void free_bregexp(BareosRegex *script);
 
-/* fill an alist with BREGEXP from where */
+/* fill an alist with BareosRegex from where */
 DLL_IMP_EXP alist *get_bregexps(const char *where);
 
 /* apply every regexps from the alist */

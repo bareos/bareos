@@ -32,18 +32,18 @@
 #include "filed/fd_plugins.h"
 
 /* Dummy functions */
-int generate_job_event(JCR *jcr, const char *event) { return 1; }
-void generate_plugin_event(JCR *jcr, bEventType eventType, void *value) { }
+int generate_job_event(JobControlRecord *jcr, const char *event) { return 1; }
+void generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value) { }
 
 /* Global variables */
 int attrs = 0;
 
-static JCR *jcr;
+static JobControlRecord *jcr;
 static int num_files = 0;
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool);
+static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool);
 static void print_ls_output(char *fname, char *link, int type, struct stat *statp);
-static int count_files(JCR *jcr, FF_PKT *ff, bool top_level);
+static int count_files(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level);
 
 static void usage()
 {
@@ -73,7 +73,7 @@ static void usage()
 
 int main(int argc, char *const *argv)
 {
-   FF_PKT *ff;
+   FindFilesPacket *ff;
    char name[1000];
    bool quiet = false;
    int i, ch;
@@ -124,7 +124,7 @@ int main(int argc, char *const *argv)
    argc -= optind;
    argv += optind;
 
-   jcr = new_jcr(sizeof(JCR), NULL);
+   jcr = new_jcr(sizeof(JobControlRecord), NULL);
 
    ff = init_find_files();
    if (argc == 0 && !inc) {
@@ -183,13 +183,13 @@ int main(int argc, char *const *argv)
    exit(0);
 }
 
-static int count_files(JCR *jcr, FF_PKT *ff, bool top_level)
+static int count_files(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
    num_files++;
    return 1;
 }
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
+static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
 
    switch (ff->type) {

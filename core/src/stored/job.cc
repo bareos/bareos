@@ -67,19 +67,19 @@ static char Job_end[] =
  *  - Return when the connection is terminated or
  *    there is an error.
  */
-bool job_cmd(JCR *jcr)
+bool job_cmd(JobControlRecord *jcr)
 {
    int32_t JobId;
    char auth_key[MAX_NAME_LENGTH];
    char seed[MAX_NAME_LENGTH];
    char spool_size[MAX_NAME_LENGTH];
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM job_name, client_name, job, fileset_name, fileset_md5, backup_format;
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem job_name, client_name, job, fileset_name, fileset_md5, backup_format;
    int32_t JobType, level, spool_attributes, no_attributes, spool_data;
    int32_t PreferMountedVols, rerunning, protocol;
    int status;
    uint64_t quota = 0;
-   JCR *ojcr;
+   JobControlRecord *ojcr;
 
    /*
     * Get JobId and permissions from Director
@@ -169,7 +169,7 @@ bool job_cmd(JCR *jcr)
    return true;
 }
 
-bool do_job_run(JCR *jcr)
+bool do_job_run(JobControlRecord *jcr)
 {
    struct timeval tv;
    struct timezone tz;
@@ -247,11 +247,11 @@ bool do_job_run(JCR *jcr)
    }
 }
 
-bool nextrun_cmd(JCR *jcr)
+bool nextrun_cmd(JobControlRecord *jcr)
 {
    char auth_key[MAX_NAME_LENGTH];
    char seed[MAX_NAME_LENGTH];
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    struct timeval tv;
    struct timezone tz;
    struct timespec timeout;
@@ -331,9 +331,9 @@ bool nextrun_cmd(JCR *jcr)
    }
 }
 
-bool finish_cmd(JCR *jcr)
+bool finish_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char ec1[30];
 
    /*
@@ -387,11 +387,11 @@ bool finish_cmd(JCR *jcr)
  *    not closed on an error.
  *
  */
-bool query_cmd(JCR *jcr)
+bool query_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM dev_name, VolumeName, MediaType, ChangerName;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVRES *device;
+   PoolMem dev_name, VolumeName, MediaType, ChangerName;
+   BareosSocket *dir = jcr->dir_bsock;
+   DeviceResource *device;
    AUTOCHANGER *changer;
    bool ok;
 
@@ -453,7 +453,7 @@ bool query_cmd(JCR *jcr)
  * Destroy the Job Control Record and associated
  * resources (sockets).
  */
-void stored_free_jcr(JCR *jcr)
+void stored_free_jcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start stored free_jcr\n");
    Dmsg2(800, "End Job JobId=%u %p\n", jcr->JobId, jcr);
@@ -555,7 +555,7 @@ void stored_free_jcr(JCR *jcr)
    }
 
    if (jcr->read_store) {
-      DIRSTORE *store;
+      DirectorStorage *store;
       foreach_alist(store, jcr->read_store) {
          delete store->device;
          delete store;
@@ -565,7 +565,7 @@ void stored_free_jcr(JCR *jcr)
    }
 
    if (jcr->write_store) {
-      DIRSTORE *store;
+      DirectorStorage *store;
       foreach_alist(store, jcr->write_store) {
          delete store->device;
          delete store;

@@ -69,14 +69,14 @@
 /**
  * Entry points when compiled without support for ACLs or on an unsupported platform.
  */
-bacl_exit_code build_acl_streams(JCR *jcr,
+bacl_exit_code build_acl_streams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
-                                 FF_PKT *ff_pkt)
+                                 FindFilesPacket *ff_pkt)
 {
    return bacl_exit_fatal;
 }
 
-bacl_exit_code parse_acl_streams(JCR *jcr,
+bacl_exit_code parse_acl_streams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
                                  int stream,
                                  char *content,
@@ -88,9 +88,9 @@ bacl_exit_code parse_acl_streams(JCR *jcr,
 /**
  * Send an ACL stream to the SD.
  */
-bacl_exit_code send_acl_stream(JCR *jcr, acl_data_t *acl_data, int stream)
+bacl_exit_code send_acl_stream(JobControlRecord *jcr, acl_data_t *acl_data, int stream)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    POOLMEM *msgsave;
 #ifdef FD_NO_SEND_TEST
    return bacl_exit_ok;
@@ -196,9 +196,9 @@ static int os_default_acl_streams[1] = {
    -1
 };
 
-static bacl_exit_code aix_build_acl_streams(JCR *jcr,
+static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
-                                            FF_PKT *ff_pkt)
+                                            FindFilesPacket *ff_pkt)
 {
    mode_t mode;
    acl_type_t type;
@@ -354,7 +354,7 @@ bail_out:
  * See if a specific type of ACLs are supported on the filesystem
  * the file is located on.
  */
-static inline bool aix_query_acl_support(JCR *jcr,
+static inline bool aix_query_acl_support(JobControlRecord *jcr,
                                          acl_data_t *acl_data,
                                          uint64_t aclType,
                                          acl_type_t *pacl_type_info)
@@ -377,7 +377,7 @@ static inline bool aix_query_acl_support(JCR *jcr,
    return false;
 }
 
-static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
+static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
                                             int stream,
                                             char *content,
@@ -525,9 +525,9 @@ static int os_default_acl_streams[1] = {
    -1
 };
 
-static bacl_exit_code aix_build_acl_streams(JCR *jcr,
+static bacl_exit_code aix_build_acl_streams(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
-                                            FF_PKT *ff_pkt)
+                                            FindFilesPacket *ff_pkt)
 {
    char *acl_text;
 
@@ -540,7 +540,7 @@ static bacl_exit_code aix_build_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
+static bacl_exit_code aix_parse_acl_streams(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
                                             int stream,
                                             char *content,
@@ -557,10 +557,10 @@ static bacl_exit_code aix_parse_acl_streams(JCR *jcr,
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       aix_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       aix_parse_acl_streams;
 
 #elif defined(HAVE_DARWIN_OS) || \
@@ -780,7 +780,7 @@ static bool acl_is_trivial(acl_t acl)
 /**
  * Generic wrapper around acl_get_file call.
  */
-static bacl_exit_code generic_get_acl_from_os(JCR *jcr,
+static bacl_exit_code generic_get_acl_from_os(JobControlRecord *jcr,
                                               acl_data_t *acl_data,
                                               bacl_type acltype)
 {
@@ -897,7 +897,7 @@ bail_out:
 /**
  * Generic wrapper around acl_set_file call.
  */
-static bacl_exit_code generic_set_acl_on_os(JCR *jcr,
+static bacl_exit_code generic_set_acl_on_os(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
                                             bacl_type acltype,
                                             char *content,
@@ -1035,9 +1035,9 @@ static int os_default_acl_streams[1] = {
    -1
 };
 
-static bacl_exit_code darwin_build_acl_streams(JCR *jcr,
+static bacl_exit_code darwin_build_acl_streams(JobControlRecord *jcr,
                                                acl_data_t *acl_data,
-                                               FF_PKT *ff_pkt)
+                                               FindFilesPacket *ff_pkt)
 {
 #if defined(HAVE_ACL_TYPE_EXTENDED)
    /**
@@ -1065,7 +1065,7 @@ static bacl_exit_code darwin_build_acl_streams(JCR *jcr,
    return bacl_exit_ok;
 }
 
-static bacl_exit_code darwin_parse_acl_streams(JCR *jcr,
+static bacl_exit_code darwin_parse_acl_streams(JobControlRecord *jcr,
                                                acl_data_t *acl_data,
                                                int stream,
                                                char *content,
@@ -1084,10 +1084,10 @@ static bacl_exit_code darwin_parse_acl_streams(JCR *jcr,
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       darwin_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       darwin_parse_acl_streams;
 
 #elif defined(HAVE_FREEBSD_OS)
@@ -1102,9 +1102,9 @@ static int os_default_acl_streams[1] = {
    STREAM_ACL_FREEBSD_DEFAULT_ACL
 };
 
-static bacl_exit_code freebsd_build_acl_streams(JCR *jcr,
+static bacl_exit_code freebsd_build_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    int acl_enabled = 0;
    bacl_type acltype = BACL_TYPE_NONE;
@@ -1227,7 +1227,7 @@ static bacl_exit_code freebsd_build_acl_streams(JCR *jcr,
    return bacl_exit_ok;
 }
 
-static bacl_exit_code freebsd_parse_acl_streams(JCR *jcr,
+static bacl_exit_code freebsd_parse_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
                                                 int stream,
                                                 char *content,
@@ -1315,10 +1315,10 @@ static bacl_exit_code freebsd_parse_acl_streams(JCR *jcr,
  * For this OSes setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       freebsd_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       freebsd_parse_acl_streams;
 
 #elif defined(HAVE_IRIX_OS) || \
@@ -1350,9 +1350,9 @@ static int os_default_acl_streams[1] = {
 };
 #endif
 
-static bacl_exit_code generic_build_acl_streams(JCR *jcr,
+static bacl_exit_code generic_build_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    /*
     * Read access ACLs for files, dirs and links
@@ -1379,7 +1379,7 @@ static bacl_exit_code generic_build_acl_streams(JCR *jcr,
    return bacl_exit_ok;
 }
 
-static bacl_exit_code generic_parse_acl_streams(JCR *jcr,
+static bacl_exit_code generic_parse_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
                                                 int stream,
                                                 char *content,
@@ -1419,10 +1419,10 @@ static bacl_exit_code generic_parse_acl_streams(JCR *jcr,
  * For this OSes setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       generic_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       generic_parse_acl_streams;
 
 #elif defined(HAVE_OSF1_OS)
@@ -1438,9 +1438,9 @@ static int os_default_acl_streams[2] = {
    STREAM_ACL_TRU64_DEFAULT_DIR_ACL
 };
 
-static bacl_exit_code tru64_build_acl_streams(JCR *jcr,
+static bacl_exit_code tru64_build_acl_streams(JobControlRecord *jcr,
                                               acl_data_t *acl_data,
-                                              FF_PKT *ff_pkt)
+                                              FindFilesPacket *ff_pkt)
 {
    /*
     * Read access ACLs for files, dirs and links
@@ -1477,7 +1477,7 @@ static bacl_exit_code tru64_build_acl_streams(JCR *jcr,
    return bacl_exit_ok;
 }
 
-static bacl_exit_code tru64_parse_acl_streams(JCR *jcr,
+static bacl_exit_code tru64_parse_acl_streams(JobControlRecord *jcr,
                                               acl_data_t *acl_data,
                                               int stream,
                                               char *content,
@@ -1501,10 +1501,10 @@ static bacl_exit_code tru64_parse_acl_streams(JCR *jcr,
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       tru64_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       tru64_parse_acl_streams;
 
 #endif
@@ -1553,9 +1553,9 @@ static bool acl_is_trivial(int count, struct acl_entry *entries, struct stat sb)
 /**
  * OS specific functions for handling different types of acl streams.
  */
-static bacl_exit_code hpux_build_acl_streams(JCR *jcr,
+static bacl_exit_code hpux_build_acl_streams(JobControlRecord *jcr,
                                              acl_data_t *acl_data
-                                             FF_PKT *ff_pkt)
+                                             FindFilesPacket *ff_pkt)
 {
    int n;
    struct acl_entry acls[NACLENTRIES];
@@ -1630,7 +1630,7 @@ static bacl_exit_code hpux_build_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-static bacl_exit_code hpux_parse_acl_streams(JCR *jcr,
+static bacl_exit_code hpux_parse_acl_streams(JobControlRecord *jcr,
                                              acl_data_t *acl_data,
                                              int stream,
                                              char *content,
@@ -1705,10 +1705,10 @@ static bacl_exit_code hpux_parse_acl_streams(JCR *jcr,
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       hpux_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       hpux_parse_acl_streams;
 
 #elif defined(HAVE_SUN_OS)
@@ -1763,9 +1763,9 @@ static int os_default_acl_streams[1] = {
  * for acls retrieved and stored in the database with older fd versions. If the
  * new interface is not defined (Solaris 9 and older we fall back to the old code)
  */
-static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
+static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    int acl_enabled, flags;
    acl_t *aclp;
@@ -1866,7 +1866,7 @@ static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
    return stream_status;
 }
 
-static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
+static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
                                                 int stream,
                                                 char *content,
@@ -2048,9 +2048,9 @@ static bool acl_is_trivial(int count, aclent_t *entries)
 /**
  * OS specific functions for handling different types of acl streams.
  */
-static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
+static bacl_exit_code solaris_build_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
-                                                FF_PKT *ff_pkt)
+                                                FindFilesPacket *ff_pkt)
 {
    int n;
    aclent_t *acls;
@@ -2094,7 +2094,7 @@ static bacl_exit_code solaris_build_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
+static bacl_exit_code solaris_parse_acl_streams(JobControlRecord *jcr,
                                                 acl_data_t *acl_data,
                                                 int stream,
                                                 char *content,
@@ -2145,10 +2145,10 @@ static bacl_exit_code solaris_parse_acl_streams(JCR *jcr,
  * For this OS setup the build and parse function pointer to the OS specific functions.
  */
 static bacl_exit_code (*os_build_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, FF_PKT *ff_pkt) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt) =
                       solaris_build_acl_streams;
 static bacl_exit_code (*os_parse_acl_streams)
-                      (JCR *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
+                      (JobControlRecord *jcr, acl_data_t *acl_data, int stream, char *content, uint32_t content_length) =
                       solaris_parse_acl_streams;
 
 #endif /* HAVE_SUN_OS */
@@ -2170,9 +2170,9 @@ extern "C" {
 long pioctl(char *pathp, long opcode, struct ViceIoctl *blobp, int follow);
 }
 
-static bacl_exit_code afs_build_acl_streams(JCR *jcr,
+static bacl_exit_code afs_build_acl_streams(JobControlRecord *jcr,
                                             acl_data_t *acl_data,
-                                            FF_PKT *ff_pkt)
+                                            FindFilesPacket *ff_pkt)
 {
    int error;
    struct ViceIoctl vip;
@@ -2207,7 +2207,7 @@ static bacl_exit_code afs_build_acl_streams(JCR *jcr,
    return send_acl_stream(jcr, acl_data, STREAM_ACL_AFS_TEXT);
 }
 
-static bacl_exit_code afs_parse_acl_stream(JCR *jcr,
+static bacl_exit_code afs_parse_acl_stream(JobControlRecord *jcr,
                                            acl_data_t *acl_data,
                                            int stream,
                                            char *content,
@@ -2243,9 +2243,9 @@ static bacl_exit_code afs_parse_acl_stream(JCR *jcr,
 /**
  * Read and send an ACL for the last encountered file.
  */
-bacl_exit_code build_acl_streams(JCR *jcr,
+bacl_exit_code build_acl_streams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
-                                 FF_PKT *ff_pkt)
+                                 FindFilesPacket *ff_pkt)
 {
    /*
     * See if we are changing from one device to another.
@@ -2307,7 +2307,7 @@ bacl_exit_code build_acl_streams(JCR *jcr,
    return bacl_exit_error;
 }
 
-bacl_exit_code parse_acl_streams(JCR *jcr,
+bacl_exit_code parse_acl_streams(JobControlRecord *jcr,
                                  acl_data_t *acl_data,
                                  int stream,
                                  char *content,

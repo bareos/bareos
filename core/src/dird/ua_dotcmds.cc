@@ -48,11 +48,11 @@ extern struct s_kw VolumeStatus[];
 
 #ifdef DEVELOPER
 /* ua_cmds.c */
-extern bool quit_cmd(UAContext *ua, const char *cmd);
+extern bool quit_cmd(UaContext *ua, const char *cmd);
 #endif
 
 /* ua_output.c */
-extern void do_messages(UAContext *ua, const char *cmd);
+extern void do_messages(UaContext *ua, const char *cmd);
 
 struct authorization_mapping {
    const char *type;
@@ -71,7 +71,7 @@ static authorization_mapping authorization_mappings[] = {
    { NULL, 0 },
 };
 
-bool dot_authorized_cmd(UAContext *ua, const char *cmd)
+bool dot_authorized_cmd(UaContext *ua, const char *cmd)
 {
    bool retval = false;
 
@@ -98,7 +98,7 @@ bool dot_authorized_cmd(UAContext *ua, const char *cmd)
    return retval;
 }
 
-bool dot_bvfs_update_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_update_cmd(UaContext *ua, const char *cmd)
 {
    int pos;
 
@@ -118,7 +118,7 @@ bool dot_bvfs_update_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_bvfs_clear_cache_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_clear_cache_cmd(UaContext *ua, const char *cmd)
 {
    if (!open_client_db(ua, true)) {
       return 1;
@@ -136,7 +136,7 @@ bool dot_bvfs_clear_cache_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-static int bvfs_stat(UAContext *ua, char *lstat, int32_t *LinkFI)
+static int bvfs_stat(UaContext *ua, char *lstat, int32_t *LinkFI)
 {
    struct stat statp;
    char en1[30], en2[30];
@@ -163,7 +163,7 @@ static int bvfs_stat(UAContext *ua, char *lstat, int32_t *LinkFI)
 
 static int bvfs_result_handler(void *ctx, int fields, char **row)
 {
-   UAContext *ua = (UAContext *)ctx;
+   UaContext *ua = (UaContext *)ctx;
    char *fileid=row[BVFS_FileId];
    char *lstat=row[BVFS_LStat];
    char *jobid=row[BVFS_JobId];
@@ -224,7 +224,7 @@ static int bvfs_result_handler(void *ctx, int fields, char **row)
    return 0;
 }
 
-static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, char **fname, bool *versions, bool *copies)
+static inline bool bvfs_parse_arg_version(UaContext *ua, char **client, char **fname, bool *versions, bool *copies)
 {
    *fname = NULL;
    *client = NULL;
@@ -254,7 +254,7 @@ static inline bool bvfs_parse_arg_version(UAContext *ua, char **client, char **f
    return (*client && *fname);
 }
 
-static bool bvfs_parse_arg(UAContext *ua, DBId_t *pathid, char **path, char **jobid, int *limit, int *offset)
+static bool bvfs_parse_arg(UaContext *ua, DBId_t *pathid, char **path, char **jobid, int *limit, int *offset)
 {
    *pathid = 0;
    *limit = 2000;
@@ -308,10 +308,10 @@ static bool bvfs_parse_arg(UAContext *ua, DBId_t *pathid, char **path, char **jo
  * ACLs e.g. comparing the JobName against the Job_ACL and the client
  * against the Client_ACL.
  */
-static inline bool bvfs_validate_jobid(UAContext *ua, const char *jobid, bool audit_event)
+static inline bool bvfs_validate_jobid(UaContext *ua, const char *jobid, bool audit_event)
 {
-   JOB_DBR jr;
-   CLIENT_DBR cr;
+   JobDbRecord jr;
+   ClientDbRecord cr;
    bool retval = false;
 
    memset(&jr, 0, sizeof(jr));
@@ -342,11 +342,11 @@ bail_out:
  * This returns in filtered_jobids the list of allowed jobids in the
  * jobids variable under the current ACLs e.g. using bvfs_validate_jobid().
  */
-static bool bvfs_validate_jobids(UAContext *ua, const char *jobids, POOL_MEM &filtered_jobids, bool audit_event)
+static bool bvfs_validate_jobids(UaContext *ua, const char *jobids, PoolMem &filtered_jobids, bool audit_event)
 {
    int cnt = 0;
    char *cur_id, *bp;
-   POOL_MEM temp(PM_FNAME);
+   PoolMem temp(PM_FNAME);
 
    pm_strcpy(temp, jobids);
    pm_strcpy(filtered_jobids, "");
@@ -382,7 +382,7 @@ static bool bvfs_validate_jobids(UAContext *ua, const char *jobids, POOL_MEM &fi
 /**
  * .bvfs_cleanup path=b2XXXXX
  */
-bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_cleanup_cmd(UaContext *ua, const char *cmd)
 {
    int i;
 
@@ -404,7 +404,7 @@ bool dot_bvfs_cleanup_cmd(UAContext *ua, const char *cmd)
 /**
  * .bvfs_restore path=b2XXXXX jobid=1,2 fileid=1,2 dirid=1,2 hardlink=1,2,3,4
  */
-bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_restore_cmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    char *empty = (char *)"";
@@ -412,7 +412,7 @@ bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
    int i = 0;
    char *path = NULL, *jobid = NULL;
    char *fileid, *dirid, *hardlink;
-   POOL_MEM filtered_jobids(PM_FNAME);
+   PoolMem filtered_jobids(PM_FNAME);
 
    fileid = dirid = hardlink = empty;
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
@@ -451,14 +451,14 @@ bool dot_bvfs_restore_cmd(UAContext *ua, const char *cmd)
  * .bvfs_lsfiles jobid=1,2,3,4 path=/
  * .bvfs_lsfiles jobid=1,2,3,4 pathid=10
  */
-bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_lsfiles_cmd(UaContext *ua, const char *cmd)
 {
    int i;
    DBId_t pathid = 0;
    char *pattern = NULL;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL;
-   POOL_MEM filtered_jobids(PM_FNAME);
+   PoolMem filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
@@ -505,12 +505,12 @@ bool dot_bvfs_lsfiles_cmd(UAContext *ua, const char *cmd)
  * .bvfs_lsdirs jobid=1,2,3,4 path=/
  * .bvfs_lsdirs jobid=1,2,3,4 pathid=10
  */
-bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_lsdirs_cmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    int limit = 2000, offset = 0;
    char *path = NULL, *jobid = NULL;
-   POOL_MEM filtered_jobids(PM_FNAME);
+   PoolMem filtered_jobids(PM_FNAME);
 
    if (!bvfs_parse_arg(ua, &pathid, &path, &jobid, &limit, &offset)) {
       ua->error_msg("Can't find jobid, pathid or path argument\n");
@@ -555,7 +555,7 @@ bool dot_bvfs_lsdirs_cmd(UAContext *ua, const char *cmd)
  * jobid isn't used.
  * versions is set, but not used.
  */
-bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_versions_cmd(UaContext *ua, const char *cmd)
 {
    DBId_t pathid = 0;
    int limit = 2000, offset = 0;
@@ -606,15 +606,15 @@ bool dot_bvfs_versions_cmd(UAContext *ua, const char *cmd)
  * .bvfs_get_jobids ujobid=JobName
  *  -> returns needed jobids to restore
  */
-bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
+bool dot_bvfs_get_jobids_cmd(UaContext *ua, const char *cmd)
 {
    int pos;
-   JOB_DBR jr;
+   JobDbRecord jr;
    char ed1[50];
    dbid_list ids;               /* Store all FileSetIds for this client */
-   POOL_MEM query;
+   PoolMem query;
    db_list_ctx jobids, tempids;
-   POOL_MEM filtered_jobids(PM_FNAME);
+   PoolMem filtered_jobids(PM_FNAME);
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -643,13 +643,13 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
    if (jr.JobLevel == L_BASE) {
       jobids.add(edit_int64(jr.JobId, ed1));
    } else {
-      FILESET_DBR fs;
+      FileSetDbRecord fs;
 
       /*
        * If we have the "all" option, we do a search on all defined fileset for this client
        */
       if (find_arg(ua, "all") > 0) {
-         ua->db->fill_query(query, B_DB::SQL_QUERY_uar_sel_filesetid, edit_int64(jr.ClientId, ed1));
+         ua->db->fill_query(query, BareosDb::SQL_QUERY_uar_sel_filesetid, edit_int64(jr.ClientId, ed1));
          ua->db->get_query_dbids(ua->jcr, query, ids);
       } else {
          ids.num_ids = 1;
@@ -720,7 +720,7 @@ bool dot_bvfs_get_jobids_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_getmsgs_cmd(UAContext *ua, const char *cmd)
+bool dot_getmsgs_cmd(UaContext *ua, const char *cmd)
 {
    if (console_msg_pending) {
       do_messages(ua, cmd);
@@ -729,11 +729,11 @@ bool dot_getmsgs_cmd(UAContext *ua, const char *cmd)
 }
 
 #ifdef DEVELOPER
-static void do_storage_cmd(UAContext *ua, STORERES *store, const char *cmd)
+static void do_storage_cmd(UaContext *ua, StoreResource *store, const char *cmd)
 {
-   BSOCK *sd;
-   JCR *jcr = ua->jcr;
-   USTORERES lstore;
+   BareosSocket *sd;
+   JobControlRecord *jcr = ua->jcr;
+   UnifiedStoreResource lstore;
 
    lstore.store = store;
    pm_strcpy(lstore.store_source, _("unknown source"));
@@ -755,9 +755,9 @@ static void do_storage_cmd(UAContext *ua, STORERES *store, const char *cmd)
    return;
 }
 
-static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
+static void do_client_cmd(UaContext *ua, ClientResource *client, const char *cmd)
 {
-   BSOCK *fd;
+   BareosSocket *fd;
 
    /* Connect to File daemon */
 
@@ -786,15 +786,15 @@ static void do_client_cmd(UAContext *ua, CLIENTRES *client, const char *cmd)
  * .dump (sm_dump)
  * .exit (no arg => .quit)
  */
-bool dot_admin_cmds(UAContext *ua, const char *cmd)
+bool dot_admin_cmds(UaContext *ua, const char *cmd)
 {
    int i, a;
-   JCR *jcr = NULL;
+   JobControlRecord *jcr = NULL;
    bool dir = false;
    bool result = true;
    const char *remote_cmd;
-   STORERES *store = NULL;
-   CLIENTRES *client = NULL;
+   StoreResource *store = NULL;
+   ClientResource *client = NULL;
    bool do_deadlock = false;
    pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -922,16 +922,16 @@ bool dot_admin_cmds(UAContext *ua, const char *cmd)
 /**
  * Dummy routine for non-development version
  */
-bool dot_admin_cmds(UAContext *ua, const char *cmd)
+bool dot_admin_cmds(UaContext *ua, const char *cmd)
 {
    ua->error_msg(_("Unknown command: %s\n"), ua->argk[0]);
    return true;
 }
 #endif
 
-bool dot_jobdefs_cmd(UAContext *ua, const char *cmd)
+bool dot_jobdefs_cmd(UaContext *ua, const char *cmd)
 {
-   JOBRES *jobdefs;
+   JobResource *jobdefs;
 
    LockRes();
    ua->send->array_start("jobdefs");
@@ -952,10 +952,10 @@ bool dot_jobdefs_cmd(UAContext *ua, const char *cmd)
  * Can use an argument to filter on JobType
  * .jobs [type=B]
  */
-bool dot_jobs_cmd(UAContext *ua, const char *cmd)
+bool dot_jobs_cmd(UaContext *ua, const char *cmd)
 {
    int pos;
-   JOBRES *job;
+   JobResource *job;
    bool enabled;
    bool disabled;
    uint32_t type = 0;
@@ -992,11 +992,11 @@ bool dot_jobs_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
+bool dot_jobstatus_cmd(UaContext *ua, const char *cmd)
 {
    bool retval = false;
-   POOL_MEM select;
-   POOL_MEM where;
+   PoolMem select;
+   PoolMem where;
 
    if (ua->argv[0]) {
       if (strlen(ua->argv[0]) == 1) {
@@ -1007,7 +1007,7 @@ bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
       }
    }
 
-   ua->db->fill_query(select, B_DB::SQL_QUERY_get_jobstatus_details, where.c_str());
+   ua->db->fill_query(select, BareosDb::SQL_QUERY_get_jobstatus_details, where.c_str());
 
    if (!open_client_db(ua)) {
       return false;
@@ -1020,9 +1020,9 @@ bool dot_jobstatus_cmd(UAContext *ua, const char *cmd)
    return retval;
 }
 
-bool dot_filesets_cmd(UAContext *ua, const char *cmd)
+bool dot_filesets_cmd(UaContext *ua, const char *cmd)
 {
-   FILESETRES *fs;
+   FilesetResource *fs;
 
    LockRes();
    ua->send->array_start("filesets");
@@ -1039,9 +1039,9 @@ bool dot_filesets_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_catalogs_cmd(UAContext *ua, const char *cmd)
+bool dot_catalogs_cmd(UaContext *ua, const char *cmd)
 {
-   CATRES *cat;
+   CatalogResource *cat;
 
    LockRes();
    ua->send->array_start("catalogs");
@@ -1058,11 +1058,11 @@ bool dot_catalogs_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_clients_cmd(UAContext *ua, const char *cmd)
+bool dot_clients_cmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
-   CLIENTRES *client;
+   ClientResource *client;
 
    enabled = find_arg(ua, NT_("enabled")) >= 0;
    disabled = find_arg(ua, NT_("disabled")) >= 0;
@@ -1090,9 +1090,9 @@ bool dot_clients_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_consoles_cmd(UAContext *ua, const char *cmd)
+bool dot_consoles_cmd(UaContext *ua, const char *cmd)
 {
-   CONRES *console;
+   ConsoleResource *console;
 
    LockRes();
    ua->send->array_start("consoles");
@@ -1107,9 +1107,9 @@ bool dot_consoles_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_msgs_cmd(UAContext *ua, const char *cmd)
+bool dot_msgs_cmd(UaContext *ua, const char *cmd)
 {
-   MSGSRES *msgs = NULL;
+   MessagesResource *msgs = NULL;
 
    LockRes();
    ua->send->array_start("messages");
@@ -1124,10 +1124,10 @@ bool dot_msgs_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_pools_cmd(UAContext *ua, const char *cmd)
+bool dot_pools_cmd(UaContext *ua, const char *cmd)
 {
    int pos, length;
-   POOLRES *pool;
+   PoolResource *pool;
 
    pos = find_arg_with_value(ua, "type");
    if (pos >= 0) {
@@ -1153,11 +1153,11 @@ bool dot_pools_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_storage_cmd(UAContext *ua, const char *cmd)
+bool dot_storage_cmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
-   STORERES *store;
+   StoreResource *store;
 
    enabled = find_arg(ua, NT_("enabled")) >= 0;
    disabled = find_arg(ua, NT_("disabled")) >= 0;
@@ -1185,9 +1185,9 @@ bool dot_storage_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_profiles_cmd(UAContext *ua, const char *cmd)
+bool dot_profiles_cmd(UaContext *ua, const char *cmd)
 {
-   PROFILERES *profile;
+   ProfileResource *profile;
 
    LockRes();
    ua->send->array_start("profiles");
@@ -1202,7 +1202,7 @@ bool dot_profiles_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_aop_cmd(UAContext *ua, const char *cmd)
+bool dot_aop_cmd(UaContext *ua, const char *cmd)
 {
    ua->send->array_start("actiononpurge");
    for (int i = 0; ActionOnPurgeOptions[i].name; i++) {
@@ -1215,7 +1215,7 @@ bool dot_aop_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_types_cmd(UAContext *ua, const char *cmd)
+bool dot_types_cmd(UaContext *ua, const char *cmd)
 {
    ua->send->array_start("jobtypes");
    for (int i = 0; jobtypes[i].type_name; i++) {
@@ -1236,7 +1236,7 @@ bool dot_types_cmd(UAContext *ua, const char *cmd)
  * of new signals that indicate whether or not the command
  * succeeded.
  */
-bool dot_api_cmd(UAContext *ua, const char *cmd)
+bool dot_api_cmd(UaContext *ua, const char *cmd)
 {
    if (ua->argc == 1) {
       ua->api = 1;
@@ -1272,8 +1272,8 @@ bool dot_api_cmd(UAContext *ua, const char *cmd)
 
 static int sql_handler(void *ctx, int num_field, char **row)
 {
-   UAContext *ua = (UAContext *)ctx;
-   POOL_MEM rows(PM_MESSAGE);
+   UaContext *ua = (UaContext *)ctx;
+   PoolMem rows(PM_MESSAGE);
 
    /* Check for nonsense */
    if (num_field == 0 || row == NULL || row[0] == NULL) {
@@ -1295,7 +1295,7 @@ static int sql_handler(void *ctx, int num_field, char **row)
    return 0;
 }
 
-bool dot_sql_cmd(UAContext *ua, const char *cmd)
+bool dot_sql_cmd(UaContext *ua, const char *cmd)
 {
    int pos;
    bool retval = false;
@@ -1335,7 +1335,7 @@ bool dot_sql_cmd(UAContext *ua, const char *cmd)
 
 static int one_handler(void *ctx, int num_field, char **row)
 {
-   UAContext *ua = (UAContext *)ctx;
+   UaContext *ua = (UaContext *)ctx;
 
    ua->send->object_start();
    ua->send->object_key_value("name", row[0], "%s\n");
@@ -1344,7 +1344,7 @@ static int one_handler(void *ctx, int num_field, char **row)
    return 0;
 }
 
-bool dot_mediatypes_cmd(UAContext *ua, const char *cmd)
+bool dot_mediatypes_cmd(UaContext *ua, const char *cmd)
 {
    if (!open_client_db(ua)) {
       return true;
@@ -1359,7 +1359,7 @@ bool dot_mediatypes_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_media_cmd(UAContext *ua, const char *cmd)
+bool dot_media_cmd(UaContext *ua, const char *cmd)
 {
    if (!open_client_db(ua)) {
       return true;
@@ -1374,11 +1374,11 @@ bool dot_media_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_schedule_cmd(UAContext *ua, const char *cmd)
+bool dot_schedule_cmd(UaContext *ua, const char *cmd)
 {
    bool enabled;
    bool disabled;
-   SCHEDRES *sched;
+   ScheduleResource *sched;
 
    enabled = find_arg(ua, NT_("enabled")) >= 0;
    disabled = find_arg(ua, NT_("disabled")) >= 0;
@@ -1406,7 +1406,7 @@ bool dot_schedule_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_locations_cmd(UAContext *ua, const char *cmd)
+bool dot_locations_cmd(UaContext *ua, const char *cmd)
 {
    if (!open_client_db(ua)) {
       return true;
@@ -1421,7 +1421,7 @@ bool dot_locations_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_levels_cmd(UAContext *ua, const char *cmd)
+bool dot_levels_cmd(UaContext *ua, const char *cmd)
 {
    /*
     * Note some levels are blank, which means none is needed
@@ -1465,7 +1465,7 @@ bool dot_levels_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool dot_volstatus_cmd(UAContext *ua, const char *cmd)
+bool dot_volstatus_cmd(UaContext *ua, const char *cmd)
 {
    ua->send->array_start("volstatus");
    for (int i = 0; VolumeStatus[i].name; i++) {
@@ -1481,21 +1481,21 @@ bool dot_volstatus_cmd(UAContext *ua, const char *cmd)
 /**
  * Return default values for a job
  */
-bool dot_defaults_cmd(UAContext *ua, const char *cmd)
+bool dot_defaults_cmd(UaContext *ua, const char *cmd)
 {
    char ed1[50];
    int pos = 0;
 
    ua->send->object_start("defaults");
    if ((pos = find_arg_with_value(ua, "job")) >= 0) {
-      JOBRES *job;
+      JobResource *job;
 
       /*
        * Job defaults
        */
       job = ua->GetJobResWithName(ua->argv[pos]);
       if (job) {
-         USTORERES store;
+         UnifiedStoreResource store;
 
          /*
           * BAT parses the result of this command message by message,
@@ -1527,7 +1527,7 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
          ua->send->send_buffer();
       }
    } else if ((pos = find_arg_with_value(ua, "client")) >= 0) {
-      CLIENTRES *client;
+      ClientResource *client;
 
       /*
        * Client defaults
@@ -1544,15 +1544,15 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
          ua->send->object_key_value("catalog", "%s=", client->catalog->name(), "%s\n");
       }
    } else if ((pos = find_arg_with_value(ua, "storage")) >= 0) {
-      STORERES *storage;
+      StoreResource *storage;
 
       /*
        * Storage defaults
        */
       storage = ua->GetStoreResWithName(ua->argv[pos]);
       if (storage) {
-         DEVICERES *device;
-         POOL_MEM devices;
+         DeviceResource *device;
+         PoolMem devices;
 
          ua->send->object_key_value("storage", "%s=", storage->name(), "%s\n");
          ua->send->object_key_value("address", "%s=", storage->address, "%s\n");
@@ -1560,11 +1560,11 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
          ua->send->object_key_value("enabled", "%s=", storage->enabled, "%d\n");
          ua->send->object_key_value("media_type", "%s=", storage->media_type, "%s\n");
 
-         device = (DEVICERES *)storage->device->first();
+         device = (DeviceResource *)storage->device->first();
          if (device) {
             devices.strcpy(device->name());
             if (storage->device->size() > 1) {
-               while ((device = (DEVICERES *)storage->device->next())) {
+               while ((device = (DeviceResource *)storage->device->next())) {
                   devices.strcat(",");
                   devices.strcat(device->name());
                }
@@ -1573,7 +1573,7 @@ bool dot_defaults_cmd(UAContext *ua, const char *cmd)
          }
       }
    } else if ((pos = find_arg_with_value(ua, "pool")) >= 0) {
-      POOLRES *pool;
+      PoolResource *pool;
 
       /*
        * Pool defaults

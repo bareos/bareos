@@ -53,11 +53,11 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 typedef struct mnt_req_s {
    BQUEUE bq;
-   BSOCK *bs;
-   JCR *jcr;
+   BareosSocket *bs;
+   JobControlRecord *jcr;
 } MNT_REQ;
 
-void mount_request(JCR *jcr, BSOCK *bs, char *buf)
+void mount_request(JobControlRecord *jcr, BareosSocket *bs, char *buf)
 {
    MNT_REQ *mreq;
 

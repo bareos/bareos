@@ -32,7 +32,7 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 /* Forward referenced functions */
-static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
+static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec);
 
 /**
  * Read the volume label
@@ -56,12 +56,12 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec);
  *
  * The dcr block is emptied on return, and the Volume is rewound.
  */
-int read_dev_volume_label(DCR *dcr)
+int read_dev_volume_label(DeviceControlRecord *dcr)
 {
-   JCR *jcr = dcr->jcr;
-   DEVICE * volatile dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   Device * volatile dev = dcr->dev;
    char *VolName = dcr->VolumeName;
-   DEV_RECORD *record;
+   DeviceRecord *record;
    bool ok = false;
    int status;
    bool want_ansi_label;
@@ -296,12 +296,12 @@ bail_out:
  * Returns: false on failure
  *          true  on success
  */
-static bool write_volume_label_to_block(DCR *dcr)
+static bool write_volume_label_to_block(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD rec;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord rec;
+   JobControlRecord *jcr = dcr->jcr;
 
    Dmsg0(130, "write Label in write_volume_label_to_block()\n");
 
@@ -334,13 +334,13 @@ static bool write_volume_label_to_block(DCR *dcr)
  *
  *  This routine should be used only when labeling a blank tape.
  */
-bool write_new_volume_label_to_dev(DCR *dcr, const char *VolName,
+bool write_new_volume_label_to_dev(DeviceControlRecord *dcr, const char *VolName,
                                    const char *PoolName, bool relabel)
 {
-   DEV_RECORD *rec;
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
-   DEV_BLOCK *block = dcr->block;
+   DeviceRecord *rec;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   DeviceBlock *block = dcr->block;
 
    /*
     * Set the default blocksize to read the label
@@ -478,9 +478,9 @@ bail_out:
  *  Returns: true if OK
  *           false if unable to write it
  */
-bool DCR::rewrite_volume_label(bool recycle)
+bool DeviceControlRecord::rewrite_volume_label(bool recycle)
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    /*
     * Set the label blocksize to write the label
@@ -626,11 +626,11 @@ bool DCR::rewrite_volume_label(bool recycle)
  *   Assumes that the dev->VolHdr structure is properly
  *   initialized.
 */
-static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
+static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec)
 {
    ser_declare;
    struct date_time dt;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    char buf[100];
 
    /* Serialize the label into the device record. */
@@ -684,9 +684,9 @@ static void create_volume_label_record(DCR *dcr, DEVICE *dev, DEV_RECORD *rec)
 /**
  * Create a volume label in memory
  */
-void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
+void create_volume_label(Device *dev, const char *VolName, const char *PoolName)
 {
-   DEVRES *device = (DEVRES *)dev->device;
+   DeviceResource *device = (DeviceResource *)dev->device;
 
    Dmsg0(130, "Start create_volume_label()\n");
 
@@ -728,9 +728,9 @@ void create_volume_label(DEVICE *dev, const char *VolName, const char *PoolName)
  * Create session label
  *  The pool memory must be released by the calling program
  */
-static void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
+static void create_session_label(DeviceControlRecord *dcr, DeviceRecord *rec, int label)
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    ser_declare;
 
    rec->VolSessionId   = jcr->VolSessionId;
@@ -788,12 +788,12 @@ static void create_session_label(DCR *dcr, DEV_RECORD *rec, int label)
  *  Returns: false on failure
  *           true  on success
  */
-bool write_session_label(DCR *dcr, int label)
+bool write_session_label(DeviceControlRecord *dcr, int label)
 {
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
-   DEV_RECORD *rec;
-   DEV_BLOCK *block = dcr->block;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   DeviceRecord *rec;
+   DeviceBlock *block = dcr->block;
    char buf1[100], buf2[100];
 
    rec = new_record();
@@ -860,7 +860,7 @@ bool write_session_label(DCR *dcr, int label)
  * Returns: false on error
  *          true  on success
 */
-bool unser_volume_label(DEVICE *dev, DEV_RECORD *rec)
+bool unser_volume_label(Device *dev, DeviceRecord *rec)
 {
    ser_declare;
    char buf1[100], buf2[100];
@@ -914,7 +914,7 @@ bool unser_volume_label(DEVICE *dev, DEV_RECORD *rec)
    return true;
 }
 
-bool unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec)
+bool unser_session_label(SESSION_LABEL *label, DeviceRecord *rec)
 {
    ser_declare;
 
@@ -961,7 +961,7 @@ bool unser_session_label(SESSION_LABEL *label, DEV_RECORD *rec)
    return true;
 }
 
-void dump_volume_label(DEVICE *dev)
+void dump_volume_label(Device *dev)
 {
    int dbl = debug_level;
    uint32_t File;
@@ -1032,7 +1032,7 @@ bail_out:
    debug_level = dbl;
 }
 
-static void dump_session_label(DEV_RECORD *rec, const char *type)
+static void dump_session_label(DeviceRecord *rec, const char *type)
 {
    int dbl;
    struct date_time dt;
@@ -1098,7 +1098,7 @@ static void dump_session_label(DEV_RECORD *rec, const char *type)
    debug_level = dbl;
 }
 
-void dump_label_record(DEVICE *dev, DEV_RECORD *rec, bool verbose)
+void dump_label_record(Device *dev, DeviceRecord *rec, bool verbose)
 {
    const char *type;
    int dbl;

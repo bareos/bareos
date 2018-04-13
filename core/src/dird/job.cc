@@ -35,9 +35,9 @@
 static void *job_thread(void *arg);
 static void job_monitor_watchdog(watchdog_t *self);
 static void job_monitor_destructor(watchdog_t *self);
-static bool job_check_maxwaittime(JCR *jcr);
-static bool job_check_maxruntime(JCR *jcr);
-static bool job_check_maxrunschedtime(JCR *jcr);
+static bool job_check_maxwaittime(JobControlRecord *jcr);
+static bool job_check_maxruntime(JobControlRecord *jcr);
+static bool job_check_maxrunschedtime(JobControlRecord *jcr);
 
 /* Imported subroutines */
 
@@ -75,7 +75,7 @@ void term_job_server()
  *  Returns: 0 on failure
  *           JobId on success
  */
-JobId_t run_job(JCR *jcr)
+JobId_t run_job(JobControlRecord *jcr)
 {
    int status;
 
@@ -95,7 +95,7 @@ JobId_t run_job(JCR *jcr)
    return 0;
 }
 
-bool setup_job(JCR *jcr, bool suppress_output)
+bool setup_job(JobControlRecord *jcr, bool suppress_output)
 {
    int errstat;
 
@@ -360,27 +360,27 @@ bail_out:
    return false;
 }
 
-bool is_connecting_to_client_allowed(CLIENTRES *res)
+bool is_connecting_to_client_allowed(ClientResource *res)
 {
    return res->conn_from_dir_to_fd;
 }
 
-bool is_connecting_to_client_allowed(JCR *jcr)
+bool is_connecting_to_client_allowed(JobControlRecord *jcr)
 {
    return is_connecting_to_client_allowed(jcr->res.client);
 }
 
-bool is_connect_from_client_allowed(CLIENTRES *res)
+bool is_connect_from_client_allowed(ClientResource *res)
 {
    return res->conn_from_fd_to_dir;
 }
 
-bool is_connect_from_client_allowed(JCR *jcr)
+bool is_connect_from_client_allowed(JobControlRecord *jcr)
 {
    return is_connect_from_client_allowed(jcr->res.client);
 }
 
-bool use_waiting_client(JCR *jcr, int timeout)
+bool use_waiting_client(JobControlRecord *jcr, int timeout)
 {
    bool result = false;
    CONNECTION *connection = NULL;
@@ -403,7 +403,7 @@ bool use_waiting_client(JCR *jcr, int timeout)
    return result;
 }
 
-void update_job_end(JCR *jcr, int TermCode)
+void update_job_end(JobControlRecord *jcr, int TermCode)
 {
    dequeue_messages(jcr);             /* display any queued messages */
    jcr->setJobStatus(TermCode);
@@ -418,7 +418,7 @@ void update_job_end(JCR *jcr, int TermCode)
  */
 static void *job_thread(void *arg)
 {
-   JCR *jcr = (JCR *)arg;
+   JobControlRecord *jcr = (JobControlRecord *)arg;
 
    pthread_detach(pthread_self());
    Dsm_check(100);
@@ -650,7 +650,7 @@ static void *job_thread(void *arg)
    return NULL;
 }
 
-void sd_msg_thread_send_signal(JCR *jcr, int sig)
+void sd_msg_thread_send_signal(JobControlRecord *jcr, int sig)
 {
    jcr->lock();
    if (!jcr->sd_msg_thread_done &&
@@ -669,7 +669,7 @@ void sd_msg_thread_send_signal(JCR *jcr, int sig)
  *  Returns: true  if cancel appears to be successful
  *           false on failure. Message sent to ua->jcr.
  */
-bool cancel_job(UAContext *ua, JCR *jcr)
+bool cancel_job(UaContext *ua, JobControlRecord *jcr)
 {
    char ed1[50];
    int32_t old_status = jcr->JobStatus;
@@ -727,16 +727,16 @@ bool cancel_job(UAContext *ua, JCR *jcr)
 
 static void job_monitor_destructor(watchdog_t *self)
 {
-   JCR *control_jcr = (JCR *)self->data;
+   JobControlRecord *control_jcr = (JobControlRecord *)self->data;
 
    free_jcr(control_jcr);
 }
 
 static void job_monitor_watchdog(watchdog_t *self)
 {
-   JCR *control_jcr, *jcr;
+   JobControlRecord *control_jcr, *jcr;
 
-   control_jcr = (JCR *)self->data;
+   control_jcr = (JobControlRecord *)self->data;
 
    Dsm_check(100);
    Dmsg1(800, "job_monitor_watchdog %p called\n", self);
@@ -745,7 +745,7 @@ static void job_monitor_watchdog(watchdog_t *self)
       bool cancel = false;
 
       if (jcr->JobId == 0 || job_canceled(jcr) || jcr->no_maxtime) {
-         Dmsg2(800, "Skipping JCR=%p Job=%s\n", jcr, jcr->Job);
+         Dmsg2(800, "Skipping JobControlRecord=%p Job=%s\n", jcr, jcr->Job);
          continue;
       }
 
@@ -767,12 +767,12 @@ static void job_monitor_watchdog(watchdog_t *self)
       }
 
       if (cancel) {
-         Dmsg3(800, "Cancelling JCR %p jobid %d (%s)\n", jcr, jcr->JobId, jcr->Job);
-         UAContext *ua = new_ua_context(jcr);
+         Dmsg3(800, "Cancelling JobControlRecord %p jobid %d (%s)\n", jcr, jcr->JobId, jcr->Job);
+         UaContext *ua = new_ua_context(jcr);
          ua->jcr = control_jcr;
          cancel_job(ua, jcr);
          free_ua_context(ua);
-         Dmsg2(800, "Have cancelled JCR %p Job=%d\n", jcr, jcr->JobId);
+         Dmsg2(800, "Have cancelled JobControlRecord %p Job=%d\n", jcr, jcr->JobId);
       }
 
    }
@@ -784,10 +784,10 @@ static void job_monitor_watchdog(watchdog_t *self)
  * Check if the maxwaittime has expired and it is possible
  *  to cancel the job.
  */
-static bool job_check_maxwaittime(JCR *jcr)
+static bool job_check_maxwaittime(JobControlRecord *jcr)
 {
    bool cancel = false;
-   JOBRES *job = jcr->res.job;
+   JobResource *job = jcr->res.job;
    utime_t current=0;
 
    if (!job_waiting(jcr)) {
@@ -812,10 +812,10 @@ static bool job_check_maxwaittime(JCR *jcr)
  * Check if maxruntime has expired and if the job can be
  *   canceled.
  */
-static bool job_check_maxruntime(JCR *jcr)
+static bool job_check_maxruntime(JobControlRecord *jcr)
 {
    bool cancel = false;
-   JOBRES *job = jcr->res.job;
+   JobResource *job = jcr->res.job;
    utime_t run_time;
 
    if (job_canceled(jcr) || !jcr->job_started) {
@@ -854,7 +854,7 @@ static bool job_check_maxruntime(JCR *jcr)
  * Check if MaxRunSchedTime has expired and if the job can be
  *   canceled.
  */
-static bool job_check_maxrunschedtime(JCR *jcr)
+static bool job_check_maxrunschedtime(JobControlRecord *jcr)
 {
    if (jcr->MaxRunSchedTime == 0 || job_canceled(jcr)) {
       return false;
@@ -873,9 +873,9 @@ static bool job_check_maxrunschedtime(JCR *jcr)
  * Returns: 0 on error
  *          poolid if OK
  */
-DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
+DBId_t get_or_create_pool_record(JobControlRecord *jcr, char *pool_name)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
    bstrncpy(pr.Name, pool_name, sizeof(pr.Name));
@@ -898,10 +898,10 @@ DBId_t get_or_create_pool_record(JCR *jcr, char *pool_name)
  *  Returns: true  if current job should continue
  *           false if current job should terminate
  */
-bool allow_duplicate_job(JCR *jcr)
+bool allow_duplicate_job(JobControlRecord *jcr)
 {
-   JCR *djcr;                /* possible duplicate job */
-   JOBRES *job = jcr->res.job;
+   JobControlRecord *djcr;                /* possible duplicate job */
+   JobResource *job = jcr->res.job;
    bool cancel_dup = false;
    bool cancel_me = false;
 
@@ -999,7 +999,7 @@ bool allow_duplicate_job(JCR *jcr)
             /*
              * Zap the duplicated job djcr
              */
-            UAContext *ua = new_ua_context(jcr);
+            UaContext *ua = new_ua_context(jcr);
             Jmsg(jcr, M_INFO, 0, _("Cancelling duplicate JobId=%d.\n"), djcr->JobId);
             cancel_job(ua, djcr);
             bmicrosleep(0, 500000);
@@ -1033,7 +1033,7 @@ bool allow_duplicate_job(JCR *jcr)
  * the job report.  The time in jcr->stime is later
  * passed to tell the File daemon what to do.
  */
-bool get_level_since_time(JCR *jcr)
+bool get_level_since_time(JobControlRecord *jcr)
 {
    int JobLevel;
    bool have_full;
@@ -1207,7 +1207,7 @@ bool get_level_since_time(JCR *jcr)
    return pool_updated;
 }
 
-void apply_pool_overrides(JCR *jcr, bool force)
+void apply_pool_overrides(JobControlRecord *jcr, bool force)
 {
    Dmsg0(100, "entering apply_pool_overrides()\n");
    bool pool_override = false;
@@ -1302,9 +1302,9 @@ void apply_pool_overrides(JCR *jcr, bool force)
 /**
  * Get or create a Client record for this Job
  */
-bool get_or_create_client_record(JCR *jcr)
+bool get_or_create_client_record(JobControlRecord *jcr)
 {
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
 
    memset(&cr, 0, sizeof(cr));
    bstrncpy(cr.Name, jcr->res.client->hdr.name, sizeof(cr.Name));
@@ -1346,9 +1346,9 @@ bool get_or_create_client_record(JCR *jcr)
    return true;
 }
 
-bool get_or_create_fileset_record(JCR *jcr)
+bool get_or_create_fileset_record(JobControlRecord *jcr)
 {
-   FILESET_DBR fsr;
+   FileSetDbRecord fsr;
 
    /*
     * Get or Create FileSet record
@@ -1371,7 +1371,7 @@ bool get_or_create_fileset_record(JCR *jcr)
    }
    if (!jcr->res.fileset->ignore_fs_changes ||
        !jcr->db->get_fileset_record(jcr, &fsr)) {
-      POOL_MEM FileSetText(PM_MESSAGE);
+      PoolMem FileSetText(PM_MESSAGE);
 
       jcr->res.fileset->print_config(FileSetText, false, false);
       fsr.FileSetText = FileSetText.c_str();
@@ -1391,7 +1391,7 @@ bool get_or_create_fileset_record(JCR *jcr)
    return true;
 }
 
-void init_jcr_job_record(JCR *jcr)
+void init_jcr_job_record(JobControlRecord *jcr)
 {
    jcr->jr.SchedTime = jcr->sched_time;
    jcr->jr.StartTime = jcr->start_time;
@@ -1408,7 +1408,7 @@ void init_jcr_job_record(JCR *jcr)
 /**
  * Write status and such in DB
  */
-void update_job_end_record(JCR *jcr)
+void update_job_end_record(JobControlRecord *jcr)
 {
    jcr->jr.EndTime = time(NULL);
    jcr->end_time = jcr->jr.EndTime;
@@ -1437,7 +1437,7 @@ void update_job_end_record(JCR *jcr)
  *  Returns: unique job name in jcr->Job
  *    date/time in jcr->start_time
  */
-void create_unique_job_name(JCR *jcr, const char *base_name)
+void create_unique_job_name(JobControlRecord *jcr, const char *base_name)
 {
    /* Job start mutex */
    static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -1487,7 +1487,7 @@ void create_unique_job_name(JCR *jcr, const char *base_name)
 /**
  * Called directly from job rescheduling
  */
-void dird_free_jcr_pointers(JCR *jcr)
+void dird_free_jcr_pointers(JobControlRecord *jcr)
 {
    if (jcr->file_bsock) {
       Dmsg0(200, "Close File bsock\n");
@@ -1520,7 +1520,7 @@ void dird_free_jcr_pointers(JCR *jcr)
  *  Called from main free_jcr() routine in src/lib/jcr.c so
  *  that we can do our Director specific cleanup of the jcr.
  */
-void dird_free_jcr(JCR *jcr)
+void dird_free_jcr(JobControlRecord *jcr)
 {
    Dmsg0(200, "Start dird free_jcr\n");
 
@@ -1593,10 +1593,10 @@ void dird_free_jcr(JCR *jcr)
  * The Job storage definition must be either in the Job record
  * or in the Pool record.  The Pool record overrides the Job record.
  */
-void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
+void get_job_storage(UnifiedStoreResource *store, JobResource *job, RunResource *run)
 {
    if (run && run->pool && run->pool->storage) {
-      store->store = (STORERES *)run->pool->storage->first();
+      store->store = (StoreResource *)run->pool->storage->first();
       pm_strcpy(store->store_source, _("Run pool override"));
       return;
    }
@@ -1606,24 +1606,24 @@ void get_job_storage(USTORERES *store, JOBRES *job, RUNRES *run)
       return;
    }
    if (job->pool->storage) {
-      store->store = (STORERES *)job->pool->storage->first();
+      store->store = (StoreResource *)job->pool->storage->first();
       pm_strcpy(store->store_source, _("Pool resource"));
    } else {
       if (job->storage) {
-         store->store = (STORERES *)job->storage->first();
+         store->store = (StoreResource *)job->storage->first();
          pm_strcpy(store->store_source, _("Job resource"));
       }
    }
 }
 
 /**
- * Set some defaults in the JCR necessary to
+ * Set some defaults in the JobControlRecord necessary to
  * run. These items are pulled from the job
  * definition as defaults, but can be overridden
  * later either by the Run record in the Schedule resource,
  * or by the Console program.
  */
-void set_jcr_defaults(JCR *jcr, JOBRES *job)
+void set_jcr_defaults(JobControlRecord *jcr, JobResource *job)
 {
    jcr->res.job = job;
    jcr->setJobType(job->JobType);
@@ -1695,7 +1695,7 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
             jcr->res.catalog = job->client->catalog;
             pm_strcpy(jcr->res.catalog_source, _("Client resource"));
          } else {
-            jcr->res.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            jcr->res.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
             pm_strcpy(jcr->res.catalog_source, _("Default catalog"));
          }
       }
@@ -1749,7 +1749,7 @@ void set_jcr_defaults(JCR *jcr, JOBRES *job)
    }
 }
 
-void create_clones(JCR *jcr)
+void create_clones(JobControlRecord *jcr)
 {
    /*
     * Fire off any clone jobs (run directives)
@@ -1758,10 +1758,10 @@ void create_clones(JCR *jcr)
    if (!jcr->cloned && jcr->res.job->run_cmds) {
       char *runcmd;
       JobId_t jobid;
-      JOBRES *job = jcr->res.job;
+      JobResource *job = jcr->res.job;
       POOLMEM *cmd = get_pool_memory(PM_FNAME);
 
-      UAContext *ua = new_ua_context(jcr);
+      UaContext *ua = new_ua_context(jcr);
       ua->batch = true;
       foreach_alist(runcmd, job->run_cmds) {
          cmd = edit_job_codes(jcr, cmd, runcmd, "", job_code_callback_director);
@@ -1787,10 +1787,10 @@ void create_clones(JCR *jcr)
  * Returns: -1 on error
  *           number of files if OK
  */
-int create_restore_bootstrap_file(JCR *jcr)
+int create_restore_bootstrap_file(JobControlRecord *jcr)
 {
-   RESTORE_CTX rx;
-   UAContext *ua;
+   RestoreContext rx;
+   UaContext *ua;
    int files;
 
    memset(&rx, 0, sizeof(rx));
@@ -1822,11 +1822,11 @@ bail_out:
 }
 
 /* TODO: redirect command ouput to job log */
-bool run_console_command(JCR *jcr, const char *cmd)
+bool run_console_command(JobControlRecord *jcr, const char *cmd)
 {
-   UAContext *ua;
+   UaContext *ua;
    bool ok;
-   JCR *ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
+   JobControlRecord *ljcr = new_control_jcr("-RunScript-", JT_CONSOLE);
    ua = new_ua_context(ljcr);
    /* run from runscript and check if commands are authorized */
    ua->runscript = true;

@@ -31,7 +31,7 @@
 #define __SD_BACKENDS_H_ 1
 
 extern "C" {
-typedef DEVICE *(*t_backend_instantiate)(JCR *jcr, int device_type);
+typedef Device *(*t_backend_instantiate)(JobControlRecord *jcr, int device_type);
 typedef void (*t_flush_backend)(void);
 }
 

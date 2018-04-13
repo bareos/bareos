@@ -53,9 +53,9 @@ char VolName[MAX_NAME_LENGTH];
  */
 static uint32_t btape_state_level = 2;
 
-DEVICE *dev = NULL;
-DCR *dcr;
-DEVRES *device = NULL;
+Device *dev = NULL;
+DeviceControlRecord *dcr;
+DeviceResource *device = NULL;
 int exit_code = 0;
 
 #define REC_SIZE 32768
@@ -74,10 +74,10 @@ static void fillcmd();
 static void qfillcmd();
 static void statcmd();
 static void unfillcmd();
-static int flush_block(DEV_BLOCK *block, int dump);
-static bool quickie_cb(DCR *dcr, DEV_RECORD *rec);
-static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block);
-static bool my_mount_next_read_volume(DCR *dcr);
+static int flush_block(DeviceBlock *block, int dump);
+static bool quickie_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
+static bool compare_blocks(DeviceBlock *last_block, DeviceBlock *block);
+static bool my_mount_next_read_volume(DeviceControlRecord *dcr);
 static void scan_blocks();
 static void set_volume_name(const char *VolName, int volnum);
 static void rawfill_cmd();
@@ -97,7 +97,7 @@ static int argc;
 
 static int quickie_count = 0;
 static uint64_t write_count = 0;
-static BSR *bsr = NULL;
+static BootStrapRecord *bsr = NULL;
 static int signals = TRUE;
 static bool ok;
 static int stop = 0;
@@ -111,11 +111,11 @@ static uint32_t eot_block;
 static uint32_t eot_block_len;
 static uint32_t eot_FileIndex;
 static int dumped = 0;
-static DEV_BLOCK *last_block1 = NULL;
-static DEV_BLOCK *last_block2 = NULL;
-static DEV_BLOCK *last_block = NULL;
-static DEV_BLOCK *this_block = NULL;
-static DEV_BLOCK *first_block = NULL;
+static DeviceBlock *last_block1 = NULL;
+static DeviceBlock *last_block2 = NULL;
+static DeviceBlock *last_block = NULL;
+static DeviceBlock *this_block = NULL;
+static DeviceBlock *first_block = NULL;
 static uint32_t last_file1 = 0;
 static uint32_t last_file2 = 0;
 static uint32_t last_file = 0;
@@ -128,7 +128,7 @@ static bool simple = true;
 static const char *volumename = NULL;
 static int vol_num = 0;
 
-static JCR *jcr = NULL;
+static JobControlRecord *jcr = NULL;
 
 static void usage();
 static void terminate_btape(int sig);
@@ -147,7 +147,7 @@ int main(int margc, char *margv[])
    uint64_t x64, y64;
    char buf[1000];
    char *DirectorName = NULL;
-   DIRRES *director = NULL;
+   DirectorResource *director = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -470,7 +470,7 @@ static void mix_buffer(fill_mode_t mode, char *data, uint32_t len)
 
 static bool open_the_device()
 {
-   DEV_BLOCK *block;
+   DeviceBlock *block;
    bool ok = true;
 
    block = new_block(dev);
@@ -739,8 +739,8 @@ static void capcmd()
  */
 static void rectestcmd()
 {
-   DEV_BLOCK *save_block;
-   DEV_RECORD *rec;
+   DeviceBlock *save_block;
+   DeviceRecord *rec;
    int i, blkno = 0;
 
    Pmsg0(0, _("Test writing larger and larger records.\n"
@@ -789,13 +789,13 @@ static void rectestcmd()
  */
 static bool re_read_block_test()
 {
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD *rec;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord *rec;
    bool rc = false;
    int len;
 
    if (!dev->has_cap(CAP_BSR)) {
-      Pmsg0(-1, _("Skipping read backwards test because BSR turned off.\n"));
+      Pmsg0(-1, _("Skipping read backwards test because BootStrapRecord turned off.\n"));
       return true;
    }
 
@@ -900,7 +900,7 @@ bail_out:
 
 static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 {
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    int status;
    uint32_t block_num = 0;
    int my_errno;
@@ -948,9 +948,9 @@ static bool speed_test_raw(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 
 static bool speed_test_bareos(fill_mode_t mode, uint64_t nb_gb, uint32_t nb)
 {
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    char ed1[200];
-   DEV_RECORD *rec;
+   DeviceRecord *rec;
    uint64_t last_bytes = dev->VolCatInfo.VolCatBytes;
    uint64_t written=0;
 
@@ -1004,7 +1004,7 @@ bail_out:
    return false;
 }
 
-/* TODO: use UAContext */
+/* TODO: use UaContext */
 static int btape_find_arg(const char *keyword)
 {
    for (int i=1; i<argc; i++) {
@@ -1116,12 +1116,12 @@ const uint64_t num_recs = 10000LL;
 
 static bool write_two_files()
 {
-   DEV_BLOCK *block;
-   DEV_RECORD *rec;
+   DeviceBlock *block;
+   DeviceRecord *rec;
    uint32_t len;
    uint32_t *p;
    bool rc = false;       /* bad return code */
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
 
    /*
     * Set big max_file_size so that write_record_to_block
@@ -1205,8 +1205,8 @@ bail_out:
  */
 static bool write_read_test()
 {
-   DEV_BLOCK *block;
-   DEV_RECORD *rec;
+   DeviceBlock *block;
+   DeviceRecord *rec;
    bool rc = false;
    uint32_t len;
    uint32_t *p;
@@ -1283,8 +1283,8 @@ bail_out:
  */
 static bool position_test()
 {
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD *rec;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord *rec;
    bool rc = false;
    int len, j;
    bool more = true;
@@ -1898,8 +1898,8 @@ static void rbcmd()
  */
 static void wrcmd()
 {
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD *rec = dcr->rec;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord *rec = dcr->rec;
    int i;
 
    if (!dev->is_open()) {
@@ -2055,7 +2055,7 @@ static void scan_blocks()
    int blocks, tot_blocks, tot_files;
    uint32_t block_size;
    uint64_t bytes;
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    char ec1[50];
    char buf1[100], buf2[100];
 
@@ -2128,7 +2128,7 @@ static void scan_blocks()
          block->BlockNumber, dev->file, dev->block_num, block->block_len, block->BlockVer,
          block->VolSessionId, block->VolSessionTime);
       if (verbose == 1) {
-         DEV_RECORD *rec = new_record();
+         DeviceRecord *rec = new_record();
          read_record_from_block(dcr, rec);
          Pmsg9(-1, _("Block=%u file,blk=%u,%u blen=%u First rec FI=%s SessId=%u SessTim=%u Strm=%s rlen=%d\n"),
               block->BlockNumber, dev->file, dev->block_num, block->block_len,
@@ -2195,8 +2195,8 @@ static void statcmd()
  */
 static void fillcmd()
 {
-   DEV_RECORD rec;
-   DEV_BLOCK  *block = dcr->block;
+   DeviceRecord rec;
+   DeviceBlock  *block = dcr->block;
    char ec1[50], ec2[50];
    char buf1[100], buf2[100];
    uint64_t write_eof;
@@ -2518,7 +2518,7 @@ static void unfillcmd()
  */
 static bool do_unfill()
 {
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    int autochanger;
    bool rc = false;
 
@@ -2691,9 +2691,9 @@ bail_out:
 }
 
 /* Read 10000 records then stop */
-static bool quickie_cb(DCR *dcr, DEV_RECORD *rec)
+static bool quickie_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    quickie_count++;
    if (quickie_count == 10000) {
       Pmsg2(-1, _("10000 records read now at %d:%d\n"), dev->file, dev->block_num);
@@ -2701,7 +2701,7 @@ static bool quickie_cb(DCR *dcr, DEV_RECORD *rec)
    return quickie_count < 10000;
 }
 
-static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
+static bool compare_blocks(DeviceBlock *last_block, DeviceBlock *block)
 {
    char *p, *q;
    union {
@@ -2744,11 +2744,11 @@ static bool compare_blocks(DEV_BLOCK *last_block, DEV_BLOCK *block)
  *   not it is full. If the tape fills, attempt to
  *   acquire another tape.
  */
-static int flush_block(DEV_BLOCK *block, int dump)
+static int flush_block(DeviceBlock *block, int dump)
 {
    char ec1[50], ec2[50];
    uint64_t rate;
-   DEV_BLOCK *tblock;
+   DeviceBlock *tblock;
    uint32_t this_file, this_block_num;
 
    dev->rLock();
@@ -2842,8 +2842,8 @@ static int flush_block(DEV_BLOCK *block, int dump)
  */
 static void qfillcmd()
 {
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD *rec = dcr->rec;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord *rec = dcr->rec;
    int i, count;
 
    Pmsg0(0, _("Test writing blocks of 64512 bytes to tape.\n"));
@@ -2898,7 +2898,7 @@ bail_out:
  */
 static void rawfill_cmd()
 {
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    int status;
    uint32_t block_num = 0;
    uint32_t *p;
@@ -3127,21 +3127,21 @@ bool BTAPE_DCR::dir_ask_sysop_to_create_appendable_volume()
    return true;
 }
 
-DCR *BTAPE_DCR::get_new_spooling_dcr()
+DeviceControlRecord *BTAPE_DCR::get_new_spooling_dcr()
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
 
    dcr = New(BTAPE_DCR);
 
    return dcr;
 }
 
-static bool my_mount_next_read_volume(DCR *dcr)
+static bool my_mount_next_read_volume(DeviceControlRecord *dcr)
 {
    char ec1[50], ec2[50];
    uint64_t rate;
-   JCR *jcr = dcr->jcr;
-   DEV_BLOCK *block = dcr->block;
+   JobControlRecord *jcr = dcr->jcr;
+   DeviceBlock *block = dcr->block;
 
    Dmsg0(20, "Enter my_mount_next_read_volume\n");
    Pmsg2(000, _("End of Volume \"%s\" %d records.\n"), dcr->VolumeName,
@@ -3179,7 +3179,7 @@ static bool my_mount_next_read_volume(DCR *dcr)
 
 static void set_volume_name(const char *VolName, int volnum)
 {
-   DCR *dcr = jcr->dcr;
+   DeviceControlRecord *dcr = jcr->dcr;
    volumename = VolName;
    vol_num = volnum;
    dev->setVolCatName(VolName);

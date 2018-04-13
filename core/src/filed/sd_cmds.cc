@@ -31,9 +31,9 @@
 
 static int dbglvl = 100;
 
-void *handle_stored_connection(BSOCK *sd)
+void *handle_stored_connection(BareosSocket *sd)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    char job_name[MAX_NAME_LENGTH];
 
    /*

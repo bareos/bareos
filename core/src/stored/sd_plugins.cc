@@ -53,14 +53,14 @@ static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...);
 static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...);
-static char *bareosEditDeviceCodes(DCR *dcr, POOLMEM *&omsg,
+static char *bareosEditDeviceCodes(DeviceControlRecord *dcr, POOLMEM *&omsg,
                                    const char *imsg, const char *cmd);
 static char *bareosLookupCryptoKey(const char *VolumeName);
-static bool bareosUpdateVolumeInfo(DCR *dcr);
-static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags);
-static DEV_RECORD *bareosNewRecord(bool with_data);
-static void bareosCopyRecordState(DEV_RECORD *dst, DEV_RECORD *src);
-static void bareosFreeRecord(DEV_RECORD *rec);
+static bool bareosUpdateVolumeInfo(DeviceControlRecord *dcr);
+static void bareosUpdateTapeAlert(DeviceControlRecord *dcr, uint64_t flags);
+static DeviceRecord *bareosNewRecord(bool with_data);
+static void bareosCopyRecordState(DeviceRecord *dst, DeviceRecord *src);
+static void bareosFreeRecord(DeviceRecord *rec);
 static bool is_plugin_compatible(Plugin *plugin);
 
 /* Bareos info */
@@ -93,7 +93,7 @@ static bsdFuncs bfuncs = {
  * Bareos private context
  */
 struct b_plugin_ctx {
-   JCR *jcr;                                       /* jcr for plugin */
+   JobControlRecord *jcr;                                       /* jcr for plugin */
    bRC  rc;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
    char events[nbytes_for_bits(SD_NR_EVENTS + 1)]; /* enabled events bitmask */
@@ -128,13 +128,13 @@ static inline bool is_plugin_disabled(bpContext *ctx)
 }
 
 #ifdef needed
-static inline bool is_plugin_disabled(JCR *jcr)
+static inline bool is_plugin_disabled(JobControlRecord *jcr)
 {
    return is_plugin_disabled(jcr->plugin_ctx);
 }
 #endif
 
-static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
+static bool is_ctx_good(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
 {
    if (!ctx) {
       return false;
@@ -172,7 +172,7 @@ static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
  *  imsg = input string containing edit codes (%x)
  *  cmd = command string (load, unload, ...)
  */
-char *edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd)
+char *edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd)
 {
    const char *p;
    const char *str;
@@ -245,7 +245,7 @@ char *edit_device_codes(DCR *dcr, POOLMEM *&omsg, const char *imsg, const char *
    return omsg;
 }
 
-static inline bool trigger_plugin_event(JCR *jcr, bsdEventType eventType,
+static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType eventType,
                                         bsdEvent *event, bpContext *ctx,
                                         void *value, alist *plugin_ctx_list,
                                         int *index, bRC *rc)
@@ -311,7 +311,7 @@ bail_out:
 /**
  * Create a plugin event
  */
-bRC generate_plugin_event(JCR *jcr, bsdEventType eventType, void *value, bool reverse)
+bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *value, bool reverse)
 {
    int i;
    bsdEvent event;
@@ -443,7 +443,7 @@ void unload_sd_plugins(void)
    sd_plugin_list = NULL;
 }
 
-int list_sd_plugins(POOL_MEM &msg)
+int list_sd_plugins(PoolMem &msg)
 {
    return list_plugins(sd_plugin_list, msg);
 }
@@ -495,7 +495,7 @@ static bool is_plugin_compatible(Plugin *plugin)
 /**
  * Instantiate a new plugin instance.
  */
-static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t instance)
+static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugin, uint32_t instance)
 {
    bpContext *ctx;
    b_plugin_ctx *b_ctx;
@@ -525,7 +525,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, uint32_t i
 /**
  * Send a bsdEventNewPluginOptions event to all plugins configured in jcr->plugin_options.
  */
-void dispatch_new_plugin_options(JCR *jcr)
+void dispatch_new_plugin_options(JobControlRecord *jcr)
 {
    int i, j, len;
    Plugin *plugin;
@@ -535,7 +535,7 @@ void dispatch_new_plugin_options(JCR *jcr)
    bsdEventType eventType;
    char *bp, *plugin_name, *option;
    const char *plugin_options;
-   POOL_MEM priv_plugin_options(PM_MESSAGE);
+   PoolMem priv_plugin_options(PM_MESSAGE);
 
    if (!sd_plugin_list || sd_plugin_list->empty()) {
       return;
@@ -621,7 +621,7 @@ void dispatch_new_plugin_options(JCR *jcr)
 /**
  * Create a new instance of each plugin for this Job
  */
-void new_plugins(JCR *jcr)
+void new_plugins(JobControlRecord *jcr)
 {
    Plugin *plugin;
    int i, num;
@@ -659,7 +659,7 @@ void new_plugins(JCR *jcr)
 /**
  * Free the plugin instances for this Job
  */
-void free_plugins(JCR *jcr)
+void free_plugins(JobControlRecord *jcr)
 {
    bpContext *ctx;
 
@@ -688,7 +688,7 @@ void free_plugins(JCR *jcr)
  */
 static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 {
-   JCR *jcr = NULL;
+   JobControlRecord *jcr = NULL;
    bRC retval = bRC_OK;
 
    if (!value) {
@@ -809,7 +809,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
 
 static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    if (!value || !ctx) {
       return bRC_Error;
    }
@@ -882,7 +882,7 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
 static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
 {
    int cnt;
-   JCR *jcr, *njcr;
+   JobControlRecord *jcr, *njcr;
    bpContext *nctx;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
@@ -917,9 +917,9 @@ bail_out:
 static bRC bareosJobMsg(bpContext *ctx, const char *file, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    if (ctx) {
       jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
@@ -939,7 +939,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    va_start(arg_ptr, fmt);
    buffer.bvsprintf(fmt, arg_ptr);
@@ -949,7 +949,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *file, int line,
    return bRC_OK;
 }
 
-static char *bareosEditDeviceCodes(DCR *dcr, POOLMEM *&omsg,
+static char *bareosEditDeviceCodes(DeviceControlRecord *dcr, POOLMEM *&omsg,
                                    const char *imsg, const char *cmd)
 {
    return edit_device_codes(dcr, omsg, imsg, cmd);
@@ -960,12 +960,12 @@ static char *bareosLookupCryptoKey(const char *VolumeName)
    return lookup_crypto_cache_entry(VolumeName);
 }
 
-static bool bareosUpdateVolumeInfo(DCR *dcr)
+static bool bareosUpdateVolumeInfo(DeviceControlRecord *dcr)
 {
    return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ);
 }
 
-static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags)
+static void bareosUpdateTapeAlert(DeviceControlRecord *dcr, uint64_t flags)
 {
    utime_t now;
    now = (utime_t)time(NULL);
@@ -973,17 +973,17 @@ static void bareosUpdateTapeAlert(DCR *dcr, uint64_t flags)
    update_device_tapealert(dcr->device->name(), flags, now);
 }
 
-static DEV_RECORD *bareosNewRecord(bool with_data)
+static DeviceRecord *bareosNewRecord(bool with_data)
 {
    return new_record(with_data);
 }
 
-static void bareosCopyRecordState(DEV_RECORD *dst, DEV_RECORD *src)
+static void bareosCopyRecordState(DeviceRecord *dst, DeviceRecord *src)
 {
    copy_record_state(dst, src);
 }
 
-static void bareosFreeRecord(DEV_RECORD *rec)
+static void bareosFreeRecord(DeviceRecord *rec)
 {
    free_record(rec);
 }
@@ -992,9 +992,9 @@ static void bareosFreeRecord(DEV_RECORD *rec)
 int main(int argc, char *argv[])
 {
    char plugin_dir[1000];
-   JCR mjcr1, mjcr2;
-   JCR *jcr1 = &mjcr1;
-   JCR *jcr2 = &mjcr2;
+   JobControlRecord mjcr1, mjcr2;
+   JobControlRecord *jcr1 = &mjcr1;
+   JobControlRecord *jcr2 = &mjcr2;
 
    my_name_is(argc, argv, "plugtest");
    init_msg(NULL, NULL);

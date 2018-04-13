@@ -37,7 +37,7 @@
 #define DH_BITS 1024
 
 /* TLS Context Structure */
-struct TLS_Context {
+struct TlsContext {
    gnutls_dh_params dh_params;
    gnutls_certificate_client_credentials gnutls_cred;
 
@@ -50,8 +50,8 @@ struct TLS_Context {
    bool tls_require;
 };
 
-struct TLS_Connection {
-   TLS_Context *ctx;
+struct TlsConnection {
+   TlsContext *ctx;
    gnutls_session_t gnutls_state;
 };
 
@@ -337,7 +337,7 @@ static inline bool tls_cert_verify(TLS_CONNECTION *tls_conn)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    char *cn;
    int error, cnt;
@@ -416,7 +416,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    int error;
    unsigned int list_size;
@@ -545,7 +545,7 @@ void free_tls_connection(TLS_CONNECTION *tls_conn)
    free(tls_conn);
 }
 
-static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
+static inline bool gnutls_bsock_session_start(BareosSocket *bsock, bool server)
 {
    int flags, error;
    bool status = true;
@@ -573,9 +573,9 @@ static inline bool gnutls_bsock_session_start(BSOCK *bsock, bool server)
       case GNUTLS_E_AGAIN:
       case GNUTLS_E_INTERRUPTED:
          if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
-            wait_for_writable_fd(bsock->m_fd, 10000, false);
+            wait_for_writable_fd(bsock->fd_, 10000, false);
          } else {
-            wait_for_readable_fd(bsock->m_fd, 10000, false);
+            wait_for_readable_fd(bsock->fd_, 10000, false);
          }
          status = true;
          continue;
@@ -620,7 +620,7 @@ cleanup:
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BSOCK *bsock)
+bool tls_bsock_connect(BareosSocket *bsock)
 {
    return gnutls_bsock_session_start(bsock, false);
 }
@@ -630,12 +630,12 @@ bool tls_bsock_connect(BSOCK *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BSOCK *bsock)
+bool tls_bsock_accept(BareosSocket *bsock)
 {
    return gnutls_bsock_session_start(bsock, true);
 }
 
-void tls_bsock_shutdown(BSOCK *bsock)
+void tls_bsock_shutdown(BareosSocket *bsock)
 {
    TLS_CONNECTION *tls_conn = bsock->tls_conn;
 
@@ -643,7 +643,7 @@ void tls_bsock_shutdown(BSOCK *bsock)
 }
 
 /* Does all the manual labor for tls_bsock_readn() and tls_bsock_writen() */
-static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bool write)
+static inline int gnutls_bsock_readwrite(BareosSocket *bsock, char *ptr, int nbytes, bool write)
 {
    TLS_CONNECTION *tls_conn = bsock->tls_conn;
    int error;
@@ -688,9 +688,9 @@ static inline int gnutls_bsock_readwrite(BSOCK *bsock, char *ptr, int nbytes, bo
          case GNUTLS_E_AGAIN:
          case GNUTLS_E_INTERRUPTED:
             if (gnutls_record_get_direction(tls_conn->gnutls_state) == 1) {
-               wait_for_writable_fd(bsock->m_fd, 10000, false);
+               wait_for_writable_fd(bsock->fd_, 10000, false);
             } else {
-               wait_for_readable_fd(bsock->m_fd, 10000, false);
+               wait_for_readable_fd(bsock->fd_, 10000, false);
             }
             break;
          default:
@@ -720,12 +720,12 @@ cleanup:
    return nbytes - nleft;
 }
 
-int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return gnutls_bsock_readwrite(bsock, ptr, nbytes, true);
 }
 
-int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return gnutls_bsock_readwrite(bsock, ptr, nbytes, false);
 }

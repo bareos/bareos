@@ -44,7 +44,7 @@ extern "C" int bndmp_fhdb_add_file(struct ndmlog *ixlog, int tagc, char *raw_nam
 
    if (nis->save_filehist) {
       int8_t FileType = 0;
-      POOL_MEM attribs(PM_FNAME),
+      PoolMem attribs(PM_FNAME),
                pathname(PM_FNAME);
 
       /*

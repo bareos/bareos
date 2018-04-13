@@ -50,18 +50,18 @@ enum {
 };
 
 /* Definition of the contents of each Resource */
-class DIRRES : public TLSRES {
+class DirectorResource : public TlsResource {
 public:
    char *address;                     /**< Director IP address or zero */
    bool monitor;                      /**< Have only access to status and .status functions */
    uint64_t max_bandwidth_per_job;    /**< Bandwidth limitation (per director) */
    s_password keyencrkey;             /**< Key Encryption Key */
-   DIRRES() : TLSRES() {}
+   DirectorResource() : TlsResource() {}
 };
 
-class NDMPRES {
+class NdmpResource {
 public:
-   RES hdr;
+   CommonResourceHeader hdr;
 
    uint32_t AuthType;                 /**< Authentication Type to use */
    uint32_t LogLevel;                 /**< Log level to use for logging NDMP protocol msgs */
@@ -70,7 +70,7 @@ public:
 };
 
 /* Storage daemon "global" definitions */
-class STORES : public TLSRES {
+class STORES : public TlsResource {
 public:
    dlist *SDaddrs;
    dlist *SDsrc_addr;                 /**< Address to source connections from */
@@ -87,7 +87,7 @@ public:
    uint32_t ndmploglevel;             /**< Initial NDMP log level */
    uint32_t jcr_watchdog_time;        /**< Absolute time after which a Job gets terminated regardless of its progress */
    uint32_t stats_collect_interval;   /**< Statistics collect interval in seconds */
-   MSGSRES *messages;                 /**< Daemon message handler */
+   MessagesResource *messages;                 /**< Daemon message handler */
    utime_t SDConnectTimeout;          /**< Timeout in seconds */
    utime_t FDConnectTimeout;          /**< Timeout in seconds */
    utime_t heartbeat_interval;        /**< Interval to send hb to FD */
@@ -108,21 +108,21 @@ public:
    char *log_timestamp_format;        /**< Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /**< Bandwidth limitation (global) */
 
-   STORES() : TLSRES() {}
+   STORES() : TlsResource() {}
 };
 
-class AUTOCHANGERRES : public BRSRES {
+class AutochangerResource : public BareosResource {
 public:
-   alist *device;                     /**< List of DEVRES device pointers */
+   alist *device;                     /**< List of DeviceResource device pointers */
    char *changer_name;                /**< Changer device name */
    char *changer_command;             /**< Changer command  -- external program */
    brwlock_t changer_lock;            /**< One changer operation at a time */
 
-   AUTOCHANGERRES() : BRSRES() {}
+   AutochangerResource() : BareosResource() {}
 };
 
 /* Device specific definitions */
-class DEVRES : public BRSRES {
+class DeviceResource : public BareosResource {
 public:
    char *media_type;                  /**< User assigned media type */
    char *device_name;                 /**< Archive device name */
@@ -175,24 +175,24 @@ public:
    /*
     * The following are set at runtime
     */
-   DEVICE *dev;                       /* Pointer to physical dev -- set at runtime */
-   AUTOCHANGERRES *changer_res;       /* Pointer to changer res if any */
+   Device *dev;                       /* Pointer to physical dev -- set at runtime */
+   AutochangerResource *changer_res;       /* Pointer to changer res if any */
 
-   DEVRES() : BRSRES() {}
+   DeviceResource() : BareosResource() {}
 };
 
 union URES {
-   DIRRES res_dir;
-   NDMPRES res_ndmp;
+   DirectorResource res_dir;
+   NdmpResource res_ndmp;
    STORES res_store;
-   DEVRES res_dev;
-   MSGSRES res_msgs;
-   AUTOCHANGERRES res_changer;
-   RES hdr;
+   DeviceResource res_dev;
+   MessagesResource res_msgs;
+   AutochangerResource res_changer;
+   CommonResourceHeader hdr;
 
-   URES() {new(&hdr) RES();}
+   URES() {new(&hdr) CommonResourceHeader();}
    ~URES() {}
 };
 
 void init_sd_config(CONFIG *config, const char *configfile, int exit_code);
-bool print_config_schema_json(POOL_MEM &buffer);
+bool print_config_schema_json(PoolMem &buffer);

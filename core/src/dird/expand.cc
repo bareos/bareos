@@ -32,7 +32,7 @@
 #include "bareos.h"
 #include "dird.h"
 
-static int date_item(JCR *jcr,
+static int date_item(JobControlRecord *jcr,
                      int code,
                      const char **val_ptr,
                      int *val_len,
@@ -76,7 +76,7 @@ static int date_item(JCR *jcr,
    return 1;
 }
 
-static int job_item(JCR *jcr,
+static int job_item(JobControlRecord *jcr,
                     int code,
                     const char **val_ptr,
                     int *val_len,
@@ -147,7 +147,7 @@ static int job_item(JCR *jcr,
 struct s_built_in_vars {
    const char *var_name;
    int code;
-   int (*func)(JCR *jcr, int code, const char **val_ptr, int *val_len, int *val_size);
+   int (*func)(JobControlRecord *jcr, int code, const char **val_ptr, int *val_len, int *val_size);
 };
 
 /*
@@ -189,7 +189,7 @@ static var_rc_t lookup_built_in_var(var_t *ctx,
                                     int *val_len,
                                     int *val_size)
 {
-   JCR *jcr = (JCR *)my_ctx;
+   JobControlRecord *jcr = (JobControlRecord *)my_ctx;
    int status, i;
 
    for (i = 0; _(built_in_vars[i].var_name); i++) {
@@ -219,8 +219,8 @@ static var_rc_t lookup_counter_var(var_t *ctx,
                                    int *val_len,
                                    int *val_size)
 {
-   COUNTERRES *counter;
-   POOL_MEM buf(PM_NAME);
+   CounterResource *counter;
+   PoolMem buf(PM_NAME);
    var_rc_t status = VAR_ERR_UNDEFINED_VARIABLE;
 
    buf.check_size(var_len + 1);
@@ -228,7 +228,7 @@ static var_rc_t lookup_counter_var(var_t *ctx,
    (buf.c_str())[var_len] = 0;
 
    LockRes();
-   for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+   for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
       if (bstrcmp(counter->name(), buf.c_str())) {
          Dmsg2(100, "Counter=%s val=%d\n", buf.c_str(), counter->CurrentValue);
          /*
@@ -253,8 +253,8 @@ static var_rc_t lookup_counter_var(var_t *ctx,
                counter->CurrentValue++;
             }
             if (counter->Catalog) {   /* update catalog if need be */
-               COUNTER_DBR cr;
-               JCR *jcr = (JCR *)my_ctx;
+               CounterDbRecord cr;
+               JobControlRecord *jcr = (JobControlRecord *)my_ctx;
                memset(&cr, 0, sizeof(cr));
                bstrncpy(cr.Counter, counter->name(), sizeof(cr.Counter));
                cr.MinValue = counter->MinValue;
@@ -294,7 +294,7 @@ static var_rc_t lookup_var(var_t *ctx,
                            int *val_len,
                            int *val_size)
 {
-   POOL_MEM buf(PM_NAME);
+   PoolMem buf(PM_NAME);
    char *val, *p, *v;
    var_rc_t status;
    int count;
@@ -414,8 +414,8 @@ static var_rc_t operate_var(var_t *var,
                             int *out_len,
                             int *out_size)
 {
-   COUNTERRES *counter;
-   POOL_MEM buf(PM_NAME);
+   CounterResource *counter;
+   PoolMem buf(PM_NAME);
    var_rc_t status = VAR_ERR_UNDEFINED_OPERATION;
 
    Dmsg0(100, "Enter operate_var\n");
@@ -435,7 +435,7 @@ static var_rc_t operate_var(var_t *var,
       Dmsg1(100, "Val=%s\n", buf.c_str());
 
       LockRes();
-      for (counter = NULL; (counter = (COUNTERRES *)GetNextRes(R_COUNTER, (RES *)counter)); ) {
+      for (counter = NULL; (counter = (CounterResource *)GetNextRes(R_COUNTER, (CommonResourceHeader *)counter)); ) {
          if (bstrcmp(counter->name(), buf.c_str())) {
             Dmsg2(100, "counter=%s val=%s\n", counter->name(), buf.c_str());
             break;
@@ -455,7 +455,7 @@ static var_rc_t operate_var(var_t *var,
  * Returns: 0 on failure
  *          1 on success and exp has expanded input
  */
-int variable_expansion(JCR *jcr, char *inp, POOLMEM *&exp)
+int variable_expansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp)
 {
    var_t *var_ctx;
    var_rc_t status;

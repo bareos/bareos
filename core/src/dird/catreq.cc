@@ -74,7 +74,7 @@ static char OK_media[] =
 static char OK_create[] =
    "1000 OK CreateJobMedia\n";
 
-static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr)
+static int send_volume_info_to_storage_daemon(JobControlRecord *jcr, BareosSocket *sd, MediaDbRecord *mr)
 {
    int status;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
@@ -100,16 +100,16 @@ static int send_volume_info_to_storage_daemon(JCR *jcr, BSOCK *sd, MEDIA_DBR *mr
    return status;
 }
 
-void catalog_request(JCR *jcr, BSOCK *bs)
+void catalog_request(JobControlRecord *jcr, BareosSocket *bs)
 {
-   MEDIA_DBR mr, sdmr;
-   JOBMEDIA_DBR jm;
+   MediaDbRecord mr, sdmr;
+   JobMediaDbRecord jm;
    char Job[MAX_NAME_LENGTH];
    char pool_name[MAX_NAME_LENGTH];
-   POOL_MEM unwanted_volumes(PM_MESSAGE);
+   PoolMem unwanted_volumes(PM_MESSAGE);
    int index, ok, label, writing;
    POOLMEM *omsg;
-   POOL_DBR pr;
+   PoolDbRecord pr;
    uint32_t Stripe, Copy;
    uint64_t MediaId;
    utime_t VolFirstWritten;
@@ -377,7 +377,7 @@ bail_out:
  * packet, VolSessionId, VolSessionTime, FileIndex, file type, and file name to
  * store in the catalog.
  */
-static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
+static void update_attribute(JobControlRecord *jcr, char *msg, int32_t msglen)
 {
    unser_declare;
    uint32_t VolSessionId, VolSessionTime;
@@ -386,7 +386,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
    char *p;
    int len;
    char *fname, *attr;
-   ATTR_DBR *ar = NULL;
+   AttributesDbRecord *ar = NULL;
    uint32_t reclen;
 
    /*
@@ -529,7 +529,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
       Dmsg1(400, "dird<filed: attr=%s\n", attr);
       break;
    case STREAM_RESTORE_OBJECT: {
-      ROBJECT_DBR ro;
+      RestoreObjectDbRecord ro;
 
       memset(&ro, 0, sizeof(ro));
       ro.Stream = Stream;
@@ -649,7 +649,7 @@ static void update_attribute(JCR *jcr, char *msg, int32_t msglen)
 /**
  * Update File Attributes in the catalog with data sent by the Storage daemon.
  */
-void catalog_update(JCR *jcr, BSOCK *bs)
+void catalog_update(JobControlRecord *jcr, BareosSocket *bs)
 {
    if (!jcr->res.pool->catalog_files) {
       return;                         /* user disabled cataloging */
@@ -681,7 +681,7 @@ bail_out:
  * the storage daemon spool file. We receive the filename and
  * we try to read it.
  */
-bool despool_attributes_from_file(JCR *jcr, const char *file)
+bool despool_attributes_from_file(JobControlRecord *jcr, const char *file)
 {
    bool retval = false;
    int32_t pktsiz;

@@ -50,28 +50,28 @@ static char DotStatusJob[] =
    "JobId=%d JobStatus=%c JobErrors=%d\n";
 
 /* Forward referenced functions */
-static void sendit(const char *msg, int len, STATUS_PKT *sp);
-static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp);
+static void sendit(const char *msg, int len, StatusPacket *sp);
+static void sendit(PoolMem &msg, int len, StatusPacket *sp);
 static void sendit(const char *msg, int len, void *arg);
 
-static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp);
-static void send_device_status(DEVICE *dev, STATUS_PKT *sp);
-static void list_terminated_jobs(STATUS_PKT *sp);
-static void list_running_jobs(STATUS_PKT *sp);
-static void list_jobs_waiting_on_reservation(STATUS_PKT *sp);
-static void list_status_header(STATUS_PKT *sp);
-static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames);
-static void list_volumes(STATUS_PKT *sp, const char *devicenames);
+static void send_blocked_status(Device *dev, StatusPacket *sp);
+static void send_device_status(Device *dev, StatusPacket *sp);
+static void list_terminated_jobs(StatusPacket *sp);
+static void list_running_jobs(StatusPacket *sp);
+static void list_jobs_waiting_on_reservation(StatusPacket *sp);
+static void list_status_header(StatusPacket *sp);
+static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames);
+static void list_volumes(StatusPacket *sp, const char *devicenames);
 
 static const char *level_to_str(int level);
 
 /**
  * Status command from Director
  */
-static void output_status(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
+static void output_status(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
 
    list_status_header(sp);
 
@@ -113,18 +113,18 @@ static void output_status(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
    }
 }
 
-static void list_resources(STATUS_PKT *sp)
+static void list_resources(StatusPacket *sp)
 {
 #ifdef when_working
    int len;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nSD Resources:\n"));
       sendit(msg, len, sp);
    }
 
-   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->m_r_first], sp, false);
+   dump_resource(R_DEVICE, resources[R_DEVICE - my_config->r_first_], sp, false);
 
    if (!sp->api) {
       len = pm_strcpy(msg, "====\n\n");
@@ -137,8 +137,8 @@ static void list_resources(STATUS_PKT *sp)
 static find_device(char *devname)
 {
    bool found;
-   DEVRES *device;
-   AUTOCHANGERRES *changer;
+   DeviceResource *device;
+   AutochangerResource *changer;
 
    foreach_res(device, R_DEVICE) {
       if (strcasecmp(device->name(), devname) == 0) {
@@ -160,7 +160,7 @@ static find_device(char *devname)
 static bool need_to_list_device(const char *devicenames, const char *devicename)
 {
    char *cur, *bp;
-   POOL_MEM namelist;
+   PoolMem namelist;
 
    Dmsg2(200, "need_to_list_device devicenames %s, devicename %s\n",
          devicenames, devicename);
@@ -192,7 +192,7 @@ static bool need_to_list_device(const char *devicenames, const char *devicename)
    return false;
 }
 
-static bool need_to_list_device(const char *devicenames, DEVRES *device)
+static bool need_to_list_device(const char *devicenames, DeviceResource *device)
 {
    /*
     * See if we are requested to list an explicit device name.
@@ -222,9 +222,9 @@ static bool need_to_list_device(const char *devicenames, DEVRES *device)
  * Trigger the specific eventtype to get status information from any plugin that
  * registered the event to return specific device information.
  */
-static void trigger_device_status_hook(JCR *jcr,
-                                       DEVRES *device,
-                                       STATUS_PKT *sp,
+static void trigger_device_status_hook(JobControlRecord *jcr,
+                                       DeviceResource *device,
+                                       StatusPacket *sp,
                                        bsdEventType eventType)
 {
    bsdDevStatTrig dst;
@@ -244,8 +244,8 @@ static void trigger_device_status_hook(JCR *jcr,
 /*
  * Ask the device if it want to log something specific in the status overview.
  */
-static void get_device_specific_status(DEVRES *device,
-                                       STATUS_PKT *sp)
+static void get_device_specific_status(DeviceResource *device,
+                                       StatusPacket *sp)
 {
    bsdDevStatTrig dst;
 
@@ -261,14 +261,14 @@ static void get_device_specific_status(DEVRES *device,
    free_pool_memory(dst.status);
 }
 
-static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
+static void list_devices(JobControlRecord *jcr, StatusPacket *sp, const char *devicenames)
 {
    int len;
    int bpb;
-   DEVICE *dev;
-   DEVRES *device;
-   AUTOCHANGERRES *changer;
-   POOL_MEM msg(PM_MESSAGE);
+   Device *dev;
+   DeviceResource *device;
+   AutochangerResource *changer;
+   PoolMem msg(PM_MESSAGE);
    char b1[35], b2[35], b3[35];
 
    if (!sp->api) {
@@ -414,14 +414,14 @@ static void list_devices(JCR *jcr, STATUS_PKT *sp, const char *devicenames)
 /*
  * List Volumes
  */
-static void list_volumes(STATUS_PKT *sp, const char *devicenames)
+static void list_volumes(StatusPacket *sp, const char *devicenames)
 {
    int len;
-   VOLRES *vol;
-   POOL_MEM msg(PM_MESSAGE);
+   VolumeReservationItem *vol;
+   PoolMem msg(PM_MESSAGE);
 
    foreach_vol(vol) {
-      DEVICE *dev = vol->dev;
+      Device *dev = vol->dev;
 
       if (dev) {
          if (devicenames && !need_to_list_device(devicenames, dev->device)) {
@@ -443,7 +443,7 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
    endeach_vol(vol);
 
    foreach_read_vol(vol) {
-      DEVICE *dev = vol->dev;
+      Device *dev = vol->dev;
 
       if (dev) {
          if (devicenames && !need_to_list_device(devicenames, dev->device)) {
@@ -465,10 +465,10 @@ static void list_volumes(STATUS_PKT *sp, const char *devicenames)
    endeach_read_vol(vol);
 }
 
-static void list_status_header(STATUS_PKT *sp)
+static void list_status_header(StatusPacket *sp)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH];
    char b1[35], b2[35], b3[35], b4[35], b5[35];
 #if defined(HAVE_WIN32)
@@ -557,13 +557,13 @@ static void list_status_header(STATUS_PKT *sp)
    }
 }
 
-static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
+static void send_blocked_status(Device *dev, StatusPacket *sp)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
 
    if (!dev) {
-      len = Mmsg(msg, _("No DEVICE structure.\n\n"));
+      len = Mmsg(msg, _("No Device structure.\n\n"));
       sendit(msg, len, sp);
       return;
    }
@@ -578,7 +578,7 @@ static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
       break;
    case BST_WAITING_FOR_SYSOP:
       {
-         DCR *dcr;
+         DeviceControlRecord *dcr;
          bool found_jcr = false;
          dev->Lock();
          foreach_dlist(dcr, dev->attached_dcrs) {
@@ -638,12 +638,12 @@ static void send_blocked_status(DEVICE *dev, STATUS_PKT *sp)
    }
 }
 
-static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
+static void send_device_status(Device *dev, StatusPacket *sp)
 {
    int len;
-   DCR *dcr = NULL;
+   DeviceControlRecord *dcr = NULL;
    bool found = false;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
 
    if (debug_level > 5) {
       len = Mmsg(msg, _("Configured device capabilities:\n"));
@@ -717,13 +717,13 @@ static void send_device_status(DEVICE *dev, STATUS_PKT *sp)
    sendit(msg, len, sp);
 }
 
-static void list_running_jobs(STATUS_PKT *sp)
+static void list_running_jobs(StatusPacket *sp)
 {
-   JCR *jcr;
-   DCR *dcr, *rdcr;
+   JobControlRecord *jcr;
+   DeviceControlRecord *dcr, *rdcr;
    bool found = false;
    time_t now = time(NULL);
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    int len, avebps, bps, sec;
    char JobName[MAX_NAME_LENGTH];
    char b1[50], b2[50], b3[50], b4[50];
@@ -806,7 +806,7 @@ static void list_running_jobs(STATUS_PKT *sp)
             len = Mmsg(msg, _("    FDReadSeqNo=%s in_msg=%u out_msg=%d fd=%d\n"),
                        edit_uint64_with_commas(jcr->file_bsock->read_seqno, b1),
                        jcr->file_bsock->in_msg_no, jcr->file_bsock->out_msg_no,
-                       jcr->file_bsock->m_fd);
+                       jcr->file_bsock->fd_);
             sendit(msg, len, sp);
          } else {
             len = Mmsg(msg, _("    FDSocket closed\n"));
@@ -833,7 +833,7 @@ static void list_running_jobs(STATUS_PKT *sp)
 /*
  * Send any reservation messages queued for this jcr
  */
-static inline void send_drive_reserve_messages(JCR *jcr, STATUS_PKT *sp)
+static inline void send_drive_reserve_messages(JobControlRecord *jcr, StatusPacket *sp)
 {
    int i;
    alist *msgs;
@@ -858,11 +858,11 @@ bail_out:
    jcr->unlock();
 }
 
-static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
+static void list_jobs_waiting_on_reservation(StatusPacket *sp)
 {
    int len;
-   JCR *jcr;
-   POOL_MEM msg(PM_MESSAGE);
+   JobControlRecord *jcr;
+   PoolMem msg(PM_MESSAGE);
 
    if (!sp->api) {
       len = Mmsg(msg, _("\nJobs waiting to reserve a drive:\n"));
@@ -883,12 +883,12 @@ static void list_jobs_waiting_on_reservation(STATUS_PKT *sp)
    }
 }
 
-static void list_terminated_jobs(STATUS_PKT *sp)
+static void list_terminated_jobs(StatusPacket *sp)
 {
    int len;
    char level[10];
    struct s_last_job *je;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    char dt[MAX_TIME_LENGTH], b1[30], b2[30];
 
    if (!sp->api) {
@@ -1041,9 +1041,9 @@ static const char *level_to_str(int level)
 /**
  * Send to Director
  */
-static void sendit(const char *msg, int len, STATUS_PKT *sp)
+static void sendit(const char *msg, int len, StatusPacket *sp)
 {
-   BSOCK *bs = sp->bs;
+   BareosSocket *bs = sp->bs;
 
    if (bs) {
       memcpy(bs->msg, msg, len+1);
@@ -1056,12 +1056,12 @@ static void sendit(const char *msg, int len, STATUS_PKT *sp)
 
 static void sendit(const char *msg, int len, void *sp)
 {
-   sendit(msg, len, (STATUS_PKT *)sp);
+   sendit(msg, len, (StatusPacket *)sp);
 }
 
-static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
+static void sendit(PoolMem &msg, int len, StatusPacket *sp)
 {
-   BSOCK *bs = sp->bs;
+   BareosSocket *bs = sp->bs;
 
    if (bs) {
       memcpy(bs->msg, msg.c_str(), len+1);
@@ -1075,11 +1075,11 @@ static void sendit(POOL_MEM &msg, int len, STATUS_PKT *sp)
 /**
  * Status command from Director
  */
-bool status_cmd(JCR *jcr)
+bool status_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM devicenames;
-   STATUS_PKT sp;
-   BSOCK *dir = jcr->dir_bsock;
+   PoolMem devicenames;
+   StatusPacket sp;
+   BareosSocket *dir = jcr->dir_bsock;
 
    sp.bs = dir;
    devicenames.check_size(dir->msglen);
@@ -1102,13 +1102,13 @@ bool status_cmd(JCR *jcr)
 /**
  * .status command from Director
  */
-bool dotstatus_cmd(JCR *jcr)
+bool dotstatus_cmd(JobControlRecord *jcr)
 {
-   JCR *njcr;
-   POOL_MEM cmd;
-   STATUS_PKT sp;
+   JobControlRecord *njcr;
+   PoolMem cmd;
+   StatusPacket sp;
    s_last_job* job;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    sp.bs = dir;
    cmd.check_size(dir->msglen);
@@ -1180,7 +1180,7 @@ int bareosstat = 0;
  */
 char *bareos_status(char *buf, int buf_len)
 {
-   JCR *njcr;
+   JobControlRecord *njcr;
    const char *termstat = _("Bareos Storage: Idle");
    struct s_last_job *job;
    int status = 0;                    /* Idle */

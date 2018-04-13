@@ -105,7 +105,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
    LockRes();
 
    int monitorItems = 0;
-   MONITORRES *monitorRes;
+   MonitorResource *monitorRes;
    foreach_res(monitorRes, R_MONITOR) {
       monitorItems++;
    }
@@ -117,11 +117,11 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
             monitorItems, my_config->get_base_config_path());
    }
 
-   monitor = reinterpret_cast<MONITORRES*>(GetNextRes(R_MONITOR, (RES *)NULL));
+   monitor = reinterpret_cast<MonitorResource*>(GetNextRes(R_MONITOR, (CommonResourceHeader *)NULL));
 
    int nitems = 0;
 
-   DIRRES* dird;
+   DirectorResource* dird;
    foreach_res(dird, R_DIRECTOR) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_DIRECTOR);
@@ -133,7 +133,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       nitems++;
    }
 
-   CLIENTRES* filed;
+   ClientResource* filed;
    foreach_res(filed, R_CLIENT) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_CLIENT);
@@ -145,7 +145,7 @@ QStringList MonitorItemThread::createRes(const cl_opts& cl)
       nitems++;
    }
 
-   STORERES* stored;
+   StoreResource* stored;
    foreach_res(stored, R_STORAGE) {
       MonitorItem* item = new MonitorItem;
       item->setType(R_STORAGE);
@@ -193,7 +193,7 @@ void MonitorItemThread::on_RefreshTimer_timeout()
    onRefreshItems();
 }
 
-MONITORRES* MonitorItemThread::getMonitor() const
+MonitorResource* MonitorItemThread::getMonitor() const
 {
    return monitor;
 }

@@ -44,29 +44,29 @@
 const int dbglevel = 500;
 
 /* Forward references */
-static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool done);
-static int match_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_RECORD *rec, bool done);
-static int match_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_RECORD *rec);
-static int match_client(BSR *bsr, BSR_CLIENT *client, SESSION_LABEL *sessrec, bool done);
-static int match_job(BSR *bsr, BSR_JOB *job, SESSION_LABEL *sessrec, bool done);
-static int match_job_type(BSR *bsr, BSR_JOBTYPE *job_type, SESSION_LABEL *sessrec, bool done);
-static int match_job_level(BSR *bsr, BSR_JOBLEVEL *job_level, SESSION_LABEL *sessrec, bool done);
-static int match_jobid(BSR *bsr, BSR_JOBID *jobid, SESSION_LABEL *sessrec, bool done);
-static int match_findex(BSR *bsr, BSR_FINDEX *findex, DEV_RECORD *rec, bool done);
-static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool done);
-static int match_voladdr(BSR *bsr, BSR_VOLADDR *voladdr, DEV_RECORD *rec, bool done);
-static int match_stream(BSR *bsr, BSR_STREAM *stream, DEV_RECORD *rec, bool done);
-static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, bool done, JCR *jcr);
-static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *block);
-static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block);
-static BSR *find_smallest_volfile(BSR *fbsr, BSR *bsr);
+static int match_volume(BootStrapRecord *bsr, BsrVolume *volume, VOLUME_LABEL *volrec, bool done);
+static int match_sesstime(BootStrapRecord *bsr, BsrSessionTime *sesstime, DeviceRecord *rec, bool done);
+static int match_sessid(BootStrapRecord *bsr, BsrSessionId *sessid, DeviceRecord *rec);
+static int match_client(BootStrapRecord *bsr, BsrClient *client, SESSION_LABEL *sessrec, bool done);
+static int match_job(BootStrapRecord *bsr, BsrJob *job, SESSION_LABEL *sessrec, bool done);
+static int match_job_type(BootStrapRecord *bsr, BsrJobType *job_type, SESSION_LABEL *sessrec, bool done);
+static int match_job_level(BootStrapRecord *bsr, BsrJoblevel *job_level, SESSION_LABEL *sessrec, bool done);
+static int match_jobid(BootStrapRecord *bsr, BsrJobid *jobid, SESSION_LABEL *sessrec, bool done);
+static int match_findex(BootStrapRecord *bsr, BsrFileIndex *findex, DeviceRecord *rec, bool done);
+static int match_volfile(BootStrapRecord *bsr, BsrVolumeFile *volfile, DeviceRecord *rec, bool done);
+static int match_voladdr(BootStrapRecord *bsr, BsrVolumeAddress *voladdr, DeviceRecord *rec, bool done);
+static int match_stream(BootStrapRecord *bsr, BsrStream *stream, DeviceRecord *rec, bool done);
+static int match_all(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, bool done, JobControlRecord *jcr);
+static int match_block_sesstime(BootStrapRecord *bsr, BsrSessionTime *sesstime, DeviceBlock *block);
+static int match_block_sessid(BootStrapRecord *bsr, BsrSessionId *sessid, DeviceBlock *block);
+static BootStrapRecord *find_smallest_volfile(BootStrapRecord *fbsr, BootStrapRecord *bsr);
 
 /**
  *
  *  If possible, position the archive device (tape) to read the
  *  next block.
  */
-void position_bsr_block(BSR *bsr, DEV_BLOCK *block)
+void position_bsr_block(BootStrapRecord *bsr, DeviceBlock *block)
 {
    /* To be implemented */
 }
@@ -83,7 +83,7 @@ void position_bsr_block(BSR *bsr, DEV_BLOCK *block)
  *                  that can match the bsr).
  *
  */
-int match_bsr_block(BSR *bsr, DEV_BLOCK *block)
+int match_bsr_block(BootStrapRecord *bsr, DeviceBlock *block)
 {
    if (!bsr || !bsr->use_fast_rejection || (block->BlockVer < 2)) {
       return 1;                       /* cannot fast reject */
@@ -101,7 +101,7 @@ int match_bsr_block(BSR *bsr, DEV_BLOCK *block)
    return 0;
 }
 
-static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *block)
+static int match_block_sesstime(BootStrapRecord *bsr, BsrSessionTime *sesstime, DeviceBlock *block)
 {
    if (!sesstime) {
       return 1;                       /* no specification matches all */
@@ -115,7 +115,7 @@ static int match_block_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_BLOCK *blo
    return 0;
 }
 
-static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block)
+static int match_block_sessid(BootStrapRecord *bsr, BsrSessionId *sessid, DeviceBlock *block)
 {
    if (!sessid) {
       return 1;                       /* no specification matches all */
@@ -129,7 +129,7 @@ static int match_block_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_BLOCK *block)
    return 0;
 }
 
-static int match_fileregex(BSR *bsr, DEV_RECORD *rec, JCR *jcr)
+static int match_fileregex(BootStrapRecord *bsr, DeviceRecord *rec, JobControlRecord *jcr)
 {
    if (bsr->fileregex_re == NULL)
       return 1;
@@ -167,7 +167,7 @@ static int match_fileregex(BSR *bsr, DEV_RECORD *rec, JCR *jcr)
  *                      reposition the tape
  *       returns -1 no additional matches possible
  */
-int match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, JCR *jcr)
+int match_bsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec, SESSION_LABEL *sessrec, JobControlRecord *jcr)
 {
    int status;
 
@@ -197,10 +197,10 @@ int match_bsr(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec, SESSION_LABEL *se
  * Find the next bsr that applies to the current tape.
  *   It is the one with the smallest VolFile position.
  */
-BSR *find_next_bsr(BSR *root_bsr, DEVICE *dev)
+BootStrapRecord *find_next_bsr(BootStrapRecord *root_bsr, Device *dev)
 {
-   BSR *bsr;
-   BSR *found_bsr = NULL;
+   BootStrapRecord *bsr;
+   BootStrapRecord *found_bsr = NULL;
 
    /* Do tape/disk seeking only if CAP_POSITIONBLOCKS is on */
    if (!root_bsr) {
@@ -240,7 +240,7 @@ BSR *find_next_bsr(BSR *root_bsr, DEVICE *dev)
  * Get the smallest address from this voladdr part
  * Don't use "done" elements
  */
-static bool get_smallest_voladdr(BSR_VOLADDR *va, uint64_t *ret)
+static bool get_smallest_voladdr(BsrVolumeAddress *va, uint64_t *ret)
 {
    bool ok=false;
    uint64_t min_val=0;
@@ -270,11 +270,11 @@ static bool get_smallest_voladdr(BSR_VOLADDR *va, uint64_t *ret)
  *   returns a bsr pointing to a smaller address (file/block).
  *
  */
-static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
+static BootStrapRecord *find_smallest_volfile(BootStrapRecord *found_bsr, BootStrapRecord *bsr)
 {
-   BSR *return_bsr = found_bsr;
-   BSR_VOLFILE *vf;
-   BSR_VOLBLOCK *vb;
+   BootStrapRecord *return_bsr = found_bsr;
+   BsrVolumeFile *vf;
+   BsrVolumeBlock *vb;
    uint32_t found_bsr_sfile, bsr_sfile;
    uint32_t found_bsr_sblock, bsr_sblock;
    uint64_t found_bsr_saddr, bsr_saddr;
@@ -347,9 +347,9 @@ static BSR *find_smallest_volfile(BSR *found_bsr, BSR *bsr)
  * Returns: true if we should reposition
  *        : false otherwise.
  */
-bool is_this_bsr_done(BSR *bsr, DEV_RECORD *rec)
+bool is_this_bsr_done(BootStrapRecord *bsr, DeviceRecord *rec)
 {
-   BSR *rbsr = rec->bsr;
+   BootStrapRecord *rbsr = rec->bsr;
    Dmsg1(dbglevel, "match_set %d\n", rbsr != NULL);
    if (!rbsr) {
       return false;
@@ -374,8 +374,8 @@ bool is_this_bsr_done(BSR *bsr, DEV_RECORD *rec)
  *   returns  0 no match
  *   returns -1 no additional matches possible
  */
-static int match_all(BSR *bsr, DEV_RECORD *rec, VOLUME_LABEL *volrec,
-                     SESSION_LABEL *sessrec, bool done, JCR *jcr)
+static int match_all(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
+                     SESSION_LABEL *sessrec, bool done, JobControlRecord *jcr)
 {
    Dmsg0(dbglevel, "Enter match_all\n");
    if (bsr->done) {
@@ -501,7 +501,7 @@ no_match:
    return 0;
 }
 
-static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool done)
+static int match_volume(BootStrapRecord *bsr, BsrVolume *volume, VOLUME_LABEL *volrec, bool done)
 {
    if (!volume) {
       return 0;                       /* Volume must match */
@@ -516,7 +516,7 @@ static int match_volume(BSR *bsr, BSR_VOLUME *volume, VOLUME_LABEL *volrec, bool
    return 0;
 }
 
-static int match_client(BSR *bsr, BSR_CLIENT *client, SESSION_LABEL *sessrec, bool done)
+static int match_client(BootStrapRecord *bsr, BsrClient *client, SESSION_LABEL *sessrec, bool done)
 {
    if (!client) {
       return 1;                       /* no specification matches all */
@@ -530,7 +530,7 @@ static int match_client(BSR *bsr, BSR_CLIENT *client, SESSION_LABEL *sessrec, bo
    return 0;
 }
 
-static int match_job(BSR *bsr, BSR_JOB *job, SESSION_LABEL *sessrec, bool done)
+static int match_job(BootStrapRecord *bsr, BsrJob *job, SESSION_LABEL *sessrec, bool done)
 {
    if (!job) {
       return 1;                       /* no specification matches all */
@@ -544,7 +544,7 @@ static int match_job(BSR *bsr, BSR_JOB *job, SESSION_LABEL *sessrec, bool done)
    return 0;
 }
 
-static int match_job_type(BSR *bsr, BSR_JOBTYPE *job_type, SESSION_LABEL *sessrec, bool done)
+static int match_job_type(BootStrapRecord *bsr, BsrJobType *job_type, SESSION_LABEL *sessrec, bool done)
 {
    if (!job_type) {
       return 1;                       /* no specification matches all */
@@ -558,7 +558,7 @@ static int match_job_type(BSR *bsr, BSR_JOBTYPE *job_type, SESSION_LABEL *sessre
    return 0;
 }
 
-static int match_job_level(BSR *bsr, BSR_JOBLEVEL *job_level, SESSION_LABEL *sessrec, bool done)
+static int match_job_level(BootStrapRecord *bsr, BsrJoblevel *job_level, SESSION_LABEL *sessrec, bool done)
 {
    if (!job_level) {
       return 1;                       /* no specification matches all */
@@ -572,7 +572,7 @@ static int match_job_level(BSR *bsr, BSR_JOBLEVEL *job_level, SESSION_LABEL *ses
    return 0;
 }
 
-static int match_jobid(BSR *bsr, BSR_JOBID *jobid, SESSION_LABEL *sessrec, bool done)
+static int match_jobid(BootStrapRecord *bsr, BsrJobid *jobid, SESSION_LABEL *sessrec, bool done)
 {
    if (!jobid) {
       return 1;                       /* no specification matches all */
@@ -586,7 +586,7 @@ static int match_jobid(BSR *bsr, BSR_JOBID *jobid, SESSION_LABEL *sessrec, bool 
    return 0;
 }
 
-static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool done)
+static int match_volfile(BootStrapRecord *bsr, BsrVolumeFile *volfile, DeviceRecord *rec, bool done)
 {
    if (!volfile) {
       return 1;                       /* no specification matches all */
@@ -625,7 +625,7 @@ static int match_volfile(BSR *bsr, BSR_VOLFILE *volfile, DEV_RECORD *rec, bool d
    return 0;
 }
 
-static int match_voladdr(BSR *bsr, BSR_VOLADDR *voladdr, DEV_RECORD *rec, bool done)
+static int match_voladdr(BootStrapRecord *bsr, BsrVolumeAddress *voladdr, DeviceRecord *rec, bool done)
 {
    if (!voladdr) {
       return 1;                       /* no specification matches all */
@@ -670,7 +670,7 @@ static int match_voladdr(BSR *bsr, BSR_VOLADDR *voladdr, DEV_RECORD *rec, bool d
 }
 
 
-static int match_stream(BSR *bsr, BSR_STREAM *stream, DEV_RECORD *rec, bool done)
+static int match_stream(BootStrapRecord *bsr, BsrStream *stream, DeviceRecord *rec, bool done)
 {
    if (!stream) {
       return 1;                       /* no specification matches all */
@@ -684,7 +684,7 @@ static int match_stream(BSR *bsr, BSR_STREAM *stream, DEV_RECORD *rec, bool done
    return 0;
 }
 
-static int match_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_RECORD *rec, bool done)
+static int match_sesstime(BootStrapRecord *bsr, BsrSessionTime *sesstime, DeviceRecord *rec, bool done)
 {
    if (!sesstime) {
       return 1;                       /* no specification matches all */
@@ -711,7 +711,7 @@ static int match_sesstime(BSR *bsr, BSR_SESSTIME *sesstime, DEV_RECORD *rec, boo
  *  have interleaved records, and there may be more of what we want
  *  later.
  */
-static int match_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_RECORD *rec)
+static int match_sessid(BootStrapRecord *bsr, BsrSessionId *sessid, DeviceRecord *rec)
 {
    if (!sessid) {
       return 1;                       /* no specification matches all */
@@ -732,7 +732,7 @@ static int match_sessid(BSR *bsr, BSR_SESSID *sessid, DEV_RECORD *rec)
  *  ***FIXME*** optimizations
  * We could optimize by removing the recursion.
  */
-static int match_findex(BSR *bsr, BSR_FINDEX *findex, DEV_RECORD *rec, bool done)
+static int match_findex(BootStrapRecord *bsr, BsrFileIndex *findex, DeviceRecord *rec, bool done)
 {
    if (!findex) {
       return 1;                       /* no specification matches all */
@@ -758,7 +758,7 @@ static int match_findex(BSR *bsr, BSR_FINDEX *findex, DEV_RECORD *rec, bool done
    return 0;
 }
 
-uint64_t get_bsr_start_addr(BSR *bsr, uint32_t *file, uint32_t *block)
+uint64_t get_bsr_start_addr(BootStrapRecord *bsr, uint32_t *file, uint32_t *block)
 {
    uint64_t bsr_addr = 0;
    uint32_t sfile = 0, sblock = 0;
@@ -787,11 +787,11 @@ uint64_t get_bsr_start_addr(BSR *bsr, uint32_t *file, uint32_t *block)
 /* ****************************************************************
  * Routines for handling volumes
  */
-static VOL_LIST *new_restore_volume()
+static VolumeList *new_restore_volume()
 {
-   VOL_LIST *vol;
-   vol = (VOL_LIST *)malloc(sizeof(VOL_LIST));
-   memset(vol, 0, sizeof(VOL_LIST));
+   VolumeList *vol;
+   vol = (VolumeList *)malloc(sizeof(VolumeList));
+   memset(vol, 0, sizeof(VolumeList));
    return vol;
 }
 
@@ -802,9 +802,9 @@ static VOL_LIST *new_restore_volume()
  *   returns: 1 if volume added
  *            0 if volume already in list
  */
-static bool add_restore_volume(JCR *jcr, VOL_LIST *vol)
+static bool add_restore_volume(JobControlRecord *jcr, VolumeList *vol)
 {
-   VOL_LIST *next = jcr->VolList;
+   VolumeList *next = jcr->VolList;
 
    /* Add volume to volume manager's read list */
    add_read_volume(jcr, vol->VolumeName);
@@ -838,10 +838,10 @@ static bool add_restore_volume(JCR *jcr, VOL_LIST *vol)
  * Create a list of Volumes (and Slots and Start positions) to be
  *  used in the current restore job.
  */
-void create_restore_volume_list(JCR *jcr)
+void create_restore_volume_list(JobControlRecord *jcr)
 {
    char *p, *n;
-   VOL_LIST *vol;
+   VolumeList *vol;
 
    /*
     * Build a list of volumes to be processed
@@ -849,13 +849,13 @@ void create_restore_volume_list(JCR *jcr)
    jcr->NumReadVolumes = 0;
    jcr->CurReadVolume = 0;
    if (jcr->bsr) {
-      BSR *bsr = jcr->bsr;
+      BootStrapRecord *bsr = jcr->bsr;
       if (!bsr->volume || !bsr->volume->VolumeName[0]) {
          return;
       }
       for ( ; bsr; bsr=bsr->next) {
-         BSR_VOLUME *bsrvol;
-         BSR_VOLFILE *volfile;
+         BsrVolume *bsrvol;
+         BsrVolumeFile *volfile;
          uint32_t sfile = UINT32_MAX;
 
          /* Find minimum start file so that we can forward space to it */
@@ -903,10 +903,10 @@ void create_restore_volume_list(JCR *jcr)
    }
 }
 
-void free_restore_volume_list(JCR *jcr)
+void free_restore_volume_list(JobControlRecord *jcr)
 {
-   VOL_LIST *vol = jcr->VolList;
-   VOL_LIST *tmp;
+   VolumeList *vol = jcr->VolList;
+   VolumeList *tmp;
 
    for ( ; vol; ) {
       tmp = vol->next;

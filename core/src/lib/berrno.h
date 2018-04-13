@@ -46,14 +46,14 @@
  *  for editing the message. strerror() does the actual editing, and
  *  it is thread safe.
  *
- * If bit 29 in m_berrno is set then it is a Win32 error, and we
+ * If bit 29 in berrno_ is set then it is a Win32 error, and we
  *  must do a GetLastError() to get the error code for formatting.
- * If bit 29 in m_berrno is not set, then it is a Unix errno.
+ * If bit 29 in berrno_ is not set, then it is a Unix errno.
  *
  */
-class DLL_IMP_EXP berrno : public SMARTALLOC {
-   POOLMEM *m_buf;
-   int m_berrno;
+class DLL_IMP_EXP berrno : public SmartAlloc {
+   POOLMEM *buf_;
+   int berrno_;
    void format_win32_message();
 public:
    berrno(int pool=PM_EMSG);
@@ -61,32 +61,32 @@ public:
    const char *bstrerror();
    const char *bstrerror(int errnum);
    void set_errno(int errnum);
-   int code() { return m_berrno & ~(b_errno_exit|b_errno_signal); }
+   int code() { return berrno_ & ~(b_errno_exit|b_errno_signal); }
    int code(int stat) { return stat & ~(b_errno_exit|b_errno_signal); }
 };
 
 /* Constructor */
 inline berrno::berrno(int pool)
 {
-   m_berrno = errno;
-   m_buf = get_pool_memory(pool);
-   *m_buf = 0;
-   errno = m_berrno;
+   berrno_ = errno;
+   buf_ = get_pool_memory(pool);
+   *buf_ = 0;
+   errno = berrno_;
 }
 
 inline berrno::~berrno()
 {
-   free_pool_memory(m_buf);
+   free_pool_memory(buf_);
 }
 
 inline const char *berrno::bstrerror(int errnum)
 {
-   m_berrno = errnum;
+   berrno_ = errnum;
    return berrno::bstrerror();
 }
 
 
 inline void berrno::set_errno(int errnum)
 {
-   m_berrno = errnum;
+   berrno_ = errnum;
 }

@@ -47,7 +47,7 @@ static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Extract any post backup statistics.
  */
-static inline bool extract_post_backup_stats(JCR *jcr,
+static inline bool extract_post_backup_stats(JobControlRecord *jcr,
                                              char *filesystem,
                                              struct ndm_session *sess)
 {
@@ -116,7 +116,7 @@ static inline bool extract_post_backup_stats(JCR *jcr,
 /**
  * Setup a NDMP backup session.
  */
-bool do_ndmp_backup_init(JCR *jcr)
+bool do_ndmp_backup_init(JobControlRecord *jcr)
 {
    free_rstorage(jcr);                   /* we don't read so release */
 
@@ -174,13 +174,13 @@ bool do_ndmp_backup_init(JCR *jcr)
 /**
  * Run a NDMP backup session.
  */
-bool do_ndmp_backup(JCR *jcr)
+bool do_ndmp_backup(JobControlRecord *jcr)
 {
    unsigned int cnt;
    int i, status;
    char ed1[100];
    NIS *nis = NULL;
-   FILESETRES *fileset;
+   FilesetResource *fileset;
    struct ndm_job_param ndmp_job;
    struct ndm_session ndmp_sess;
    bool session_initialized = false;
@@ -242,7 +242,7 @@ bool do_ndmp_backup(JCR *jcr)
 
       /*
        * Start the job prior to starting the message thread below
-       * to avoid two threads from using the BSOCK structure at
+       * to avoid two threads from using the BareosSocket structure at
        * the same time.
        */
       if (!jcr->store_bsock->fsend("run")) {
@@ -284,8 +284,8 @@ bool do_ndmp_backup(JCR *jcr)
    for (i = 0; i < fileset->num_includes; i++) {
       int j;
       char *item;
-      INCEXE *ie = fileset->include_items[i];
-      POOL_MEM virtual_filename(PM_FNAME);
+      IncludeExcludeItem *ie = fileset->include_items[i];
+      PoolMem virtual_filename(PM_FNAME);
 
       /*
        * Loop over each file = entry of the fileset.
@@ -341,7 +341,7 @@ bool do_ndmp_backup(JCR *jcr)
          memcpy(&ndmp_sess.control_acb->job, &ndmp_job, sizeof(struct ndm_job_param));
 
          /*
-          * We can use the same private pointer used in the logging with the JCR in
+          * We can use the same private pointer used in the logging with the JobControlRecord in
           * the file index generation. We don't setup a index_log.deliver
           * function as we catch the index information via callbacks.
           */
@@ -533,13 +533,13 @@ ok_out:
 }
 
 #else
-bool do_ndmp_backup_init(JCR *jcr)
+bool do_ndmp_backup_init(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool do_ndmp_backup(JCR *jcr)
+bool do_ndmp_backup(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

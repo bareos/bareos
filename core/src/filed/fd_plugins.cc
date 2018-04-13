@@ -30,7 +30,7 @@
 #include "bareos.h"
 #include "filed.h"
 
-extern CLIENTRES *me;
+extern ClientResource *me;
 extern DLL_IMP_EXP char *exepath;
 extern DLL_IMP_EXP char *version;
 extern DLL_IMP_EXP char *dist_name;
@@ -44,16 +44,16 @@ const char *plugin_type = "-fd.so";
 static alist *fd_plugin_list = NULL;
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-extern int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level);
+extern int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
 
 /**
  * Function pointers to be set here
  */
-extern DLL_IMP_EXP int (*plugin_bopen)(BFILE *bfd, const char *fname, int flags, mode_t mode);
-extern DLL_IMP_EXP int (*plugin_bclose)(BFILE *bfd);
-extern DLL_IMP_EXP ssize_t (*plugin_bread)(BFILE *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BFILE *bfd, void *buf, size_t count);
-extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BFILE *bfd, boffset_t offset, int whence);
+extern DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+extern DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd);
+extern DLL_IMP_EXP ssize_t (*plugin_bread)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern DLL_IMP_EXP ssize_t (*plugin_bwrite)(BareosWinFilePacket *bfd, void *buf, size_t count);
+extern DLL_IMP_EXP boffset_t (*plugin_blseek)(BareosWinFilePacket *bfd, boffset_t offset, int whence);
 
 /**
  * Forward referenced functions
@@ -78,7 +78,7 @@ static bRC bareosNewOptions(bpContext *ctx);
 static bRC bareosNewInclude(bpContext *ctx);
 static bRC bareosNewPreInclude(bpContext *ctx);
 static bool is_plugin_compatible(Plugin *plugin);
-static bool get_plugin_name(JCR *jcr, char *cmd, int *ret);
+static bool get_plugin_name(JobControlRecord *jcr, char *cmd, int *ret);
 static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp);
 static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp);
 static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname);
@@ -88,11 +88,11 @@ static bRC bareosGetInstanceCount(bpContext *ctx, int *ret);
 /**
  * These will be plugged into the global pointer structure for the findlib.
  */
-static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode);
-static int my_plugin_bclose(BFILE *bfd);
-static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count);
-static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count);
-static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence);
+static int my_plugin_bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode);
+static int my_plugin_bclose(BareosWinFilePacket *bfd);
+static ssize_t my_plugin_bread(BareosWinFilePacket *bfd, void *buf, size_t count);
+static ssize_t my_plugin_bwrite(BareosWinFilePacket *bfd, void *buf, size_t count);
+static boffset_t my_plugin_blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence);
 
 /* Bareos info */
 static bInfo binfo = {
@@ -131,7 +131,7 @@ static bFuncs bfuncs = {
  * Bareos private context
  */
 struct b_plugin_ctx {
-   JCR *jcr;                                       /* jcr for plugin */
+   JobControlRecord *jcr;                                       /* jcr for plugin */
    bRC ret;                                        /* last return code */
    bool disabled;                                  /* set if plugin disabled */
    bool restoreFileStarted;
@@ -174,7 +174,7 @@ static inline bool is_plugin_disabled(bpContext *ctx)
    return b_ctx->disabled;
 }
 
-static bool is_ctx_good(bpContext *ctx, JCR *&jcr, b_plugin_ctx *&bctx)
+static bool is_ctx_good(bpContext *ctx, JobControlRecord *&jcr, b_plugin_ctx *&bctx)
 {
    if (!ctx) {
       return false;
@@ -227,7 +227,7 @@ static bool for_this_plugin(Plugin *plugin, char *name, int len)
 /**
  * Raise a certain plugin event.
  */
-static inline bool trigger_plugin_event(JCR *jcr, bEventType eventType,
+static inline bool trigger_plugin_event(JobControlRecord *jcr, bEventType eventType,
                                         bEvent *event, bpContext *ctx,
                                         void *value, alist *plugin_ctx_list,
                                         int *index, bRC *rc)
@@ -313,7 +313,7 @@ bail_out:
 /**
  * Create a plugin event When receiving bEventCancelCommand, this function is called by another thread.
  */
-bRC generate_plugin_event(JCR *jcr, bEventType eventType, void *value, bool reverse)
+bRC generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value, bool reverse)
 {
    bEvent event;
    char *name = NULL;
@@ -440,7 +440,7 @@ bail_out:
 /**
  * Check if file was seen for accurate
  */
-bool plugin_check_file(JCR *jcr, char *fname)
+bool plugin_check_file(JobControlRecord *jcr, char *fname)
 {
    bpContext *ctx;
    alist *plugin_ctx_list;
@@ -485,7 +485,7 @@ bool plugin_check_file(JCR *jcr, char *fname)
  *  Plugin = alldrives
  * => ret = 9
  */
-static bool get_plugin_name(JCR *jcr, char *cmd, int *ret)
+static bool get_plugin_name(JobControlRecord *jcr, char *cmd, int *ret)
 {
    char *p;
    int len;
@@ -516,7 +516,7 @@ static bool get_plugin_name(JCR *jcr, char *cmd, int *ret)
    return true;
 }
 
-void plugin_update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
+void plugin_update_ff_pkt(FindFilesPacket *ff_pkt, struct save_pkt *sp)
 {
    ff_pkt->no_read = sp->no_read;
    ff_pkt->delta_seq = sp->delta_seq;
@@ -557,7 +557,7 @@ void plugin_update_ff_pkt(FF_PKT *ff_pkt, struct save_pkt *sp)
 /**
  * Ask to a Option Plugin what to do with the current file
  */
-bRC plugin_option_handle_file(JCR *jcr, FF_PKT *ff_pkt, struct save_pkt *sp)
+bRC plugin_option_handle_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, struct save_pkt *sp)
 {
    int len;
    char *cmd;
@@ -636,7 +636,7 @@ bail_out:
  * Sequence of calls for restore:
  *   See subroutine plugin_name_stream() below.
  */
-int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+int plugin_save(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    int len;
    bRC retval;
@@ -645,8 +645,8 @@ int plugin_save(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    bpContext *ctx;
    struct save_pkt sp;
    bEventType eventType;
-   POOL_MEM fname(PM_FNAME);
-   POOL_MEM link(PM_FNAME);
+   PoolMem fname(PM_FNAME);
+   PoolMem link(PM_FNAME);
    alist *plugin_ctx_list;
    char flags[FOPTS_BYTES];
 
@@ -864,18 +864,18 @@ bail_out:
  *    us the data we need in save_pkt
  *
  */
-int plugin_estimate(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+int plugin_estimate(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    int len;
    char *cmd = ff_pkt->top_fname;
    struct save_pkt sp;
    bEvent event;
    bEventType eventType;
-   POOL_MEM fname(PM_FNAME);
-   POOL_MEM link(PM_FNAME);
+   PoolMem fname(PM_FNAME);
+   PoolMem link(PM_FNAME);
    bpContext *ctx;
    alist *plugin_ctx_list;
-   ATTR attr;
+   Attributes attr;
 
    plugin_ctx_list = jcr->plugin_ctx_list;
    if (!fd_plugin_list || !plugin_ctx_list) {
@@ -1019,7 +1019,7 @@ bail_out:
 /**
  * Send plugin name start/end record to SD
  */
-bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
+bool send_plugin_name(JobControlRecord *jcr, BareosSocket *sd, bool start)
 {
    int status;
    int index = jcr->JobFiles;
@@ -1075,7 +1075,7 @@ bool send_plugin_name(JCR *jcr, BSOCK *sd, bool start)
  * Returns: true  if start of stream
  *          false if end of steam
  */
-bool plugin_name_stream(JCR *jcr, char *name)
+bool plugin_name_stream(JobControlRecord *jcr, char *name)
 {
    int len;
    char *cmd;
@@ -1193,7 +1193,7 @@ bail_out:
  * CF_EXTRACT  -> extract the file (i.e.call i/o routines)
  * CF_CREATED  -> created, but no content to extract (typically directories)
  */
-int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
+int plugin_create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *bfd, int replace)
 {
    int flags;
    int retval;
@@ -1290,7 +1290,7 @@ int plugin_create_file(JCR *jcr, ATTR *attr, BFILE *bfd, int replace)
  * Reset the file attributes after all file I/O is done -- this allows the previous access time/dates
  * to be set properly, and it also allows us to properly set directory permissions.
  */
-bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
+bool plugin_set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    Plugin *plugin;
    struct restore_pkt rp;
@@ -1337,9 +1337,9 @@ bool plugin_set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
 /**
  * Plugin specific callback for getting ACL information.
  */
-bacl_exit_code plugin_build_acl_streams(JCR *jcr,
+bacl_exit_code plugin_build_acl_streams(JobControlRecord *jcr,
                                         acl_data_t *acl_data,
-                                        FF_PKT *ff_pkt)
+                                        FindFilesPacket *ff_pkt)
 {
    Plugin *plugin;
 
@@ -1385,7 +1385,7 @@ bacl_exit_code plugin_build_acl_streams(JCR *jcr,
 /**
  * Plugin specific callback for setting ACL information.
  */
-bacl_exit_code plugin_parse_acl_streams(JCR *jcr,
+bacl_exit_code plugin_parse_acl_streams(JobControlRecord *jcr,
                                         acl_data_t *acl_data,
                                         int stream,
                                         char *content,
@@ -1429,9 +1429,9 @@ bacl_exit_code plugin_parse_acl_streams(JCR *jcr,
 /**
  * Plugin specific callback for getting XATTR information.
  */
-bxattr_exit_code plugin_build_xattr_streams(JCR *jcr,
+bxattr_exit_code plugin_build_xattr_streams(JobControlRecord *jcr,
                                             struct xattr_data_t *xattr_data,
-                                            FF_PKT *ff_pkt)
+                                            FindFilesPacket *ff_pkt)
 {
    Plugin *plugin;
 #if defined(HAVE_XATTR)
@@ -1562,7 +1562,7 @@ bail_out:
 /**
  * Plugin specific callback for setting XATTR information.
  */
-bxattr_exit_code plugin_parse_xattr_streams(JCR *jcr,
+bxattr_exit_code plugin_parse_xattr_streams(JobControlRecord *jcr,
                                             struct xattr_data_t *xattr_data,
                                             int stream,
                                             char *content,
@@ -1706,7 +1706,7 @@ void unload_fd_plugins(void)
    fd_plugin_list = NULL;
 }
 
-int list_fd_plugins(POOL_MEM &msg)
+int list_fd_plugins(PoolMem &msg)
 {
    return list_plugins(fd_plugin_list, msg);
 }
@@ -1757,7 +1757,7 @@ static bool is_plugin_compatible(Plugin *plugin)
 /**
  * Instantiate a new plugin instance.
  */
-static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char instance)
+static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugin, char instance)
 {
    bpContext *ctx;
    b_plugin_ctx *b_ctx;
@@ -1787,7 +1787,7 @@ static inline bpContext *instantiate_plugin(JCR *jcr, Plugin *plugin, char insta
  *
  * Note, fd_plugin_list can exist but jcr->plugin_ctx_list can be NULL if no plugins were loaded.
  */
-void new_plugins(JCR *jcr)
+void new_plugins(JobControlRecord *jcr)
 {
    int i, num;
    Plugin *plugin;
@@ -1820,7 +1820,7 @@ void new_plugins(JCR *jcr)
 /**
  * Free the plugin instances for this Job
  */
-void free_plugins(JCR *jcr)
+void free_plugins(JobControlRecord *jcr)
 {
    bpContext *ctx;
 
@@ -1844,11 +1844,11 @@ void free_plugins(JCR *jcr)
 /**
  * Entry point for opening the file this is a wrapper around the pluginIO entry point in the plugin.
  */
-static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode)
+static int my_plugin_bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode)
 {
    Plugin *plugin;
    struct io_pkt io;
-   JCR *jcr = bfd->jcr;
+   JobControlRecord *jcr = bfd->jcr;
 
    Dmsg1(dbglvl, "plugin_bopen flags=%08o\n", flags);
    if (!jcr->plugin_ctx) {
@@ -1883,11 +1883,11 @@ static int my_plugin_bopen(BFILE *bfd, const char *fname, int flags, mode_t mode
 /**
  * Entry point for closing the file this is a wrapper around the pluginIO entry point in the plugin.
  */
-static int my_plugin_bclose(BFILE *bfd)
+static int my_plugin_bclose(BareosWinFilePacket *bfd)
 {
    Plugin *plugin;
    struct io_pkt io;
-   JCR *jcr = bfd->jcr;
+   JobControlRecord *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "===== plugin_bclose\n");
    if (!jcr->plugin_ctx) {
@@ -1919,11 +1919,11 @@ static int my_plugin_bclose(BFILE *bfd)
 /**
  * Entry point for reading from the file this is a wrapper around the pluginIO entry point in the plugin.
  */
-static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
+static ssize_t my_plugin_bread(BareosWinFilePacket *bfd, void *buf, size_t count)
 {
    Plugin *plugin;
    struct io_pkt io;
-   JCR *jcr = bfd->jcr;
+   JobControlRecord *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bread\n");
    if (!jcr->plugin_ctx) {
@@ -1956,11 +1956,11 @@ static ssize_t my_plugin_bread(BFILE *bfd, void *buf, size_t count)
 /**
  * Entry point for writing to the file this is a wrapper around the pluginIO entry point in the plugin.
  */
-static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
+static ssize_t my_plugin_bwrite(BareosWinFilePacket *bfd, void *buf, size_t count)
 {
    Plugin *plugin;
    struct io_pkt io;
-   JCR *jcr = bfd->jcr;
+   JobControlRecord *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bwrite\n");
    if (!jcr->plugin_ctx) {
@@ -1993,11 +1993,11 @@ static ssize_t my_plugin_bwrite(BFILE *bfd, void *buf, size_t count)
 /**
  * Entry point for seeking in the file this is a wrapper around the pluginIO entry point in the plugin.
  */
-static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
+static boffset_t my_plugin_blseek(BareosWinFilePacket *bfd, boffset_t offset, int whence)
 {
    Plugin *plugin;
    struct io_pkt io;
-   JCR *jcr = bfd->jcr;
+   JobControlRecord *jcr = bfd->jcr;
 
    Dmsg0(dbglvl, "plugin_bseek\n");
    if (!jcr->plugin_ctx) {
@@ -2032,7 +2032,7 @@ static boffset_t my_plugin_blseek(BFILE *bfd, boffset_t offset, int whence)
  */
 static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 {
-   JCR *jcr = NULL;
+   JobControlRecord *jcr = NULL;
    if (!value) {
       return bRC_Error;
    }
@@ -2136,7 +2136,7 @@ static bRC bareosGetValue(bpContext *ctx, bVariable var, void *value)
 
 static bRC bareosSetValue(bpContext *ctx, bVariable var, void *value)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
    if (!value || !ctx) {
       return bRC_Error;
@@ -2192,7 +2192,7 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
 static bRC bareosGetInstanceCount(bpContext *ctx, int *ret)
 {
    int cnt;
-   JCR *jcr, *njcr;
+   JobControlRecord *jcr, *njcr;
    bpContext *nctx;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
@@ -2250,9 +2250,9 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
 static bRC bareosJobMsg(bpContext *ctx, const char *fname, int line,
                         int type, utime_t mtime, const char *fmt, ...)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    if (ctx) {
       jcr = ((b_plugin_ctx *)ctx->bContext)->jcr;
@@ -2272,7 +2272,7 @@ static bRC bareosDebugMsg(bpContext *ctx, const char *fname, int line,
                           int level, const char *fmt, ...)
 {
    va_list arg_ptr;
-   POOL_MEM buffer(PM_MESSAGE);
+   PoolMem buffer(PM_MESSAGE);
 
    va_start(arg_ptr, fmt);
    buffer.bvsprintf(fmt, arg_ptr);
@@ -2305,7 +2305,7 @@ static void bareosFree(bpContext *ctx, const char *fname, int line, void *mem)
  */
 static bRC bareosAddExclude(bpContext *ctx, const char *fname)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    findINCEXE *old;
    b_plugin_ctx *bctx;
 
@@ -2354,7 +2354,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *fname)
  */
 static bRC bareosAddInclude(bpContext *ctx, const char *fname)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    findINCEXE *old;
    b_plugin_ctx *bctx;
 
@@ -2397,7 +2397,7 @@ static bRC bareosAddInclude(bpContext *ctx, const char *fname)
 
 static bRC bareosAddOptions(bpContext *ctx, const char *opts)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2415,7 +2415,7 @@ static bRC bareosAddOptions(bpContext *ctx, const char *opts)
 
 static bRC bareosAddRegex(bpContext *ctx, const char *item, int type)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2433,7 +2433,7 @@ static bRC bareosAddRegex(bpContext *ctx, const char *item, int type)
 
 static bRC bareosAddWild(bpContext *ctx, const char *item, int type)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2451,7 +2451,7 @@ static bRC bareosAddWild(bpContext *ctx, const char *item, int type)
 
 static bRC bareosNewOptions(bpContext *ctx)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2464,7 +2464,7 @@ static bRC bareosNewOptions(bpContext *ctx)
 
 static bRC bareosNewInclude(bpContext *ctx)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2477,7 +2477,7 @@ static bRC bareosNewInclude(bpContext *ctx)
 
 static bRC bareosNewPreInclude(bpContext *ctx)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2496,9 +2496,9 @@ static bRC bareosNewPreInclude(bpContext *ctx)
  */
 static bRC bareosCheckChanges(bpContext *ctx, struct save_pkt *sp)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
-   FF_PKT *ff_pkt;
+   FindFilesPacket *ff_pkt;
    bRC retval = bRC_Error;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2550,8 +2550,8 @@ bail_out:
  */
 static bRC bareosAcceptFile(bpContext *ctx, struct save_pkt *sp)
 {
-   JCR *jcr;
-   FF_PKT *ff_pkt;
+   JobControlRecord *jcr;
+   FindFilesPacket *ff_pkt;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
 
@@ -2582,7 +2582,7 @@ bail_out:
  */
 static bRC bareosSetSeenBitmap(bpContext *ctx, bool all, char *fname)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
 
@@ -2614,7 +2614,7 @@ bail_out:
  */
 static bRC bareosClearSeenBitmap(bpContext *ctx, bool all, char *fname)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    b_plugin_ctx *bctx;
    bRC retval = bRC_Error;
 
@@ -2643,19 +2643,19 @@ bail_out:
 
 #ifdef TEST_PROGRAM
 /* Exported variables */
-CLIENTRES *me;                        /* my resource */
+ClientResource *me;                        /* my resource */
 
-int save_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+int save_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
    return 0;
 }
 
-bool accurate_mark_file_as_seen(JCR *jcr, char *fname)
+bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname)
 {
    return true;
 }
 
-bool set_cmd_plugin(BFILE *bfd, JCR *jcr)
+bool set_cmd_plugin(BareosWinFilePacket *bfd, JobControlRecord *jcr)
 {
    return true;
 }
@@ -2663,9 +2663,9 @@ bool set_cmd_plugin(BFILE *bfd, JCR *jcr)
 int main(int argc, char *argv[])
 {
    char plugin_dir[PATH_MAX];
-   JCR mjcr1, mjcr2;
-   JCR *jcr1 = &mjcr1;
-   JCR *jcr2 = &mjcr2;
+   JobControlRecord mjcr1, mjcr2;
+   JobControlRecord *jcr1 = &mjcr1;
+   JobControlRecord *jcr2 = &mjcr2;
 
    my_name_is(argc, argv, "plugtest");
    init_msg(NULL, NULL);

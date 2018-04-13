@@ -83,7 +83,7 @@ struct ndmp_session_handle {
    int port;                       /* Local port */
    struct sockaddr client_addr;    /* Client's IP address */
    struct sockaddr_in peer_addr;   /* Peer's IP address */
-   JCR *jcr;                       /* Internal JCR bound to this NDMP session */
+   JobControlRecord *jcr;                       /* Internal JobControlRecord bound to this NDMP session */
 };
 
 /**
@@ -91,7 +91,7 @@ struct ndmp_session_handle {
  */
 struct ndmp_internal_state {
    uint32_t LogLevel;
-   JCR *jcr;
+   JobControlRecord *jcr;
 };
 typedef struct ndmp_internal_state NIS;
 
@@ -225,7 +225,7 @@ extern "C" void ndmp_loghandler(struct ndmlog *log, char *tag, int level, char *
  */
 extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass)
 {
-   NDMPRES *auth_config;
+   NdmpResource *auth_config;
 
    foreach_res(auth_config, R_NDMP) {
       /*
@@ -264,7 +264,7 @@ extern "C" int bndmp_auth_clear(struct ndm_session *sess, char *name, char *pass
  */
 extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[16])
 {
-   NDMPRES *auth_config;
+   NdmpResource *auth_config;
 
    foreach_res(auth_config, R_NDMP) {
       /*
@@ -307,13 +307,13 @@ extern "C" int bndmp_auth_md5(struct ndm_session *sess, char *name, char digest[
 /**
  * Save a record using the native routines.
  */
-static inline bool bndmp_write_data_to_block(JCR *jcr,
+static inline bool bndmp_write_data_to_block(JobControlRecord *jcr,
                                              int stream,
                                              char *data,
                                              uint32_t data_length)
 {
    bool retval = false;
-   DCR *dcr = jcr->dcr;
+   DeviceControlRecord *dcr = jcr->dcr;
    POOLMEM *rec_data;
 
    if (!dcr) {
@@ -358,12 +358,12 @@ bail_out:
  *
  * data_length == 0 = EOF
  */
-static inline bool bndmp_read_data_from_block(JCR *jcr,
+static inline bool bndmp_read_data_from_block(JobControlRecord *jcr,
                                               char *data,
                                               uint32_t wanted_data_length,
                                               uint32_t *data_length)
 {
-   DCR *dcr = jcr->read_dcr;
+   DeviceControlRecord *dcr = jcr->read_dcr;
    READ_CTX *rctx = jcr->rctx;
    bool done = false;
    bool ok = true;
@@ -467,12 +467,12 @@ static inline bool bndmp_read_data_from_block(JCR *jcr,
 /**
  * Generate virtual file attributes for the whole NDMP stream.
  */
-static inline bool bndmp_create_virtual_file(JCR *jcr, char *filename)
+static inline bool bndmp_create_virtual_file(JobControlRecord *jcr, char *filename)
 {
-   DCR *dcr = jcr->dcr;
+   DeviceControlRecord *dcr = jcr->dcr;
    struct stat statp;
    time_t now = time(NULL);
-   POOL_MEM attribs(PM_NAME),
+   PoolMem attribs(PM_NAME),
             data(PM_NAME);
    int32_t size;
 
@@ -532,9 +532,9 @@ static int bndmp_simu_flush_weof(struct ndm_session *sess)
 /**
  * Search the JCRs for one with the given security key.
  */
-static inline JCR *get_jcr_by_security_key(char *security_key)
+static inline JobControlRecord *get_jcr_by_security_key(char *security_key)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
    foreach_jcr(jcr) {
       if (bstrcmp(jcr->sd_auth_key, security_key)) {
@@ -550,8 +550,8 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
                                        char *drive_name,
                                        int will_write)
 {
-   JCR *jcr;
-   DCR *dcr;
+   JobControlRecord *jcr;
+   DeviceControlRecord *dcr;
    char *filesystem;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta;
@@ -573,7 +573,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    }
 
    /*
-    * When we found a JCR with the wanted security key it also implictly
+    * When we found a JobControlRecord with the wanted security key it also implictly
     * means the authentication succeeded as the connecting NDMP session
     * only knows the exact security key as it was inserted by the director.
     */
@@ -587,15 +587,15 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    pthread_cond_signal(&jcr->job_start_wait);
 
    /*
-    * Save the JCR to ndm_session binding so everything furher
-    * knows which JCR belongs to which NDMP session. We have
+    * Save the JobControlRecord to ndm_session binding so everything furher
+    * knows which JobControlRecord belongs to which NDMP session. We have
     * a special ndmp_session_handle which we can use to track
     * session specific information.
     */
    handle = (struct ndmp_session_handle *)sess->session_handle;
 
    /*
-    * If we already have a JCR binding for this connection we release it here
+    * If we already have a JobControlRecord binding for this connection we release it here
     * as we are about to establish a new binding (e.g. second NDMP save for
     * the same job) and we should end up with the same binding.
     */
@@ -605,7 +605,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    handle->jcr = jcr;
 
    /*
-    * Keep track of the JCR for logging purposes.
+    * Keep track of the JobControlRecord for logging purposes.
     */
    if (sess->param->log.ctx) {
       NIS *nis;
@@ -615,7 +615,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    }
 
    /*
-    * Depending on the open mode select the right DCR.
+    * Depending on the open mode select the right DeviceControlRecord.
     */
    if (will_write) {
       dcr = jcr->dcr;
@@ -624,12 +624,12 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
    }
 
    if (!dcr) {
-      Jmsg0(jcr, M_FATAL, 0, _("DCR is NULL!!!\n"));
+      Jmsg0(jcr, M_FATAL, 0, _("DeviceControlRecord is NULL!!!\n"));
       return NDMP9_NO_DEVICE_ERR;
    }
 
    if (!dcr->dev) {
-      Jmsg0(jcr, M_FATAL, 0, _("DEVICE is NULL!!!\n"));
+      Jmsg0(jcr, M_FATAL, 0, _("Device is NULL!!!\n"));
       return NDMP9_NO_DEVICE_ERR;
    }
 
@@ -637,7 +637,7 @@ extern "C" ndmp9_error bndmp_tape_open(struct ndm_session *sess,
     * See if need to setup for write or read.
     */
    if (will_write) {
-      POOL_MEM virtual_filename(PM_FNAME);
+      PoolMem virtual_filename(PM_FNAME);
 
       /*
        * Setup internal system for writing data.
@@ -819,7 +819,7 @@ bail_out:
 
 extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    ndmp9_error err;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta = sess->tape_acb;
@@ -838,7 +838,7 @@ extern "C" ndmp9_error bndmp_tape_close(struct ndm_session *sess)
 
    jcr = handle->jcr;
    if (!jcr) {
-      Jmsg0(NULL, M_FATAL, 0, _("JCR is NULL!!!\n"));
+      Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
       return NDMP9_DEV_NOT_OPEN_ERR;
    }
 
@@ -914,7 +914,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session *sess,
                                         uint32_t count,
                                         uint32_t *done_count)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    ndmp9_error err;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta = sess->tape_acb;
@@ -934,7 +934,7 @@ extern "C" ndmp9_error bndmp_tape_write(struct ndm_session *sess,
 
    jcr = handle->jcr;
    if (!jcr) {
-      Jmsg0(NULL, M_FATAL, 0, _("JCR is NULL!!!\n"));
+      Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
       return NDMP9_DEV_NOT_OPEN_ERR;
    }
 
@@ -980,7 +980,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session *sess,
                                        uint32_t count,
                                        uint32_t *done_count)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    ndmp9_error err;
    struct ndmp_session_handle *handle;
    struct ndm_tape_agent *ta = sess->tape_acb;
@@ -996,7 +996,7 @@ extern "C" ndmp9_error bndmp_tape_read(struct ndm_session *sess,
 
    jcr = handle->jcr;
    if (!jcr) {
-      Jmsg0(NULL, M_FATAL, 0, _("JCR is NULL!!!\n"));
+      Jmsg0(NULL, M_FATAL, 0, _("JobControlRecord is NULL!!!\n"));
       return NDMP9_DEV_NOT_OPEN_ERR;
    }
 
@@ -1045,9 +1045,9 @@ static inline void unregister_callback_hooks(struct ndm_session *sess)
    ndmos_auth_unregister_callbacks(sess);
 }
 
-void end_of_ndmp_backup(JCR *jcr)
+void end_of_ndmp_backup(JobControlRecord *jcr)
 {
-   DCR *dcr = jcr->dcr;
+   DeviceControlRecord *dcr = jcr->dcr;
    char ec[50];
 
    /*
@@ -1125,7 +1125,7 @@ void end_of_ndmp_backup(JCR *jcr)
    jcr->sendJobStatus();              /* update director */
 }
 
-void end_of_ndmp_restore(JCR *jcr)
+void end_of_ndmp_restore(JobControlRecord *jcr)
 {
    if (jcr->rctx) {
       free_read_context(jcr->rctx);
@@ -1562,11 +1562,11 @@ void stop_ndmp_thread_server()
    }
 }
 #else
-void end_of_ndmp_backup(JCR *jcr)
+void end_of_ndmp_backup(JobControlRecord *jcr)
 {
 }
 
-void end_of_ndmp_restore(JCR *jcr)
+void end_of_ndmp_restore(JobControlRecord *jcr)
 {
 }
 #endif /* HAVE_NDMP */

@@ -202,15 +202,15 @@ static pthread_mutex_t tapealert_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static bRC handle_tapealert_readout(void *value)
 {
-   DCR *dcr;
-   DEVICE *dev;
-   DEVRES *device;
+   DeviceControlRecord *dcr;
+   Device *dev;
+   DeviceResource *device;
    uint64_t flags;
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       return bRC_Error;
    }

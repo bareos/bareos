@@ -33,11 +33,11 @@
 #include "dird.h"
 
 /* Forward referenced functions */
-static bool update_volume(UAContext *ua);
-static bool update_pool(UAContext *ua);
-static bool update_job(UAContext *ua);
-static bool update_stats(UAContext *ua);
-static void update_slots(UAContext *ua);
+static bool update_volume(UaContext *ua);
+static bool update_pool(UaContext *ua);
+static bool update_job(UaContext *ua);
+static bool update_stats(UaContext *ua);
+static void update_slots(UaContext *ua);
 
 /**
  * Update a Pool Record in the database.
@@ -54,7 +54,7 @@ static void update_slots(UAContext *ua);
  *    update stats [days=...]
  *         updates long term statistics
  */
-bool update_cmd(UAContext *ua, const char *cmd)
+bool update_cmd(UaContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("media"),  /* 0 */
@@ -117,9 +117,9 @@ bool update_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-static void update_volstatus(UAContext *ua, const char *val, MEDIA_DBR *mr)
+static void update_volstatus(UaContext *ua, const char *val, MediaDbRecord *mr)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    const char *kw[] = {
       NT_("Append"),
       NT_("Archive"),
@@ -156,10 +156,10 @@ static void update_volstatus(UAContext *ua, const char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volretention(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volretention(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[150], ed2[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!duration_to_utime(val, &mr->VolRetention)) {
       ua->error_msg(_("Invalid retention period specified: %s\n"), val);
@@ -175,10 +175,10 @@ static void update_volretention(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_voluseduration(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_voluseduration(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[150], ed2[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!duration_to_utime(val, &mr->VolUseDuration)) {
       ua->error_msg(_("Invalid use duration specified: %s\n"), val);
@@ -194,9 +194,9 @@ static void update_voluseduration(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volmaxjobs(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volmaxjobs(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    char ed1[50];
 
    Mmsg(query, "UPDATE Media SET MaxVolJobs=%s WHERE MediaId=%s",
@@ -208,9 +208,9 @@ static void update_volmaxjobs(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volmaxfiles(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volmaxfiles(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    char ed1[50];
 
    Mmsg(query, "UPDATE Media SET MaxVolFiles=%s WHERE MediaId=%s",
@@ -222,11 +222,11 @@ static void update_volmaxfiles(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volmaxbytes(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volmaxbytes(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    uint64_t maxbytes;
    char ed1[50], ed2[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!size_to_uint64(val, &maxbytes)) {
       ua->error_msg(_("Invalid max. bytes specification: %s\n"), val);
@@ -241,11 +241,11 @@ static void update_volmaxbytes(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volrecycle(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volrecycle(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    bool recycle;
    char ed1[50];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!is_yesno(val, &recycle)) {
       ua->error_msg(_("Invalid value. It must be yes or no.\n"));
@@ -263,11 +263,11 @@ static void update_volrecycle(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volinchanger(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volinchanger(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    char ed1[50];
    bool InChanger;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    if (!is_yesno(val, &InChanger)) {
       ua->error_msg(_("Invalid value. It must be yes or no.\n"));
@@ -285,9 +285,9 @@ static void update_volinchanger(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volslot(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
@@ -316,10 +316,10 @@ static void update_volslot(UAContext *ua, char *val, MEDIA_DBR *mr)
 /**
  * Modify the Pool in which this Volume is located
  */
-void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
+void update_vol_pool(UaContext *ua, char *val, MediaDbRecord *mr, PoolDbRecord *opr)
 {
-   POOL_DBR pr;
-   POOL_MEM query(PM_MESSAGE);
+   PoolDbRecord pr;
+   PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[50];
 
    memset(&pr, 0, sizeof(pr));
@@ -351,10 +351,10 @@ void update_vol_pool(UAContext *ua, char *val, MEDIA_DBR *mr, POOL_DBR *opr)
 /**
  * Modify the RecyclePool of a Volume
  */
-void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
+void update_vol_recyclepool(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   POOL_DBR pr;
-   POOL_MEM query(PM_MESSAGE);
+   PoolDbRecord pr;
+   PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[50];
    const char *poolname;
 
@@ -391,10 +391,10 @@ void update_vol_recyclepool(UAContext *ua, char *val, MEDIA_DBR *mr)
 /**
  * Modify the Storage in which this Volume is located
  */
-void update_vol_storage(UAContext *ua, char *val, MEDIA_DBR *mr)
+void update_vol_storage(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   STORAGE_DBR sr;
-   POOL_MEM query(PM_MESSAGE);
+   StorageDbRecord sr;
+   PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[50];
 
    memset(&sr, 0, sizeof(sr));
@@ -417,9 +417,9 @@ void update_vol_storage(UAContext *ua, char *val, MEDIA_DBR *mr)
 /**
  * Refresh the Volume information from the Pool record
  */
-static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
+static void update_vol_from_pool(UaContext *ua, MediaDbRecord *mr)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
    pr.PoolId = mr->PoolId;
@@ -439,10 +439,10 @@ static void update_vol_from_pool(UAContext *ua, MEDIA_DBR *mr)
 /**
  * Refresh the Volume information from the Pool record for all Volumes
  */
-static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
+static void update_all_vols_from_pool(UaContext *ua, const char *pool_name)
 {
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
 
    memset(&pr, 0, sizeof(pr));
    memset(&mr, 0, sizeof(mr));
@@ -461,12 +461,12 @@ static void update_all_vols_from_pool(UAContext *ua, const char *pool_name)
    }
 }
 
-static void update_all_vols(UAContext *ua)
+static void update_all_vols(UaContext *ua)
 {
    int i, num_pools;
    uint32_t *ids;
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
 
    memset(&pr, 0, sizeof(pr));
    memset(&mr, 0, sizeof(mr));
@@ -503,7 +503,7 @@ static void update_all_vols(UAContext *ua)
    free(ids);
 }
 
-static void update_volenabled(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_volenabled(UaContext *ua, char *val, MediaDbRecord *mr)
 {
    mr->Enabled = get_enabled(ua, val);
    if (mr->Enabled < 0) {
@@ -517,9 +517,9 @@ static void update_volenabled(UAContext *ua, char *val, MEDIA_DBR *mr)
    }
 }
 
-static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
+static void update_vol_actiononpurge(UaContext *ua, char *val, MediaDbRecord *mr)
 {
-   POOL_MEM ret;
+   PoolMem ret;
    if (bstrcasecmp(val, "truncate")) {
       mr->ActionOnPurge = ON_PURGE_TRUNCATE;
    } else {
@@ -542,11 +542,11 @@ static void update_vol_actiononpurge(UAContext *ua, char *val, MEDIA_DBR *mr)
  *  writing on the volume, set it to anything other
  *  than Append.
  */
-static bool update_volume(UAContext *ua)
+static bool update_volume(UaContext *ua)
 {
-   POOLRES *pool;
+   PoolResource *pool;
    POOLMEM *query;
-   POOL_MEM ret;
+   PoolMem ret;
    char buf[1000];
    char ed1[130];
    bool done = false;
@@ -575,8 +575,8 @@ static bool update_volume(UAContext *ua)
 
    for (i = 0; kw[i]; i++) {
       int j;
-      POOL_DBR pr;
-      MEDIA_DBR mr;
+      PoolDbRecord pr;
+      MediaDbRecord mr;
 
       memset(&pr, 0, sizeof(pr));
       memset(&mr, 0, sizeof(mr));
@@ -652,9 +652,9 @@ static bool update_volume(UAContext *ua)
    }
 
    for ( ; !done; ) {
-      POOL_DBR pr;
-      MEDIA_DBR mr;
-      STORAGE_DBR sr;
+      PoolDbRecord pr;
+      MediaDbRecord mr;
+      StorageDbRecord sr;
 
       memset(&pr, 0, sizeof(pr));
       memset(&mr, 0, sizeof(mr));
@@ -900,7 +900,7 @@ static bool update_volume(UAContext *ua)
 /**
  * Update long term statistics
  */
-static bool update_stats(UAContext *ua)
+static bool update_stats(UaContext *ua)
 {
    int i = find_arg_with_value(ua, NT_("days"));
    utime_t since = 0;
@@ -918,13 +918,13 @@ static bool update_stats(UAContext *ua)
 /**
  * Update pool record -- pull info from current POOL resource
  */
-static bool update_pool(UAContext *ua)
+static bool update_pool(UaContext *ua)
 {
    int id;
-   POOL_DBR pr;
+   PoolDbRecord pr;
    char ed1[50];
-   POOLRES *pool;
-   POOL_MEM query(PM_MESSAGE);
+   PoolResource *pool;
+   PoolMem query(PM_MESSAGE);
 
    pool = get_pool_resource(ua);
    if (!pool) {
@@ -944,7 +944,7 @@ static bool update_pool(UAContext *ua)
    if (id <= 0) {
       ua->error_msg(_("update_pool_record returned %d. ERR=%s\n"), id, ua->db->strerror());
    }
-   ua->db->fill_query(query, B_DB::SQL_QUERY_list_pool, edit_int64(pr.PoolId, ed1));
+   ua->db->fill_query(query, BareosDb::SQL_QUERY_list_pool, edit_int64(pr.PoolId, ed1));
    ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    ua->info_msg(_("Pool DB record updated from resource.\n"));
 
@@ -954,13 +954,13 @@ static bool update_pool(UAContext *ua)
 /**
  * Update a Job record -- allows to change the fields in a Job record.
  */
-static bool update_job(UAContext *ua)
+static bool update_job(UaContext *ua)
 {
    int i;
    char ed1[50], ed2[50], ed3[50], ed4[50];
-   POOL_MEM cmd(PM_MESSAGE);
-   JOB_DBR jr;
-   CLIENT_DBR cr;
+   PoolMem cmd(PM_MESSAGE);
+   JobDbRecord jr;
+   ClientDbRecord cr;
    utime_t StartTime;
    char *client_name = NULL;
    char *job_name = NULL;
@@ -1072,12 +1072,12 @@ static bool update_job(UAContext *ua)
 /**
  * Update Slots corresponding to Volumes in autochanger
  */
-static void update_slots(UAContext *ua)
+static void update_slots(UaContext *ua)
 {
-   USTORERES store;
+   UnifiedStoreResource store;
    vol_list_t *vl;
    changer_vol_list_t *vol_list = NULL;
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
    char *slot_list;
    bool scan;
    slot_number_t max_slots;
@@ -1263,10 +1263,10 @@ bail_out:
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_slots_from_vol_list(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list)
+void update_slots_from_vol_list(UaContext *ua, StoreResource *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
 
    if (!open_client_db(ua)) {
       return;
@@ -1368,10 +1368,10 @@ void update_slots_from_vol_list(UAContext *ua, STORERES *store, changer_vol_list
  *
  * The vol_list passed here needs to be from an "autochanger listall" cmd.
  */
-void update_inchanger_for_export(UAContext *ua, STORERES *store, changer_vol_list_t *vol_list, char *slot_list)
+void update_inchanger_for_export(UaContext *ua, StoreResource *store, changer_vol_list_t *vol_list, char *slot_list)
 {
    vol_list_t *vl;
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
 
    if (!open_client_db(ua)) {
       return;

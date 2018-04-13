@@ -27,7 +27,7 @@
 #include <QList>
 
 class MonitorItem;
-class MONITORRES;
+class MonitorResource;
 class QTimer;
 
 class MonitorItemThread : public QThread
@@ -40,7 +40,7 @@ public:
 
    Qt::HANDLE getThreadId();
    QStringList createRes(const cl_opts& cl);
-   MONITORRES* getMonitor() const;
+   MonitorResource* getMonitor() const;
    MonitorItem *getDirector() const;
 
 protected:
@@ -54,7 +54,7 @@ private:
 
    static MonitorItemThread* monitorItemThreadSingleton;
    static bool already_destroyed;
-   MONITORRES* monitor;
+   MonitorResource* monitor;
    Qt::HANDLE threadId;
 
    QList<MonitorItem*> items;

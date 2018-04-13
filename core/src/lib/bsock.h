@@ -41,35 +41,35 @@
 #include <bareos.h>
 
 struct btimer_t;                      /* forward reference */
-class BSOCK;
-btimer_t *start_bsock_timer(BSOCK *bs, uint32_t wait);
+class BareosSocket;
+btimer_t *start_bsock_timer(BareosSocket *bs, uint32_t wait);
 void stop_bsock_timer(btimer_t *wid);
 
-uint32_t GetNeedFromConfiguration(TLSRES *tls_configuration);
+uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration);
 
 
-tls_base_t *SelectTlsFromPolicy(TLSRES *tls_configuration, uint32_t remote_policy);
+TlsBase *SelectTlsFromPolicy(TlsResource *tls_configuration, uint32_t remote_policy);
 
-class DLL_IMP_EXP BSOCK : public SMARTALLOC {
+class DLL_IMP_EXP BareosSocket : public SmartAlloc {
 /*
  * Note, keep this public part before the private otherwise
  *  bat breaks on some systems such as RedHat.
  */
 public:
-   int m_fd;                          /* Socket file descriptor */
+   int fd_;                          /* Socket file descriptor */
    uint64_t read_seqno;               /* Read sequence number */
    POOLMEM *msg;                      /* Message pool buffer */
    POOLMEM *errmsg;                   /* Edited error message */
-   int m_spool_fd;                    /* Spooling file */
+   int spool_fd_;                    /* Spooling file */
    IPADDR *src_addr;                  /* IP address to source connections from */
    uint32_t in_msg_no;                /* Input message number */
    uint32_t out_msg_no;               /* Output message number */
    int32_t msglen;                    /* Message length */
    volatile time_t timer_start;       /* Time started read/write */
-   int b_errno;                       /* BSOCK errno */
-   int m_blocking;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
+   int b_errno;                       /* BareosSocket errno */
+   int blocking_;                    /* Blocking state (0 = nonblocking, 1 = blocking) */
    volatile int errors;               /* Incremented for each error on socket */
-   volatile bool m_suppress_error_msgs; /* Set to suppress error messages */
+   volatile bool suppress_error_msgs_; /* Set to suppress error messages */
 
    struct sockaddr client_addr;       /* Client's IP address */
    struct sockaddr_in peer_addr;      /* Peer's IP address */
@@ -87,49 +87,49 @@ public:
   //  } /* Associated tls connection */
 
 protected:
-   JCR *m_jcr;                        /* JCR or NULL for error msgs */
-   pthread_mutex_t m_mutex;           /* For locking if use_locking set */
-   char *m_who;                       /* Name of daemon to which we are talking */
-   char *m_host;                      /* Host name/IP */
-   int m_port;                        /* Desired port */
-   btimer_t *m_tid;                   /* Timer id */
-   boffset_t m_data_end;              /* Offset of last valid data written */
-   int32_t m_FileIndex;               /* Last valid attr spool FI */
-   volatile bool m_timed_out:1;       /* Timed out in read/write */
-   volatile bool m_terminated:1;      /* Set when BNET_TERMINATE arrives */
-   bool m_cloned:1;                   /* Set if cloned BSOCK */
-   bool m_spool:1;                    /* Set for spooling */
-   bool m_use_locking:1;              /* Set to use locking */
-   bool m_use_bursting:1;             /* Set to use bandwidth bursting */
-   bool m_use_keepalive:1;            /* Set to use keepalive on the socket */
-   int64_t m_bwlimit;                 /* Set to limit bandwidth */
-   int64_t m_nb_bytes;                /* Bytes sent/recv since the last tick */
-   btime_t m_last_tick;               /* Last tick used by bwlimit */
+   JobControlRecord *jcr_;                        /* JobControlRecord or NULL for error msgs */
+   pthread_mutex_t mutex_;           /* For locking if use_locking set */
+   char *who_;                       /* Name of daemon to which we are talking */
+   char *host_;                      /* Host name/IP */
+   int port_;                        /* Desired port */
+   btimer_t *tid_;                   /* Timer id */
+   boffset_t data_end_;              /* Offset of last valid data written */
+   int32_t FileIndex_;               /* Last valid attr spool FI */
+   volatile bool timed_out_:1;       /* Timed out in read/write */
+   volatile bool terminated_:1;      /* Set when BNET_TERMINATE arrives */
+   bool cloned_:1;                   /* Set if cloned BareosSocket */
+   bool spool_:1;                    /* Set for spooling */
+   bool use_locking_:1;              /* Set to use locking */
+   bool use_bursting_:1;             /* Set to use bandwidth bursting */
+   bool use_keepalive_:1;            /* Set to use keepalive on the socket */
+   int64_t bwlimit_;                 /* Set to limit bandwidth */
+   int64_t nb_bytes_;                /* Bytes sent/recv since the last tick */
+   btime_t last_tick_;               /* Last tick used by bwlimit */
 
-   virtual void fin_init(JCR * jcr, int sockfd, const char *who, const char *host, int port,
+   virtual void fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host, int port,
                          struct sockaddr *lclient_addr) = 0;
-   virtual bool open(JCR *jcr, const char *name, char *host, char *service,
+   virtual bool open(JobControlRecord *jcr, const char *name, char *host, char *service,
                      int port, utime_t heart_beat, int *fatal) = 0;
 
 private:
   TLS_CONNECTION *tls_conn;          /* Associated tls connection */
   // std::shared_ptr<TLS_CONNECTION> tls_conn;          /* Associated tls connection */
-  bool two_way_authenticate(JCR *jcr,
+  bool two_way_authenticate(JobControlRecord *jcr,
                             const char *what,
                             const char *identity,
                             s_password &password,
-                            TLSRES *tls_configuration,
+                            TlsResource *tls_configuration,
                             bool initiated_by_remote);
 
 public:
-   BSOCK();
-   virtual ~BSOCK();
+   BareosSocket();
+   virtual ~BareosSocket();
 
    /* Methods -- in bsock.c */
   //  void free_bsock();
    void free_tls();
-   virtual BSOCK *clone() = 0;
-   virtual bool connect(JCR * jcr, int retry_interval, utime_t max_retry_time,
+   virtual BareosSocket *clone() = 0;
+   virtual bool connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
                         utime_t heart_beat, const char *name, char *host,
                         char *service, int port, bool verbose) = 0;
    virtual int32_t recv() = 0;
@@ -153,64 +153,64 @@ public:
    bool signal(int signal);
    const char *bstrerror();           /* last error on socket */
    bool despool(void update_attr_spool_size(ssize_t size), ssize_t tsize);
-   bool authenticate_with_director(JCR *jcr,
+   bool authenticate_with_director(JobControlRecord *jcr,
                                    const char *name,
                                    s_password &password,
                                    char *response,
                                    int response_len,
-                                   TLSRES *tls_configuration);
+                                   TlsResource *tls_configuration);
    bool set_locking();                /* in bsock.c */
    void clear_locking();              /* in bsock.c */
    void set_source_address(dlist *src_addr_list);
    void control_bwlimit(int bytes);   /* in bsock.c */
 
-   bool authenticate_outbound_connection(JCR *jcr,
+   bool authenticate_outbound_connection(JobControlRecord *jcr,
                                          const char *what,
                                          const char *identity,
                                          s_password &password,
-                                         TLSRES *tls_configuration);
+                                         TlsResource *tls_configuration);
 
-   bool authenticate_inbound_connection(JCR *jcr,
+   bool authenticate_inbound_connection(JobControlRecord *jcr,
                                         const char *what,
                                         const char *name,
                                         s_password &password,
-                                        TLSRES *tls_configuration);
+                                        TlsResource *tls_configuration);
 
-   void set_jcr(JCR *jcr) { m_jcr = jcr; };
-   void set_who(char *who) { m_who = who; };
-   void set_host(char *host) { m_host = host; };
-   void set_port(int port) { m_port = port; };
-   char *who() { return m_who; };
-   char *host() { return m_host; };
-   int port() { return m_port; };
-   JCR *jcr() { return m_jcr; };
-   JCR *get_jcr() { return m_jcr; };
-   bool is_spooling() { return m_spool; };
-   bool is_terminated() { return m_terminated; };
-   bool is_timed_out() { return m_timed_out; };
+   void set_jcr(JobControlRecord *jcr) { jcr_ = jcr; };
+   void set_who(char *who) { who_ = who; };
+   void set_host(char *host) { host_ = host; };
+   void set_port(int port) { port_ = port; };
+   char *who() { return who_; };
+   char *host() { return host_; };
+   int port() { return port_; };
+   JobControlRecord *jcr() { return jcr_; };
+   JobControlRecord *get_jcr() { return jcr_; };
+   bool is_spooling() { return spool_; };
+   bool is_terminated() { return terminated_; };
+   bool is_timed_out() { return timed_out_; };
    bool is_stop() { return errors || is_terminated(); }
    bool is_error() { errno = b_errno; return errors; }
    void set_data_end(int32_t FileIndex) {
-      if (m_spool && FileIndex > m_FileIndex) {
-         m_FileIndex = FileIndex - 1;
-         m_data_end = lseek(m_spool_fd, 0, SEEK_CUR);
+      if (spool_ && FileIndex > FileIndex_) {
+         FileIndex_ = FileIndex - 1;
+         data_end_ = lseek(spool_fd_, 0, SEEK_CUR);
       }
    };
-   boffset_t get_data_end() { return m_data_end; };
-   int32_t get_FileIndex() { return m_FileIndex; };
-   void set_bwlimit(int64_t maxspeed) { m_bwlimit = maxspeed; };
-   bool use_bwlimit() { return m_bwlimit > 0;};
-   void set_bwlimit_bursting() { m_use_bursting = true; };
-   void clear_bwlimit_bursting() { m_use_bursting = false; };
-   void set_keepalive() { m_use_keepalive = true; };
-   void clear_keepalive() { m_use_keepalive = false; };
-   void set_spooling() { m_spool = true; };
-   void clear_spooling() { m_spool = false; };
-   void set_timed_out() { m_timed_out = true; };
-   void clear_timed_out() { m_timed_out = false; };
-   void set_terminated() { m_terminated = true; };
-   void start_timer(int sec) { m_tid = start_bsock_timer(this, sec); };
-   void stop_timer() { stop_bsock_timer(m_tid); };
+   boffset_t get_data_end() { return data_end_; };
+   int32_t get_FileIndex() { return FileIndex_; };
+   void set_bwlimit(int64_t maxspeed) { bwlimit_ = maxspeed; };
+   bool use_bwlimit() { return bwlimit_ > 0;};
+   void set_bwlimit_bursting() { use_bursting_ = true; };
+   void clear_bwlimit_bursting() { use_bursting_ = false; };
+   void set_keepalive() { use_keepalive_ = true; };
+   void clear_keepalive() { use_keepalive_ = false; };
+   void set_spooling() { spool_ = true; };
+   void clear_spooling() { spool_ = false; };
+   void set_timed_out() { timed_out_ = true; };
+   void clear_timed_out() { timed_out_ = false; };
+   void set_terminated() { terminated_ = true; };
+   void start_timer(int sec) { tid_ = start_bsock_timer(this, sec); };
+   void stop_timer() { stop_bsock_timer(tid_); };
 };
 
 /**

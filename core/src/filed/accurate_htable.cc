@@ -34,7 +34,7 @@
 
 static int dbglvl = 100;
 
-BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JCR *jcr, uint32_t number_of_files)
+BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JobControlRecord *jcr, uint32_t number_of_files)
 {
    jcr_= jcr;
    filenr_ = 0;
@@ -116,7 +116,7 @@ bool BareosAccurateFilelistHtable::update_payload(char *fname, accurate_payload 
 bool BareosAccurateFilelistHtable::send_base_file_list()
 {
    CurFile *elt;
-   FF_PKT *ff_pkt;
+   FindFilesPacket *ff_pkt;
    int32_t LinkFIc;
    struct stat statp;
    int stream = STREAM_UNIX_ATTRIBUTES;
@@ -149,7 +149,7 @@ bool BareosAccurateFilelistHtable::send_base_file_list()
 bool BareosAccurateFilelistHtable::send_deleted_list()
 {
    CurFile *elt;
-   FF_PKT *ff_pkt;
+   FindFilesPacket *ff_pkt;
    int32_t LinkFIc;
    struct stat statp;
    int stream = STREAM_UNIX_ATTRIBUTES;

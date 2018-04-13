@@ -31,24 +31,24 @@
 #include "bareos.h"
 #include "filed.h"
 
-static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool);
+static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
 
 /**
  * Find all the requested files and count them.
  */
-int make_estimate(JCR *jcr)
+int make_estimate(JobControlRecord *jcr)
 {
    int status;
 
    jcr->setJobStatus(JS_Running);
 
-   set_find_options((FF_PKT *)jcr->ff, jcr->incremental, jcr->mtime);
+   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    /* in accurate mode, we overwrite the find_one check function */
    if (jcr->accurate) {
-      set_find_changed_function((FF_PKT *)jcr->ff, accurate_check_file);
+      set_find_changed_function((FindFilesPacket *)jcr->ff, accurate_check_file);
    }
 
-   status = find_files(jcr, (FF_PKT *)jcr->ff, tally_file, plugin_estimate);
+   status = find_files(jcr, (FindFilesPacket *)jcr->ff, tally_file, plugin_estimate);
    accurate_free(jcr);
    return status;
 }
@@ -57,9 +57,9 @@ int make_estimate(JCR *jcr)
  * Called here by find() for each file included.
  *
  */
-static int tally_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
-   ATTR attr;
+   Attributes attr;
 
    if (job_canceled(jcr)) {
       return 0;

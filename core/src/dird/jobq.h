@@ -38,7 +38,7 @@
  */
 struct jobq_item_t {
    dlink link;
-   JCR *jcr;
+   JobControlRecord *jcr;
 };
 
 /**
@@ -67,7 +67,7 @@ extern int jobq_init(
               void   *(*engine)(void *)   /* engine routine */
                     );
 extern int jobq_destroy(jobq_t *wq);
-extern int jobq_add(jobq_t *wq, JCR *jcr);
-extern int jobq_remove(jobq_t *wq, JCR *jcr);
+extern int jobq_add(jobq_t *wq, JobControlRecord *jcr);
+extern int jobq_remove(jobq_t *wq, JobControlRecord *jcr);
 
 #endif /* __JOBQ_H */

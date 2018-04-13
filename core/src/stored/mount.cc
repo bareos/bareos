@@ -62,12 +62,12 @@ enum {
  *   locked.
  *
  */
-bool DCR::mount_next_write_volume()
+bool DeviceControlRecord::mount_next_write_volume()
 {
    int retry = 0;
    bool ask = false, recycle, autochanger;
    int mode;
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    Dmsg2(150, "Enter mount_next_volume(release=%d) dev=%s\n",
          dev->must_unload(), dev->print_name());
@@ -384,9 +384,9 @@ no_lock_bail_out:
  * Note, mount_mutex is already locked on entry and thus
  * must remain locked on exit from this function.
  */
-bool DCR::find_a_volume()
+bool DeviceControlRecord::find_a_volume()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (!is_suitable_volume_mounted()) {
       bool have_vol = false;
@@ -430,9 +430,9 @@ bool DCR::find_a_volume()
    return dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
 }
 
-int DCR::check_volume_label(bool &ask, bool &autochanger)
+int DeviceControlRecord::check_volume_label(bool &ask, bool &autochanger)
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
    int vol_label_status;
 
    /*
@@ -463,7 +463,7 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
       dev->VolCatInfo = VolCatInfo;       /* structure assignment */
       break;                    /* got a Volume */
    case VOL_NAME_ERROR:
-      VOLUME_CAT_INFO dcrVolCatInfo, devVolCatInfo;
+      VolumeCatalogInfo dcrVolCatInfo, devVolCatInfo;
       char saveVolumeName[MAX_NAME_LENGTH];
 
       Dmsg2(150, "Vol NAME Error Have=%s, want=%s\n", dev->VolHdr.VolumeName, VolumeName);
@@ -492,7 +492,7 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
       bstrncpy(saveVolumeName, VolumeName, sizeof(saveVolumeName));
       bstrncpy(VolumeName, dev->VolHdr.VolumeName, sizeof(VolumeName));
       if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_WRITE)) {
-         POOL_MEM vol_info_msg;
+         PoolMem vol_info_msg;
          pm_strcpy(vol_info_msg, jcr->dir_bsock->msg);  /* save error message */
          /* Restore desired volume name, note device info out of sync */
          /* This gets the info regardless of the Pool */
@@ -513,7 +513,7 @@ int DCR::check_volume_label(bool &ask, bool &autochanger)
              dcrVolCatInfo.VolCatName, dev->VolHdr.VolumeName,
              vol_info_msg.c_str());
          ask = true;
-         /* Restore saved DCR before continuing */
+         /* Restore saved DeviceControlRecord before continuing */
          bstrncpy(VolumeName, saveVolumeName, sizeof(VolumeName));
          VolCatInfo = dcrVolCatInfo;  /* structure assignment */
          goto check_next_volume;
@@ -582,7 +582,7 @@ check_read_volume:
 
 }
 
-bool DCR::is_suitable_volume_mounted()
+bool DeviceControlRecord::is_suitable_volume_mounted()
 {
    /* Volume mounted? */
    if (dev->VolHdr.VolumeName[0] == 0 || dev->swap_dev || dev->must_unload()) {
@@ -592,9 +592,9 @@ bool DCR::is_suitable_volume_mounted()
    return dir_get_volume_info(GET_VOL_INFO_FOR_WRITE);
 }
 
-bool DCR::do_unload()
+bool DeviceControlRecord::do_unload()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (generate_plugin_event(jcr, bsdEventVolumeUnload, dcr) != bRC_OK) {
       return false;
@@ -607,9 +607,9 @@ bool DCR::do_unload()
    return true;
 }
 
-bool DCR::do_load(bool is_writing)
+bool DeviceControlRecord::do_load(bool is_writing)
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
    bool retval = false;
 
    if (dev->must_load()) {
@@ -629,9 +629,9 @@ bool DCR::do_load(bool is_writing)
    return retval;
 }
 
-void DCR::do_swapping(bool is_writing)
+void DeviceControlRecord::do_swapping(bool is_writing)
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    /*
     * See if we are asked to swap the Volume from another device
@@ -670,9 +670,9 @@ void DCR::do_swapping(bool is_writing)
 /**
  * Check if the current position on the volume corresponds to what is in the catalog.
  */
-bool DCR::is_eod_valid()
+bool DeviceControlRecord::is_eod_valid()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (dev->is_tape()) {
       /*
@@ -763,9 +763,9 @@ bool DCR::is_eod_valid()
  *   try_error           hard error (catalog update)
  *   try_default         I couldn't do anything
  */
-int DCR::try_autolabel(bool opened)
+int DeviceControlRecord::try_autolabel(bool opened)
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    if (dev->poll && !dev->is_tape()) {
       return try_default;       /* if polling, don't try to create new labels */
@@ -816,9 +816,9 @@ int DCR::try_autolabel(bool opened)
 /**
  * Mark volume in error in catalog
  */
-void DCR::mark_volume_in_error()
+void DeviceControlRecord::mark_volume_in_error()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    Jmsg(jcr, M_INFO, 0, _("Marking Volume \"%s\" in Error in Catalog.\n"),
         VolumeName);
@@ -835,9 +835,9 @@ void DCR::mark_volume_in_error()
  * The Volume is not in the correct slot, so mark this
  * Volume as not being in the Changer.
  */
-void DCR::mark_volume_not_inchanger()
+void DeviceControlRecord::mark_volume_not_inchanger()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    Jmsg(jcr, M_ERROR, 0, _("Autochanger Volume \"%s\" not found in slot %d.\n"
                            "    Setting InChanger to zero in catalog.\n"),
@@ -853,9 +853,9 @@ void DCR::mark_volume_not_inchanger()
  * Either because we are going to hang a new volume, or because
  * of explicit user request, we release the current volume.
  */
-void DCR::release_volume()
+void DeviceControlRecord::release_volume()
 {
-   DCR *dcr = this;
+   DeviceControlRecord *dcr = this;
 
    unload_autochanger(dcr, -1);
 
@@ -909,7 +909,7 @@ void DCR::release_volume()
  *  in error.  Another strategy with num_writers == 0, would be
  *  to rewind the tape and do a new eod() request.
  */
-bool DCR::is_tape_position_ok()
+bool DeviceControlRecord::is_tape_position_ok()
 {
    if (dev->is_tape() && dev->num_writers == 0) {
       int32_t file = dev->get_os_tape_file();
@@ -937,10 +937,10 @@ bool DCR::is_tape_position_ok()
  * If we are reading, we come here at the end of the tape
  *  and see if there are more volumes to be mounted.
  */
-bool mount_next_read_volume(DCR *dcr)
+bool mount_next_read_volume(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    Dmsg2(90, "NumReadVolumes=%d CurReadVolume=%d\n", jcr->NumReadVolumes, jcr->CurReadVolume);
 
    volume_unused(dcr);                /* release current volume */

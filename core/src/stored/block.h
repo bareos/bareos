@@ -75,10 +75,10 @@
    uint32_t VolSessionTime;
  */
 
-class DEVICE;                         /* for forward reference */
+class Device;                         /* for forward reference */
 
 /**
- * DEV_BLOCK for reading and writing blocks.
+ * DeviceBlock for reading and writing blocks.
  * This is the basic unit that is written to the device, and
  * it contains a Block Header followd by Records.  Note,
  * at times (when reading a file), this block may contain
@@ -86,9 +86,9 @@ class DEVICE;                         /* for forward reference */
  *
  *  This is the memory structure for a device block.
  */
-struct DEV_BLOCK {
-   DEV_BLOCK *next;                   /* pointer to next one */
-   DEVICE *dev;                       /* pointer to device */
+struct DeviceBlock {
+   DeviceBlock *next;                   /* pointer to next one */
+   Device *dev;                       /* pointer to device */
    /* binbuf is the number of bytes remaining in the buffer.
     *   For writes, it is bytes not yet written.
     *   For reads, it is remaining bytes not yet read.

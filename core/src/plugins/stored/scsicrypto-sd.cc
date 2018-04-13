@@ -270,7 +270,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 
 static pthread_mutex_t crypto_operation_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-static inline bool get_volume_encryption_key(DCR *dcr, char *VolEncrKey)
+static inline bool get_volume_encryption_key(DeviceControlRecord *dcr, char *VolEncrKey)
 {
    /*
     * See if we have valid VolCatInfo.
@@ -307,17 +307,17 @@ static inline bool get_volume_encryption_key(DCR *dcr, char *VolEncrKey)
 
 static bRC do_set_scsi_encryption_key(void *value)
 {
-   DCR *dcr;
-   DEVICE *dev;
-   DEVRES *device;
-   DIRRES *director;
+   DeviceControlRecord *dcr;
+   Device *dev;
+   DeviceResource *device;
+   DirectorResource *director;
    char StoredVolEncrKey[MAX_NAME_LENGTH];
    char VolEncrKey[MAX_NAME_LENGTH];
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
@@ -411,15 +411,15 @@ static bRC do_set_scsi_encryption_key(void *value)
 
 static bRC do_clear_scsi_encryption_key(void *value)
 {
-   DCR *dcr;
-   DEVICE *dev;
-   DEVRES *device;
+   DeviceControlRecord *dcr;
+   Device *dev;
+   DeviceResource *device;
    bool need_to_clear;
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
@@ -470,15 +470,15 @@ static bRC do_clear_scsi_encryption_key(void *value)
 
 static bRC handle_read_error(void *value)
 {
-   DCR *dcr;
-   DEVICE *dev;
-   DEVRES *device;
+   DeviceControlRecord *dcr;
+   Device *dev;
+   DeviceResource *device;
    bool decryption_needed;
 
    /*
     * Unpack the arguments passed in.
     */
-   dcr = (DCR *)value;
+   dcr = (DeviceControlRecord *)value;
    if (!dcr) {
       return bRC_Error;
    }

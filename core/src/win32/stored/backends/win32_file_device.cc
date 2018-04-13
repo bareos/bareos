@@ -35,10 +35,10 @@
 /**
  * (Un)mount the device (For a FILE device)
  */
-static bool do_mount(DCR *dcr, bool mount, int dotimeout)
+static bool do_mount(DeviceControlRecord *dcr, bool mount, int dotimeout)
 {
-   DEVRES *device = dcr->dev->device;
-   POOL_MEM ocmd(PM_FNAME);
+   DeviceResource *device = dcr->dev->device;
+   PoolMem ocmd(PM_FNAME);
    POOLMEM *results;
    DIR* dp;
    char *icmd;
@@ -165,7 +165,7 @@ get_out:
  * If timeout, wait until the mount command returns 0.
  * If !timeout, try to mount the device only once.
  */
-bool win32_file_device::mount_backend(DCR *dcr, int timeout)
+bool win32_file_device::mount_backend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
@@ -182,7 +182,7 @@ bool win32_file_device::mount_backend(DCR *dcr, int timeout)
  * If timeout, wait until the unmount command returns 0.
  * If !timeout, try to unmount the device only once.
  */
-bool win32_file_device::unmount_backend(DCR *dcr, int timeout)
+bool win32_file_device::unmount_backend(DeviceControlRecord *dcr, int timeout)
 {
    bool retval = true;
 
@@ -218,16 +218,16 @@ int win32_file_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-boffset_t win32_file_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t win32_file_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
-   return ::_lseeki64(m_fd, (__int64)offset, whence);
+   return ::_lseeki64(fd_, (__int64)offset, whence);
 }
 
-bool win32_file_device::d_truncate(DCR *dcr)
+bool win32_file_device::d_truncate(DeviceControlRecord *dcr)
 {
    struct stat st;
 
-   if (ftruncate(m_fd, 0) != 0) {
+   if (ftruncate(fd_, 0) != 0) {
       berrno be;
 
       Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), print_name(), be.bstrerror());
@@ -243,7 +243,7 @@ bool win32_file_device::d_truncate(DCR *dcr)
     * 3. open new file with same mode
     * 4. change ownership to original
     */
-   if (fstat(m_fd, &st) != 0) {
+   if (fstat(fd_, &st) != 0) {
       berrno be;
 
       Mmsg2(errmsg, _("Unable to stat device %s. ERR=%s\n"), print_name(), be.bstrerror());
@@ -251,7 +251,7 @@ bool win32_file_device::d_truncate(DCR *dcr)
    }
 
    if (st.st_size != 0) {             /* ftruncate() didn't work */
-      POOL_MEM archive_name(PM_FNAME);
+      PoolMem archive_name(PM_FNAME);
 
       pm_strcpy(archive_name, dev_name);
       if (!IsPathSeparator(archive_name.c_str()[strlen(archive_name.c_str())-1])) {
@@ -265,14 +265,14 @@ bool win32_file_device::d_truncate(DCR *dcr)
       /*
        * Close file and blow it away
        */
-      ::close(m_fd);
+      ::close(fd_);
       secure_erase(dcr->jcr, archive_name.c_str());
 
       /*
        * Recreate the file -- of course, empty
        */
       oflags = O_CREAT | O_RDWR | O_BINARY;
-      if ((m_fd = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
+      if ((fd_ = ::open(archive_name.c_str(), oflags, st.st_mode)) < 0) {
          berrno be;
 
          dev_errno = errno;

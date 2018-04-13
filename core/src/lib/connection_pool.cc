@@ -29,21 +29,21 @@
 /*
  * Connection
  */
-CONNECTION::CONNECTION(const char* name, int protocol_version, BSOCK* socket, bool authenticated)
+CONNECTION::CONNECTION(const char* name, int protocol_version, BareosSocket* socket, bool authenticated)
 {
-   m_tid = pthread_self();
-   m_connect_time = time(NULL);
-   m_in_use = false;
-   m_authenticated = authenticated;
-   bstrncpy(m_name, name, sizeof(m_name));
-   m_protocol_version = protocol_version;
-   m_socket = socket;
-   pthread_mutex_init(&m_mutex, NULL);
+   tid_ = pthread_self();
+   connect_time_ = time(NULL);
+   in_use_ = false;
+   authenticated_ = authenticated;
+   bstrncpy(name_, name, sizeof(name_));
+   protocol_version_ = protocol_version;
+   socket_ = socket;
+   pthread_mutex_init(&mutex_, NULL);
 }
 
 CONNECTION::~CONNECTION()
 {
-   pthread_mutex_destroy(&m_mutex);
+   pthread_mutex_destroy(&mutex_);
 }
 
 /*
@@ -57,7 +57,7 @@ bool CONNECTION::check(int timeout_data)
    /*
     * Returns: 1 if data available, 0 if timeout, -1 if error
     */
-   data_available = m_socket->wait_data_intr(timeout_data);
+   data_available = socket_->wait_data_intr(timeout_data);
 
    /*
     * Use lock to prevent that data is read for job thread.
@@ -65,12 +65,12 @@ bool CONNECTION::check(int timeout_data)
    lock();
    if (data_available < 0) {
       ok = false;
-   } else if ((data_available > 0) && (!m_in_use)) {
-      if (m_socket->recv() <= 0) {
+   } else if ((data_available > 0) && (!in_use_)) {
+      if (socket_->recv() <= 0) {
          ok = false;
       }
 
-      if (m_socket->is_error()) {
+      if (socket_->is_error()) {
          ok = false;
       }
    }
@@ -87,7 +87,7 @@ bool CONNECTION::wait(int timeout)
 {
    bool ok = true;
 
-   while (ok && (!m_in_use)) {
+   while (ok && (!in_use_)) {
       ok = check(timeout);
    }
    return ok;
@@ -100,8 +100,8 @@ bool CONNECTION::take()
 {
    bool result = false;
    lock();
-   if (!m_in_use) {
-      m_in_use = true;
+   if (!in_use_) {
+      in_use_ = true;
       result = true;
    }
    unlock();
@@ -114,31 +114,31 @@ bool CONNECTION::take()
  */
 CONNECTION_POOL::CONNECTION_POOL()
 {
-   m_connections = New(alist(10, false));
+   connections_ = New(alist(10, false));
    /*
     * Initialize mutex and condition variable objects.
     */
-   pthread_mutex_init(&m_add_mutex, NULL);
-   pthread_cond_init(&m_add_cond_var, NULL);
+   pthread_mutex_init(&add_mutex_, NULL);
+   pthread_cond_init(&add_cond_var_, NULL);
 }
 
 CONNECTION_POOL::~CONNECTION_POOL()
 {
-   delete(m_connections);
-   pthread_mutex_destroy(&m_add_mutex);
-   pthread_cond_destroy(&m_add_cond_var);
+   delete(connections_);
+   pthread_mutex_destroy(&add_mutex_);
+   pthread_cond_destroy(&add_cond_var_);
 }
 
 void CONNECTION_POOL::cleanup()
 {
    CONNECTION *connection = NULL;
    int i = 0;
-   for(i=m_connections->size()-1; i>=0; i--) {
-      connection = (CONNECTION *)m_connections->get(i);
+   for(i=connections_->size()-1; i>=0; i--) {
+      connection = (CONNECTION *)connections_->get(i);
       Dmsg2(120, "checking connection %s (%d)\n", connection->name(), i);
       if (!connection->check()) {
          Dmsg2(120, "connection %s (%d) is terminated => removed\n", connection->name(), i);
-         m_connections->remove(i);
+         connections_->remove(i);
          delete(connection);
       }
    }
@@ -147,21 +147,21 @@ void CONNECTION_POOL::cleanup()
 alist *CONNECTION_POOL::get_as_alist()
 {
    this->cleanup();
-   return m_connections;
+   return connections_;
 }
 
 bool CONNECTION_POOL::add(CONNECTION* connection)
 {
    this->cleanup();
    Dmsg1(120, "add connection: %s\n", connection->name());
-   P(m_add_mutex);
-   m_connections->append(connection);
-   pthread_cond_broadcast(&m_add_cond_var);
-   V(m_add_mutex);
+   P(add_mutex_);
+   connections_->append(connection);
+   pthread_cond_broadcast(&add_cond_var_);
+   V(add_mutex_);
    return true;
 }
 
-CONNECTION *CONNECTION_POOL::add_connection(const char* name, int fd_protocol_version, BSOCK* socket, bool authenticated)
+CONNECTION *CONNECTION_POOL::add_connection(const char* name, int fd_protocol_version, BareosSocket* socket, bool authenticated)
 {
    CONNECTION *connection = New(CONNECTION(name, fd_protocol_version, socket, authenticated));
    if (!add(connection)) {
@@ -182,7 +182,7 @@ CONNECTION *CONNECTION_POOL::get_connection(const char *name)
    if (!name) {
       return NULL;
    }
-   foreach_alist(connection, m_connections) {
+   foreach_alist(connection, connections_) {
       if (connection->check()
           && connection->authenticated()
           && connection->bsock()
@@ -230,9 +230,9 @@ int CONNECTION_POOL::wait_for_new_connection(timespec &timeout)
 {
    int errstat;
 
-   P(m_add_mutex);
-   errstat = pthread_cond_timedwait(&m_add_cond_var, &m_add_mutex, &timeout);
-   V(m_add_mutex);
+   P(add_mutex_);
+   errstat = pthread_cond_timedwait(&add_cond_var_, &add_mutex_, &timeout);
+   V(add_mutex_);
    if (errstat == 0) {
       Dmsg0(120, "new connection available.\n");
    } else if (errstat == ETIMEDOUT) {
@@ -247,9 +247,9 @@ bool CONNECTION_POOL::remove(CONNECTION *connection)
 {
    bool removed = false;
    int i = 0;
-   for(i=m_connections->size()-1; i>=0; i--) {
-      if (m_connections->get(i) == connection) {
-         m_connections->remove(i);
+   for(i=connections_->size()-1; i>=0; i--) {
+      if (connections_->get(i) == connection) {
+         connections_->remove(i);
          removed = true;
          Dmsg0(120, "removed connection.\n");
          break;

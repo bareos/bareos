@@ -47,13 +47,13 @@ static char serrmsg[] =
 /* Imported functions */
 
 /* Forward referenced SD commands */
-static bool start_replication_session(JCR *jcr);
-static bool replicate_data(JCR *jcr);
-static bool end_replication_session(JCR *jcr);
+static bool start_replication_session(JobControlRecord *jcr);
+static bool replicate_data(JobControlRecord *jcr);
+static bool end_replication_session(JobControlRecord *jcr);
 
 struct s_cmds {
    const char *cmd;
-   bool (*func)(JCR *jcr);
+   bool (*func)(JobControlRecord *jcr);
 };
 
 /**
@@ -92,9 +92,9 @@ static char Job_end[] =
  * After receiving a connection (in socket_server.c) if it is
  * from the Storage daemon, this routine is called.
  */
-void *handle_stored_connection(BSOCK *sd, char *job_name)
+void *handle_stored_connection(BareosSocket *sd, char *job_name)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
 
 /**
  * With the following bmicrosleep on, running the
@@ -149,11 +149,11 @@ void *handle_stored_connection(BSOCK *sd, char *job_name)
 /**
  * Now talk to the SD and do what he says
  */
-static void do_sd_commands(JCR *jcr)
+static void do_sd_commands(JobControlRecord *jcr)
 {
    int i, status;
    bool found, quit;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    sd->set_jcr(jcr);
    quit = false;
@@ -217,11 +217,11 @@ static void do_sd_commands(JCR *jcr)
  * - Read a command from the Storage daemon
  * - Execute it
  */
-bool do_listen_run(JCR *jcr)
+bool do_listen_run(JobControlRecord *jcr)
 {
    char ec1[30];
    int errstat = 0;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    jcr->sendJobStatus(JS_WaitSD);          /* wait for SD to connect */
 
@@ -292,9 +292,9 @@ cleanup:
 /**
  * Start of replication.
  */
-static bool start_replication_session(JCR *jcr)
+static bool start_replication_session(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    Dmsg1(120, "Start replication session: %s", sd->msg);
    if (jcr->session_opened) {
@@ -319,9 +319,9 @@ static bool start_replication_session(JCR *jcr)
  *    Open Data Channel and receive Data for archiving
  *    Write the Data to the archive device
  */
-static bool replicate_data(JCR *jcr)
+static bool replicate_data(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    Dmsg1(120, "Replicate data: %s", sd->msg);
    if (jcr->session_opened) {
@@ -352,9 +352,9 @@ static bool replicate_data(JCR *jcr)
 /**
  * End a replication session.
  */
-static bool end_replication_session(JCR *jcr)
+static bool end_replication_session(JobControlRecord *jcr)
 {
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    Dmsg1(120, "stored<stored: %s", sd->msg);
    if (!jcr->session_opened) {

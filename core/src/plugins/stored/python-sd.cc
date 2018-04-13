@@ -54,7 +54,7 @@ static bRC freePlugin(bpContext *ctx);
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value);
 static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value);
-static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options);
+static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_options);
 
 static void PyErrorHandler(bpContext *ctx, int msgtype);
 static bRC PyLoadModule(bpContext *ctx, void *value);
@@ -276,7 +276,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
 {
    bRC retval = bRC_Error;
    bool event_dispatched = false;
-   POOL_MEM plugin_options(PM_FNAME);
+   PoolMem plugin_options(PM_FNAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (!p_ctx) {
@@ -408,11 +408,11 @@ static inline void set_string(char **destination, char *value)
  *
  * python:module_path=<path>:module_name=<python_module_name>:...
  */
-static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin_options)
+static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_options)
 {
    bool found;
    int i, cnt;
-   POOL_MEM plugin_definition(PM_FNAME);
+   PoolMem plugin_definition(PM_FNAME);
    char *bp, *argument, *argument_value;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
@@ -521,7 +521,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, POOL_MEM &plugin
        * If we didn't consume this parameter we add it to the plugin_options list.
        */
       if (!found) {
-         POOL_MEM option(PM_FNAME);
+         PoolMem option(PM_FNAME);
 
          if (cnt) {
             Mmsg(option, ":%s=%s", argument, argument_value);

@@ -29,13 +29,13 @@
 #include "bareos.h"
 #include "dird.h"
 
-static void configure_lex_error_handler(const char *file, int line, LEX *lc, POOL_MEM &msg)
+static void configure_lex_error_handler(const char *file, int line, LEX *lc, PoolMem &msg)
 {
-   UAContext *ua;
+   UaContext *ua;
 
    lc->error_counter++;
    if (lc->caller_ctx) {
-      ua = (UAContext *)(lc->caller_ctx);
+      ua = (UaContext *)(lc->caller_ctx);
       ua->error_msg("configure error: %s\n", msg.c_str());
    };
 }
@@ -45,7 +45,7 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, con
    /*
     * This function is an error handler, used by lex.
     */
-   POOL_MEM buf(PM_NAME);
+   PoolMem buf(PM_NAME);
    va_list ap;
 
    va_start(ap, msg);
@@ -78,10 +78,10 @@ static inline bool configure_write_resource(const char *filename, const char *re
    return result;
 }
 
-static inline RES_ITEM *config_get_res_item(UAContext *ua, RES_TABLE *res_table,
+static inline ResourceItem *config_get_res_item(UaContext *ua, ResourceTable *res_table,
                                             const char *key, const char *value)
 {
-   RES_ITEM *item = NULL;
+   ResourceItem *item = NULL;
    const char *errorcharmsg = NULL;
 
    if (res_table) {
@@ -113,11 +113,11 @@ static inline RES_ITEM *config_get_res_item(UAContext *ua, RES_TABLE *res_table,
    return item;
 }
 
-static inline bool config_add_directive(UAContext *ua, RES_TABLE *res_table, const char *key,
-                                        const char *value, POOL_MEM &resource, int indent = 2)
+static inline bool config_add_directive(UaContext *ua, ResourceTable *res_table, const char *key,
+                                        const char *value, PoolMem &resource, int indent = 2)
 {
-   POOL_MEM temp(PM_MESSAGE);
-   RES_ITEM *item = NULL;
+   PoolMem temp(PM_MESSAGE);
+   ResourceItem *item = NULL;
 
    item = config_get_res_item(ua, res_table, key, value);
    if (res_table && (!item)) {
@@ -138,8 +138,8 @@ static inline bool config_add_directive(UAContext *ua, RES_TABLE *res_table, con
    return true;
 }
 
-static inline bool configure_create_resource_string(UAContext *ua, int first_parameter, RES_TABLE *res_table,
-                                                    POOL_MEM &resourcename, POOL_MEM &resource)
+static inline bool configure_create_resource_string(UaContext *ua, int first_parameter, ResourceTable *res_table,
+                                                    PoolMem &resourcename, PoolMem &resource)
 {
    resource.strcat(res_table->name);
    resource.strcat(" {\n");
@@ -178,11 +178,11 @@ static inline bool configure_create_resource_string(UAContext *ua, int first_par
    return true;
 }
 
-static inline bool configure_create_fd_resource_string(UAContext *ua, POOL_MEM &resource, const char *clientname)
+static inline bool configure_create_fd_resource_string(UaContext *ua, PoolMem &resource, const char *clientname)
 {
-   CLIENTRES *client;
+   ClientResource *client;
    s_password *password;
-   POOL_MEM temp(PM_MESSAGE);
+   PoolMem temp(PM_MESSAGE);
 
    client = ua->GetClientResWithName(clientname);
    if (!client) {
@@ -214,13 +214,13 @@ static inline bool configure_create_fd_resource_string(UAContext *ua, POOL_MEM &
  * Create a bareos-fd director resource file
  * that corresponds to our client definition.
  */
-static inline bool configure_create_fd_resource(UAContext *ua, const char *clientname)
+static inline bool configure_create_fd_resource(UaContext *ua, const char *clientname)
 {
-   POOL_MEM resource(PM_MESSAGE);
-   POOL_MEM filename_tmp(PM_FNAME);
-   POOL_MEM filename(PM_FNAME);
-   POOL_MEM basedir(PM_FNAME);
-   POOL_MEM temp(PM_MESSAGE);
+   PoolMem resource(PM_MESSAGE);
+   PoolMem filename_tmp(PM_FNAME);
+   PoolMem filename(PM_FNAME);
+   PoolMem basedir(PM_FNAME);
+   PoolMem temp(PM_MESSAGE);
    const char *dirname = NULL;
    const bool error_if_exists = false;
    const bool create_directories = true;
@@ -275,14 +275,14 @@ static inline bool configure_create_fd_resource(UAContext *ua, const char *clien
  *
  * This way, the existing parsing functionality is used.
  */
-static inline bool configure_add_resource(UAContext *ua, int first_parameter, RES_TABLE *res_table)
+static inline bool configure_add_resource(UaContext *ua, int first_parameter, ResourceTable *res_table)
 {
-   POOL_MEM resource(PM_MESSAGE);
-   POOL_MEM name(PM_MESSAGE);
-   POOL_MEM filename_tmp(PM_FNAME);
-   POOL_MEM filename(PM_FNAME);
-   POOL_MEM temp(PM_FNAME);
-   JOBRES *res = NULL;
+   PoolMem resource(PM_MESSAGE);
+   PoolMem name(PM_MESSAGE);
+   PoolMem filename_tmp(PM_FNAME);
+   PoolMem filename(PM_FNAME);
+   PoolMem temp(PM_FNAME);
+   JobResource *res = NULL;
 
    if (!configure_create_resource_string(ua, first_parameter, res_table, name, resource)) {
       return false;
@@ -319,9 +319,9 @@ static inline bool configure_add_resource(UAContext *ua, int first_parameter, RE
     * therefore we explicitly check the new resource here.
     */
    if ((res_table->rcode == R_JOB) || (res_table->rcode == R_JOBDEFS)) {
-      res = (JOBRES *)GetResWithName(res_table->rcode, name.c_str());
+      res = (JobResource *)GetResWithName(res_table->rcode, name.c_str());
       propagate_jobdefs(res_table->rcode, res);
-      if (!validate_resource(res_table->rcode, res_table->items, (BRSRES *)res)) {
+      if (!validate_resource(res_table->rcode, res_table->items, (BareosResource *)res)) {
          ua->error_msg("failed to create config resource \"%s\"\n", name.c_str());
          unlink(filename_tmp.c_str());
          my_config->remove_resource(res_table->rcode, name.c_str());
@@ -356,10 +356,10 @@ static inline bool configure_add_resource(UAContext *ua, int first_parameter, RE
    return true;
 }
 
-static inline bool configure_add(UAContext *ua, int resource_type_parameter)
+static inline bool configure_add(UaContext *ua, int resource_type_parameter)
 {
    bool result = false;
-   RES_TABLE *res_table = NULL;
+   ResourceTable *res_table = NULL;
 
    res_table = my_config->get_resource_table(ua->argk[resource_type_parameter]);
    if (!res_table) {
@@ -379,12 +379,12 @@ static inline bool configure_add(UAContext *ua, int resource_type_parameter)
    return result;
 }
 
-static inline void configure_export_usage(UAContext *ua)
+static inline void configure_export_usage(UaContext *ua)
 {
    ua->error_msg(_("usage: configure export client=<clientname>\n"));
 }
 
-static inline bool configure_export(UAContext *ua)
+static inline bool configure_export(UaContext *ua)
 {
    bool result = false;
    int i;
@@ -407,7 +407,7 @@ static inline bool configure_export(UAContext *ua)
    return result;
 }
 
-bool configure_cmd(UAContext *ua, const char *cmd)
+bool configure_cmd(UaContext *ua, const char *cmd)
 {
    bool result = false;
 

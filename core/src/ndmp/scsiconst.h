@@ -43,16 +43,16 @@
 /*
                       Table D.2 - SCSI-2 Operation Codes
 =============================================================================
-           D - DIRECT ACCESS DEVICE                       Device column key
-           .T - SEQUENTIAL ACCESS DEVICE                  M = Mandatory
-           . L - PRINTER DEVICE                           O = Optional
-           .  P - PROCESSOR DEVICE                        V = Vendor-specific
-           .  .W - WRITE ONCE READ MULTIPLE DEVICE        R = Reserved
-           .  . R - READ ONLY (CD-ROM) DEVICE
-           .  .  S - SCANNER DEVICE
-           .  .  .O - OPTICAL MEMORY DEVICE
-           .  .  . M - MEDIA CHANGER DEVICE
-           .  .  .  C - COMMUNICATION DEVICE
+           D - DIRECT ACCESS Device                       Device column key
+           .T - SEQUENTIAL ACCESS Device                  M = Mandatory
+           . L - PRINTER Device                           O = Optional
+           .  P - PROCESSOR Device                        V = Vendor-specific
+           .  .W - WRITE ONCE READ MULTIPLE Device        R = Reserved
+           .  . R - READ ONLY (CD-ROM) Device
+           .  .  S - SCANNER Device
+           .  .  .O - OPTICAL MEMORY Device
+           .  .  . M - MEDIA CHANGER Device
+           .  .  .  C - COMMUNICATION Device
            .  .  .  .
            DTLPWRSOMC
 */
@@ -287,16 +287,16 @@
 
 /*
 ================================================================
-           D - DIRECT ACCESS DEVICE
-           .T - SEQUENTIAL ACCESS DEVICE
-           . L - PRINTER DEVICE
-           .  P - PROCESSOR DEVICE
-           .  .W - WRITE ONCE READ MULTIPLE DEVICE
-           .  . R - READ ONLY (CD-ROM) DEVICE
-           .  .  S - SCANNER DEVICE
-           .  .  .O - OPTICAL MEMORY DEVICE
-           .  .  . M - MEDIA CHANGER DEVICE
-           .  .  .  C - COMMUNICATION DEVICE
+           D - DIRECT ACCESS Device
+           .T - SEQUENTIAL ACCESS Device
+           . L - PRINTER Device
+           .  P - PROCESSOR Device
+           .  .W - WRITE ONCE READ MULTIPLE Device
+           .  . R - READ ONLY (CD-ROM) Device
+           .  .  S - SCANNER Device
+           .  .  .O - OPTICAL MEMORY Device
+           .  .  . M - MEDIA CHANGER Device
+           .  .  .  C - COMMUNICATION Device
            .  .  .  .
            DTLPWRSOMC
 */

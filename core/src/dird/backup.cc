@@ -57,7 +57,7 @@ static char EndJob[] =
    "ReadBytes=%llu JobBytes=%llu Errors=%u "
    "VSS=%d Encrypt=%d\n";
 
-static inline bool validate_client(JCR *jcr)
+static inline bool validate_client(JobControlRecord *jcr)
 {
    switch (jcr->res.client->Protocol) {
    case APT_NATIVE:
@@ -72,7 +72,7 @@ static inline bool validate_client(JCR *jcr)
 /**
  * if both FD and SD have LanAddress set, use the storages' LanAddress to connect to.
  */
-char* storage_address_to_contact(CLIENTRES *client, STORERES *store)
+char* storage_address_to_contact(ClientResource *client, StoreResource *store)
 {
    if (store->lanaddress && client->lanaddress) {
       return store->lanaddress;
@@ -85,7 +85,7 @@ char* storage_address_to_contact(CLIENTRES *client, STORERES *store)
  * if both FD and SD have LanAddress set, use the clients' LanAddress to connect to.
  *
  */
-char* client_address_to_contact(CLIENTRES *client, STORERES *store)
+char* client_address_to_contact(ClientResource *client, StoreResource *store)
 {
    if (store->lanaddress && client->lanaddress) {
       return client->lanaddress;
@@ -99,7 +99,7 @@ char* client_address_to_contact(CLIENTRES *client, STORERES *store)
  * use wstores' LanAddress to connect to.
  *
  */
-char* storage_address_to_contact(STORERES *rstore, STORERES *wstore)
+char* storage_address_to_contact(StoreResource *rstore, StoreResource *wstore)
 {
    if (rstore->lanaddress && wstore->lanaddress) {
       return wstore->lanaddress;
@@ -108,9 +108,9 @@ char* storage_address_to_contact(STORERES *rstore, STORERES *wstore)
    }
 }
 
-static inline bool validate_storage(JCR *jcr)
+static inline bool validate_storage(JobControlRecord *jcr)
 {
-   STORERES *store;
+   StoreResource *store;
 
    foreach_alist(store, jcr->res.wstorage) {
       switch (store->Protocol) {
@@ -129,7 +129,7 @@ static inline bool validate_storage(JCR *jcr)
 /*
  * Called here before the job is run to do the job specific setup.
  */
-bool do_native_backup_init(JCR *jcr)
+bool do_native_backup_init(JobControlRecord *jcr)
 {
    free_rstorage(jcr);                   /* we don't read so release */
 
@@ -166,10 +166,10 @@ bool do_native_backup_init(JCR *jcr)
 /*
  * Take all base jobs from job resource and find the last L_BASE jobid.
  */
-static bool get_base_jobids(JCR *jcr, db_list_ctx *jobids)
+static bool get_base_jobids(JobControlRecord *jcr, db_list_ctx *jobids)
 {
-   JOB_DBR jr;
-   JOBRES *job;
+   JobDbRecord jr;
+   JobResource *job;
    JobId_t id;
    char str_jobid[50];
 
@@ -203,7 +203,7 @@ static bool get_base_jobids(JCR *jcr, db_list_ctx *jobids)
  */
 static int accurate_list_handler(void *ctx, int num_fields, char **row)
 {
-   JCR *jcr = (JCR *)ctx;
+   JobControlRecord *jcr = (JobControlRecord *)ctx;
 
    if (job_canceled(jcr)) {
       return 1;
@@ -231,11 +231,11 @@ static int accurate_list_handler(void *ctx, int num_fields, char **row)
  * FileSet-> Include-> Options-> Accurate/Verify/BaseJob=checksum
  * This procedure uses jcr->HasBase, so it must be call after the initialization
  */
-static bool is_checksum_needed_by_fileset(JCR *jcr)
+static bool is_checksum_needed_by_fileset(JobControlRecord *jcr)
 {
-   INCEXE *inc;
-   FOPTS *fopts;
-   FILESETRES *fs;
+   IncludeExcludeItem *inc;
+   FileOptions *fopts;
+   FilesetResource *fs;
    bool in_block=false;
    bool have_basejob_option=false;
 
@@ -295,9 +295,9 @@ static bool is_checksum_needed_by_fileset(JCR *jcr)
  *    ...
  *    DIR -> FD : EOD
  */
-bool send_accurate_current_files(JCR *jcr)
+bool send_accurate_current_files(JobControlRecord *jcr)
 {
-   POOL_MEM buf;
+   PoolMem buf;
    db_list_ctx jobids;
    db_list_ctx nb;
 
@@ -386,17 +386,17 @@ bool send_accurate_current_files(JCR *jcr)
  *  Returns:  false on failure
  *            true  on success
  */
-bool do_native_backup(JCR *jcr)
+bool do_native_backup(JobControlRecord *jcr)
 {
    int status;
    uint32_t tls_need = 0;
-   BSOCK *fd = NULL;
-   BSOCK *sd = NULL;
-   STORERES *store = NULL;
-   CLIENTRES *client = NULL;
+   BareosSocket *fd = NULL;
+   BareosSocket *sd = NULL;
+   StoreResource *store = NULL;
+   ClientResource *client = NULL;
    char ed1[100];
    db_int64_ctx job;
-   POOL_MEM buf;
+   PoolMem buf;
 
    /* Print Job Start message */
    Jmsg(jcr, M_INFO, 0, _("Start Backup JobId %s, Job=%s\n"),
@@ -451,7 +451,7 @@ bool do_native_backup(JCR *jcr)
    if (!jcr->passive_client) {
       /*
        * Start the job prior to starting the message thread below
-       * to avoid two threads from using the BSOCK structure at
+       * to avoid two threads from using the BareosSocket structure at
        * the same time.
        */
       if (!sd->fsend("run")) {
@@ -569,7 +569,7 @@ bool do_native_backup(JCR *jcr)
 
       /*
        * Start the job prior to starting the message thread below
-       * to avoid two threads from using the BSOCK structure at
+       * to avoid two threads from using the BareosSocket structure at
        * the same time.
        */
       if (!jcr->store_bsock->fsend("run")) {
@@ -679,10 +679,10 @@ bail_out:
  *
  * Also used by restore.c
  */
-int wait_for_job_termination(JCR *jcr, int timeout)
+int wait_for_job_termination(JobControlRecord *jcr, int timeout)
 {
    int32_t n = 0;
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    bool fd_ok = false;
    uint32_t JobFiles, JobErrors;
    uint32_t JobWarnings = 0;
@@ -785,12 +785,12 @@ int wait_for_job_termination(JCR *jcr, int timeout)
 /*
  * Release resources allocated during backup.
  */
-void native_backup_cleanup(JCR *jcr, int TermCode)
+void native_backup_cleanup(JobControlRecord *jcr, int TermCode)
 {
    const char *term_msg;
    char term_code[100];
    int msg_type = M_INFO;
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
 
    Dmsg2(100, "Enter backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
@@ -855,7 +855,7 @@ void native_backup_cleanup(JCR *jcr, int TermCode)
    Dmsg0(100, "Leave backup_cleanup()\n");
 }
 
-void update_bootstrap_file(JCR *jcr)
+void update_bootstrap_file(JobControlRecord *jcr)
 {
    /*
     * Now update the bootstrap file if any
@@ -866,8 +866,8 @@ void update_bootstrap_file(JCR *jcr)
       FILE *fd;
       int VolCount;
       int got_pipe = 0;
-      BPIPE *bpipe = NULL;
-      VOL_PARAMS *VolParams = NULL;
+      Bpipe *bpipe = NULL;
+      VolumeParameters *VolParams = NULL;
       char edt[50], ed1[50], ed2[50];
       POOLMEM *fname = get_pool_memory(PM_FNAME);
 
@@ -934,7 +934,7 @@ void update_bootstrap_file(JCR *jcr)
  *    - native_vbackup_cleanup e.g. virtual backups
  *    - ndmp_backup_cleanup e.g. NDMP backups
  */
-void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char *term_msg)
+void generate_backup_summary(JobControlRecord *jcr, ClientDbRecord *cr, int msg_type, const char *term_msg)
 {
    char sdt[50], edt[50], schedt[50], gdt[50];
    char ec1[30], ec2[30], ec3[30], ec4[30], ec5[30], compress[50];
@@ -942,8 +942,8 @@ void generate_backup_summary(JCR *jcr, CLIENT_DBR *cr, int msg_type, const char 
    char fd_term_msg[100], sd_term_msg[100];
    double kbps, compression;
    utime_t RunTime;
-   MEDIA_DBR mr;
-   POOL_MEM temp,
+   MediaDbRecord mr;
+   PoolMem temp,
             level_info,
             statistics,
             quota_info,

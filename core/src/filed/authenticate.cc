@@ -71,7 +71,7 @@ static inline void delay()
    V(mutex);
 }
 
-static inline void authenticate_failed(JCR *jcr, POOL_MEM &message)
+static inline void authenticate_failed(JobControlRecord *jcr, PoolMem &message)
 {
    Dmsg0(dbglvl, message.c_str());
    Jmsg0(jcr, M_FATAL, 0, message.c_str());
@@ -85,13 +85,13 @@ static inline void authenticate_failed(JCR *jcr, POOL_MEM &message)
  * Basic tasks done here:
  * We read Director's initial message and authorize him.
  */
-bool authenticate_director(JCR *jcr)
+bool authenticate_director(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
-   POOL_MEM errormsg(PM_MESSAGE);
-   POOL_MEM dirname(PM_MESSAGE);
-   DIRRES *director = NULL;
+   PoolMem errormsg(PM_MESSAGE);
+   PoolMem dirname(PM_MESSAGE);
+   DirectorResource *director = NULL;
 
    if (dir->msglen < 25 || dir->msglen > 500) {
       char addr[64];
@@ -111,7 +111,7 @@ bool authenticate_director(JCR *jcr)
    }
 
    unbash_spaces(dirname.c_str());
-   director = (DIRRES *)GetResWithName(R_DIRECTOR, dirname.c_str());
+   director = (DirectorResource *)GetResWithName(R_DIRECTOR, dirname.c_str());
 
    if (!director) {
       char addr[64];
@@ -144,7 +144,7 @@ bool authenticate_director(JCR *jcr)
 /**
  * Authenticate with a remote director.
  */
-bool authenticate_with_director(JCR *jcr, DIRRES *director) {
+bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *director) {
    return jcr->dir_bsock->authenticate_outbound_connection(
       jcr, "Director", me->name(), director->password, director);
 }
@@ -152,10 +152,10 @@ bool authenticate_with_director(JCR *jcr, DIRRES *director) {
 /**
  * Authenticate a remote storage daemon.
  */
-bool authenticate_storagedaemon(JCR *jcr)
+bool authenticate_storagedaemon(JobControlRecord *jcr)
 {
    bool result = false;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    s_password password;
 
    password.encoding = p_encoding_md5;
@@ -176,10 +176,10 @@ bool authenticate_storagedaemon(JCR *jcr)
 /**
  * Authenticate with a remote storage daemon.
  */
-bool authenticate_with_storagedaemon(JCR *jcr)
+bool authenticate_with_storagedaemon(JobControlRecord *jcr)
 {
    bool result = false;
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    s_password password;
 
    password.encoding = p_encoding_md5;

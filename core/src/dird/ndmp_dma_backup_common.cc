@@ -38,17 +38,17 @@
 /*
  * Fill the NDMP backup environment table with the data for the data agent to act on.
  */
-bool fill_backup_environment(JCR *jcr,
-                             INCEXE *ie,
+bool fill_backup_environment(JobControlRecord *jcr,
+                             IncludeExcludeItem *ie,
                              char *filesystem,
                              struct ndm_job_param *job)
 {
    int i, j, cnt;
    bool exclude;
-   FOPTS *fo;
+   FileOptions *fo;
    ndmp9_pval pv;
-   POOL_MEM pattern;
-   POOL_MEM tape_device;
+   PoolMem pattern;
+   PoolMem tape_device;
    ndmp_backup_format_option *nbf_options;
 
    /*
@@ -201,7 +201,7 @@ bool fill_backup_environment(JCR *jcr,
 /*
  * Translate bareos native backup level to NDMP backup level
  */
-int native_to_ndmp_level(JCR *jcr, char *filesystem)
+int native_to_ndmp_level(JobControlRecord *jcr, char *filesystem)
 {
    int level = -1;
 
@@ -287,12 +287,12 @@ void process_fhdb(struct ndmlog *ixlog)
 /*
  * Cleanup a NDMP backup session.
  */
-void ndmp_backup_cleanup(JCR *jcr, int TermCode)
+void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
 {
    const char *term_msg;
    char term_code[100];
    int msg_type = M_INFO;
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
 
    Dmsg2(100, "Enter ndmp_backup_cleanup %d %c\n", TermCode, TermCode);
    memset(&cr, 0, sizeof(cr));
@@ -358,7 +358,7 @@ void ndmp_backup_cleanup(JCR *jcr, int TermCode)
 
 #else  /* HAVE_NDMP */
 
-void ndmp_backup_cleanup(JCR *jcr, int TermCode)
+void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
 }

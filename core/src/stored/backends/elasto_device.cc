@@ -85,7 +85,7 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
       goto bail_out;
    }
 
-   if (!m_elasto_configstring) {
+   if (!elasto_configstring_) {
       char *bp, *next_option;
       bool done;
 
@@ -95,9 +95,9 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
-      m_elasto_configstring = bstrdup(dev_options);
+      elasto_configstring_ = bstrdup(dev_options);
 
-      bp = m_elasto_configstring;
+      bp = elasto_configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -112,15 +112,15 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
             if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
                switch (device_options[i].type) {
                case argument_publishfile:
-                  m_elasto_ps_file = bp + device_options[i].compare_size;
+                  elasto_ps_file_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_basedir:
-                  m_basedir = bp + device_options[i].compare_size;
+                  basedir_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_insecure_http:
-                  m_insecure_http = true;
+                  insecure_http_ = true;
                   done = true;
                   break;
                default:
@@ -139,7 +139,7 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
       }
    }
 
-   if (!m_elasto_ps_file) {
+   if (!elasto_ps_file_) {
       Mmsg0(errmsg, _("No publish file configured\n"));
       Emsg0(M_FATAL, 0, errmsg);
       goto bail_out;
@@ -148,56 +148,56 @@ int elasto_device::d_open(const char *pathname, int flags, int mode)
    /*
     * See if we don't have a file open already.
     */
-   if (m_efh) {
-      elasto_fclose(m_efh);
-      m_efh = NULL;
+   if (efh_) {
+      elasto_fclose(efh_);
+      efh_ = NULL;
    }
 
    auth.type = ELASTO_FILE_AZURE;
-   auth.az.ps_path = m_elasto_ps_file;
-   auth.insecure_http = m_insecure_http;
+   auth.az.ps_path = elasto_ps_file_;
+   auth.insecure_http = insecure_http_;
 
-   if (m_basedir) {
+   if (basedir_) {
 #if 0
-      status = elasto_fmkdir(&auth, m_basedir);
+      status = elasto_fmkdir(&auth, basedir_);
       if (status < 0) {
          goto bail_out;
       }
 #endif
-      Mmsg(m_virtual_filename, "%s/%s", m_basedir, getVolCatName());
+      Mmsg(virtual_filename_, "%s/%s", basedir_, getVolCatName());
    } else {
-      Mmsg(m_virtual_filename, "%s", getVolCatName());
+      Mmsg(virtual_filename_, "%s", getVolCatName());
    }
 
    if (flags & O_CREAT) {
       elasto_flags = ELASTO_FOPEN_CREATE;
    }
 
-   status = elasto_fopen(&auth, m_virtual_filename, elasto_flags, &m_efh);
+   status = elasto_fopen(&auth, virtual_filename_, elasto_flags, &efh_);
    if (status < 0) {
       goto bail_out;
    }
 
-   status = elasto_fstat(m_efh, &efstat);
+   status = elasto_fstat(efh_, &efstat);
    if (status < 0) {
       goto bail_out;
    }
 
    if (efstat.lease_status == ELASTO_FLEASE_LOCKED) {
-      status = elasto_flease_break(m_efh);
+      status = elasto_flease_break(efh_);
       if (status < 0) {
          goto bail_out;
       }
    }
 
-   m_offset = 0;
+   offset_ = 0;
 
    return 0;
 
 bail_out:
-   if (m_efh) {
-      elasto_fclose(m_efh);
-      m_efh = NULL;
+   if (efh_) {
+      elasto_fclose(efh_);
+      efh_ = NULL;
    }
 
    return -1;
@@ -208,7 +208,7 @@ bail_out:
  */
 ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
 {
-   if (m_efh) {
+   if (efh_) {
       int status;
       int nr_read;
       struct elasto_data *data;
@@ -219,10 +219,10 @@ ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
        * a zero size object (when a volume is labeled its first read to
        * see if its not an existing labeled volume).
        */
-      if (m_offset == 0) {
+      if (offset_ == 0) {
          struct elasto_fstat efstat;
 
-         status = elasto_fstat(m_efh, &efstat);
+         status = elasto_fstat(efh_, &efstat);
          if (status < 0) {
             errno = EIO;
             return -1;
@@ -241,9 +241,9 @@ ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
          return -1;
       }
 
-      nr_read = elasto_fread(m_efh, m_offset, count, data);
+      nr_read = elasto_fread(efh_, offset_, count, data);
       if (nr_read >= 0) {
-         m_offset += nr_read;
+         offset_ += nr_read;
          data->iov.buf = NULL;
          elasto_data_free(data);
 
@@ -263,7 +263,7 @@ ssize_t elasto_device::d_read(int fd, void *buffer, size_t count)
  */
 ssize_t elasto_device::d_write(int fd, const void *buffer, size_t count)
 {
-   if (m_efh) {
+   if (efh_) {
       int status;
       int nr_written;
       struct elasto_data *data;
@@ -275,9 +275,9 @@ ssize_t elasto_device::d_write(int fd, const void *buffer, size_t count)
          return -1;
       }
 
-      nr_written = elasto_fwrite(m_efh, m_offset, count, data);
+      nr_written = elasto_fwrite(efh_, offset_, count, data);
       if (nr_written >= 0) {
-         m_offset += nr_written;
+         offset_ += nr_written;
          data->iov.buf = NULL;
          elasto_data_free(data);
 
@@ -294,9 +294,9 @@ ssize_t elasto_device::d_write(int fd, const void *buffer, size_t count)
 
 int elasto_device::d_close(int fd)
 {
-   if (m_efh) {
-      elasto_fclose(m_efh);
-      m_efh = NULL;
+   if (efh_) {
+      elasto_fclose(efh_);
+      efh_ = NULL;
    } else {
       errno = EBADF;
       return -1;
@@ -310,25 +310,25 @@ int elasto_device::d_ioctl(int fd, ioctl_req_t request, char *op)
    return -1;
 }
 
-boffset_t elasto_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t elasto_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
    switch (whence) {
    case SEEK_SET:
-      m_offset = offset;
+      offset_ = offset;
       break;
    case SEEK_CUR:
-      m_offset += offset;
+      offset_ += offset;
       break;
    case SEEK_END:
-      if (m_efh) {
+      if (efh_) {
          int status;
          struct elasto_fstat efstat;
 
-         status = elasto_fstat(m_efh, &efstat);
+         status = elasto_fstat(efh_, &efstat);
          if (status < 0) {
             return -1;
          }
-         m_offset = efstat.size + offset;
+         offset_ = efstat.size + offset;
       } else {
          return -1;
       }
@@ -337,27 +337,27 @@ boffset_t elasto_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
       return -1;
    }
 
-   return m_offset;
+   return offset_;
 }
 
-bool elasto_device::d_truncate(DCR *dcr)
+bool elasto_device::d_truncate(DeviceControlRecord *dcr)
 {
-   if (m_efh) {
+   if (efh_) {
       int status;
       struct elasto_fstat efstat;
 
-      status = elasto_ftruncate(m_efh, 0);
+      status = elasto_ftruncate(efh_, 0);
       if (status < 0) {
          return false;
       }
 
-      status = elasto_fstat(m_efh, &efstat);
+      status = elasto_fstat(efh_, &efstat);
       if (status < 0) {
          return false;
       }
 
       if (efstat.size == 0) {
-         m_offset = 0;
+         offset_ = 0;
       } else {
          return false;
       }
@@ -368,33 +368,33 @@ bool elasto_device::d_truncate(DCR *dcr)
 
 elasto_device::~elasto_device()
 {
-   if (m_efh) {
-      elasto_fclose(m_efh);
-      m_efh = NULL;
+   if (efh_) {
+      elasto_fclose(efh_);
+      efh_ = NULL;
    }
 
-   if (m_elasto_configstring) {
-      free(m_elasto_configstring);
+   if (elasto_configstring_) {
+      free(elasto_configstring_);
    }
 
-   free_pool_memory(m_virtual_filename);
+   free_pool_memory(virtual_filename_);
 }
 
 elasto_device::elasto_device()
 {
-   m_elasto_configstring = NULL;
-   m_elasto_ps_file = NULL;
-   m_basedir = NULL;
-   m_insecure_http = false;
-   m_efh = NULL;
-   m_virtual_filename = get_pool_memory(PM_FNAME);
+   elasto_configstring_ = NULL;
+   elasto_ps_file_ = NULL;
+   basedir_ = NULL;
+   insecure_http_ = false;
+   efh_ = NULL;
+   virtual_filename_ = get_pool_memory(PM_FNAME);
    set_cap(CAP_ADJWRITESIZE); /* Adjust write size to min/max */
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_ELASTO_DEV:

@@ -27,30 +27,30 @@
 #error "Illegal inclusion of catalog private interface"
 #endif
 
-class CATS_IMP_EXP B_DB_PRIV: public B_DB {
+class CATS_IMP_EXP BareosDbPrivateInterface: public BareosDb {
 protected:
    /*
     * Members
     */
-   int m_status;                      /**< Status */
-   int m_num_rows;                    /**< Number of rows returned by last query */
-   int m_num_fields;                  /**< Number of fields returned by last query */
-   int m_rows_size;                   /**< Size of malloced rows */
-   int m_fields_size;                 /**< Size of malloced fields */
-   int m_row_number;                  /**< Row number from xx_data_seek */
-   int m_field_number;                /**< Field number from sql_field_seek */
-   SQL_ROW m_rows;                    /**< Defined rows */
-   SQL_FIELD *m_fields;               /**< Defined fields */
-   bool m_allow_transactions;         /**< Transactions allowed ? */
-   bool m_transaction;                /**< Transaction started ? */
+   int status_;                      /**< Status */
+   int num_rows_;                    /**< Number of rows returned by last query */
+   int num_fields_;                  /**< Number of fields returned by last query */
+   int rows_size_;                   /**< Size of malloced rows */
+   int fields_size_;                 /**< Size of malloced fields */
+   int row_number_;                  /**< Row number from xx_data_seek */
+   int field_number_;                /**< Field number from sql_field_seek */
+   SQL_ROW rows_;                    /**< Defined rows */
+   SQL_FIELD *fields_;               /**< Defined fields */
+   bool allow_transactions_;         /**< Transactions allowed ? */
+   bool transaction_;                /**< Transaction started ? */
 
 private:
    /*
     * Methods
     */
-   int sql_num_rows(void) { return m_num_rows; };
-   void sql_field_seek(int field) { m_field_number = field; };
-   int sql_num_fields(void) { return m_num_fields; };
+   int sql_num_rows(void) { return num_rows_; };
+   void sql_field_seek(int field) { field_number_ = field; };
+   int sql_num_fields(void) { return num_fields_; };
    virtual void sql_free_result(void) = 0;
    virtual SQL_ROW sql_fetch_row(void) = 0;
    virtual bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
@@ -62,17 +62,17 @@ private:
    virtual SQL_FIELD *sql_fetch_field(void) = 0;
    virtual bool sql_field_is_not_null(int field_type) = 0;
    virtual bool sql_field_is_numeric(int field_type) = 0;
-   virtual bool sql_batch_start(JCR *jcr) = 0;
-   virtual bool sql_batch_end(JCR *jcr, const char *error) = 0;
-   virtual bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar) = 0;
+   virtual bool sql_batch_start(JobControlRecord *jcr) = 0;
+   virtual bool sql_batch_end(JobControlRecord *jcr, const char *error) = 0;
+   virtual bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar) = 0;
 
 public:
    /*
     * Methods
     */
-   B_DB_PRIV() {
+   BareosDbPrivateInterface() {
       queries = NULL;
    };
-   virtual ~B_DB_PRIV() {};
+   virtual ~BareosDbPrivateInterface() {};
 };
 #endif /* __BDB_PRIV_H_ */

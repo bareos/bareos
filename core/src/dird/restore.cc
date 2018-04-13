@@ -69,7 +69,7 @@ static char OKpassiveclient[] =
 static char OKbootstrap[] =
    "3000 OK bootstrap\n";
 
-static void build_restore_command(JCR *jcr, POOL_MEM &ret)
+static void build_restore_command(JobControlRecord *jcr, PoolMem &ret)
 {
    char replace, *where, *cmd;
    char empty = '\0';
@@ -119,15 +119,15 @@ static void build_restore_command(JCR *jcr, POOL_MEM &ret)
  *   restore.  E.g. your Full is stored on tape, and Incrementals
  *   on disk.
  */
-static inline bool do_native_restore_bootstrap(JCR *jcr)
+static inline bool do_native_restore_bootstrap(JobControlRecord *jcr)
 {
-   STORERES *store;
-   CLIENTRES *client;
+   StoreResource *store;
+   ClientResource *client;
    bootstrap_info info;
-   BSOCK *fd = NULL;
-   BSOCK *sd = NULL;
+   BareosSocket *fd = NULL;
+   BareosSocket *sd = NULL;
    bool first_time = true;
-   POOL_MEM restore_cmd(PM_MESSAGE);
+   PoolMem restore_cmd(PM_MESSAGE);
    char *connection_target_address;
 
    client = jcr->res.client;
@@ -389,7 +389,7 @@ bail_out:
  *  Returns:  false on failure
  *            true on success
  */
-bool do_native_restore_init(JCR *jcr)
+bool do_native_restore_init(JobControlRecord *jcr)
 {
    free_wstorage(jcr);                /* we don't write */
 
@@ -402,9 +402,9 @@ bool do_native_restore_init(JCR *jcr)
  *  Returns:  false on failure
  *            true on success
  */
-bool do_native_restore(JCR *jcr)
+bool do_native_restore(JobControlRecord *jcr)
 {
-   JOB_DBR rjr;                       /* restore job record */
+   JobDbRecord rjr;                       /* restore job record */
    int status;
 
    memset(&rjr, 0, sizeof(rjr));
@@ -451,7 +451,7 @@ bail_out:
 /**
  * Release resources allocated during restore.
  */
-void native_restore_cleanup(JCR *jcr, int TermCode)
+void native_restore_cleanup(JobControlRecord *jcr, int TermCode)
 {
    char term_code[100];
    const char *term_msg;
@@ -517,14 +517,14 @@ void native_restore_cleanup(JCR *jcr, int TermCode)
  *    - native_restore_cleanup e.g. normal restores
  *    - ndmp_restore_cleanup e.g. NDMP restores
  */
-void generate_restore_summary(JCR *jcr, int msg_type, const char *term_msg)
+void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *term_msg)
 {
    char sdt[MAX_TIME_LENGTH], edt[MAX_TIME_LENGTH];
    char ec1[30], ec2[30], ec3[30], elapsed[50];
    char fd_term_msg[100], sd_term_msg[100];
    utime_t RunTime;
    double kbps;
-   POOL_MEM temp, secure_erase_status;
+   PoolMem temp, secure_erase_status;
 
    bstrftimes(sdt, sizeof(sdt), jcr->jr.StartTime);
    bstrftimes(edt, sizeof(edt), jcr->jr.EndTime);

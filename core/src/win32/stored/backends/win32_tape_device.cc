@@ -33,7 +33,7 @@
  * generic_tape_device::
  *         |
  *         v
- *      DEVICE::
+ *      Device::
  */
 /**
  * @file
@@ -419,13 +419,13 @@ int win32_tape_device::tape_op(struct mtop *mt_com)
    DWORD result = NO_ERROR;
    int   index;
 
-   if (m_fd < 3 || m_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-       TapeHandleTable[m_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+   if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
+       TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
       errno = EBADF;
       return -1;
    }
 
-   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[m_fd - 3];
+   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd_ - 3];
    switch (mt_com->mt_op) {
    case MTRESET:
    case MTNOP:
@@ -721,13 +721,13 @@ int win32_tape_device::tape_get(struct mtget *mt_get)
    TAPE_POSITION_INFO pos_info;
    BOOL result;
 
-   if (m_fd < 3 || m_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-       TapeHandleTable[m_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+   if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
+       TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
       errno = EBADF;
       return -1;
    }
 
-   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[m_fd - 3];
+   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd_ - 3];
 
    if (GetTapePositionInfo(pHandleInfo->OSHandle, &pos_info) != NO_ERROR) {
       return -1;
@@ -1059,13 +1059,13 @@ int win32_tape_device::tape_pos(struct mtpos *mt_pos)
    DWORD offsetHi;
    BOOL result;
 
-   if (m_fd < 3 || m_fd >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
-       TapeHandleTable[m_fd - 3].OSHandle == INVALID_HANDLE_VALUE) {
+   if (fd_ < 3 || fd_ >= (int)(NUMBER_HANDLE_ENTRIES + 3) ||
+       TapeHandleTable[fd_ - 3].OSHandle == INVALID_HANDLE_VALUE) {
       errno = EBADF;
       return -1;
    }
 
-   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[m_fd - 3];
+   PTAPE_HANDLE_INFO pHandleInfo = &TapeHandleTable[fd_ - 3];
 
    result = GetTapePosition(pHandleInfo->OSHandle, TAPE_ABSOLUTE_BLOCK, &partition, &offset, &offsetHi);
    if (result == NO_ERROR) {

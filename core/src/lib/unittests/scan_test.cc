@@ -54,7 +54,7 @@ TEST(scan,scan) {
    const char *media =
       "1000 OK VolName=TestVolume001 VolJobs=0 VolFiles=0 VolBlocks=0 VolBytes=1 VolMounts=0 VolErrors=0 VolWrites=0 MaxVolBytes=0 VolCapacityBytes=0 VolStatus=Append Slot=0 MaxVolJobs=0 MaxVolFiles=0 InChanger=1 VolReadTime=0 VolWriteTime=0";
 
-   struct VOLUME_CAT_INFO {
+   struct VolumeCatalogInfo {
       /* Media info for the current Volume */
       uint32_t VolCatJobs;               /* number of jobs on this Volume */
       uint32_t VolCatFiles;              /* Number of files */
@@ -79,7 +79,7 @@ TEST(scan,scan) {
       char VolCatStatus[20];             /* Volume status */
       char VolCatName[MAX_NAME_LENGTH];  /* Desired volume to mount */
    };
-   struct VOLUME_CAT_INFO vol;
+   struct VolumeCatalogInfo vol;
 
    bsscanf("Hello_world 123 1234", "%120s %ld %lld", buf, &val32, &val64);
    //printf("%s %d %lld", buf, val32, val64);

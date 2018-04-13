@@ -38,7 +38,7 @@
 #endif
 
 /* Dummy functions */
-void generate_plugin_event(JCR *jcr, bEventType eventType, void *value) { }
+void generate_plugin_event(JobControlRecord *jcr, bEventType eventType, void *value) { }
 extern bool parse_dir_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Global variables */
@@ -49,14 +49,14 @@ static int trunc_fname = 0;
 static int trunc_path = 0;
 static int attrs = 0;
 
-DIRRES *me = NULL;                    /* Our Global resource */
+DirectorResource *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
-static JCR *jcr;
+static JobControlRecord *jcr;
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool);
-static void count_files(FF_PKT *ff);
-static bool copy_fileset(FF_PKT *ff, JCR *jcr);
+static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool);
+static void count_files(FindFilesPacket *ff);
+static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr);
 static void set_options(findFOPTS *fo, const char *opts);
 
 static void usage()
@@ -86,7 +86,7 @@ static void usage()
 int
 main (int argc, char *const *argv)
 {
-   FF_PKT *ff;
+   FindFilesPacket *ff;
    const char *configfile = "bareos-dir.conf";
    const char *fileset_name = "Windows-Full-Set";
    int ch, hard_links;
@@ -136,20 +136,20 @@ main (int argc, char *const *argv)
    my_config = new_config_parser();
    parse_dir_config(my_config, configfile, M_ERROR_TERM);
 
-   MSGSRES *msg;
+   MessagesResource *msg;
 
    foreach_res(msg, R_MSGS)
    {
       init_msg(NULL, msg);
    }
 
-   jcr = new_jcr(sizeof(JCR), NULL);
-   jcr->res.fileset = (FILESETRES *)GetResWithName(R_FILESET, fileset_name);
+   jcr = new_jcr(sizeof(JobControlRecord), NULL);
+   jcr->res.fileset = (FilesetResource *)GetResWithName(R_FILESET, fileset_name);
 
    if (jcr->res.fileset == NULL) {
       fprintf(stderr, "%s: Fileset not found\n", fileset_name);
 
-      FILESETRES *var;
+      FilesetResource *var;
 
       fprintf(stderr, "Valid FileSets:\n");
 
@@ -247,7 +247,7 @@ main (int argc, char *const *argv)
    exit(0);
 }
 
-static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
+static int print_file(JobControlRecord *jcr, FindFilesPacket *ff, bool top_level)
 {
 
    switch (ff->type) {
@@ -346,12 +346,12 @@ static int print_file(JCR *jcr, FF_PKT *ff, bool top_level)
    return 1;
 }
 
-static void count_files(FF_PKT *ar)
+static void count_files(FindFilesPacket *ar)
 {
    int fnl, pnl;
    char *l, *p;
-   POOL_MEM file(PM_FNAME);
-   POOL_MEM spath(PM_FNAME);
+   PoolMem file(PM_FNAME);
+   PoolMem spath(PM_FNAME);
 
    num_files++;
 
@@ -415,9 +415,9 @@ static void count_files(FF_PKT *ar)
 
 }
 
-static bool copy_fileset(FF_PKT *ff, JCR *jcr)
+static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
 {
-   FILESETRES *jcr_fileset = jcr->res.fileset;
+   FilesetResource *jcr_fileset = jcr->res.fileset;
    int num;
    bool include = true;
 
@@ -439,7 +439,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
          num = jcr_fileset->num_excludes;
       }
       for (int i=0; i<num; i++) {
-         INCEXE *ie;
+         IncludeExcludeItem *ie;
          int j, k;
 
          if (include) {
@@ -463,7 +463,7 @@ static bool copy_fileset(FF_PKT *ff, JCR *jcr)
          }
 
          for (j=0; j<ie->num_opts; j++) {
-            FOPTS *fo = ie->opts_list[j];
+            FileOptions *fo = ie->opts_list[j];
 
             current_opts = (findFOPTS *)malloc(sizeof(findFOPTS));
             memset(current_opts, 0, sizeof(findFOPTS));

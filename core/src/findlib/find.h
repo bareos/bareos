@@ -174,7 +174,7 @@ struct findFILESET {
 /**
  * OSX resource fork.
  */
-struct HFSPLUS_INFO {
+struct HfsPlusInfo {
    unsigned long length;              /**< Mandatory field */
    char fndrinfo[32];                 /**< Finder Info */
    off_t rsrclength;                  /**< Size of resource fork */
@@ -202,7 +202,7 @@ struct CurLink {
  * Definition of the find_files packet passed as the
  * first argument to the find_files callback subroutine.
  */
-struct FF_PKT {
+struct FindFilesPacket {
    char *top_fname;                   /**< Full filename before descending */
    char *fname;                       /**< Full filename */
    char *link;                        /**< Link if file linked */
@@ -225,7 +225,7 @@ struct FF_PKT {
    int32_t object_compression;        /**< Type of compression for object */
    int type;                          /**< FT_ type from above */
    int ff_errno;                      /**< Errno */
-   BFILE bfd;                         /**< Bareos file descriptor */
+   BareosWinFilePacket bfd;                         /**< Bareos file descriptor */
    time_t save_time;                  /**< Start of incremental time */
    bool accurate_found;               /**< Found in the accurate hash (valid after check_changes()) */
    bool dereference;                  /**< Follow links (not implemented) */
@@ -239,9 +239,9 @@ struct FF_PKT {
    struct s_excluded_file *excluded_files_list;
    struct s_excluded_file *excluded_paths_list;
    findFILESET *fileset;
-   int (*file_save)(JCR *, FF_PKT *, bool); /**< User's callback */
-   int (*plugin_save)(JCR *, FF_PKT *, bool); /**< User's callback */
-   bool (*check_fct)(JCR *, FF_PKT *); /**< Optionnal user fct to check file changes */
+   int (*file_save)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
+   int (*plugin_save)(JobControlRecord *, FindFilesPacket *, bool); /**< User's callback */
+   bool (*check_fct)(JobControlRecord *, FindFilesPacket *); /**< Optionnal user fct to check file changes */
 
    /*
     * Values set by accept_file while processing Options
@@ -266,9 +266,9 @@ struct FF_PKT {
     * Darwin specific things.
     * To avoid clutter, we always include rsrc_bfd and volhas_attrlist.
     */
-   BFILE rsrc_bfd;                    /**< Fd for resource forks */
+   BareosWinFilePacket rsrc_bfd;                    /**< Fd for resource forks */
    bool volhas_attrlist;              /**< Volume supports getattrlist() */
-   struct HFSPLUS_INFO hfsinfo;       /**< Finder Info and resource fork size */
+   struct HfsPlusInfo hfsinfo;       /**< Finder Info and resource fork size */
 };
 
 #include "acl.h"

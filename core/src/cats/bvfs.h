@@ -61,7 +61,7 @@ typedef enum {
 class Bvfs {
 
 public:
-   Bvfs(JCR *j, B_DB *mdb);
+   Bvfs(JobControlRecord *j, BareosDb *mdb);
    virtual ~Bvfs();
 
    void set_jobid(JobId_t id);
@@ -122,11 +122,11 @@ public:
       return pwd_id;
    }
 
-   ATTR *get_attr() {
+   Attributes *get_attr() {
       return attr;
    }
 
-   JCR *get_jcr() {
+   JobControlRecord *get_jcr() {
       return jcr;
    }
 
@@ -155,8 +155,8 @@ private:
    Bvfs(const Bvfs &);               /* prohibit pass by value */
    Bvfs & operator = (const Bvfs &); /* prohibit class assignment */
 
-   JCR *jcr;
-   B_DB *db;
+   JobControlRecord *jcr;
+   BareosDb *db;
    POOLMEM *jobids;
    uint32_t limit;
    uint32_t offset;
@@ -164,7 +164,7 @@ private:
    POOLMEM *pattern;
    DBId_t pwd_id;               /* Current pathid */
    POOLMEM *prev_dir; /* ls_dirs query returns all versions, take the 1st one */
-   ATTR *attr;        /* Can be use by handler to call decode_stat() */
+   Attributes *attr;        /* Can be use by handler to call decode_stat() */
 
    bool see_all_versions;
    bool see_copies;

@@ -60,9 +60,9 @@ extern struct s_kw RunFields[];
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static RES *sres_head[R_LAST - R_FIRST + 1];
-static RES **res_head = sres_head;
-static POOL_MEM *configure_usage_string = NULL;
+static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader **res_head = sres_head;
+static PoolMem *configure_usage_string = NULL;
 
 /**
  * Set default indention e.g. 2 spaces.
@@ -72,8 +72,8 @@ static POOL_MEM *configure_usage_string = NULL;
 /**
  * Imported subroutines
  */
-extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
-extern void store_run(LEX *lc, RES_ITEM *item, int index, int pass);
+extern void store_inc(LEX *lc, ResourceItem *item, int index, int pass);
+extern void store_run(LEX *lc, ResourceItem *item, int index, int pass);
 
 /**
  * Forward referenced subroutines
@@ -97,7 +97,7 @@ static int32_t res_all_size = sizeof(res_all);
  *
  * name handler value code flags default_value
  */
-static RES_ITEM dir_items[] = {
+static ResourceItem dir_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -153,7 +153,7 @@ static RES_ITEM dir_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM profile_items[] = {
+static ResourceItem profile_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_profile.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_profile.hdr.desc), 0, 0, NULL, NULL,
@@ -186,7 +186,7 @@ static RES_ITEM profile_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM con_items[] = {
+static ResourceItem con_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_con.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_con.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_AUTOPASSWORD, ITEM(res_con.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -215,7 +215,7 @@ static RES_ITEM con_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM cli_items[] = {
+static ResourceItem cli_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -265,7 +265,7 @@ static RES_ITEM cli_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM store_items[] = {
+static ResourceItem store_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_store.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
       "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_store.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -311,7 +311,7 @@ static RES_ITEM store_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM cat_items[] = {
+static ResourceItem cat_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_cat.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_cat.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -354,7 +354,7 @@ static RES_ITEM cat_items[] = {
  *
  * name handler value code flags default_value
  */
-RES_ITEM job_items[] = {
+ResourceItem job_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_job.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_job.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -464,7 +464,7 @@ RES_ITEM job_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM fs_items[] = {
+static ResourceItem fs_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_fs.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_fs.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -480,7 +480,7 @@ static RES_ITEM fs_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM sch_items[] = {
+static ResourceItem sch_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_sch.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_sch.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -495,7 +495,7 @@ static RES_ITEM sch_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM pool_items[] = {
+static ResourceItem pool_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_pool.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_pool.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -538,7 +538,7 @@ static RES_ITEM pool_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_ITEM counter_items[] = {
+static ResourceItem counter_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_counter.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL,
      "The name of the resource." },
    { "Description", CFG_TYPE_STR, ITEM(res_counter.hdr.desc), 0, 0, NULL, NULL, NULL },
@@ -563,21 +563,21 @@ static RES_ITEM counter_items[] = {
  *
  * name handler value code flags default_value
  */
-static RES_TABLE resources[] = {
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES*) res) CLIENTRES(); }  },
-   { "JobDefs", job_items, R_JOBDEFS, sizeof(JOBRES)},
-   { "Job", job_items, R_JOB, sizeof(JOBRES)  },
-   { "Storage", store_items, R_STORAGE, sizeof(STORERES), [] (void *res){ return new((STORERES *) res) STORERES(); }   },
-   { "Catalog", cat_items, R_CATALOG, sizeof(CATRES)   },
-   { "Schedule", sch_items, R_SCHEDULE, sizeof(SCHEDRES)   },
-   { "FileSet", fs_items, R_FILESET, sizeof(FILESETRES)   },
-   { "Pool", pool_items, R_POOL, sizeof(POOLRES)   },
-   { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES)   },
-   { "Counter", counter_items, R_COUNTER, sizeof(COUNTERRES)   },
-   { "Profile", profile_items, R_PROFILE, sizeof(PROFILERES)   },
-   { "Console", con_items, R_CONSOLE, sizeof(CONRES), [] (void *res){ return new((CONRES *) res) CONRES(); }   },
-   { "Device", NULL, R_DEVICE, sizeof(DEVICERES)   }, /* info obtained from SD */
+static ResourceTable resources[] = {
+   { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource*) res) ClientResource(); }  },
+   { "JobDefs", job_items, R_JOBDEFS, sizeof(JobResource)},
+   { "Job", job_items, R_JOB, sizeof(JobResource)  },
+   { "Storage", store_items, R_STORAGE, sizeof(StoreResource), [] (void *res){ return new((StoreResource *) res) StoreResource(); }   },
+   { "Catalog", cat_items, R_CATALOG, sizeof(CatalogResource)   },
+   { "Schedule", sch_items, R_SCHEDULE, sizeof(ScheduleResource)   },
+   { "FileSet", fs_items, R_FILESET, sizeof(FilesetResource)   },
+   { "Pool", pool_items, R_POOL, sizeof(PoolResource)   },
+   { "Messages", msgs_items, R_MSGS, sizeof(MessagesResource)   },
+   { "Counter", counter_items, R_COUNTER, sizeof(CounterResource)   },
+   { "Profile", profile_items, R_PROFILE, sizeof(ProfileResource)   },
+   { "Console", con_items, R_CONSOLE, sizeof(ConsoleResource), [] (void *res){ return new((ConsoleResource *) res) ConsoleResource(); }   },
+   { "Device", NULL, R_DEVICE, sizeof(DeviceResource)   }, /* info obtained from SD */
    { NULL, NULL, 0, 0, nullptr }
 };
 
@@ -596,7 +596,7 @@ static RUNSCRIPT res_runscript;
  * new RunScript items
  * name handler value code flags default_value
  */
-static RES_ITEM runscript_items[] = {
+static ResourceItem runscript_items[] = {
  { "Command", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, SHELL_CMD, 0, NULL, NULL, NULL },
  { "Console", CFG_TYPE_RUNSCRIPT_CMD, { (char **)&res_runscript }, CONSOLE_CMD, 0, NULL, NULL, NULL },
  { "Target", CFG_TYPE_RUNSCRIPT_TARGET, { (char **)&res_runscript }, 0, 0, NULL, NULL, NULL },
@@ -860,7 +860,7 @@ json_t *json_datatype(const int type, s_jt items[])
    return json;
 }
 
-json_t *json_datatype(const int type, RES_ITEM items[])
+json_t *json_datatype(const int type, ResourceItem items[])
 {
    json_t *json = json_datatype_header(type, "sub");
    if (items) {
@@ -876,10 +876,10 @@ json_t *json_datatype(const int type, RES_ITEM items[])
 /**
  * Print configuration file schema in json format
  */
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
-   DATATYPE_NAME *datatype;
-   RES_TABLE *resources = my_config->m_resources;
+   DatatypeName *datatype;
+   ResourceTable *resources = my_config->resources_;
 
    initialize_json();
 
@@ -897,7 +897,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    json_object_set(resource, "bareos-dir", bareos_dir);
 
    for (int r = 0; resources[r].name; r++) {
-      RES_TABLE resource = my_config->m_resources[r];
+      ResourceTable resource = my_config->resources_[r];
       json_object_set(bareos_dir, resource.name, json_items(resource.items));
    }
 
@@ -971,7 +971,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    return true;
 }
 #else
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
    pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
 
@@ -979,10 +979,10 @@ bool print_config_schema_json(POOL_MEM &buffer)
 }
 #endif
 
-static inline bool cmdline_item(POOL_MEM *buffer, RES_ITEM *item)
+static inline bool cmdline_item(PoolMem *buffer, ResourceItem *item)
 {
-   POOL_MEM temp;
-   POOL_MEM key;
+   PoolMem temp;
+   PoolMem key;
    const char *nomod = "";
    const char *mod_start = nomod;
    const char *mod_end = nomod;
@@ -1017,7 +1017,7 @@ static inline bool cmdline_item(POOL_MEM *buffer, RES_ITEM *item)
    return true;
 }
 
-static inline bool cmdline_items(POOL_MEM *buffer, RES_ITEM items[])
+static inline bool cmdline_items(PoolMem *buffer, ResourceItem items[])
 {
    if (!items) {
       return false;
@@ -1038,10 +1038,10 @@ static inline bool cmdline_items(POOL_MEM *buffer, RES_ITEM items[])
  */
 const char *get_configure_usage_string()
 {
-   POOL_MEM resourcename;
+   PoolMem resourcename;
 
    if (!configure_usage_string) {
-      configure_usage_string = new POOL_MEM(PM_BSOCK);
+      configure_usage_string = new PoolMem(PM_BSOCK);
    }
 
    /*
@@ -1083,9 +1083,9 @@ void destroy_configure_usage_string()
 }
 
 /**
- * Propagate the settings from source BRSRES to dest BRSRES using the RES_ITEMS array.
+ * Propagate the settings from source BareosResource to dest BareosResource using the RES_ITEMS array.
  */
-static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
+static void propagate_resource(ResourceItem *items, BareosResource *source, BareosResource *dest)
 {
    uint32_t offset;
 
@@ -1156,7 +1156,7 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
             break;
          }
          case CFG_TYPE_ALIST_RES: {
-            RES *res;
+            CommonResourceHeader *res;
             alist *orig_list, **new_list;
 
             /*
@@ -1289,7 +1289,7 @@ static void propagate_resource(RES_ITEM *items, BRSRES *source, BRSRES *dest)
 /**
  * Ensure that all required items are present
  */
-bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
+bool validate_resource(int res_type, ResourceItem *items, BareosResource *res)
 {
    if (res_type == R_JOBDEFS) {
       /*
@@ -1297,7 +1297,7 @@ bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
        */
       return true;
    } else if (res_type == R_JOB) {
-      if (!((JOBRES *)res)->validate()) {
+      if (!((JobResource *)res)->validate()) {
          return false;
       }
    }
@@ -1324,7 +1324,7 @@ bool validate_resource(int res_type, RES_ITEM *items, BRSRES *res)
    return true;
 }
 
-bool JOBRES::validate()
+bool JobResource::validate()
 {
    /*
     * For Copy and Migrate we can have Jobs without a client or fileset.
@@ -1362,7 +1362,7 @@ bool JOBRES::validate()
    return true;
 }
 
-char *CATRES::display(POOLMEM *dst)
+char *CatalogResource::display(POOLMEM *dst)
 {
    Mmsg(dst, "catalog=%s\ndb_name=%s\ndb_driver=%s\ndb_user=%s\n"
              "db_password=%s\ndb_address=%s\ndb_port=%i\n"
@@ -1374,9 +1374,9 @@ char *CATRES::display(POOLMEM *dst)
    return dst;
 }
 
-static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
+static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
 {
-   POOL_MEM temp;
+   PoolMem temp;
    RUNSCRIPT *runscript;
    alist *list;
 
@@ -1384,7 +1384,7 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
    if (bstrcasecmp(item->name, "runscript")) {
       if (list != NULL) {
          foreach_alist(runscript, list) {
-            POOL_MEM esc;
+            PoolMem esc;
 
             escape_string(esc, runscript->command, strlen(runscript->command));
 
@@ -1512,10 +1512,10 @@ static inline void print_config_runscript(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 }
 
-static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
+static inline void print_config_run(ResourceItem *item, PoolMem &cfg_str)
 {
-   POOL_MEM temp;
-   RUNRES *run;
+   PoolMem temp;
+   RunResource *run;
    bool all_set;
    int i, nr_items;
    int interval_start;
@@ -1550,11 +1550,11 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
       (char *)"5th"
    };
 
-   run = (RUNRES *)*(item->value);
+   run = (RunResource *)*(item->value);
    if (run != NULL) {
       while (run) {
-         POOL_MEM run_str; /* holds the complete run= ... line */
-         POOL_MEM interval; /* is one entry of day/month/week etc. */
+         PoolMem run_str; /* holds the complete run= ... line */
+         PoolMem interval; /* is one entry of day/month/week etc. */
 
          indent_config_item(cfg_str, 1, "run = ");
 
@@ -1927,13 +1927,13 @@ static inline void print_config_run(RES_ITEM *item, POOL_MEM &cfg_str)
    }
 }
 
-bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool verbose)
+bool FilesetResource::print_config(PoolMem &buff, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM cfg_str;
-   POOL_MEM temp;
+   PoolMem cfg_str;
+   PoolMem temp;
    const char *p;
 
-   Dmsg0(200,"FILESETRES::print_config\n");
+   Dmsg0(200,"FilesetResource::print_config\n");
 
    Mmsg(temp, "FileSet {\n");
    pm_strcat(cfg_str, temp.c_str());
@@ -1951,7 +1951,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
        * Loop over all exclude blocks.
        */
       for (int i = 0;  i < num_includes; i++) {
-         INCEXE *incexe = include_items[i];
+         IncludeExcludeItem *incexe = include_items[i];
 
          indent_config_item(cfg_str, 1, "Include {\n");
 
@@ -1960,7 +1960,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
           */
          if (incexe->num_opts > 0) {
             for (int j = 0; j < incexe->num_opts; j++) {
-               FOPTS *fo = incexe->opts_list[j];
+               FileOptions *fo = incexe->opts_list[j];
 
                indent_config_item(cfg_str, 2, "Options {\n");
                for (p = &fo->opts[0]; *p; p++) {
@@ -2248,7 +2248,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
           */
          if (incexe->name_list.size()) {
             char *entry;
-            POOL_MEM esc;
+            PoolMem esc;
 
             for (int l = 0; l < incexe->name_list.size(); l++) {
                entry = (char *)incexe->name_list.get(l);
@@ -2263,7 +2263,7 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
           */
          if (incexe->plugin_list.size()) {
             char *entry;
-            POOL_MEM esc;
+            PoolMem esc;
 
             for (int l = 0; l < incexe->plugin_list.size(); l++) {
                entry = (char *)incexe->plugin_list.get(l);
@@ -2296,11 +2296,11 @@ bool FILESETRES::print_config(POOL_MEM &buff, bool hide_sensitive_data, bool ver
        * Loop over all exclude blocks.
        */
       for (int j = 0; j < num_excludes; j++) {
-         INCEXE *incexe = exclude_items[j];
+         IncludeExcludeItem *incexe = exclude_items[j];
 
          if (incexe->name_list.size()) {
             char *entry;
-            POOL_MEM esc;
+            PoolMem esc;
 
             indent_config_item(cfg_str, 1, "Exclude {\n");
             for (int k = 0; k < incexe->name_list.size(); k++) {
@@ -2351,14 +2351,14 @@ const char *level_to_str(int level)
 /**
  * Dump contents of resource
  */
-void dump_resource(int type, RES *ures,
+void dump_resource(int type, CommonResourceHeader *ures,
                    void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM buf;
+   PoolMem buf;
    bool recurse = true;
    URES *res = (URES *)ures;
-   UAContext *ua = (UAContext *)sock;
+   UaContext *ua = (UaContext *)sock;
 
    if (!res) {
       sendit(sock, _("No %s resource defined\n"), res_to_str(type));
@@ -2440,14 +2440,14 @@ bail_out:
 }
 
 /**
- * Free all the members of an INCEXE structure
+ * Free all the members of an IncludeExcludeItem structure
  */
-static void free_incexe(INCEXE *incexe)
+static void free_incexe(IncludeExcludeItem *incexe)
 {
    incexe->name_list.destroy();
    incexe->plugin_list.destroy();
    for (int i = 0; i < incexe->num_opts; i++) {
-      FOPTS *fopt = incexe->opts_list[i];
+      FileOptions *fopt = incexe->opts_list[i];
       fopt->regex.destroy();
       fopt->regexdir.destroy();
       fopt->regexfile.destroy();
@@ -2484,10 +2484,10 @@ static void free_incexe(INCEXE *incexe)
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(RES *sres, int type)
+void free_resource(CommonResourceHeader *sres, int type)
 {
    int num;
-   RES *nres; /* next resource if linked */
+   CommonResourceHeader *nres; /* next resource if linked */
    URES *res = (URES *)sres;
 
    if (!res)
@@ -2496,7 +2496,7 @@ void free_resource(RES *sres, int type)
    /*
     * Common stuff -- free the resource name and description
     */
-   nres = (RES *)res->res_dir.hdr.next;
+   nres = (CommonResourceHeader *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
    }
@@ -2829,7 +2829,7 @@ void free_resource(RES *sres, int type)
       break;
    case R_SCHEDULE:
       if (res->res_sch.run) {
-         RUNRES *nrun, *next;
+         RunResource *nrun, *next;
          nrun = res->res_sch.run;
          while (nrun) {
             next = nrun->next;
@@ -2906,7 +2906,7 @@ void free_resource(RES *sres, int type)
       if (res->res_msgs.timestamp_format) {
          free(res->res_msgs.timestamp_format);
       }
-      free_msgs_res((MSGSRES *)res); /* free message resource */
+      free_msgs_res((MessagesResource *)res); /* free message resource */
       res = NULL;
       break;
    default:
@@ -2923,7 +2923,7 @@ void free_resource(RES *sres, int type)
    }
 }
 
-static bool update_resource_pointer(int type, RES_ITEM *items)
+static bool update_resource_pointer(int type, ResourceItem *items)
 {
    URES *res;
    bool result = true;
@@ -3089,7 +3089,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
             /*
              * No catalog overwrite given use the first catalog definition.
              */
-            res->res_client.catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+            res->res_client.catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
          }
          res->res_client.tls_cert.allowed_cns = res_all.res_client.tls_cert.allowed_cns;
 
@@ -3099,7 +3099,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
       break;
    case R_SCHEDULE:
       /*
-       * Schedule is a bit different in that it contains a RUNRES record
+       * Schedule is a bit different in that it contains a RunResource record
        * chain which isn't a "named" resource. This chain was linked
        * in by run_conf.c during pass 2, so here we jam the pointer
        * into the Schedule resource.
@@ -3140,7 +3140,7 @@ static bool update_resource_pointer(int type, RES_ITEM *items)
  * pointers because they may not have been defined until
  * later in pass 1.
  */
-bool save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, ResourceItem *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -3187,11 +3187,11 @@ bool save_resource(int type, RES_ITEM *items, int pass)
    res = (URES *)malloc(resources[rindex].size);
    memcpy(res, &res_all, resources[rindex].size);
    if (!res_head[rindex]) {
-      res_head[rindex] = (RES *)res; /* store first entry */
+      res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
       Dmsg3(900, "Inserting first %s res: %s index=%d\n", res_to_str(type),
             res->res_dir.name(), rindex);
    } else {
-      RES *next, *last;
+      CommonResourceHeader *next, *last;
       if (!res->res_dir.name()) {
          Emsg1(M_ERROR, 0, _("Name item is required in %s resource, but not found.\n"),
                resources[rindex].name);
@@ -3209,16 +3209,16 @@ bool save_resource(int type, RES_ITEM *items, int pass)
             return false;
          }
       }
-      last->next = (RES *)res;
+      last->next = (CommonResourceHeader *)res;
       Dmsg4(900, _("Inserting %s res: %s index=%d pass=%d\n"), res_to_str(type),
             res->res_dir.name(), rindex, pass);
    }
    return true;
 }
 
-bool propagate_jobdefs(int res_type, JOBRES *res)
+bool propagate_jobdefs(int res_type, JobResource *res)
 {
-   JOBRES *jobdefs = NULL;
+   JobResource *jobdefs = NULL;
 
    if (!res->jobdefs) {
       return true;
@@ -3265,7 +3265,7 @@ bool propagate_jobdefs(int res_type, JOBRES *res)
  */
 static inline bool populate_jobdefs()
 {
-   JOBRES *job, *jobdefs;
+   JobResource *job, *jobdefs;
    bool retval = true;
 
    /*
@@ -3300,7 +3300,7 @@ bool populate_defs()
    return populate_jobdefs();
 }
 
-static void store_pooltype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_pooltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3330,7 +3330,7 @@ static void store_pooltype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    uint32_t *destination = item->ui32value;
@@ -3362,7 +3362,7 @@ static void store_actiononpurge(LEX *lc, RES_ITEM *item, int index, int pass)
  * first reference. The details of the resource are obtained
  * later from the SD.
  */
-static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
 {
    URES *res;
    int rindex = R_DEVICE - R_FIRST;
@@ -3374,11 +3374,11 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
          res = (URES *)malloc(resources[rindex].size);
          memset(res, 0, resources[rindex].size);
          res->res_dev.hdr.name = bstrdup(lc->str);
-         res_head[rindex] = (RES *)res; /* store first entry */
+         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
          Dmsg3(900, "Inserting first %s res: %s index=%d\n",
                res_to_str(R_DEVICE), res->res_dir.name(), rindex);
       } else {
-         RES *next;
+         CommonResourceHeader *next;
          /*
           * See if it is already defined
           */
@@ -3392,7 +3392,7 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
             res = (URES *)malloc(resources[rindex].size);
             memset(res, 0, resources[rindex].size);
             res->res_dev.hdr.name = bstrdup(lc->str);
-            next->next = (RES *)res;
+            next->next = (CommonResourceHeader *)res;
             Dmsg4(900, "Inserting %s res: %s index=%d pass=%d\n",
                   res_to_str(R_DEVICE), res->res_dir.name(), rindex, pass);
          }
@@ -3409,7 +3409,7 @@ static void store_device(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Migration/Copy type
  */
-static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_migtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3437,7 +3437,7 @@ static void store_migtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store JobType (backup, verify, restore)
  */
-static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_jobtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3465,7 +3465,7 @@ static void store_jobtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Protocol (Native, NDMP/NDMP_BAREOS, NDMP_NATIVE)
  */
-static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_protocoltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3490,7 +3490,7 @@ static void store_protocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
    clear_bit(index, res_all.hdr.inherit_content);
 }
 
-static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_replace(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3518,7 +3518,7 @@ static void store_replace(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Auth Protocol (Native, NDMPv2, NDMPv3, NDMPv4)
  */
-static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_authprotocoltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3545,7 +3545,7 @@ static void store_authprotocoltype(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store authentication type (Mostly for NDMP like clear or MD5).
  */
-static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3573,7 +3573,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Job Level (Full, Incremental, ...)
  */
-static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_level(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
@@ -3601,7 +3601,7 @@ static void store_level(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store password either clear if for NDMP and catalog or MD5 hashed for native.
  */
-static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_autopassword(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (res_all.hdr.rcode) {
    case R_DIRECTOR:
@@ -3655,7 +3655,7 @@ static void store_autopassword(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store ACL (access control list)
  */
-static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_acl(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    alist *list;
@@ -3687,7 +3687,7 @@ static void store_acl(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Audit event.
  */
-static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_audit(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    alist *list;
@@ -3716,7 +3716,7 @@ static void store_audit(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store a runscript->when in a bit field
  */
-static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
 
@@ -3737,7 +3737,7 @@ static void store_runscript_when(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store a runscript->target
  */
-static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
 
@@ -3749,7 +3749,7 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
       } else if (bstrcasecmp(lc->str, "no")) {
          ((RUNSCRIPT *)item->value)->set_target("");
       } else {
-         RES *res;
+         CommonResourceHeader *res;
 
          if (!(res = GetResWithName(R_CLIENT, lc->str))) {
             scan_err3(lc, _("Could not find config Resource %s referenced on line %d : %s\n"),
@@ -3765,7 +3765,7 @@ static void store_runscript_target(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store a runscript->command as a string and runscript->cmd_type as a pointer
  */
-static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_runscript_cmd(LEX *lc, ResourceItem *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
 
@@ -3782,7 +3782,7 @@ static void store_runscript_cmd(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 {
    lex_get_token(lc, T_STRING);
    alist **runscripts = item->alistvalue;
@@ -3838,7 +3838,7 @@ static void store_short_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
  * Store a bool in a bit field without modifing res_all.hdr
  * We can also add an option to store_bool to skip res_all.hdr
  */
-static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_runscript_bool(LEX *lc, ResourceItem *item, int index, int pass)
 {
    lex_get_token(lc, T_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -3858,7 +3858,7 @@ static void store_runscript_bool(LEX *lc, RES_ITEM *item, int index, int pass)
  * resource.  We treat the RunScript like a sort of
  * mini-resource within the Job resource.
  */
-static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 {
    char *c;
    int token, i, t;
@@ -3987,7 +3987,7 @@ static void store_runscript(LEX *lc, RES_ITEM *item, int index, int pass)
  * %D = Director name
  * %V = Volume name(s) (Destination)
  */
-extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
+extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char *param)
 {
    static char yes[] = "yes";
    static char no[] = "no";
@@ -4046,7 +4046,7 @@ extern "C" char *job_code_callback_director(JCR *jcr, const char *param)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item, int pass)
+static void init_resource_cb(ResourceItem *item, int pass)
 {
    switch (pass) {
    case 1:
@@ -4088,7 +4088,7 @@ static void init_resource_cb(RES_ITEM *item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function parse_config, for more generic handling.
  */
-static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
+static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (item->type) {
    case CFG_TYPE_AUTOPASSWORD:
@@ -4149,11 +4149,11 @@ static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
 
 /**
  * callback function for print_config
- * See ../lib/res.c, function BRSRES::print_config, for more generic handling.
+ * See ../lib/res.c, function BareosResource::print_config, for more generic handling.
  */
-static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited)
+static void print_config_cb(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited)
 {
-   POOL_MEM temp;
+   PoolMem temp;
 
    switch (items[i].type) {
    case CFG_TYPE_DEVICE: {
@@ -4161,9 +4161,9 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
        * Each member of the list is comma-separated
        */
       int cnt = 0;
-      RES *res;
+      CommonResourceHeader *res;
       alist *list;
-      POOL_MEM res_names;
+      PoolMem res_names;
 
       list = *(items[i].alistvalue);
       if (list != NULL) {
@@ -4199,7 +4199,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       int cnt = 0;
       char *value;
       alist *list;
-      POOL_MEM acl;
+      PoolMem acl;
 
       list = items[i].alistvalue[items[i].code];
       if (list != NULL) {
@@ -4360,7 +4360,7 @@ static void print_config_cb(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide
       int cnt = 0;
       char *audit_event;
       alist *list;
-      POOL_MEM audit_events;
+      PoolMem audit_events;
 
       list = *(items[i].alistvalue);
       if (list != NULL) {

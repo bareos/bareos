@@ -46,7 +46,7 @@ static const GUID VSS_SWPRV_ProviderID = {
 
 static bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBuflen)
 {
-   JCR *jcr = get_jcr_from_tsd();
+   JobControlRecord *jcr = get_jcr_from_tsd();
 
    if (jcr && jcr->pVSSClient) {
       return jcr->pVSSClient->GetShadowPath(szFilePath, szShadowPath, nBuflen);
@@ -57,7 +57,7 @@ static bool VSSPathConvert(const char *szFilePath, char *szShadowPath, int nBufl
 
 static bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
 {
-   JCR *jcr = get_jcr_from_tsd();
+   JobControlRecord *jcr = get_jcr_from_tsd();
 
    if (jcr && jcr->pVSSClient) {
       return jcr->pVSSClient->GetShadowPathW(szFilePath, szShadowPath, nBuflen);
@@ -66,7 +66,7 @@ static bool VSSPathConvertW(const wchar_t *szFilePath, wchar_t *szShadowPath, in
    return false;
 }
 
-void VSSInit(JCR *jcr)
+void VSSInit(JobControlRecord *jcr)
 {
    /*
     * Decide which vss class to initialize
@@ -101,9 +101,9 @@ void VSSInit(JCR *jcr)
 VSSClient::VSSClient()
 {
     memset(this, 0, sizeof(VSSClient));
-    m_pAlistWriterState = New(alist(10, not_owned_by_alist));
-    m_pAlistWriterInfoText = New(alist(10, owned_by_alist));
-    m_uidCurrentSnapshotSet = GUID_NULL;
+    pAlistWriterState_ = New(alist(10, not_owned_by_alist));
+    pAlistWriterInfoText_ = New(alist(10, owned_by_alist));
+    uidCurrentSnapshotSet_ = GUID_NULL;
 }
 
 /*
@@ -115,36 +115,36 @@ VSSClient::~VSSClient()
     * Release the IVssBackupComponents interface
     * WARNING: this must be done BEFORE calling CoUninitialize()
     */
-   if (m_pVssObject) {
-//      m_pVssObject->Release();
-      m_pVssObject = NULL;
+   if (pVssObject_) {
+//      pVssObject_->Release();
+      pVssObject_ = NULL;
    }
 
    DestroyWriterInfo();
-   delete m_pAlistWriterState;
-   delete m_pAlistWriterInfoText;
+   delete pAlistWriterState_;
+   delete pAlistWriterInfoText_;
 
    /*
     * Call CoUninitialize if the CoInitialize was performed successfully
     */
-   if (m_bCoInitializeCalled) {
+   if (bCoInitializeCalled_) {
       CoUninitialize();
    }
 }
 
-bool VSSClient::InitializeForBackup(JCR *jcr)
+bool VSSClient::InitializeForBackup(JobControlRecord *jcr)
 {
-   m_jcr = jcr;
+   jcr_ = jcr;
 
    generate_plugin_event(jcr, bEventVssInitializeForBackup);
 
    return Initialize(0);
 }
 
-bool VSSClient::InitializeForRestore(JCR *jcr)
+bool VSSClient::InitializeForRestore(JobControlRecord *jcr)
 {
-   m_metadata = NULL;
-   m_jcr = jcr;
+   metadata_ = NULL;
+   jcr_ = jcr;
 
    generate_plugin_event(jcr, bEventVssInitializeForRestore);
 
@@ -153,7 +153,7 @@ bool VSSClient::InitializeForRestore(JCR *jcr)
 
 bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nBuflen)
 {
-   if (!m_bBackupIsInitialized)
+   if (!bBackupIsInitialized_)
       return false;
 
    /*
@@ -169,9 +169,9 @@ bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nB
 
    if (bIsValidName) {
       int nDriveIndex = toupper(szFilePath[0])-'A';
-      if (m_szShadowCopyName[nDriveIndex][0] != 0) {
+      if (szShadowCopyName_[nDriveIndex][0] != 0) {
 
-         if (WideCharToMultiByte(CP_UTF8,0,m_szShadowCopyName[nDriveIndex],-1,szShadowPath,nBuflen-1,NULL,NULL)) {
+         if (WideCharToMultiByte(CP_UTF8,0,szShadowCopyName_[nDriveIndex],-1,szShadowPath,nBuflen-1,NULL,NULL)) {
             nBuflen -= (int)strlen(szShadowPath);
             bstrncat(szShadowPath, szFilePath+2, nBuflen);
             return true;
@@ -186,7 +186,7 @@ bool VSSClient::GetShadowPath(const char *szFilePath, char *szShadowPath, int nB
 
 bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath, int nBuflen)
 {
-   if (!m_bBackupIsInitialized)
+   if (!bBackupIsInitialized_)
       return false;
 
    /*
@@ -202,9 +202,9 @@ bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath,
 
    if (bIsValidName) {
       int nDriveIndex = towupper(szFilePath[0])-'A';
-      if (m_szShadowCopyName[nDriveIndex][0] != 0) {
-         wcsncpy(szShadowPath, m_szShadowCopyName[nDriveIndex], nBuflen);
-         nBuflen -= (int)wcslen(m_szShadowCopyName[nDriveIndex]);
+      if (szShadowCopyName_[nDriveIndex][0] != 0) {
+         wcsncpy(szShadowPath, szShadowCopyName_[nDriveIndex], nBuflen);
+         nBuflen -= (int)wcslen(szShadowCopyName_[nDriveIndex]);
          wcsncat(szShadowPath, szFilePath+2, nBuflen);
          return true;
       }
@@ -217,17 +217,17 @@ bool VSSClient::GetShadowPathW(const wchar_t *szFilePath, wchar_t *szShadowPath,
 
 const size_t VSSClient::GetWriterCount()
 {
-   return m_pAlistWriterInfoText->size();
+   return pAlistWriterInfoText_->size();
 }
 
 const char* VSSClient::GetWriterInfo(int nIndex)
 {
-   return (char*)m_pAlistWriterInfoText->get(nIndex);
+   return (char*)pAlistWriterInfoText_->get(nIndex);
 }
 
 const int VSSClient::GetWriterState(int nIndex)
 {
-   void *item = m_pAlistWriterState->get(nIndex);
+   void *item = pAlistWriterState_->get(nIndex);
 
    /*
     * Eliminate compiler warnings
@@ -241,8 +241,8 @@ const int VSSClient::GetWriterState(int nIndex)
 
 void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
 {
-   m_pAlistWriterInfoText->push(bstrdup(pszInfo));
-   m_pAlistWriterState->push((void*)nState);
+   pAlistWriterInfoText_->push(bstrdup(pszInfo));
+   pAlistWriterState_->push((void*)nState);
 }
 
 /*
@@ -251,12 +251,12 @@ void VSSClient::AppendWriterInfo(int nState, const char* pszInfo)
  */
 void VSSClient::DestroyWriterInfo()
 {
-   while (!m_pAlistWriterInfoText->empty()) {
-      free(m_pAlistWriterInfoText->pop());
+   while (!pAlistWriterInfoText_->empty()) {
+      free(pAlistWriterInfoText_->pop());
    }
 
-   while (!m_pAlistWriterState->empty()) {
-      m_pAlistWriterState->pop();
+   while (!pAlistWriterState_->empty()) {
+      pAlistWriterState_->pop();
    }
 }
 #endif

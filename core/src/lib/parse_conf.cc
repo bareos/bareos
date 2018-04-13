@@ -62,8 +62,8 @@
  * Define the Union of all the common resource structure definitions.
  */
 union URES {
-   MSGSRES  res_msgs;
-   RES hdr;
+   MessagesResource  res_msgs;
+   CommonResourceHeader hdr;
 };
 
 /* Common Resource definitions */
@@ -99,45 +99,45 @@ void CONFIG::init(const char *cf,
                   int32_t res_all_size,
                   int32_t r_first,
                   int32_t r_last,
-                  RES_TABLE *resources,
-                  RES **res_head)
+                  ResourceTable *resources,
+                  CommonResourceHeader **res_head)
 {
-   m_cf = cf;
-   m_use_config_include_dir = false;
-   m_config_include_dir = NULL;
-   m_config_include_naming_format = "%s/%s/%s.conf";
-   m_used_config_path = NULL;
-   m_scan_error = scan_error;
-   m_scan_warning = scan_warning;
-   m_init_res = init_res;
-   m_store_res = store_res;
-   m_print_res = print_res;
-   m_err_type = err_type;
-   m_res_all = vres_all;
-   m_res_all_size = res_all_size;
-   m_r_first = r_first;
-   m_r_last = r_last;
-   m_resources = resources;
-   m_res_head = res_head;
+   cf_ = cf;
+   use_config_include_dir_ = false;
+   config_include_dir_ = NULL;
+   config_include_naming_format_ = "%s/%s/%s.conf";
+   used_config_path_ = NULL;
+   scan_error_ = scan_error;
+   scan_warning_ = scan_warning;
+   init_res_ = init_res;
+   store_res_ = store_res;
+   print_res_ = print_res;
+   err_type_ = err_type;
+   res_all_ = vres_all;
+   res_all_size_ = res_all_size;
+   r_first_ = r_first;
+   r_last_ = r_last;
+   resources_ = resources;
+   res_head_ = res_head;
 }
 
 void CONFIG::set_default_config_filename(const char *filename)
 {
-   m_config_default_filename = bstrdup(filename);
+   config_default_filename_ = bstrdup(filename);
 }
 
 void CONFIG::set_config_include_dir(const char* rel_path)
 {
-   m_config_include_dir = bstrdup(rel_path);
+   config_include_dir_ = bstrdup(rel_path);
 }
 
 bool CONFIG::parse_config()
 {
    static bool first = true;
    int errstat;
-   POOL_MEM config_path;
+   PoolMem config_path;
 
-   if (first && (errstat = rwl_init(&m_res_lock)) != 0) {
+   if (first && (errstat = rwl_init(&res_lock_)) != 0) {
       berrno be;
       Jmsg1(NULL, M_ABORT, 0, _("Unable to initialize resource lock. ERR=%s\n"),
             be.bstrerror(errstat));
@@ -147,9 +147,9 @@ bool CONFIG::parse_config()
    if (!find_config_path(config_path)) {
       Jmsg0(NULL, M_ERROR_TERM, 0, _("Failed to find config filename.\n"));
    }
-   m_used_config_path = bstrdup(config_path.c_str());
-   Dmsg1(100, "config file = %s\n", m_used_config_path);
-   return parse_config_file(config_path.c_str(), NULL, m_scan_error, m_scan_warning, m_err_type);
+   used_config_path_ = bstrdup(config_path.c_str());
+   Dmsg1(100, "config file = %s\n", used_config_path_);
+   return parse_config_file(config_path.c_str(), NULL, scan_error_, scan_warning_, err_type_);
 }
 
 bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error,
@@ -160,9 +160,9 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
    int token, i, pass;
    int res_type = 0;
    enum parse_state state = p_none;
-   RES_TABLE *res_table = NULL;
-   RES_ITEM *items = NULL;
-   RES_ITEM *item = NULL;
+   ResourceTable *res_table = NULL;
+   ResourceItem *items = NULL;
+   ResourceItem *item = NULL;
    int level = 0;
 
    /*
@@ -281,8 +281,8 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
                      /*
                       * None of the generic types fired if there is a registered callback call that now.
                       */
-                     if (m_store_res) {
-                        m_store_res(lc, item, i, pass);
+                     if (store_res_) {
+                        store_res_(lc, item, i, pass);
                      }
                   }
                } else {
@@ -298,7 +298,7 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
                level--;
                state = p_none;
                Dmsg0(900, "T_EOB => define new resource\n");
-               if (((URES *)m_res_all)->hdr.name == NULL) {
+               if (((URES *)res_all_)->hdr.name == NULL) {
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
                }
@@ -329,8 +329,8 @@ bool CONFIG::parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDL
       }
       if (debug_level >= 900 && pass == 2) {
          int i;
-         for (i = m_r_first; i <= m_r_last; i++) {
-            dump_resource(i, m_res_head[i-m_r_first], prtmsg, NULL, false);
+         for (i = r_first_; i <= r_last_; i++) {
+            dump_resource(i, res_head_[i-r_first_], prtmsg, NULL, false);
          }
       }
 
@@ -362,40 +362,40 @@ int CONFIG::get_resource_table_index(int resource_type)
 {
    int rindex = -1;
 
-   if ((resource_type >= m_r_first) && (resource_type <= m_r_last)) {
-      rindex = resource_type = m_r_first;
+   if ((resource_type >= r_first_) && (resource_type <= r_last_)) {
+      rindex = resource_type = r_first_;
    }
 
    return rindex;
 }
 
-RES_TABLE *CONFIG::get_resource_table(int resource_type)
+ResourceTable *CONFIG::get_resource_table(int resource_type)
 {
-   RES_TABLE *result = NULL;
+   ResourceTable *result = NULL;
    int rindex = get_resource_table_index(resource_type);
 
    if (rindex >= 0) {
-      result = &m_resources[rindex];
+      result = &resources_[rindex];
    }
 
    return result;
 }
 
-RES_TABLE *CONFIG::get_resource_table(const char *resource_type_name)
+ResourceTable *CONFIG::get_resource_table(const char *resource_type_name)
 {
-   RES_TABLE *result = NULL;
+   ResourceTable *result = NULL;
    int i;
 
-   for (i = 0; m_resources[i].name; i++) {
-      if (bstrcasecmp(m_resources[i].name, resource_type_name)) {
-         result = &m_resources[i];
+   for (i = 0; resources_[i].name; i++) {
+      if (bstrcasecmp(resources_[i].name, resource_type_name)) {
+         result = &resources_[i];
       }
    }
 
    return result;
 }
 
-int CONFIG::get_resource_item_index(RES_ITEM *items, const char *item)
+int CONFIG::get_resource_item_index(ResourceItem *items, const char *item)
 {
    int result = -1;
    int i;
@@ -410,9 +410,9 @@ int CONFIG::get_resource_item_index(RES_ITEM *items, const char *item)
    return result;
 }
 
-RES_ITEM *CONFIG::get_resource_item(RES_ITEM *items, const char *item)
+ResourceItem *CONFIG::get_resource_item(ResourceItem *items, const char *item)
 {
-   RES_ITEM *result = NULL;
+   ResourceItem *result = NULL;
    int i = -1;
 
    i = get_resource_item_index(items, item);
@@ -458,7 +458,7 @@ static inline void set_env(const char *key, const char *value)
 #elif HAVE_PUTENV
 static inline void set_env(const char *key, const char *value)
 {
-   POOL_MEM env_string;
+   PoolMem env_string;
 
    Mmsg(env_string, "%s=%s", key, value);
    putenv(bstrdup(env_string.c_str()));
@@ -469,7 +469,7 @@ static inline void set_env(const char *key, const char *value)
 }
 #endif
 
-bool CONFIG::get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename)
+bool CONFIG::get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename)
 {
    bool found = false;
 
@@ -481,7 +481,7 @@ bool CONFIG::get_config_file(POOL_MEM &full_path, const char *config_dir, const 
       full_path.strcpy(config_dir);
       if (path_append(full_path, config_filename)) {
          if (path_exists(full_path)) {
-            m_config_dir = bstrdup(config_dir);
+            config_dir_ = bstrdup(config_dir);
             found = true;
          }
       }
@@ -490,25 +490,25 @@ bool CONFIG::get_config_file(POOL_MEM &full_path, const char *config_dir, const 
    return found;
 }
 
-bool CONFIG::get_config_include_path(POOL_MEM &full_path, const char *config_dir)
+bool CONFIG::get_config_include_path(PoolMem &full_path, const char *config_dir)
 {
    bool found = false;
 
-   if (m_config_include_dir) {
+   if (config_include_dir_) {
       /*
        * Set full_path to the initial part of the include path,
        * so it can be used as result, even on errors.
        * On success, full_path will be overwritten with the full path.
        */
       full_path.strcpy(config_dir);
-      path_append(full_path, m_config_include_dir);
+      path_append(full_path, config_include_dir_);
       if (path_is_directory(full_path)) {
-         m_config_dir = bstrdup(config_dir);
+         config_dir_ = bstrdup(config_dir);
          /*
           * Set full_path to wildcard path.
           */
          if (get_path_of_resource(full_path, NULL, NULL, NULL, true)) {
-            m_use_config_include_dir = true;
+            use_config_include_dir_ = true;
             found = true;
          }
       }
@@ -521,17 +521,17 @@ bool CONFIG::get_config_include_path(POOL_MEM &full_path, const char *config_dir
  * Returns false on error
  *         true  on OK, with full_path set to where config file should be
  */
-bool CONFIG::find_config_path(POOL_MEM &full_path)
+bool CONFIG::find_config_path(PoolMem &full_path)
 {
    bool found = false;
-   POOL_MEM config_dir;
-   POOL_MEM config_path_file;
+   PoolMem config_dir;
+   PoolMem config_path_file;
 
-   if (!m_cf) {
+   if (!cf_) {
       /*
        * No path is given, so use the defaults.
        */
-      found = get_config_file(full_path, get_default_configdir(), m_config_default_filename);
+      found = get_config_file(full_path, get_default_configdir(), config_default_filename_);
       if (!found) {
          config_path_file.strcpy(full_path);
          found = get_config_include_path(full_path, get_default_configdir());
@@ -542,46 +542,46 @@ bool CONFIG::find_config_path(POOL_MEM &full_path)
                  "\"%s\" (config file path) and \"%s\" (config include directory).\n"),
                config_path_file.c_str(), full_path.c_str());
       }
-   } else if (path_exists(m_cf)) {
+   } else if (path_exists(cf_)) {
       /*
        * Path is given and exists.
        */
-      if (path_is_directory(m_cf)) {
-         found = get_config_file(full_path, m_cf, m_config_default_filename);
+      if (path_is_directory(cf_)) {
+         found = get_config_file(full_path, cf_, config_default_filename_);
          if (!found) {
             config_path_file.strcpy(full_path);
-            found = get_config_include_path(full_path, m_cf);
+            found = get_config_include_path(full_path, cf_);
          }
          if (!found) {
             Jmsg3(NULL, M_ERROR, 0,
                   _("Failed to find configuration files under directory \"%s\". "
                   "Did look for \"%s\" (config file path) and \"%s\" (config include directory).\n"),
-                  m_cf, config_path_file.c_str(), full_path.c_str());
+                  cf_, config_path_file.c_str(), full_path.c_str());
          }
       } else {
-         full_path.strcpy(m_cf);
+         full_path.strcpy(cf_);
          path_get_directory(config_dir, full_path);
-         m_config_dir = bstrdup(config_dir.c_str());
+         config_dir_ = bstrdup(config_dir.c_str());
          found = true;
       }
-   } else if (!m_config_default_filename) {
+   } else if (!config_default_filename_) {
       /*
        * Compatibility with older versions.
-       * If m_config_default_filename is not set,
-       * m_cf may contain what is expected in m_config_default_filename.
+       * If config_default_filename_ is not set,
+       * cf_ may contain what is expected in config_default_filename_.
        */
-      found = get_config_file(full_path, get_default_configdir(), m_cf);
+      found = get_config_file(full_path, get_default_configdir(), cf_);
       if (!found) {
          Jmsg2(NULL, M_ERROR, 0,
                _("Failed to find configuration files at \"%s\" and \"%s\".\n"),
-               m_cf, full_path.c_str());
+               cf_, full_path.c_str());
       }
    } else {
-      Jmsg1(NULL, M_ERROR, 0, _("Failed to read config file \"%s\"\n"), m_cf);
+      Jmsg1(NULL, M_ERROR, 0, _("Failed to read config file \"%s\"\n"), cf_);
    }
 
    if (found) {
-      set_env("BAREOS_CFGDIR", m_config_dir);
+      set_env("BAREOS_CFGDIR", config_dir_);
    }
 
    return found;
@@ -589,46 +589,46 @@ bool CONFIG::find_config_path(POOL_MEM &full_path)
 
 void CONFIG::free_resources()
 {
-   for (int i = m_r_first; i<= m_r_last; i++) {
-      free_resource(m_res_head[i-m_r_first], i);
-      m_res_head[i-m_r_first] = NULL;
+   for (int i = r_first_; i<= r_last_; i++) {
+      free_resource(res_head_[i-r_first_], i);
+      res_head_[i-r_first_] = NULL;
    }
 
-   if (m_config_default_filename) {
-      free((void *)m_config_default_filename);
+   if (config_default_filename_) {
+      free((void *)config_default_filename_);
    }
 
-   if (m_config_dir) {
-      free((void *)m_config_dir);
+   if (config_dir_) {
+      free((void *)config_dir_);
    }
 
-   if (m_config_include_dir) {
-      free((void *)m_config_include_dir);
+   if (config_include_dir_) {
+      free((void *)config_include_dir_);
    }
 
-   if (m_used_config_path) {
-      free((void *)m_used_config_path);
+   if (used_config_path_) {
+      free((void *)used_config_path_);
    }
 
 }
 
-RES **CONFIG::save_resources()
+CommonResourceHeader **CONFIG::save_resources()
 {
-   int num = m_r_last - m_r_first + 1;
-   RES **res = (RES **)malloc(num*sizeof(RES *));
+   int num = r_last_ - r_first_ + 1;
+   CommonResourceHeader **res = (CommonResourceHeader **)malloc(num*sizeof(CommonResourceHeader *));
 
    for (int i = 0; i < num; i++) {
-      res[i] = m_res_head[i];
-      m_res_head[i] = NULL;
+      res[i] = res_head_[i];
+      res_head_[i] = NULL;
    }
 
    return res;
 }
 
-RES **CONFIG::new_res_head()
+CommonResourceHeader **CONFIG::new_res_head()
 {
-   int size = (m_r_last - m_r_first + 1) * sizeof(RES *);
-   RES **res = (RES **)malloc(size);
+   int size = (r_last_ - r_first_ + 1) * sizeof(CommonResourceHeader *);
+   CommonResourceHeader **res = (CommonResourceHeader **)malloc(size);
 
    memset(res, 0, size);
 
@@ -639,13 +639,13 @@ RES **CONFIG::new_res_head()
  * Initialize the static structure to zeros, then apply all the default values.
  */
 void CONFIG::init_resource(int type,
-                           RES_ITEM *items,
+                           ResourceItem *items,
                            int pass,
                            std::function<void *(void *res)> initres) {
    URES *res_all;
 
-   memset(m_res_all, 0, m_res_all_size);
-   res_all = ((URES *)m_res_all);
+   memset(res_all_, 0, res_all_size_);
+   res_all = ((URES *)res_all_);
    if (initres != nullptr) {
       initres(res_all);
    }
@@ -728,7 +728,7 @@ void CONFIG::init_resource(int type,
                *(items[i].strValue) = new std::string(items[i].default_value);
                break;
             case CFG_TYPE_DIR: {
-               POOL_MEM pathname(PM_FNAME);
+               PoolMem pathname(PM_FNAME);
 
                pm_strcpy(pathname, items[i].default_value);
                if (*pathname.c_str() != '|') {
@@ -745,7 +745,7 @@ void CONFIG::init_resource(int type,
                break;
             }
             case CFG_TYPE_STDSTRDIR: {
-               POOL_MEM pathname(PM_FNAME);
+               PoolMem pathname(PM_FNAME);
 
                pm_strcpy(pathname, items[i].default_value);
                if (*pathname.c_str() != '|') {
@@ -768,13 +768,13 @@ void CONFIG::init_resource(int type,
                /*
                 * None of the generic types fired if there is a registered callback call that now.
                 */
-               if (m_init_res) {
-                  m_init_res(&items[i], pass);
+               if (init_res_) {
+                  init_res_(&items[i], pass);
                }
                break;
             }
 
-            if (!m_omit_defaults) {
+            if (!omit_defaults_) {
                set_bit(i, res_all->hdr.inherit_content);
             }
          }
@@ -783,7 +783,7 @@ void CONFIG::init_resource(int type,
           * If this triggers, take a look at lib/parse_conf.h
           */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first].name);
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources_[type - r_first_].name);
          }
       }
       break;
@@ -814,7 +814,7 @@ void CONFIG::init_resource(int type,
                (*(items[i].alistvalue))->append(bstrdup(items[i].default_value));
                break;
             case CFG_TYPE_ALIST_DIR: {
-               POOL_MEM pathname(PM_FNAME);
+               PoolMem pathname(PM_FNAME);
 
                if (!*items[i].alistvalue) {
                   *(items[i].alistvalue) = New(alist(10, owned_by_alist));
@@ -838,13 +838,13 @@ void CONFIG::init_resource(int type,
                /*
                 * None of the generic types fired if there is a registered callback call that now.
                 */
-               if (m_init_res) {
-                  m_init_res(&items[i], pass);
+               if (init_res_) {
+                  init_res_(&items[i], pass);
                }
                break;
             }
 
-            if (!m_omit_defaults) {
+            if (!omit_defaults_) {
                set_bit(i, res_all->hdr.inherit_content);
             }
          }
@@ -853,7 +853,7 @@ void CONFIG::init_resource(int type,
           * If this triggers, take a look at lib/parse_conf.h
           */
          if (i >= MAX_RES_ITEMS) {
-            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), m_resources[type - m_r_first].name);
+            Emsg1(M_ERROR_TERM, 0, _("Too many items in %s resource\n"), resources_[type - r_first_].name);
          }
       }
       break;
@@ -865,8 +865,8 @@ void CONFIG::init_resource(int type,
 
 bool CONFIG::remove_resource(int type, const char *name)
 {
-   int rindex = type - m_r_first;
-   RES *last;
+   int rindex = type - r_first_;
+   CommonResourceHeader *last;
 
    /*
     * Remove resource from list.
@@ -877,11 +877,11 @@ bool CONFIG::remove_resource(int type, const char *name)
     * If it is referenced, don't remove it.
     */
    last = NULL;
-   for (RES *res = m_res_head[rindex]; res; res = res->next) {
+   for (CommonResourceHeader *res = res_head_[rindex]; res; res = res->next) {
       if (bstrcmp(res->name, name)) {
          if (!last) {
             Dmsg2(900, _("removing resource %s, name=%s (first resource in list)\n"), res_to_str(type), name);
-            m_res_head[rindex] = res->next;
+            res_head_[rindex] = res->next;
         } else {
             Dmsg2(900, _("removing resource %s, name=%s\n"), res_to_str(type), name);
             last->next = res->next;
@@ -902,24 +902,24 @@ bool CONFIG::remove_resource(int type, const char *name)
 void CONFIG::dump_resources(void sendit(void *sock, const char *fmt, ...),
                             void *sock, bool hide_sensitive_data)
 {
-   for (int i = m_r_first; i <= m_r_last; i++) {
-      if (m_res_head[i - m_r_first]) {
-         dump_resource(i,m_res_head[i - m_r_first],sendit, sock, hide_sensitive_data);
+   for (int i = r_first_; i <= r_last_; i++) {
+      if (res_head_[i - r_first_]) {
+         dump_resource(i,res_head_[i - r_first_],sendit, sock, hide_sensitive_data);
       }
    }
 }
 
-bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
+bool CONFIG::get_path_of_resource(PoolMem &path, const char *component,
                                   const char *resourcetype, const char *name, bool set_wildcards)
 {
-   POOL_MEM rel_path(PM_FNAME);
-   POOL_MEM directory(PM_FNAME);
-   POOL_MEM resourcetype_lowercase(resourcetype);
+   PoolMem rel_path(PM_FNAME);
+   PoolMem directory(PM_FNAME);
+   PoolMem resourcetype_lowercase(resourcetype);
    resourcetype_lowercase.toLower();
 
    if (!component) {
-      if (m_config_include_dir) {
-         component = m_config_include_dir;
+      if (config_include_dir_) {
+         component = config_include_dir_;
       } else {
          return false;
       }
@@ -941,20 +941,20 @@ bool CONFIG::get_path_of_resource(POOL_MEM &path, const char *component,
       }
    }
 
-   path.strcpy(m_config_dir);
-   rel_path.bsprintf(m_config_include_naming_format, component, resourcetype_lowercase.c_str(), name);
+   path.strcpy(config_dir_);
+   rel_path.bsprintf(config_include_naming_format_, component, resourcetype_lowercase.c_str(), name);
    path_append(path, rel_path);
 
    return true;
 }
 
-bool CONFIG::get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
+bool CONFIG::get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
                                       const char *resourcetype, const char *name,
                                       bool error_if_exists, bool create_directories)
 {
-   POOL_MEM rel_path(PM_FNAME);
-   POOL_MEM directory(PM_FNAME);
-   POOL_MEM resourcetype_lowercase(resourcetype);
+   PoolMem rel_path(PM_FNAME);
+   PoolMem directory(PM_FNAME);
+   PoolMem resourcetype_lowercase(resourcetype);
    resourcetype_lowercase.toLower();
 
    if (!get_path_of_resource(path, component, resourcetype, name, false)) {

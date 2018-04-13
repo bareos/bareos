@@ -42,7 +42,7 @@
 
 static const int dbglvl = 500;
 
-static void handle_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec)
+static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    char buf[100];
@@ -75,7 +75,7 @@ static void handle_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *s
          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
 }
 
-static char *rec_state_bits_to_str(DEV_RECORD *rec)
+static char *rec_state_bits_to_str(DeviceRecord *rec)
 {
    static char buf[200];
 
@@ -112,7 +112,7 @@ static char *rec_state_bits_to_str(DEV_RECORD *rec)
  */
 READ_CTX *new_read_context(void)
 {
-   DEV_RECORD *rec = NULL;
+   DeviceRecord *rec = NULL;
    READ_CTX *rctx;
 
    rctx = (READ_CTX *)malloc(sizeof(READ_CTX));
@@ -127,13 +127,13 @@ READ_CTX *new_read_context(void)
  */
 void free_read_context(READ_CTX *rctx)
 {
-   DEV_RECORD *rec;
+   DeviceRecord *rec;
 
    /*
     * Walk down list and free all remaining allocated recs
     */
    while (!rctx->recs->empty()) {
-      rec = (DEV_RECORD *)rctx->recs->first();
+      rec = (DeviceRecord *)rctx->recs->first();
       rctx->recs->remove(rec);
       free_record(rec);
    }
@@ -147,9 +147,9 @@ void free_read_context(READ_CTX *rctx)
  * Reuse an already existing record when available in the linked
  * list or allocate a fresh one and prepend it in the linked list.
  */
-void read_context_set_record(DCR *dcr, READ_CTX *rctx)
+void read_context_set_record(DeviceControlRecord *dcr, READ_CTX *rctx)
 {
-   DEV_RECORD *rec;
+   DeviceRecord *rec;
    bool found = false;
 
    foreach_dlist(rec, rctx->recs) {
@@ -181,14 +181,14 @@ void read_context_set_record(DCR *dcr, READ_CTX *rctx)
  *
  * Any fatal error sets the status bool to false.
  */
-bool read_next_block_from_device(DCR *dcr,
+bool read_next_block_from_device(DeviceControlRecord *dcr,
                                  SESSION_LABEL *sessrec,
-                                 bool record_cb(DCR *dcr, DEV_RECORD *rec),
-                                 bool mount_cb(DCR *dcr),
+                                 bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+                                 bool mount_cb(DeviceControlRecord *dcr),
                                  bool *status)
 {
-   JCR *jcr = dcr->jcr;
-   DEV_RECORD *trec;
+   JobControlRecord *jcr = dcr->jcr;
+   DeviceRecord *trec;
 
    while (1) {
       if (!dcr->read_block_from_device(CHECK_BLOCK_NUMBERS)) {
@@ -274,12 +274,12 @@ bool read_next_block_from_device(DCR *dcr,
  *
  * When we are done processing all records the done bool is set to true.
  */
-bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
+bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool *done)
 {
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
-   DEV_BLOCK *block = dcr->block;
-   DEV_RECORD *rec = rctx->rec;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   DeviceBlock *block = dcr->block;
+   DeviceRecord *rec = rctx->rec;
 
    while (1) {
       if (!read_record_from_block(dcr, rec)) {
@@ -326,7 +326,7 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
       }
 
       /*
-       * Apply BSR filter
+       * Apply BootStrapRecord filter
        */
       if (jcr->bsr) {
          rec->match_stat = match_bsr(jcr->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
@@ -335,7 +335,7 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
             Dmsg2(dbglvl, "All done=(file:block) %u:%u\n", dev->file, dev->block_num);
             return false;
          } else if (rec->match_stat == 0) {  /* no match */
-            Dmsg4(dbglvl, "BSR no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
+            Dmsg4(dbglvl, "BootStrapRecord no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
                rec->remainder, rec->FileIndex, dev->file, dev->block_num);
             rec->remainder = 0;
             clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
@@ -374,13 +374,13 @@ bool read_next_record_from_block(DCR *dcr, READ_CTX *rctx, bool *done)
  * This subroutine reads all the records and passes them back to your
  * callback routine (also mount routine at EOM).
  *
- * You must not change any values in the DEV_RECORD packet
+ * You must not change any values in the DeviceRecord packet
  */
-bool read_records(DCR *dcr,
-                  bool record_cb(DCR *dcr, DEV_RECORD *rec),
-                  bool mount_cb(DCR *dcr))
+bool read_records(DeviceControlRecord *dcr,
+                  bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec),
+                  bool mount_cb(DeviceControlRecord *dcr))
 {
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    READ_CTX *rctx;
    bool ok = true;
    bool done = false;
@@ -447,7 +447,7 @@ bool read_records(DCR *dcr,
              *  check the match_stat in the record */
             ok = record_cb(dcr, rctx->rec);
          } else {
-            DEV_RECORD *rec;
+            DeviceRecord *rec;
 
             Dmsg6(dbglvl, "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
                   rctx->records_processed, rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber,
@@ -471,7 +471,7 @@ bool read_records(DCR *dcr,
             /*
              * The record got translated when we got an after_rec pointer after calling the
              * bsdEventReadRecordTranslation plugin event. If no translation has taken place
-             * we just point the rec pointer to same DEV_RECORD as in the before_rec pointer.
+             * we just point the rec pointer to same DeviceRecord as in the before_rec pointer.
              */
             rec = (dcr->after_rec) ? dcr->after_rec : dcr->before_rec;
             ok = record_cb(dcr, rec);
@@ -486,7 +486,7 @@ bool read_records(DCR *dcr,
                Dmsg3(dbglvl, "=== Have digest FI=%u before bsr check pos %u:%u\n",
                      rec->FileIndex, dev->file, dev->block_num);
                if (is_this_bsr_done(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
-                  Dmsg1(dbglvl, "==== BSR done at FI=%d\n", rec->FileIndex);
+                  Dmsg1(dbglvl, "==== BootStrapRecord done at FI=%d\n", rec->FileIndex);
                   Dmsg2(dbglvl, "This bsr done, break pos %u:%u\n",
                         dev->file, dev->block_num);
                   break;
@@ -498,7 +498,7 @@ bool read_records(DCR *dcr,
             /*
              * We can just release the translated record here as the record may not be
              * changed by the record callback so any changes made don't need to be copied
-             * back to the original DEV_RECORD.
+             * back to the original DeviceRecord.
              */
             if (dcr->after_rec) {
                free_record(dcr->after_rec);

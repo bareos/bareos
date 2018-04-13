@@ -37,7 +37,7 @@
  * Returns: unsigned long long containing remaining bytes before going over quota.
  *          0 if over quota
  */
-uint64_t fetch_remaining_quotas(JCR *jcr)
+uint64_t fetch_remaining_quotas(JobControlRecord *jcr)
 {
    uint64_t remaining = 0;
    uint64_t now = (uint64_t)time(NULL);
@@ -101,7 +101,7 @@ uint64_t fetch_remaining_quotas(JCR *jcr)
  * Returns: true on reaching quota
  *          false on not reaching quota.
  */
-bool check_hardquotas(JCR *jcr)
+bool check_hardquotas(JobControlRecord *jcr)
 {
    bool retval = false;
 
@@ -153,7 +153,7 @@ bail_out:
  * Returns: true on reaching soft quota
  *          false on not reaching soft quota.
  */
-bool check_softquotas(JCR *jcr)
+bool check_softquotas(JobControlRecord *jcr)
 {
    bool retval = false;
    uint64_t now = (uint64_t)time(NULL);
@@ -264,7 +264,7 @@ bool check_softquotas(JCR *jcr)
       /*
        * Reset softquota
        */
-      CLIENT_DBR cr;
+      ClientDbRecord cr;
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jcr->jr.ClientId;
       if (!jcr->db->reset_quota_record(jcr, &cr)) {

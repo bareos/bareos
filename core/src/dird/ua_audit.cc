@@ -34,7 +34,7 @@
 /**
  * See if we need to audit this event.
  */
-bool UAContext::audit_event_wanted(bool audit_event_enabled)
+bool UaContext::audit_event_wanted(bool audit_event_enabled)
 {
    if (!me->audit_events) {
       return audit_event_enabled;
@@ -56,7 +56,7 @@ bool UAContext::audit_event_wanted(bool audit_event_enabled)
 /**
  * Log an audit event for a console that accesses an resource or cmd that is not allowed.
  */
-static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg, int acl, const char *item)
+static inline void log_audit_event_acl_msg(UaContext *ua, const char *audit_msg, int acl, const char *item)
 {
    const char *console_name;
    const char *host;
@@ -107,7 +107,7 @@ static inline void log_audit_event_acl_msg(UAContext *ua, const char *audit_msg,
    Emsg4(M_AUDIT, 0, audit_msg, console_name, host, acl_type_name, item);
 }
 
-void UAContext::log_audit_event_acl_failure(int acl, const char *item)
+void UaContext::log_audit_event_acl_failure(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
@@ -116,7 +116,7 @@ void UAContext::log_audit_event_acl_failure(int acl, const char *item)
    log_audit_event_acl_msg(this, _("Console [%s] from [%s], Audit acl failure %s %s\n"), acl, item);
 }
 
-void UAContext::log_audit_event_acl_success(int acl, const char *item)
+void UaContext::log_audit_event_acl_success(int acl, const char *item)
 {
    if (!me->auditing) {
       return;
@@ -128,7 +128,7 @@ void UAContext::log_audit_event_acl_success(int acl, const char *item)
 /**
  * Log an audit event
  */
-void UAContext::log_audit_event_cmdline()
+void UaContext::log_audit_event_cmdline()
 {
    const char *console_name;
    const char *host;

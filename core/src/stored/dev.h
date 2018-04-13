@@ -31,14 +31,14 @@
 /**
  * Some details of how volume and device reservations work
  *
- * class VOLRES:
+ * class VolumeReservationItem:
  *   set_in_use()     volume being used on current drive
  *   clear_in_use()   no longer being used.  Can be re-used or moved.
  *   set_swapping()   set volume being moved to another drive
  *   is_swapping()    volume is being moved to another drive
  *   clear_swapping() volume normal
  *
- * class DEVICE:
+ * class Device:
  *   set_load()       set to load volume
  *   needs_load()     volume must be loaded (i.e. set_load done)
  *   clear_load()     load done.
@@ -51,7 +51,7 @@
  *   dec_reserved()   decrements num of reservations
  *   num_reserved()   number of reservations
  *
- * class DCR:
+ * class DeviceControlRecord:
  *   set_reserved()   sets local reserve flag and calls dev->inc_reserved()
  *   clear_reserved() clears local reserve flag and calls dev->dec_reserved()
  *   is_reserved()    returns local reserved flag
@@ -61,7 +61,7 @@
 #ifndef __DEV_H
 #define __DEV_H 1
 
-#undef DCR                            /* used by Bareos */
+#undef DeviceControlRecord                            /* used by Bareos */
 
 /**
  * Return values from wait_for_sysop()
@@ -211,7 +211,7 @@ enum {
 /**
  * Volume Catalog Information structure definition
  */
-struct VOLUME_CAT_INFO {
+struct VolumeCatalogInfo {
    /*
     * Media info for the current Volume
     */
@@ -247,21 +247,21 @@ struct VOLUME_CAT_INFO {
    uint32_t VolMaxBlocksize;          /**< Volume Maximum Blocksize */
 };
 
-struct BLOCKSIZES {
+struct BlockSizes {
    uint32_t max_block_size;
    uint32_t min_block_size;
 };
 
-class DEVRES; /* Forward reference Device resource defined in stored_conf.h */
-class DCR; /* Forward reference */
-class VOLRES; /* Forward reference */
+class DeviceResource; /* Forward reference Device resource defined in stored_conf.h */
+class DeviceControlRecord; /* Forward reference */
+class VolumeReservationItem; /* Forward reference */
 
 /**
- * Device specific status information either returned via DEVICE::device_status()
+ * Device specific status information either returned via Device::device_status()
  * method of via bsdEventDriveStatus and bsdEventVolumeStatus plugin events.
  */
-typedef struct DevStatTrigger {
-   DEVRES *device;
+typedef struct DeviceStatusTrigger {
+   DeviceResource *device;
    POOLMEM *status;
    int status_length;
 } bsdDevStatTrig;
@@ -272,24 +272,24 @@ typedef struct DevStatTrigger {
  * There is one of these for each physical device. Everything here is "global" to
  * that device and effects all jobs using the device.
  */
-class DEVICE: public SMARTALLOC {
+class Device: public SmartAlloc {
 protected:
-   int m_fd;                          /**< File descriptor */
+   int fd_;                          /**< File descriptor */
 private:
-   int m_blocked;                     /**< Set if we must wait (i.e. change tape) */
-   int m_count;                       /**< Mutex use count -- DEBUG only */
-   int m_num_reserved;                /**< Counter of device reservations */
-   slot_number_t m_slot;              /**< Slot loaded in drive or -1 if none */
-   pthread_t m_pid;                   /**< Thread that locked -- DEBUG only */
-   bool m_unload;                     /**< Set when Volume must be unloaded */
-   bool m_load;                       /**< Set when Volume must be loaded */
+   int blocked_;                     /**< Set if we must wait (i.e. change tape) */
+   int count_;                       /**< Mutex use count -- DEBUG only */
+   int num_reserved_;                /**< Counter of device reservations */
+   slot_number_t slot_;              /**< Slot loaded in drive or -1 if none */
+   pthread_t pid_;                   /**< Thread that locked -- DEBUG only */
+   bool unload_;                     /**< Set when Volume must be unloaded */
+   bool load_;                       /**< Set when Volume must be loaded */
 
 public:
-   DEVICE();
-   virtual ~DEVICE() {};
-   DEVICE * volatile swap_dev;        /**< Swap vol from this device */
-   dlist *attached_dcrs;              /**< Attached DCR list */
-   bthread_mutex_t m_mutex;           /**< Access control */
+   Device();
+   virtual ~Device() {};
+   Device * volatile swap_dev;        /**< Swap vol from this device */
+   dlist *attached_dcrs;              /**< Attached DeviceControlRecord list */
+   bthread_mutex_t mutex_;           /**< Access control */
    bthread_mutex_t spool_mutex;       /**< Mutex for updating spool_size */
    bthread_mutex_t acquire_mutex;     /**< Mutex for acquire code */
    pthread_mutex_t read_acquire_mutex; /**< Mutex for acquire read code */
@@ -316,7 +316,7 @@ public:
    POOLMEM *prt_name;                 /**< Name used for display purposes */
    char *errmsg;                      /**< Nicely edited error message */
    uint32_t block_num;                /**< Current block number base 0 */
-   uint32_t LastBlock;                /**< Last DEV_BLOCK number written to Volume */
+   uint32_t LastBlock;                /**< Last DeviceBlock number written to Volume */
    uint32_t file;                     /**< Current file number base 0 */
    uint64_t file_addr;                /**< Current file read/write address */
    uint64_t file_size;                /**< Current file size */
@@ -335,11 +335,11 @@ public:
    uint32_t max_open_vols;            /**< Max simultaneous open volumes */
 
    utime_t vol_poll_interval;         /**< Interval between polling Vol mount */
-   DEVRES *device;                    /**< Pointer to Device Resource */
-   VOLRES *vol;                       /**< Pointer to Volume reservation item */
+   DeviceResource *device;                    /**< Pointer to Device Resource */
+   VolumeReservationItem *vol;                       /**< Pointer to Volume reservation item */
    btimer_t *tid;                     /**< Timer id */
 
-   VOLUME_CAT_INFO VolCatInfo;        /**< Volume Catalog Information */
+   VolumeCatalogInfo VolCatInfo;        /**< Volume Catalog Information */
    VOLUME_LABEL VolHdr;               /**< Actual volume label */
    char pool_name[MAX_NAME_LENGTH];   /**< Pool name */
    char pool_type[MAX_NAME_LENGTH];   /**< Pool type */
@@ -381,12 +381,12 @@ public:
                                   dev_type == B_ELASTO_DEV); }
    bool is_fifo() const { return dev_type == B_FIFO_DEV; }
    bool is_vtl() const  { return dev_type == B_VTL_DEV; }
-   bool is_open() const { return m_fd >= 0; }
+   bool is_open() const { return fd_ >= 0; }
    bool is_offline() const { return bit_is_set(ST_OFFLINE, state); }
    bool is_labeled() const { return bit_is_set(ST_LABEL, state); }
    bool is_mounted() const { return bit_is_set(ST_MOUNTED, state); }
    bool is_unmountable() const { return ((is_file() && is_removable())); }
-   int num_reserved() const { return m_num_reserved; };
+   int num_reserved() const { return num_reserved_; };
    bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); }
    bool have_media() const { return bit_is_set(ST_MEDIA, state); }
    bool is_short_block() const { return bit_is_set(ST_SHORT, state); }
@@ -405,16 +405,16 @@ public:
    bool can_write() const { return is_open() && can_append() &&
                                    is_labeled() && !at_weot(); }
    bool can_read() const { return bit_is_set(ST_READREADY, state); }
-   bool can_steal_lock() const { return m_blocked &&
-                    (m_blocked == BST_UNMOUNTED ||
-                     m_blocked == BST_WAITING_FOR_SYSOP ||
-                     m_blocked == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
+   bool can_steal_lock() const { return blocked_ &&
+                    (blocked_ == BST_UNMOUNTED ||
+                     blocked_ == BST_WAITING_FOR_SYSOP ||
+                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
    bool waiting_for_mount() const { return
-                    (m_blocked == BST_UNMOUNTED ||
-                     m_blocked == BST_WAITING_FOR_SYSOP ||
-                     m_blocked == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
-   bool must_unload() const { return m_unload; };
-   bool must_load() const { return m_load; };
+                    (blocked_ == BST_UNMOUNTED ||
+                     blocked_ == BST_WAITING_FOR_SYSOP ||
+                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
+   bool must_unload() const { return unload_; };
+   bool must_load() const { return load_; };
    const char *strerror() const;
    const char *archive_name() const;
    const char *name() const;
@@ -436,26 +436,26 @@ public:
          clear_bit(ST_PART_SPOOLED, state);
    };
    bool is_volume_to_unload() const { \
-      return m_unload && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
-   void set_load() { m_load = true; };
-   void inc_reserved() { m_num_reserved++; }
-   void dec_reserved() { m_num_reserved--; ASSERT(m_num_reserved>=0); };
+      return unload_ && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
+   void set_load() { load_ = true; };
+   void inc_reserved() { num_reserved_++; }
+   void dec_reserved() { num_reserved_--; ASSERT(num_reserved_>=0); };
    void clear_append() { clear_bit(ST_APPENDREADY, state); };
    void clear_read() { clear_bit(ST_READREADY, state); };
    void clear_labeled() { clear_bit(ST_LABEL, state); };
    void clear_offline() { clear_bit(ST_OFFLINE, state); };
    void clear_eot() { clear_bit(ST_EOT, state); };
    void clear_eof() { clear_bit(ST_EOF, state); };
-   void clear_opened() { m_fd = -1; };
+   void clear_opened() { fd_ = -1; };
    void clear_mounted() { clear_bit(ST_MOUNTED, state); };
    void clear_media() { clear_bit(ST_MEDIA, state); };
    void clear_short_block() { clear_bit(ST_SHORT, state); };
    void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); };
-   void clear_unload() { m_unload = false; UnloadVolName[0] = 0; };
-   void clear_load() { m_load = false; };
+   void clear_unload() { unload_ = false; UnloadVolName[0] = 0; };
+   void clear_load() { load_ = false; };
    char *bstrerror(void) { return errmsg; };
    char *print_errmsg() { return errmsg; };
-   slot_number_t get_slot() const { return m_slot; };
+   slot_number_t get_slot() const { return slot_; };
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
@@ -467,25 +467,25 @@ public:
    const char *mode_to_str(int mode);
    void set_unload();
    void clear_volhdr();
-   bool close(DCR *dcr);
-   bool open(DCR *dcr, int mode);
+   bool close(DeviceControlRecord *dcr);
+   bool open(DeviceControlRecord *dcr, int mode);
    void term();
    ssize_t read(void *buf, size_t len);
    ssize_t write(const void *buf, size_t len);
-   bool mount(DCR *dcr, int timeout);
-   bool unmount(DCR *dcr, int timeout);
-   void edit_mount_codes(POOL_MEM &omsg, const char *imsg);
+   bool mount(DeviceControlRecord *dcr, int timeout);
+   bool unmount(DeviceControlRecord *dcr, int timeout);
+   void edit_mount_codes(PoolMem &omsg, const char *imsg);
    bool offline_or_rewind();
-   bool scan_dir_for_volume(DCR *dcr);
+   bool scan_dir_for_volume(DeviceControlRecord *dcr);
    void set_slot(slot_number_t slot);
    void clear_slot();
 
-   void set_blocksizes(DCR* dcr);
-   void set_label_blocksize(DCR* dcr);
+   void set_blocksizes(DeviceControlRecord* dcr);
+   void set_label_blocksize(DeviceControlRecord* dcr);
 
    uint32_t get_file() const { return file; };
    uint32_t get_block_num() const { return block_num; };
-   int fd() const { return m_fd; };
+   int fd() const { return fd_; };
 
    /*
     * Tape specific operations.
@@ -500,25 +500,25 @@ public:
    virtual void lock_door() {};
    virtual void unlock_door() {};
    virtual void clrerror(int func) {};
-   virtual void set_os_device_parameters(DCR *dcr) {};
+   virtual void set_os_device_parameters(DeviceControlRecord *dcr) {};
    virtual int32_t get_os_tape_file() { return -1; };
 
    /*
     * Generic operations.
     */
-   virtual void open_device(DCR *dcr, int omode);
+   virtual void open_device(DeviceControlRecord *dcr, int omode);
    virtual char *status_dev();
-   virtual bool eod(DCR *dcr);
+   virtual bool eod(DeviceControlRecord *dcr);
    virtual void set_ateof();
    virtual void set_ateot();
-   virtual bool rewind(DCR *dcr);
-   virtual bool update_pos(DCR *dcr);
-   virtual bool reposition(DCR *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool mount_backend(DCR *dcr, int timeout) { return true; };
-   virtual bool unmount_backend(DCR *dcr, int timeout) { return true; };
+   virtual bool rewind(DeviceControlRecord *dcr);
+   virtual bool update_pos(DeviceControlRecord *dcr);
+   virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
+   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout) { return true; };
+   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout) { return true; };
    virtual bool device_status(bsdDevStatTrig *dst) { return false; };
-   boffset_t lseek(DCR *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
-   bool truncate(DCR *dcr) { return d_truncate(dcr); };
+   boffset_t lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
+   bool truncate(DeviceControlRecord *dcr) { return d_truncate(dcr); };
 
    /*
     * Low level operations
@@ -528,8 +528,8 @@ public:
    virtual int d_close(int fd) = 0;
    virtual ssize_t d_read(int fd, void *buffer, size_t count) = 0;
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
-   virtual boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence) = 0;
-   virtual bool d_truncate(DCR *dcr) = 0;
+   virtual boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) = 0;
+   virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
 
    /*
     * Locking and blocking calls
@@ -564,18 +564,18 @@ public:
    void dblock(int why);
    void dunblock(bool locked = false);
    bool is_device_unmounted();
-   void set_blocked(int block) { m_blocked = block; };
-   int blocked() const { return m_blocked; };
-   bool is_blocked() const { return m_blocked != BST_NOT_BLOCKED; };
+   void set_blocked(int block) { blocked_ = block; };
+   int blocked() const { return blocked_; };
+   bool is_blocked() const { return blocked_ != BST_NOT_BLOCKED; };
    const char *print_blocked() const;
 
 protected:
    void set_mode(int mode);
 };
 
-inline const char *DEVICE::strerror() const { return errmsg; }
-inline const char *DEVICE::archive_name() const { return dev_name; }
-inline const char *DEVICE::print_name() const { return prt_name; }
+inline const char *Device::strerror() const { return errmsg; }
+inline const char *Device::archive_name() const { return dev_name; }
+inline const char *Device::print_name() const { return prt_name; }
 
 #define CHECK_BLOCK_NUMBERS true
 #define NO_BLOCK_NUMBER_CHECK false
@@ -593,31 +593,31 @@ enum get_vol_info_rw {
  * do not affect other Jobs. Note, a job can have multiple
  * DCRs open, each pointing to a different device.
  *
- * Normally, there is only one JCR thread per DCR. However, the
+ * Normally, there is only one JobControlRecord thread per DeviceControlRecord. However, the
  * big and important exception to this is when a Job is being
  * canceled. At that time, there may be two threads using the
- * same DCR. Consequently, when creating/attaching/detaching
- * and freeing the DCR we must lock it (m_mutex).
+ * same DeviceControlRecord. Consequently, when creating/attaching/detaching
+ * and freeing the DeviceControlRecord we must lock it (mutex_).
  */
-class SD_IMP_EXP DCR : public SMARTALLOC {
+class SD_IMP_EXP DeviceControlRecord : public SmartAlloc {
 private:
-   bool m_dev_locked;                 /**< Set if dev already locked */
-   int m_dev_lock;                    /**< Non-zero if rLock already called */
-   bool m_reserved;                   /**< Set if reserved device */
-   bool m_found_in_use;               /**< Set if a volume found in use */
-   bool m_will_write;                 /**< Set if DCR will be used for writing */
+   bool dev_locked_;                 /**< Set if dev already locked */
+   int dev_lock_;                    /**< Non-zero if rLock already called */
+   bool reserved_;                   /**< Set if reserved device */
+   bool found_in_use_;               /**< Set if a volume found in use */
+   bool will_write_;                 /**< Set if DeviceControlRecord will be used for writing */
 
 public:
    dlink dev_link;                    /**< Link to attach to dev */
-   JCR *jcr;                          /**< Pointer to JCR */
-   bthread_mutex_t m_mutex;           /**< Access control */
+   JobControlRecord *jcr;                          /**< Pointer to JobControlRecord */
+   bthread_mutex_t mutex_;           /**< Access control */
    pthread_mutex_t r_mutex;           /**< rLock pre-mutex */
-   DEVICE * volatile dev;             /**< Pointer to device */
-   DEVRES *device;                    /**< Pointer to device resource */
-   DEV_BLOCK *block;                  /**< Pointer to current block */
-   DEV_RECORD *rec;                   /**< Pointer to record being processed */
-   DEV_RECORD *before_rec;            /**< Pointer to record before translation */
-   DEV_RECORD *after_rec;             /**< Pointer to record after translation */
+   Device * volatile dev;             /**< Pointer to device */
+   DeviceResource *device;                    /**< Pointer to device resource */
+   DeviceBlock *block;                  /**< Pointer to current block */
+   DeviceRecord *rec;                   /**< Pointer to record being processed */
+   DeviceRecord *before_rec;            /**< Pointer to record before translation */
+   DeviceRecord *after_rec;             /**< Pointer to record after translation */
    pthread_t tid;                     /**< Thread running this dcr */
    int spool_fd;                      /**< Fd if spooling */
    bool spool_data;                   /**< Set to spool data */
@@ -652,32 +652,32 @@ public:
    char dev_name[MAX_NAME_LENGTH];    /**< Dev name */
    int Copy;                          /**< Identical copy number */
    int Stripe;                        /**< RAIT stripe */
-   VOLUME_CAT_INFO VolCatInfo;        /**< Catalog info for desired volume */
+   VolumeCatalogInfo VolCatInfo;        /**< Catalog info for desired volume */
 
    /*
     * Constructor/Destructor.
     */
-   DCR();
-   virtual ~DCR() {};
+   DeviceControlRecord();
+   virtual ~DeviceControlRecord() {};
 
    /*
     * Methods
     */
-   void set_dev(DEVICE *ndev) { dev = ndev; };
-   void set_found_in_use() { m_found_in_use = true; };
-   void set_will_write() { m_will_write = true; };
+   void set_dev(Device *ndev) { dev = ndev; };
+   void set_found_in_use() { found_in_use_ = true; };
+   void set_will_write() { will_write_ = true; };
    void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
 
-   void clear_found_in_use() { m_found_in_use = false; };
-   void clear_will_write() { m_will_write = false; };
+   void clear_found_in_use() { found_in_use_ = false; };
+   void clear_will_write() { will_write_ = false; };
 
-   bool is_reserved() const { return m_reserved; };
-   bool is_dev_locked() { return m_dev_locked; }
-   bool is_writing() const { return m_will_write; };
+   bool is_reserved() const { return reserved_; };
+   bool is_dev_locked() { return dev_locked_; }
+   bool is_writing() const { return will_write_; };
 
-   void inc_dev_lock() { m_dev_lock++; };
-   void dec_dev_lock() { m_dev_lock--; };
-   bool found_in_use() const { return m_found_in_use; };
+   void inc_dev_lock() { dev_lock_++; };
+   void dec_dev_lock() { dev_lock_--; };
+   bool found_in_use() const { return found_in_use_; };
 
    bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
    void setVolCatName(const char *name) {
@@ -689,11 +689,11 @@ public:
    /*
     * Methods in askdir.c
     */
-   virtual DCR *get_new_spooling_dcr();
+   virtual DeviceControlRecord *get_new_spooling_dcr();
    virtual bool dir_find_next_appendable_volume() { return true; };
    virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; };
    virtual bool dir_create_jobmedia_record(bool zero) { return true; };
-   virtual bool dir_update_file_attributes(DEV_RECORD *record) { return true; };
+   virtual bool dir_update_file_attributes(DeviceRecord *record) { return true; };
    virtual bool dir_ask_sysop_to_mount_volume(int mode);
    virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; };
    virtual bool dir_get_volume_info(enum get_vol_info_rw writing);
@@ -760,7 +760,7 @@ public:
    bool rewrite_volume_label(bool recycle);
 };
 
-class SD_IMP_EXP SD_DCR : public DCR {
+class SD_IMP_EXP SD_DCR : public DeviceControlRecord {
 public:
    /*
     * Virtual Destructor.
@@ -773,14 +773,14 @@ public:
    bool dir_find_next_appendable_volume();
    bool dir_update_volume_info(bool label, bool update_LastWritten);
    bool dir_create_jobmedia_record(bool zero);
-   bool dir_update_file_attributes(DEV_RECORD *record);
+   bool dir_update_file_attributes(DeviceRecord *record);
    bool dir_ask_sysop_to_mount_volume(int mode);
    bool dir_ask_sysop_to_create_appendable_volume();
    bool dir_get_volume_info(enum get_vol_info_rw writing);
-   DCR *get_new_spooling_dcr();
+   DeviceControlRecord *get_new_spooling_dcr();
 };
 
-class BTAPE_DCR : public DCR {
+class BTAPE_DCR : public DeviceControlRecord {
 public:
    /*
     * Virtual Destructor.
@@ -794,7 +794,7 @@ public:
    bool dir_create_jobmedia_record(bool zero);
    bool dir_ask_sysop_to_mount_volume(int mode);
    bool dir_ask_sysop_to_create_appendable_volume();
-   DCR *get_new_spooling_dcr();
+   DeviceControlRecord *get_new_spooling_dcr();
 };
 
 /*

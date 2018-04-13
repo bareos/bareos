@@ -82,7 +82,7 @@ static inline backend_interface_mapping_t *lookup_backend_interface_mapping(cons
    return NULL;
 }
 
-B_DB *db_init_database(JCR *jcr,
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -99,8 +99,8 @@ B_DB *db_init_database(JCR *jcr,
    struct stat st;
    char *backend_dir;
    void *dl_handle = NULL;
-   POOL_MEM shared_library_name(PM_FNAME);
-   POOL_MEM error(PM_FNAME);
+   PoolMem shared_library_name(PM_FNAME);
+   PoolMem error(PM_FNAME);
    backend_interface_mapping_t *backend_interface_mapping;
    backend_shared_library_t *backend_shared_library;
    t_backend_instantiate backend_instantiate;
@@ -126,7 +126,7 @@ B_DB *db_init_database(JCR *jcr,
    backend_interface_mapping = lookup_backend_interface_mapping(db_driver);
    if (backend_interface_mapping == NULL) {
       Jmsg(jcr, M_ERROR_TERM, 0, _("Unknown database driver: %s\n"), db_driver);
-      return (B_DB *)NULL;
+      return (BareosDb *)NULL;
    }
 
    /*
@@ -253,7 +253,7 @@ B_DB *db_init_database(JCR *jcr,
    } else {
       Jmsg(jcr, M_ABORT, 0, _("Unable to load any shared library for libbareoscats-%s%s\n"),
            backend_interface_mapping->interface_name, DYN_LIB_EXTENSION);
-      return (B_DB *)NULL;
+      return (BareosDb *)NULL;
    }
 }
 
@@ -283,7 +283,7 @@ void db_flush_backends(void)
 /**
  * Dummy bareos backend function replaced with the correct one at install time.
  */
-B_DB *db_init_database(JCR *jcr,
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,

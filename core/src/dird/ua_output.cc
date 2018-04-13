@@ -41,9 +41,9 @@ extern struct s_jl joblevels[];
 /* Imported functions */
 
 /* Forward referenced functions */
-static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist);
-static bool list_nextvol(UAContext *ua, int ndays);
-static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist);
+static bool do_list_cmd(UaContext *ua, const char *cmd, e_list_type llist);
+static bool list_nextvol(UaContext *ua, int ndays);
+static bool parse_list_backups_cmd(UaContext *ua, const char *range, e_list_type llist);
 
 /**
  * Some defaults.
@@ -54,7 +54,7 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type
 /**
  * Turn auto display of console messages on/off
  */
-bool autodisplay_cmd(UAContext *ua, const char *cmd)
+bool autodisplay_cmd(UaContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("on"),
@@ -79,7 +79,7 @@ bool autodisplay_cmd(UAContext *ua, const char *cmd)
 /**
  * Turn GUI mode on/off
  */
-bool gui_cmd(UAContext *ua, const char *cmd)
+bool gui_cmd(UaContext *ua, const char *cmd)
 {
    static const char *kw[] = {
       NT_("on"),
@@ -104,9 +104,9 @@ bool gui_cmd(UAContext *ua, const char *cmd)
 /**
  * Enter with Resources locked
  */
-static void show_disabled_jobs(UAContext *ua)
+static void show_disabled_jobs(UaContext *ua)
 {
-   JOBRES *job;
+   JobResource *job;
    bool first = true;
 
    foreach_res(job, R_JOB) {
@@ -131,9 +131,9 @@ static void show_disabled_jobs(UAContext *ua)
 /**
  * Enter with Resources locked
  */
-static void show_disabled_clients(UAContext *ua)
+static void show_disabled_clients(UaContext *ua)
 {
-   CLIENTRES *client;
+   ClientResource *client;
    bool first = true;
 
    foreach_res(client, R_CLIENT) {
@@ -158,9 +158,9 @@ static void show_disabled_clients(UAContext *ua)
 /**
  * Enter with Resources locked
  */
-static void show_disabled_schedules(UAContext *ua)
+static void show_disabled_schedules(UaContext *ua)
 {
-   SCHEDRES *sched;
+   ScheduleResource *sched;
    bool first = true;
 
    foreach_res(sched, R_SCHEDULE) {
@@ -218,12 +218,12 @@ static struct showstruct avail_resources[] = {
  *  show disabled clients - shows disabled clients
  *  show disabled schedules - shows disabled schedules
  */
-bool show_cmd(UAContext *ua, const char *cmd)
+bool show_cmd(UaContext *ua, const char *cmd)
 {
    int i, j, type, len;
    int recurse;
    char *res_name;
-   RES *res = NULL;
+   CommonResourceHeader *res = NULL;
    bool verbose = false;
    bool hide_sensitive_data;
 
@@ -279,7 +279,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
                if (type > 0) {
-                  res = my_config->m_res_head[type - my_config->m_r_first];
+                  res = my_config->res_head_[type - my_config->r_first_];
                } else {
                   res = NULL;
                }
@@ -295,7 +295,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
          for (j = 0; avail_resources[j].res_name; j++) {
             if (bstrncasecmp(res_name, _(avail_resources[j].res_name), len)) {
                type = avail_resources[j].type;
-               res = (RES *)ua->GetResWithName(type, ua->argv[i], true);
+               res = (CommonResourceHeader *)ua->GetResWithName(type, ua->argv[i], true);
                if (!res) {
                   type = -3;
                }
@@ -306,7 +306,7 @@ bool show_cmd(UAContext *ua, const char *cmd)
 
       switch (type) {
       case -1:                           /* all */
-         for (j = my_config->m_r_first; j <= my_config->m_r_last; j++) {
+         for (j = my_config->r_first_; j <= my_config->r_last_; j++) {
             switch (j) {
             case R_DEVICE:
                /*
@@ -314,8 +314,8 @@ bool show_cmd(UAContext *ua, const char *cmd)
                 */
                continue;
             default:
-               if (my_config->m_res_head[j - my_config->m_r_first]) {
-                  dump_resource(j, my_config->m_res_head[j - my_config->m_r_first],
+               if (my_config->res_head_[j - my_config->r_first_]) {
+                  dump_resource(j, my_config->res_head_[j - my_config->r_first_],
                                 bsendmsg, ua, hide_sensitive_data, verbose);
                }
                break;
@@ -373,22 +373,22 @@ bail_out:
  */
 
 /* Do long or full listing */
-bool llist_cmd(UAContext *ua, const char *cmd)
+bool llist_cmd(UaContext *ua, const char *cmd)
 {
    return do_list_cmd(ua, cmd, VERT_LIST);
 }
 
 /* Do short or summary listing */
-bool list_cmd(UAContext *ua, const char *cmd)
+bool list_cmd(UaContext *ua, const char *cmd)
 {
    return do_list_cmd(ua, cmd, HORZ_LIST);
 }
 
-static int get_jobid_from_cmdline(UAContext *ua)
+static int get_jobid_from_cmdline(UaContext *ua)
 {
    int i, jobid;
-   JOB_DBR jr;
-   CLIENT_DBR cr;
+   JobDbRecord jr;
+   ClientDbRecord cr;
 
    memset(&jr, 0, sizeof(jr));
 
@@ -448,29 +448,29 @@ bail_out:
  * Filter convience functions that abstract the actions needed to
  * perform a certain type of acl or resource filtering.
  */
-static inline void set_acl_filter(UAContext *ua, int column, int acltype)
+static inline void set_acl_filter(UaContext *ua, int column, int acltype)
 {
    if (ua->acl_has_restrictions(acltype)) {
       ua->send->add_acl_filter_tuple(column, acltype);
    }
 }
 
-static inline void set_res_filter(UAContext *ua, int column, int restype)
+static inline void set_res_filter(UaContext *ua, int column, int restype)
 {
    ua->send->add_res_filter_tuple(column, restype);
 }
 
-static inline void set_enabled_filter(UAContext *ua, int column, int restype)
+static inline void set_enabled_filter(UaContext *ua, int column, int restype)
 {
    ua->send->add_enabled_filter_tuple(column, restype);
 }
 
-static inline void set_disabled_filter(UAContext *ua, int column, int restype)
+static inline void set_disabled_filter(UaContext *ua, int column, int restype)
 {
    ua->send->add_disabled_filter_tuple(column, restype);
 }
 
-static inline void set_hidden_column_acl_filter(UAContext *ua, int column, int acltype)
+static inline void set_hidden_column_acl_filter(UaContext *ua, int column, int acltype)
 {
    ua->send->add_hidden_column(column);
    if (ua->acl_has_restrictions(acltype)) {
@@ -478,12 +478,12 @@ static inline void set_hidden_column_acl_filter(UAContext *ua, int column, int a
    }
 }
 
-static inline void set_hidden_column(UAContext *ua, int column)
+static inline void set_hidden_column(UaContext *ua, int column)
 {
    ua->send->add_hidden_column(column);
 }
 
-static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
+static void set_query_range(PoolMem &query_range, UaContext *ua, JobDbRecord *jr)
 {
    int i;
 
@@ -512,7 +512,7 @@ static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
     */
    i = find_arg_with_value(ua, NT_("limit"));
    if (i >= 0) {
-      POOL_MEM temp(PM_MESSAGE);
+      PoolMem temp(PM_MESSAGE);
 
       jr->limit = atoi(ua->argv[i]);
       ua->send->add_limit_filter_tuple(jr->limit);
@@ -533,12 +533,12 @@ static void set_query_range(POOL_MEM &query_range, UAContext *ua, JOB_DBR *jr)
    }
 }
 
-static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
+static bool do_list_cmd(UaContext *ua, const char *cmd, e_list_type llist)
 {
-   JOB_DBR jr;
-   POOL_DBR pr;
+   JobDbRecord jr;
+   PoolDbRecord pr;
    utime_t now;
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
    int days = 0,
        hours = 0,
        jobstatus = 0,
@@ -554,7 +554,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    char *volumename = NULL;
    const int secs_in_day = 86400;
    const int secs_in_hour = 3600;
-   POOL_MEM query_range(PM_MESSAGE);
+   PoolMem query_range(PM_MESSAGE);
 
    if (!open_client_db(ua, true)) {
       return true;
@@ -742,7 +742,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       int filesetid = 0;
 
       /*
-       * List FILESET
+       * List FileSet
        */
       i = find_arg_with_value(ua, NT_("filesetid"));
       if (i > 0) {
@@ -825,7 +825,7 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
       ua->db->list_log_records(ua->jcr, clientname, query_range.c_str(), reverse,  ua->send, llist);
    } else if (bstrcasecmp(ua->argk[1], NT_("pool")) ||
               bstrcasecmp(ua->argk[1], NT_("pools"))) {
-      POOL_DBR pr;
+      PoolDbRecord pr;
 
       /*
        * List POOLS
@@ -1063,8 +1063,8 @@ static bool do_list_cmd(UAContext *ua, const char *cmd, e_list_type llist)
    return true;
 }
 
-static inline bool parse_jobstatus_selection_param(POOL_MEM &selection,
-                                                   UAContext *ua,
+static inline bool parse_jobstatus_selection_param(PoolMem &selection,
+                                                   UaContext *ua,
                                                    const char *default_selection)
 {
    int pos;
@@ -1073,7 +1073,7 @@ static inline bool parse_jobstatus_selection_param(POOL_MEM &selection,
    if ((pos = find_arg_with_value(ua, "jobstatus")) >= 0) {
       int cnt = 0;
       int jobstatus;
-      POOL_MEM temp;
+      PoolMem temp;
       char *cur_stat, *bp;
 
       cur_stat = ua->argv[pos];
@@ -1134,8 +1134,8 @@ static inline bool parse_jobstatus_selection_param(POOL_MEM &selection,
    return true;
 }
 
-static inline bool parse_level_selection_param(POOL_MEM &selection,
-                                               UAContext *ua,
+static inline bool parse_level_selection_param(PoolMem &selection,
+                                               UaContext *ua,
                                                const char *default_selection)
 {
    int pos;
@@ -1143,7 +1143,7 @@ static inline bool parse_level_selection_param(POOL_MEM &selection,
    selection.strcpy("");
    if ((pos = find_arg_with_value(ua, "level")) >= 0) {
       int cnt = 0;
-      POOL_MEM temp;
+      PoolMem temp;
       char *cur_level, *bp;
 
       cur_level = ua->argv[pos];
@@ -1188,8 +1188,8 @@ static inline bool parse_level_selection_param(POOL_MEM &selection,
    return true;
 }
 
-static inline bool parse_fileset_selection_param(POOL_MEM &selection,
-                                                 UAContext *ua,
+static inline bool parse_fileset_selection_param(PoolMem &selection,
+                                                 UaContext *ua,
                                                  bool listall)
 {
    int fileset;
@@ -1197,8 +1197,8 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
    pm_strcpy(selection, "");
    fileset = find_arg_with_value(ua, "fileset");
    if ((fileset >= 0 && bstrcasecmp(ua->argv[fileset], "any")) || (listall && fileset < 0)) {
-      FILESETRES *fs;
-      POOL_MEM temp(PM_MESSAGE);
+      FilesetResource *fs;
+      PoolMem temp(PM_MESSAGE);
 
       LockRes();
       foreach_res(fs, R_FILESET) {
@@ -1226,10 +1226,10 @@ static inline bool parse_fileset_selection_param(POOL_MEM &selection,
    return true;
 }
 
-static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type llist)
+static bool parse_list_backups_cmd(UaContext *ua, const char *range, e_list_type llist)
 {
    int pos, client;
-   POOL_MEM temp(PM_MESSAGE),
+   PoolMem temp(PM_MESSAGE),
             selection(PM_MESSAGE),
             criteria(PM_MESSAGE);
 
@@ -1280,25 +1280,25 @@ static bool parse_list_backups_cmd(UAContext *ua, const char *range, e_list_type
    pm_strcat(criteria, range);
 
    if (llist == VERT_LIST) {
-      ua->db->fill_query(ua->cmd, B_DB::SQL_QUERY_list_jobs_long, selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, BareosDb::SQL_QUERY_list_jobs_long, selection.c_str(), criteria.c_str());
    } else {
-      ua->db->fill_query(ua->cmd, B_DB::SQL_QUERY_list_jobs, selection.c_str(), criteria.c_str());
+      ua->db->fill_query(ua->cmd, BareosDb::SQL_QUERY_list_jobs, selection.c_str(), criteria.c_str());
    }
 
    return true;
 }
 
-static bool list_nextvol(UAContext *ua, int ndays)
+static bool list_nextvol(UaContext *ua, int ndays)
 {
    int i;
-   JOBRES *job;
-   JCR *jcr;
-   USTORERES store;
-   RUNRES *run;
+   JobResource *job;
+   JobControlRecord *jcr;
+   UnifiedStoreResource store;
+   RunResource *run;
    utime_t runtime;
    bool found = false;
-   MEDIA_DBR mr;
-   POOL_DBR pr;
+   MediaDbRecord mr;
+   PoolDbRecord pr;
 
    memset(&mr, 0, sizeof(mr));
 
@@ -1317,7 +1317,7 @@ static bool list_nextvol(UAContext *ua, int ndays)
       }
    }
 
-   jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
    for (run = NULL; (run = find_next_run(run, job, runtime, ndays)); ) {
       if (!complete_jcr_for_job(jcr, job, run->pool)) {
          found = false;
@@ -1365,10 +1365,10 @@ get_out:
  * For a given job, we examine all his run records
  *  to see if it is scheduled today or tomorrow.
  */
-RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
+RunResource *find_next_run(RunResource *run, JobResource *job, utime_t &runtime, int ndays)
 {
    time_t now, future, endtime;
-   SCHEDRES *sched;
+   ScheduleResource *sched;
    struct tm tm, runtm;
    int mday, wday, month, wom, i;
    int woy;
@@ -1456,9 +1456,9 @@ RUNRES *find_next_run(RUNRES *run, JOBRES *job, utime_t &runtime, int ndays)
 /**
  * Fill in the remaining fields of the jcr as if it is going to run the job.
  */
-bool complete_jcr_for_job(JCR *jcr, JOBRES *job, POOLRES *pool)
+bool complete_jcr_for_job(JobControlRecord *jcr, JobResource *job, PoolResource *pool)
 {
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
    set_jcr_defaults(jcr, job);
@@ -1512,7 +1512,7 @@ static void con_lock_release(void *arg)
    Vw(con_lock);
 }
 
-void do_messages(UAContext *ua, const char *cmd)
+void do_messages(UaContext *ua, const char *cmd)
 {
    char msg[2000];
    int mlen;
@@ -1545,7 +1545,7 @@ void do_messages(UAContext *ua, const char *cmd)
    Vw(con_lock);
 }
 
-bool dot_messages_cmd(UAContext *ua, const char *cmd)
+bool dot_messages_cmd(UaContext *ua, const char *cmd)
 {
    if (console_msg_pending &&
        ua->acl_no_restrictions(Command_ACL) &&
@@ -1555,7 +1555,7 @@ bool dot_messages_cmd(UAContext *ua, const char *cmd)
    return true;
 }
 
-bool messages_cmd(UAContext *ua, const char *cmd)
+bool messages_cmd(UaContext *ua, const char *cmd)
 {
    if (console_msg_pending &&
        ua->acl_no_restrictions(Command_ACL)) {
@@ -1572,7 +1572,7 @@ bool messages_cmd(UAContext *ua, const char *cmd)
 of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
 {
    char **row = (char **)data;
-   UAContext *ua = (UAContext *)ctx;
+   UaContext *ua = (UaContext *)ctx;
    of_filter_state retval = OF_FILTER_STATE_SHOW;
 
    switch (tuple->type) {
@@ -1622,7 +1622,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
 
       switch (tuple->u.res_filter.restype) {
       case R_CLIENT: {
-         CLIENTRES *client;
+         ClientResource *client;
 
          client = ua->GetClientResWithName(row[tuple->u.res_filter.column], false, false);
          if (!client || client->enabled != enabled) {
@@ -1633,7 +1633,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
          goto bail_out;
       }
       case R_JOB: {
-         JOBRES *job;
+         JobResource *job;
 
          job = ua->GetJobResWithName(row[tuple->u.res_filter.column], false, false);
          if (!job || job->enabled != enabled) {
@@ -1644,7 +1644,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
          goto bail_out;
       }
       case R_STORAGE: {
-         STORERES *store;
+         StoreResource *store;
 
          store = ua->GetStoreResWithName(row[tuple->u.res_filter.column], false, false);
          if (!store || store->enabled != enabled) {
@@ -1655,7 +1655,7 @@ of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple)
          goto bail_out;
       }
       case R_SCHEDULE: {
-         SCHEDRES *schedule;
+         ScheduleResource *schedule;
 
          schedule = ua->GetScheduleResWithName(row[tuple->u.res_filter.column], false, false);
          if (!schedule || schedule->enabled != enabled) {
@@ -1684,7 +1684,7 @@ bail_out:
 bool printit(void *ctx, const char *msg)
 {
    bool retval = false;
-   UAContext *ua = (UAContext *)ctx;
+   UaContext *ua = (UaContext *)ctx;
 
    if (ua->UA_sock) {
       retval = ua->UA_sock->fsend("%s", msg);
@@ -1704,9 +1704,9 @@ bool printit(void *ctx, const char *msg)
  * that case direct the messages to the Job.
  */
 #ifdef HAVE_VA_COPY
-void bmsg(UAContext *ua, const char *fmt, va_list arg_ptr)
+void bmsg(UaContext *ua, const char *fmt, va_list arg_ptr)
 {
-   BSOCK *bs = ua->UA_sock;
+   BareosSocket *bs = ua->UA_sock;
    int maxlen, len;
    POOLMEM *msg = NULL;
    va_list ap;
@@ -1741,9 +1741,9 @@ again:
 
 #else /* no va_copy() -- brain damaged version of variable arguments */
 
-void bmsg(UAContext *ua, const char *fmt, va_list arg_ptr)
+void bmsg(UaContext *ua, const char *fmt, va_list arg_ptr)
 {
-   BSOCK *bs = ua->UA_sock;
+   BareosSocket *bs = ua->UA_sock;
    int maxlen, len;
    POOLMEM *msg = NULL;
 
@@ -1781,7 +1781,7 @@ void bsendmsg(void *ctx, const char *fmt, ...)
 {
    va_list arg_ptr;
    va_start(arg_ptr, fmt);
-   bmsg((UAContext *)ctx, fmt, arg_ptr);
+   bmsg((UaContext *)ctx, fmt, arg_ptr);
    va_end(arg_ptr);
 }
 
@@ -1793,10 +1793,10 @@ void bsendmsg(void *ctx, const char *fmt, ...)
  * This is a message that should be displayed on the user's
  *  console.
  */
-void UAContext::send_msg(const char *fmt, ...)
+void UaContext::send_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
-   POOL_MEM message;
+   PoolMem message;
 
    /* send current buffer */
    send->send_buffer();
@@ -1811,11 +1811,11 @@ void UAContext::send_msg(const char *fmt, ...)
  * This is an error condition with a command. The gui should put
  *  up an error or critical dialog box.  The command is aborted.
  */
-void UAContext::error_msg(const char *fmt, ...)
+void UaContext::error_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
-   BSOCK *bs = UA_sock;
-   POOL_MEM message;
+   BareosSocket *bs = UA_sock;
+   PoolMem message;
 
    /* send current buffer */
    send->send_buffer();
@@ -1832,11 +1832,11 @@ void UAContext::error_msg(const char *fmt, ...)
  *  dialog box on the GUI. The command is not aborted, but something
  *  went wrong.
  */
-void UAContext::warning_msg(const char *fmt, ...)
+void UaContext::warning_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
-   BSOCK *bs = UA_sock;
-   POOL_MEM message;
+   BareosSocket *bs = UA_sock;
+   PoolMem message;
 
    /* send current buffer */
    send->send_buffer();
@@ -1852,11 +1852,11 @@ void UAContext::warning_msg(const char *fmt, ...)
  * This is an information message that should probably be put
  *  into the status line of a GUI program.
  */
-void UAContext::info_msg(const char *fmt, ...)
+void UaContext::info_msg(const char *fmt, ...)
 {
    va_list arg_ptr;
-   BSOCK *bs = UA_sock;
-   POOL_MEM message;
+   BareosSocket *bs = UA_sock;
+   PoolMem message;
 
    /* send current buffer */
    send->send_buffer();
@@ -1869,11 +1869,11 @@ void UAContext::info_msg(const char *fmt, ...)
 }
 
 
-void UAContext::send_cmd_usage(const char *fmt, ...)
+void UaContext::send_cmd_usage(const char *fmt, ...)
 {
    va_list arg_ptr;
-   POOL_MEM message;
-   POOL_MEM usage;
+   PoolMem message;
+   PoolMem usage;
 
    /* send current buffer */
    send->send_buffer();

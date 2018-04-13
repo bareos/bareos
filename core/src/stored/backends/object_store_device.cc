@@ -136,7 +136,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
    }
    V(mutex);
 
-   if (!m_object_configstring) {
+   if (!object_configstring_) {
       int len;
       char *bp, *next_option;
       bool done;
@@ -147,9 +147,9 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
          return -1;
       }
 
-      m_object_configstring = bstrdup(dev_options);
+      object_configstring_ = bstrdup(dev_options);
 
-      bp = m_object_configstring;
+      bp = object_configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -164,11 +164,11 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
             if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
                switch (device_options[i].type) {
                case argument_profile:
-                  m_profile = bp + device_options[i].compare_size;
+                  profile_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_bucket:
-                  m_object_bucketname = bp + device_options[i].compare_size;
+                  object_bucketname_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                default:
@@ -186,7 +186,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
          bp = next_option;
       }
 
-      if (!m_profile) {
+      if (!profile_) {
          Mmsg0(errmsg, _("No droplet profile configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
@@ -195,46 +195,46 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
       /*
        * Strip any .profile prefix from the libdroplet profile name.
        */
-      len = strlen(m_profile);
-      if (len > 8 && bstrcasecmp(m_profile + (len - 8), ".profile")) {
-         m_profile[len - 8] = '\0';
+      len = strlen(profile_);
+      if (len > 8 && bstrcasecmp(profile_ + (len - 8), ".profile")) {
+         profile_[len - 8] = '\0';
       }
    }
 
    /*
     * See if we need to setup a new context for this device.
     */
-   if (!m_ctx) {
+   if (!ctx_) {
       char *bp;
 
       /*
        * See if this is a path.
        */
-      bp = strrchr(m_object_configstring, '/');
+      bp = strrchr(object_configstring_, '/');
       if (!bp) {
          /*
           * Only a profile name.
           */
-         m_ctx = dpl_ctx_new(NULL, m_object_configstring);
+         ctx_ = dpl_ctx_new(NULL, object_configstring_);
       } else {
-         if (bp == m_object_configstring) {
+         if (bp == object_configstring_) {
             /*
              * Profile in root of filesystem
              */
-            m_ctx = dpl_ctx_new("/", bp + 1);
+            ctx_ = dpl_ctx_new("/", bp + 1);
          } else {
             /*
              * Profile somewhere else.
              */
             *bp++ = '\0';
-            m_ctx = dpl_ctx_new(m_object_configstring, bp);
+            ctx_ = dpl_ctx_new(object_configstring_, bp);
          }
       }
 
       /*
        * If we failed to allocate a new context fail the open.
        */
-      if (!m_ctx) {
+      if (!ctx_) {
          Mmsg1(errmsg, _("Failed to create a new context using config %s\n"), dev_options);
          return -1;
       }
@@ -242,7 +242,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
       /*
        * Login if that is needed for this backend.
        */
-      status = dpl_login(m_ctx);
+      status = dpl_login(ctx_);
       switch (status) {
       case DPL_SUCCESS:
          break;
@@ -260,17 +260,17 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
       /*
        * If a bucketname was defined set it in the context.
        */
-      if (m_object_bucketname) {
-         m_ctx->cur_bucket = m_object_bucketname;
+      if (object_bucketname_) {
+         ctx_->cur_bucket = object_bucketname_;
       }
    }
 
    /*
     * See if we don't have a file open already.
     */
-   if (m_vfd) {
-      dpl_close(m_vfd);
-      m_vfd = NULL;
+   if (vfd_) {
+      dpl_close(vfd_);
+      vfd_ = NULL;
    }
 
    /*
@@ -285,7 +285,7 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
 
    if (flags & O_CREAT) {
       dpl_flags = DPL_VFILE_FLAG_CREAT | DPL_VFILE_FLAG_RDWR;
-      status = dpl_open(m_ctx, /* context */
+      status = dpl_open(ctx_, /* context */
                         getVolCatName(), /* locator */
                         dpl_flags, /* flags */
                         &dpl_options, /* options */
@@ -294,10 +294,10 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
                         NULL, /* sysmd */
                         NULL, /* query_params */
                         NULL, /* stream_status */
-                        &m_vfd);
+                        &vfd_);
    } else {
       dpl_flags = DPL_VFILE_FLAG_RDWR;
-      status = dpl_open(m_ctx, /* context */
+      status = dpl_open(ctx_, /* context */
                         getVolCatName(), /* locator */
                         dpl_flags, /* flags */
                         &dpl_options, /* options */
@@ -306,17 +306,17 @@ int object_store_device::d_open(const char *pathname, int flags, int mode)
                         NULL, /* sysmd */
                         NULL, /* query_params */
                         NULL, /* stream_status */
-                        &m_vfd);
+                        &vfd_);
    }
 
    switch (status) {
    case DPL_SUCCESS:
-      m_offset = 0;
+      offset_ = 0;
       return 0;
    default:
       Mmsg2(errmsg, _("Failed to open %s using dpl_open(): ERR=%s.\n"),
             getVolCatName(), dpl_status_str(status));
-      m_vfd = NULL;
+      vfd_ = NULL;
       return droplet_errno_to_system_errno(status);
    }
 
@@ -329,16 +329,16 @@ bail_out:
  */
 ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
 {
-   if (m_vfd) {
+   if (vfd_) {
       unsigned int buflen;
       dpl_status_t status;
 
       buflen = count;
-      status = dpl_pread(m_vfd, count, m_offset, (char **)&buffer, &buflen);
+      status = dpl_pread(vfd_, count, offset_, (char **)&buffer, &buflen);
 
       switch (status) {
       case DPL_SUCCESS:
-         m_offset += buflen;
+         offset_ += buflen;
          return buflen;
       default:
          Mmsg2(errmsg, _("Failed to read %s using dpl_read(): ERR=%s.\n"),
@@ -356,13 +356,13 @@ ssize_t object_store_device::d_read(int fd, void *buffer, size_t count)
  */
 ssize_t object_store_device::d_write(int fd, const void *buffer, size_t count)
 {
-   if (m_vfd) {
+   if (vfd_) {
       dpl_status_t status;
 
-      status = dpl_pwrite(m_vfd, (char *)buffer, count, m_offset);
+      status = dpl_pwrite(vfd_, (char *)buffer, count, offset_);
       switch (status) {
       case DPL_SUCCESS:
-         m_offset += count;
+         offset_ += count;
          return count;
       default:
          Mmsg2(errmsg, _("Failed to write %s using dpl_write(): ERR=%s.\n"),
@@ -377,16 +377,16 @@ ssize_t object_store_device::d_write(int fd, const void *buffer, size_t count)
 
 int object_store_device::d_close(int fd)
 {
-   if (m_vfd) {
+   if (vfd_) {
       dpl_status_t status;
 
-      status = dpl_close(m_vfd);
+      status = dpl_close(vfd_);
       switch (status) {
       case DPL_SUCCESS:
-         m_vfd = NULL;
+         vfd_ = NULL;
          return 0;
       default:
-         m_vfd = NULL;
+         vfd_ = NULL;
          return droplet_errno_to_system_errno(status);
       }
    } else {
@@ -430,21 +430,21 @@ static inline size_t object_store_get_file_size(dpl_ctx_t *ctx, const char *file
    return filesize;
 }
 
-boffset_t object_store_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t object_store_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
    switch (whence) {
    case SEEK_SET:
-      m_offset = offset;
+      offset_ = offset;
       break;
    case SEEK_CUR:
-      m_offset += offset;
+      offset_ += offset;
       break;
    case SEEK_END: {
       size_t filesize;
 
-      filesize = object_store_get_file_size(m_ctx, getVolCatName());
+      filesize = object_store_get_file_size(ctx_, getVolCatName());
       if (filesize >= 0) {
-         m_offset = filesize + offset;
+         offset_ = filesize + offset;
       } else {
          return -1;
       }
@@ -454,23 +454,23 @@ boffset_t object_store_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
       return -1;
    }
 
-   return m_offset;
+   return offset_;
 }
 
-bool object_store_device::d_truncate(DCR *dcr)
+bool object_store_device::d_truncate(DeviceControlRecord *dcr)
 {
    /*
     * libdroplet doesn't have a truncate function so unlink the volume and create a new empty one.
     */
-   if (m_vfd) {
+   if (vfd_) {
       dpl_status_t status;
       dpl_vfile_flag_t dpl_flags;
       dpl_option_t dpl_options;
 
-      status = dpl_close(m_vfd);
+      status = dpl_close(vfd_);
       switch (status) {
       case DPL_SUCCESS:
-         m_vfd = NULL;
+         vfd_ = NULL;
          break;
       default:
          Mmsg2(errmsg, _("Failed to close %s using dpl_close(): ERR=%s.\n"),
@@ -478,7 +478,7 @@ bool object_store_device::d_truncate(DCR *dcr)
          return false;
       }
 
-      status = dpl_unlink(m_ctx, getVolCatName());
+      status = dpl_unlink(ctx_, getVolCatName());
       switch (status) {
       case DPL_SUCCESS:
          break;
@@ -499,7 +499,7 @@ bool object_store_device::d_truncate(DCR *dcr)
       dpl_options.mask |= DPL_OPTION_NOALLOC;
 
       dpl_flags = DPL_VFILE_FLAG_CREAT | DPL_VFILE_FLAG_RDWR;
-      status = dpl_open(m_ctx, /* context */
+      status = dpl_open(ctx_, /* context */
                         getVolCatName(), /* locator */
                         dpl_flags, /* flags */
                         &dpl_options, /* options */
@@ -508,7 +508,7 @@ bool object_store_device::d_truncate(DCR *dcr)
                         NULL, /* sysmd */
                         NULL, /* query_params */
                         NULL, /* stream_status */
-                        &m_vfd);
+                        &vfd_);
 
       switch (status) {
       case DPL_SUCCESS:
@@ -525,13 +525,13 @@ bool object_store_device::d_truncate(DCR *dcr)
 
 object_store_device::~object_store_device()
 {
-   if (m_ctx) {
-      dpl_ctx_free(m_ctx);
-      m_ctx = NULL;
+   if (ctx_) {
+      dpl_ctx_free(ctx_);
+      ctx_ = NULL;
    }
 
-   if (m_object_configstring) {
-      free(m_object_configstring);
+   if (object_configstring_) {
+      free(object_configstring_);
    }
 
    P(mutex);
@@ -544,15 +544,15 @@ object_store_device::~object_store_device()
 
 object_store_device::object_store_device()
 {
-   m_object_configstring = NULL;
-   m_object_bucketname = NULL;
-   m_ctx = NULL;
+   object_configstring_ = NULL;
+   object_bucketname_ = NULL;
+   ctx_ = NULL;
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_OBJECT_STORE_DEV:

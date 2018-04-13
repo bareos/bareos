@@ -23,28 +23,28 @@
 #ifndef __BDB_SQLITE_H_
 #define __BDB_SQLITE_H_ 1
 
-class B_DB_SQLITE: public B_DB_PRIV {
+class BareosDbSqlite: public BareosDbPrivateInterface {
 private:
    /*
     * Members.
     */
-   struct sqlite3 *m_db_handle;
-   char **m_result;                         /**< sql_store_results() and sql_query_without_handler() */
-   char **m_col_names;                      /**< used to access fields when using sql_query_with_handler() */
-   char *m_lowlevel_errmsg;
-   SQL_FIELD m_sql_field;                   /**< used when using sql_query_with_handler() and sql_fetch_field() */
+   struct sqlite3 *db_handle_;
+   char **result_;                         /**< sql_store_results() and sql_query_without_handler() */
+   char **col_names_;                      /**< used to access fields when using sql_query_with_handler() */
+   char *lowlevel_errmsg_;
+   SQL_FIELD sql_field_;                   /**< used when using sql_query_with_handler() and sql_fetch_field() */
    static const char *query_definitions[];  /**< table of predefined sql queries */
 
 private:
    /*
     * Methods.
     */
-   bool open_database(JCR *jcr);
-   void close_database(JCR *jcr);
+   bool open_database(JobControlRecord *jcr);
+   void close_database(JobControlRecord *jcr);
    bool validate_connection(void);
    void thread_cleanup(void);
-   void start_transaction(JCR *jcr);
-   void end_transaction(JCR *jcr);
+   void start_transaction(JobControlRecord *jcr);
+   void end_transaction(JobControlRecord *jcr);
    bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool sql_query_without_handler(const char *query, int flags = 0);
    void sql_free_result(void);
@@ -56,15 +56,15 @@ private:
    SQL_FIELD *sql_fetch_field(void);
    bool sql_field_is_not_null(int field_type);
    bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JCR *jcr);
-   bool sql_batch_end(JCR *jcr, const char *error);
-   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
+   bool sql_batch_start(JobControlRecord *jcr);
+   bool sql_batch_end(JobControlRecord *jcr, const char *error);
+   bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar);
 
 public:
    /*
     * Methods.
     */
-   B_DB_SQLITE(JCR *jcr,
+   BareosDbSqlite(JobControlRecord *jcr,
                const char *db_driver,
                const char *db_name,
                const char *db_user,
@@ -77,15 +77,15 @@ public:
                bool try_reconnect,
                bool exit_on_fatal,
                bool need_private);
-   ~B_DB_SQLITE();
+   ~BareosDbSqlite();
 
    /*
     * Used internaly by sqlite.c to access fields in sql_query_with_handler()
     */
    void set_column_names(char **res, int nb) {
-      m_col_names = res;
-      m_num_fields = nb;
-      m_field_number = 0;
+      col_names_ = res;
+      num_fields_ = nb;
+      field_number_ = 0;
    }
 };
 

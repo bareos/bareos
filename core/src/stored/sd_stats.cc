@@ -152,7 +152,7 @@ void update_device_tapealert(const char *devname, uint64_t flags, utime_t now)
          tape_alert->timestamp, dev_stats->DevName, tape_alert->flags);
 }
 
-static inline void update_device_statistics(const char *devname, DEVICE *dev, utime_t now)
+static inline void update_device_statistics(const char *devname, Device *dev, utime_t now)
 {
    bool found = false;
    struct device_statistics *dev_stats = NULL;
@@ -235,7 +235,7 @@ static inline void update_device_statistics(const char *devname, DEVICE *dev, ut
          dev_stat->VolCatBlocks);
 }
 
-void update_job_statistics(JCR *jcr, utime_t now)
+void update_job_statistics(JobControlRecord *jcr, utime_t now)
 {
    bool found = false;
    struct job_statistics *job_stats = NULL;
@@ -351,8 +351,8 @@ void *statistics_thread_runner(void *arg)
    struct timeval tv;
    struct timezone tz;
    struct timespec timeout;
-   DEVRES *device;
-   JCR *jcr;
+   DeviceResource *device;
+   JobControlRecord *jcr;
 
    setup_statistics();
 
@@ -368,7 +368,7 @@ void *statistics_thread_runner(void *arg)
           */
          foreach_res(device, R_DEVICE) {
             if (device->collectstats) {
-               DEVICE *dev;
+               Device *dev;
 
                dev = device->dev;
                if (dev && dev->initiated) {
@@ -425,7 +425,7 @@ int start_statistics_thread(void)
     * one device of which stats are collected.
     */
    if (me->collect_dev_stats && !me->collect_job_stats) {
-      DEVRES *device;
+      DeviceResource *device;
       int cnt = 0;
 
       foreach_res(device, R_DEVICE) {
@@ -461,11 +461,11 @@ void stop_statistics_thread()
    }
 }
 
-bool stats_cmd(JCR *jcr)
+bool stats_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM msg(PM_MESSAGE);
-   POOL_MEM dev_tmp(PM_MESSAGE);
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem msg(PM_MESSAGE);
+   PoolMem dev_tmp(PM_MESSAGE);
 
    if (device_statistics) {
       struct device_statistics *dev_stats;
@@ -536,7 +536,7 @@ bool stats_cmd(JCR *jcr)
 
    if (job_statistics) {
       bool found;
-      JCR *jcr;
+      JobControlRecord *jcr;
       struct job_statistics *job_stats, *next_job_stats;
 
       job_stats = (struct job_statistics *)job_statistics->first();

@@ -78,11 +78,11 @@ static char Device_update[] =
 /**
  * Send update information about a device to Director
  */
-bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
+bool SD_DCR::dir_update_device(JobControlRecord *jcr, Device *dev)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM dev_name, VolumeName, MediaType, ChangerName;
-   DEVRES *device = dev->device;
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem dev_name, VolumeName, MediaType, ChangerName;
+   DeviceResource *device = dev->device;
    bool ok;
 
    pm_strcpy(dev_name, device->name());
@@ -116,16 +116,16 @@ bool SD_DCR::dir_update_device(JCR *jcr, DEVICE *dev)
    return ok;
 }
 
-bool SD_DCR::dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
+bool SD_DCR::dir_update_changer(JobControlRecord *jcr, AUTOCHANGER *changer)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   POOL_MEM dev_name, MediaType;
-   DEVRES *device;
+   BareosSocket *dir = jcr->dir_bsock;
+   PoolMem dev_name, MediaType;
+   DeviceResource *device;
    bool ok;
 
    pm_strcpy(dev_name, changer->name());
    bash_spaces(dev_name);
-   device = (DEVRES *)changer->device->first();
+   device = (DeviceResource *)changer->device->first();
    pm_strcpy(MediaType, device->media_type);
    bash_spaces(MediaType);
    /* This is mostly to indicate that we are here */
@@ -161,11 +161,11 @@ bool SD_DCR::dir_update_changer(JCR *jcr, AUTOCHANGER *changer)
  *  Returns: true  on success and vol info in dcr->VolCatInfo
  *           false on failure
  */
-static bool do_get_volume_info(DCR *dcr)
+static bool do_get_volume_info(DeviceControlRecord *dcr)
 {
-    JCR *jcr = dcr->jcr;
-    BSOCK *dir = jcr->dir_bsock;
-    VOLUME_CAT_INFO vol;
+    JobControlRecord *jcr = dcr->jcr;
+    BareosSocket *dir = jcr->dir_bsock;
+    VolumeCatalogInfo vol;
     int n;
     int32_t InChanger;
 
@@ -240,7 +240,7 @@ static bool do_get_volume_info(DCR *dcr)
 bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
 {
    bool ok;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    P(vol_info_mutex);
    setVolCatName(VolumeName);
@@ -269,8 +269,8 @@ bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
 bool SD_DCR::dir_find_next_appendable_volume()
 {
     bool retval;
-    BSOCK *dir = jcr->dir_bsock;
-    POOL_MEM unwanted_volumes(PM_MESSAGE);
+    BareosSocket *dir = jcr->dir_bsock;
+    PoolMem unwanted_volumes(PM_MESSAGE);
 
     Dmsg2(dbglvl, "dir_find_next_appendable_volume: reserved=%d Vol=%s\n", is_reserved(), VolumeName);
 
@@ -341,12 +341,12 @@ get_out:
  */
 bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
 {
-   BSOCK *dir = jcr->dir_bsock;
-   VOLUME_CAT_INFO *vol = &dev->VolCatInfo;
+   BareosSocket *dir = jcr->dir_bsock;
+   VolumeCatalogInfo *vol = &dev->VolCatInfo;
    char ed1[50], ed2[50], ed3[50], ed4[50], ed5[50], ed6[50];
    int InChanger;
    bool ok = false;
-   POOL_MEM volume_name;
+   PoolMem volume_name;
 
    /*
     * If system job, do not update catalog
@@ -421,7 +421,7 @@ bail_out:
  */
 bool SD_DCR::dir_create_jobmedia_record(bool zero)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char ed1[50];
 
    /*
@@ -496,9 +496,9 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
  *
  * Now Restore Objects pass through here STREAM_RESTORE_OBJECT
  */
-bool SD_DCR::dir_update_file_attributes(DEV_RECORD *record)
+bool SD_DCR::dir_update_file_attributes(DeviceRecord *record)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    ser_declare;
 
 #ifdef NO_ATTRIBUTES_TEST
@@ -506,7 +506,7 @@ bool SD_DCR::dir_update_file_attributes(DEV_RECORD *record)
 #endif
 
    dir->msg = check_pool_memory_size(dir->msg, sizeof(FileAttributes) +
-                MAX_NAME_LENGTH + sizeof(DEV_RECORD) + record->data_len + 1);
+                MAX_NAME_LENGTH + sizeof(DeviceRecord) + record->data_len + 1);
    dir->msglen = bsnprintf(dir->msg, sizeof(FileAttributes) +
                 MAX_NAME_LENGTH + 1, FileAttributes, jcr->Job);
    ser_begin(dir->msg + dir->msglen, 0);
@@ -707,9 +707,9 @@ get_out:
    return true;
 }
 
-DCR *SD_DCR::get_new_spooling_dcr()
+DeviceControlRecord *SD_DCR::get_new_spooling_dcr()
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
 
    dcr = New(SD_DCR);
 
@@ -719,7 +719,7 @@ DCR *SD_DCR::get_new_spooling_dcr()
 /**
  * Dummy methods for everything but SD and BTAPE.
  */
-bool DCR::dir_ask_sysop_to_mount_volume(int /*mode*/)
+bool DeviceControlRecord::dir_ask_sysop_to_mount_volume(int /*mode*/)
 {
    fprintf(stderr, _("Mount Volume \"%s\" on device %s and press return when ready: "),
            VolumeName, dev->print_name());
@@ -728,7 +728,7 @@ bool DCR::dir_ask_sysop_to_mount_volume(int /*mode*/)
    return true;
 }
 
-bool DCR::dir_get_volume_info(enum get_vol_info_rw writing)
+bool DeviceControlRecord::dir_get_volume_info(enum get_vol_info_rw writing)
 {
    Dmsg0(100, "Fake dir_get_volume_info\n");
    setVolCatName(VolumeName);
@@ -736,9 +736,9 @@ bool DCR::dir_get_volume_info(enum get_vol_info_rw writing)
    return 1;
 }
 
-DCR *DCR::get_new_spooling_dcr()
+DeviceControlRecord *DeviceControlRecord::get_new_spooling_dcr()
 {
-   DCR *dcr;
+   DeviceControlRecord *dcr;
 
    dcr = New(SD_DCR);
 

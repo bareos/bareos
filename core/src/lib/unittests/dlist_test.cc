@@ -44,7 +44,7 @@ struct MYJCR {
  * dlink must be the first item in the used structure.
  * (otherwise loffset must be calculated)
  */
-struct LIST_ITEM {
+struct ListItem {
    dlink link;
    char *buf;
 };
@@ -64,7 +64,7 @@ static int my_compare(void *item1, void *item2)
  */
 void test_foreach_dlist(dlist *list)
 {
-   LIST_ITEM *val = NULL;
+   ListItem *val = NULL;
    char buf[30];
    int i=0;
 
@@ -80,12 +80,12 @@ void test_foreach_dlist(dlist *list)
 
 void dlist_fill(dlist *list, int max)
 {
-   LIST_ITEM *jcr = NULL;
+   ListItem *jcr = NULL;
    char buf[30];
    int start = list->size();
 
    for (int i=0; i<max; i++) {
-      jcr = (LIST_ITEM *)malloc(sizeof(MYJCR));
+      jcr = (ListItem *)malloc(sizeof(MYJCR));
       // memset not required
       //memset(jcr, 0, sizeof(MYJCR));
       sprintf(buf, "%d", start + i);
@@ -96,7 +96,7 @@ void dlist_fill(dlist *list, int max)
    }
 }
 
-void free_item(LIST_ITEM *item)
+void free_item(ListItem *item)
 {
    if (item) {
       free(item->buf);
@@ -106,11 +106,11 @@ void free_item(LIST_ITEM *item)
 
 void free_dlist(dlist *list)
 {
-   LIST_ITEM *val = NULL;
+   ListItem *val = NULL;
    int number = list->size();
 
    for(int i=number; i>0; i--) {
-      val = (LIST_ITEM *)list->last();
+      val = (ListItem *)list->last();
       list->remove(val);
       free_item(val);
    }
@@ -122,7 +122,7 @@ void free_dlist(dlist *list)
 
 void test_dlist_dynamic() {
    dlist *list = NULL;
-   LIST_ITEM *item = NULL;
+   ListItem *item = NULL;
 
    // NULL->size() will segfault
    //EXPECT_EQ(list->size(), 0);
@@ -144,13 +144,13 @@ void test_dlist_dynamic() {
 
    // verify and remove the latest entries
    EXPECT_EQ(list->size(), 20);
-   item = (LIST_ITEM *)list->last();
+   item = (ListItem *)list->last();
    list->remove(item);
    EXPECT_STREQ(item->buf, "19");
    free_item(item);
 
    EXPECT_EQ(list->size(), 19);
-   item = (LIST_ITEM *)list->last();
+   item = (ListItem *)list->last();
    list->remove(item);
    EXPECT_STREQ(item->buf, "18");
    free_item(item);

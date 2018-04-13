@@ -36,9 +36,9 @@ const bool have_darwin_os = true;
 const bool have_darwin_os = false;
 #endif
 
-static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool);
-static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr);
-static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);
+static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr);
+static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                   DIGEST **digest, int *digest_stream,
                                   char **digest_buf, const char **digest_name);
 
@@ -47,7 +47,7 @@ static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
  * to the Director.
  *
  */
-void do_verify(JCR *jcr)
+void do_verify(JobControlRecord *jcr)
 {
    jcr->setJobStatus(JS_Running);
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
@@ -55,10 +55,10 @@ void do_verify(JCR *jcr)
       Jmsg1(jcr, M_ABORT, 0, _("Cannot malloc %d network read buffer\n"),
          DEFAULT_NETWORK_BUFFER_SIZE);
    }
-   set_find_options((FF_PKT *)jcr->ff, jcr->incremental, jcr->mtime);
+   set_find_options((FindFilesPacket *)jcr->ff, jcr->incremental, jcr->mtime);
    Dmsg0(10, "Start find files\n");
    /* Subroutine verify_file() is called for each file */
-   find_files(jcr, (FF_PKT *)jcr->ff, verify_file, NULL);
+   find_files(jcr, (FindFilesPacket *)jcr->ff, verify_file, NULL);
    Dmsg0(10, "End find files\n");
 
    if (jcr->big_buf) {
@@ -73,12 +73,12 @@ void do_verify(JCR *jcr)
  *
  *  Find the file, compute the MD5 or SHA1 and send it back to the Director
  */
-static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
+static int verify_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level)
 {
-   POOL_MEM attribs(PM_NAME),
+   PoolMem attribs(PM_NAME),
             attribsEx(PM_NAME);
    int status;
-   BSOCK *dir;
+   BareosSocket *dir;
 
    if (job_canceled(jcr)) {
       return 0;
@@ -191,7 +191,7 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
    /*
     * Send file attributes to Director (note different format than for Storage)
     */
-   Dmsg2(400, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
+   Dmsg2(400, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, ff_pkt->fname);
    if (ff_pkt->type == FT_LNK || ff_pkt->type == FT_LNKSAVED) {
       status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
                           STREAM_UNIX_ATTRIBUTES, ff_pkt->VerifyOpts, ff_pkt->fname,
@@ -258,9 +258,9 @@ static int verify_file(JCR *jcr, FF_PKT *ff_pkt, bool top_level)
  * Compute message digest for the file specified by ff_pkt.
  * In case of errors we need the job control record and file name.
  */
-int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
+int digest_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST *digest)
 {
-   BFILE bfd;
+   BareosWinFilePacket bfd;
 
    binit(&bfd);
 
@@ -308,12 +308,12 @@ int digest_file(JCR *jcr, FF_PKT *ff_pkt, DIGEST *digest)
  * Read message digest of bfd, updating digest
  * In case of errors we need the job control record and file name.
  */
-static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
+static int read_digest(BareosWinFilePacket *bfd, DIGEST *digest, JobControlRecord *jcr)
 {
    char buf[DEFAULT_NETWORK_BUFFER_SIZE];
    int64_t n;
    int64_t bufsiz = (int64_t)sizeof(buf);
-   FF_PKT *ff_pkt = (FF_PKT *)jcr->ff;
+   FindFilesPacket *ff_pkt = (FindFilesPacket *)jcr->ff;
    uint64_t fileAddr = 0;             /* file address */
 
 
@@ -367,7 +367,7 @@ static int read_digest(BFILE *bfd, DIGEST *digest, JCR *jcr)
  * Returns: true   if digest calculation succeeded.
  *          false  if digest calculation failed.
  */
-static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt, DIGEST **digest,
+static bool calculate_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt, DIGEST **digest,
                                   int *digest_stream, char **digest_buf, const char **digest_name)
 {
    /*
@@ -418,7 +418,7 @@ static bool calculate_file_chksum(JCR *jcr, FF_PKT *ff_pkt, DIGEST **digest,
  * Returns: true   if chksum matches.
  *          false  if chksum is different.
  */
-bool calculate_and_compare_file_chksum(JCR *jcr, FF_PKT *ff_pkt,
+bool calculate_and_compare_file_chksum(JobControlRecord *jcr, FindFilesPacket *ff_pkt,
                                        const char *fname, const char *chksum)
 {
    DIGEST *digest = NULL;

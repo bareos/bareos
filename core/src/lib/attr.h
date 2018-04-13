@@ -31,7 +31,7 @@
 #define __ATTR_H_ 1
 
 
-struct ATTR {
+struct Attributes {
    int32_t stream;                    /**< attribute stream id */
    int32_t data_stream;               /**< id of data stream to follow */
    int32_t type;                      /**< file type FT */
@@ -45,13 +45,13 @@ struct ATTR {
    POOLMEM *olname;                   /**< output link name */
    /*
     * Note the following three variables point into the
-    *  current BSOCK record, so they are invalid after
+    *  current BareosSocket record, so they are invalid after
     *  the next socket read!
     */
    char *attr;                        /**< attributes position */
    char *fname;                       /**< filename */
    char *lname;                       /**< link name if any */
-   JCR *jcr;                          /**< jcr pointer */
+   JobControlRecord *jcr;                          /**< jcr pointer */
 };
 
 #endif /* __ATTR_H_ */

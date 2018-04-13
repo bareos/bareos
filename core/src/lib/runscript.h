@@ -80,7 +80,7 @@ public:
    job_code_callback_t job_code_callback;
                                 /* Optional callback function passed to edit_job_code */
    alist *commands;             /* Use during parsing */
-   bool run(JCR *job, const char *name=""); /* name must contain "Before" or "After" keyword */
+   bool run(JobControlRecord *job, const char *name=""); /* name must contain "Before" or "After" keyword */
    bool can_run_at_level(int JobLevel) { return true;};        /* TODO */
    void set_command(const char *cmd, int cmd_type = SHELL_CMD);
    void set_target(const char *client_name);
@@ -98,7 +98,7 @@ DLL_IMP_EXP RUNSCRIPT *new_runscript();
 DLL_IMP_EXP RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
 
 /* launch each script from runscripts*/
-DLL_IMP_EXP int run_scripts(JCR *jcr, alist *runscripts, const char *name,
+DLL_IMP_EXP int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
 /* free RUNSCRIPT (and all POOLMEM) */
@@ -107,6 +107,6 @@ DLL_IMP_EXP void free_runscript(RUNSCRIPT *script);
 /* foreach_alist free RUNSCRIPT */
 DLL_IMP_EXP void free_runscripts(alist *runscripts); /* you have to free alist */
 
-extern DLL_IMP_EXP bool (*console_command)(JCR *jcr, const char *cmd);
+extern DLL_IMP_EXP bool (*console_command)(JobControlRecord *jcr, const char *cmd);
 
 #endif /* __RUNSCRIPT_H_ */

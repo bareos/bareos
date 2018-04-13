@@ -32,7 +32,7 @@
 #include "stored.h"
 
 /* Forward referenced subroutines */
-static bool record_cb(DCR *dcr, DEV_RECORD *rec);
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 /* Responses sent to the File daemon */
 static char OK_data[] =
@@ -48,10 +48,10 @@ static char rec_header[] =
  * Returns: false on failure
  *          true  on success
  */
-bool do_read_data(JCR *jcr)
+bool do_read_data(JobControlRecord *jcr)
 {
-   BSOCK *fd = jcr->file_bsock;
-   DCR *dcr = jcr->read_dcr;
+   BareosSocket *fd = jcr->file_bsock;
+   DeviceControlRecord *dcr = jcr->read_dcr;
    bool ok = true;
 
    Dmsg0(20, "Start read data.\n");
@@ -111,10 +111,10 @@ bool do_read_data(JCR *jcr)
  * Returns: true if OK
  *          false if error
  */
-static bool record_cb(DCR *dcr, DEV_RECORD *rec)
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
-   JCR *jcr = dcr->jcr;
-   BSOCK *fd = jcr->file_bsock;
+   JobControlRecord *jcr = dcr->jcr;
+   BareosSocket *fd = jcr->file_bsock;
    bool ok = true;
    POOLMEM *save_msg;
    char ec1[50], ec2[50];

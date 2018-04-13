@@ -30,8 +30,8 @@
 
 #include <functional>
 
-struct RES_ITEM;                        /* Declare forward referenced structure */
-class RES;                              /* Declare forward referenced structure */
+struct ResourceItem;                        /* Declare forward referenced structure */
+class CommonResourceHeader;                              /* Declare forward referenced structure */
 
 /*
  * Parser state
@@ -134,7 +134,7 @@ struct s_password {
  * This is the structure that defines the record types (items) permitted within each
  * resource. It is used to define the configuration tables.
  */
-struct RES_ITEM {
+struct ResourceItem {
    const char *name;                    /* Resource name i.e. Director, ... */
    const int type;
    union {
@@ -149,7 +149,7 @@ struct RES_ITEM {
       bool *boolvalue;
       utime_t *utimevalue;
       s_password *pwdvalue;
-      RES **resvalue;
+      CommonResourceHeader **resvalue;
       alist **alistvalue;
       dlist **dlistvalue;
       char *bitvalue;
@@ -174,14 +174,14 @@ struct RES_ITEM {
 /* For storing name_addr items in res_items table */
 #define ITEM(x) {(char **)&res_all.x}
 
-#define MAX_RES_ITEMS 90                /* maximum resource items per RES */
+#define MAX_RES_ITEMS 90                /* maximum resource items per CommonResourceHeader */
 
 /*
  * This is the universal header that is at the beginning of every resource record.
  */
-class RES {
+class CommonResourceHeader {
 public:
-   RES *next;                           /* Pointer to next resource of this type */
+   CommonResourceHeader *next;                           /* Pointer to next resource of this type */
    char *name;                          /* Resource name */
    char *desc;                          /* Resource description */
    uint32_t rcode;                      /* Resource id or type */
@@ -194,9 +194,9 @@ public:
  * Master Resource configuration structure definition
  * This is the structure that defines the resources that are available to this daemon.
  */
- struct RES_TABLE {
+ struct ResourceTable {
    const char *name;        /* Resource name */
-   RES_ITEM *items;         /* List of resource keywords */
+   ResourceItem *items;         /* List of resource keywords */
    uint32_t rcode;          /* Code if needed */
    uint32_t size;           /* Size of resource */
 
@@ -313,7 +313,7 @@ enum {
    CFG_TYPE_CIPHER = 301                /* Encryption Cipher */
 };
 
-struct DATATYPE_NAME {
+struct DatatypeName {
    const int number;
    const char *name;
    const char *description;
@@ -323,13 +323,13 @@ struct DATATYPE_NAME {
 /*
  * Base Class for all Resource Classes
  */
-class BRSRES {
+class BareosResource {
 public:
-   RES hdr;
+   CommonResourceHeader hdr;
 
    /* Methods */
    inline char *name() const { return this->hdr.name; };
-   bool print_config(POOL_MEM &buf, bool hide_sensitive_data = false, bool verbose = false);
+   bool print_config(PoolMem &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
     * when special rules for this resource type must be checked.
@@ -337,7 +337,7 @@ public:
    // virtual inline bool validate() { return true; };
 };
 
-class TLSRES : public BRSRES {
+class TlsResource : public BareosResource {
  public:
    s_password password; /* UA server password */
    tls_cert_t tls_cert; /* TLS structure */
@@ -347,7 +347,7 @@ class TLSRES : public BRSRES {
 /*
  * Message Resource
  */
-class MSGSRES : public BRSRES {
+class MessagesResource : public BareosResource {
    /*
     * Members
     */
@@ -359,29 +359,29 @@ public:
    char send_msg[nbytes_for_bits(M_MAX+1)]; /* Bit array of types */
 
 private:
-   bool m_in_use;                     /* Set when using to send a message */
-   bool m_closing;                    /* Set when closing message resource */
+   bool in_use_;                     /* Set when using to send a message */
+   bool closing_;                    /* Set when closing message resource */
 
 public:
    /*
     * Methods
     */
-   void clear_in_use() { lock(); m_in_use=false; unlock(); }
-   void set_in_use() { wait_not_in_use(); m_in_use=true; unlock(); }
-   void set_closing() { m_closing=true; }
-   bool get_closing() { return m_closing; }
-   void clear_closing() { lock(); m_closing=false; unlock(); }
-   bool is_closing() { lock(); bool rtn=m_closing; unlock(); return rtn; }
+   void clear_in_use() { lock(); in_use_=false; unlock(); }
+   void set_in_use() { wait_not_in_use(); in_use_=true; unlock(); }
+   void set_closing() { closing_=true; }
+   bool get_closing() { return closing_; }
+   void clear_closing() { lock(); closing_=false; unlock(); }
+   bool is_closing() { lock(); bool rtn=closing_; unlock(); return rtn; }
 
    void wait_not_in_use();            /* in message.c */
    void lock();                       /* in message.c */
    void unlock();                     /* in message.c */
-   bool print_config(POOL_MEM &buff, bool hide_sensitive_data = false, bool verbose = false);
+   bool print_config(PoolMem &buff, bool hide_sensitive_data = false, bool verbose = false);
 };
 
-typedef void (INIT_RES_HANDLER)(RES_ITEM *item, int pass);
-typedef void (STORE_RES_HANDLER)(LEX *lc, RES_ITEM *item, int index, int pass);
-typedef void (PRINT_RES_HANDLER)(RES_ITEM *items, int i, POOL_MEM &cfg_str, bool hide_sensitive_data, bool inherited);
+typedef void (INIT_RES_HANDLER)(ResourceItem *item, int pass);
+typedef void (STORE_RES_HANDLER)(LEX *lc, ResourceItem *item, int index, int pass);
+typedef void (PRINT_RES_HANDLER)(ResourceItem *items, int i, PoolMem &cfg_str, bool hide_sensitive_data, bool inherited);
 
 /*
  * New C++ configuration routines
@@ -391,23 +391,23 @@ public:
    /*
     * Members
     */
-   const char *m_cf;                    /* Config file parameter */
-   LEX_ERROR_HANDLER *m_scan_error;     /* Error handler if non-null */
-   LEX_WARNING_HANDLER *m_scan_warning; /* Warning handler if non-null */
-   INIT_RES_HANDLER *m_init_res;        /* Init resource handler for non default types if non-null */
-   STORE_RES_HANDLER *m_store_res;      /* Store resource handler for non default types if non-null */
-   PRINT_RES_HANDLER *m_print_res;      /* Print resource handler for non default types if non-null */
+   const char *cf_;                    /* Config file parameter */
+   LEX_ERROR_HANDLER *scan_error_;     /* Error handler if non-null */
+   LEX_WARNING_HANDLER *scan_warning_; /* Warning handler if non-null */
+   INIT_RES_HANDLER *init_res_;        /* Init resource handler for non default types if non-null */
+   STORE_RES_HANDLER *store_res_;      /* Store resource handler for non default types if non-null */
+   PRINT_RES_HANDLER *print_res_;      /* Print resource handler for non default types if non-null */
 
-   int32_t m_err_type;                  /* The way to terminate on failure */
-   void *m_res_all;                     /* Pointer to res_all buffer */
-   int32_t m_res_all_size;              /* Length of buffer */
-   bool m_omit_defaults;                /* Omit config variables with default values when dumping the config */
+   int32_t err_type_;                  /* The way to terminate on failure */
+   void *res_all_;                     /* Pointer to res_all buffer */
+   int32_t res_all_size_;              /* Length of buffer */
+   bool omit_defaults_;                /* Omit config variables with default values when dumping the config */
 
-   int32_t m_r_first;                   /* First daemon resource type */
-   int32_t m_r_last;                    /* Last daemon resource type */
-   RES_TABLE *m_resources;              /* Pointer to table of permitted resources */
-   RES **m_res_head;                    /* Pointer to defined resources */
-   brwlock_t m_res_lock;                /* Resource lock */
+   int32_t r_first_;                   /* First daemon resource type */
+   int32_t r_last_;                    /* Last daemon resource type */
+   ResourceTable *resources_;              /* Pointer to table of permitted resources */
+   CommonResourceHeader **res_head_;                    /* Pointer to defined resources */
+   brwlock_t res_lock_;                /* Resource lock */
 
    /*
     * Methods
@@ -424,47 +424,47 @@ public:
       int32_t res_all_size,
       int32_t r_first,
       int32_t r_last,
-      RES_TABLE *resources,
-      RES **res_head);
+      ResourceTable *resources,
+      CommonResourceHeader **res_head);
    void set_default_config_filename(const char *filename);
    void set_config_include_dir(const char *rel_path);
-   bool is_using_config_include_dir() { return m_use_config_include_dir; };
+   bool is_using_config_include_dir() { return use_config_include_dir_; };
    bool parse_config();
    bool parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
-   const char *get_base_config_path() { return m_used_config_path; };
+   const char *get_base_config_path() { return used_config_path_; };
    void free_resources();
-   RES **save_resources();
-   RES **new_res_head();
-   void init_resource(int type, RES_ITEM *items, int pass, std::function<void *(void *res)> initres);
+   CommonResourceHeader **save_resources();
+   CommonResourceHeader **new_res_head();
+   void init_resource(int type, ResourceItem *items, int pass, std::function<void *(void *res)> initres);
    bool remove_resource(int type, const char *name);
    void dump_resources(void sendit(void *sock, const char *fmt, ...),
                        void *sock, bool hide_sensitive_data = false);
    const char *get_resource_type_name(int code);
    int get_resource_code(const char *resource_type);
-   RES_TABLE *get_resource_table(int resource_type);
-   RES_TABLE *get_resource_table(const char *resource_type_name);
-   int get_resource_item_index(RES_ITEM *res_table, const char *item);
-   RES_ITEM *get_resource_item(RES_ITEM *res_table, const char *item);
-   bool get_path_of_resource(POOL_MEM &path, const char *component, const char *resourcetype,
+   ResourceTable *get_resource_table(int resource_type);
+   ResourceTable *get_resource_table(const char *resource_type_name);
+   int get_resource_item_index(ResourceItem *res_table, const char *item);
+   ResourceItem *get_resource_item(ResourceItem *res_table, const char *item);
+   bool get_path_of_resource(PoolMem &path, const char *component, const char *resourcetype,
                              const char *name, bool set_wildcards = false);
-   bool get_path_of_new_resource(POOL_MEM &path, POOL_MEM &extramsg, const char *component,
+   bool get_path_of_new_resource(PoolMem &path, PoolMem &extramsg, const char *component,
                                  const char *resourcetype, const char *name,
                                  bool error_if_exits = false, bool create_directories = false);
 
 protected:
-   const char *m_config_default_filename;         /* default config filename, that is used, if no filename is given */
-   const char *m_config_dir;                      /* base directory of configuration files */
-   const char *m_config_include_dir;              /* rel. path to the config include directory
+   const char *config_default_filename_;         /* default config filename, that is used, if no filename is given */
+   const char *config_dir_;                      /* base directory of configuration files */
+   const char *config_include_dir_;              /* rel. path to the config include directory
                                                      (bareos-dir.d, bareos-sd.d, bareos-fd.d, ...) */
-   bool m_use_config_include_dir;                 /* Use the config include directory */
-   const char *m_config_include_naming_format;    /* Format string for file paths of resources */
-   const char *m_used_config_path;                /* Config file that is used. */
+   bool use_config_include_dir_;                 /* Use the config include directory */
+   const char *config_include_naming_format_;    /* Format string for file paths of resources */
+   const char *used_config_path_;                /* Config file that is used. */
 
    const char *get_default_configdir();
-   bool get_config_file(POOL_MEM &full_path, const char *config_dir, const char *config_filename);
-   bool get_config_include_path(POOL_MEM &full_path, const char *config_dir);
-   bool find_config_path(POOL_MEM &full_path);
+   bool get_config_file(PoolMem &full_path, const char *config_dir, const char *config_filename);
+   bool get_config_include_path(PoolMem &full_path, const char *config_dir);
+   bool find_config_path(PoolMem &full_path);
    int get_resource_table_index(int resource_type);
 };
 
@@ -475,24 +475,24 @@ DLL_IMP_EXP void prtmsg(void *sock, const char *fmt, ...);
 /*
  * Data type routines
  */
-DLL_IMP_EXP DATATYPE_NAME *get_datatype(int number);
+DLL_IMP_EXP DatatypeName *get_datatype(int number);
 DLL_IMP_EXP const char *datatype_to_str(int type);
 DLL_IMP_EXP const char *datatype_to_description(int type);
 
 /*
  * Resource routines
  */
-DLL_IMP_EXP RES *GetResWithName(int rcode, const char *name, bool lock = true);
-DLL_IMP_EXP RES *GetNextRes(int rcode, RES *res);
+DLL_IMP_EXP CommonResourceHeader *GetResWithName(int rcode, const char *name, bool lock = true);
+DLL_IMP_EXP CommonResourceHeader *GetNextRes(int rcode, CommonResourceHeader *res);
 DLL_IMP_EXP void b_LockRes(const char *file, int line);
 DLL_IMP_EXP void b_UnlockRes(const char *file, int line);
-DLL_IMP_EXP void dump_resource(int type, RES *res, void sendmsg(void *sock, const char *fmt, ...),
+DLL_IMP_EXP void dump_resource(int type, CommonResourceHeader *res, void sendmsg(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data = false, bool verbose = false);
-DLL_IMP_EXP void indent_config_item(POOL_MEM &cfg_str, int level, const char *config_item, bool inherited = false);
-DLL_IMP_EXP void free_resource(RES *res, int type);
-DLL_IMP_EXP void init_resource(int type, RES_ITEM *item);
-DLL_IMP_EXP bool save_resource(int type, RES_ITEM *item, int pass);
-DLL_IMP_EXP bool store_resource(int type, LEX *lc, RES_ITEM *item, int index, int pass);
+DLL_IMP_EXP void indent_config_item(PoolMem &cfg_str, int level, const char *config_item, bool inherited = false);
+DLL_IMP_EXP void free_resource(CommonResourceHeader *res, int type);
+DLL_IMP_EXP void init_resource(int type, ResourceItem *item);
+DLL_IMP_EXP bool save_resource(int type, ResourceItem *item, int pass);
+DLL_IMP_EXP bool store_resource(int type, LEX *lc, ResourceItem *item, int index, int pass);
 DLL_IMP_EXP const char *res_to_str(int rcode);
 
 
@@ -501,8 +501,8 @@ DLL_IMP_EXP const char *res_to_str(int rcode);
  * JSON output helper functions
  */
 DLL_IMP_EXP json_t *json_item(s_kw *item);
-DLL_IMP_EXP json_t *json_item(RES_ITEM *item);
-DLL_IMP_EXP json_t *json_items(RES_ITEM items[]);
+DLL_IMP_EXP json_t *json_item(ResourceItem *item);
+DLL_IMP_EXP json_t *json_items(ResourceItem items[]);
 #endif
 
 /*
@@ -510,8 +510,8 @@ DLL_IMP_EXP json_t *json_items(RES_ITEM items[]);
  */
 #ifdef HAVE_TYPEOF
 #define foreach_res(var, type) \
-        for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (RES *)var));)
+        for((var)=NULL; ((var)=(typeof(var))GetNextRes((type), (CommonResourceHeader *)var));)
 #else
 #define foreach_res(var, type) \
-    for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (RES *)var));)
+    for(var=NULL; (*((void **)&(var))=(void *)GetNextRes((type), (CommonResourceHeader *)var));)
 #endif

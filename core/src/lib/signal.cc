@@ -73,7 +73,7 @@ extern void dbg_print_lock(FILE *fp);
  * !!! WARNING !!!
  *
  * This function should be used ONLY after a violent signal. We walk through the
- * JCR chain without locking, BAREOS should not be running.
+ * JobControlRecord chain without locking, BAREOS should not be running.
  */
 static void dbg_print_bareos()
 {
@@ -88,8 +88,8 @@ static void dbg_print_bareos()
 
    fprintf(stderr, "Dumping: %s\n", buf);
 
-   /* Print also B_DB and RWLOCK structure
-    * Can add more info about JCR with dbg_jcr_add_hook()
+   /* Print also BareosDb and RWLOCK structure
+    * Can add more info about JobControlRecord with dbg_jcr_add_hook()
     */
    dbg_print_lock(fp);
    dbg_print_jcr(fp);

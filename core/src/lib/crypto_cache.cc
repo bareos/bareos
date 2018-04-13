@@ -316,7 +316,7 @@ char *lookup_crypto_cache_entry(const char *VolumeName)
 void dump_crypto_cache(int fd)
 {
    int len;
-   POOL_MEM msg(PM_MESSAGE);
+   PoolMem msg(PM_MESSAGE);
    crypto_cache_entry_t *cce;
    char dt1[MAX_TIME_LENGTH],
         dt2[MAX_TIME_LENGTH];

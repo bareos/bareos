@@ -90,13 +90,13 @@ public:
 
    Rescode type() const;
    void* resource() const;
-   BSOCK* DSock() const;
+   BareosSocket* DSock() const;
    StateEnum state() const;
    int connectTimeout() const;
 
    void setType(Rescode type);
    void setResource(void* resource);
-   void setDSock(BSOCK* DSock);
+   void setDSock(BareosSocket* DSock);
    void setState(StateEnum state);
    void setConnectTimeout(int timeout);
 
@@ -126,8 +126,8 @@ class MonitorItemPrivate
       { }
 
    Rescode type; /* R_DIRECTOR, R_CLIENT or R_STORAGE */
-   void* resource; /* DIRRES*, CLIENTRES* or STORERES* */
-   BSOCK* DSock;
+   void* resource; /* DirectorResource*, ClientResource* or StoreResource* */
+   BareosSocket* DSock;
    int connectTimeout;
 
    MonitorItem::StateEnum state;

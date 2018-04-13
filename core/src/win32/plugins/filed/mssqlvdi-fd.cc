@@ -469,7 +469,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
 {
    time_t now;
-   POOL_MEM fname(PM_NAME);
+   PoolMem fname(PM_NAME);
    char dt[MAX_TIME_LENGTH];
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
@@ -856,7 +856,7 @@ static void comReportError(bpContext *ctx, HRESULT hrErr)
 /**
  * Retrieve errors from ADO Connection.
  */
-static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, POOL_MEM &ado_errorstr)
+static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, PoolMem &ado_errorstr)
 {
    HRESULT hr;
    ADOErrors *adoErrors;
@@ -955,7 +955,7 @@ static bool adoReportError(bpContext *ctx)
 static void adoThreadSetError(bpContext *ctx, _ADOConnection *adoConnection)
 {
    int cancel_type;
-   POOL_MEM ado_errorstr(PM_NAME);
+   PoolMem ado_errorstr(PM_NAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (p_ctx->ado_errorstr) {
@@ -1114,7 +1114,7 @@ bail_out:
  */
 static void set_ado_connect_string(bpContext *ctx)
 {
-   POOL_MEM ado_connect_string(PM_NAME);
+   PoolMem ado_connect_string(PM_NAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    if (bstrcasecmp(p_ctx->instance, DEFAULT_INSTANCE)) {
@@ -1131,7 +1131,7 @@ static void set_ado_connect_string(bpContext *ctx)
     * See if we need to use a username/password or a trusted connection.
     */
    if (p_ctx->username && p_ctx->password) {
-      POOL_MEM temp(PM_NAME);
+      PoolMem temp(PM_NAME);
 
       Mmsg(temp, ";User Id=%s;Password=%s;",
             p_ctx->username, p_ctx->password);
@@ -1155,7 +1155,7 @@ static void set_ado_connect_string(bpContext *ctx)
 static inline void perform_ado_backup(bpContext *ctx)
 {
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
-   POOL_MEM ado_connect_string(PM_NAME),
+   PoolMem ado_connect_string(PM_NAME),
             ado_query(PM_NAME);
    POOLMEM *vdsname;
 
@@ -1213,7 +1213,7 @@ static inline void perform_ado_backup(bpContext *ctx)
  */
 static inline void perform_ado_restore(bpContext *ctx)
 {
-   POOL_MEM ado_query(PM_NAME),
+   PoolMem ado_query(PM_NAME),
             temp(PM_NAME);
    POOLMEM *vdsname;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
@@ -1323,7 +1323,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
    ado_connect_string = str_2_BSTR(p_ctx->ado_connect_string);
    hr = adoConnection->Open(ado_connect_string);
    if (!SUCCEEDED (hr)) {
-      POOL_MEM ado_errorstr(PM_NAME);
+      PoolMem ado_errorstr(PM_NAME);
 
       adoGetErrors(ctx, adoConnection, ado_errorstr);
       Jmsg(ctx, M_FATAL, "Failed to connect to database, %s\n", ado_errorstr.c_str());
@@ -1337,7 +1337,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
    ado_query = str_2_BSTR(query);
    hr = adoConnection->Execute(ado_query, NULL, adExecuteNoRecords, NULL);
    if (!SUCCEEDED (hr)) {
-      POOL_MEM ado_errorstr(PM_NAME);
+      PoolMem ado_errorstr(PM_NAME);
 
       adoGetErrors(ctx, adoConnection, ado_errorstr);
       Jmsg(ctx, M_FATAL, "Failed to execute query %s on database, %s\n", query, ado_errorstr.c_str());
@@ -1379,7 +1379,7 @@ cleanup:
  */
 static inline bool perform_ado_recover(bpContext *ctx)
 {
-   POOL_MEM recovery_query(PM_NAME);
+   PoolMem recovery_query(PM_NAME);
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
    set_ado_connect_string(ctx);

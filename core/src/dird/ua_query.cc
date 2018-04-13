@@ -31,9 +31,9 @@
 #include "bareos.h"
 #include "dird.h"
 
-extern DIRRES *director;
+extern DirectorResource *director;
 
-static POOLMEM *substitute_prompts(UAContext *ua,
+static POOLMEM *substitute_prompts(UaContext *ua,
                        POOLMEM *query, char **prompt, int nprompt);
 
 /**
@@ -49,7 +49,7 @@ static POOLMEM *substitute_prompts(UAContext *ua,
  *   SQL statement possibly terminated by ;
  *   :next query prompt
  */
-bool query_cmd(UAContext *ua, const char *cmd)
+bool query_cmd(UaContext *ua, const char *cmd)
 {
    FILE *fd = NULL;
    POOLMEM *query = get_pool_memory(PM_MESSAGE);
@@ -157,7 +157,7 @@ bail_out:
    return true;
 }
 
-static POOLMEM *substitute_prompts(UAContext *ua, POOLMEM *query, char **prompt, int nprompt)
+static POOLMEM *substitute_prompts(UaContext *ua, POOLMEM *query, char **prompt, int nprompt)
 {
    char *p, *q, *o;
    POOLMEM *new_query;
@@ -246,9 +246,9 @@ static POOLMEM *substitute_prompts(UAContext *ua, POOLMEM *query, char **prompt,
 /**
  * Get general SQL query for Catalog
  */
-bool sqlquery_cmd(UAContext *ua, const char *cmd)
+bool sqlquery_cmd(UaContext *ua, const char *cmd)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    int len;
    const char *msg;
 

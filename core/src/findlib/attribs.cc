@@ -43,8 +43,8 @@ static bool uid_set = false;
 extern void unix_name_to_win32(POOLMEM *&win32_name, const char *name);
 
 /* Forward referenced subroutines */
-static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd);
-void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
+static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
+void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *ofile);
 #endif /* HAVE_WIN32 */
 
 /**
@@ -71,7 +71,7 @@ void win_error(JCR *jcr, const char *prefix, POOLMEM *ofile);
 /**
  * Return the data stream that will be used
  */
-int select_data_stream(FF_PKT *ff_pkt, bool compatible)
+int select_data_stream(FindFilesPacket *ff_pkt, bool compatible)
 {
    int stream;
 
@@ -206,7 +206,7 @@ int select_data_stream(FF_PKT *ff_pkt, bool compatible)
 /**
  * Restore all file attributes like owner, mode and file times.
  */
-static inline bool restore_file_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
+static inline bool restore_file_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    bool ok = true;
    bool suppress_errors;
@@ -367,7 +367,7 @@ static inline bool restore_file_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
  * Returns:  true  on success
  *           false on failure
  */
-bool set_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
+bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    mode_t old_mask;
    bool ok = true;
@@ -516,7 +516,7 @@ bail_out:
  * The code below shows how to return nothing.  See the Win32
  *   code below for returning something in the attributes.
  */
-int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
+int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff_pkt)
 {
 #ifdef HAVE_DARWIN_OS
    /**
@@ -545,7 +545,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
 /*                 * * *  W i n 3 2 * * * *                    */
 /*                                                             */
 /*=============================================================*/
-int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
+int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff_pkt)
 {
    char *p = attribsEx;
    WIN32_FILE_ATTRIBUTE_DATA atts;
@@ -635,7 +635,7 @@ int encode_attribsEx(JCR *jcr, char *attribsEx, FF_PKT *ff_pkt)
  * Returns:  true  on success
  *           false on failure
  */
-static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
+static bool set_win32_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd)
 {
    char *p = attr->attrEx;
    int64_t val;
@@ -702,7 +702,7 @@ static bool set_win32_attributes(JCR *jcr, ATTR *attr, BFILE *ofd)
    return true;
 }
 
-void win_error(JCR *jcr, const char *prefix, POOLMEM *win32_ofile)
+void win_error(JobControlRecord *jcr, const char *prefix, POOLMEM *win32_ofile)
 {
    DWORD lerror = GetLastError();
    LPTSTR msg;
@@ -719,7 +719,7 @@ void win_error(JCR *jcr, const char *prefix, POOLMEM *win32_ofile)
    LocalFree(msg);
 }
 
-void win_error(JCR *jcr, const char *prefix, DWORD lerror)
+void win_error(JobControlRecord *jcr, const char *prefix, DWORD lerror)
 {
    LPTSTR msg;
    FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM,

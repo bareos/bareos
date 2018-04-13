@@ -53,7 +53,7 @@ enum {
  * the C struct with answers. The Director can send back as a RestoreObject
  * the result of the questionnaire.
  *
- * struct ini_items[] -> UAContext -> dump_result() -> FD as RestoreObject R2
+ * struct ini_items[] -> UaContext -> dump_result() -> FD as RestoreObject R2
  *
  * On the Plugin side, it can get back the C structure and use it.
  * RestoreObject R2 -> parse() -> struct ini_items[]
@@ -123,7 +123,7 @@ private:
    bool items_allocated;
 
 public:
-   JCR *jcr;                    /* JCR needed for Jmsg */
+   JobControlRecord *jcr;                    /* JobControlRecord needed for Jmsg */
    int version;                 /* Internal version check */
    int sizeof_ini_items;        /* Extra check when using dynamic loading */
    struct ini_items *items;     /* Structure of the config file */
@@ -162,9 +162,9 @@ public:
    bool dump_string(const char *buf, int32_t len);
 
    /*
-    * JCR needed for Jmsg
+    * JobControlRecord needed for Jmsg
     */
-   void set_jcr(JCR *ajcr) {
+   void set_jcr(JobControlRecord *ajcr) {
       jcr = ajcr;
    }
 
@@ -187,12 +187,12 @@ public:
     * Dump the item table format to a buffer (used on plugin side)
     * returns the length of the buffer, -1 if error
     */
-   int serialize(POOL_MEM *buf);
+   int serialize(PoolMem *buf);
 
    /*
     * Dump the item table content to a buffer
     */
-   int dump_results(POOL_MEM *buf);
+   int dump_results(PoolMem *buf);
 
    /*
     * Get item position in items list (useful when dynamic)

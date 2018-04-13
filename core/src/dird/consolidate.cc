@@ -35,7 +35,7 @@
 
 static const int dbglvl = 100;
 
-bool do_consolidate_init(JCR *jcr)
+bool do_consolidate_init(JobControlRecord *jcr)
 {
    free_rstorage(jcr);
    if (!allow_duplicate_job(jcr)) {
@@ -48,11 +48,11 @@ bool do_consolidate_init(JCR *jcr)
  * Start a Virtual(Full) Job that creates a new virtual backup
  * containing the jobids given in jcr->vf_jobids
  */
-static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
+static inline void start_new_consolidation_job(JobControlRecord *jcr, char *jobname)
 {
    JobId_t jobid;
-   UAContext *ua;
-   POOL_MEM cmd(PM_MESSAGE);
+   UaContext *ua;
+   PoolMem cmd(PM_MESSAGE);
 
    ua = new_ua_context(jcr);
    ua->batch = true;
@@ -77,11 +77,11 @@ static inline void start_new_consolidation_job(JCR *jcr, char *jobname)
  * Returns: false on failure
  *          true  on success
  */
-bool do_consolidate(JCR *jcr)
+bool do_consolidate(JobControlRecord *jcr)
 {
    char *p;
-   JOBRES *job;
-   JOBRES *tmpjob;
+   JobResource *job;
+   JobResource *tmpjob;
    bool retval = true;
    char *jobids = NULL;
    time_t now = time(NULL);
@@ -296,7 +296,7 @@ bail_out:
 /**
  * Release resources allocated during backup.
  */
-void consolidate_cleanup(JCR *jcr, int TermCode)
+void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
 {
    int msg_type;
    char term_code[100];

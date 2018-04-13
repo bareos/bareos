@@ -26,39 +26,39 @@
  * @file
  * Bootstrap Record header file
  *
- * BSR (bootstrap record) handling routines split from ua_restore.c July 2003
+ * BootStrapRecord (bootstrap record) handling routines split from ua_restore.c July 2003
  * Bootstrap send handling routines split from restore.c July 2012
  */
 
 /**
  * FileIndex entry in restore bootstrap record
  */
-struct RBSR_FINDEX {
-   RBSR_FINDEX *next;
+struct RestoreBootstrapRecordFileIndex {
+   RestoreBootstrapRecordFileIndex *next;
    int32_t findex;
    int32_t findex2;
 };
 
 /**
  * Restore bootstrap record -- not the real one, but useful here
- *  The restore bsr is a chain of BSR records (linked by next).
- *  Each BSR represents a single JobId, and within it, it
+ *  The restore bsr is a chain of BootStrapRecord records (linked by next).
+ *  Each BootStrapRecord represents a single JobId, and within it, it
  *    contains a linked list of file indexes for that JobId.
  *    The complete_bsr() routine, will then add all the volumes
- *    on which the Job is stored to the BSR.
+ *    on which the Job is stored to the BootStrapRecord.
  */
-struct RBSR {
-   RBSR *next;                        /**< next JobId */
+struct RestoreBootstrapRecord {
+   RestoreBootstrapRecord *next;                        /**< next JobId */
    JobId_t JobId;                     /**< JobId this bsr */
    uint32_t VolSessionId;
    uint32_t VolSessionTime;
    int      VolCount;                 /**< Volume parameter count */
-   VOL_PARAMS *VolParams;             /**< Volume, start/end file/blocks */
-   RBSR_FINDEX *fi;                   /**< File indexes this JobId */
+   VolumeParameters *VolParams;             /**< Volume, start/end file/blocks */
+   RestoreBootstrapRecordFileIndex *fi;                   /**< File indexes this JobId */
    char *fileregex;                   /**< Only restore files matching regex */
 };
 
-class UAContext;
+class UaContext;
 
 /**
  * Open bootstrap file.
@@ -66,6 +66,6 @@ class UAContext;
 struct bootstrap_info
 {
    FILE *bs;
-   UAContext *ua;
+   UaContext *ua;
    char storage[MAX_NAME_LENGTH + 1];
 };

@@ -29,7 +29,7 @@
 #include "cats/bdb_priv.h"
 
 /* Local variables */
-static B_DB *db;
+static BareosDb *db;
 static const char *file = "COPYRIGHT";
 #if defined(HAVE_DYNAMIC_CATS_BACKENDS)
 static const char *backend_directory = _PATH_BAREOS_BACKENDDIR;
@@ -42,7 +42,7 @@ static const char *db_address = NULL;
 static const char *db_driver = NULL;
 static int db_port = 0;
 static int64_t pid = 0;
-static JCR *jcr=NULL;
+static JobControlRecord *jcr=NULL;
 
 #define PLINE "\n============================================================\n"
 static void usage()
@@ -130,7 +130,7 @@ int report()
    return _err>0;
 }
 
-static void cmp_pool(POOL_DBR &pr, POOL_DBR &pr2)
+static void cmp_pool(PoolDbRecord &pr, PoolDbRecord &pr2)
 {
    ok(pr.MaxVols == pr2.MaxVols,                "  Check Pool MaxVols");
    ok(pr.UseOnce == pr2.UseOnce,                "  Check Pool UseOnce");
@@ -151,7 +151,7 @@ static void cmp_pool(POOL_DBR &pr, POOL_DBR &pr2)
    ok(pr.ActionOnPurge == pr2.ActionOnPurge,    "  Check Pool ActionOnPurge");
 }
 
-static void cmp_client(CLIENT_DBR &cr, CLIENT_DBR &cr2)
+static void cmp_client(ClientDbRecord &cr, ClientDbRecord &cr2)
 {
    ok(bstrcmp(cr2.Name, cr.Name),           "  Check Client Name");
    ok(bstrcmp(cr2.Uname, cr.Uname),         "  Check Client Uname");
@@ -160,7 +160,7 @@ static void cmp_client(CLIENT_DBR &cr, CLIENT_DBR &cr2)
    ok(cr.FileRetention == cr2.FileRetention,"  Check Client FileRetention");
 }
 
-static void cmp_job(JOB_DBR &jr, JOB_DBR &jr2)
+static void cmp_job(JobDbRecord &jr, JobDbRecord &jr2)
 {
    ok(jr.VolSessionId == jr2.VolSessionId,     "  Check VolSessionId");
    ok(jr.VolSessionTime == jr2.VolSessionTime, "  Check VolSessionTime");
@@ -334,7 +334,7 @@ int main (int argc, char *argv[])
     *  - Test db_handler
     */
 
-   jcr = new_jcr(sizeof(JCR), NULL);
+   jcr = new_jcr(sizeof(JobControlRecord), NULL);
    jcr->setJobType(JT_CONSOLE);
    jcr->setJobLevel(L_NONE);
    jcr->JobStatus = JS_Running;
@@ -484,7 +484,7 @@ int main (int argc, char *argv[])
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Job tests" PLINE);
 
-   JOB_DBR jr, jr2;
+   JobDbRecord jr, jr2;
    memset(&jr, 0, sizeof(jr));
    memset(&jr2, 0, sizeof(jr2));
    jr.JobId = 1;
@@ -516,7 +516,7 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
 
-   ATTR_DBR ar;
+   AttributesDbRecord ar;
    memset(&ar, 0, sizeof(ar));
    Mmsg(buf2, aPATH aPATH aPATH aPATH "/" aFILE aFILE ".txt");
    ar.fname = buf2;
@@ -543,7 +543,7 @@ int main (int argc, char *argv[])
    /* ---------------------------------------------------------------- */
 
    Pmsg0(0, PLINE "Doing Client tests" PLINE);
-   CLIENT_DBR cr, cr2;
+   ClientDbRecord cr, cr2;
    memset(&cr, 0, sizeof(cr));
    memset(&cr2, 0, sizeof(cr2));
 
@@ -599,7 +599,7 @@ int main (int argc, char *argv[])
 
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Pool tests" PLINE);
-   POOL_DBR pr, pr2;
+   PoolDbRecord pr, pr2;
    memset(&pr, 0, sizeof(pr));
    memset(&pr2, 0, sizeof(pr2));
 
@@ -661,7 +661,7 @@ int main (int argc, char *argv[])
    /* ---------------------------------------------------------------- */
    Pmsg0(0, PLINE "Doing Media tests" PLINE);
 
-   MEDIA_DBR mr, mr2;
+   MediaDbRecord mr, mr2;
    memset(&mr, 0, sizeof(mr));
    memset(&mr2, 0, sizeof(mr2));
 

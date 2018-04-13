@@ -60,27 +60,27 @@
  */
 
 class PskCredentials {
-   std::string m_identity;
-   std::string m_psk;
+   std::string identity_;
+   std::string psk_;
 
  public:
-   PskCredentials(std::string &identity, std::string &psk) : m_identity(identity), m_psk(psk) {
-      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+   PskCredentials(std::string &identity, std::string &psk) : identity_(identity), psk_(psk) {
+      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
    }
    PskCredentials(const char *identity, const char *psk)
-      : m_identity(std::string(identity)), m_psk(std::string(psk)) {
-      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+      : identity_(std::string(identity)), psk_(std::string(psk)) {
+      Dmsg2(100, "Construct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
    }
 
-   std::string &get_identity() { return m_identity; }
-   std::string &get_psk() { return m_psk; }
+   std::string &get_identity() { return identity_; }
+   std::string &get_psk() { return psk_; }
 
    ~PskCredentials() {
-      Dmsg2(100, "Destruct PskCredentials: id=%s, passwd=%s\n", m_identity.c_str(), m_psk.c_str());
+      Dmsg2(100, "Destruct PskCredentials: id=%s, passwd=%s\n", identity_.c_str(), psk_.c_str());
    }
 };
 
-class DLL_IMP_EXP tls_base_t {
+class DLL_IMP_EXP TlsBase {
  public:
    bool enable;  /*!< Enable TLS */
    bool require; /*!< Require TLS */
@@ -107,11 +107,11 @@ class DLL_IMP_EXP tls_base_t {
       BNET_TLS_REQUIRED = 1 << 1, /*!< TLS with certificates is required */
    } Policy_e;
 
-   virtual ~tls_base_t() {}
-   tls_base_t() : enable(false), require(false) {}
+   virtual ~TlsBase() {}
+   TlsBase() : enable(false), require(false) {}
 };
 
-class DLL_IMP_EXP tls_cert_t : public tls_base_t {
+class DLL_IMP_EXP tls_cert_t : public TlsBase {
    static u_int32_t const policy_offset = 0;
  public:
    bool authenticate;       /* Authenticate with TLS */
@@ -127,7 +127,7 @@ class DLL_IMP_EXP tls_cert_t : public tls_base_t {
    //   TLS_CONTEXT *ctx;   /* Shared TLS Context */
    std::string *pem_message;
    tls_cert_t()
-      : tls_base_t(), authenticate(false), verify_peer(0),
+      : TlsBase(), authenticate(false), verify_peer(0),
         ca_certfile(nullptr), ca_certdir(nullptr), crlfile(nullptr), certfile(nullptr),
         keyfile(nullptr), cipherlist(nullptr), dhfile(nullptr), allowed_cns(nullptr),
         pem_message(nullptr) {}
@@ -168,13 +168,13 @@ class DLL_IMP_EXP tls_cert_t : public tls_base_t {
    static bool required(u_int32_t policy);
 };
 
-class DLL_IMP_EXP tls_psk_t : public tls_base_t {
+class DLL_IMP_EXP tls_psk_t : public TlsBase {
    static u_int32_t const policy_offset = 2;
 
  public:
    char *cipherlist; /* TLS Cipher List */
 
-   tls_psk_t() : tls_base_t(), cipherlist(nullptr) {}
+   tls_psk_t() : TlsBase(), cipherlist(nullptr) {}
    ~tls_psk_t();
 
    virtual uint32_t GetPolicy() const override;

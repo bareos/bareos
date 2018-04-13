@@ -31,9 +31,9 @@
  * Opaque TLS Context Structure.
  * New TLS Connections are manufactured from this context.
  */
-typedef struct TLS_Context TLS_CONTEXT;
+typedef struct TlsContext TLS_CONTEXT;
 
 /* Opaque TLS Connection Structure */
-typedef struct TLS_Connection TLS_CONNECTION;
+typedef struct TlsConnection TLS_CONNECTION;
 
 #endif /* __TLS_H_ */

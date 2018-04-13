@@ -46,7 +46,7 @@ static char TERM_msg[] = "2999 Terminate\n";
  * Returns -2 on hard end of file (BNET_HARDEOF)
  * Returns -3 on error  (BNET_ERROR)
  */
-int bget_msg(BSOCK *sock)
+int bget_msg(BareosSocket *sock)
 {
    int n;
    for ( ;; ) {

@@ -39,31 +39,31 @@
 
 
 
-bool B_DB::match_database(const char *db_driver, const char *db_name,
+bool BareosDb::match_database(const char *db_driver, const char *db_name,
                           const char *db_address, int db_port)
 {
    bool match;
 
    if (db_driver) {
-      match = bstrcasecmp(m_db_driver, db_driver) &&
-              bstrcmp(m_db_name, db_name) &&
-              bstrcmp(m_db_address, db_address) &&
-              m_db_port == db_port;
+      match = bstrcasecmp(db_driver_, db_driver) &&
+              bstrcmp(db_name_, db_name) &&
+              bstrcmp(db_address_, db_address) &&
+              db_port_ == db_port;
    } else {
-      match = bstrcmp(m_db_name, db_name) &&
-              bstrcmp(m_db_address, db_address) &&
-              m_db_port == db_port;
+      match = bstrcmp(db_name_, db_name) &&
+              bstrcmp(db_address_, db_address) &&
+              db_port_ == db_port;
    }
    return match;
 }
 
 /**
- * Clone a B_DB class by either increasing the reference count
+ * Clone a BareosDb class by either increasing the reference count
  * (when mult_db_connection == false) or by getting a new
  * connection otherwise. We use a method so we can reference
  * the protected members of the class.
  */
-B_DB *B_DB::clone_database_connection(JCR *jcr,
+BareosDb *BareosDb::clone_database_connection(JobControlRecord *jcr,
                                       bool mult_db_connections,
                                       bool get_pooled_connection,
                                       bool need_private)
@@ -73,7 +73,7 @@ B_DB *B_DB::clone_database_connection(JCR *jcr,
     * then we just return the calling class pointer.
     */
    if (!mult_db_connections && !need_private) {
-      m_ref_count++;
+      ref_count_++;
       return this;
    }
 
@@ -82,19 +82,19 @@ B_DB *B_DB::clone_database_connection(JCR *jcr,
     * See if we need to get a pooled or non pooled connection.
     */
    if (get_pooled_connection) {
-      return db_sql_get_pooled_connection(jcr, m_db_driver, m_db_name, m_db_user, m_db_password,
-                                          m_db_address, m_db_port, m_db_socket, mult_db_connections, m_disabled_batch_insert,
-                                          m_try_reconnect, m_exit_on_fatal, need_private);
+      return db_sql_get_pooled_connection(jcr, db_driver_, db_name_, db_user_, db_password_,
+                                          db_address_, db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
+                                          try_reconnect_, exit_on_fatal_, need_private);
    } else {
-      return db_sql_get_non_pooled_connection(jcr, m_db_driver, m_db_name, m_db_user, m_db_password,
-                                              m_db_address, m_db_port, m_db_socket, mult_db_connections, m_disabled_batch_insert,
-                                              m_try_reconnect, m_exit_on_fatal, need_private);
+      return db_sql_get_non_pooled_connection(jcr, db_driver_, db_name_, db_user_, db_password_,
+                                              db_address_, db_port_, db_socket_, mult_db_connections, disabled_batch_insert_,
+                                              try_reconnect_, exit_on_fatal_, need_private);
    }
 }
 
-const char *B_DB::get_type(void)
+const char *BareosDb::get_type(void)
 {
-   switch (m_db_interface_type) {
+   switch (db_interface_type_) {
    case SQL_INTERFACE_TYPE_MYSQL:
       return "MySQL";
    case SQL_INTERFACE_TYPE_POSTGRESQL:
@@ -104,7 +104,7 @@ const char *B_DB::get_type(void)
    case SQL_INTERFACE_TYPE_INGRES:
       return "Ingres";
    case SQL_INTERFACE_TYPE_DBI:
-      switch (m_db_type) {
+      switch (db_type_) {
       case SQL_TYPE_MYSQL:
          return "DBI:MySQL";
       case SQL_TYPE_POSTGRESQL:
@@ -126,11 +126,11 @@ const char *B_DB::get_type(void)
  * thread without blocking, but must be unlocked the number of
  * times it was locked using db_unlock().
  */
-void B_DB::_lock_db(const char *file, int line)
+void BareosDb::_lock_db(const char *file, int line)
 {
    int errstat;
 
-   if ((errstat = rwl_writelock_p(&m_lock, file, line)) != 0) {
+   if ((errstat = rwl_writelock_p(&lock_, file, line)) != 0) {
       berrno be;
       e_msg(file, line, M_FATAL, 0, "rwl_writelock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
@@ -142,21 +142,21 @@ void B_DB::_lock_db(const char *file, int line)
  * same thread up to the number of times that thread called
  * db_lock()/
  */
-void B_DB::_unlock_db(const char *file, int line)
+void BareosDb::_unlock_db(const char *file, int line)
 {
    int errstat;
 
-   if ((errstat = rwl_writeunlock(&m_lock)) != 0) {
+   if ((errstat = rwl_writeunlock(&lock_)) != 0) {
       berrno be;
       e_msg(file, line, M_FATAL, 0, "rwl_writeunlock failure. stat=%d: ERR=%s\n",
             errstat, be.bstrerror(errstat));
    }
 }
 
-void B_DB::print_lock_info(FILE *fp)
+void BareosDb::print_lock_info(FILE *fp)
 {
-   if (m_lock.valid == RWLOCK_VALID) {
-      fprintf(fp, "\tRWLOCK=%p w_active=%i w_wait=%i\n", &m_lock, m_lock.w_active, m_lock.w_wait);
+   if (lock_.valid == RWLOCK_VALID) {
+      fprintf(fp, "\tRWLOCK=%p w_active=%i w_wait=%i\n", &lock_, lock_.w_active, lock_.w_wait);
    }
 }
 
@@ -167,7 +167,7 @@ void B_DB::print_lock_info(FILE *fp)
  *       string must be long enough (max 2*old+1) to hold
  *       the escaped output.
  */
-void B_DB::escape_string(JCR *jcr, char *snew, char *old, int len)
+void BareosDb::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
 {
    char *n, *o;
 
@@ -196,9 +196,9 @@ void B_DB::escape_string(JCR *jcr, char *snew, char *old, int len)
 /**
  * Escape binary object.
  * We base64 encode the data so its normal ASCII
- * Memory is stored in B_DB struct, no need to free it.
+ * Memory is stored in BareosDb struct, no need to free it.
  */
-char *B_DB::escape_object(JCR *jcr, char *old, int len)
+char *BareosDb::escape_object(JobControlRecord *jcr, char *old, int len)
 {
    int length;
    int max_length;
@@ -215,7 +215,7 @@ char *B_DB::escape_object(JCR *jcr, char *old, int len)
  * Unescape binary object
  * We base64 encode the data so its normal ASCII
  */
-void B_DB::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+void BareosDb::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                            POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {

@@ -49,14 +49,14 @@ extern "C" void *jobq_server(void *arg);
 extern "C" void *sched_wait(void *arg);
 
 static int start_server(jobq_t *jq);
-static bool acquire_resources(JCR *jcr);
-static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je);
-static bool inc_client_concurrency(JCR *jcr);
-static void dec_client_concurrency(JCR *jcr);
-static bool inc_job_concurrency(JCR *jcr);
-static void dec_job_concurrency(JCR *jcr);
-static bool inc_write_store(JCR *jcr);
-static void dec_write_store(JCR *jcr);
+static bool acquire_resources(JobControlRecord *jcr);
+static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je);
+static bool inc_client_concurrency(JobControlRecord *jcr);
+static void dec_client_concurrency(JobControlRecord *jcr);
+static bool inc_job_concurrency(JobControlRecord *jcr);
+static void dec_job_concurrency(JobControlRecord *jcr);
+static bool inc_write_store(JobControlRecord *jcr);
+static void dec_write_store(JobControlRecord *jcr);
 
 /*
  * Initialize a job queue
@@ -157,7 +157,7 @@ int jobq_destroy(jobq_t *jq)
 }
 
 struct wait_pkt {
-   JCR *jcr;
+   JobControlRecord *jcr;
    jobq_t *jq;
 };
 
@@ -170,7 +170,7 @@ struct wait_pkt {
  */
 extern "C" void *sched_wait(void *arg)
 {
-   JCR *jcr = ((wait_pkt *)arg)->jcr;
+   JobControlRecord *jcr = ((wait_pkt *)arg)->jcr;
    jobq_t *jq = ((wait_pkt *)arg)->jq;
 
    set_jcr_in_tsd(INVALID_JCR);
@@ -214,7 +214,7 @@ extern "C" void *sched_wait(void *arg)
  * Add a job to the queue
  * jq is a queue that was created with jobq_init
  */
-int jobq_add(jobq_t *jq, JCR *jcr)
+int jobq_add(jobq_t *jq, JobControlRecord *jcr)
 {
    int status;
    jobq_item_t *item, *li;
@@ -318,7 +318,7 @@ int jobq_add(jobq_t *jq, JCR *jcr)
  * If you want to cancel it, you need to provide some external means
  * of doing so (e.g. pthread_kill()).
  */
-int jobq_remove(jobq_t *jq, JCR *jcr)
+int jobq_remove(jobq_t *jq, JobControlRecord *jcr)
 {
    int status;
    bool found = false;
@@ -450,7 +450,7 @@ extern "C" void *jobq_server(void *arg)
        */
       Dmsg0(2300, "Checking ready queue.\n");
       while (!jq->ready_jobs->empty() && !jq->quit) {
-         JCR *jcr;
+         JobControlRecord *jcr;
 
          je = (jobq_item_t *)jq->ready_jobs->first();
          jcr = je->jcr;
@@ -566,7 +566,7 @@ extern "C" void *jobq_server(void *arg)
             /*
              * je is current job item on the queue, jn is the next one
              */
-            JCR *jcr = je->jcr;
+            JobControlRecord *jcr = je->jcr;
             jobq_item_t *jn = (jobq_item_t *)jq->waiting_jobs->next(je);
 
             Dmsg4(2300, "Examining Job=%d JobPri=%d want Pri=%d (%s)\n",
@@ -668,7 +668,7 @@ extern "C" void *jobq_server(void *arg)
 /**
  * Returns true if cleanup done and we should look for more work
  */
-static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
+static bool reschedule_job(JobControlRecord *jcr, jobq_t *jq, jobq_item_t *je)
 {
    bool resched = false,
         retval = false;
@@ -723,7 +723,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
       }
 
       /*
-       * Only jobs with no output or Incomplete jobs can run on same JCR
+       * Only jobs with no output or Incomplete jobs can run on same JobControlRecord
        */
       if (jcr->JobBytes == 0) {
          update_job_end(jcr, JS_WaitStartTime);
@@ -736,7 +736,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
          free(je);              /* free the job entry */
          retval = true;         /* we already cleaned up */
       } else {
-         JCR *njcr;
+         JobControlRecord *njcr;
 
          /*
           * Something was actually backed up, so we cannot reuse
@@ -745,7 +745,7 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
           * appropriate fields.
           */
          jcr->setJobStatus(JS_WaitStartTime);
-         njcr = new_jcr(sizeof(JCR), dird_free_jcr);
+         njcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
          set_jcr_defaults(njcr, jcr->res.job);
          njcr->reschedule_count = jcr->reschedule_count;
          njcr->sched_time = jcr->sched_time;
@@ -789,12 +789,12 @@ static bool reschedule_job(JCR *jcr, jobq_t *jq, jobq_item_t *je)
 }
 
 /**
- * See if we can acquire all the necessary resources for the job (JCR)
+ * See if we can acquire all the necessary resources for the job (JobControlRecord)
  *
  *  Returns: true  if successful
  *           false if resource failure
  */
-static bool acquire_resources(JCR *jcr)
+static bool acquire_resources(JobControlRecord *jcr)
 {
    /*
     * Set that we didn't acquire any resourse locks yet.
@@ -892,7 +892,7 @@ static bool acquire_resources(JCR *jcr)
    return true;
 }
 
-static bool inc_client_concurrency(JCR *jcr)
+static bool inc_client_concurrency(JobControlRecord *jcr)
 {
    if (!jcr->res.client || jcr->IgnoreClientConcurrency) {
       return true;
@@ -913,7 +913,7 @@ static bool inc_client_concurrency(JCR *jcr)
    return false;
 }
 
-static void dec_client_concurrency(JCR *jcr)
+static void dec_client_concurrency(JobControlRecord *jcr)
 {
    if (jcr->IgnoreClientConcurrency) {
       return;
@@ -928,7 +928,7 @@ static void dec_client_concurrency(JCR *jcr)
    V(mutex);
 }
 
-static bool inc_job_concurrency(JCR *jcr)
+static bool inc_job_concurrency(JobControlRecord *jcr)
 {
    P(mutex);
    if (jcr->res.job->rjs->NumConcurrentJobs < jcr->res.job->MaxConcurrentJobs) {
@@ -945,7 +945,7 @@ static bool inc_job_concurrency(JCR *jcr)
    return false;
 }
 
-static void dec_job_concurrency(JCR *jcr)
+static void dec_job_concurrency(JobControlRecord *jcr)
 {
    P(mutex);
    jcr->res.job->rjs->NumConcurrentJobs--;
@@ -958,7 +958,7 @@ static void dec_job_concurrency(JCR *jcr)
  * Note: inc_read_store() and dec_read_store() are
  * called from select_next_rstore() in src/dird/job.c
  */
-bool inc_read_store(JCR *jcr)
+bool inc_read_store(JobControlRecord *jcr)
 {
    if (jcr->IgnoreStorageConcurrency) {
       return true;
@@ -982,7 +982,7 @@ bool inc_read_store(JCR *jcr)
    return false;
 }
 
-void dec_read_store(JCR *jcr)
+void dec_read_store(JobControlRecord *jcr)
 {
    if (jcr->res.rstore && !jcr->IgnoreStorageConcurrency) {
       P(mutex);
@@ -1004,7 +1004,7 @@ void dec_read_store(JCR *jcr)
    }
 }
 
-static bool inc_write_store(JCR *jcr)
+static bool inc_write_store(JobControlRecord *jcr)
 {
    if (jcr->IgnoreStorageConcurrency) {
       return true;
@@ -1027,7 +1027,7 @@ static bool inc_write_store(JCR *jcr)
    return false;
 }
 
-static void dec_write_store(JCR *jcr)
+static void dec_write_store(JobControlRecord *jcr)
 {
    if (jcr->res.wstore && !jcr->IgnoreStorageConcurrency) {
       P(mutex);

@@ -33,7 +33,7 @@
  * and is not set in the File daemon, because the File
  * daemon cannot run console commands.
  */
-bool (*console_command)(JCR *jcr, const char *cmd) = NULL;
+bool (*console_command)(JobControlRecord *jcr, const char *cmd) = NULL;
 
 
 RUNSCRIPT *new_runscript()
@@ -93,11 +93,11 @@ void free_runscript(RUNSCRIPT *script)
    free(script);
 }
 
-static inline bool script_dir_allowed(JCR *jcr, RUNSCRIPT *script, alist *allowed_script_dirs)
+static inline bool script_dir_allowed(JobControlRecord *jcr, RUNSCRIPT *script, alist *allowed_script_dirs)
 {
    char *bp, *allowed_script_dir;
    bool allowed = false;
-   POOL_MEM script_dir(PM_FNAME);
+   PoolMem script_dir(PM_FNAME);
 
    /*
     * If there is no explicit list of allowed dirs allow any dir.
@@ -140,7 +140,7 @@ static inline bool script_dir_allowed(JCR *jcr, RUNSCRIPT *script, alist *allowe
    return allowed;
 }
 
-int run_scripts(JCR *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
+int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
 {
    RUNSCRIPT *script;
    bool runit;
@@ -259,13 +259,13 @@ void RUNSCRIPT::set_target(const char *client_name)
    pm_strcpy(target, client_name);
 }
 
-bool RUNSCRIPT::run(JCR *jcr, const char *name)
+bool RUNSCRIPT::run(JobControlRecord *jcr, const char *name)
 {
    Dmsg1(100, "runscript: running a RUNSCRIPT object type=%d\n", cmd_type);
    POOLMEM *ecmd = get_pool_memory(PM_FNAME);
    int status;
-   BPIPE *bpipe;
-   POOL_MEM line(PM_NAME);
+   Bpipe *bpipe;
+   PoolMem line(PM_NAME);
 
    ecmd = edit_job_codes(jcr, ecmd, this->command, "", this->job_code_callback);
    Dmsg1(100, "runscript: running '%s'...\n", ecmd);

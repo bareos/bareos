@@ -39,7 +39,7 @@
 
 #ifdef WIN32_VSS
 
-void VSSInit(JCR *jcr);
+void VSSInit(JobControlRecord *jcr);
 
 #define VSS_INIT_RESTORE_AFTER_INIT   1
 #define VSS_INIT_RESTORE_AFTER_GATHER 2
@@ -59,11 +59,11 @@ public:
    virtual ~VSSClient();
 
    // Backup Process
-   bool InitializeForBackup(JCR *jcr);
-   bool InitializeForRestore(JCR *jcr);
+   bool InitializeForBackup(JobControlRecord *jcr);
+   bool InitializeForRestore(JobControlRecord *jcr);
    virtual void AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters, bool onefs_disabled) = 0;
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume) = 0;
-   virtual void ShowVolumeMountPointStats(JCR *jcr) = 0;
+   virtual void ShowVolumeMountPointStats(JobControlRecord *jcr) = 0;
 
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled) = 0;
    virtual bool CloseBackup() = 0;
@@ -78,9 +78,9 @@ public:
    const int GetWriterState(int nIndex);
    void DestroyWriterInfo();
    void AppendWriterInfo(int nState, const char *pszInfo);
-   const bool IsInitialized() { return m_bBackupIsInitialized; };
-   HMODULE GetVssDllHandle() { return m_hLib; };
-   IUnknown *GetVssObject() { return m_pVssObject; };
+   const bool IsInitialized() { return bBackupIsInitialized_; };
+   HMODULE GetVssDllHandle() { return hLib_; };
+   IUnknown *GetVssObject() { return pVssObject_; };
 
 private:
    virtual bool Initialize(DWORD dwContext, bool bDuringRestore = FALSE) = 0;
@@ -88,31 +88,31 @@ private:
    virtual void QuerySnapshotSet(GUID snapshotSetID) = 0;
 
 protected:
-   HMODULE m_hLib;
-   JCR *m_jcr;
+   HMODULE hLib_;
+   JobControlRecord *jcr_;
 
-   t_CreateVssBackupComponents m_CreateVssBackupComponents;
-   t_VssFreeSnapshotProperties m_VssFreeSnapshotProperties;
+   t_CreateVssBackupComponents CreateVssBackupComponents_;
+   t_VssFreeSnapshotProperties VssFreeSnapshotProperties_;
 
-   DWORD m_dwContext;
+   DWORD dwContext_;
 
-   IUnknown *m_pVssObject;
-   GUID m_uidCurrentSnapshotSet;
+   IUnknown *pVssObject_;
+   GUID uidCurrentSnapshotSet_;
 
    /*
     ! drive A will be stored on position 0, Z on pos. 25
     */
-   wchar_t m_wszUniqueVolumeName[26][MAX_PATH];
-   wchar_t m_szShadowCopyName[26][MAX_PATH];
-   wchar_t *m_metadata;
+   wchar_t wszUniqueVolumeName_[26][MAX_PATH];
+   wchar_t szShadowCopyName_[26][MAX_PATH];
+   wchar_t *metadata_;
 
-   alist *m_pAlistWriterState;
-   alist *m_pAlistWriterInfoText;
+   alist *pAlistWriterState_;
+   alist *pAlistWriterInfoText_;
 
-   bool m_bCoInitializeCalled;
-   bool m_bDuringRestore;  /* true if we are doing a restore */
-   bool m_bBackupIsInitialized;
-   bool m_bWriterStatusCurrent;
+   bool bCoInitializeCalled_;
+   bool bDuringRestore_;  /* true if we are doing a restore */
+   bool bBackupIsInitialized_;
+   bool bWriterStatusCurrent_;
 
    int VMPs; /* volume mount points */
    int VMP_snapshots; /* volume mount points that are snapshotted */
@@ -125,7 +125,7 @@ public:
    virtual ~VSSClientXP();
    virtual void AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters, bool onefs_disabled);
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
-   virtual void ShowVolumeMountPointStats(JCR *jcr);
+   virtual void ShowVolumeMountPointStats(JobControlRecord *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
    virtual bool CloseBackup();
    virtual bool CloseRestore();
@@ -150,7 +150,7 @@ public:
    virtual ~VSSClient2003();
    virtual void AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters, bool onefs_disabled);
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
-   virtual void ShowVolumeMountPointStats(JCR *jcr);
+   virtual void ShowVolumeMountPointStats(JobControlRecord *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
    virtual bool CloseBackup();
    virtual bool CloseRestore();
@@ -175,7 +175,7 @@ public:
    virtual ~VSSClientVista();
    virtual void AddDriveSnapshots(IVssBackupComponents *pVssObj, char *szDriveLetters, bool onefs_disabled);
    virtual void AddVolumeMountPointSnapshots(IVssBackupComponents *pVssObj, LPWSTR volume);
-   virtual void ShowVolumeMountPointStats(JCR *jcr);
+   virtual void ShowVolumeMountPointStats(JobControlRecord *jcr);
    virtual bool CreateSnapshots(char *szDriveLetters, bool onefs_disabled);
    virtual bool CloseBackup();
    virtual bool CloseRestore();

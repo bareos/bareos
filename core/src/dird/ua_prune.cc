@@ -38,8 +38,8 @@
 /* Imported functions */
 
 /* Forward referenced functions */
-static bool prune_directory(UAContext *ua, CLIENTRES *client);
-static bool prune_stats(UAContext *ua, utime_t retention);
+static bool prune_directory(UaContext *ua, ClientResource *client);
+static bool prune_stats(UaContext *ua, utime_t retention);
 static bool grow_del_list(struct del_ctx *del);
 
 /**
@@ -93,12 +93,12 @@ int file_delete_handler(void *ctx, int num_fields, char **row)
 /**
  * Prune records from database
  */
-bool prune_cmd(UAContext *ua, const char *cmd)
+bool prune_cmd(UaContext *ua, const char *cmd)
 {
-   CLIENTRES *client;
-   POOLRES *pool;
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   ClientResource *client;
+   PoolResource *pool;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
    utime_t retention;
    int kw;
    const char *permission_denied_message = _("Permission denied: need full %s permission.\n");
@@ -279,12 +279,12 @@ bool prune_cmd(UAContext *ua, const char *cmd)
 /**
  * Prune Directory meta data records from the database.
  */
-static bool prune_directory(UAContext *ua, CLIENTRES *client)
+static bool prune_directory(UaContext *ua, ClientResource *client)
 {
    int i, len;
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
    char *prune_topdir = NULL;
-   POOL_MEM query(PM_MESSAGE),
+   PoolMem query(PM_MESSAGE),
             temp(PM_MESSAGE);
    bool recursive = false;
    bool retval = false;
@@ -409,11 +409,11 @@ bail_out:
 /**
  * Prune Job stat records from the database.
  */
-static bool prune_stats(UAContext *ua, utime_t retention)
+static bool prune_stats(UaContext *ua, utime_t retention)
 {
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    utime_t now = (utime_t)time(NULL);
 
    db_lock(ua->db);
@@ -447,13 +447,13 @@ static bool prune_stats(UAContext *ua, utime_t retention)
  * returns add_from string to add in FROM clause
  *         add_where string to add in WHERE clause
  */
-static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
-                             POOLRES *pool, utime_t period,
-                             POOL_MEM *add_from, POOL_MEM *add_where)
+static bool prune_set_filter(UaContext *ua, ClientResource *client,
+                             PoolResource *pool, utime_t period,
+                             PoolMem *add_from, PoolMem *add_where)
 {
    utime_t now;
    char ed1[50], ed2[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM tmp(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE);
 
    now = (utime_t)time(NULL);
    edit_int64(now - period, ed1);
@@ -494,13 +494,13 @@ static bool prune_set_filter(UAContext *ua, CLIENTRES *client,
  *
  * Note: client or pool can possibly be NULL (not both).
  */
-bool prune_files(UAContext *ua, CLIENTRES *client, POOLRES *pool)
+bool prune_files(UaContext *ua, ClientResource *client, PoolResource *pool)
 {
    struct del_ctx del;
    struct s_count_ctx cnt;
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM sql_where(PM_MESSAGE);
-   POOL_MEM sql_from(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
+   PoolMem sql_where(PM_MESSAGE);
+   PoolMem sql_from(PM_MESSAGE);
    utime_t period;
    char ed1[50];
 
@@ -573,21 +573,21 @@ bail_out:
    return 1;
 }
 
-static void drop_temp_tables(UAContext *ua)
+static void drop_temp_tables(UaContext *ua)
 {
-   ua->db->sql_query(B_DB::SQL_QUERY_drop_deltabs);
+   ua->db->sql_query(BareosDb::SQL_QUERY_drop_deltabs);
 }
 
-static bool create_temp_tables(UAContext *ua)
+static bool create_temp_tables(UaContext *ua)
 {
    /* Create temp tables and indicies */
-   if (!ua->db->sql_query(B_DB::SQL_QUERY_create_deltabs)) {
+   if (!ua->db->sql_query(BareosDb::SQL_QUERY_create_deltabs)) {
       ua->error_msg("%s", ua->db->strerror());
       Dmsg0(050, "create DelTables table failed\n");
       return false;
    }
 
-   if (!ua->db->sql_query(B_DB::SQL_QUERY_create_delindex)) {
+   if (!ua->db->sql_query(BareosDb::SQL_QUERY_create_delindex)) {
        ua->error_msg("%s", ua->db->strerror());
        Dmsg0(050, "create DelInx1 index failed\n");
        return false;
@@ -674,17 +674,17 @@ static int job_select_handler(void *ctx, int num_fields, char **row)
  *
  * For Restore Jobs there are no restrictions.
  */
-static bool prune_backup_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool)
+static bool prune_backup_jobs(UaContext *ua, ClientResource *client, PoolResource *pool)
 {
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM sql_where(PM_MESSAGE);
-   POOL_MEM sql_from(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
+   PoolMem sql_where(PM_MESSAGE);
+   PoolMem sql_from(PM_MESSAGE);
    utime_t period;
    char ed1[50];
    alist *jobids_check=NULL;
    struct accurate_check_ctx *elt;
    db_list_ctx jobids, tempids;
-   JOB_DBR jr;
+   JobDbRecord jr;
    struct del_ctx del;
    memset(&del, 0, sizeof(del));
 
@@ -852,7 +852,7 @@ bail_out:
 /**
  * Dispatch to the right prune jobs function.
  */
-bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
+bool prune_jobs(UaContext *ua, ClientResource *client, PoolResource *pool, int JobType)
 {
    switch (JobType) {
    case JT_BACKUP:
@@ -865,9 +865,9 @@ bool prune_jobs(UAContext *ua, CLIENTRES *client, POOLRES *pool, int JobType)
 /**
  * Prune a given Volume
  */
-bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
+bool prune_volume(UaContext *ua, MediaDbRecord *mr)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    struct del_ctx del;
    bool ok = false;
    int count;
@@ -904,9 +904,9 @@ bool prune_volume(UAContext *ua, MEDIA_DBR *mr)
 /**
  * Get prune list for a volume
  */
-int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
+int get_prune_list_for_volume(UaContext *ua, MediaDbRecord *mr, del_ctx *del)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    int count = 0;
    utime_t now, period;
    char ed1[50], ed2[50];
@@ -920,7 +920,7 @@ int get_prune_list_for_volume(UAContext *ua, MEDIA_DBR *mr, del_ctx *del)
     */
    period = mr->VolRetention;
    now = (utime_t)time(NULL);
-   ua->db->fill_query(query, B_DB::SQL_QUERY_sel_JobMedia, edit_int64(mr->MediaId, ed1), edit_int64(now-period, ed2));
+   ua->db->fill_query(query, BareosDb::SQL_QUERY_sel_JobMedia, edit_int64(mr->MediaId, ed1), edit_int64(now-period, ed2));
 
    Dmsg3(250, "Now=%d period=%d now-period=%s\n", (int)now, (int)period, ed2);
    Dmsg1(050, "Query=%s\n", query.c_str());
@@ -948,7 +948,7 @@ bail_out:
 int exclude_running_jobs_from_list(del_ctx *prune_list)
 {
    int count = 0;
-   JCR *jcr;
+   JobControlRecord *jcr;
    bool skip;
    int i;
 

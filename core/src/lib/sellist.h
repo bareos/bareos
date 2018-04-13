@@ -37,7 +37,7 @@
         for((var)=(list)->first(); (var)>=0; (var)=(list)->next() )
 
 
-class sellist : public SMARTALLOC {
+class sellist : public SmartAlloc {
    const char *errmsg;
    char *p, *e, *h;
    char esave, hsave;

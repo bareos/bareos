@@ -43,16 +43,16 @@
 /*
  * Imported subroutines
  */
-extern void store_inc(LEX *lc, RES_ITEM *item, int index, int pass);
+extern void store_inc(LEX *lc, ResourceItem *item, int index, int pass);
 
 /* We build the current new Include and Exclude items here */
-static INCEXE res_incexe;
+static IncludeExcludeItem res_incexe;
 
 /*
  * new Include/Exclude items
  * name handler value code flags default_value
  */
-RES_ITEM newinc_items[] = {
+ResourceItem newinc_items[] = {
    { "File", CFG_TYPE_FNAME, { 0 }, 0, 0, NULL, NULL, NULL },
    { "Plugin", CFG_TYPE_PLUGINNAME, { 0 }, 0, 0, NULL, NULL, NULL },
    { "ExcludeDirContaining", CFG_TYPE_EXCLUDEDIR,  { 0 }, 0, 0, NULL, NULL, NULL },
@@ -64,7 +64,7 @@ RES_ITEM newinc_items[] = {
  * Items that are valid in an Options resource
  * name handler value code flags default_value
  */
-RES_ITEM options_items[] = {
+ResourceItem options_items[] = {
    { "Compression", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
    { "Signature", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
    { "BaseJob", CFG_TYPE_OPTION, { 0 }, 0, 0, NULL, NULL, NULL },
@@ -112,12 +112,12 @@ RES_ITEM options_items[] = {
 /**
  * determine used compression algorithms
  */
-void find_used_compressalgos(POOL_MEM *compressalgos, JCR *jcr)
+void find_used_compressalgos(PoolMem *compressalgos, JobControlRecord *jcr)
 {
    int cnt = 0;
-   INCEXE *inc;
-   FOPTS *fopts;
-   FILESETRES *fs;
+   IncludeExcludeItem *inc;
+   FileOptions *fopts;
+   FilesetResource *fs;
    struct s_fs_opt *fs_opt;
 
    if (!jcr->res.job || !jcr->res.job->fileset) {
@@ -270,7 +270,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 /**
  * Store regex info
  */
-static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token, rc;
    regex_t preg;
@@ -320,7 +320,7 @@ static void store_regex(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Base info
  */
-static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
    lex_get_token(lc, T_NAME);
@@ -336,7 +336,7 @@ static void store_base(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store reader info
  */
-static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_plugin(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
    lex_get_token(lc, T_NAME);
@@ -352,7 +352,7 @@ static void store_plugin(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store Wild-card info
  */
-static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
    const char *type;
@@ -399,7 +399,7 @@ static void store_wild(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store fstype info
  */
-static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -424,7 +424,7 @@ static void store_fstype(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * Store drivetype info
  */
-static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_drivetype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -446,7 +446,7 @@ static void store_drivetype(LEX *lc, RES_ITEM *item, int index, int pass)
    scan_to_eol(lc);
 }
 
-static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
@@ -471,7 +471,7 @@ static void store_meta(LEX *lc, RES_ITEM *item, int index, int pass)
 /**
  * New style options come here
  */
-static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_option(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    int keyword;
@@ -511,8 +511,8 @@ static void store_option(LEX *lc, RES_ITEM *item, int index, int pass)
  */
 static void setup_current_opts(void)
 {
-   FOPTS *fo = (FOPTS *)malloc(sizeof(FOPTS));
-   memset(fo, 0, sizeof(FOPTS));
+   FileOptions *fo = (FileOptions *)malloc(sizeof(FileOptions));
+   memset(fo, 0, sizeof(FileOptions));
    fo->regex.init(1, true);
    fo->regexdir.init(1, true);
    fo->regexfile.init(1, true);
@@ -526,10 +526,10 @@ static void setup_current_opts(void)
    fo->meta.init(1, true);
    res_incexe.current_opts = fo;
    if (res_incexe.num_opts == 0) {
-      res_incexe.opts_list = (FOPTS **)malloc(sizeof(FOPTS *));
+      res_incexe.opts_list = (FileOptions **)malloc(sizeof(FileOptions *));
    } else {
-      res_incexe.opts_list = (FOPTS **)realloc(res_incexe.opts_list,
-                     sizeof(FOPTS *) * (res_incexe.num_opts + 1));
+      res_incexe.opts_list = (FileOptions **)realloc(res_incexe.opts_list,
+                     sizeof(FileOptions *) * (res_incexe.num_opts + 1));
    }
    res_incexe.opts_list[res_incexe.num_opts++] = fo;
 }
@@ -537,7 +537,7 @@ static void setup_current_opts(void)
 /**
  * Come here when Options seen in Include/Exclude
  */
-static void store_options_res(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
+static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token, i;
 
@@ -614,11 +614,11 @@ static void store_options_res(LEX *lc, RES_ITEM *item, int index, int pass, bool
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
+static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token;
-   INCEXE *incexe;
-   URES *res_all = (URES *)my_config->m_res_all;
+   IncludeExcludeItem *incexe;
+   URES *res_all = (URES *)my_config->res_all_;
 
    token = lex_get_token(lc, T_SKIP_EOL);
    if (pass == 1) {
@@ -654,11 +654,11 @@ static void store_fname(LEX *lc, RES_ITEM *item, int index, int pass, bool exclu
  * always increase the name buffer by 10 items because we expect
  * to add more entries.
  */
-static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
+static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
    int token;
-   INCEXE *incexe;
-   URES *res_all = (URES *)my_config->m_res_all;
+   IncludeExcludeItem *incexe;
+   URES *res_all = (URES *)my_config->res_all_;
 
    if (exclude) {
       scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
@@ -697,9 +697,9 @@ static void store_plugin_name(LEX *lc, RES_ITEM *item, int index, int pass, bool
 /**
  * Store exclude directory containing info
  */
-static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool exclude)
+static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, bool exclude)
 {
-   INCEXE *incexe;
+   IncludeExcludeItem *incexe;
 
    if (exclude) {
       scan_err0(lc, _("ExcludeDirContaining directive not permitted in Exclude.\n"));
@@ -726,12 +726,12 @@ static void store_excludedir(LEX *lc, RES_ITEM *item, int index, int pass, bool 
  *  resource.  We treat the Include/Exclude like a sort of
  *  mini-resource within the FileSet resource.
  */
-static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
 {
    bool options;
    int token, i;
-   INCEXE *incexe;
-   URES *res_all = (URES *)my_config->m_res_all;
+   IncludeExcludeItem *incexe;
+   URES *res_all = (URES *)my_config->res_all_;
 
    if (!res_all->res_fs.have_MD5) {
       MD5_Init(&res_all->res_fs.md5c);
@@ -782,24 +782,24 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
       }
    }
    if (pass == 1) {
-      incexe = (INCEXE *)malloc(sizeof(INCEXE));
-      memcpy(incexe, &res_incexe, sizeof(INCEXE));
+      incexe = (IncludeExcludeItem *)malloc(sizeof(IncludeExcludeItem));
+      memcpy(incexe, &res_incexe, sizeof(IncludeExcludeItem));
       memset(&res_incexe, 0, sizeof(res_incexe));
       if (item->code == 0) { /* include */
          if (res_all->res_fs.num_includes == 0) {
-            res_all->res_fs.include_items = (INCEXE **)malloc(sizeof(INCEXE *));
+            res_all->res_fs.include_items = (IncludeExcludeItem **)malloc(sizeof(IncludeExcludeItem *));
          } else {
-            res_all->res_fs.include_items = (INCEXE **)realloc(res_all->res_fs.include_items,
-                           sizeof(INCEXE *) * (res_all->res_fs.num_includes + 1));
+            res_all->res_fs.include_items = (IncludeExcludeItem **)realloc(res_all->res_fs.include_items,
+                           sizeof(IncludeExcludeItem *) * (res_all->res_fs.num_includes + 1));
          }
          res_all->res_fs.include_items[res_all->res_fs.num_includes++] = incexe;
          Dmsg1(900, "num_includes=%d\n", res_all->res_fs.num_includes);
       } else {    /* exclude */
          if (res_all->res_fs.num_excludes == 0) {
-            res_all->res_fs.exclude_items = (INCEXE **)malloc(sizeof(INCEXE *));
+            res_all->res_fs.exclude_items = (IncludeExcludeItem **)malloc(sizeof(IncludeExcludeItem *));
          } else {
-            res_all->res_fs.exclude_items = (INCEXE **)realloc(res_all->res_fs.exclude_items,
-                           sizeof(INCEXE *) * (res_all->res_fs.num_excludes + 1));
+            res_all->res_fs.exclude_items = (IncludeExcludeItem **)realloc(res_all->res_fs.exclude_items,
+                           sizeof(IncludeExcludeItem *) * (res_all->res_fs.num_excludes + 1));
          }
          res_all->res_fs.exclude_items[res_all->res_fs.num_excludes++] = incexe;
          Dmsg1(900, "num_excludes=%d\n", res_all->res_fs.num_excludes);
@@ -814,7 +814,7 @@ static void store_newinc(LEX *lc, RES_ITEM *item, int index, int pass)
  * Store FileSet Include/Exclude info
  *  new style includes are handled in store_newinc()
  */
-void store_inc(LEX *lc, RES_ITEM *item, int index, int pass)
+void store_inc(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 

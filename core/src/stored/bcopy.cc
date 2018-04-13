@@ -36,21 +36,21 @@
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 /* Forward referenced functions */
-static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec);
-static bool record_cb(DCR *dcr, DEV_RECORD *rec);
+static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
 
 /* Global variables */
-static DEVICE *in_dev = NULL;
-static DEVICE *out_dev = NULL;
-static JCR *in_jcr;                    /* input jcr */
-static JCR *out_jcr;                   /* output jcr */
-static BSR *bsr = NULL;
+static Device *in_dev = NULL;
+static Device *out_dev = NULL;
+static JobControlRecord *in_jcr;                    /* input jcr */
+static JobControlRecord *out_jcr;                   /* output jcr */
+static BootStrapRecord *bsr = NULL;
 static const char *wd = "/tmp";
 static bool list_records = false;
 static uint32_t records = 0;
 static uint32_t jobs = 0;
-static DEV_BLOCK *out_block;
+static DeviceBlock *out_block;
 static SESSION_LABEL sessrec;
 
 static void usage()
@@ -81,9 +81,9 @@ int main (int argc, char *argv[])
    char *iVolumeName = NULL;
    char *oVolumeName = NULL;
    char *DirectorName = NULL;
-   DIRRES *director = NULL;
+   DirectorResource *director = NULL;
    bool ignore_label_errors = false;
-   DCR *in_dcr, *out_dcr;
+   DeviceControlRecord *in_dcr, *out_dcr;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -189,7 +189,7 @@ int main (int argc, char *argv[])
     */
    Dmsg0(100, "About to setup input jcr\n");
 
-   in_dcr = New(DCR);
+   in_dcr = New(DeviceControlRecord);
    in_jcr = setup_jcr("bcopy", argv[0], bsr, director, in_dcr, iVolumeName, true); /* read device */
    if (!in_jcr) {
       exit(1);
@@ -207,7 +207,7 @@ int main (int argc, char *argv[])
     */
    Dmsg0(100, "About to setup output jcr\n");
 
-   out_dcr = New(DCR);
+   out_dcr = New(DeviceControlRecord);
    out_jcr = setup_jcr("bcopy", argv[1], bsr, director, out_dcr, oVolumeName, false); /* write device */
    if (!out_jcr) {
       exit(1);
@@ -259,7 +259,7 @@ int main (int argc, char *argv[])
 /*
  * read_records() calls back here for each record it gets
  */
-static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
+static bool record_cb(DeviceControlRecord *in_dcr, DeviceRecord *rec)
 {
    if (list_records) {
       Pmsg5(000, _("Record: SessId=%u SessTim=%u FileIndex=%d Stream=%d len=%u\n"),
@@ -285,9 +285,9 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
          return true;
       case SOS_LABEL:
          if (bsr && rec->match_stat < 1) {
-            /* Skipping record, because does not match BSR filter */
+            /* Skipping record, because does not match BootStrapRecord filter */
             if (verbose) {
-             Pmsg0(-1, _("Copy skipped. Record does not match BSR filter.\n"));
+             Pmsg0(-1, _("Copy skipped. Record does not match BootStrapRecord filter.\n"));
             }
          } else {
             jobs++;
@@ -295,7 +295,7 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
          break;
       case EOS_LABEL:
          if (bsr && rec->match_stat < 1) {
-            /* Skipping record, because does not match BSR filter */
+            /* Skipping record, because does not match BootStrapRecord filter */
            return true;
         }
          while (!write_record_to_block(out_jcr->dcr, rec)) {
@@ -330,7 +330,7 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
 
    /*  Write record */
    if (bsr && rec->match_stat < 1) {
-      /* Skipping record, because does not match BSR filter */
+      /* Skipping record, because does not match BootStrapRecord filter */
       return true;
    }
    records++;
@@ -348,7 +348,7 @@ static bool record_cb(DCR *in_dcr, DEV_RECORD *rec)
    return true;
 }
 
-static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec)
+static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    memset(sessrec, 0, sizeof(SESSION_LABEL));

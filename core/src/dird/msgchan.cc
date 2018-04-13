@@ -79,10 +79,10 @@ extern "C" void *msg_thread(void *arg);
  *  particular device resource.
  */
 #ifdef xxx
-bool update_device_res(JCR *jcr, DEVICERES *dev)
+bool update_device_res(JobControlRecord *jcr, DeviceResource *dev)
 {
-   POOL_MEM device_name;
-   BSOCK *sd;
+   PoolMem device_name;
+   BareosSocket *sd;
    if (!connect_to_storage_daemon(jcr, 5, 30, false)) {
       return false;
    }
@@ -107,7 +107,7 @@ bool update_device_res(JCR *jcr, DEVICERES *dev)
  *    * migration and
  *    * copy Jobs
  */
-static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
+static inline bool send_bootstrap_file_to_sd(JobControlRecord *jcr, BareosSocket *sd)
 {
    FILE *bs;
    char buf[1000];
@@ -140,19 +140,19 @@ static inline bool send_bootstrap_file_to_sd(JCR *jcr, BSOCK *sd)
 
 /** Start a job with the Storage daemon
  */
-bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_bsr)
+bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstore, bool send_bsr)
 {
    bool ok = true;
-   STORERES *storage;
+   StoreResource *storage;
    char auth_key[100];
    const char *fileset_md5;
-   POOL_MEM store_name, device_name, pool_name, pool_type, media_type, backup_format;
-   POOL_MEM job_name, client_name, fileset_name;
+   PoolMem store_name, device_name, pool_name, pool_type, media_type, backup_format;
+   PoolMem job_name, client_name, fileset_name;
    int copy = 0;
    int stripe = 0;
    uint64_t remainingquota = 0;
    char ed1[30], ed2[30];
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
 
    /*
     * Before actually starting a new Job on the SD make sure we send any specific plugin options for this Job.
@@ -285,7 +285,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
          sd->fsend(use_storage, store_name.c_str(), media_type.c_str(),
                    pool_name.c_str(), pool_type.c_str(), 0, copy, stripe);
          Dmsg1(100, "rstore >stored: %s", sd->msg);
-         DEVICERES *dev;
+         DeviceResource *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             pm_strcpy(device_name, dev->name());
@@ -323,7 +323,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
                    pool_name.c_str(), pool_type.c_str(), 1, copy, stripe);
 
          Dmsg1(100, "wstore >stored: %s", sd->msg);
-         DEVICERES *dev;
+         DeviceResource *dev;
          /* Loop over alternative storage Devices until one is OK */
          foreach_alist(dev, storage->device) {
             pm_strcpy(device_name, dev->name());
@@ -346,7 +346,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
       }
    }
    if (!ok) {
-      POOL_MEM err_msg;
+      PoolMem err_msg;
       if (sd->msg[0]) {
          pm_strcpy(err_msg, sd->msg); /* save message */
          Jmsg(jcr, M_FATAL, 0, _("\n"
@@ -364,7 +364,7 @@ bool start_storage_daemon_job(JCR *jcr, alist *rstore, alist *wstore, bool send_
 /** Start a thread to handle Storage daemon messages and
  *  Catalog requests.
  */
-bool start_storage_daemon_message_thread(JCR *jcr)
+bool start_storage_daemon_message_thread(JobControlRecord *jcr)
 {
    int status;
    pthread_t thid;
@@ -390,7 +390,7 @@ bool start_storage_daemon_message_thread(JCR *jcr)
 
 extern "C" void msg_thread_cleanup(void *arg)
 {
-   JCR *jcr = (JCR *)arg;
+   JobControlRecord *jcr = (JobControlRecord *)arg;
 
    jcr->db->end_transaction(jcr);           /* terminate any open transaction */
    jcr->lock();
@@ -410,8 +410,8 @@ extern "C" void msg_thread_cleanup(void *arg)
  */
 extern "C" void *msg_thread(void *arg)
 {
-   JCR *jcr = (JCR *)arg;
-   BSOCK *sd;
+   JobControlRecord *jcr = (JobControlRecord *)arg;
+   BareosSocket *sd;
    int JobStatus;
    int n;
    char auth_key[100];
@@ -480,7 +480,7 @@ extern "C" void *msg_thread(void *arg)
    return NULL;
 }
 
-void wait_for_storage_daemon_termination(JCR *jcr)
+void wait_for_storage_daemon_termination(JobControlRecord *jcr)
 {
    int cancel_count = 0;
    /* Now wait for Storage daemon to terminate our message thread */
@@ -518,8 +518,8 @@ void wait_for_storage_daemon_termination(JCR *jcr)
 extern "C" void *device_thread(void *arg)
 {
    int i;
-   JCR *jcr;
-   DEVICERES *dev;
+   JobControlRecord *jcr;
+   DeviceResource *dev;
 
    pthread_detach(pthread_self());
    jcr = new_control_jcr("*DeviceInit*", JT_SYSTEM);

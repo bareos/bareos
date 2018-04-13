@@ -93,7 +93,7 @@ private:
  */
 static int get_path_handler(void *ctx, int fields, char **row)
 {
-   POOL_MEM *buf = (POOL_MEM *)ctx;
+   PoolMem *buf = (PoolMem *)ctx;
 
    pm_strcpy(*buf, row[0]);
 
@@ -108,13 +108,13 @@ static int path_handler(void *ctx, int fields, char **row)
 }
 
 /*
- * BVFS specific methods part of the B_DB database abstraction.
+ * BVFS specific methods part of the BareosDb database abstraction.
  */
-void B_DB::build_path_hierarchy(JCR *jcr, pathid_cache &ppathid_cache,
+void BareosDb::build_path_hierarchy(JobControlRecord *jcr, pathid_cache &ppathid_cache,
                                 char *org_pathid, char *new_path)
 {
    char pathid[50];
-   ATTR_DBR parent;
+   AttributesDbRecord parent;
    char *bkp = path;
 
    Dmsg1(dbglevel, "build_path_hierarchy(%s)\n", new_path);
@@ -183,7 +183,7 @@ bail_out:
  * return Error 0
  *        OK    1
  */
-bool B_DB::update_path_hierarchy_cache(JCR *jcr, pathid_cache &ppathid_cache, JobId_t JobId)
+bool BareosDb::update_path_hierarchy_cache(JobControlRecord *jcr, pathid_cache &ppathid_cache, JobId_t JobId)
 {
    Dmsg0(dbglevel, "update_path_hierarchy_cache()\n");
    bool retval = false;
@@ -302,7 +302,7 @@ bail_out:
    return retval;
 }
 
-void B_DB::bvfs_update_cache(JCR *jcr)
+void BareosDb::bvfs_update_cache(JobControlRecord *jcr)
 {
    uint32_t nb=0;
    db_list_ctx jobids_list;
@@ -332,7 +332,7 @@ void B_DB::bvfs_update_cache(JCR *jcr)
 /*
  * Update the bvfs cache for given jobids (1,2,3,4)
  */
-bool B_DB::bvfs_update_path_hierarchy_cache(JCR *jcr, char *jobids)
+bool BareosDb::bvfs_update_path_hierarchy_cache(JobControlRecord *jcr, char *jobids)
 {
    char *p;
    int status;
@@ -364,7 +364,7 @@ bail_out:
    return retval;
 }
 
-int B_DB::bvfs_ls_dirs(POOL_MEM &query, void *ctx)
+int BareosDb::bvfs_ls_dirs(PoolMem &query, void *ctx)
 {
    int nb_record = 0;
 
@@ -381,7 +381,7 @@ int B_DB::bvfs_ls_dirs(POOL_MEM &query, void *ctx)
    return nb_record;
 }
 
-int B_DB::bvfs_build_ls_file_query(POOL_MEM &query, DB_RESULT_HANDLER *result_handler, void *ctx)
+int BareosDb::bvfs_build_ls_file_query(PoolMem &query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    int nb_record = 0;
 
@@ -421,7 +421,7 @@ static int result_handler(void *ctx, int fields, char **row)
 /*
  * BVFS class methods.
  */
-Bvfs::Bvfs(JCR *j, B_DB *mdb) {
+Bvfs::Bvfs(JobControlRecord *j, BareosDb *mdb) {
    jcr = j;
    jcr->inc_use_count();
    db = mdb;                 /* need to inc ref count */
@@ -586,8 +586,8 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
    char ed1[50];
    char fname_esc[MAX_ESCAPE_NAME_LENGTH];
    char client_esc[MAX_ESCAPE_NAME_LENGTH];
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM filter(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
+   PoolMem filter(PM_MESSAGE);
 
    Dmsg3(dbglevel, "get_all_file_versions(%lld, %s, %s)\n",
                                          (uint64_t)pathid, fname, client);
@@ -601,7 +601,7 @@ void Bvfs::get_all_file_versions(DBId_t pathid, const char *fname, const char *c
    db->escape_string(jcr, fname_esc, (char *)fname, strlen(fname));
    db->escape_string(jcr, client_esc, (char *)client, strlen(client));
 
-   db->fill_query(query, B_DB::SQL_QUERY_bvfs_versions_6, fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit, offset);
+   db->fill_query(query, BareosDb::SQL_QUERY_bvfs_versions_6, fname_esc, edit_uint64(pathid, ed1), client_esc, filter.c_str(), limit, offset);
    db->sql_query(query.c_str(), list_entries, user_data);
 }
 
@@ -634,10 +634,10 @@ int Bvfs::_handle_path(void *ctx, int fields, char **row)
 bool Bvfs::ls_dirs()
 {
    char pathid[50];
-   POOL_MEM special_dirs_query(PM_MESSAGE);
-   POOL_MEM filter(PM_MESSAGE);
-   POOL_MEM sub_dirs_query(PM_MESSAGE);
-   POOL_MEM union_query(PM_MESSAGE);
+   PoolMem special_dirs_query(PM_MESSAGE);
+   PoolMem filter(PM_MESSAGE);
+   PoolMem sub_dirs_query(PM_MESSAGE);
+   PoolMem union_query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_dirs(%lld)\n", (uint64_t)pwd_id);
 
@@ -653,14 +653,14 @@ bool Bvfs::ls_dirs()
     */
    *prev_dir = 0;
 
-   db->fill_query(special_dirs_query, B_DB::SQL_QUERY_bvfs_ls_special_dirs_3, pathid, pathid, jobids);
+   db->fill_query(special_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_special_dirs_3, pathid, pathid, jobids);
 
    if (*pattern) {
-      db->fill_query(filter, B_DB::SQL_QUERY_match_query, pattern);
+      db->fill_query(filter, BareosDb::SQL_QUERY_match_query, pattern);
    }
-   db->fill_query(sub_dirs_query, B_DB::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid, jobids, filter.c_str(), jobids, jobids);
+   db->fill_query(sub_dirs_query, BareosDb::SQL_QUERY_bvfs_ls_sub_dirs_5, pathid, jobids, filter.c_str(), jobids, jobids);
 
-   db->fill_query(union_query, B_DB::SQL_QUERY_bvfs_lsdirs_4, special_dirs_query.c_str(), sub_dirs_query.c_str(), limit, offset);
+   db->fill_query(union_query, BareosDb::SQL_QUERY_bvfs_lsdirs_4, special_dirs_query.c_str(), sub_dirs_query.c_str(), limit, offset);
 
    /* FIXME: bvfs_ls_dirs does not return number of results */
    nb_record = db->bvfs_ls_dirs(union_query, this);
@@ -668,14 +668,14 @@ bool Bvfs::ls_dirs()
    return true;
 }
 
-static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,
+static void build_ls_files_query(JobControlRecord *jcr, BareosDb *db, PoolMem &query,
                                  const char *JobId, const char *PathId,
                                  const char *filter, int64_t limit, int64_t offset)
 {
    if (db->get_type_index() == SQL_TYPE_POSTGRESQL) {
-      db->fill_query(query, B_DB::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, filter, limit, offset);
+      db->fill_query(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, filter, limit, offset);
    } else {
-      db->fill_query(query, B_DB::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
+      db->fill_query(query, BareosDb::SQL_QUERY_bvfs_list_files, JobId, PathId, JobId, PathId, limit, offset, filter, JobId, JobId);
    }
 }
 
@@ -685,8 +685,8 @@ static void build_ls_files_query(JCR *jcr, B_DB *db, POOL_MEM &query,
 bool Bvfs::ls_files()
 {
    char pathid[50];
-   POOL_MEM filter(PM_MESSAGE);
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem filter(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    Dmsg1(dbglevel, "ls_files(%lld)\n", (uint64_t)pwd_id);
    if (*jobids == 0) {
@@ -699,7 +699,7 @@ bool Bvfs::ls_files()
 
    edit_uint64(pwd_id, pathid);
    if (*pattern) {
-      db->fill_query(filter, B_DB::SQL_QUERY_match_query2, pattern);
+      db->fill_query(filter, BareosDb::SQL_QUERY_match_query2, pattern);
    }
 
    build_ls_files_query(jcr, db, query, jobids, pathid, filter.c_str(), limit, offset);
@@ -763,7 +763,7 @@ void Bvfs::clear_cache()
     * as MySQL queries do only support single SQL statements,
     * not multiple.
     */
-   //db->sql_query(B_DB::SQL_QUERY_bvfs_clear_cache_0);
+   //db->sql_query(BareosDb::SQL_QUERY_bvfs_clear_cache_0);
    db->start_transaction(jcr);
    db->sql_query("UPDATE Job SET HasCache=0");
    if (db->get_type_index() == SQL_TYPE_SQLITE3) {
@@ -778,7 +778,7 @@ void Bvfs::clear_cache()
 
 bool Bvfs::drop_restore_list(char *output_table)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    if (check_temp(output_table)) {
       Mmsg(query, "DROP TABLE %s", output_table);
       db->sql_query(query.c_str());
@@ -789,8 +789,8 @@ bool Bvfs::drop_restore_list(char *output_table)
 
 bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char *output_table)
 {
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM tmp(PM_MESSAGE), tmp2(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
+   PoolMem tmp(PM_MESSAGE), tmp2(PM_MESSAGE);
    int64_t id, jobid, prev_jobid;
    bool init = false;
    bool retval = false;
@@ -926,7 +926,7 @@ bool Bvfs::compute_restore_list(char *fileid, char *dirid, char *hardlink, char 
       goto bail_out;
    }
 
-   db->fill_query(query, B_DB::SQL_QUERY_bvfs_select, output_table, output_table, output_table);
+   db->fill_query(query, BareosDb::SQL_QUERY_bvfs_select, output_table, output_table, output_table);
 
    /* TODO: handle jobid filter */
    Dmsg1(dbglevel_sql, "q=%s\n", query.c_str());

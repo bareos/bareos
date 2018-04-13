@@ -42,7 +42,7 @@ get_query_include_filename()
 #
 > $QUERY_NAMES_FILE
 printf "%s\n\n" "$NOTE" >> $QUERY_NAMES_FILE
-printf "const char *B_DB::query_names[] = {\n" >> $QUERY_NAMES_FILE
+printf "const char *BareosDb::query_names[] = {\n" >> $QUERY_NAMES_FILE
 
 > $QUERY_ENUM_FILE
 printf "%s\n\n" "$NOTE" >> $QUERY_ENUM_FILE

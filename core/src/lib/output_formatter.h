@@ -103,7 +103,7 @@ typedef struct of_filter_tuple {
 /**
  * Actual output formatter class.
  */
-class DLL_IMP_EXP OUTPUT_FORMATTER : public SMARTALLOC {
+class DLL_IMP_EXP OUTPUT_FORMATTER : public SmartAlloc {
 public:
    /*
     * Typedefs.
@@ -123,7 +123,7 @@ private:
    void *filter_ctx;
    alist *filters;
    char *hidden_columns;
-   POOL_MEM *result_message_plain;
+   PoolMem *result_message_plain;
    static const unsigned int max_message_length_shown_in_error = 1024;
    int num_rows_filtered;
 #if HAVE_JANSSON
@@ -150,7 +150,7 @@ private:
     * wrap = 0: reformat to single line
     * wrap > 0: if api==0: wrap after x characters, else no modifications
     */
-   void rewrap(POOL_MEM &string, int wrap);
+   void rewrap(PoolMem &string, int wrap);
 
 #if HAVE_JANSSON
    bool json_send_error_message(const char *message);
@@ -229,7 +229,7 @@ public:
    bool is_hidden_column(int column);
    void clear_hidden_columns();
 
-   void message(const char *type, POOL_MEM &message);
+   void message(const char *type, PoolMem &message);
 
    void finalize_result(bool result);
 
@@ -238,7 +238,7 @@ public:
    bool json_key_value_add_bool(const char *key, bool value);
    bool json_key_value_add(const char *key, uint64_t value);
    bool json_key_value_add(const char *key, const char *value);
-   void json_add_message(const char *type, POOL_MEM &message);
+   void json_add_message(const char *type, PoolMem &message);
    bool json_has_error_message();
    void json_finalize_result(bool result);
 #endif

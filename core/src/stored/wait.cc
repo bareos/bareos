@@ -43,7 +43,7 @@ static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
  *
  *   Returns: W_ERROR, W_TIMEOUT, W_POLL, W_MOUNT, or W_WAKE
  */
-int wait_for_sysop(DCR *dcr)
+int wait_for_sysop(DeviceControlRecord *dcr)
 {
    struct timeval tv;
    struct timezone tz;
@@ -53,8 +53,8 @@ int wait_for_sysop(DCR *dcr)
    int status = 0;
    int add_wait;
    bool unmounted;
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    dev->Lock();
    Dmsg1(dbglvl, "Enter blocked=%s\n", dev->print_blocked());
@@ -102,7 +102,7 @@ int wait_for_sysop(DCR *dcr)
       start = time(NULL);
 
       /* Wait required time */
-      status = pthread_cond_timedwait(&dev->wait_next_vol, &dev->m_mutex, &timeout);
+      status = pthread_cond_timedwait(&dev->wait_next_vol, &dev->mutex_, &timeout);
 
       Dmsg2(dbglvl, "Wokeup from sleep on device status=%d blocked=%s\n", status,
          dev->print_blocked());
@@ -218,7 +218,7 @@ int wait_for_sysop(DCR *dcr)
  * Returns: true  if a device has changed state
  *          false if the total wait time has expired.
  */
-bool wait_for_device(JCR *jcr, int &retries)
+bool wait_for_device(JobControlRecord *jcr, int &retries)
 {
    struct timeval tv;
    struct timezone tz;
@@ -266,7 +266,7 @@ void release_device_cond()
  * Returns: true if time doubled
  *          false if max time expired
  */
-static bool double_jcr_wait_time(JCR *jcr)
+static bool double_jcr_wait_time(JobControlRecord *jcr)
 {
    jcr->wait_sec *= 2;               /* double wait time */
    if (jcr->wait_sec > jcr->max_wait) {   /* but not longer than maxtime */

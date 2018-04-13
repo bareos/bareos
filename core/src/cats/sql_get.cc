@@ -52,9 +52,9 @@
  * (with attributes) in the database.
  *
  *  Returns: 0 on failure
- *           1 on success with the File record in FILE_DBR
+ *           1 on success with the File record in FileDbRecord
  */
-bool B_DB::get_file_attributes_record(JCR *jcr, char *filename, JOB_DBR *jr, FILE_DBR *fdbr)
+bool BareosDb::get_file_attributes_record(JobControlRecord *jcr, char *filename, JobDbRecord *jr, FileDbRecord *fdbr)
 {
    bool retval;
    Dmsg1(100, "db_get_file_attributes_record filename=%s \n", filename);
@@ -93,7 +93,7 @@ bool B_DB::get_file_attributes_record(JCR *jcr, char *filename, JOB_DBR *jr, FIL
  *    of the version of the directory/file we actually want and do
  *    a more explicit SQL search.
  */
-bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
+bool BareosDb::get_file_record(JobControlRecord *jcr, JobDbRecord *jr, FileDbRecord *fdbr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -172,7 +172,7 @@ bool B_DB::get_file_record(JCR *jcr, JOB_DBR *jr, FILE_DBR *fdbr)
  *
  *   DO NOT use Jmsg in this routine (see notes for get_file_record)
  */
-int B_DB::get_path_record(JCR *jcr)
+int BareosDb::get_path_record(JobControlRecord *jcr)
 {
    SQL_ROW row;
    DBId_t PathId = 0;
@@ -223,7 +223,7 @@ int B_DB::get_path_record(JCR *jcr)
    return PathId;
 }
 
-int B_DB::get_path_record(JCR *jcr, const char *new_path)
+int BareosDb::get_path_record(JobControlRecord *jcr, const char *new_path)
 {
    pm_strcpy(path, new_path);
    pnl = strlen(path);
@@ -235,7 +235,7 @@ int B_DB::get_path_record(JCR *jcr, const char *new_path)
  * Returns: false on failure
  *          true  on success
  */
-bool B_DB::get_job_record(JCR *jcr, JOB_DBR *jr)
+bool BareosDb::get_job_record(JobControlRecord *jcr, JobDbRecord *jr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -316,7 +316,7 @@ bail_out:
  *
  * Returns: number of volumes on success
  */
-int B_DB::get_job_volume_names(JCR *jcr, JobId_t JobId, POOLMEM *&VolumeNames)
+int BareosDb::get_job_volume_names(JobControlRecord *jcr, JobId_t JobId, POOLMEM *&VolumeNames)
 {
    SQL_ROW row;
    char ed1[50];
@@ -376,13 +376,13 @@ int B_DB::get_job_volume_names(JCR *jcr, JobId_t JobId, POOLMEM *&VolumeNames)
  *
  * Returns: number of volumes on success
  */
-int B_DB::get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolParams)
+int BareosDb::get_job_volume_parameters(JobControlRecord *jcr, JobId_t JobId, VolumeParameters **VolParams)
 {
    SQL_ROW row;
    char ed1[50];
    int retval = 0;
    int i;
-   VOL_PARAMS *Vols = NULL;
+   VolumeParameters *Vols = NULL;
    int num_rows;
 
    db_lock(this);
@@ -406,7 +406,7 @@ int B_DB::get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolPar
          retval = num_rows;
          DBId_t *SId = NULL;
          if (retval > 0) {
-            *VolParams = Vols = (VOL_PARAMS *)malloc(retval * sizeof(VOL_PARAMS));
+            *VolParams = Vols = (VolumeParameters *)malloc(retval * sizeof(VolumeParameters));
             SId = (DBId_t *)malloc(retval * sizeof(DBId_t));
          }
          for (i=0; i < retval; i++) {
@@ -465,7 +465,7 @@ int B_DB::get_job_volume_parameters(JCR *jcr, JobId_t JobId, VOL_PARAMS **VolPar
  * Returns: -1 on failure
  *          number on success
  */
-int B_DB::get_num_pool_records(JCR *jcr)
+int BareosDb::get_num_pool_records(JobControlRecord *jcr)
 {
    int retval = 0;
 
@@ -484,7 +484,7 @@ int B_DB::get_num_pool_records(JCR *jcr)
  * Returns 0: on failure
  *         1: on success
  */
-int B_DB::get_pool_ids(JCR *jcr, int *num_ids, DBId_t **ids)
+int BareosDb::get_pool_ids(JobControlRecord *jcr, int *num_ids, DBId_t **ids)
 {
    SQL_ROW row;
    int retval = 0;
@@ -522,7 +522,7 @@ int B_DB::get_pool_ids(JCR *jcr, int *num_ids, DBId_t **ids)
  *  Returns 0: on failure
  *          1: on success
  */
-int B_DB::get_storage_ids(JCR *jcr, int *num_ids, DBId_t *ids[])
+int BareosDb::get_storage_ids(JobControlRecord *jcr, int *num_ids, DBId_t *ids[])
 {
    SQL_ROW row;
    int retval = 0;
@@ -560,7 +560,7 @@ int B_DB::get_storage_ids(JCR *jcr, int *num_ids, DBId_t *ids[])
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_client_ids(JCR *jcr, int *num_ids, DBId_t *ids[])
+bool BareosDb::get_client_ids(JobControlRecord *jcr, int *num_ids, DBId_t *ids[])
 {
    bool retval = false;
    SQL_ROW row;
@@ -597,7 +597,7 @@ bool B_DB::get_client_ids(JCR *jcr, int *num_ids, DBId_t *ids[])
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::get_pool_record(JCR *jcr, POOL_DBR *pdbr)
+bool BareosDb::get_pool_record(JobControlRecord *jcr, PoolDbRecord *pdbr)
 {
    SQL_ROW row;
    bool ok = false;
@@ -686,7 +686,7 @@ bool B_DB::get_pool_record(JCR *jcr, POOL_DBR *pdbr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::get_storage_record(JCR *jcr, STORAGE_DBR *sdbr)
+bool BareosDb::get_storage_record(JobControlRecord *jcr, StorageDbRecord *sdbr)
 {
    SQL_ROW row;
    bool ok = false;
@@ -736,7 +736,7 @@ bool B_DB::get_storage_record(JCR *jcr, STORAGE_DBR *sdbr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::get_client_record(JCR *jcr, CLIENT_DBR *cdbr)
+bool BareosDb::get_client_record(JobControlRecord *jcr, ClientDbRecord *cdbr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -794,7 +794,7 @@ bool B_DB::get_client_record(JCR *jcr, CLIENT_DBR *cdbr)
  * Returns: false on failure
  *          true on success
  */
-bool B_DB::get_counter_record(JCR *jcr, COUNTER_DBR *cr)
+bool BareosDb::get_counter_record(JobControlRecord *jcr, CounterDbRecord *cr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -852,7 +852,7 @@ bail_out:
  * Returns: 0 on failure
  *          id on success
  */
-int B_DB::get_fileset_record(JCR *jcr, FILESET_DBR *fsr)
+int BareosDb::get_fileset_record(JobControlRecord *jcr, FileSetDbRecord *fsr)
 {
    SQL_ROW row;
    int retval = 0;
@@ -904,7 +904,7 @@ int B_DB::get_fileset_record(JCR *jcr, FILESET_DBR *fsr)
  * Returns: -1 on failure
  *          number on success
  */
-int B_DB::get_num_media_records(JCR *jcr)
+int BareosDb::get_num_media_records(JobControlRecord *jcr)
 {
    int retval = 0;
 
@@ -915,12 +915,12 @@ int B_DB::get_num_media_records(JCR *jcr)
    return retval;
 }
 
-bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes)
+bool BareosDb::prepare_media_sql_query(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem &volumes)
 {
    bool ok = true;
    char ed1[50];
    char esc[MAX_NAME_LENGTH * 2 + 1];
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    Mmsg(cmd, "SELECT DISTINCT MediaId FROM Media WHERE Recycle=%d AND Enabled=%d ", mr->Recycle, mr->Enabled);
 
@@ -973,7 +973,7 @@ bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes)
  * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
  * over VolumeName. The caller must free ids if non-NULL.
  */
-bool B_DB::get_media_ids(JCR *jcr, MEDIA_DBR *mr, POOL_MEM &volumes, int *num_ids, DBId_t *ids[])
+bool BareosDb::get_media_ids(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem &volumes, int *num_ids, DBId_t *ids[])
 {
    bool ok = false;
    SQL_ROW row;
@@ -1017,7 +1017,7 @@ bail_out:
  * Returns false: on failure
  *         true:  on success
  */
-bool B_DB::get_query_dbids(JCR *jcr, POOL_MEM &query, dbid_list &ids)
+bool BareosDb::get_query_dbids(JobControlRecord *jcr, PoolMem &query, dbid_list &ids)
 {
    SQL_ROW row;
    int i = 0;
@@ -1054,7 +1054,7 @@ bool B_DB::get_query_dbids(JCR *jcr, POOL_MEM &query, dbid_list &ids)
  * Returns: false: on failure
  *          true:  on success
  */
-bool B_DB::get_media_record(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::get_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -1199,11 +1199,11 @@ static void strip_md5(char *q)
  *
  * TODO: See if we can do the SORT only if needed (as an argument)
  */
-bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
+bool BareosDb::get_file_list(JobControlRecord *jcr, char *jobids, bool use_md5, bool use_delta,
                          DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_MESSAGE);
-   POOL_MEM query2(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
+   PoolMem query2(PM_MESSAGE);
 
    if (!*jobids) {
       db_lock(this);
@@ -1219,7 +1219,7 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
    }
 
    /*
-    * BSR code is optimized for JobId sorted, with Delta, we need to get
+    * BootStrapRecord code is optimized for JobId sorted, with Delta, we need to get
     * them ordered by date. JobTDate and JobId can be mixed if using Copy
     * or Migration
     */
@@ -1244,9 +1244,9 @@ bool B_DB::get_file_list(JCR *jcr, char *jobids, bool use_md5, bool use_delta,
 /**
  * This procedure gets the base jobid list used by jobids,
  */
-bool B_DB::get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result)
+bool BareosDb::get_used_base_jobids(JobControlRecord *jcr, POOLMEM *jobids, db_list_ctx *result)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    Mmsg(query,
  "SELECT DISTINCT BaseJobId "
@@ -1270,12 +1270,12 @@ bool B_DB::get_used_base_jobids(JCR *jcr, POOLMEM *jobids, db_list_ctx *result)
  *
  * TODO: look and merge from ua_restore.c
  */
-bool B_DB::accurate_get_jobids(JCR *jcr, JOB_DBR *jr, db_list_ctx *jobids)
+bool BareosDb::accurate_get_jobids(JobControlRecord *jcr, JobDbRecord *jr, db_list_ctx *jobids)
 {
    bool retval = false;
    char clientid[50], jobid[50], filesetid[50];
    char date[MAX_TIME_LENGTH];
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    /* Take the current time as upper limit if nothing else specified */
    utime_t StartTime = (jr->StartTime) ? jr->StartTime : time(NULL);
@@ -1364,9 +1364,9 @@ bail_out:
    return retval;
 }
 
-bool B_DB::get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::get_base_file_list(JobControlRecord *jcr, bool use_md5, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    Mmsg(query,
  "SELECT Path, Name, FileIndex, JobId, LStat, 0 As DeltaSeq, MD5, Fhinfo, Fhnode "
@@ -1379,9 +1379,9 @@ bool B_DB::get_base_file_list(JCR *jcr, bool use_md5, DB_RESULT_HANDLER *result_
    return big_sql_query(query.c_str(), result_handler, ctx);
 }
 
-bool B_DB::get_base_jobid(JCR *jcr, JOB_DBR *jr, JobId_t *jobid)
+bool BareosDb::get_base_jobid(JobControlRecord *jcr, JobDbRecord *jr, JobId_t *jobid)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    utime_t StartTime;
    db_int64_ctx lctx;
    char date[MAX_TIME_LENGTH];
@@ -1430,7 +1430,7 @@ bail_out:
 /**
  * Get JobIds associated with a volume
  */
-bool B_DB::get_volume_jobids(JCR *jcr, MEDIA_DBR *mr, db_list_ctx *lst)
+bool BareosDb::get_volume_jobids(JobControlRecord *jcr, MediaDbRecord *mr, db_list_ctx *lst)
 {
    char ed1[50];
    bool retval;
@@ -1449,7 +1449,7 @@ bool B_DB::get_volume_jobids(JCR *jcr, MEDIA_DBR *mr, db_list_ctx *lst)
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_quota_jobbytes(JCR *jcr, JOB_DBR *jr, utime_t JobRetention)
+bool BareosDb::get_quota_jobbytes(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
 {
    SQL_ROW row;
    int num_rows;
@@ -1501,7 +1501,7 @@ bool B_DB::get_quota_jobbytes(JCR *jcr, JOB_DBR *jr, utime_t JobRetention)
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetention)
+bool BareosDb::get_quota_jobbytes_nofailed(JobControlRecord *jcr, JobDbRecord *jr, utime_t JobRetention)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
@@ -1552,7 +1552,7 @@ bool B_DB::get_quota_jobbytes_nofailed(JCR *jcr, JOB_DBR *jr, utime_t JobRetenti
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_quota_record(JCR *jcr, CLIENT_DBR *cdbr)
+bool BareosDb::get_quota_record(JobControlRecord *jcr, ClientDbRecord *cdbr)
 {
    SQL_ROW row;
    char ed1[50];
@@ -1596,7 +1596,7 @@ bool B_DB::get_quota_record(JCR *jcr, CLIENT_DBR *cdbr)
  * Returns dumplevel on success
  *         0: on failure
  */
-int B_DB::get_ndmp_level_mapping(JCR *jcr, JOB_DBR *jr, char *filesystem)
+int BareosDb::get_ndmp_level_mapping(JobControlRecord *jcr, JobDbRecord *jr, char *filesystem)
 {
    SQL_ROW row;
    char ed1[50], ed2[50];
@@ -1648,9 +1648,9 @@ bail_out:
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_ndmp_environment_string(JCR *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::get_ndmp_environment_string(JobControlRecord *jcr, JobId_t JobId, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_FNAME);
+   PoolMem query(PM_FNAME);
    char ed1[50];
    db_int64_ctx lctx;
    bool retval = false;
@@ -1674,9 +1674,9 @@ bool B_DB::get_ndmp_environment_string(JCR *jcr, JobId_t JobId, DB_RESULT_HANDLE
  * Returns false: on failure
  *         true: on success
  */
-bool B_DB::get_ndmp_environment_string(JCR *jcr, JOB_DBR *jr, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDb::get_ndmp_environment_string(JobControlRecord *jcr, JobDbRecord *jr, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    char ed1[50], ed2[50];
    db_int64_ctx lctx;
    JobId_t JobId;
@@ -1720,12 +1720,12 @@ bail_out:
  * volumes or VolumeName if specified. Comma separated list of volumes takes precedence
  * over VolumeName. The caller must free ids if non-NULL.
  */
-bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM *querystring, POOL_MEM &volumes)
+bool BareosDb::prepare_media_sql_query(JobControlRecord *jcr, MediaDbRecord *mr, PoolMem *querystring, PoolMem &volumes)
 {
    bool ok = true;
    char ed1[50];
    char esc[MAX_NAME_LENGTH * 2 + 1];
-   POOL_MEM buf(PM_MESSAGE);
+   PoolMem buf(PM_MESSAGE);
 
    /*
     * columns we care of.
@@ -1804,9 +1804,9 @@ bool B_DB::prepare_media_sql_query(JCR *jcr, MEDIA_DBR *mr, POOL_MEM *querystrin
 /**
  * verify that all media use the same storage.
  */
-bool B_DB::verify_media_ids_from_single_storage(JCR *jcr, dbid_list &mediaIds)
+bool BareosDb::verify_media_ids_from_single_storage(JobControlRecord *jcr, dbid_list &mediaIds)
 {
-   MEDIA_DBR mr;
+   MediaDbRecord mr;
    DBId_t storageId = 0;
 
    for (int i = 0; i < mediaIds.size(); i++) {

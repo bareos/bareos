@@ -50,7 +50,7 @@ static alist *sock_fds = NULL;
  */
 static void *handle_connection_request(void *arg)
 {
-   BSOCK *bs = (BSOCK *)arg;
+   BareosSocket *bs = (BareosSocket *)arg;
    char tbuf[100];
 
    if (bs->recv() <= 0) {

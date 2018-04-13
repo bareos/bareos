@@ -43,7 +43,7 @@ static int set_options(findFOPTS *fo, const char *opts);
  * %D = Director
  * %m = Modification time (for incremental and differential)
  */
-extern "C" char *job_code_callback_filed(JCR *jcr, const char* param)
+extern "C" char *job_code_callback_filed(JobControlRecord *jcr, const char* param)
 {
    static char str[50];
 
@@ -60,9 +60,9 @@ extern "C" char *job_code_callback_filed(JCR *jcr, const char* param)
    return NULL;
 }
 
-bool init_fileset(JCR *jcr)
+bool init_fileset(JobControlRecord *jcr)
 {
-   FF_PKT *ff;
+   FindFilesPacket *ff;
    findFILESET *fileset;
 
    if (!jcr->ff) {
@@ -81,7 +81,7 @@ bool init_fileset(JCR *jcr)
    return true;
 }
 
-static void append_file(JCR *jcr, findINCEXE *incexe,
+static void append_file(JobControlRecord *jcr, findINCEXE *incexe,
                         const char *buf, bool is_file)
 {
    if (is_file) {
@@ -105,11 +105,11 @@ static void append_file(JCR *jcr, findINCEXE *incexe,
  * Add fname to include/exclude fileset list. First check for
  * | and < and if necessary perform command.
  */
-void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file)
+void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool is_file)
 {
    findFILESET *fileset = jcr->ff->fileset;
    char *p;
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    POOLMEM *fn;
    FILE *ffd;
    char buf[1000];
@@ -165,7 +165,7 @@ void add_file_to_fileset(JCR *jcr, const char *fname, bool is_file)
    }
 }
 
-findINCEXE *get_incexe(JCR *jcr)
+findINCEXE *get_incexe(JobControlRecord *jcr)
 {
    if (jcr->ff && jcr->ff->fileset) {
       return jcr->ff->fileset->incexe;
@@ -174,7 +174,7 @@ findINCEXE *get_incexe(JCR *jcr)
    return NULL;
 }
 
-void set_incexe(JCR *jcr, findINCEXE *incexe)
+void set_incexe(JobControlRecord *jcr, findINCEXE *incexe)
 {
    findFILESET *fileset = jcr->ff->fileset;
    fileset->incexe = incexe;
@@ -183,7 +183,7 @@ void set_incexe(JCR *jcr, findINCEXE *incexe)
 /**
  * Add a regex to the current fileset
  */
-int add_regex_to_fileset(JCR *jcr, const char *item, int type)
+int add_regex_to_fileset(JobControlRecord *jcr, const char *item, int type)
 {
    findFOPTS *current_opts = start_options(jcr->ff);
    regex_t *preg;
@@ -219,7 +219,7 @@ int add_regex_to_fileset(JCR *jcr, const char *item, int type)
 /**
  * Add a wild card to the current fileset
  */
-int add_wild_to_fileset(JCR *jcr, const char *item, int type)
+int add_wild_to_fileset(JobControlRecord *jcr, const char *item, int type)
 {
    findFOPTS *current_opts = start_options(jcr->ff);
 
@@ -241,7 +241,7 @@ int add_wild_to_fileset(JCR *jcr, const char *item, int type)
 /**
  * Add options to the current fileset
  */
-int add_options_to_fileset(JCR *jcr, const char *item)
+int add_options_to_fileset(JobControlRecord *jcr, const char *item)
 {
    findFOPTS *current_opts = start_options(jcr->ff);
 
@@ -250,9 +250,9 @@ int add_options_to_fileset(JCR *jcr, const char *item)
    return state_options;
 }
 
-void add_fileset(JCR *jcr, const char *item)
+void add_fileset(JobControlRecord *jcr, const char *item)
 {
-   FF_PKT *ff = jcr->ff;
+   FindFilesPacket *ff = jcr->ff;
    findFILESET *fileset = ff->fileset;
    int code, subcode;
    int state = fileset->state;
@@ -363,7 +363,7 @@ void add_fileset(JCR *jcr, const char *item)
    ff->fileset->state = state;
 }
 
-bool term_fileset(JCR *jcr)
+bool term_fileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
 

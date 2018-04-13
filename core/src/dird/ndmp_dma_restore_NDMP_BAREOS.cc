@@ -51,10 +51,10 @@ static char OKbootstrap[] =
  * correct fileid. Return the actual full pathname of the file
  * corresponding to the given fileid.
  */
-static inline char *lookup_fileindex(JCR *jcr, int32_t FileIndex)
+static inline char *lookup_fileindex(JobControlRecord *jcr, int32_t FileIndex)
 {
    TREE_NODE *node, *parent;
-   POOL_MEM restore_pathname, tmp;
+   PoolMem restore_pathname, tmp;
 
    node = first_tree_node(jcr->restore_tree_root);
    while (node) {
@@ -130,7 +130,7 @@ static inline void add_to_namelist(struct ndm_job_param *job,
                                    int64_t node)
 {
    ndmp9_name nl;
-   POOL_MEM destination_path;
+   PoolMem destination_path;
 
    memset(&nl, 0, sizeof(ndmp9_name));
 
@@ -157,13 +157,13 @@ static inline void add_to_namelist(struct ndm_job_param *job,
 /**
  * See in the tree with selected files what files were selected to be restored.
  */
-static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int32_t FileIndex,
+static inline int set_files_to_restore(JobControlRecord *jcr, struct ndm_job_param *job, int32_t FileIndex,
                                        const char *restore_prefix, const char *ndmp_filesystem)
 {
    int len;
    int cnt = 0;
    TREE_NODE *node, *parent;
-   POOL_MEM restore_pathname, tmp;
+   PoolMem restore_pathname, tmp;
 
    node = first_tree_node(jcr->restore_tree_root);
    while (node) {
@@ -211,20 +211,20 @@ static inline int set_files_to_restore(JCR *jcr, struct ndm_job_param *job, int3
 /**
  * Fill the NDMP restore environment table with the data for the data agent to act on.
  */
-static inline bool fill_restore_environment(JCR *jcr,
+static inline bool fill_restore_environment(JobControlRecord *jcr,
                                             int32_t current_fi,
                                             struct ndm_job_param *job)
 {
    int i;
    char *bp;
    ndmp9_pval pv;
-   FILESETRES *fileset;
+   FilesetResource *fileset;
    char *restore_pathname,
         *ndmp_filesystem,
         *restore_prefix,
         *level;
-   POOL_MEM tape_device;
-   POOL_MEM destination_path;
+   PoolMem tape_device;
+   PoolMem destination_path;
    ndmp_backup_format_option *nbf_options;
 
    /*
@@ -307,7 +307,7 @@ static inline bool fill_restore_environment(JCR *jcr,
    for (i = 0; i < fileset->num_includes; i++) {
       int j;
       char *item;
-      INCEXE *ie = fileset->include_items[i];
+      IncludeExcludeItem *ie = fileset->include_items[i];
 
       /*
        * Loop over each file = entry of the fileset.
@@ -320,7 +320,7 @@ static inline bool fill_restore_environment(JCR *jcr,
           */
          if (bstrcasecmp(item, ndmp_filesystem)) {
             int k, l;
-            FOPTS *fo;
+            FileOptions *fo;
 
             for (k = 0; k < ie->num_opts; k++) {
                fo = ie->opts_list[i];
@@ -421,7 +421,7 @@ static inline bool fill_restore_environment(JCR *jcr,
 /**
  * Setup a NDMP restore session.
  */
-bool do_ndmp_restore_init(JCR *jcr)
+bool do_ndmp_restore_init(JobControlRecord *jcr)
 {
    free_wstorage(jcr);                /* we don't write */
 
@@ -433,7 +433,7 @@ bool do_ndmp_restore_init(JCR *jcr)
    return true;
 }
 
-static inline int ndmp_wait_for_job_termination(JCR *jcr)
+static inline int ndmp_wait_for_job_termination(JobControlRecord *jcr)
 {
    jcr->setJobStatus(JS_Running);
 
@@ -475,15 +475,15 @@ static inline int ndmp_wait_for_job_termination(JCR *jcr)
  * restore.  E.g. your Full is stored on tape, and Incrementals
  * on disk.
  */
-static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
+static inline bool do_ndmp_restore_bootstrap(JobControlRecord *jcr)
 {
    int cnt;
-   BSOCK *sd;
-   BSR *bsr;
+   BareosSocket *sd;
+   BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi;
    bootstrap_info info;
-   BSR_FINDEX *fileindex;
+   BsrFileIndex *fileindex;
    struct ndm_session ndmp_sess;
    struct ndm_job_param ndmp_job;
    bool session_initialized = false;
@@ -497,7 +497,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
    }
 
    /*
-    * We first parse the BSR ourself so we know what to restore.
+    * We first parse the BootStrapRecord ourself so we know what to restore.
     */
    jcr->bsr = parse_bsr(jcr, jcr->RestoreBootstrap);
    if (!jcr->bsr) {
@@ -594,7 +594,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
        * We need to run a NDMP restore for
        * each File Index of each Session Id
        *
-       * So we go over each BSR
+       * So we go over each BootStrapRecord
        *   * look for the Session IDs that we find.
        *      * look for the FileIndexes of that Session ID
        *
@@ -620,7 +620,7 @@ static inline bool do_ndmp_restore_bootstrap(JCR *jcr)
             next_sessid = true;
          }
          /*
-          * check for the first and last fileindex  we have in the current BSR
+          * check for the first and last fileindex  we have in the current BootStrapRecord
           */
          for (fileindex = bsr->FileIndex; fileindex; fileindex = fileindex->next) {
 
@@ -844,9 +844,9 @@ bail_out:
 /**
  * Run a NDMP restore session.
  */
-bool do_ndmp_restore(JCR *jcr)
+bool do_ndmp_restore(JobControlRecord *jcr)
 {
-   JOB_DBR rjr;                       /* restore job record */
+   JobDbRecord rjr;                       /* restore job record */
    int status;
 
    memset(&rjr, 0, sizeof(rjr));
@@ -898,19 +898,19 @@ bail_out:
 
 #else /* HAVE_NDMP */
 
-bool do_ndmp_restore_init(JCR *jcr)
+bool do_ndmp_restore_init(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool do_ndmp_restore(JCR *jcr)
+bool do_ndmp_restore(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;
 }
 
-bool do_ndmp_restore_ndmp_native(JCR *jcr)
+bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
 {
    Jmsg(jcr, M_FATAL, 0, _("NDMP protocol not supported\n"));
    return false;

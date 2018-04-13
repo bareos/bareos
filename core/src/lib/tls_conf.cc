@@ -29,12 +29,12 @@ tls_cert_t::~tls_cert_t() {
 }
 
 uint32_t tls_cert_t::GetPolicy() const {
-   uint32_t result = tls_base_t::BNET_TLS_NONE;
+   uint32_t result = TlsBase::BNET_TLS_NONE;
    if (enable) {
-      result = tls_base_t::BNET_TLS_ENABLED;
+      result = TlsBase::BNET_TLS_ENABLED;
    }
    if (require) {
-      result = tls_base_t::BNET_TLS_REQUIRED | tls_base_t::BNET_TLS_ENABLED;
+      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
    }
    return result << tls_cert_t::policy_offset;
 }
@@ -46,12 +46,12 @@ tls_psk_t::~tls_psk_t() {
 }
 
 uint32_t tls_psk_t::GetPolicy() const {
-   uint32_t result = tls_base_t::BNET_TLS_NONE;
+   uint32_t result = TlsBase::BNET_TLS_NONE;
    if (enable) {
-      result = tls_base_t::BNET_TLS_ENABLED;
+      result = TlsBase::BNET_TLS_ENABLED;
    }
    if (require) {
-      result = tls_base_t::BNET_TLS_REQUIRED | tls_base_t::BNET_TLS_ENABLED;
+      result = TlsBase::BNET_TLS_REQUIRED | TlsBase::BNET_TLS_ENABLED;
    }
 
    return result << tls_psk_t::policy_offset;

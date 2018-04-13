@@ -55,10 +55,10 @@ static char FDOKhello[] = "2000 OK Hello";
 /*
  * Authenticate Director
  */
-static bool authenticate_with_director(JCR *jcr, DIRRES *dir_res) {
-   MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+static bool authenticate_with_director(JobControlRecord *jcr, DirectorResource *dir_res) {
+   MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char bashed_name[MAX_NAME_LENGTH];
    char errmsg[1024];
    int32_t errmsg_len = sizeof(errmsg);
@@ -79,11 +79,11 @@ static bool authenticate_with_director(JCR *jcr, DIRRES *dir_res) {
 /*
  * Authenticate Storage daemon connection
  */
-static bool authenticate_with_storage_daemon(JCR *jcr, STORERES* store)
+static bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource* store)
 {
-   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+   const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
 
@@ -138,11 +138,11 @@ static bool authenticate_with_storage_daemon(JCR *jcr, STORERES* store)
 /*
  * Authenticate File daemon connection
  */
-static bool authenticate_with_file_daemon(JCR *jcr, CLIENTRES* client)
+static bool authenticate_with_file_daemon(JobControlRecord *jcr, ClientResource* client)
 {
-   const MONITORRES *monitor = MonitorItemThread::instance()->getMonitor();
+   const MonitorResource *monitor = MonitorItemThread::instance()->getMonitor();
 
-   BSOCK *fd = jcr->file_bsock;
+   BareosSocket *fd = jcr->file_bsock;
    char dirname[MAX_NAME_LENGTH];
    bool auth_success = false;
 
@@ -204,15 +204,15 @@ static bool authenticate_with_file_daemon(JCR *jcr, CLIENTRES* client)
    return true;
 }
 
-bool authenticate_with_daemon(MonitorItem* item, JCR *jcr)
+bool authenticate_with_daemon(MonitorItem* item, JobControlRecord *jcr)
 {
    switch (item->type()) {
    case R_DIRECTOR:
-      return authenticate_with_director(jcr, (DIRRES*)item->resource());
+      return authenticate_with_director(jcr, (DirectorResource*)item->resource());
    case R_CLIENT:
-      return authenticate_with_file_daemon(jcr, (CLIENTRES*)item->resource());
+      return authenticate_with_file_daemon(jcr, (ClientResource*)item->resource());
    case R_STORAGE:
-      return authenticate_with_storage_daemon(jcr, (STORERES*)item->resource());
+      return authenticate_with_storage_daemon(jcr, (StoreResource*)item->resource());
    default:
       printf(_("Error, currentitem is not a Client or a Storage..\n"));
       return false;

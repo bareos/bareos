@@ -43,14 +43,14 @@ static int reservations_lock_count = 0;
 static brwlock_t reservation_lock;
 
 /* Forward referenced functions */
-static int can_reserve_drive(DCR *dcr, RCTX &rctx);
-static int reserve_device(RCTX &rctx);
-static bool reserve_device_for_read(DCR *dcr);
-static bool reserve_device_for_append(DCR *dcr, RCTX &rctx);
-static bool use_device_cmd(JCR *jcr);
-static void queue_reserve_message(JCR *jcr);
-static void pop_reserve_messages(JCR *jcr);
-//void switch_device(DCR *dcr, DEVICE *dev);
+static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx);
+static int reserve_device(ReserveContext &rctx);
+static bool reserve_device_for_read(DeviceControlRecord *dcr);
+static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &rctx);
+static bool use_device_cmd(JobControlRecord *jcr);
+static void queue_reserve_message(JobControlRecord *jcr);
+static void pop_reserve_messages(JobControlRecord *jcr);
+//void switch_device(DeviceControlRecord *dcr, Device *dev);
 
 /* Requests from the Director daemon */
 static char use_storage[] =
@@ -68,7 +68,7 @@ static char NO_device[] =
 static char BAD_use[] =
    "3913 Bad use command: %s\n";
 
-bool use_cmd(JCR *jcr)
+bool use_cmd(JobControlRecord *jcr)
 {
    /*
     * Get the device, media, and pool information
@@ -128,17 +128,17 @@ void _unlock_reservations()
    }
 }
 
-void DCR::set_reserved()
+void DeviceControlRecord::set_reserved()
 {
-   m_reserved = true;
+   reserved_ = true;
    Dmsg2(dbglvl, "Inc reserve=%d dev=%s\n", dev->num_reserved(), dev->print_name());
    dev->inc_reserved();
 }
 
-void DCR::clear_reserved()
+void DeviceControlRecord::clear_reserved()
 {
-   if (m_reserved) {
-      m_reserved = false;
+   if (reserved_) {
+      reserved_ = false;
       dev->dec_reserved();
       Dmsg2(dbglvl, "Dec reserve=%d dev=%s\n", dev->num_reserved(), dev->print_name());
    }
@@ -148,7 +148,7 @@ void DCR::clear_reserved()
  * Remove any reservation from a drive and tell the system
  * that the volume is unused at least by us.
  */
-void DCR::unreserve_device()
+void DeviceControlRecord::unreserve_device()
 {
    dev->Lock();
    if (is_reserved()) {
@@ -184,18 +184,18 @@ void DCR::unreserve_device()
  * use storage=xxx media_type=yyy pool_name=xxx pool_type=yyy append=0 copy=0 strip=0
  * use device=bbb
  */
-static bool use_device_cmd(JCR *jcr)
+static bool use_device_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM store_name, dev_name, media_type, pool_name, pool_type;
-   BSOCK *dir = jcr->dir_bsock;
+   PoolMem store_name, dev_name, media_type, pool_name, pool_type;
+   BareosSocket *dir = jcr->dir_bsock;
    int32_t append;
    bool ok;
    int32_t Copy, Stripe;
-   DIRSTORE *store;
-   RCTX rctx;
+   DirectorStorage *store;
+   ReserveContext rctx;
    alist *dirstore;
 
-   memset(&rctx, 0, sizeof(RCTX));
+   memset(&rctx, 0, sizeof(ReserveContext));
    rctx.jcr = jcr;
 
    /*
@@ -222,9 +222,9 @@ static bool use_device_cmd(JCR *jcr)
       unbash_spaces(media_type);
       unbash_spaces(pool_name);
       unbash_spaces(pool_type);
-      store = new DIRSTORE;
+      store = new DirectorStorage;
       dirstore->append(store);
-      memset(store, 0, sizeof(DIRSTORE));
+      memset(store, 0, sizeof(DirectorStorage));
       store->device = New(alist(10));
       bstrncpy(store->name, store_name, sizeof(store->name));
       bstrncpy(store->media_type, media_type, sizeof(store->media_type));
@@ -271,7 +271,7 @@ static bool use_device_cmd(JCR *jcr)
    }
 
    if (!jcr->dcr) {
-      BSOCK *dir = jcr->dir_bsock;
+      BareosSocket *dir = jcr->dir_bsock;
       dir->fsend(_("3939 Could not get dcr\n"));
       Dmsg1(dbglvl, ">dird: %s", dir->msg);
       ok = false;
@@ -420,9 +420,9 @@ static bool use_device_cmd(JCR *jcr)
  * Returns:  true  if volume is in device
  *           false otherwise
  */
-static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
+static bool is_vol_in_autochanger(ReserveContext &rctx, VolumeReservationItem *vol)
 {
-   AUTOCHANGERRES *changer = vol->dev->device->changer_res;
+   AutochangerResource *changer = vol->dev->device->changer_res;
 
    if (!changer) {
       return false;
@@ -447,13 +447,13 @@ static bool is_vol_in_autochanger(RCTX &rctx, VOLRES *vol)
  * device exists within the SD. The device may not be actually useable.
  * It also returns if it finds a useable device.
  */
-bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
+bool find_suitable_device_for_job(JobControlRecord *jcr, ReserveContext &rctx)
 {
    bool ok = false;
-   DIRSTORE *store;
+   DirectorStorage *store;
    char *device_name;
    alist *dirstore;
-   DCR *dcr = jcr->dcr;
+   DeviceControlRecord *dcr = jcr->dcr;
 
    if (rctx.append) {
       dirstore = jcr->write_store;
@@ -472,7 +472,7 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
     */
    if (!is_vol_list_empty() && rctx.append && rctx.PreferMountedVols) {
       dlist *temp_vol_list;
-      VOLRES *vol = NULL;
+      VolumeReservationItem *vol = NULL;
       temp_vol_list = dup_vol_list(jcr);
 
       /*
@@ -591,10 +591,10 @@ bool find_suitable_device_for_job(JCR *jcr, RCTX &rctx)
 /**
  * Search for a particular storage device with particular storage characteristics (MediaType).
  */
-int search_res_for_device(RCTX &rctx)
+int search_res_for_device(ReserveContext &rctx)
 {
    int status;
-   AUTOCHANGERRES *changer;
+   AutochangerResource *changer;
 
    /*
     * Look through Autochangers first
@@ -700,14 +700,14 @@ int search_res_for_device(RCTX &rctx)
 /**
  * Try to reserve a specific device.
  *
- * Returns: 1 -- OK, have DCR
+ * Returns: 1 -- OK, have DeviceControlRecord
  *          0 -- must wait
  *         -1 -- fatal error
  */
-static int reserve_device(RCTX &rctx)
+static int reserve_device(ReserveContext &rctx)
 {
    bool ok;
-   DCR *dcr;
+   DeviceControlRecord *dcr;
    const int name_len = MAX_NAME_LENGTH;
 
    /*
@@ -750,7 +750,7 @@ static int reserve_device(RCTX &rctx)
    }
 
    if (!dcr) {
-      BSOCK *dir = rctx.jcr->dir_bsock;
+      BareosSocket *dir = rctx.jcr->dir_bsock;
 
       dir->fsend(_("3926 Could not get dcr for device: %s\n"), rctx.device_name);
       Dmsg1(dbglvl, ">dird: %s", dir->msg);
@@ -846,8 +846,8 @@ static int reserve_device(RCTX &rctx)
    }
 
    if (rctx.notify_dir) {
-      POOL_MEM dev_name;
-      BSOCK *dir = rctx.jcr->dir_bsock;
+      PoolMem dev_name;
+      BareosSocket *dir = rctx.jcr->dir_bsock;
       pm_strcpy(dev_name, rctx.device->name());
       bash_spaces(dev_name);
       ok = dir->fsend(OK_device, dev_name.c_str());  /* Return real device name */
@@ -869,10 +869,10 @@ bail_out:
  * No one else should touch the drive until that is cleared.
  * This allows the DIR to "reserve" the device before actually starting the job.
  */
-static bool reserve_device_for_read(DCR *dcr)
+static bool reserve_device_for_read(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
    bool ok = false;
 
    ASSERT(dcr);
@@ -932,10 +932,10 @@ bail_out:
  * the first to reserve the device, we put the pool
  * name and pool type in the device record.
  */
-static bool reserve_device_for_append(DCR *dcr, RCTX &rctx)
+static bool reserve_device_for_append(DeviceControlRecord *dcr, ReserveContext &rctx)
 {
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
    bool ok = false;
 
    ASSERT(dcr);
@@ -992,10 +992,10 @@ bail_out:
    return ok;
 }
 
-static int is_pool_ok(DCR *dcr)
+static int is_pool_ok(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    /*
     * Now check if we want the same Pool and pool type
@@ -1019,10 +1019,10 @@ static int is_pool_ok(DCR *dcr)
    return 0;
 }
 
-static bool is_max_jobs_ok(DCR *dcr)
+static bool is_max_jobs_ok(DeviceControlRecord *dcr)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    Dmsg5(dbglvl, "MaxJobs=%d Jobs=%d reserves=%d Status=%s Vol=%s\n",
          dcr->VolCatInfo.VolCatMaxJobs,
@@ -1066,10 +1066,10 @@ static bool is_max_jobs_ok(DCR *dcr)
  *          0 if we should wait
  *         -1 on error or impossibility
  */
-static int can_reserve_drive(DCR *dcr, RCTX &rctx)
+static int can_reserve_drive(DeviceControlRecord *dcr, ReserveContext &rctx)
 {
-   DEVICE *dev = dcr->dev;
-   JCR *jcr = dcr->jcr;
+   Device *dev = dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
 
    Dmsg5(dbglvl, "PrefMnt=%d exact=%d suitable=%d chgronly=%d any=%d\n",
          rctx.PreferMountedVols, rctx.exact_match, rctx.suitable_device,
@@ -1227,7 +1227,7 @@ static int can_reserve_drive(DCR *dcr, RCTX &rctx)
 /**
  * Queue a reservation error or failure message for this jcr
  */
-static void queue_reserve_message(JCR *jcr)
+static void queue_reserve_message(JobControlRecord *jcr)
 {
    int i;
    alist *msgs;
@@ -1268,7 +1268,7 @@ bail_out:
 /**
  * Pop and release any reservations messages
  */
-static void pop_reserve_messages(JCR *jcr)
+static void pop_reserve_messages(JobControlRecord *jcr)
 {
    alist *msgs;
    char *msg;
@@ -1288,7 +1288,7 @@ bail_out:
 /**
  * Also called from acquire.c
  */
-void release_reserve_messages(JCR *jcr)
+void release_reserve_messages(JobControlRecord *jcr)
 {
    pop_reserve_messages(jcr);
    jcr->lock();

@@ -32,7 +32,7 @@
  *   chunked_device::
  *         |
  *         v
- *       DEVICE::
+ *       Device::
  *
  */
 /**
@@ -286,7 +286,7 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    dpl_status_t status;
    dpl_option_t dpl_options;
    dpl_sysmd_t *sysmd = NULL;
-   POOL_MEM chunk_dir(PM_FNAME),
+   PoolMem chunk_dir(PM_FNAME),
             chunk_name(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", request->volname);
@@ -310,8 +310,8 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
     * the biggest amount of valid data to persist as we only append to
     * chunks.
     */
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_getattr(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_getattr(ctx_, /* context */
                         chunk_name.c_str(), /* locator */
                         NULL, /* metadata */
                         sysmd); /* sysmd */
@@ -328,8 +328,8 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
        * Check on the remote backing store if the chunkdir exists.
        */
       dpl_sysmd_free(sysmd);
-      sysmd = dpl_sysmd_dup(&m_sysmd);
-      status = dpl_getattr(m_ctx, /* context */
+      sysmd = dpl_sysmd_dup(&sysmd_);
+      status = dpl_getattr(ctx_, /* context */
                            chunk_dir.c_str(), /* locator */
                            NULL, /* metadata */
                            sysmd); /* sysmd */
@@ -343,8 +343,8 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
           * Make sure the chunk directory with the name of the volume exists.
           */
          dpl_sysmd_free(sysmd);
-         sysmd = dpl_sysmd_dup(&m_sysmd);
-         status = dpl_mkdir(m_ctx, /* context */
+         sysmd = dpl_sysmd_dup(&sysmd_);
+         status = dpl_mkdir(ctx_, /* context */
                             chunk_dir.c_str(), /* locator */
                             NULL, /* metadata */
                             sysmd);/* sysmd */
@@ -376,8 +376,8 @@ bool droplet_device::flush_remote_chunk(chunk_io_request *request)
    dpl_options.mask |= DPL_OPTION_NOALLOC;
 
    dpl_sysmd_free(sysmd);
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_fput(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_fput(ctx_, /* context */
                      chunk_name.c_str(), /* locator */
                      &dpl_options, /* options */
                      NULL, /* condition */
@@ -422,7 +422,7 @@ bool droplet_device::read_remote_chunk(chunk_io_request *request)
    dpl_option_t dpl_options;
    dpl_range_t dpl_range;
    dpl_sysmd_t *sysmd = NULL;
-   POOL_MEM chunk_name(PM_FNAME);
+   PoolMem chunk_name(PM_FNAME);
 
    Mmsg(chunk_name, "/%s/%04d", request->volname, request->chunk);
    Dmsg1(100, "Reading chunk %s\n", chunk_name.c_str());
@@ -430,8 +430,8 @@ bool droplet_device::read_remote_chunk(chunk_io_request *request)
    /*
     * See if chunk exists.
     */
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_getattr(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_getattr(ctx_, /* context */
                         chunk_name.c_str(), /* locator */
                         NULL, /* metadata */
                         sysmd); /* sysmd */
@@ -468,8 +468,8 @@ bool droplet_device::read_remote_chunk(chunk_io_request *request)
    dpl_range.end = sysmd->size;
    *request->rbuflen = sysmd->size;
    dpl_sysmd_free(sysmd);
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_fget(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_fget(ctx_, /* context */
                      chunk_name.c_str(), /* locator */
                      &dpl_options, /* options */
                      NULL, /* condition */
@@ -507,12 +507,12 @@ bail_out:
 /*
  * Internal method for truncating a chunked volume on the remote backing store.
  */
-bool droplet_device::truncate_remote_chunked_volume(DCR *dcr)
+bool droplet_device::truncate_remote_chunked_volume(DeviceControlRecord *dcr)
 {
-   POOL_MEM chunk_dir(PM_FNAME);
+   PoolMem chunk_dir(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", getVolCatName());
-   if (!walk_dpl_directory(m_ctx, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
+   if (!walk_dpl_directory(ctx_, chunk_dir.c_str(), chunked_volume_truncate_callback, NULL)) {
       return false;
    }
 
@@ -545,7 +545,7 @@ bool droplet_device::initialize()
    droplet_reference_count++;
    V(mutex);
 
-   if (!m_configstring) {
+   if (!configstring_) {
       int len;
       bool done;
       uint64_t value;
@@ -557,9 +557,9 @@ bool droplet_device::initialize()
          return -1;
       }
 
-      m_configstring = bstrdup(dev_options);
+      configstring_ = bstrdup(dev_options);
 
-      bp = m_configstring;
+      bp = configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -584,48 +584,48 @@ bool droplet_device::initialize()
                   if (len > 8 && bstrcasecmp(profile + (len - 8), ".profile")) {
                      profile[len - 8] = '\0';
                   }
-                  m_profile = profile;
+                  profile_ = profile;
                   done = true;
                   break;
                }
                case argument_location:
-                  m_location = bp + device_options[i].compare_size;
+                  location_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_canned_acl:
-                  m_canned_acl = bp + device_options[i].compare_size;
+                  canned_acl_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_storage_class:
-                  m_storage_class = bp + device_options[i].compare_size;
+                  storage_class_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_bucket:
-                  m_bucketname = bp + device_options[i].compare_size;
+                  bucketname_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_chunksize:
                   size_to_uint64(bp + device_options[i].compare_size, &value);
-                  m_chunk_size = value;
+                  chunk_size_ = value;
                   done = true;
                   break;
                case argument_iothreads:
                   size_to_uint64(bp + device_options[i].compare_size, &value);
-                  m_io_threads = value & 0xFF;
+                  io_threads_ = value & 0xFF;
                   done = true;
                   break;
                case argument_ioslots:
                   size_to_uint64(bp + device_options[i].compare_size, &value);
-                  m_io_slots = value & 0xFF;
+                  io_slots_ = value & 0xFF;
                   done = true;
                   break;
                case argument_retries:
                   size_to_uint64(bp + device_options[i].compare_size, &value);
-                  m_retries = value & 0xFF;
+                  retries_ = value & 0xFF;
                   done = true;
                   break;
                case argument_mmap:
-                  m_use_mmap = true;
+                  use_mmap_ = true;
                   done = true;
                   break;
                default:
@@ -643,7 +643,7 @@ bool droplet_device::initialize()
          bp = next_option;
       }
 
-      if (!m_profile) {
+      if (!profile_) {
          Mmsg0(errmsg, _("No droplet profile configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
@@ -653,39 +653,39 @@ bool droplet_device::initialize()
    /*
     * See if we need to setup a new context for this device.
     */
-   if (!m_ctx) {
+   if (!ctx_) {
       char *bp;
-      POOL_MEM temp(PM_NAME);
+      PoolMem temp(PM_NAME);
 
       /*
        * Setup global sysmd settings which are cloned for each operation.
        */
-      memset(&m_sysmd, 0, sizeof(m_sysmd));
-      if (m_location) {
-         pm_strcpy(temp, m_location);
-         m_sysmd.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
-         m_sysmd.location_constraint = dpl_location_constraint(temp.c_str());
-         if (m_sysmd.location_constraint == -1) {
+      memset(&sysmd_, 0, sizeof(sysmd_));
+      if (location_) {
+         pm_strcpy(temp, location_);
+         sysmd_.mask |= DPL_SYSMD_MASK_LOCATION_CONSTRAINT;
+         sysmd_.location_constraint = dpl_location_constraint(temp.c_str());
+         if (sysmd_.location_constraint == -1) {
             Mmsg2(errmsg, _("Illegal location argument %s for device %s%s\n"), temp.c_str(), dev_name);
             goto bail_out;
          }
       }
 
-      if (m_canned_acl) {
-         pm_strcpy(temp, m_canned_acl);
-         m_sysmd.mask |= DPL_SYSMD_MASK_CANNED_ACL;
-         m_sysmd.canned_acl = dpl_canned_acl(temp.c_str());
-         if (m_sysmd.canned_acl == -1) {
+      if (canned_acl_) {
+         pm_strcpy(temp, canned_acl_);
+         sysmd_.mask |= DPL_SYSMD_MASK_CANNED_ACL;
+         sysmd_.canned_acl = dpl_canned_acl(temp.c_str());
+         if (sysmd_.canned_acl == -1) {
             Mmsg2(errmsg, _("Illegal canned_acl argument %s for device %s%s\n"), temp.c_str(), dev_name);
             goto bail_out;
          }
       }
 
-      if (m_storage_class) {
-         pm_strcpy(temp, m_storage_class);
-         m_sysmd.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
-         m_sysmd.storage_class = dpl_storage_class(temp.c_str());
-         if (m_sysmd.storage_class == -1) {
+      if (storage_class_) {
+         pm_strcpy(temp, storage_class_);
+         sysmd_.mask |= DPL_SYSMD_MASK_STORAGE_CLASS;
+         sysmd_.storage_class = dpl_storage_class(temp.c_str());
+         if (sysmd_.storage_class == -1) {
             Mmsg2(errmsg, _("Illegal storage_class argument %s for device %s%s\n"), temp.c_str(), dev_name);
             goto bail_out;
          }
@@ -694,32 +694,32 @@ bool droplet_device::initialize()
       /*
        * See if this is a path.
        */
-      pm_strcpy(temp, m_profile);
+      pm_strcpy(temp, profile_);
       bp = strrchr(temp.c_str(), '/');
       if (!bp) {
          /*
           * Only a profile name.
           */
-         m_ctx = dpl_ctx_new(NULL, temp.c_str());
+         ctx_ = dpl_ctx_new(NULL, temp.c_str());
       } else {
          if (bp == temp.c_str()) {
             /*
              * Profile in root of filesystem
              */
-            m_ctx = dpl_ctx_new("/", bp + 1);
+            ctx_ = dpl_ctx_new("/", bp + 1);
          } else {
             /*
              * Profile somewhere else.
              */
             *bp++ = '\0';
-            m_ctx = dpl_ctx_new(temp.c_str(), bp);
+            ctx_ = dpl_ctx_new(temp.c_str(), bp);
          }
       }
 
       /*
        * If we failed to allocate a new context fail the open.
        */
-      if (!m_ctx) {
+      if (!ctx_) {
          Mmsg1(errmsg, _("Failed to create a new context using config %s\n"), dev_options);
          Dmsg1(100, "%s", errmsg);
          goto bail_out;
@@ -728,7 +728,7 @@ bool droplet_device::initialize()
       /*
        * Login if that is needed for this backend.
        */
-      status = dpl_login(m_ctx);
+      status = dpl_login(ctx_);
 
       switch (status) {
       case DPL_SUCCESS:
@@ -748,8 +748,8 @@ bool droplet_device::initialize()
       /*
        * If a bucketname was defined set it in the context.
        */
-      if (m_bucketname) {
-         m_ctx->cur_bucket = bstrdup(m_bucketname);
+      if (bucketname_) {
+         ctx_->cur_bucket = bstrdup(bucketname_);
       }
    }
 
@@ -805,7 +805,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    dpl_status_t status;
    ssize_t volumesize = 0;
    dpl_sysmd_t *sysmd = NULL;
-   POOL_MEM chunk_dir(PM_FNAME);
+   PoolMem chunk_dir(PM_FNAME);
 
    Mmsg(chunk_dir, "/%s", getVolCatName());
 
@@ -821,8 +821,8 @@ ssize_t droplet_device::chunked_remote_volume_size()
    /*
     * First make sure that the chunkdir exists otherwise it makes little sense to scan it.
     */
-   sysmd = dpl_sysmd_dup(&m_sysmd);
-   status = dpl_getattr(m_ctx, /* context */
+   sysmd = dpl_sysmd_dup(&sysmd_);
+   status = dpl_getattr(ctx_, /* context */
                         chunk_dir.c_str(), /* locator */
                         NULL, /* metadata */
                         sysmd); /* sysmd */
@@ -845,7 +845,7 @@ ssize_t droplet_device::chunked_remote_volume_size()
    }
 #endif
 
-   if (!walk_dpl_directory(m_ctx, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
+   if (!walk_dpl_directory(ctx_, chunk_dir.c_str(), chunked_volume_size_callback, &volumesize)) {
       volumesize = -1;
       goto bail_out;
    }
@@ -860,14 +860,14 @@ bail_out:
    return volumesize;
 }
 
-boffset_t droplet_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t droplet_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
    switch (whence) {
    case SEEK_SET:
-      m_offset = offset;
+      offset_ = offset;
       break;
    case SEEK_CUR:
-      m_offset += offset;
+      offset_ += offset;
       break;
    case SEEK_END: {
       ssize_t volumesize;
@@ -877,7 +877,7 @@ boffset_t droplet_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
       Dmsg1(100, "Current volumesize: %lld\n", volumesize);
 
       if (volumesize >= 0) {
-         m_offset = volumesize + offset;
+         offset_ = volumesize + offset;
       } else {
          return -1;
       }
@@ -891,27 +891,27 @@ boffset_t droplet_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
       return -1;
    }
 
-   return m_offset;
+   return offset_;
 }
 
-bool droplet_device::d_truncate(DCR *dcr)
+bool droplet_device::d_truncate(DeviceControlRecord *dcr)
 {
    return truncate_chunked_volume(dcr);
 }
 
 droplet_device::~droplet_device()
 {
-   if (m_ctx) {
-      if (m_bucketname && m_ctx->cur_bucket) {
-         free(m_ctx->cur_bucket);
-         m_ctx->cur_bucket = NULL;
+   if (ctx_) {
+      if (bucketname_ && ctx_->cur_bucket) {
+         free(ctx_->cur_bucket);
+         ctx_->cur_bucket = NULL;
       }
-      dpl_ctx_free(m_ctx);
-      m_ctx = NULL;
+      dpl_ctx_free(ctx_);
+      ctx_ = NULL;
    }
 
-   if (m_configstring) {
-      free(m_configstring);
+   if (configstring_) {
+      free(configstring_);
    }
 
    P(mutex);
@@ -924,18 +924,18 @@ droplet_device::~droplet_device()
 
 droplet_device::droplet_device()
 {
-   m_configstring = NULL;
-   m_bucketname = NULL;
-   m_location = NULL;
-   m_canned_acl = NULL;
-   m_storage_class = NULL;
-   m_ctx = NULL;
+   configstring_ = NULL;
+   bucketname_ = NULL;
+   location_ = NULL;
+   canned_acl_ = NULL;
+   storage_class_ = NULL;
+   ctx_ = NULL;
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_DROPLET_DEV:

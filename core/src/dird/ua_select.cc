@@ -38,7 +38,7 @@ extern struct s_jl joblevels[];
 /**
  * Confirm a retention period
  */
-bool confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
+bool confirm_retention(UaContext *ua, utime_t *ret, const char *msg)
 {
    bool retval;
    char ed1[100];
@@ -81,7 +81,7 @@ bool confirm_retention(UAContext *ua, utime_t *ret, const char *msg)
  * Returns: -1 if not found
  *          index into list (base 0) on success
  */
-int find_arg_keyword(UAContext *ua, const char **list)
+int find_arg_keyword(UaContext *ua, const char **list)
 {
    for (int i = 1; i < ua->argc; i++) {
       for (int j = 0; list[j]; j++) {
@@ -100,7 +100,7 @@ int find_arg_keyword(UAContext *ua, const char **list)
  * Returns: argk index (always gt 0)
  *          -1 if not found
  */
-int find_arg(UAContext *ua, const char *keyword)
+int find_arg(UaContext *ua, const char *keyword)
 {
    for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(keyword, ua->argk[i])) {
@@ -117,7 +117,7 @@ int find_arg(UAContext *ua, const char *keyword)
  * Returns: -1 if not found or no value
  *           list index (base 0) on success
  */
-int find_arg_with_value(UAContext *ua, const char *keyword)
+int find_arg_with_value(UaContext *ua, const char *keyword)
 {
    for (int i = 1; i < ua->argc; i++) {
       if (bstrcasecmp(keyword, ua->argk[i])) {
@@ -138,7 +138,7 @@ int find_arg_with_value(UAContext *ua, const char *keyword)
  * Returns: -1 on failure
  *          index into list (base 0) on success
  */
-int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
+int do_keyword_prompt(UaContext *ua, const char *msg, const char **list)
 {
    start_prompt(ua, _("You have the following choices:\n"));
    for (int i = 0; list[i]; i++) {
@@ -151,9 +151,9 @@ int do_keyword_prompt(UAContext *ua, const char *msg, const char **list)
 /**
  * Select a Storage resource from prompt list
  */
-STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
+StoreResource *select_storage_resource(UaContext *ua, bool autochanger_only)
 {
-   STORERES *store;
+   StoreResource *store;
    char name[MAX_NAME_LENGTH];
 
    if (autochanger_only) {
@@ -185,9 +185,9 @@ STORERES *select_storage_resource(UAContext *ua, bool autochanger_only)
 /**
  * Select a FileSet resource from prompt list
  */
-FILESETRES *select_fileset_resource(UAContext *ua)
+FilesetResource *select_fileset_resource(UaContext *ua)
 {
-   FILESETRES *fs;
+   FilesetResource *fs;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined FileSet resources are:\n"));
@@ -212,9 +212,9 @@ FILESETRES *select_fileset_resource(UAContext *ua)
 /**
  * Get a catalog resource from prompt list
  */
-CATRES *get_catalog_resource(UAContext *ua)
+CatalogResource *get_catalog_resource(UaContext *ua)
 {
-   CATRES *catalog = NULL;
+   CatalogResource *catalog = NULL;
    char name[MAX_NAME_LENGTH];
 
    for (int i = 1; i < ua->argc; i++) {
@@ -228,7 +228,7 @@ CATRES *get_catalog_resource(UAContext *ua)
 
    if (ua->gui && !catalog) {
       LockRes();
-      catalog = (CATRES *)GetNextRes(R_CATALOG, NULL);
+      catalog = (CatalogResource *)GetNextRes(R_CATALOG, NULL);
       UnlockRes();
 
       if (!catalog) {
@@ -266,9 +266,9 @@ CATRES *get_catalog_resource(UAContext *ua)
 /**
  * Select a job to enable or disable
  */
-JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
+JobResource *select_enable_disable_job_resource(UaContext *ua, bool enable)
 {
-   JOBRES *job;
+   JobResource *job;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Job resources are:\n"));
@@ -297,9 +297,9 @@ JOBRES *select_enable_disable_job_resource(UAContext *ua, bool enable)
 /**
  * Select a Job resource from prompt list
  */
-JOBRES *select_job_resource(UAContext *ua)
+JobResource *select_job_resource(UaContext *ua)
 {
-   JOBRES *job;
+   JobResource *job;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Job resources are:\n"));
@@ -324,10 +324,10 @@ JOBRES *select_job_resource(UAContext *ua)
 /**
  * Select a Restore Job resource from argument or prompt
  */
-JOBRES *get_restore_job(UAContext *ua)
+JobResource *get_restore_job(UaContext *ua)
 {
    int i;
-   JOBRES *job;
+   JobResource *job;
 
    i = find_arg_with_value(ua, NT_("restorejob"));
    if (i >= 0) {
@@ -344,9 +344,9 @@ JOBRES *get_restore_job(UAContext *ua)
 /**
  * Select a Restore Job resource from prompt list
  */
-JOBRES *select_restore_job_resource(UAContext *ua)
+JobResource *select_restore_job_resource(UaContext *ua)
 {
-   JOBRES *job;
+   JobResource *job;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Restore Job resources are:\n"));
@@ -371,9 +371,9 @@ JOBRES *select_restore_job_resource(UAContext *ua)
 /**
  * Select a client resource from prompt list
  */
-CLIENTRES *select_client_resource(UAContext *ua)
+ClientResource *select_client_resource(UaContext *ua)
 {
-   CLIENTRES *client;
+   ClientResource *client;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Client resources are:\n"));
@@ -398,9 +398,9 @@ CLIENTRES *select_client_resource(UAContext *ua)
 /**
  * Select a client to enable or disable
  */
-CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
+ClientResource *select_enable_disable_client_resource(UaContext *ua, bool enable)
 {
-   CLIENTRES *client;
+   ClientResource *client;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Client resources are:\n"));
@@ -431,9 +431,9 @@ CLIENTRES *select_enable_disable_client_resource(UAContext *ua, bool enable)
  *   client=<client-name>
  *  if we don't find the keyword, we prompt the user.
  */
-CLIENTRES *get_client_resource(UAContext *ua)
+ClientResource *get_client_resource(UaContext *ua)
 {
-   CLIENTRES *client = NULL;
+   ClientResource *client = NULL;
 
    for (int i = 1; i < ua->argc; i++) {
       if ((bstrcasecmp(ua->argk[i], NT_("client")) ||
@@ -455,9 +455,9 @@ CLIENTRES *get_client_resource(UAContext *ua)
 /**
  * Select a schedule to enable or disable
  */
-SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
+ScheduleResource *select_enable_disable_schedule_resource(UaContext *ua, bool enable)
 {
-   SCHEDRES *sched;
+   ScheduleResource *sched;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Schedule resources are:\n"));
@@ -491,9 +491,9 @@ SCHEDRES *select_enable_disable_schedule_resource(UAContext *ua, bool enable)
  * If error or not found, put up a list of client DBRs to choose from.
  *
  * returns: false on error
- *          true on success and fills in CLIENT_DBR
+ *          true on success and fills in ClientDbRecord
  */
-bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
+bool get_client_dbr(UaContext *ua, ClientDbRecord *cr)
 {
    if (cr->Name[0]) {                 /* If name already supplied */
       if (ua->db->get_client_record(ua->jcr, cr)) {
@@ -532,10 +532,10 @@ bool get_client_dbr(UAContext *ua, CLIENT_DBR *cr)
  * Returns true on success
  *         false on failure
  */
-bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
+bool select_client_dbr(UaContext *ua, ClientDbRecord *cr)
 {
    DBId_t *ids;
-   CLIENT_DBR ocr;
+   ClientDbRecord ocr;
    int num_clients;
    char name[MAX_NAME_LENGTH];
 
@@ -588,9 +588,9 @@ bool select_client_dbr(UAContext *ua, CLIENT_DBR *cr)
  * If error or not found, put up a list of storage DBRs to choose from.
  *
  * returns: false on error
- *          true  on success and fills in STORAGE_DBR
+ *          true  on success and fills in StorageDbRecord
  */
-bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
+bool get_storage_dbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
 {
    if (sr->Name[0]) {                 /* If name already supplied */
       if (ua->db->get_storage_record(ua->jcr, sr) &&
@@ -617,9 +617,9 @@ bool get_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
  * If error or not found, put up a list of pool DBRs to choose from.
  *
  * returns: false on error
- *          true  on success and fills in POOL_DBR
+ *          true  on success and fills in PoolDbRecord
  */
-bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
+bool get_pool_dbr(UaContext *ua, PoolDbRecord *pr, const char *argk)
 {
    if (pr->Name[0]) {                 /* If name already supplied */
       if (ua->db->get_pool_record(ua->jcr, pr) &&
@@ -640,9 +640,9 @@ bool get_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
  * Select a Pool record from catalog
  * argk can be pool, recyclepool, scratchpool etc..
  */
-bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
+bool select_pool_dbr(UaContext *ua, PoolDbRecord *pr, const char *argk)
 {
-   POOL_DBR opr;
+   PoolDbRecord opr;
    DBId_t *ids;
    int num_pools;
    char name[MAX_NAME_LENGTH];
@@ -714,13 +714,13 @@ bool select_pool_dbr(UAContext *ua, POOL_DBR *pr, const char *argk)
 /**
  * Select a Pool and a Media (Volume) record from the database
  */
-bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
+bool select_pool_and_media_dbr(UaContext *ua, PoolDbRecord *pr, MediaDbRecord *mr)
 {
    if (!select_media_dbr(ua, mr)) {
       return false;
    }
 
-   memset(pr, 0, sizeof(POOL_DBR));
+   memset(pr, 0, sizeof(PoolDbRecord));
    pr->PoolId = mr->PoolId;
    if (!ua->db->get_pool_record(ua->jcr, pr)) {
       ua->error_msg("%s", ua->db->strerror());
@@ -739,9 +739,9 @@ bool select_pool_and_media_dbr(UAContext *ua, POOL_DBR *pr, MEDIA_DBR *mr)
  * Select a Storage record from catalog
  * argk can be storage
  */
-bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
+bool select_storage_dbr(UaContext *ua, StorageDbRecord *sr, const char *argk)
 {
-   STORAGE_DBR osr;
+   StorageDbRecord osr;
    DBId_t *ids;
    int num_storages;
    char name[MAX_NAME_LENGTH];
@@ -813,14 +813,14 @@ bool select_storage_dbr(UAContext *ua, STORAGE_DBR *sr, const char *argk)
 /**
  * Select a Media (Volume) record from the database
  */
-bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
+bool select_media_dbr(UaContext *ua, MediaDbRecord *mr)
 {
    int i;
    int retval = false;
    POOLMEM *err = get_pool_memory(PM_FNAME);
 
    *err = 0;
-   memset(mr, 0, sizeof(MEDIA_DBR));
+   memset(mr, 0, sizeof(MediaDbRecord));
    i = find_arg_with_value(ua, NT_("volume"));
    if (i >= 0) {
       if (is_name_valid(ua->argv[i], err)) {
@@ -831,7 +831,7 @@ bool select_media_dbr(UAContext *ua, MEDIA_DBR *mr)
    }
 
    if (mr->VolumeName[0] == 0) {
-      POOL_DBR pr;
+      PoolDbRecord pr;
 
       memset(&pr, 0, sizeof(pr));
       /*
@@ -875,9 +875,9 @@ bail_out:
 /**
  * Select a pool resource from prompt list
  */
-POOLRES *select_pool_resource(UAContext *ua)
+PoolResource *select_pool_resource(UaContext *ua)
 {
-   POOLRES *pool;
+   PoolResource *pool;
    char name[MAX_NAME_LENGTH];
 
    start_prompt(ua, _("The defined Pool resources are:\n"));
@@ -903,10 +903,10 @@ POOLRES *select_pool_resource(UAContext *ua)
  *  probably want to use select_pool_dbr()
  *  or get_pool_dbr() above.
  */
-POOLRES *get_pool_resource(UAContext *ua)
+PoolResource *get_pool_resource(UaContext *ua)
 {
    int i;
-   POOLRES *pool = NULL;
+   PoolResource *pool = NULL;
 
    i = find_arg_with_value(ua, NT_("pool"));
    if (i >= 0 && ua->acl_access_ok(Pool_ACL, ua->argv[i])) {
@@ -923,7 +923,7 @@ POOLRES *get_pool_resource(UAContext *ua)
 /**
  * List all jobs and ask user to select one
  */
-int select_job_dbr(UAContext *ua, JOB_DBR *jr)
+int select_job_dbr(UaContext *ua, JobDbRecord *jr)
 {
    ua->db->list_job_records(ua->jcr, jr, "", NULL, 0, 0, NULL, 0, 0, 0, ua->send, HORZ_LIST);
    if (!get_pint(ua, _("Enter the JobId to select: "))) {
@@ -948,9 +948,9 @@ int select_job_dbr(UAContext *ua, JOB_DBR *jr)
  * to choose from.
  *
  * returns: 0 on error
- *          JobId on success and fills in JOB_DBR
+ *          JobId on success and fills in JobDbRecord
  */
-int get_job_dbr(UAContext *ua, JOB_DBR *jr)
+int get_job_dbr(UaContext *ua, JobDbRecord *jr)
 {
    int i;
 
@@ -995,7 +995,7 @@ int get_job_dbr(UAContext *ua, JOB_DBR *jr)
 /**
  * Implement unique set of prompts
  */
-void start_prompt(UAContext *ua, const char *msg)
+void start_prompt(UaContext *ua, const char *msg)
 {
   if (ua->max_prompts == 0) {
      ua->max_prompts = 10;
@@ -1008,7 +1008,7 @@ void start_prompt(UAContext *ua, const char *msg)
 /**
  * Add to prompts -- keeping them unique
  */
-void add_prompt(UAContext *ua, const char *prompt)
+void add_prompt(UaContext *ua, const char *prompt)
 {
    if (ua->num_prompts == ua->max_prompts) {
       ua->max_prompts *= 2;
@@ -1032,11 +1032,11 @@ void add_prompt(UAContext *ua, const char *prompt)
  *           index base 0 on success, and choice is copied to prompt if not NULL
  *           prompt is set to the chosen prompt item string
  */
-int do_prompt(UAContext *ua, const char *automsg, const char *msg, char *prompt, int max_prompt)
+int do_prompt(UaContext *ua, const char *automsg, const char *msg, char *prompt, int max_prompt)
 {
    int item;
-   POOL_MEM pmsg(PM_MESSAGE);
-   BSOCK *user = ua->UA_sock;
+   PoolMem pmsg(PM_MESSAGE);
+   BareosSocket *user = ua->UA_sock;
 
    if (prompt) {
       *prompt = 0;
@@ -1154,14 +1154,14 @@ done:
  *
  * If autochangers_only is given, we limit the output to autochangers only.
  */
-STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochangers_only)
+StoreResource *get_storage_resource(UaContext *ua, bool use_default, bool autochangers_only)
 {
    int i;
-   JCR *jcr;
+   JobControlRecord *jcr;
    int jobid;
    char ed1[50];
    char *store_name = NULL;
-   STORERES *store = NULL;
+   StoreResource *store = NULL;
 
    Dmsg1(100, "get_storage_resource: autochangers_only is %d\n", autochangers_only);
 
@@ -1271,7 +1271,7 @@ STORERES *get_storage_resource(UAContext *ua, bool use_default, bool autochanger
 /**
  * Get drive that we are working with for this storage
  */
-drive_number_t get_storage_drive(UAContext *ua, STORERES *store)
+drive_number_t get_storage_drive(UaContext *ua, StoreResource *store)
 {
    int i;
    char drivename[10];
@@ -1321,7 +1321,7 @@ drive_number_t get_storage_drive(UAContext *ua, STORERES *store)
 /**
  * Get slot that we are working with for this storage
  */
-slot_number_t get_storage_slot(UAContext *ua, STORERES *store)
+slot_number_t get_storage_slot(UaContext *ua, StoreResource *store)
 {
    int i;
    slot_number_t slot = -1;
@@ -1355,9 +1355,9 @@ slot_number_t get_storage_slot(UAContext *ua, STORERES *store)
  *  Returns: 0 on error
  *           1 on success, MediaType is set
  */
-int get_media_type(UAContext *ua, char *MediaType, int max_media)
+int get_media_type(UaContext *ua, char *MediaType, int max_media)
 {
-   STORERES *store;
+   StoreResource *store;
    int i;
 
    i = find_arg_with_value(ua, NT_("mediatype"));
@@ -1379,7 +1379,7 @@ int get_media_type(UAContext *ua, char *MediaType, int max_media)
    return (do_prompt(ua, _("Media Type"), _("Select the Media Type"), MediaType, max_media) < 0) ? 0 : 1;
 }
 
-bool get_level_from_name(JCR *jcr, const char *level_name)
+bool get_level_from_name(JobControlRecord *jcr, const char *level_name)
 {
    bool found = false;
 
@@ -1429,12 +1429,12 @@ static inline bool insert_selected_jobid(alist *selected_jobids, JobId_t JobId)
  * Returns: NULL on error
  *          alist on success with the selected jobids.
  */
-alist *select_jobs(UAContext *ua, const char *reason)
+alist *select_jobs(UaContext *ua, const char *reason)
 {
    int i;
    int cnt = 0;
    int njobs = 0;
-   JCR *jcr = NULL;
+   JobControlRecord *jcr = NULL;
    bool select_all = false;
    bool select_by_state = false;
    alist *selected_jobids;
@@ -1712,7 +1712,7 @@ bail_out:
  * Returns: false on error
  *          true on success with the selected slots set in the slot_list.
  */
-bool get_user_slot_list(UAContext *ua, char *slot_list, const char *argument, int num_slots)
+bool get_user_slot_list(UaContext *ua, char *slot_list, const char *argument, int num_slots)
 {
    int i, len, beg, end;
    const char *msg;
@@ -1824,7 +1824,7 @@ bail_out:
    return false;
 }
 
-bool get_user_job_type_selection(UAContext *ua, int *jobtype)
+bool get_user_job_type_selection(UaContext *ua, int *jobtype)
 {
    int i;
    char job_type[MAX_NAME_LENGTH];
@@ -1861,7 +1861,7 @@ bool get_user_job_type_selection(UAContext *ua, int *jobtype)
    return true;
 }
 
-bool get_user_job_status_selection(UAContext *ua, int *jobstatus)
+bool get_user_job_status_selection(UaContext *ua, int *jobstatus)
 {
    int i;
 
@@ -1888,7 +1888,7 @@ bool get_user_job_status_selection(UAContext *ua, int *jobstatus)
    return true;
 }
 
-bool get_user_job_level_selection(UAContext *ua, int *joblevel)
+bool get_user_job_level_selection(UaContext *ua, int *joblevel)
 {
    int i;
 

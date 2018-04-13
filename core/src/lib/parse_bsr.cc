@@ -30,29 +30,29 @@
 #include "jcr.h"
 #include "bsr.h"
 
-typedef BSR * (ITEM_HANDLER)(LEX *lc, BSR *bsr);
+typedef BootStrapRecord * (ITEM_HANDLER)(LEX *lc, BootStrapRecord *bsr);
 
-static BSR *store_vol(LEX *lc, BSR *bsr);
-static BSR *store_mediatype(LEX *lc, BSR *bsr);
-static BSR *store_device(LEX *lc, BSR *bsr);
-static BSR *store_client(LEX *lc, BSR *bsr);
-static BSR *store_job(LEX *lc, BSR *bsr);
-static BSR *store_jobid(LEX *lc, BSR *bsr);
-static BSR *store_count(LEX *lc, BSR *bsr);
-static BSR *store_jobtype(LEX *lc, BSR *bsr);
-static BSR *store_joblevel(LEX *lc, BSR *bsr);
-static BSR *store_findex(LEX *lc, BSR *bsr);
-static BSR *store_sessid(LEX *lc, BSR *bsr);
-static BSR *store_volfile(LEX *lc, BSR *bsr);
-static BSR *store_volblock(LEX *lc, BSR *bsr);
-static BSR *store_voladdr(LEX *lc, BSR *bsr);
-static BSR *store_sesstime(LEX *lc, BSR *bsr);
-static BSR *store_include(LEX *lc, BSR *bsr);
-static BSR *store_exclude(LEX *lc, BSR *bsr);
-static BSR *store_stream(LEX *lc, BSR *bsr);
-static BSR *store_slot(LEX *lc, BSR *bsr);
-static BSR *store_fileregex(LEX *lc, BSR *bsr);
-static BSR *store_nothing(LEX *lc, BSR *bsr);
+static BootStrapRecord *store_vol(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_mediatype(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_device(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_client(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_job(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_jobid(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_count(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_jobtype(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_joblevel(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_findex(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_sessid(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_volfile(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_volblock(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_voladdr(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_sesstime(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_include(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_exclude(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_stream(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_slot(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_fileregex(LEX *lc, BootStrapRecord *bsr);
+static BootStrapRecord *store_nothing(LEX *lc, BootStrapRecord *bsr);
 
 struct kw_items {
    const char *name;
@@ -88,12 +88,12 @@ struct kw_items items[] = {
 };
 
 /*
- * Create a BSR record
+ * Create a BootStrapRecord record
  */
-static BSR *new_bsr()
+static BootStrapRecord *new_bsr()
 {
-   BSR *bsr = (BSR *)malloc(sizeof(BSR));
-   memset(bsr, 0, sizeof(BSR));
+   BootStrapRecord *bsr = (BootStrapRecord *)malloc(sizeof(BootStrapRecord));
+   memset(bsr, 0, sizeof(BootStrapRecord));
    return bsr;
 }
 
@@ -104,8 +104,8 @@ static void s_err(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_NAME);
-   JCR *jcr = (JCR *)(lc->caller_ctx);
+   PoolMem buf(PM_NAME);
+   JobControlRecord *jcr = (JobControlRecord *)(lc->caller_ctx);
 
    while (1) {
       maxlen = buf.size() - 1;
@@ -139,8 +139,8 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
 {
    va_list ap;
    int len, maxlen;
-   POOL_MEM buf(PM_NAME);
-   JCR *jcr = (JCR *)(lc->caller_ctx);
+   PoolMem buf(PM_NAME);
+   JobControlRecord *jcr = (JobControlRecord *)(lc->caller_ctx);
 
    while (1) {
       maxlen = buf.size() - 1;
@@ -167,7 +167,7 @@ static void s_warn(const char *file, int line, LEX *lc, const char *msg, ...)
    }
 }
 
-static inline bool is_fast_rejection_ok(BSR *bsr)
+static inline bool is_fast_rejection_ok(BootStrapRecord *bsr)
 {
    /*
     * Although, this can be optimized, for the moment, require
@@ -182,7 +182,7 @@ static inline bool is_fast_rejection_ok(BSR *bsr)
    return true;
 }
 
-static inline bool is_positioning_ok(BSR *bsr)
+static inline bool is_positioning_ok(BootStrapRecord *bsr)
 {
    /*
     * Every bsr should have a volfile entry and a volblock entry
@@ -200,12 +200,12 @@ static inline bool is_positioning_ok(BSR *bsr)
 /*
  * Parse Bootstrap file
  */
-BSR *parse_bsr(JCR *jcr, char *fname)
+BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *fname)
 {
    LEX *lc = NULL;
    int token, i;
-   BSR *root_bsr = new_bsr();
-   BSR *bsr = root_bsr;
+   BootStrapRecord *root_bsr = new_bsr();
+   BootStrapRecord *bsr = root_bsr;
 
    Dmsg1(300, "Enter parse_bsf %s\n", fname);
    if ((lc = lex_open_file(lc, fname, s_err, s_warn)) == NULL) {
@@ -263,10 +263,10 @@ BSR *parse_bsr(JCR *jcr, char *fname)
    return root_bsr;
 }
 
-static BSR *store_vol(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_vol(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_VOLUME *volume;
+   BsrVolume *volume;
    char *p, *n;
 
    token = lex_get_token(lc, T_STRING);
@@ -286,8 +286,8 @@ static BSR *store_vol(LEX *lc, BSR *bsr)
       if (n) {
          *n++ = 0;
       }
-      volume = (BSR_VOLUME *)malloc(sizeof(BSR_VOLUME));
-      memset(volume, 0, sizeof(BSR_VOLUME));
+      volume = (BsrVolume *)malloc(sizeof(BsrVolume));
+      memset(volume, 0, sizeof(BsrVolume));
       bstrncpy(volume->VolumeName, p, sizeof(volume->VolumeName));
 
       /*
@@ -296,7 +296,7 @@ static BSR *store_vol(LEX *lc, BSR *bsr)
       if (!bsr->volume) {
          bsr->volume = volume;
       } else {
-         BSR_VOLUME *bc = bsr->volume;
+         BsrVolume *bc = bsr->volume;
          for ( ;bc->next; bc=bc->next)
             { }
          bc->next = volume;
@@ -309,7 +309,7 @@ static BSR *store_vol(LEX *lc, BSR *bsr)
 /*
  * Shove the MediaType in each Volume in the current bsr\
  */
-static BSR *store_mediatype(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_mediatype(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -322,14 +322,14 @@ static BSR *store_mediatype(LEX *lc, BSR *bsr)
          lc->str);
       return bsr;
    }
-   BSR_VOLUME *bv;
+   BsrVolume *bv;
    for (bv=bsr->volume; bv; bv=bv->next) {
       bstrncpy(bv->MediaType, lc->str, sizeof(bv->MediaType));
    }
    return bsr;
 }
 
-static BSR *store_nothing(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_nothing(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -343,7 +343,7 @@ static BSR *store_nothing(LEX *lc, BSR *bsr)
 /*
  * Shove the Device name in each Volume in the current bsr
  */
-static BSR *store_device(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_device(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -356,25 +356,25 @@ static BSR *store_device(LEX *lc, BSR *bsr)
          lc->str);
       return bsr;
    }
-   BSR_VOLUME *bv;
+   BsrVolume *bv;
    for (bv=bsr->volume; bv; bv=bv->next) {
       bstrncpy(bv->device, lc->str, sizeof(bv->device));
    }
    return bsr;
 }
 
-static BSR *store_client(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_client(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_CLIENT *client;
+   BsrClient *client;
 
    for (;;) {
       token = lex_get_token(lc, T_NAME);
       if (token == T_ERROR) {
          return NULL;
       }
-      client = (BSR_CLIENT *)malloc(sizeof(BSR_CLIENT));
-      memset(client, 0, sizeof(BSR_CLIENT));
+      client = (BsrClient *)malloc(sizeof(BsrClient));
+      memset(client, 0, sizeof(BsrClient));
       bstrncpy(client->ClientName, lc->str, sizeof(client->ClientName));
 
       /*
@@ -383,7 +383,7 @@ static BSR *store_client(LEX *lc, BSR *bsr)
       if (!bsr->client) {
          bsr->client = client;
       } else {
-         BSR_CLIENT *bc = bsr->client;
+         BsrClient *bc = bsr->client;
          for ( ;bc->next; bc=bc->next)
             { }
          bc->next = client;
@@ -396,18 +396,18 @@ static BSR *store_client(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_job(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_job(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_JOB *job;
+   BsrJob *job;
 
    for (;;) {
       token = lex_get_token(lc, T_NAME);
       if (token == T_ERROR) {
          return NULL;
       }
-      job = (BSR_JOB *)malloc(sizeof(BSR_JOB));
-      memset(job, 0, sizeof(BSR_JOB));
+      job = (BsrJob *)malloc(sizeof(BsrJob));
+      memset(job, 0, sizeof(BsrJob));
       bstrncpy(job->Job, lc->str, sizeof(job->Job));
 
       /*
@@ -419,7 +419,7 @@ static BSR *store_job(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_JOB *bc = bsr->job;
+         BsrJob *bc = bsr->job;
          for ( ;bc->next; bc=bc->next)
             { }
          bc->next = job;
@@ -432,18 +432,18 @@ static BSR *store_job(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_findex(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_findex(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_FINDEX *findex;
+   BsrFileIndex *findex;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      findex = (BSR_FINDEX *)malloc(sizeof(BSR_FINDEX));
-      memset(findex, 0, sizeof(BSR_FINDEX));
+      findex = (BsrFileIndex *)malloc(sizeof(BsrFileIndex));
+      memset(findex, 0, sizeof(BsrFileIndex));
       findex->findex = lc->u.pint32_val;
       findex->findex2 = lc->u2.pint32_val;
 
@@ -456,7 +456,7 @@ static BSR *store_findex(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_FINDEX *bs = bsr->FileIndex;
+         BsrFileIndex *bs = bsr->FileIndex;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = findex;
@@ -469,18 +469,18 @@ static BSR *store_findex(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_jobid(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_jobid(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_JOBID *jobid;
+   BsrJobid *jobid;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      jobid = (BSR_JOBID *)malloc(sizeof(BSR_JOBID));
-      memset(jobid, 0, sizeof(BSR_JOBID));
+      jobid = (BsrJobid *)malloc(sizeof(BsrJobid));
+      memset(jobid, 0, sizeof(BsrJobid));
       jobid->JobId = lc->u.pint32_val;
       jobid->JobId2 = lc->u2.pint32_val;
 
@@ -493,7 +493,7 @@ static BSR *store_jobid(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_JOBID *bs = bsr->JobId;
+         BsrJobid *bs = bsr->JobId;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = jobid;
@@ -506,7 +506,7 @@ static BSR *store_jobid(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_count(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_count(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -519,7 +519,7 @@ static BSR *store_count(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_fileregex(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_fileregex(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
    int rc;
@@ -546,14 +546,14 @@ static BSR *store_fileregex(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_jobtype(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_jobtype(LEX *lc, BootStrapRecord *bsr)
 {
    /* *****FIXME****** */
    Pmsg0(-1, _("JobType not yet implemented\n"));
    return bsr;
 }
 
-static BSR *store_joblevel(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_joblevel(LEX *lc, BootStrapRecord *bsr)
 {
    /* *****FIXME****** */
    Pmsg0(-1, _("JobLevel not yet implemented\n"));
@@ -563,18 +563,18 @@ static BSR *store_joblevel(LEX *lc, BSR *bsr)
 /*
  * Routine to handle Volume start/end file
  */
-static BSR *store_volfile(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_volfile(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_VOLFILE *volfile;
+   BsrVolumeFile *volfile;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      volfile = (BSR_VOLFILE *)malloc(sizeof(BSR_VOLFILE));
-      memset(volfile, 0, sizeof(BSR_VOLFILE));
+      volfile = (BsrVolumeFile *)malloc(sizeof(BsrVolumeFile));
+      memset(volfile, 0, sizeof(BsrVolumeFile));
       volfile->sfile = lc->u.pint32_val;
       volfile->efile = lc->u2.pint32_val;
 
@@ -587,7 +587,7 @@ static BSR *store_volfile(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_VOLFILE *bs = bsr->volfile;
+         BsrVolumeFile *bs = bsr->volfile;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = volfile;
@@ -603,18 +603,18 @@ static BSR *store_volfile(LEX *lc, BSR *bsr)
 /*
  * Routine to handle Volume start/end Block
  */
-static BSR *store_volblock(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_volblock(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_VOLBLOCK *volblock;
+   BsrVolumeBlock *volblock;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      volblock = (BSR_VOLBLOCK *)malloc(sizeof(BSR_VOLBLOCK));
-      memset(volblock, 0, sizeof(BSR_VOLBLOCK));
+      volblock = (BsrVolumeBlock *)malloc(sizeof(BsrVolumeBlock));
+      memset(volblock, 0, sizeof(BsrVolumeBlock));
       volblock->sblock = lc->u.pint32_val;
       volblock->eblock = lc->u2.pint32_val;
 
@@ -627,7 +627,7 @@ static BSR *store_volblock(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_VOLBLOCK *bs = bsr->volblock;
+         BsrVolumeBlock *bs = bsr->volblock;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = volblock;
@@ -643,18 +643,18 @@ static BSR *store_volblock(LEX *lc, BSR *bsr)
 /*
  * Routine to handle Volume start/end address
  */
-static BSR *store_voladdr(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_voladdr(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_VOLADDR *voladdr;
+   BsrVolumeAddress *voladdr;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT64_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      voladdr = (BSR_VOLADDR *)malloc(sizeof(BSR_VOLADDR));
-      memset(voladdr, 0, sizeof(BSR_VOLADDR));
+      voladdr = (BsrVolumeAddress *)malloc(sizeof(BsrVolumeAddress));
+      memset(voladdr, 0, sizeof(BsrVolumeAddress));
       voladdr->saddr = lc->u.pint64_val;
       voladdr->eaddr = lc->u2.pint64_val;
 
@@ -667,7 +667,7 @@ static BSR *store_voladdr(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_VOLADDR *bs = bsr->voladdr;
+         BsrVolumeAddress *bs = bsr->voladdr;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = voladdr;
@@ -680,18 +680,18 @@ static BSR *store_voladdr(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_sessid(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_sessid(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_SESSID *sid;
+   BsrSessionId *sid;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32_RANGE);
       if (token == T_ERROR) {
          return NULL;
       }
-      sid = (BSR_SESSID *)malloc(sizeof(BSR_SESSID));
-      memset(sid, 0, sizeof(BSR_SESSID));
+      sid = (BsrSessionId *)malloc(sizeof(BsrSessionId));
+      memset(sid, 0, sizeof(BsrSessionId));
       sid->sessid = lc->u.pint32_val;
       sid->sessid2 = lc->u2.pint32_val;
 
@@ -704,7 +704,7 @@ static BSR *store_sessid(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_SESSID *bs = bsr->sessid;
+         BsrSessionId *bs = bsr->sessid;
          for ( ;bs->next; bs=bs->next)
             {  }
          bs->next = sid;
@@ -717,18 +717,18 @@ static BSR *store_sessid(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_sesstime(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_sesstime(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_SESSTIME *stime;
+   BsrSessionTime *stime;
 
    for (;;) {
       token = lex_get_token(lc, T_PINT32);
       if (token == T_ERROR) {
          return NULL;
       }
-      stime = (BSR_SESSTIME *)malloc(sizeof(BSR_SESSTIME));
-      memset(stime, 0, sizeof(BSR_SESSTIME));
+      stime = (BsrSessionTime *)malloc(sizeof(BsrSessionTime));
+      memset(stime, 0, sizeof(BsrSessionTime));
       stime->sesstime = lc->u.pint32_val;
 
       /*
@@ -740,7 +740,7 @@ static BSR *store_sesstime(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_SESSTIME *bs = bsr->sesstime;
+         BsrSessionTime *bs = bsr->sesstime;
          for ( ;bs->next; bs=bs->next)
             { }
          bs->next = stime;
@@ -753,18 +753,18 @@ static BSR *store_sesstime(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_stream(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_stream(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
-   BSR_STREAM *stream;
+   BsrStream *stream;
 
    for (;;) {
       token = lex_get_token(lc, T_INT32);
       if (token == T_ERROR) {
          return NULL;
       }
-      stream = (BSR_STREAM *)malloc(sizeof(BSR_STREAM));
-      memset(stream, 0, sizeof(BSR_STREAM));
+      stream = (BsrStream *)malloc(sizeof(BsrStream));
+      memset(stream, 0, sizeof(BsrStream));
       stream->stream = lc->u.int32_val;
 
       /*
@@ -776,7 +776,7 @@ static BSR *store_stream(LEX *lc, BSR *bsr)
          /*
 	  * Add to end of chain
 	  */
-         BSR_STREAM *bs = bsr->stream;
+         BsrStream *bs = bsr->stream;
          for ( ;bs->next; bs=bs->next)
             { }
          bs->next = stream;
@@ -789,7 +789,7 @@ static BSR *store_stream(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_slot(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_slot(LEX *lc, BootStrapRecord *bsr)
 {
    int token;
 
@@ -806,19 +806,19 @@ static BSR *store_slot(LEX *lc, BSR *bsr)
    return bsr;
 }
 
-static BSR *store_include(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_include(LEX *lc, BootStrapRecord *bsr)
 {
    scan_to_eol(lc);
    return bsr;
 }
 
-static BSR *store_exclude(LEX *lc, BSR *bsr)
+static BootStrapRecord *store_exclude(LEX *lc, BootStrapRecord *bsr)
 {
    scan_to_eol(lc);
    return bsr;
 }
 
-static inline void dump_volfile(BSR_VOLFILE *volfile)
+static inline void dump_volfile(BsrVolumeFile *volfile)
 {
    if (volfile) {
       Pmsg2(-1, _("VolFile     : %u-%u\n"), volfile->sfile, volfile->efile);
@@ -826,7 +826,7 @@ static inline void dump_volfile(BSR_VOLFILE *volfile)
    }
 }
 
-static inline void dump_volblock(BSR_VOLBLOCK *volblock)
+static inline void dump_volblock(BsrVolumeBlock *volblock)
 {
    if (volblock) {
       Pmsg2(-1, _("VolBlock    : %u-%u\n"), volblock->sblock, volblock->eblock);
@@ -834,7 +834,7 @@ static inline void dump_volblock(BSR_VOLBLOCK *volblock)
    }
 }
 
-static inline void dump_voladdr(BSR_VOLADDR *voladdr)
+static inline void dump_voladdr(BsrVolumeAddress *voladdr)
 {
    if (voladdr) {
       Pmsg2(-1, _("VolAddr    : %llu-%llu\n"), voladdr->saddr, voladdr->eaddr);
@@ -842,7 +842,7 @@ static inline void dump_voladdr(BSR_VOLADDR *voladdr)
    }
 }
 
-static inline void dump_findex(BSR_FINDEX *FileIndex)
+static inline void dump_findex(BsrFileIndex *FileIndex)
 {
    if (FileIndex) {
       if (FileIndex->findex == FileIndex->findex2) {
@@ -854,7 +854,7 @@ static inline void dump_findex(BSR_FINDEX *FileIndex)
    }
 }
 
-static inline void dump_jobid(BSR_JOBID *jobid)
+static inline void dump_jobid(BsrJobid *jobid)
 {
    if (jobid) {
       if (jobid->JobId == jobid->JobId2) {
@@ -866,7 +866,7 @@ static inline void dump_jobid(BSR_JOBID *jobid)
    }
 }
 
-static inline void dump_sessid(BSR_SESSID *sessid)
+static inline void dump_sessid(BsrSessionId *sessid)
 {
    if (sessid) {
       if (sessid->sessid == sessid->sessid2) {
@@ -878,7 +878,7 @@ static inline void dump_sessid(BSR_SESSID *sessid)
    }
 }
 
-static inline void dump_volume(BSR_VOLUME *volume)
+static inline void dump_volume(BsrVolume *volume)
 {
    if (volume) {
       Pmsg1(-1, _("VolumeName  : %s\n"), volume->VolumeName);
@@ -889,7 +889,7 @@ static inline void dump_volume(BSR_VOLUME *volume)
    }
 }
 
-static inline void dump_client(BSR_CLIENT *client)
+static inline void dump_client(BsrClient *client)
 {
    if (client) {
       Pmsg1(-1, _("Client      : %s\n"), client->ClientName);
@@ -897,7 +897,7 @@ static inline void dump_client(BSR_CLIENT *client)
    }
 }
 
-static inline void dump_job(BSR_JOB *job)
+static inline void dump_job(BsrJob *job)
 {
    if (job) {
       Pmsg1(-1, _("Job          : %s\n"), job->Job);
@@ -905,7 +905,7 @@ static inline void dump_job(BSR_JOB *job)
    }
 }
 
-static inline void dump_sesstime(BSR_SESSTIME *sesstime)
+static inline void dump_sesstime(BsrSessionTime *sesstime)
 {
    if (sesstime) {
       Pmsg1(-1, _("SessTime    : %u\n"), sesstime->sesstime);
@@ -913,12 +913,12 @@ static inline void dump_sesstime(BSR_SESSTIME *sesstime)
    }
 }
 
-void dump_bsr(BSR *bsr, bool recurse)
+void dump_bsr(BootStrapRecord *bsr, bool recurse)
 {
    int save_debug = debug_level;
    debug_level = 1;
    if (!bsr) {
-      Pmsg0(-1, _("BSR is NULL\n"));
+      Pmsg0(-1, _("BootStrapRecord is NULL\n"));
       debug_level = save_debug;
       return;
    }
@@ -952,7 +952,7 @@ void dump_bsr(BSR *bsr, bool recurse)
 /*
  * Free bsr resources
  */
-static inline void free_bsr_item(BSR *bsr)
+static inline void free_bsr_item(BootStrapRecord *bsr)
 {
    if (bsr) {
       free_bsr_item(bsr->next);
@@ -963,20 +963,20 @@ static inline void free_bsr_item(BSR *bsr)
 /*
  * Remove a single item from the bsr tree
  */
-static inline void remove_bsr(BSR *bsr)
+static inline void remove_bsr(BootStrapRecord *bsr)
 {
-   free_bsr_item((BSR *)bsr->volume);
-   free_bsr_item((BSR *)bsr->client);
-   free_bsr_item((BSR *)bsr->sessid);
-   free_bsr_item((BSR *)bsr->sesstime);
-   free_bsr_item((BSR *)bsr->volfile);
-   free_bsr_item((BSR *)bsr->volblock);
-   free_bsr_item((BSR *)bsr->voladdr);
-   free_bsr_item((BSR *)bsr->JobId);
-   free_bsr_item((BSR *)bsr->job);
-   free_bsr_item((BSR *)bsr->FileIndex);
-   free_bsr_item((BSR *)bsr->JobType);
-   free_bsr_item((BSR *)bsr->JobLevel);
+   free_bsr_item((BootStrapRecord *)bsr->volume);
+   free_bsr_item((BootStrapRecord *)bsr->client);
+   free_bsr_item((BootStrapRecord *)bsr->sessid);
+   free_bsr_item((BootStrapRecord *)bsr->sesstime);
+   free_bsr_item((BootStrapRecord *)bsr->volfile);
+   free_bsr_item((BootStrapRecord *)bsr->volblock);
+   free_bsr_item((BootStrapRecord *)bsr->voladdr);
+   free_bsr_item((BootStrapRecord *)bsr->JobId);
+   free_bsr_item((BootStrapRecord *)bsr->job);
+   free_bsr_item((BootStrapRecord *)bsr->FileIndex);
+   free_bsr_item((BootStrapRecord *)bsr->JobType);
+   free_bsr_item((BootStrapRecord *)bsr->JobLevel);
    if (bsr->fileregex) {
       bfree(bsr->fileregex);
    }
@@ -999,9 +999,9 @@ static inline void remove_bsr(BSR *bsr)
 /*
  * Free all bsrs in chain
  */
-void free_bsr(BSR *bsr)
+void free_bsr(BootStrapRecord *bsr)
 {
-   BSR *next_bsr;
+   BootStrapRecord *next_bsr;
 
    if (!bsr) {
       return;

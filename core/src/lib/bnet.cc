@@ -62,7 +62,7 @@ static pthread_mutex_t ip_mutex = PTHREAD_MUTEX_INITIALIZER;
  *    4. Error
  *  Using is_bnet_stop() and is_bnet_error() you can figure this all out.
  */
-int32_t bnet_recv(BSOCK * bsock)
+int32_t bnet_recv(BareosSocket * bsock)
 {
    return bsock->recv();
 }
@@ -72,7 +72,7 @@ int32_t bnet_recv(BSOCK * bsock)
  * Return 1 if there are errors on this bsock or it is closed,
  *   i.e. stop communicating on this line.
  */
-bool is_bnet_stop(BSOCK * bsock)
+bool is_bnet_stop(BareosSocket * bsock)
 {
    return bsock->is_stop();
 }
@@ -80,7 +80,7 @@ bool is_bnet_stop(BSOCK * bsock)
 /**
  * Return number of errors on socket
  */
-int is_bnet_error(BSOCK * bsock)
+int is_bnet_error(BareosSocket * bsock)
 {
    return bsock->is_error();
 }
@@ -89,9 +89,9 @@ int is_bnet_error(BSOCK * bsock)
  * Call here after error during closing to suppress error
  *  messages which are due to the other end shutting down too.
  */
-void bnet_suppress_error_messages(BSOCK * bsock, bool flag)
+void bnet_suppress_error_messages(BareosSocket * bsock, bool flag)
 {
-   bsock->m_suppress_error_msgs = flag;
+   bsock->suppress_error_msgs_ = flag;
 }
 
 /**
@@ -102,7 +102,7 @@ void bnet_suppress_error_messages(BSOCK * bsock, bool flag)
  * Returns: false on failure
  *          true  on success
  */
-bool bnet_send(BSOCK *bsock)
+bool bnet_send(BareosSocket *bsock)
 {
    return bsock->send();
 }
@@ -114,12 +114,12 @@ bool bnet_send(BSOCK *bsock)
  *           false on failure
  */
 #ifdef HAVE_TLS
-bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK *bsock, alist *verify_list)
+bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock, alist *verify_list)
 {
    TLS_CONNECTION *tls_conn = nullptr;
-   JCR *jcr = bsock->jcr();
+   JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn = new_tls_connection(tls_ctx, bsock->m_fd, true);
+   tls_conn = new_tls_connection(tls_ctx, bsock->fd_, true);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
@@ -157,12 +157,12 @@ err:
  * Returns: true  on success
  *          false on failure
  */
-bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
+bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool verify_peer, alist *verify_list)
 {
    TLS_CONNECTION *tls_conn;
-   JCR *jcr = bsock->jcr();
+   JobControlRecord *jcr = bsock->jcr();
 
-   tls_conn  = new_tls_connection(tls_ctx, bsock->m_fd, false);
+   tls_conn  = new_tls_connection(tls_ctx, bsock->fd_, false);
    if (!tls_conn) {
       Qmsg0(bsock->jcr(), M_FATAL, 0, _("TLS connection initialization failed.\n"));
       return false;
@@ -207,13 +207,13 @@ err:
    return false;
 }
 #else
-bool bnet_tls_server(std::shared_ptr<TLS_Context> tls_ctx, BSOCK * bsock, alist *verify_list)
+bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket * bsock, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
 }
 
-bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock, bool verify_peer, alist *verify_list)
+bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock, bool verify_peer, alist *verify_list)
 {
    Jmsg(bsock->jcr(), M_ABORT, 0, _("TLS enabled but not configured.\n"));
    return false;
@@ -222,13 +222,13 @@ bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BSOCK *bsock, bool ve
 
 /**
  * Wait for a specified time for data to appear on
- * the BSOCK connection.
+ * the BareosSocket connection.
  *
  *   Returns: 1 if data available
  *            0 if timeout
  *           -1 if error
  */
-int bnet_wait_data(BSOCK * bsock, int sec)
+int bnet_wait_data(BareosSocket * bsock, int sec)
 {
    return bsock->wait_data(sec);
 }
@@ -236,7 +236,7 @@ int bnet_wait_data(BSOCK * bsock, int sec)
 /**
  * As above, but returns on interrupt
  */
-int bnet_wait_data_intr(BSOCK * bsock, int sec)
+int bnet_wait_data_intr(BareosSocket * bsock, int sec)
 {
    return bsock->wait_data_intr(sec);
 }
@@ -471,7 +471,7 @@ dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr)
  * Return the string for the error that occurred
  * on the socket. Only the first error is retained.
  */
-const char *bnet_strerror(BSOCK * bsock)
+const char *bnet_strerror(BareosSocket * bsock)
 {
    return bsock->bstrerror();
 }
@@ -481,7 +481,7 @@ const char *bnet_strerror(BSOCK * bsock)
  *  Returns: false on error
  *           true  on success
  */
-bool bnet_fsend(BSOCK * bs, const char *fmt, ...)
+bool bnet_fsend(BareosSocket * bs, const char *fmt, ...)
 {
    va_list arg_ptr;
    int maxlen;
@@ -507,7 +507,7 @@ bool bnet_fsend(BSOCK * bs, const char *fmt, ...)
    return bs->send();
 }
 
-int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen)
+int bnet_get_peer(BareosSocket *bs, char *buf, socklen_t buflen)
 {
    return bs->get_peer(buf, buflen);
 }
@@ -519,7 +519,7 @@ int bnet_get_peer(BSOCK *bs, char *buf, socklen_t buflen)
  *  Returns: 0 on failure
  *           1 on success
  */
-bool bnet_set_buffer_size(BSOCK * bs, uint32_t size, int rw)
+bool bnet_set_buffer_size(BareosSocket * bs, uint32_t size, int rw)
 {
    return bs->set_buffer_size(size, rw);
 }
@@ -528,7 +528,7 @@ bool bnet_set_buffer_size(BSOCK * bs, uint32_t size, int rw)
  * Set socket non-blocking
  * Returns previous socket flag
  */
-int bnet_set_nonblocking(BSOCK *bsock)
+int bnet_set_nonblocking(BareosSocket *bsock)
 {
    return bsock->set_nonblocking();
 }
@@ -537,7 +537,7 @@ int bnet_set_nonblocking(BSOCK *bsock)
  * Set socket blocking
  * Returns previous socket flags
  */
-int bnet_set_blocking(BSOCK *bsock)
+int bnet_set_blocking(BareosSocket *bsock)
 {
    return bsock->set_blocking();
 }
@@ -545,7 +545,7 @@ int bnet_set_blocking(BSOCK *bsock)
 /**
  * Restores socket flags
  */
-void bnet_restore_blocking (BSOCK *bsock, int flags)
+void bnet_restore_blocking (BareosSocket *bsock, int flags)
 {
    bsock->restore_blocking(flags);
 }
@@ -557,7 +557,7 @@ void bnet_restore_blocking (BSOCK *bsock, int flags)
  *  Returns: false on failure
  *           true  on success
  */
-bool bnet_sig(BSOCK * bs, int signal)
+bool bnet_sig(BareosSocket * bs, int signal)
 {
    return bs->signal(signal);
 }
@@ -566,7 +566,7 @@ bool bnet_sig(BSOCK * bs, int signal)
  * Convert a network "signal" code into
  * human readable ASCII.
  */
-const char *bnet_sig_to_ascii(BSOCK * bs)
+const char *bnet_sig_to_ascii(BareosSocket * bs)
 {
    static char buf[30];
    switch (bs->msglen) {

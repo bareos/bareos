@@ -57,7 +57,7 @@ static dlist *db_list = NULL;
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
+BareosDbMysql::BareosDbMysql(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -75,35 +75,35 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    /*
     * Initialize the parent class members.
     */
-   m_db_interface_type = SQL_INTERFACE_TYPE_MYSQL;
-   m_db_type = SQL_TYPE_MYSQL;
-   m_db_driver = bstrdup("MySQL");
-   m_db_name = bstrdup(db_name);
-   m_db_user = bstrdup(db_user);
+   db_interface_type_ = SQL_INTERFACE_TYPE_MYSQL;
+   db_type_ = SQL_TYPE_MYSQL;
+   db_driver_ = bstrdup("MySQL");
+   db_name_ = bstrdup(db_name);
+   db_user_ = bstrdup(db_user);
    if (db_password) {
-      m_db_password = bstrdup(db_password);
+      db_password_ = bstrdup(db_password);
    }
    if (db_address) {
-      m_db_address = bstrdup(db_address);
+      db_address_ = bstrdup(db_address);
    }
    if (db_socket) {
-      m_db_socket = bstrdup(db_socket);
+      db_socket_ = bstrdup(db_socket);
    }
-   m_db_port = db_port;
+   db_port_ = db_port;
 
    if (disable_batch_insert) {
-      m_disabled_batch_insert = true;
-      m_have_batch_insert = false;
+      disabled_batch_insert_ = true;
+      have_batch_insert_ = false;
    } else {
-      m_disabled_batch_insert = false;
+      disabled_batch_insert_ = false;
 #if defined(USE_BATCH_FILE_INSERT)
 # if defined(HAVE_MYSQL_THREAD_SAFE)
-      m_have_batch_insert = mysql_thread_safe();
+      have_batch_insert_ = mysql_thread_safe();
 # else
-      m_have_batch_insert = false;
+      have_batch_insert_ = false;
 # endif /* HAVE_MYSQL_THREAD_SAFE */
 #else
-      m_have_batch_insert = false;
+      have_batch_insert_ = false;
 #endif /* USE_BATCH_FILE_INSERT */
    }
    errmsg = get_pool_memory(PM_EMSG); /* get error message buffer */
@@ -111,30 +111,30 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    cmd = get_pool_memory(PM_EMSG);    /* get command buffer */
    cached_path = get_pool_memory(PM_FNAME);
    cached_path_id = 0;
-   m_ref_count = 1;
+   ref_count_ = 1;
    fname = get_pool_memory(PM_FNAME);
    path = get_pool_memory(PM_FNAME);
    esc_name = get_pool_memory(PM_FNAME);
    esc_path = get_pool_memory(PM_FNAME);
    esc_obj = get_pool_memory(PM_FNAME);
-   m_allow_transactions = mult_db_connections;
-   m_is_private = need_private;
-   m_try_reconnect = try_reconnect;
-   m_exit_on_fatal = exit_on_fatal;
-   m_last_hash_key = 0;
-   m_last_query_text = NULL;
+   allow_transactions_ = mult_db_connections;
+   is_private_ = need_private;
+   try_reconnect_ = try_reconnect;
+   exit_on_fatal_ = exit_on_fatal;
+   last_hash_key_ = 0;
+   last_query_text_ = NULL;
 
    /*
     * Initialize the private members.
     */
-   m_db_handle = NULL;
-   m_result = NULL;
+   db_handle_ = NULL;
+   result_ = NULL;
 
    /*
     * Put the db in the list.
     */
    if (db_list == NULL) {
-      db_list = New(dlist(this, &this->m_link));
+      db_list = New(dlist(this, &this->link_));
    }
    db_list->append(this);
 
@@ -142,7 +142,7 @@ B_DB_MYSQL::B_DB_MYSQL(JCR *jcr,
    queries = query_definitions;
 }
 
-B_DB_MYSQL::~B_DB_MYSQL()
+BareosDbMysql::~BareosDbMysql()
 {
 }
 
@@ -152,19 +152,19 @@ B_DB_MYSQL::~B_DB_MYSQL()
  *
  * DO NOT close the database or delete mdb here !!!!
  */
-bool B_DB_MYSQL::open_database(JCR *jcr)
+bool BareosDbMysql::open_database(JobControlRecord *jcr)
 {
    bool retval = false;
    int errstat;
    my_bool reconnect = 1;
 
    P(mutex);
-   if (m_connected) {
+   if (connected_) {
       retval = true;
       goto bail_out;
    }
 
-   if ((errstat=rwl_init(&m_lock)) != 0) {
+   if ((errstat=rwl_init(&lock_)) != 0) {
       berrno be;
       Mmsg1(errmsg, _("Unable to initialize DB lock. ERR=%s\n"), be.bstrerror(errstat));
       goto bail_out;
@@ -176,58 +176,58 @@ bool B_DB_MYSQL::open_database(JCR *jcr)
 #ifdef xHAVE_EMBEDDED_MYSQL
 // mysql_server_init(0, NULL, NULL);
 #endif
-   mysql_init(&m_instance);
+   mysql_init(&instance_);
 
    Dmsg0(50, "mysql_init done\n");
    /*
     * If connection fails, try at 5 sec intervals for 30 seconds.
     */
    for (int retry=0; retry < 6; retry++) {
-      m_db_handle = mysql_real_connect(&m_instance,        /* db */
-                                       m_db_address,       /* default = localhost */
-                                       m_db_user,          /* login name */
-                                       m_db_password,      /* password */
-                                       m_db_name,          /* database name */
-                                       m_db_port,          /* default port */
-                                       m_db_socket,        /* default = socket */
+      db_handle_ = mysql_real_connect(&instance_,        /* db */
+                                       db_address_,       /* default = localhost */
+                                       db_user_,          /* login name */
+                                       db_password_,      /* password */
+                                       db_name_,          /* database name */
+                                       db_port_,          /* default port */
+                                       db_socket_,        /* default = socket */
                                        CLIENT_FOUND_ROWS); /* flags */
 
       /*
        * If no connect, try once more in case it is a timing problem
        */
-      if (m_db_handle != NULL) {
+      if (db_handle_ != NULL) {
          break;
       }
       bmicrosleep(5,0);
    }
 
-   mysql_options(&m_instance, MYSQL_OPT_RECONNECT, &reconnect);    /* so connection does not timeout */
+   mysql_options(&instance_, MYSQL_OPT_RECONNECT, &reconnect);    /* so connection does not timeout */
    Dmsg0(50, "mysql_real_connect done\n");
-   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", m_db_user, m_db_name,
-        (m_db_password == NULL) ? "(NULL)" : m_db_password);
+   Dmsg3(50, "db_user=%s db_name=%s db_password=%s\n", db_user_, db_name_,
+        (db_password_ == NULL) ? "(NULL)" : db_password_);
 
-   if (m_db_handle == NULL) {
+   if (db_handle_ == NULL) {
       Mmsg2(errmsg, _("Unable to connect to MySQL server.\n"
                        "Database=%s User=%s\n"
                        "MySQL connect failed either server not running or your authorization is incorrect.\n"),
-         m_db_name, m_db_user);
+         db_name_, db_user_);
 #if MYSQL_VERSION_ID >= 40101
       Dmsg3(50, "Error %u (%s): %s\n",
-            mysql_errno(&(m_instance)), mysql_sqlstate(&(m_instance)),
-            mysql_error(&(m_instance)));
+            mysql_errno(&(instance_)), mysql_sqlstate(&(instance_)),
+            mysql_error(&(instance_)));
 #else
       Dmsg2(50, "Error %u: %s\n",
-            mysql_errno(&(m_instance)), mysql_error(&(m_instance)));
+            mysql_errno(&(instance_)), mysql_error(&(instance_)));
 #endif
       goto bail_out;
    }
 
-   m_connected = true;
+   connected_ = true;
    if (!check_tables_version(jcr)) {
       goto bail_out;
    }
 
-   Dmsg3(100, "opendb ref=%d connected=%d db=%p\n", m_ref_count, m_connected, m_db_handle);
+   Dmsg3(100, "opendb ref=%d connected=%d db=%p\n", ref_count_, connected_, db_handle_);
 
    /*
     * Set connection timeout to 8 days specialy for batch mode
@@ -242,29 +242,29 @@ bail_out:
    return retval;
 }
 
-void B_DB_MYSQL::close_database(JCR *jcr)
+void BareosDbMysql::close_database(JobControlRecord *jcr)
 {
-   if (m_connected) {
+   if (connected_) {
       end_transaction(jcr);
    }
    P(mutex);
-   m_ref_count--;
-   Dmsg3(100, "closedb ref=%d connected=%d db=%p\n", m_ref_count, m_connected, m_db_handle);
-   if (m_ref_count == 0) {
-      if (m_connected) {
+   ref_count_--;
+   Dmsg3(100, "closedb ref=%d connected=%d db=%p\n", ref_count_, connected_, db_handle_);
+   if (ref_count_ == 0) {
+      if (connected_) {
          sql_free_result();
       }
       db_list->remove(this);
-      if (m_connected) {
-         Dmsg1(100, "close db=%p\n", m_db_handle);
-         mysql_close(&m_instance);
+      if (connected_) {
+         Dmsg1(100, "close db=%p\n", db_handle_);
+         mysql_close(&instance_);
 
 #ifdef xHAVE_EMBEDDED_MYSQL
 //       mysql_server_end();
 #endif
       }
-      if (rwl_is_init(&m_lock)) {
-         rwl_destroy(&m_lock);
+      if (rwl_is_init(&lock_)) {
+         rwl_destroy(&lock_);
       }
       free_pool_memory(errmsg);
       free_pool_memory(cmd);
@@ -274,23 +274,23 @@ void B_DB_MYSQL::close_database(JCR *jcr)
       free_pool_memory(esc_name);
       free_pool_memory(esc_path);
       free_pool_memory(esc_obj);
-      if (m_db_driver) {
-         free(m_db_driver);
+      if (db_driver_) {
+         free(db_driver_);
       }
-      if (m_db_name) {
-         free(m_db_name);
+      if (db_name_) {
+         free(db_name_);
       }
-      if (m_db_user) {
-         free(m_db_user);
+      if (db_user_) {
+         free(db_user_);
       }
-      if (m_db_password) {
-         free(m_db_password);
+      if (db_password_) {
+         free(db_password_);
       }
-      if (m_db_address) {
-         free(m_db_address);
+      if (db_address_) {
+         free(db_address_);
       }
-      if (m_db_socket) {
-         free(m_db_socket);
+      if (db_socket_) {
+         free(db_socket_);
       }
       delete this;
       if (db_list->size() == 0) {
@@ -301,7 +301,7 @@ void B_DB_MYSQL::close_database(JCR *jcr)
    V(mutex);
 }
 
-bool B_DB_MYSQL::validate_connection(void)
+bool BareosDbMysql::validate_connection(void)
 {
    bool retval;
    unsigned long mysql_threadid;
@@ -312,14 +312,14 @@ bool B_DB_MYSQL::validate_connection(void)
     * a reconnect has taken place.
     */
    db_lock(this);
-   mysql_threadid = mysql_thread_id(m_db_handle);
-   if (mysql_ping(m_db_handle) == 0) {
+   mysql_threadid = mysql_thread_id(db_handle_);
+   if (mysql_ping(db_handle_) == 0) {
       Dmsg2(500, "db_validate_connection connection valid previous threadid %ld new threadid %ld\n",
-            mysql_threadid, mysql_thread_id(m_db_handle));
+            mysql_threadid, mysql_thread_id(db_handle_));
 
-      if (mysql_thread_id(m_db_handle) != mysql_threadid) {
-         mysql_query(m_db_handle, "SET wait_timeout=691200");
-         mysql_query(m_db_handle, "SET interactive_timeout=691200");
+      if (mysql_thread_id(db_handle_) != mysql_threadid) {
+         mysql_query(db_handle_, "SET wait_timeout=691200");
+         mysql_query(db_handle_, "SET interactive_timeout=691200");
       }
 
       retval = true;
@@ -343,7 +343,7 @@ bail_out:
  *  closes the database.  Thus the msgchan must call here
  *  to cleanup any thread specific data that it created.
  */
-void B_DB_MYSQL::thread_cleanup(void)
+void BareosDbMysql::thread_cleanup(void)
 {
 #ifndef HAVE_WIN32
    mysql_thread_end();
@@ -357,26 +357,26 @@ void B_DB_MYSQL::thread_cleanup(void)
  *         string must be long enough (max 2*old+1) to hold
  *         the escaped output.
  */
-void B_DB_MYSQL::escape_string(JCR *jcr, char *snew, char *old, int len)
+void BareosDbMysql::escape_string(JobControlRecord *jcr, char *snew, char *old, int len)
 {
-   mysql_real_escape_string(m_db_handle, snew, old, len);
+   mysql_real_escape_string(db_handle_, snew, old, len);
 }
 
 /**
  * Escape binary object so that MySQL is happy
- * Memory is stored in B_DB struct, no need to free it
+ * Memory is stored in BareosDb struct, no need to free it
  */
-char *B_DB_MYSQL::escape_object(JCR *jcr, char *old, int len)
+char *BareosDbMysql::escape_object(JobControlRecord *jcr, char *old, int len)
 {
    esc_obj = check_pool_memory_size(esc_obj, len*2+1);
-   mysql_real_escape_string(m_db_handle, esc_obj, old, len);
+   mysql_real_escape_string(db_handle_, esc_obj, old, len);
    return esc_obj;
 }
 
 /**
  * Unescape binary object so that MySQL is happy
  */
-void B_DB_MYSQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
+void BareosDbMysql::unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                                  POOLMEM *&dest, int32_t *dest_len)
 {
    if (!from) {
@@ -390,17 +390,17 @@ void B_DB_MYSQL::unescape_object(JCR *jcr, char *from, int32_t expected_len,
    dest[expected_len] = '\0';
 }
 
-void B_DB_MYSQL::start_transaction(JCR *jcr)
+void BareosDbMysql::start_transaction(JobControlRecord *jcr)
 {
    if (!jcr->attr) {
       jcr->attr = get_pool_memory(PM_FNAME);
    }
    if (!jcr->ar) {
-      jcr->ar = (ATTR_DBR *)malloc(sizeof(ATTR_DBR));
+      jcr->ar = (AttributesDbRecord *)malloc(sizeof(AttributesDbRecord));
    }
 }
 
-void B_DB_MYSQL::end_transaction(JCR *jcr)
+void BareosDbMysql::end_transaction(JobControlRecord *jcr)
 {
    if (jcr && jcr->cached_attribute) {
       Dmsg0(400, "Flush last cached attribute.\n");
@@ -415,7 +415,7 @@ void B_DB_MYSQL::end_transaction(JCR *jcr)
  * Submit a general SQL command (cmd), and for each row returned,
  * the result_handler is called with the ctx.
  */
-bool B_DB_MYSQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
+bool BareosDbMysql::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx)
 {
    int status;
    SQL_ROW row;
@@ -428,21 +428,21 @@ bool B_DB_MYSQL::sql_query_with_handler(const char *query, DB_RESULT_HANDLER *re
    db_lock(this);
 
 retry_query:
-   status = mysql_query(m_db_handle, query);
+   status = mysql_query(db_handle_, query);
 
    switch (status) {
    case 0:
       break;
    case CR_SERVER_GONE_ERROR:
    case CR_SERVER_LOST:
-      if (m_exit_on_fatal) {
+      if (exit_on_fatal_) {
          /*
           * Any fatal error should result in the daemon exiting.
           */
          Emsg0(M_FATAL, 0, "Fatal database error\n");
       }
 
-      if (m_try_reconnect && !m_transaction) {
+      if (try_reconnect_ && !transaction_) {
          /*
           * Only try reconnecting when no transaction is pending.
           * Reconnecting within a transaction will lead to an aborted
@@ -451,14 +451,14 @@ retry_query:
          if (retry) {
             unsigned long mysql_threadid;
 
-            mysql_threadid = mysql_thread_id(m_db_handle);
-            if (mysql_ping(m_db_handle) == 0) {
+            mysql_threadid = mysql_thread_id(db_handle_);
+            if (mysql_ping(db_handle_) == 0) {
                /*
                 * See if the threadid changed e.g. new connection to the DB.
                 */
-               if (mysql_thread_id(m_db_handle) != mysql_threadid) {
-                  mysql_query(m_db_handle, "SET wait_timeout=691200");
-                  mysql_query(m_db_handle, "SET interactive_timeout=691200");
+               if (mysql_thread_id(db_handle_) != mysql_threadid) {
+                  mysql_query(db_handle_, "SET wait_timeout=691200");
+                  mysql_query(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -477,19 +477,19 @@ retry_query:
    Dmsg0(500, "sql_query_with_handler succeeded. checking handler\n");
 
    if (result_handler != NULL) {
-      if ((m_result = mysql_use_result(m_db_handle)) != NULL) {
-         m_num_fields = mysql_num_fields(m_result);
+      if ((result_ = mysql_use_result(db_handle_)) != NULL) {
+         num_fields_ = mysql_num_fields(result_);
 
          /*
           * We *must* fetch all rows
           */
-         while ((row = mysql_fetch_row(m_result)) != NULL) {
+         while ((row = mysql_fetch_row(result_)) != NULL) {
             if (send) {
                /* the result handler returns 1 when it has
                 *  seen all the data it wants.  However, we
                 *  loop to the end of the data.
                 */
-               if (result_handler(ctx, m_num_fields, row)) {
+               if (result_handler(ctx, num_fields_, row)) {
                   send = false;
                }
             }
@@ -506,7 +506,7 @@ bail_out:
    return retval;
 }
 
-bool B_DB_MYSQL::sql_query_without_handler(const char *query, int flags)
+bool BareosDbMysql::sql_query_without_handler(const char *query, int flags)
 {
    int status;
    bool retry = true;
@@ -518,13 +518,13 @@ bool B_DB_MYSQL::sql_query_without_handler(const char *query, int flags)
     * We are starting a new query. reset everything.
     */
 retry_query:
-   m_num_rows = -1;
-   m_row_number = -1;
-   m_field_number = -1;
+   num_rows_ = -1;
+   row_number_ = -1;
+   field_number_ = -1;
 
-   if (m_result) {
-      mysql_free_result(m_result);
-      m_result = NULL;
+   if (result_) {
+      mysql_free_result(result_);
+      result_ = NULL;
    }
 
    /*
@@ -532,38 +532,38 @@ retry_query:
     * If multiple SQL statements have to be used, they can produce multiple results,
     * each of them needs handling.
     */
-   status = mysql_query(m_db_handle, query);
+   status = mysql_query(db_handle_, query);
    switch (status) {
    case 0:
       Dmsg0(500, "we have a result\n");
       if (flags & QF_STORE_RESULT) {
-         m_result = mysql_store_result(m_db_handle);
-         if (m_result != NULL) {
-            m_num_fields = mysql_num_fields(m_result);
-            Dmsg1(500, "we have %d fields\n", m_num_fields);
-            m_num_rows = mysql_num_rows(m_result);
-            Dmsg1(500, "we have %d rows\n", m_num_rows);
+         result_ = mysql_store_result(db_handle_);
+         if (result_ != NULL) {
+            num_fields_ = mysql_num_fields(result_);
+            Dmsg1(500, "we have %d fields\n", num_fields_);
+            num_rows_ = mysql_num_rows(result_);
+            Dmsg1(500, "we have %d rows\n", num_rows_);
          } else {
-            m_num_fields = 0;
-            m_num_rows = mysql_affected_rows(m_db_handle);
-            Dmsg1(500, "we have %d rows\n", m_num_rows);
+            num_fields_ = 0;
+            num_rows_ = mysql_affected_rows(db_handle_);
+            Dmsg1(500, "we have %d rows\n", num_rows_);
          }
       } else {
-         m_num_fields = 0;
-         m_num_rows = mysql_affected_rows(m_db_handle);
-         Dmsg1(500, "we have %d rows\n", m_num_rows);
+         num_fields_ = 0;
+         num_rows_ = mysql_affected_rows(db_handle_);
+         Dmsg1(500, "we have %d rows\n", num_rows_);
       }
       break;
    case CR_SERVER_GONE_ERROR:
    case CR_SERVER_LOST:
-      if (m_exit_on_fatal) {
+      if (exit_on_fatal_) {
          /*
           * Any fatal error should result in the daemon exiting.
           */
          Emsg0(M_FATAL, 0, "Fatal database error\n");
       }
 
-      if (m_try_reconnect && !m_transaction) {
+      if (try_reconnect_ && !transaction_) {
          /*
           * Only try reconnecting when no transaction is pending.
           * Reconnecting within a transaction will lead to an aborted
@@ -572,14 +572,14 @@ retry_query:
          if (retry) {
             unsigned long mysql_threadid;
 
-            mysql_threadid = mysql_thread_id(m_db_handle);
-            if (mysql_ping(m_db_handle) == 0) {
+            mysql_threadid = mysql_thread_id(db_handle_);
+            if (mysql_ping(db_handle_) == 0) {
                /*
                 * See if the threadid changed e.g. new connection to the DB.
                 */
-               if (mysql_thread_id(m_db_handle) != mysql_threadid) {
-                  mysql_query(m_db_handle, "SET wait_timeout=691200");
-                  mysql_query(m_db_handle, "SET interactive_timeout=691200");
+               if (mysql_thread_id(db_handle_) != mysql_threadid) {
+                  mysql_query(db_handle_, "SET wait_timeout=691200");
+                  mysql_query(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -591,7 +591,7 @@ retry_query:
       /* FALL THROUGH */
    default:
       Dmsg0(500, "we failed\n");
-      m_status = 1;                   /* failed */
+      status_ = 1;                   /* failed */
       retval = false;
       break;
    }
@@ -599,88 +599,88 @@ retry_query:
    return retval;
 }
 
-void B_DB_MYSQL::sql_free_result(void)
+void BareosDbMysql::sql_free_result(void)
 {
    db_lock(this);
-   if (m_result) {
-      mysql_free_result(m_result);
-      m_result = NULL;
+   if (result_) {
+      mysql_free_result(result_);
+      result_ = NULL;
    }
-   if (m_fields) {
-      free(m_fields);
-      m_fields = NULL;
+   if (fields_) {
+      free(fields_);
+      fields_ = NULL;
    }
-   m_num_rows = m_num_fields = 0;
+   num_rows_ = num_fields_ = 0;
    db_unlock(this);
 }
 
-SQL_ROW B_DB_MYSQL::sql_fetch_row(void)
+SQL_ROW BareosDbMysql::sql_fetch_row(void)
 {
-   if (!m_result) {
+   if (!result_) {
       return NULL;
    } else {
-      return mysql_fetch_row(m_result);
+      return mysql_fetch_row(result_);
    }
 }
 
-const char *B_DB_MYSQL::sql_strerror(void)
+const char *BareosDbMysql::sql_strerror(void)
 {
-   return mysql_error(m_db_handle);
+   return mysql_error(db_handle_);
 }
 
-void B_DB_MYSQL::sql_data_seek(int row)
+void BareosDbMysql::sql_data_seek(int row)
 {
-   return mysql_data_seek(m_result, row);
+   return mysql_data_seek(result_, row);
 }
 
-int B_DB_MYSQL::sql_affected_rows(void)
+int BareosDbMysql::sql_affected_rows(void)
 {
-   return mysql_affected_rows(m_db_handle);
+   return mysql_affected_rows(db_handle_);
 }
 
-uint64_t B_DB_MYSQL::sql_insert_autokey_record(const char *query, const char *table_name)
+uint64_t BareosDbMysql::sql_insert_autokey_record(const char *query, const char *table_name)
 {
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (mysql_query(m_db_handle, query) != 0) {
+   if (mysql_query(db_handle_, query) != 0) {
       return 0;
    }
 
-   m_num_rows = mysql_affected_rows(m_db_handle);
-   if (m_num_rows != 1) {
+   num_rows_ = mysql_affected_rows(db_handle_);
+   if (num_rows_ != 1) {
       return 0;
    }
 
    changes++;
 
-   return mysql_insert_id(m_db_handle);
+   return mysql_insert_id(db_handle_);
 }
 
-SQL_FIELD *B_DB_MYSQL::sql_fetch_field(void)
+SQL_FIELD *BareosDbMysql::sql_fetch_field(void)
 {
    int i;
    MYSQL_FIELD *field;
 
-   if (!m_fields || m_fields_size < m_num_fields) {
-      if (m_fields) {
-         free(m_fields);
-         m_fields = NULL;
+   if (!fields_ || fields_size_ < num_fields_) {
+      if (fields_) {
+         free(fields_);
+         fields_ = NULL;
       }
-      Dmsg1(500, "allocating space for %d fields\n", m_num_fields);
-      m_fields = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * m_num_fields);
-      m_fields_size = m_num_fields;
+      Dmsg1(500, "allocating space for %d fields\n", num_fields_);
+      fields_ = (SQL_FIELD *)malloc(sizeof(SQL_FIELD) * num_fields_);
+      fields_size_ = num_fields_;
 
-      for (i = 0; i < m_num_fields; i++) {
+      for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
-         if ((field = mysql_fetch_field(m_result)) != NULL) {
-            m_fields[i].name = field->name;
-            m_fields[i].max_length = field->max_length;
-            m_fields[i].type = field->type;
-            m_fields[i].flags = field->flags;
+         if ((field = mysql_fetch_field(result_)) != NULL) {
+            fields_[i].name = field->name;
+            fields_[i].max_length = field->max_length;
+            fields_[i].type = field->type;
+            fields_[i].flags = field->flags;
 
             Dmsg4(500, "sql_fetch_field finds field '%s' has length='%d' type='%d' and IsNull=%d\n",
-                  m_fields[i].name, m_fields[i].max_length, m_fields[i].type, m_fields[i].flags);
+                  fields_[i].name, fields_[i].max_length, fields_[i].type, fields_[i].flags);
          }
       }
    }
@@ -688,15 +688,15 @@ SQL_FIELD *B_DB_MYSQL::sql_fetch_field(void)
    /*
     * Increment field number for the next time around
     */
-   return &m_fields[m_field_number++];
+   return &fields_[field_number_++];
 }
 
-bool B_DB_MYSQL::sql_field_is_not_null(int field_type)
+bool BareosDbMysql::sql_field_is_not_null(int field_type)
 {
    return IS_NOT_NULL(field_type);
 }
 
-bool B_DB_MYSQL::sql_field_is_numeric(int field_type)
+bool BareosDbMysql::sql_field_is_numeric(int field_type)
 {
    return IS_NUM(field_type);
 }
@@ -705,7 +705,7 @@ bool B_DB_MYSQL::sql_field_is_numeric(int field_type)
  * Returns true if OK
  *         false if failed
  */
-bool B_DB_MYSQL::sql_batch_start(JCR *jcr)
+bool BareosDbMysql::sql_batch_start(JobControlRecord *jcr)
 {
    bool retval;
 
@@ -735,9 +735,9 @@ bool B_DB_MYSQL::sql_batch_start(JCR *jcr)
  * Returns true if OK
  *         false if failed
  */
-bool B_DB_MYSQL::sql_batch_end(JCR *jcr, const char *error)
+bool BareosDbMysql::sql_batch_end(JobControlRecord *jcr, const char *error)
 {
-   m_status = 0;
+   status_ = 0;
 
    /*
     * Flush any pending inserts.
@@ -753,7 +753,7 @@ bool B_DB_MYSQL::sql_batch_end(JCR *jcr, const char *error)
  * Returns true if OK
  *         false if failed
  */
-bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
+bool BareosDbMysql::sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar)
 {
    const char *digest;
    char ed1[50], ed2[50], ed3[50];
@@ -813,7 +813,7 @@ bool B_DB_MYSQL::sql_batch_insert(JCR *jcr, ATTR_DBR *ar)
  * never have errors, or it is really fatal.
  */
 #ifdef HAVE_DYNAMIC_CATS_BACKENDS
-extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
+extern "C" BareosDb CATS_IMP_EXP *backend_instantiate(JobControlRecord *jcr,
                                                   const char *db_driver,
                                                   const char *db_name,
                                                   const char *db_user,
@@ -827,7 +827,7 @@ extern "C" B_DB CATS_IMP_EXP *backend_instantiate(JCR *jcr,
                                                   bool exit_on_fatal,
                                                   bool need_private)
 #else
-B_DB *db_init_database(JCR *jcr,
+BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -842,7 +842,7 @@ B_DB *db_init_database(JCR *jcr,
                        bool need_private)
 #endif
 {
-   B_DB_MYSQL *mdb = NULL;
+   BareosDbMysql *mdb = NULL;
 
    if (!db_user) {
       Jmsg(jcr, M_FATAL, 0, _("A user name for MySQL must be supplied.\n"));
@@ -867,7 +867,7 @@ B_DB *db_init_database(JCR *jcr,
       }
    }
    Dmsg0(100, "db_init_database first time\n");
-   mdb = New(B_DB_MYSQL(jcr,
+   mdb = New(BareosDbMysql(jcr,
                         db_driver,
                         db_name,
                         db_user,

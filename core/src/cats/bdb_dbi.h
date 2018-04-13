@@ -23,34 +23,34 @@
 #ifndef __BDB_DBI_H_
 #define __BDB_DBI_H_ 1
 
-struct DBI_FIELD_GET {
+struct DbiFieldGet {
    dlink link;
    char *value;
 };
 
-class B_DB_DBI: public B_DB_PRIV {
+class BareosDbDBI: public BareosDbPrivateInterface {
 private:
    /*
     * Members.
     */
-   dbi_inst m_instance;
-   dbi_conn *m_db_handle;
-   dbi_result *m_result;
-   DBI_FIELD_GET *m_field_get;
+   dbi_inst instance_;
+   dbi_conn *db_handle_;
+   dbi_result *result_;
+   DbiFieldGet *field_get_;
 
 private:
    /*
     * Methods.
     */
-   bool open_database(JCR *jcr);
-   void close_database(JCR *jcr);
+   bool open_database(JobControlRecord *jcr);
+   void close_database(JobControlRecord *jcr);
    bool validate_connection(void);
-   void escape_string(JCR *jcr, char *snew, char *old, int len);
-   char *escape_object(JCR *jcr, char *old, int len);
-   void unescape_object(JCR *jcr, char *from, int32_t expected_len,
+   void escape_string(JobControlRecord *jcr, char *snew, char *old, int len);
+   char *escape_object(JobControlRecord *jcr, char *old, int len);
+   void unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                         POOLMEM *&dest, int32_t *len);
-   void start_transaction(JCR *jcr);
-   void end_transaction(JCR *jcr);
+   void start_transaction(JobControlRecord *jcr);
+   void end_transaction(JobControlRecord *jcr);
    bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool sql_query_without_handler(const char *query, int flags = 0);
    void sql_free_result(void);
@@ -62,15 +62,15 @@ private:
    SQL_FIELD *sql_fetch_field(void);
    bool sql_field_is_not_null(int field_type);
    bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JCR *jcr);
-   bool sql_batch_end(JCR *jcr, const char *error);
-   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
+   bool sql_batch_start(JobControlRecord *jcr);
+   bool sql_batch_end(JobControlRecord *jcr, const char *error);
+   bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar);
 
 public:
    /*
     * Methods.
     */
-   B_DB_DBI(JCR *jcr,
+   BareosDbDBI(JobControlRecord *jcr,
             const char *db_driver,
             const char *db_name,
             const char *db_user,
@@ -83,6 +83,6 @@ public:
             bool try_reconnect,
             bool exit_on_fatal,
             bool need_private);
-   ~B_DB_DBI();
+   ~BareosDbDBI();
 };
 #endif /* __BDB_DBI_H_ */

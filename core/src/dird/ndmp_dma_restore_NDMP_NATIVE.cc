@@ -40,19 +40,19 @@
 /*
  * Fill the NDMP restore environment table with the data for the data agent to act on.
  */
-static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
+static inline bool fill_restore_environment_ndmp_native(JobControlRecord *jcr,
                                             int32_t current_fi,
                                             struct ndm_job_param *job)
 {
    int i;
    char *bp;
    ndmp9_pval pv;
-   FILESETRES *fileset;
+   FilesetResource *fileset;
    char *restore_pathname,
         *ndmp_filesystem,
         *restore_prefix;
-   POOL_MEM tape_device;
-   POOL_MEM destination_path;
+   PoolMem tape_device;
+   PoolMem destination_path;
    ndmp_backup_format_option *nbf_options;
 
    ndmp_filesystem = NULL;
@@ -182,13 +182,13 @@ static inline bool fill_restore_environment_ndmp_native(JCR *jcr,
 /*
  * See in the tree with selected files what files were selected to be restored.
  */
-int set_files_to_restore_ndmp_native(JCR *jcr, struct ndm_job_param *job, int32_t FileIndex,
+int set_files_to_restore_ndmp_native(JobControlRecord *jcr, struct ndm_job_param *job, int32_t FileIndex,
                                        const char *restore_prefix, const char *ndmp_filesystem)
 {
    int len;
    int cnt = 0;
    TREE_NODE *node, *parent;
-   POOL_MEM restore_pathname, tmp;
+   PoolMem restore_pathname, tmp;
 
    node = first_tree_node(jcr->restore_tree_root);
    while (node) {
@@ -249,11 +249,11 @@ int set_files_to_restore_ndmp_native(JCR *jcr, struct ndm_job_param *job, int32_
 /**
  * Execute native NDMP restore.
  */
-static bool do_ndmp_native_restore(JCR *jcr)
+static bool do_ndmp_native_restore(JobControlRecord *jcr)
 {
    int cnt;
-   BSOCK *sd;
-   BSR *bsr;
+   BareosSocket *sd;
+   BootStrapRecord *bsr;
    NIS *nis = NULL;
    int32_t current_fi = 0;
    struct ndm_session ndmp_sess;
@@ -478,9 +478,9 @@ bail_out:
 /*
  * Run a NDMP restore session.
  */
-bool do_ndmp_restore_ndmp_native(JCR *jcr)
+bool do_ndmp_restore_ndmp_native(JobControlRecord *jcr)
 {
-   JOB_DBR rjr;                       /* restore job record */
+   JobDbRecord rjr;                       /* restore job record */
    int status;
 
    memset(&rjr, 0, sizeof(rjr));

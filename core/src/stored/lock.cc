@@ -76,10 +76,10 @@ const int dbglvl = 500;
  *
  * Functions:
  *
- * DEVICE::Lock()   does P(m_mutex)     (in dev.h)
- * DEVICE::Unlock() does V(m_mutex)
+ * Device::Lock()   does P(mutex_)     (in dev.h)
+ * Device::Unlock() does V(mutex_)
  *
- * DEVICE::rLock(locked) allows locking the device when this thread
+ * Device::rLock(locked) allows locking the device when this thread
  *                       already has the device blocked.
  * - if (!locked)
  *   Lock()
@@ -87,14 +87,14 @@ const int dbglvl = 500;
  *   pthread_cond_wait
  * - leaves device locked
  *
- * DEVICE::rUnlock() Unlocks but does not unblock same as Unlock();
+ * Device::rUnlock() Unlocks but does not unblock same as Unlock();
  *
- * DEVICE::dblock(why) does
+ * Device::dblock(why) does
  * - rLock();         (recursive device lock)
  * - block_device(this, why)
  * - rUnlock()
  *
- * DEVICE::dunblock does
+ * Device::dunblock does
  * - Lock()
  * - unblock_device()
  * - Unlock()
@@ -125,14 +125,14 @@ const int dbglvl = 500;
  * - if waiting threads
  *   pthread_cond_broadcast
  */
-void DEVICE::dblock(int why)
+void Device::dblock(int why)
 {
    rLock(false);              /* need recursive lock to block */
    block_device(this, why);
    rUnlock();
 }
 
-void DEVICE::dunblock(bool locked)
+void Device::dunblock(bool locked)
 {
    if (!locked) {
       Lock();
@@ -143,10 +143,10 @@ void DEVICE::dunblock(bool locked)
 
 #ifdef SD_DEBUG_LOCK
 /**
- * Debug DCR locks  N.B.
+ * Debug DeviceControlRecord locks  N.B.
  *
  */
-void DCR::dbg_mLock(const char *file, int line, bool locked)
+void DeviceControlRecord::dbg_mLock(const char *file, int line, bool locked)
 {
    real_P(r_mutex);
    if (is_dev_locked()) {
@@ -160,7 +160,7 @@ void DCR::dbg_mLock(const char *file, int line, bool locked)
    return;
 }
 
-void DCR::dbg_mUnlock(const char *file, int line)
+void DeviceControlRecord::dbg_mUnlock(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "mUnlock from %s:%d\n", file, line);
    real_P(r_mutex);
@@ -179,57 +179,57 @@ void DCR::dbg_mUnlock(const char *file, int line)
 }
 
 /**
- * Debug DEVICE locks  N.B.
+ * Debug Device locks  N.B.
  *
  */
-void DEVICE::dbg_Lock(const char *file, int line)
+void Device::dbg_Lock(const char *file, int line)
 {
-   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, m_count);
+   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, count_);
    /* Note, this *really* should be protected by a mutex, but
     *  since it is only debug code we don't worry too much.
     */
-   if (m_count > 0 && pthread_equal(m_pid, pthread_self())) {
-      Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d m_count=%d\n",
-            get_jobid_from_tid(m_pid),
-            file, line, m_count);
+   if (count_ > 0 && pthread_equal(pid_, pthread_self())) {
+      Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d count_=%d\n",
+            get_jobid_from_tid(pid_),
+            file, line, count_);
    }
-   bthread_mutex_lock_p(&m_mutex, file, line);
-   m_pid = pthread_self();
-   m_count++;
+   bthread_mutex_lock_p(&mutex_, file, line);
+   pid_ = pthread_self();
+   count_++;
 }
 
-void DEVICE::dbg_Unlock(const char *file, int line)
+void Device::dbg_Unlock(const char *file, int line)
 {
-   m_count--;
-   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, m_count);
-   bthread_mutex_unlock_p(&m_mutex, file, line);
+   count_--;
+   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, count_);
+   bthread_mutex_unlock_p(&mutex_, file, line);
 }
 
-void DEVICE::dbg_rUnlock(const char *file, int line)
+void Device::dbg_rUnlock(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", file, line);
    dbg_Unlock(file, line);
 }
 
-void DEVICE::dbg_Lock_acquire(const char *file, int line)
+void Device::dbg_Lock_acquire(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&acquire_mutex, file, line);
 }
 
-void DEVICE::dbg_Unlock_acquire(const char *file, int line)
+void Device::dbg_Unlock_acquire(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&acquire_mutex, file, line);
 }
 
-void DEVICE::dbg_Lock_read_acquire(const char *file, int line)
+void Device::dbg_Lock_read_acquire(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&read_acquire_mutex, file, line);
 }
 
-void DEVICE::dbg_Unlock_read_acquire(const char *file, int line)
+void Device::dbg_Unlock_read_acquire(const char *file, int line)
 {
    Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&read_acquire_mutex, file, line);
@@ -238,12 +238,12 @@ void DEVICE::dbg_Unlock_read_acquire(const char *file, int line)
 #else
 
 /**
- * DCR locks N.B.
+ * DeviceControlRecord locks N.B.
  */
 /**
  * Multiple rLock implementation
  */
-void DCR::mLock(bool locked)
+void DeviceControlRecord::mLock(bool locked)
 {
    P(r_mutex);
    if (is_dev_locked()) {
@@ -259,7 +259,7 @@ void DCR::mLock(bool locked)
 /**
  * Multiple rUnlock implementation
  */
-void DCR::mUnlock()
+void DeviceControlRecord::mUnlock()
 {
    P(r_mutex);
    if (!is_dev_locked()) {
@@ -279,39 +279,39 @@ void DCR::mUnlock()
 }
 
 /**
- * DEVICE locks N.B.
+ * Device locks N.B.
  */
-void DEVICE::rUnlock()
+void Device::rUnlock()
 {
    Unlock();
 }
 
-void DEVICE::Lock()
+void Device::Lock()
 {
-   P(m_mutex);
+   P(mutex_);
 }
 
-void DEVICE::Unlock()
+void Device::Unlock()
 {
-   V(m_mutex);
+   V(mutex_);
 }
 
-void DEVICE::Lock_acquire()
+void Device::Lock_acquire()
 {
    P(acquire_mutex);
 }
 
-void DEVICE::Unlock_acquire()
+void Device::Unlock_acquire()
 {
    V(acquire_mutex);
 }
 
-void DEVICE::Lock_read_acquire()
+void Device::Lock_read_acquire()
 {
    P(read_acquire_mutex);
 }
 
-void DEVICE::Unlock_read_acquire()
+void Device::Unlock_read_acquire()
 {
    V(read_acquire_mutex);
 }
@@ -321,15 +321,15 @@ void DEVICE::Unlock_read_acquire()
 /**
  * Main device access control
  */
-int DEVICE::init_mutex()
+int Device::init_mutex()
 {
-   return pthread_mutex_init(&m_mutex, NULL);
+   return pthread_mutex_init(&mutex_, NULL);
 }
 
 /**
  * Write device acquire mutex
  */
-int DEVICE::init_acquire_mutex()
+int Device::init_acquire_mutex()
 {
    return pthread_mutex_init(&acquire_mutex, NULL);
 }
@@ -337,7 +337,7 @@ int DEVICE::init_acquire_mutex()
 /**
  * Read device acquire mutex
  */
-int DEVICE::init_read_acquire_mutex()
+int Device::init_read_acquire_mutex()
 {
    return pthread_mutex_init(&read_acquire_mutex, NULL);
 }
@@ -345,19 +345,19 @@ int DEVICE::init_read_acquire_mutex()
 /**
  * Set order in which device locks must be acquired
  */
-void DEVICE::set_mutex_priorities()
+void Device::set_mutex_priorities()
 {
    /*
     * Ensure that we respect this order in P/V operations
     */
-   bthread_mutex_set_priority(&m_mutex, PRIO_SD_DEV_ACCESS);
+   bthread_mutex_set_priority(&mutex_, PRIO_SD_DEV_ACCESS);
    bthread_mutex_set_priority(&spool_mutex, PRIO_SD_DEV_SPOOL);
    bthread_mutex_set_priority(&acquire_mutex, PRIO_SD_DEV_ACQUIRE);
 }
 
-int DEVICE::next_vol_timedwait(const struct timespec *timeout)
+int Device::next_vol_timedwait(const struct timespec *timeout)
 {
-   return pthread_cond_timedwait(&wait_next_vol, &m_mutex, timeout);
+   return pthread_cond_timedwait(&wait_next_vol, &mutex_, timeout);
 }
 
 /**
@@ -368,23 +368,23 @@ int DEVICE::next_vol_timedwait(const struct timespec *timeout)
  * and preparing the label.
  */
 #ifdef SD_DEBUG_LOCK
-void DEVICE::dbg_rLock(const char *file, int line, bool locked)
+void Device::dbg_rLock(const char *file, int line, bool locked)
 {
    Dmsg3(sd_dbglvl, "rLock blked=%s from %s:%d\n", print_blocked(),
          file, line);
    if (!locked) {
       /*
-       * lockmgr version of P(m_mutex)
+       * lockmgr version of P(mutex_)
        */
-      bthread_mutex_lock_p(&m_mutex, file, line);
-      m_count++;
+      bthread_mutex_lock_p(&mutex_, file, line);
+      count_++;
    }
 #else
-void DEVICE::rLock(bool locked)
+void Device::rLock(bool locked)
 {
    if (!locked) {
       Lock();
-      m_count++;
+      count_++;
    }
 #endif
 
@@ -398,7 +398,7 @@ void DEVICE::rLock(bool locked)
                print_blocked(),
                edit_pthread(no_wait_id, ed1, sizeof(ed1)),
                edit_pthread(pthread_self(), ed2, sizeof(ed2)));
-         if ((status = pthread_cond_wait(&wait, &m_mutex)) != 0) {
+         if ((status = pthread_cond_wait(&wait, &mutex_)) != 0) {
             berrno be;
             this->Unlock();
             Emsg1(M_ABORT, 0, _("pthread_cond_wait failure. ERR=%s\n"),
@@ -418,9 +418,9 @@ void DEVICE::rLock(bool locked)
  * the current thread can do slip through the dev->rLock()
  * calls without blocking.
  */
-void _block_device(const char *file, int line, DEVICE *dev, int state)
+void _block_device(const char *file, int line, Device *dev, int state)
 {
-// ASSERT(lmgr_mutex_is_locked(&dev->m_mutex) == 1);
+// ASSERT(lmgr_mutex_is_locked(&dev->mutex_) == 1);
    ASSERT(dev->blocked() == BST_NOT_BLOCKED);
    dev->set_blocked(state);           /* make other threads wait */
    dev->no_wait_id = pthread_self();  /* allow us to continue */
@@ -432,10 +432,10 @@ void _block_device(const char *file, int line, DEVICE *dev, int state)
  * Enter: device locked
  * Exit:  device locked
  */
-void _unblock_device(const char *file, int line, DEVICE *dev)
+void _unblock_device(const char *file, int line, Device *dev)
 {
    Dmsg3(sd_dbglvl, "unblock %s from %s:%d\n", dev->print_blocked(), file, line);
-// ASSERT(lmgr_mutex_is_locked(&dev->m_mutex) == 1);
+// ASSERT(lmgr_mutex_is_locked(&dev->mutex_) == 1);
    ASSERT(dev->blocked());
    dev->set_blocked(BST_NOT_BLOCKED);
    clear_thread_id(dev->no_wait_id);
@@ -448,7 +448,7 @@ void _unblock_device(const char *file, int line, DEVICE *dev)
  * Enter with device locked and blocked
  * Exit with device unlocked and blocked by us.
  */
-void _steal_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold, int state)
+void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state)
 {
    Dmsg3(sd_dbglvl, "steal lock. old=%s from %s:%d\n", dev->print_blocked(),
       file, line);
@@ -465,7 +465,7 @@ void _steal_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock_t *
  * Enter with device blocked by us but not locked
  * Exit with device locked, and blocked by previous owner
  */
-void _give_back_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock_t *hold)
+void _give_back_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold)
 {
    Dmsg3(sd_dbglvl, "return lock. old=%s from %s:%d\n",
       dev->print_blocked(), file, line);
@@ -479,9 +479,9 @@ void _give_back_device_lock(const char *file, int line, DEVICE *dev, bsteal_lock
    }
 }
 
-const char *DEVICE::print_blocked() const
+const char *Device::print_blocked() const
 {
-   switch (m_blocked) {
+   switch (blocked_) {
    case BST_NOT_BLOCKED:
       return "BST_NOT_BLOCKED";
    case BST_UNMOUNTED:
@@ -508,7 +508,7 @@ const char *DEVICE::print_blocked() const
 /**
  * Check if the device is blocked or not
  */
-bool DEVICE::is_device_unmounted()
+bool Device::is_device_unmounted()
 {
    bool status;
    int blk = blocked();

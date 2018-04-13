@@ -41,16 +41,16 @@ struct ocbuf_item {
    void *data;
 };
 
-class ordered_circbuf : public SMARTALLOC {
+class ordered_circbuf : public SmartAlloc {
 private:
-   int m_size;
-   int m_capacity;
-   int m_reserved;
-   bool m_flush;
-   pthread_mutex_t m_lock;    /* Lock the structure */
-   pthread_cond_t m_notfull;  /* Full -> not full condition */
-   pthread_cond_t m_notempty; /* Empty -> not empty condition */
-   dlist *m_data;             /* Circular buffer of pointers */
+   int size_;
+   int capacity_;
+   int reserved_;
+   bool flush_;
+   pthread_mutex_t lock_;    /* Lock the structure */
+   pthread_cond_t notfull_;  /* Full -> not full condition */
+   pthread_cond_t notempty_; /* Empty -> not empty condition */
+   dlist *data_;             /* Circular buffer of pointers */
 
 public:
    ordered_circbuf(int capacity = OQSIZE);
@@ -72,10 +72,10 @@ public:
               int callback(void *item1, void *item2));
    int unreserve_slot();
    int flush();
-   bool full() { return m_size == (m_capacity - m_reserved); };
-   bool empty() { return m_size == 0; };
-   bool is_flushing() { return m_flush; };
-   int capacity() const { return m_capacity; };
+   bool full() { return size_ == (capacity_ - reserved_); };
+   bool empty() { return size_ == 0; };
+   bool is_flushing() { return flush_; };
+   int capacity() const { return capacity_; };
 };
 
 /*

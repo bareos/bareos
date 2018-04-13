@@ -39,23 +39,23 @@ extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_cod
 static void do_blocks(char *infname);
 static void do_jobs(char *infname);
 static void do_ls(char *fname);
-static void do_close(JCR *jcr);
-static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec);
-static bool record_cb(DCR *dcr, DEV_RECORD *rec);
+static void do_close(JobControlRecord *jcr);
+static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec);
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
-static DEVICE *dev;
-static DCR *dcr;
+static Device *dev;
+static DeviceControlRecord *dcr;
 static bool dump_label = false;
 static bool list_blocks = false;
 static bool list_jobs = false;
-static DEV_RECORD *rec;
-static JCR *jcr;
+static DeviceRecord *rec;
+static JobControlRecord *jcr;
 static SESSION_LABEL sessrec;
 static uint32_t num_files = 0;
-static ATTR *attr;
+static Attributes *attr;
 
-static FF_PKT *ff;
-static BSR *bsr = NULL;
+static FindFilesPacket *ff;
+static BootStrapRecord *bsr = NULL;
 
 static void usage()
 {
@@ -91,7 +91,7 @@ int main (int argc, char *argv[])
    char *bsrName = NULL;
    char *DirectorName = NULL;
    bool ignore_label_errors = false;
-   DIRRES *director = NULL;
+   DirectorResource *director = NULL;
 
    setlocale(LC_ALL, "");
    bindtextdomain("bareos", LOCALEDIR);
@@ -235,7 +235,7 @@ int main (int argc, char *argv[])
       if (bsrName) {
          bsr = parse_bsr(NULL, bsrName);
       }
-      dcr = New(DCR);
+      dcr = New(DeviceControlRecord);
       jcr = setup_jcr("bls", argv[i], bsr, director, dcr, VolumeName, true); /* read device */
       if (!jcr) {
          exit(1);
@@ -275,7 +275,7 @@ int main (int argc, char *argv[])
    return 0;
 }
 
-static void do_close(JCR *jcr)
+static void do_close(JobControlRecord *jcr)
 {
    free_attr(attr);
    free_record(rec);
@@ -288,7 +288,7 @@ static void do_close(JCR *jcr)
 /* List just block information */
 static void do_blocks(char *infname)
 {
-   DEV_BLOCK *block = dcr->block;
+   DeviceBlock *block = dcr->block;
    char buf1[100], buf2[100];
    for ( ;; ) {
       if (!dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK)) {
@@ -300,7 +300,7 @@ static void do_blocks(char *infname)
                break;
             }
             /* Read and discard Volume label */
-            DEV_RECORD *record;
+            DeviceRecord *record;
             record = new_record();
             dcr->read_block_from_device(NO_BLOCK_NUMBER_CHECK);
             read_record_from_block(dcr, record);
@@ -351,7 +351,7 @@ static void do_blocks(char *infname)
 /**
  * We are only looking for labels or in particular Job Session records
  */
-static bool jobs_cb(DCR *dcr, DEV_RECORD *rec)
+static bool jobs_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    if (rec->FileIndex < 0) {
       dump_label_record(dcr->dev, rec, verbose);
@@ -380,9 +380,9 @@ static void do_ls(char *infname)
 /**
  * Called here for each record from read_records()
  */
-static bool record_cb(DCR *dcr, DEV_RECORD *rec)
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
-   POOL_MEM record_str(PM_MESSAGE);
+   PoolMem record_str(PM_MESSAGE);
 
    if (rec->FileIndex < 0) {
       get_session_record(dev, rec, &sessrec);
@@ -430,7 +430,7 @@ static bool record_cb(DCR *dcr, DEV_RECORD *rec)
    return true;
 }
 
-static void get_session_record(DEVICE *dev, DEV_RECORD *rec, SESSION_LABEL *sessrec)
+static void get_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
    const char *rtype;
    memset(sessrec, 0, sizeof(SESSION_LABEL));

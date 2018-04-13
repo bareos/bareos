@@ -56,7 +56,7 @@ bool MonitorItem::get_job_defaults(struct JobDefaults &job_defs)
 {
    int stat;
    char *def;
-   BSOCK *dircomm;
+   BareosSocket *dircomm;
    QString scmd = QString(".defaults job=\"%1\"").arg(job_defs.job_name);
 
    if (job_defs.job_name == "" || !doconnect()) {
@@ -112,18 +112,18 @@ bool MonitorItem::doconnect()
        return true;
    }
 
-  JCR jcr;
+  JobControlRecord jcr;
   memset(&jcr, 0, sizeof(jcr));
 
-  DIRRES *dird;
-  CLIENTRES *filed;
-  STORERES *stored;
+  DirectorResource *dird;
+  ClientResource *filed;
+  StoreResource *stored;
   QString message;
 
   switch (d->type) {
 
   case R_DIRECTOR:
-     dird = static_cast<DIRRES*>(d->resource);
+     dird = static_cast<DirectorResource*>(d->resource);
      message = QString("Connecting to Director %1:%2").arg(dird->address).arg(dird->DIRport);
      emit showStatusbarMessage(message);
      d->DSock =  New(BSOCK_TCP);
@@ -137,7 +137,7 @@ bool MonitorItem::doconnect()
      break;
 
   case R_CLIENT:
-     filed = static_cast<CLIENTRES*>(d->resource);
+     filed = static_cast<ClientResource*>(d->resource);
      message = QString("Connecting to Client %1:%2").arg(filed->address).arg(filed->FDport);
      emit showStatusbarMessage(message);
      d->DSock =  New(BSOCK_TCP);
@@ -151,7 +151,7 @@ bool MonitorItem::doconnect()
      break;
 
   case R_STORAGE:
-     stored = static_cast<STORERES*>(d->resource);
+     stored = static_cast<StoreResource*>(d->resource);
      message = QString("Connecting to Storage %1:%2").arg(stored->address).arg(stored->SDport);
      emit showStatusbarMessage(message);
      d->DSock =  New(BSOCK_TCP);
@@ -340,12 +340,12 @@ void MonitorItem::connectToMainWindow(QObject* mainWindow)
 
 Rescode MonitorItem::type() const { return d->type; }
 void* MonitorItem::resource() const { return d->resource; }
-BSOCK* MonitorItem::DSock() const { return d->DSock; }
+BareosSocket* MonitorItem::DSock() const { return d->DSock; }
 MonitorItem::StateEnum MonitorItem::state() const { return d->state; }
 int MonitorItem::connectTimeout() const { return d->connectTimeout; }
 
 void MonitorItem::setType(Rescode type) { d->type = type; }
 void MonitorItem::setResource(void* resource) { d->resource = resource; }
-void MonitorItem::setDSock(BSOCK* DSock) { d->DSock = DSock; }
+void MonitorItem::setDSock(BareosSocket* DSock) { d->DSock = DSock; }
 void MonitorItem::setState(MonitorItem::StateEnum state) { d->state = state; }
 void MonitorItem::setConnectTimeout(int timeout) { d->connectTimeout = timeout; }

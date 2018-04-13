@@ -34,7 +34,7 @@
 /**
  * Check if access is permitted to item in acl
  */
-bool UAContext::acl_access_ok(int acl, const char *item, bool audit_event)
+bool UaContext::acl_access_ok(int acl, const char *item, bool audit_event)
 {
    return acl_access_ok(acl, item, strlen(item), audit_event);
 }
@@ -207,7 +207,7 @@ bail_out:
 /**
  * This version expects the length of the item which we must check.
  */
-bool UAContext::acl_access_ok(int acl, const char *item, int len, bool audit_event)
+bool UaContext::acl_access_ok(int acl, const char *item, int len, bool audit_event)
 {
    bool retval = false;
 
@@ -241,7 +241,7 @@ bool UAContext::acl_access_ok(int acl, const char *item, int len, bool audit_eve
     * If we didn't find a matching ACL try to use the profiles this console is connected to.
     */
    if (!retval && cons->profiles && cons->profiles->size()) {
-      PROFILERES *profile;
+      ProfileResource *profile;
 
       foreach_alist(profile, cons->profiles) {
          retval = find_in_acl_list(profile->ACL_lists[acl], acl, item, len);
@@ -266,10 +266,10 @@ bail_out:
 /**
  * This function returns if the authentication has any acl restrictions for a certain acltype.
  */
-bool UAContext::acl_no_restrictions(int acl)
+bool UaContext::acl_no_restrictions(int acl)
 {
    const char *list_value;
-   PROFILERES *profile;
+   ProfileResource *profile;
 
    /*
     * If no console resource => default console and all is permitted
@@ -311,7 +311,7 @@ bool UAContext::acl_no_restrictions(int acl)
    return false;
 }
 
-int UAContext::rcode_to_acltype(int rcode)
+int UaContext::rcode_to_acltype(int rcode)
 {
    int acl = -1;
 
@@ -348,7 +348,7 @@ int UAContext::rcode_to_acltype(int rcode)
 /**
  * This checks the right ACL if the UA has access to the wanted resource.
  */
-bool UAContext::is_res_allowed(RES *res)
+bool UaContext::is_res_allowed(CommonResourceHeader *res)
 {
    int acl;
 
@@ -368,7 +368,7 @@ bool UAContext::is_res_allowed(RES *res)
 /**
  * Try to get a resource and make sure the current ACL allows it to be retrieved.
  */
-RES *UAContext::GetResWithName(int rcode, const char *name, bool audit_event, bool lock)
+CommonResourceHeader *UaContext::GetResWithName(int rcode, const char *name, bool audit_event, bool lock)
 {
    int acl;
 
@@ -394,19 +394,19 @@ bail_out:
    return NULL;
 }
 
-POOLRES *UAContext::GetPoolResWithName(const char *name, bool audit_event, bool lock)
+PoolResource *UaContext::GetPoolResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (POOLRES *)GetResWithName(R_POOL, name, audit_event, lock);
+   return (PoolResource *)GetResWithName(R_POOL, name, audit_event, lock);
 }
 
-STORERES *UAContext::GetStoreResWithName(const char *name, bool audit_event, bool lock)
+StoreResource *UaContext::GetStoreResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (STORERES *)GetResWithName(R_STORAGE, name, audit_event, lock);
+   return (StoreResource *)GetResWithName(R_STORAGE, name, audit_event, lock);
 }
 
-STORERES *UAContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
+StoreResource *UaContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
 {
-   STORAGE_DBR storage_dbr;
+   StorageDbRecord storage_dbr;
    memset(&storage_dbr, 0, sizeof(storage_dbr));
 
    storage_dbr.StorageId = id;
@@ -416,27 +416,27 @@ STORERES *UAContext::GetStoreResWithId(DBId_t id, bool audit_event, bool lock)
    return NULL;
 }
 
-CLIENTRES *UAContext::GetClientResWithName(const char *name, bool audit_event, bool lock)
+ClientResource *UaContext::GetClientResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (CLIENTRES *)GetResWithName(R_CLIENT, name, audit_event, lock);
+   return (ClientResource *)GetResWithName(R_CLIENT, name, audit_event, lock);
 }
 
-JOBRES *UAContext::GetJobResWithName(const char *name, bool audit_event, bool lock)
+JobResource *UaContext::GetJobResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (JOBRES *)GetResWithName(R_JOB, name, audit_event, lock);
+   return (JobResource *)GetResWithName(R_JOB, name, audit_event, lock);
 }
 
-FILESETRES *UAContext::GetFileSetResWithName(const char *name, bool audit_event, bool lock)
+FilesetResource *UaContext::GetFileSetResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (FILESETRES *)GetResWithName(R_FILESET, name, audit_event, lock);
+   return (FilesetResource *)GetResWithName(R_FILESET, name, audit_event, lock);
 }
 
-CATRES *UAContext::GetCatalogResWithName(const char *name, bool audit_event, bool lock)
+CatalogResource *UaContext::GetCatalogResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (CATRES *)GetResWithName(R_CATALOG, name, audit_event, lock);
+   return (CatalogResource *)GetResWithName(R_CATALOG, name, audit_event, lock);
 }
 
-SCHEDRES *UAContext::GetScheduleResWithName(const char *name, bool audit_event, bool lock)
+ScheduleResource *UaContext::GetScheduleResWithName(const char *name, bool audit_event, bool lock)
 {
-   return (SCHEDRES *)GetResWithName(R_SCHEDULE, name, audit_event, lock);
+   return (ScheduleResource *)GetResWithName(R_SCHEDULE, name, audit_event, lock);
 }

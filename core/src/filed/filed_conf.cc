@@ -52,8 +52,8 @@
  * types. Note, these should be unique for each
  * daemon though not a requirement.
  */
-static RES *sres_head[R_LAST - R_FIRST + 1];
-static RES **res_head = sres_head;
+static CommonResourceHeader *sres_head[R_LAST - R_FIRST + 1];
+static CommonResourceHeader **res_head = sres_head;
 
 /**
  * Forward referenced subroutines
@@ -78,7 +78,7 @@ static int32_t res_all_size = sizeof(res_all);
 /**
  * Client or File daemon "Global" resources
  */
-static RES_ITEM cli_items[] = {
+static ResourceItem cli_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_client.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, "The name of this resource. It is used to reference to it." },
    { "Description", CFG_TYPE_STR, ITEM(res_client.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "FdPort", CFG_TYPE_ADDRESSES_PORT, ITEM(res_client.FDaddrs), 0, CFG_ITEM_DEFAULT, FD_DEFAULT_PORT, NULL, NULL },
@@ -132,7 +132,7 @@ static RES_ITEM cli_items[] = {
 /**
  * Directors that can use our services
  */
-static RES_ITEM dir_items[] = {
+static ResourceItem dir_items[] = {
    { "Name", CFG_TYPE_NAME, ITEM(res_dir.hdr.name), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
    { "Description", CFG_TYPE_STR, ITEM(res_dir.hdr.desc), 0, 0, NULL, NULL, NULL },
    { "Password", CFG_TYPE_MD5PASSWORD, ITEM(res_dir.password), 0, CFG_ITEM_REQUIRED, NULL, NULL, NULL },
@@ -163,24 +163,24 @@ static RES_ITEM dir_items[] = {
  * This is the master resource definition.
  * It must have one item for each of the resources.
  */
-static RES_TABLE resources[] = {
-   { "Director", dir_items, R_DIRECTOR, sizeof(DIRRES), [] (void *res){ return new((DIRRES *) res) DIRRES(); } },
-   { "FileDaemon", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } },
-   { "Client", cli_items, R_CLIENT, sizeof(CLIENTRES), [] (void *res){ return new((CLIENTRES *) res) CLIENTRES(); } }, /* alias for filedaemon */
-   { "Messages", msgs_items, R_MSGS, sizeof(MSGSRES) },
+static ResourceTable resources[] = {
+   { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
+   { "FileDaemon", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource *) res) ClientResource(); } },
+   { "Client", cli_items, R_CLIENT, sizeof(ClientResource), [] (void *res){ return new((ClientResource *) res) ClientResource(); } }, /* alias for filedaemon */
+   { "Messages", msgs_items, R_MSGS, sizeof(MessagesResource) },
    { NULL, NULL, 0}
 };
 
 /**
  * Dump contents of resource
  */
-void dump_resource(int type, RES *reshdr,
+void dump_resource(int type, CommonResourceHeader *reshdr,
                    void sendit(void *sock, const char *fmt, ...),
                    void *sock, bool hide_sensitive_data, bool verbose)
 {
-   POOL_MEM buf;
+   PoolMem buf;
    URES *res = (URES *)reshdr;
-   BRSRES *resclass;
+   BareosResource *resclass;
    int recurse = 1;
 
    if (res == NULL) {
@@ -195,12 +195,12 @@ void dump_resource(int type, RES *reshdr,
 
    switch (type) {
    case R_MSGS: {
-      MSGSRES *resclass = (MSGSRES *)reshdr;
+      MessagesResource *resclass = (MessagesResource *)reshdr;
       resclass->print_config(buf);
       break;
    }
    default:
-      resclass = (BRSRES *)reshdr;
+      resclass = (BareosResource *)reshdr;
       resclass->print_config(buf);
       break;
    }
@@ -218,9 +218,9 @@ void dump_resource(int type, RES *reshdr,
  * resource chain is traversed.  Mainly we worry about freeing
  * allocated strings (names).
  */
-void free_resource(RES *sres, int type)
+void free_resource(CommonResourceHeader *sres, int type)
 {
-   RES *nres;
+   CommonResourceHeader *nres;
    URES *res = (URES *)sres;
 
    if (res == NULL) {
@@ -230,7 +230,7 @@ void free_resource(RES *sres, int type)
    /*
     * Common stuff -- free the resource name
     */
-   nres = (RES *)res->res_dir.hdr.next;
+   nres = (CommonResourceHeader *)res->res_dir.hdr.next;
    if (res->res_dir.hdr.name) {
       free(res->res_dir.hdr.name);
    }
@@ -397,7 +397,7 @@ void free_resource(RES *sres, int type)
       if (res->res_msgs.timestamp_format) {
          free(res->res_msgs.timestamp_format);
       }
-      free_msgs_res((MSGSRES *)res);  /* free message resource */
+      free_msgs_res((MessagesResource *)res);  /* free message resource */
       res = NULL;
       break;
    default:
@@ -417,7 +417,7 @@ void free_resource(RES *sres, int type)
  * the resource. If this is pass 2, we update any resource
  * pointers (currently only in the Job resource).
  */
-bool save_resource(int type, RES_ITEM *items, int pass)
+bool save_resource(int type, ResourceItem *items, int pass)
 {
    URES *res;
    int rindex = type - R_FIRST;
@@ -504,9 +504,9 @@ bool save_resource(int type, RES_ITEM *items, int pass)
       res = (URES *)malloc(resources[rindex].size);
       memcpy(res, &res_all, resources[rindex].size);
       if (!res_head[rindex]) {
-         res_head[rindex] = (RES *)res; /* store first entry */
+         res_head[rindex] = (CommonResourceHeader *)res; /* store first entry */
       } else {
-         RES *next, *last;
+         CommonResourceHeader *next, *last;
          /*
           * Add new res to end of chain
           */
@@ -518,7 +518,7 @@ bool save_resource(int type, RES_ITEM *items, int pass)
                   resources[rindex].name, res->res_dir.name());
             }
          }
-         last->next = (RES *)res;
+         last->next = (CommonResourceHeader *)res;
          Dmsg2(90, "Inserting %s res: %s\n", res_to_str(type),
                res->res_dir.name());
       }
@@ -540,7 +540,7 @@ static struct s_kw CryptoCiphers[] = {
    { NULL, 0 }
 };
 
-static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
+static void store_cipher(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
    lex_get_token(lc, T_NAME);
@@ -567,7 +567,7 @@ static void store_cipher(LEX *lc, RES_ITEM *item, int index, int pass)
  * callback function for init_resource
  * See ../lib/parse_conf.c, function init_resource, for more generic handling.
  */
-static void init_resource_cb(RES_ITEM *item, int pass)
+static void init_resource_cb(ResourceItem *item, int pass)
 {
    switch (pass) {
    case 1:
@@ -592,7 +592,7 @@ static void init_resource_cb(RES_ITEM *item, int pass)
  * callback function for parse_config
  * See ../lib/parse_conf.c, function parse_config, for more generic handling.
  */
-static void parse_config_cb(LEX *lc, RES_ITEM *item, int index, int pass)
+static void parse_config_cb(LEX *lc, ResourceItem *item, int index, int pass)
 {
    switch (item->type) {
    case CFG_TYPE_CIPHER:
@@ -632,9 +632,9 @@ bool parse_fd_config(CONFIG *config, const char *configfile, int exit_code)
  * Print configuration file schema in json format
  */
 #ifdef HAVE_JANSSON
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
-   RES_TABLE *resources = my_config->m_resources;
+   ResourceTable *resources = my_config->resources_;
 
    initialize_json();
 
@@ -652,7 +652,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    json_object_set(resource, "bareos-fd", bareos_fd);
 
    for (int r = 0; resources[r].name; r++) {
-      RES_TABLE resource = my_config->m_resources[r];
+      ResourceTable resource = my_config->resources_[r];
       json_object_set(bareos_fd, resource.name, json_items(resource.items));
    }
 
@@ -662,7 +662,7 @@ bool print_config_schema_json(POOL_MEM &buffer)
    return true;
 }
 #else
-bool print_config_schema_json(POOL_MEM &buffer)
+bool print_config_schema_json(PoolMem &buffer)
 {
    pm_strcat(buffer, "{ \"success\": false, \"message\": \"not available\" }");
    return false;

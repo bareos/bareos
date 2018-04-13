@@ -77,7 +77,7 @@ static bool found_first_sos_label = false;
  * Returns: false on failure
  *          true on success
  */
-static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
+static bool response(JobControlRecord *jcr, BareosSocket *sd, char *resp, const char *cmd)
 {
    if (sd->errors) {
       return false;
@@ -109,12 +109,12 @@ static bool response(JCR *jcr, BSOCK *sd, char *resp, const char *cmd)
  * Returns: true if OK
  *           false if error
  */
-static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
+static bool clone_record_internally(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    bool retval = false;
    bool translated_record = false;
-   JCR *jcr = dcr->jcr;
-   DEVICE *dev = jcr->dcr->dev;
+   JobControlRecord *jcr = dcr->jcr;
+   Device *dev = jcr->dcr->dev;
    char buf1[100], buf2[100];
 
 #ifdef xxx
@@ -233,7 +233,7 @@ static bool clone_record_internally(DCR *dcr, DEV_RECORD *rec)
    /*
     * The record got translated when we got an after_rec pointer after calling the
     * bsdEventWriteRecordTranslation plugin event. If no translation has taken place
-    * we just point the after_rec pointer to same DEV_RECORD as in the before_rec pointer.
+    * we just point the after_rec pointer to same DeviceRecord as in the before_rec pointer.
     */
    if (!jcr->dcr->after_rec) {
       jcr->dcr->after_rec = jcr->dcr->before_rec;
@@ -292,12 +292,12 @@ bail_out:
  * Returns: true if OK
  *           false if error
  */
-static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
+static bool clone_record_to_remote_sd(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    POOLMEM *msgsave;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
    char buf1[100], buf2[100];
-   BSOCK *sd = jcr->store_bsock;
+   BareosSocket *sd = jcr->store_bsock;
    bool send_eod, send_header;
 
 #ifdef xxx
@@ -426,7 +426,7 @@ static bool clone_record_to_remote_sd(DCR *dcr, DEV_RECORD *rec)
 /**
  * Check autoinflation/autodeflation settings.
  */
-static inline void check_auto_xflation(JCR *jcr)
+static inline void check_auto_xflation(JobControlRecord *jcr)
 {
    /*
     * See if the autoxflateonreplication flag is set to true then we allow
@@ -490,14 +490,14 @@ static inline void check_auto_xflation(JCR *jcr)
 /**
  * Read Data and commit to new job.
  */
-bool do_mac_run(JCR *jcr)
+bool do_mac_run(JobControlRecord *jcr)
 {
    utime_t now;
    char ec1[50];
    const char *Type;
    bool ok = true;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev = jcr->dcr->dev;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev = jcr->dcr->dev;
 
    switch(jcr->getJobType()) {
    case JT_MIGRATE:
@@ -533,7 +533,7 @@ bool do_mac_run(JCR *jcr)
     * See if we perform both read and write or read only.
     */
    if (jcr->remote_replicate) {
-      BSOCK *sd;
+      BareosSocket *sd;
 
       if (!jcr->read_dcr) {
          Jmsg(jcr, M_FATAL, 0, _("Read device not properly initialized.\n"));
@@ -725,7 +725,7 @@ bail_out:
          /*
           * Write End Of Session Label
           */
-         DCR *dcr = jcr->dcr;
+         DeviceControlRecord *dcr = jcr->dcr;
          if (!write_session_label(dcr, EOS_LABEL)) {
             /*
              * Print only if ok and not cancelled to avoid spurious messages

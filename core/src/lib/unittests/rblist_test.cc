@@ -33,16 +33,16 @@
 #include "protos.h"
 
 
-struct RBLISTJCR {
+struct RbListJobControlRecord {
    char *buf;
 };
 
 static int rblist_compare(void *item1, void *item2)
 {
-   RBLISTJCR *jcr1, *jcr2;
+   RbListJobControlRecord *jcr1, *jcr2;
    int comp;
-   jcr1 = (RBLISTJCR *)item1;
-   jcr2 = (RBLISTJCR *)item2;
+   jcr1 = (RbListJobControlRecord *)item1;
+   jcr2 = (RbListJobControlRecord *)item2;
    comp = strcmp(jcr1->buf, jcr2->buf);
    return comp;
 }
@@ -50,8 +50,8 @@ static int rblist_compare(void *item1, void *item2)
 TEST(rblist,rblist){
    char buf[30];
    rblist *jcr_chain;
-   RBLISTJCR *jcr = NULL;
-   RBLISTJCR *jcr1;
+   RbListJobControlRecord *jcr = NULL;
+   RbListJobControlRecord *jcr1;
 
 
    /* Now do a binary insert for the tree */
@@ -67,10 +67,10 @@ TEST(rblist,rblist){
             if ((count & 0x3FF) == 0) {
                Dmsg1(000, "At %d\n", count);
             }
-            jcr = (RBLISTJCR *)malloc(sizeof(RBLISTJCR));
-            memset(jcr, 0, sizeof(RBLISTJCR));
+            jcr = (RbListJobControlRecord *)malloc(sizeof(RbListJobControlRecord));
+            memset(jcr, 0, sizeof(RbListJobControlRecord));
             jcr->buf = bstrdup(buf);
-            jcr1 = (RBLISTJCR *)jcr_chain->insert((void *)jcr, rblist_compare);
+            jcr1 = (RbListJobControlRecord *)jcr_chain->insert((void *)jcr, rblist_compare);
             if (jcr != jcr1) {
                Dmsg2(000, "Insert of %s vs %s failed.\n", jcr->buf, jcr1->buf);
             }
@@ -86,11 +86,11 @@ TEST(rblist,rblist){
    printf("num_items=%d\n", jcr_chain->size());
 
 // test stop in the next line...
-   jcr = (RBLISTJCR *)malloc(sizeof(RBLISTJCR));
-   memset(jcr, 0, sizeof(RBLISTJCR));
+   jcr = (RbListJobControlRecord *)malloc(sizeof(RbListJobControlRecord));
+   memset(jcr, 0, sizeof(RbListJobControlRecord));
 
    jcr->buf = bstrdup("a");
-   if ((jcr1=(RBLISTJCR *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
       printf("One less failed!!!! Got: %s\n", jcr1->buf);
    } else {
       printf("One less: OK\n");
@@ -98,7 +98,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("ZZZZZZZZZZZZZZZZ");
-   if ((jcr1=(RBLISTJCR *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
       printf("One greater failed!!!! Got:%s\n", jcr1->buf);
    } else {
       printf("One greater: OK\n");
@@ -106,7 +106,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("AAA");
-   if ((jcr1=(RBLISTJCR *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1=(RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
       printf("Search for AAA got %s\n", jcr1->buf);
    } else {
       printf("Search for AAA not found\n");
@@ -114,7 +114,7 @@ TEST(rblist,rblist){
    free(jcr->buf);
 
    jcr->buf = bstrdup("ZZZ");
-   if ((jcr1 = (RBLISTJCR *)jcr_chain->search((void *)jcr, rblist_compare))) {
+   if ((jcr1 = (RbListJobControlRecord *)jcr_chain->search((void *)jcr, rblist_compare))) {
       printf("Search for ZZZ got %s\n", jcr1->buf);
    } else {
       printf("Search for ZZZ not found\n");
@@ -124,13 +124,13 @@ TEST(rblist,rblist){
 
 
    printf("Find each of %d items in tree.\n", count);
-   for (jcr=(RBLISTJCR *)jcr_chain->first(); jcr; (jcr=(RBLISTJCR *)jcr_chain->next((void *)jcr)) ) {
+   for (jcr=(RbListJobControlRecord *)jcr_chain->first(); jcr; (jcr=(RbListJobControlRecord *)jcr_chain->next((void *)jcr)) ) {
       if (!jcr_chain->search((void *)jcr, rblist_compare)) {
          printf("rblist binary_search item not found = %s\n", jcr->buf);
       }
    }
    printf("Free each of %d items in tree.\n", count);
-   for (jcr=(RBLISTJCR *)jcr_chain->first(); jcr; (jcr=(RBLISTJCR *)jcr_chain->next((void *)jcr)) ) {
+   for (jcr=(RbListJobControlRecord *)jcr_chain->first(); jcr; (jcr=(RbListJobControlRecord *)jcr_chain->next((void *)jcr)) ) {
       free(jcr->buf);
       jcr->buf = NULL;
    }

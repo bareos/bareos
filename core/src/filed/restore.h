@@ -22,13 +22,13 @@
 #ifndef __RESTORE_H
 #define __RESTORE_H
 
-struct DELAYED_DATA_STREAM {
+struct DelayedDataStream {
    int32_t stream;                     /* stream less new bits */
    char *content;                      /* stream data */
    uint32_t content_length;            /* stream length */
 };
 
-struct RESTORE_CIPHER_CTX {
+struct RestoreCipherContext {
    CIPHER_CONTEXT *cipher;
    uint32_t block_size;
 
@@ -38,28 +38,28 @@ struct RESTORE_CIPHER_CTX {
 };
 
 struct r_ctx {
-   JCR *jcr;
+   JobControlRecord *jcr;
    int32_t stream;                     /* stream less new bits */
    int32_t prev_stream;                /* previous stream */
    int32_t full_stream;                /* full stream including new bits */
    int32_t comp_stream;                /* last compressed stream found. needed only to restore encrypted compressed backup */
-   BFILE bfd;                          /* File content */
+   BareosWinFilePacket bfd;                          /* File content */
    uint64_t fileAddr;                  /* file write address */
    uint32_t size;                      /* Size of file */
    char flags[FOPTS_BYTES];            /* Options for extract_data() */
-   BFILE forkbfd;                      /* Alternative data stream */
+   BareosWinFilePacket forkbfd;                      /* Alternative data stream */
    uint64_t fork_addr;                 /* Write address for alternative stream */
    int64_t fork_size;                  /* Size of alternate stream */
    char fork_flags[FOPTS_BYTES];       /* Options for extract_data() */
    int32_t type;                       /* file type FT_ */
-   ATTR *attr;                         /* Pointer to attributes */
+   Attributes *attr;                         /* Pointer to attributes */
    bool extract;                       /* set when extracting */
    alist *delayed_streams;             /* streams that should be restored as last */
 
    SIGNATURE *sig;                     /* Cryptographic signature (if any) for file */
    CRYPTO_SESSION *cs;                 /* Cryptographic session data (if any) for file */
-   RESTORE_CIPHER_CTX cipher_ctx;      /* Cryptographic restore context (if any) for file */
-   RESTORE_CIPHER_CTX fork_cipher_ctx; /* Cryptographic restore context (if any) for alternative stream */
+   RestoreCipherContext cipher_ctx;      /* Cryptographic restore context (if any) for file */
+   RestoreCipherContext fork_cipher_ctx; /* Cryptographic restore context (if any) for alternative stream */
 };
 
 #endif

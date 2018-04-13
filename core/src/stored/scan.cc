@@ -34,7 +34,7 @@
 static bool is_volume_name_legal(char *name);
 
 
-bool DEVICE::scan_dir_for_volume(DCR *dcr)
+bool Device::scan_dir_for_volume(DeviceControlRecord *dcr)
 {
    DIR* dp;
    struct dirent *result;
@@ -43,11 +43,11 @@ bool DEVICE::scan_dir_for_volume(DCR *dcr)
 #endif
    int name_max;
    char *mount_point;
-   VOLUME_CAT_INFO dcrVolCatInfo, devVolCatInfo;
+   VolumeCatalogInfo dcrVolCatInfo, devVolCatInfo;
    char VolumeName[MAX_NAME_LENGTH];
    struct stat statp;
    bool found = false;
-   POOL_MEM fname(PM_FNAME);
+   PoolMem fname(PM_FNAME);
    bool need_slash = false;
    int len;
 

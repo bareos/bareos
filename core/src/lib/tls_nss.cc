@@ -30,12 +30,12 @@
 #if defined(HAVE_TLS) && defined(HAVE_NSS)
 
 /* TLS Context Structure */
-struct TLS_Context {
+struct TlsContext {
    bool tls_enable;
    bool tls_require;
 };
 
-struct TLS_Connection {
+struct TlsConnection {
 };
 
 TLS_CONTEXT *new_tls_context(const char *cipherlist, CRYPTO_TLS_PSK_CB) {}
@@ -98,7 +98,7 @@ bool get_tls_verify_peer(TLS_CONTEXT *ctx)
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
+bool tls_postconnect_verify_cn(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, alist *verify_list)
 {
    return true;
 }
@@ -109,7 +109,7 @@ bool tls_postconnect_verify_cn(JCR *jcr, TLS_CONNECTION *tls_conn, alist *verify
  * Returns: true on success
  *          false on failure
  */
-bool tls_postconnect_verify_host(JCR *jcr, TLS_CONNECTION *tls_conn, const char *host)
+bool tls_postconnect_verify_host(JobControlRecord *jcr, TLS_CONNECTION *tls_conn, const char *host)
 {
    return true;
 }
@@ -134,7 +134,7 @@ void free_tls_connection(TLS_CONNECTION *tls_conn)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_connect(BSOCK *bsock)
+bool tls_bsock_connect(BareosSocket *bsock)
 {
    return false;
 }
@@ -144,21 +144,21 @@ bool tls_bsock_connect(BSOCK *bsock)
  *  Returns: true on success
  *           false on failure
  */
-bool tls_bsock_accept(BSOCK *bsock)
+bool tls_bsock_accept(BareosSocket *bsock)
 {
    return false;
 }
 
-void tls_bsock_shutdown(BSOCK *bsock)
+void tls_bsock_shutdown(BareosSocket *bsock)
 {
 }
 
-int tls_bsock_writen(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_writen(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return -1;
 }
 
-int tls_bsock_readn(BSOCK *bsock, char *ptr, int32_t nbytes)
+int tls_bsock_readn(BareosSocket *bsock, char *ptr, int32_t nbytes)
 {
    return -1;
 }

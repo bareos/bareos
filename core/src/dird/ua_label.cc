@@ -35,9 +35,9 @@
 
 /* External functions */
 
-static inline bool update_database(UAContext *ua,
-                                   MEDIA_DBR *mr,
-                                   POOL_DBR *pr,
+static inline bool update_database(UaContext *ua,
+                                   MediaDbRecord *mr,
+                                   PoolDbRecord *pr,
                                    bool media_record_exists)
 {
    bool retval = true;
@@ -84,14 +84,14 @@ static inline bool update_database(UAContext *ua,
 /*
  * NOTE! This routine opens the SD socket but leaves it open
  */
-static inline bool native_send_label_request(UAContext *ua,
-                                             MEDIA_DBR *mr,
-                                             MEDIA_DBR *omr,
-                                             POOL_DBR *pr,
+static inline bool native_send_label_request(UaContext *ua,
+                                             MediaDbRecord *mr,
+                                             MediaDbRecord *omr,
+                                             PoolDbRecord *pr,
                                              bool relabel,
                                              drive_number_t drive)
 {
-   BSOCK *sd;
+   BareosSocket *sd;
    char dev_name[MAX_NAME_LENGTH];
    bool retval = false;
    uint64_t VolBytes = 0;
@@ -178,7 +178,7 @@ static inline bool native_send_label_request(UAContext *ua,
  * the old key somewhere save so you can use bscrypto to
  * convert them for the new wrap key.
  */
-static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
+static bool generate_new_encryption_key(UaContext *ua, MediaDbRecord *mr)
 {
    int length;
    char *passphrase;
@@ -218,8 +218,8 @@ static bool generate_new_encryption_key(UAContext *ua, MEDIA_DBR *mr)
    return true;
 }
 
-bool send_label_request(UAContext *ua,
-                        STORERES *store, MEDIA_DBR *mr, MEDIA_DBR *omr, POOL_DBR *pr,
+bool send_label_request(UaContext *ua,
+                        StoreResource *store, MediaDbRecord *mr, MediaDbRecord *omr, PoolDbRecord *pr,
                         bool media_record_exists, bool relabel,
                         drive_number_t drive, slot_number_t slot)
 {
@@ -252,7 +252,7 @@ bool send_label_request(UAContext *ua,
  * Check if this is a cleaning tape by comparing the Volume name
  * with the Cleaning Prefix. If they match, this is a cleaning tape.
  */
-static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
+static inline bool is_cleaning_tape(UaContext *ua, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    bool retval;
 
@@ -282,12 +282,12 @@ static inline bool is_cleaning_tape(UAContext *ua, MEDIA_DBR *mr, POOL_DBR *pr)
 /*
  * Request Storage to send us the slot:barcodes, then wiffle through them all labeling them.
  */
-static void label_from_barcodes(UAContext *ua, drive_number_t drive,
+static void label_from_barcodes(UaContext *ua, drive_number_t drive,
                                 bool label_encrypt, bool yes)
 {
-   STORERES *store = ua->jcr->res.wstore;
-   POOL_DBR pr;
-   MEDIA_DBR mr;
+   StoreResource *store = ua->jcr->res.wstore;
+   PoolDbRecord pr;
+   MediaDbRecord mr;
    vol_list_t *vl;
    changer_vol_list_t *vol_list = NULL;
    bool media_record_exists;
@@ -430,13 +430,13 @@ bail_out:
 /*
  * Common routine for both label and relabel
  */
-static int do_label(UAContext *ua, const char *cmd, bool relabel)
+static int do_label(UaContext *ua, const char *cmd, bool relabel)
 {
    int i, j;
-   BSOCK *sd;
-   MEDIA_DBR mr, omr;
-   POOL_DBR pr;
-   USTORERES store;
+   BareosSocket *sd;
+   MediaDbRecord mr, omr;
+   PoolDbRecord pr;
+   UnifiedStoreResource store;
    bool ok = false;
    bool yes = false;                 /* Was "yes" given on cmdline */
    drive_number_t drive;
@@ -709,12 +709,12 @@ checkName:
  *
  *   label storage=xxx volume=vvv
  */
-bool label_cmd(UAContext *ua, const char *cmd)
+bool label_cmd(UaContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, false);   /* standard label */
 }
 
-bool relabel_cmd(UAContext *ua, const char *cmd)
+bool relabel_cmd(UaContext *ua, const char *cmd)
 {
    return do_label(ua, cmd, true);    /* relabel tape */
 }
@@ -723,7 +723,7 @@ bool relabel_cmd(UAContext *ua, const char *cmd)
  * Check if the Volume name has legal characters
  * If ua is non-NULL send the message
  */
-bool is_volume_name_legal(UAContext *ua, const char *name)
+bool is_volume_name_legal(UaContext *ua, const char *name)
 {
    int len;
    const char *p;

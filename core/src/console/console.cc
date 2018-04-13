@@ -49,7 +49,7 @@
 #endif
 
 /* Exported variables */
-CONRES *me = NULL;                    /* Our Global resource */
+ConsoleResource *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
 //extern int rl_catch_signals;
@@ -60,8 +60,8 @@ extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_c
 /* Forward referenced functions */
 static void terminate_console(int sig);
 static int check_resources();
-int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec);
-static int do_outputcmd(FILE *input, BSOCK *UA_sock);
+int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec);
+static int do_outputcmd(FILE *input, BareosSocket *UA_sock);
 void senditf(const char *fmt, ...);
 void sendit(const char *buf);
 
@@ -72,9 +72,9 @@ extern "C" void got_sigtin(int sig);
 
 /* Static variables */
 static char *configfile = NULL;
-static BSOCK *UA_sock = NULL;
-static DIRRES *dir = NULL;
-static CONRES *cons = NULL;
+static BareosSocket *UA_sock = NULL;
+static DirectorResource *dir = NULL;
+static ConsoleResource *cons = NULL;
 static FILE *output = stdout;
 static bool teeout = false;               /* output to output and stdout */
 static bool stop = false;
@@ -88,18 +88,18 @@ static char *argv[MAX_CMD_ARGS];
 static bool file_selection = false;
 
 /* Command prototypes */
-static int versioncmd(FILE *input, BSOCK *UA_sock);
-static int inputcmd(FILE *input, BSOCK *UA_sock);
-static int outputcmd(FILE *input, BSOCK *UA_sock);
-static int teecmd(FILE *input, BSOCK *UA_sock);
-static int quitcmd(FILE *input, BSOCK *UA_sock);
-static int helpcmd(FILE *input, BSOCK *UA_sock);
-static int echocmd(FILE *input, BSOCK *UA_sock);
-static int timecmd(FILE *input, BSOCK *UA_sock);
-static int sleepcmd(FILE *input, BSOCK *UA_sock);
-static int execcmd(FILE *input, BSOCK *UA_sock);
+static int versioncmd(FILE *input, BareosSocket *UA_sock);
+static int inputcmd(FILE *input, BareosSocket *UA_sock);
+static int outputcmd(FILE *input, BareosSocket *UA_sock);
+static int teecmd(FILE *input, BareosSocket *UA_sock);
+static int quitcmd(FILE *input, BareosSocket *UA_sock);
+static int helpcmd(FILE *input, BareosSocket *UA_sock);
+static int echocmd(FILE *input, BareosSocket *UA_sock);
+static int timecmd(FILE *input, BareosSocket *UA_sock);
+static int sleepcmd(FILE *input, BareosSocket *UA_sock);
+static int execcmd(FILE *input, BareosSocket *UA_sock);
 #ifdef HAVE_READLINE
-static int eolcmd(FILE *input, BSOCK *UA_sock);
+static int eolcmd(FILE *input, BareosSocket *UA_sock);
 
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
@@ -154,7 +154,7 @@ void got_sigtin(int sig)
 // printf("Got tin\n");
 }
 
-static int zed_keyscmd(FILE *input, BSOCK *UA_sock)
+static int zed_keyscmd(FILE *input, BareosSocket *UA_sock)
 {
    con_set_zed_keys();
    return 1;
@@ -165,7 +165,7 @@ static int zed_keyscmd(FILE *input, BSOCK *UA_sock)
  */
 struct cmdstruct {
    const char *key;
-   int (*func)(FILE *input, BSOCK *UA_sock);
+   int (*func)(FILE *input, BareosSocket *UA_sock);
    const char *help;
 };
 static struct cmdstruct commands[] = {
@@ -187,7 +187,7 @@ static struct cmdstruct commands[] = {
 };
 #define comsize ((int)(sizeof(commands)/sizeof(struct cmdstruct)))
 
-static int do_a_command(FILE *input, BSOCK *UA_sock)
+static int do_a_command(FILE *input, BareosSocket *UA_sock)
 {
    unsigned int i;
    int status;
@@ -223,7 +223,7 @@ static int do_a_command(FILE *input, BSOCK *UA_sock)
    return status;
 }
 
-static void read_and_process_input(FILE *input, BSOCK *UA_sock)
+static void read_and_process_input(FILE *input, BareosSocket *UA_sock)
 {
    const char *prompt = "*";
    bool at_prompt = false;
@@ -712,7 +712,7 @@ static char **readline_completion(const char *text, int start, int end)
 }
 
 static char eol = '\0';
-static int eolcmd(FILE *input, BSOCK *UA_sock)
+static int eolcmd(FILE *input, BareosSocket *UA_sock)
 {
    if ((argc > 1) && (strchr("!$%&'()*+,-/:;<>?[]^`{|}~", argk[1][0]) != NULL)) {
       eol = argk[1][0];
@@ -729,7 +729,7 @@ static int eolcmd(FILE *input, BSOCK *UA_sock)
  *        0 if no input
  *       -1 error (must stop)
  */
-int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    static char *line = NULL;
    static char *next = NULL;
@@ -807,7 +807,7 @@ static bool bisatty(int fd)
  *   Returns: 1 if got input
  *           -1 if EOF or error
  */
-int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    int len;
 
@@ -858,7 +858,7 @@ again:
  *            0 if timeout
  *           -1 if EOF or error
  */
-int get_cmd(FILE *input, const char *prompt, BSOCK *sock, int sec)
+int get_cmd(FILE *input, const char *prompt, BareosSocket *sock, int sec)
 {
    int len;
 
@@ -968,13 +968,13 @@ static int console_init_history(const char *histfile)
    return ret;
 }
 
-static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret_cons)
+static bool select_director(const char *director, DirectorResource **ret_dir, ConsoleResource **ret_cons)
 {
    int numcon=0, numdir=0;
    int i=0, item=0;
-   BSOCK *UA_sock;
-   DIRRES *dir = NULL;
-   CONRES *cons = NULL;
+   BareosSocket *UA_sock;
+   DirectorResource *dir = NULL;
+   ConsoleResource *cons = NULL;
 
    *ret_cons = NULL;
    *ret_dir = NULL;
@@ -991,7 +991,7 @@ static bool select_director(const char *director, DIRRES **ret_dir, CONRES **ret
    UnlockRes();
 
    if (numdir == 1) {           /* No choose */
-      dir = (DIRRES *)GetNextRes(R_DIRECTOR, NULL);
+      dir = (DirectorResource *)GetNextRes(R_DIRECTOR, NULL);
    }
 
    if (director) {    /* Command line choice overwrite the no choose option */
@@ -1038,7 +1038,7 @@ try_again:
       delete UA_sock;
       LockRes();
       for (i=0; i<item; i++) {
-         dir = (DIRRES *)GetNextRes(R_DIRECTOR, (RES *)dir);
+         dir = (DirectorResource *)GetNextRes(R_DIRECTOR, (CommonResourceHeader *)dir);
       }
       UnlockRes();
    }
@@ -1048,7 +1048,7 @@ try_again:
     */
    LockRes();
    for (i=0; i<numcon; i++) {
-      cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
+      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
       if (cons->director && bstrcmp(cons->director, dir->name())) {
          break;
       }
@@ -1060,7 +1060,7 @@ try_again:
     */
    if (cons == NULL) {
       for (i=0; i<numcon; i++) {
-         cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)cons);
+         cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)cons);
          if (cons->director == NULL)
             break;
          cons = NULL;
@@ -1071,7 +1071,7 @@ try_again:
     * If no console, take first one
     */
    if (!cons) {
-      cons = (CONRES *)GetNextRes(R_CONSOLE, (RES *)NULL);
+      cons = (ConsoleResource *)GetNextRes(R_CONSOLE, (CommonResourceHeader *)NULL);
    }
    UnlockRes();
 
@@ -1140,8 +1140,8 @@ int main(int argc, char *argv[])
    bool test_config = false;
    bool export_config = false;
    bool export_config_schema = false;
-   JCR jcr;
-   POOL_MEM history_file;
+   JobControlRecord jcr;
+   PoolMem history_file;
    utime_t heart_beat;
 
    errmsg_len = sizeof(errmsg);
@@ -1245,7 +1245,7 @@ int main(int argc, char *argv[])
    }
 
    if (export_config_schema) {
-      POOL_MEM buffer;
+      PoolMem buffer;
 
       my_config = new_config_parser();
       init_cons_config(my_config, configfile, M_ERROR_TERM);
@@ -1432,7 +1432,7 @@ static void terminate_console(int sig)
 static int check_resources()
 {
    bool OK = true;
-   DIRRES *director;
+   DirectorResource *director;
    bool tls_needed;
 
    LockRes();
@@ -1448,8 +1448,8 @@ static int check_resources()
       OK = false;
    }
 
-   CONRES *cons;
-   me = (CONRES *)GetNextRes(R_CONSOLE, NULL);
+   ConsoleResource *cons;
+   me = (ConsoleResource *)GetNextRes(R_CONSOLE, NULL);
 
    UnlockRes();
 
@@ -1457,7 +1457,7 @@ static int check_resources()
 }
 
 /* @version */
-static int versioncmd(FILE *input, BSOCK *UA_sock)
+static int versioncmd(FILE *input, BareosSocket *UA_sock)
 {
    senditf("Version: " VERSION " (" BDATE ") %s %s %s\n",
       HOST_OS, DISTNAME, DISTVER);
@@ -1465,7 +1465,7 @@ static int versioncmd(FILE *input, BSOCK *UA_sock)
 }
 
 /* @input <input-filename> */
-static int inputcmd(FILE *input, BSOCK *UA_sock)
+static int inputcmd(FILE *input, BareosSocket *UA_sock)
 {
    FILE *fd;
 
@@ -1491,7 +1491,7 @@ static int inputcmd(FILE *input, BSOCK *UA_sock)
 
 /* @tee <output-filename> */
 /* Send output to both terminal and specified file */
-static int teecmd(FILE *input, BSOCK *UA_sock)
+static int teecmd(FILE *input, BareosSocket *UA_sock)
 {
    teeout = true;
    return do_outputcmd(input, UA_sock);
@@ -1499,13 +1499,13 @@ static int teecmd(FILE *input, BSOCK *UA_sock)
 
 /* @output <output-filename> */
 /* Send output to specified "file" */
-static int outputcmd(FILE *input, BSOCK *UA_sock)
+static int outputcmd(FILE *input, BareosSocket *UA_sock)
 {
    teeout = false;
    return do_outputcmd(input, UA_sock);
 }
 
-static int do_outputcmd(FILE *input, BSOCK *UA_sock)
+static int do_outputcmd(FILE *input, BareosSocket *UA_sock)
 {
    FILE *fd;
    const char *mode = "a+b";
@@ -1539,9 +1539,9 @@ static int do_outputcmd(FILE *input, BSOCK *UA_sock)
 /**
  * @exec "some-command" [wait-seconds]
 */
-static int execcmd(FILE *input, BSOCK *UA_sock)
+static int execcmd(FILE *input, BareosSocket *UA_sock)
 {
-   BPIPE *bpipe;
+   Bpipe *bpipe;
    char line[5000];
    int status;
    int wait = 0;
@@ -1574,7 +1574,7 @@ static int execcmd(FILE *input, BSOCK *UA_sock)
 }
 
 /* @echo xxx yyy */
-static int echocmd(FILE *input, BSOCK *UA_sock)
+static int echocmd(FILE *input, BareosSocket *UA_sock)
 {
    for (int i=1; i < argc; i++) {
       senditf("%s ", argk[i]);
@@ -1584,13 +1584,13 @@ static int echocmd(FILE *input, BSOCK *UA_sock)
 }
 
 /* @quit */
-static int quitcmd(FILE *input, BSOCK *UA_sock)
+static int quitcmd(FILE *input, BareosSocket *UA_sock)
 {
    return 0;
 }
 
 /* @help */
-static int helpcmd(FILE *input, BSOCK *UA_sock)
+static int helpcmd(FILE *input, BareosSocket *UA_sock)
 {
    int i;
    for (i=0; i<comsize; i++) {
@@ -1600,7 +1600,7 @@ static int helpcmd(FILE *input, BSOCK *UA_sock)
 }
 
 /* @sleep secs */
-static int sleepcmd(FILE *input, BSOCK *UA_sock)
+static int sleepcmd(FILE *input, BareosSocket *UA_sock)
 {
    if (argc > 1) {
       sleep(atoi(argk[1]));
@@ -1609,7 +1609,7 @@ static int sleepcmd(FILE *input, BSOCK *UA_sock)
 }
 
 /* @time */
-static int timecmd(FILE *input, BSOCK *UA_sock)
+static int timecmd(FILE *input, BareosSocket *UA_sock)
 {
    char sdt[50];
 

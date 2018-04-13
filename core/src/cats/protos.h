@@ -38,7 +38,7 @@
 DLL_IMP_EXP void db_set_backend_dirs(alist *new_backend_dirs);
 #endif
 DLL_IMP_EXP void db_flush_backends(void);
-DLL_IMP_EXP B_DB *db_init_database(JCR *jcr,
+DLL_IMP_EXP BareosDb *db_init_database(JobControlRecord *jcr,
                        const char *db_driver,
                        const char *db_name,
                        const char *db_user,
@@ -56,7 +56,7 @@ DLL_IMP_EXP B_DB *db_init_database(JCR *jcr,
 DLL_IMP_EXP int db_int64_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_strtime_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_list_handler(void *ctx, int num_fields, char **row);
-DLL_IMP_EXP void db_debug_print(JCR *jcr, FILE *fp);
+DLL_IMP_EXP void db_debug_print(JobControlRecord *jcr, FILE *fp);
 DLL_IMP_EXP int db_int_handler(void *ctx, int num_fields, char **row);
 
 /* sql_pooling.c */
@@ -77,7 +77,7 @@ DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
                             int validate_timeout);
 DLL_IMP_EXP void db_sql_pool_destroy(void);
 DLL_IMP_EXP void db_sql_pool_flush(void);
-DLL_IMP_EXP B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
+DLL_IMP_EXP BareosDb *db_sql_get_non_pooled_connection(JobControlRecord *jcr,
                                        const char *db_drivername,
                                        const char *db_name,
                                        const char *db_user,
@@ -90,7 +90,7 @@ DLL_IMP_EXP B_DB *db_sql_get_non_pooled_connection(JCR *jcr,
                                        bool try_reconnect,
                                        bool exit_on_fatal,
                                        bool need_private = false);
-DLL_IMP_EXP B_DB *db_sql_get_pooled_connection(JCR *jcr,
+DLL_IMP_EXP BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                                    const char *db_drivername,
                                    const char *db_name,
                                    const char *db_user,
@@ -103,7 +103,7 @@ DLL_IMP_EXP B_DB *db_sql_get_pooled_connection(JCR *jcr,
                                    bool try_reconnect,
                                    bool exit_on_fatal,
                                    bool need_private = false);
-DLL_IMP_EXP void db_sql_close_pooled_connection(JCR *jcr, B_DB *mdb, bool abort = false);
+DLL_IMP_EXP void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort = false);
 
 /* sql_query.c */
 #endif /* __SQL_PROTOS_H */

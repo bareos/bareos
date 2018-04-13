@@ -28,22 +28,22 @@
 #ifndef WIN32_FILE_DEVICE_H
 #define WIN32_FILE_DEVICE_H
 
-class win32_file_device: public DEVICE {
+class win32_file_device: public Device {
 public:
    win32_file_device();
    ~win32_file_device();
 
    /*
-    * Interface from DEVICE
+    * Interface from Device
     */
-   bool mount_backend(DCR *dcr, int timeout);
-   bool unmount_backend(DCR *dcr, int timeout);
+   bool mount_backend(DeviceControlRecord *dcr, int timeout);
+   bool unmount_backend(DeviceControlRecord *dcr, int timeout);
    int d_close(int);
    int d_open(const char *pathname, int flags, int mode);
    int d_ioctl(int fd, ioctl_req_t request, char *mt = NULL);
    ssize_t d_read(int fd, void *buffer, size_t count);
    ssize_t d_write(int fd, const void *buffer, size_t count);
-   boffset_t d_lseek(DCR *dcr, boffset_t offset, int whence);
-   bool d_truncate(DCR *dcr);
+   boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
+   bool d_truncate(DeviceControlRecord *dcr);
 };
 #endif /* WIN32_FILE_DEVICE_H */

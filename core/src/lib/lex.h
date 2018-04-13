@@ -91,7 +91,7 @@ enum lex_state {
 #define LOPT_STRING              0x2  /* Force scan for string */
 #define LOPT_NO_EXTERN           0x4  /* Don't follow @ command */
 
-class BPIPE;                          /* forward reference */
+class Bpipe;                          /* forward reference */
 
 /* Lexical context */
 typedef struct s_lex_context {
@@ -127,7 +127,7 @@ typedef struct s_lex_context {
    int err_type;                      /* message level for scan_error (M_..) */
    int error_counter;
    void *caller_ctx;                  /* caller private data */
-   BPIPE *bpipe;                      /* set if we are piping */
+   Bpipe *bpipe;                      /* set if we are piping */
 } LEX;
 
 typedef void (LEX_ERROR_HANDLER)(const char *file, int line, LEX *lc, const char *msg, ...);

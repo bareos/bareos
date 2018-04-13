@@ -36,25 +36,25 @@
 extern bool parse_sd_config(CONFIG *config, const char *configfile, int exit_code);
 
 static void do_extract(char *devname);
-static bool record_cb(DCR *dcr, DEV_RECORD *rec);
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);
 
-static DEVICE *dev = NULL;
-static DCR *dcr;
-static BFILE bfd;
-static JCR *jcr;
-static FF_PKT *ff;
-static BSR *bsr = NULL;
+static Device *dev = NULL;
+static DeviceControlRecord *dcr;
+static BareosWinFilePacket bfd;
+static JobControlRecord *jcr;
+static FindFilesPacket *ff;
+static BootStrapRecord *bsr = NULL;
 static bool extract = false;
 static int non_support_data = 0;
 static long total = 0;
-static ATTR *attr;
+static Attributes *attr;
 static char *where;
 static uint32_t num_files = 0;
 static int prog_name_msg = 0;
 static int win32_data_msg = 0;
 static char *VolumeName = NULL;
 static char *DirectorName = NULL;
-static DIRRES *director = NULL;
+static DirectorResource *director = NULL;
 
 static struct acl_data_t acl_data;
 static struct xattr_data_t xattr_data;
@@ -244,7 +244,7 @@ int main (int argc, char *argv[])
  */
 static inline void drop_delayed_data_streams()
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    if (!delayed_streams ||
        delayed_streams->empty()) {
@@ -263,13 +263,13 @@ static inline void drop_delayed_data_streams()
  */
 static inline void push_delayed_data_stream(int stream, char *content, uint32_t content_length)
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    if (!delayed_streams) {
       delayed_streams = New(alist(10, owned_by_alist));
    }
 
-   dds = (DELAYED_DATA_STREAM *)malloc(sizeof(DELAYED_DATA_STREAM));
+   dds = (DelayedDataStream *)malloc(sizeof(DelayedDataStream));
    dds->stream = stream;
    dds->content = (char *)malloc(content_length);
    memcpy(dds->content, content, content_length);
@@ -287,7 +287,7 @@ static inline void push_delayed_data_stream(int stream, char *content, uint32_t 
  */
 static inline void pop_delayed_data_streams()
 {
-   DELAYED_DATA_STREAM *dds;
+   DelayedDataStream *dds;
 
    /*
     * See if there is anything todo.
@@ -380,7 +380,7 @@ static void do_extract(char *devname)
 
    enable_backup_privileges(NULL, 1);
 
-   dcr = New(DCR);
+   dcr = New(DeviceControlRecord);
    jcr = setup_jcr("bextract", devname, bsr, director, dcr, VolumeName, true); /* read device */
    if (!jcr) {
       exit(1);
@@ -410,7 +410,7 @@ static void do_extract(char *devname)
    jcr->buf_size = DEFAULT_NETWORK_BUFFER_SIZE;
    setup_decompression_buffers(jcr, &decompress_buf_size);
    if (decompress_buf_size > 0) {
-      memset(&jcr->compress, 0, sizeof(CMPRS_CTX));
+      memset(&jcr->compress, 0, sizeof(CompressionContext));
       jcr->compress.inflate_buffer = get_memory(decompress_buf_size);
       jcr->compress.inflate_buffer_size = decompress_buf_size;
    }
@@ -449,7 +449,7 @@ static void do_extract(char *devname)
    return;
 }
 
-static bool store_data(BFILE *bfd, char *data, const int32_t length)
+static bool store_data(BareosWinFilePacket *bfd, char *data, const int32_t length)
 {
    if (is_win32_stream(attr->data_stream) && !have_win32_api()) {
       set_portable_backup(bfd);
@@ -472,10 +472,10 @@ static bool store_data(BFILE *bfd, char *data, const int32_t length)
 /*
  * Called here for each record from read_records()
  */
-static bool record_cb(DCR *dcr, DEV_RECORD *rec)
+static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec)
 {
    int status;
-   JCR *jcr = dcr->jcr;
+   JobControlRecord *jcr = dcr->jcr;
 
    if (rec->FileIndex < 0) {
       return true;                    /* we don't want labels */

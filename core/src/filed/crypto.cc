@@ -38,7 +38,7 @@ const bool have_sha2 = true;
 const bool have_sha2 = false;
 #endif
 
-static void unser_crypto_packet_len(RESTORE_CIPHER_CTX *ctx)
+static void unser_crypto_packet_len(RestoreCipherContext *ctx)
 {
    unser_declare;
    if (ctx->packet_len == 0 && ctx->buf_len >= CRYPTO_LEN_SIZE) {
@@ -48,7 +48,7 @@ static void unser_crypto_packet_len(RESTORE_CIPHER_CTX *ctx)
    }
 }
 
-bool crypto_session_start(JCR *jcr, crypto_cipher_t cipher)
+bool crypto_session_start(JobControlRecord *jcr, crypto_cipher_t cipher)
 {
    /**
     * Create encryption session data and a cached, DER-encoded session data
@@ -102,7 +102,7 @@ bool crypto_session_start(JCR *jcr, crypto_cipher_t cipher)
    return true;
 }
 
-void crypto_session_end(JCR *jcr)
+void crypto_session_end(JobControlRecord *jcr)
 {
    if (jcr->crypto.crypto_buf) {
       free_pool_memory(jcr->crypto.crypto_buf);
@@ -117,7 +117,7 @@ void crypto_session_end(JCR *jcr)
    }
 }
 
-bool crypto_session_send(JCR *jcr, BSOCK *sd)
+bool crypto_session_send(JobControlRecord *jcr, BareosSocket *sd)
 {
    POOLMEM *msgsave;
 
@@ -144,7 +144,7 @@ bool crypto_session_send(JCR *jcr, BSOCK *sd)
  * TODO landonf: Implement without using find_one_file and
  * without re-reading the file.
  */
-bool verify_signature(JCR *jcr, r_ctx &rctx)
+bool verify_signature(JobControlRecord *jcr, r_ctx &rctx)
 {
    X509_KEYPAIR *keypair;
    DIGEST *digest = NULL;
@@ -274,7 +274,7 @@ bail_out:
  * writing it to bfd.
  * Return value is true on success, false on failure.
  */
-bool flush_cipher(JCR *jcr, BFILE *bfd, uint64_t *addr, char *flags, int32_t stream, RESTORE_CIPHER_CTX *cipher_ctx)
+bool flush_cipher(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char *flags, int32_t stream, RestoreCipherContext *cipher_ctx)
 {
    uint32_t decrypted_len = 0;
    char *wbuf;                        /* write buffer */
@@ -438,7 +438,7 @@ bail_out:
 /**
  * Setup a decryption context
  */
-bool setup_decryption_context(r_ctx &rctx, RESTORE_CIPHER_CTX &rcctx)
+bool setup_decryption_context(r_ctx &rctx, RestoreCipherContext &rcctx)
 {
    if (!rctx.cs) {
       Jmsg1(rctx.jcr, M_ERROR, 0, _("Missing encryption session data stream for %s\n"), rctx.jcr->last_fname);
@@ -529,7 +529,7 @@ bail_out:
    return retval;
 }
 
-bool decrypt_data(JCR *jcr, char **data, uint32_t *length, RESTORE_CIPHER_CTX *cipher_ctx)
+bool decrypt_data(JobControlRecord *jcr, char **data, uint32_t *length, RestoreCipherContext *cipher_ctx)
 {
    uint32_t decrypted_len = 0; /* Decryption output length */
 

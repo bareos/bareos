@@ -42,9 +42,9 @@ static char rec_header[] =
  * Verify attributes of the requested files on the Volume
  *
  */
-void do_verify_volume(JCR *jcr)
+void do_verify_volume(JobControlRecord *jcr)
 {
-   BSOCK *sd, *dir;
+   BareosSocket *sd, *dir;
    POOLMEM *fname;                    /* original file name */
    POOLMEM *lname;                    /* link name */
    int32_t stream;
@@ -64,7 +64,7 @@ void do_verify_volume(JCR *jcr)
    jcr->setJobStatus(JS_Running);
 
    LockRes();
-   CLIENTRES *client = (CLIENTRES *)GetNextRes(R_CLIENT, NULL);
+   ClientResource *client = (ClientResource *)GetNextRes(R_CLIENT, NULL);
    UnlockRes();
    uint32_t buf_size;
    if (client) {
@@ -182,7 +182,7 @@ void do_verify_volume(JCR *jcr)
           * slash. For a linked file, link is the link.
           */
          /* Send file attributes to Director */
-         Dmsg2(200, "send ATTR inx=%d fname=%s\n", jcr->JobFiles, fname);
+         Dmsg2(200, "send Attributes inx=%d fname=%s\n", jcr->JobFiles, fname);
          if (type == FT_LNK || type == FT_LNKSAVED) {
             status = dir->fsend("%d %d %s %s%c%s%c%s%c", jcr->JobFiles,
                                 STREAM_UNIX_ATTRIBUTES, "pinsug5", fname,

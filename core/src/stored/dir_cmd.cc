@@ -115,53 +115,53 @@ static char OKsecureerase[] =
    "2000 OK SDSecureEraseCmd %s \n";
 
 /* Imported functions */
-extern bool finish_cmd(JCR *jcr);
-extern bool job_cmd(JCR *jcr);
-extern bool nextrun_cmd(JCR *jcr);
-extern bool dotstatus_cmd(JCR *jcr);
-//extern bool query_cmd(JCR *jcr);
-extern bool status_cmd(JCR *sjcr);
-extern bool use_cmd(JCR *jcr);
-extern bool stats_cmd(JCR *jcr);
+extern bool finish_cmd(JobControlRecord *jcr);
+extern bool job_cmd(JobControlRecord *jcr);
+extern bool nextrun_cmd(JobControlRecord *jcr);
+extern bool dotstatus_cmd(JobControlRecord *jcr);
+//extern bool query_cmd(JobControlRecord *jcr);
+extern bool status_cmd(JobControlRecord *sjcr);
+extern bool use_cmd(JobControlRecord *jcr);
+extern bool stats_cmd(JobControlRecord *jcr);
 
-extern bool do_job_run(JCR *jcr);
-extern bool do_mac_run(JCR *jcr);
+extern bool do_job_run(JobControlRecord *jcr);
+extern bool do_mac_run(JobControlRecord *jcr);
 extern void terminate_child();
 
 /* Forward referenced functions */
-//static bool action_on_purge_cmd(JCR *jcr);
-static bool bootstrap_cmd(JCR *jcr);
-static bool cancel_cmd(JCR *cjcr);
-static bool changer_cmd(JCR *jcr);
-static bool die_cmd(JCR *jcr);
-static bool label_cmd(JCR *jcr);
-static bool listen_cmd(JCR *jcr);
-static bool mount_cmd(JCR *jcr);
-static bool passive_cmd(JCR *jcr);
-static bool pluginoptions_cmd(JCR *jcr);
-static bool readlabel_cmd(JCR *jcr);
-static bool resolve_cmd(JCR *jcr);
-static bool relabel_cmd(JCR *jcr);
-static bool release_cmd(JCR *jcr);
-static bool replicate_cmd(JCR *jcr);
-static bool run_cmd(JCR *jcr);
-static bool secureerasereq_cmd(JCR *jcr);
-static bool setbandwidth_cmd(JCR *jcr);
-static bool setdebug_cmd(JCR *jcr);
-static bool unmount_cmd(JCR *jcr);
+//static bool action_on_purge_cmd(JobControlRecord *jcr);
+static bool bootstrap_cmd(JobControlRecord *jcr);
+static bool cancel_cmd(JobControlRecord *cjcr);
+static bool changer_cmd(JobControlRecord *jcr);
+static bool die_cmd(JobControlRecord *jcr);
+static bool label_cmd(JobControlRecord *jcr);
+static bool listen_cmd(JobControlRecord *jcr);
+static bool mount_cmd(JobControlRecord *jcr);
+static bool passive_cmd(JobControlRecord *jcr);
+static bool pluginoptions_cmd(JobControlRecord *jcr);
+static bool readlabel_cmd(JobControlRecord *jcr);
+static bool resolve_cmd(JobControlRecord *jcr);
+static bool relabel_cmd(JobControlRecord *jcr);
+static bool release_cmd(JobControlRecord *jcr);
+static bool replicate_cmd(JobControlRecord *jcr);
+static bool run_cmd(JobControlRecord *jcr);
+static bool secureerasereq_cmd(JobControlRecord *jcr);
+static bool setbandwidth_cmd(JobControlRecord *jcr);
+static bool setdebug_cmd(JobControlRecord *jcr);
+static bool unmount_cmd(JobControlRecord *jcr);
 
-static DCR *find_device(JCR *jcr, POOL_MEM &dev_name,
-                        drive_number_t drive, BLOCKSIZES *blocksizes);
-static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, slot_number_t slot);
-static void label_volume_if_ok(DCR *dcr, char *oldname,
+static DeviceControlRecord *find_device(JobControlRecord *jcr, PoolMem &dev_name,
+                        drive_number_t drive, BlockSizes *blocksizes);
+static void read_volume_label(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t slot);
+static void label_volume_if_ok(DeviceControlRecord *dcr, char *oldname,
                                char *newname, char *poolname,
                                slot_number_t Slot, bool relabel);
-static int try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t slot, const char *VolName);
-static void send_dir_busy_message(BSOCK *dir, DEVICE *dev);
+static int try_autoload_device(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t slot, const char *VolName);
+static void send_dir_busy_message(BareosSocket *dir, Device *dev);
 
 struct s_cmds {
    const char *cmd;
-   bool (*func)(JCR *jcr);
+   bool (*func)(JobControlRecord *jcr);
    bool monitoraccess;                      /* set if monitors can access this cmd */
 };
 
@@ -207,7 +207,7 @@ static struct s_cmds cmds[] = {
   */
 static inline bool count_running_jobs()
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    unsigned int cnt = 0;
 
    foreach_jcr(jcr) {
@@ -222,15 +222,15 @@ static inline bool count_running_jobs()
  * Connection request from an director.
  *
  * Basic tasks done here:
- *  - Create a JCR record
+ *  - Create a JobControlRecord record
  *  - Authenticate the Director
  *  - We wait for a command
  *  - We execute the command
  *  - We continue or exit depending on the return status
  */
-void *handle_director_connection(BSOCK *dir)
+void *handle_director_connection(BareosSocket *dir)
 {
-   JCR *jcr;
+   JobControlRecord *jcr;
    int i, errstat;
    int bnet_stat = 0;
    bool found, quit;
@@ -242,9 +242,9 @@ void *handle_director_connection(BSOCK *dir)
    }
 
    /*
-    * This is a connection from the Director, so setup a JCR
+    * This is a connection from the Director, so setup a JobControlRecord
     */
-   jcr = new_jcr(sizeof(JCR), stored_free_jcr); /* create Job Control Record */
+   jcr = new_jcr(sizeof(JobControlRecord), stored_free_jcr); /* create Job Control Record */
    new_plugins(jcr);                            /* instantiate plugins */
    jcr->dir_bsock = dir;                        /* save Director bsock */
    jcr->dir_bsock->set_jcr(jcr);
@@ -321,7 +321,7 @@ void *handle_director_connection(BSOCK *dir)
         }
       }
       if (!found) {                   /* command not found */
-        POOL_MEM err_msg;
+        PoolMem err_msg;
         Mmsg(err_msg, "%s %s\n", derrmsg, dir->msg);
         dir->fsend(err_msg.c_str());
         break;
@@ -341,12 +341,12 @@ bail_out:
 /**
  * Force SD to die, and hopefully dump itself.  Turned on only in development version.
  */
-static bool die_cmd(JCR *jcr)
+static bool die_cmd(JobControlRecord *jcr)
 {
 #ifdef DEVELOPER
-   JCR *djcr = NULL;
+   JobControlRecord *djcr = NULL;
    int a;
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    pthread_mutex_t m=PTHREAD_MUTEX_INITIALIZER;
 
    if (strstr(dir->msg, "deadlock")) {
@@ -368,8 +368,8 @@ static bool die_cmd(JCR *jcr)
  * replies the configured secure erase command
  * or "*None*"
  */
-static bool secureerasereq_cmd(JCR *jcr) {
-   BSOCK *dir = jcr->dir_bsock;
+static bool secureerasereq_cmd(JobControlRecord *jcr) {
+   BareosSocket *dir = jcr->dir_bsock;
 
    Dmsg1(220,"Secure Erase Cmd Request: %s\n", (me->secure_erase_cmdline ? me->secure_erase_cmdline : "*None*"));
 
@@ -379,11 +379,11 @@ static bool secureerasereq_cmd(JCR *jcr) {
 /**
  * Set bandwidth limit as requested by the Director
  */
-static bool setbandwidth_cmd(JCR *jcr)
+static bool setbandwidth_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int64_t bw = 0;
-   JCR *cjcr;
+   JobControlRecord *cjcr;
    char Job[MAX_NAME_LENGTH];
 
    *Job = 0;
@@ -416,9 +416,9 @@ static bool setbandwidth_cmd(JCR *jcr)
 /**
  * Set debug level as requested by the Director
  */
-static bool setdebug_cmd(JCR *jcr)
+static bool setdebug_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    int32_t level, trace_flag, timestamp_flag;
    int scan;
 
@@ -432,7 +432,7 @@ static bool setdebug_cmd(JCR *jcr)
       return false;
    }
 
-   POOL_MEM tracefilename(PM_FNAME);
+   PoolMem tracefilename(PM_FNAME);
    Mmsg(tracefilename, "%s/%s.trace", TRACEFILEDIRECTORY, my_name);
 
    debug_level = level;
@@ -449,16 +449,16 @@ static bool setdebug_cmd(JCR *jcr)
 
 /**
  * Cancel a Job
- *   Be careful, we switch to using the job's JCR! So, using
+ *   Be careful, we switch to using the job's JobControlRecord! So, using
  *   BSOCKs on that jcr can have two threads in the same code.
  */
-static bool cancel_cmd(JCR *cjcr)
+static bool cancel_cmd(JobControlRecord *cjcr)
 {
-   BSOCK *dir = cjcr->dir_bsock;
+   BareosSocket *dir = cjcr->dir_bsock;
    int oldStatus;
    char Job[MAX_NAME_LENGTH];
    JobId_t JobId;
-   JCR *jcr;
+   JobControlRecord *jcr;
    int status;
    const char *reason;
 
@@ -555,9 +555,9 @@ bail_out:
 /**
  * Resolve a hostname
  */
-static bool resolve_cmd(JCR *jcr)
+static bool resolve_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    dlist *addr_list;
    const char *errstr;
    char addresses[2048];
@@ -579,18 +579,18 @@ bail_out:
    return true;
 }
 
-static bool do_label(JCR *jcr, bool relabel)
+static bool do_label(JobControlRecord *jcr, bool relabel)
 {
    int len;
    POOLMEM *newname,
            *oldname,
            *poolname,
            *mediatype;
-   POOL_MEM dev_name;
-   BSOCK *dir = jcr->dir_bsock;
-   DCR *dcr;
-   DEVICE *dev;
-   BLOCKSIZES blocksizes;
+   PoolMem dev_name;
+   BareosSocket *dir = jcr->dir_bsock;
+   DeviceControlRecord *dcr;
+   Device *dev;
+   BlockSizes blocksizes;
    bool ok = false;
    slot_number_t slot;
    drive_number_t drive;
@@ -678,12 +678,12 @@ static bool do_label(JCR *jcr, bool relabel)
 /**
  * Label a Volume
  */
-static bool label_cmd(JCR *jcr)
+static bool label_cmd(JobControlRecord *jcr)
 {
    return do_label(jcr, false);
 }
 
-static bool relabel_cmd(JCR *jcr)
+static bool relabel_cmd(JobControlRecord *jcr)
 {
    return do_label(jcr, true);
 }
@@ -694,13 +694,13 @@ static bool relabel_cmd(JCR *jcr)
  *
  *  Enter with the mutex set
  */
-static void label_volume_if_ok(DCR *dcr, char *oldname,
+static void label_volume_if_ok(DeviceControlRecord *dcr, char *oldname,
                                char *newname, char *poolname,
                                slot_number_t slot, bool relabel)
 {
-   BSOCK *dir = dcr->jcr->dir_bsock;
+   BareosSocket *dir = dcr->jcr->dir_bsock;
    bsteal_lock_t hold;
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
    int label_status;
    int mode;
    const char *volname = relabel ? oldname : newname;
@@ -817,13 +817,13 @@ bail_out:
  *
  *  Enter with the mutex set
  */
-static bool read_label(DCR *dcr)
+static bool read_label(DeviceControlRecord *dcr)
 {
    int ok;
-   JCR *jcr = dcr->jcr;
-   BSOCK *dir = jcr->dir_bsock;
+   JobControlRecord *jcr = dcr->jcr;
+   BareosSocket *dir = jcr->dir_bsock;
    bsteal_lock_t hold;
-   DEVICE *dev = dcr->dev;
+   Device *dev = dcr->dev;
 
    steal_device_lock(dev, &hold, BST_DOING_ACQUIRE);
 
@@ -848,12 +848,12 @@ static bool read_label(DCR *dcr)
 /**
  * Searches for device by name, and if found, creates a dcr and returns it.
  */
-static DCR *find_device(JCR *jcr, POOL_MEM &devname, drive_number_t drive, BLOCKSIZES *blocksizes)
+static DeviceControlRecord *find_device(JobControlRecord *jcr, PoolMem &devname, drive_number_t drive, BlockSizes *blocksizes)
 {
-   DEVRES *device;
-   AUTOCHANGERRES *changer;
+   DeviceResource *device;
+   AutochangerResource *changer;
    bool found = false;
-   DCR *dcr = NULL;
+   DeviceControlRecord *dcr = NULL;
 
    unbash_spaces(devname);
    foreach_res(device, R_DEVICE) {
@@ -927,12 +927,12 @@ static DCR *find_device(JCR *jcr, POOL_MEM &devname, drive_number_t drive, BLOCK
 /**
  * Mount command from Director
  */
-static bool mount_cmd(JCR *jcr)
+static bool mount_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM devname;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev;
-   DCR *dcr;
+   PoolMem devname;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev;
+   DeviceControlRecord *dcr;
    drive_number_t drive;
    slot_number_t slot = 0;
    bool ok;
@@ -1073,12 +1073,12 @@ static bool mount_cmd(JCR *jcr)
 /**
  * unmount command from Director
  */
-static bool unmount_cmd(JCR *jcr)
+static bool unmount_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM devname;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev;
-   DCR *dcr;
+   PoolMem devname;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev;
+   DeviceControlRecord *dcr;
    drive_number_t drive;
 
    if (sscanf(dir->msg, unmountcmd, devname.c_str(), &drive) == 2) {
@@ -1167,9 +1167,9 @@ static bool unmount_cmd(JCR *jcr)
  *
  * It is currently disabled
  */
-static bool action_on_purge_cmd(JCR *jcr)
+static bool action_on_purge_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    char devname[MAX_NAME_LENGTH];
    char volumename[MAX_NAME_LENGTH];
@@ -1203,12 +1203,12 @@ done:
  *   the operator the chance to change the tape anytime before the
  *   next job starts.
  */
-static bool release_cmd(JCR *jcr)
+static bool release_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM devname;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev;
-   DCR *dcr;
+   PoolMem devname;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev;
+   DeviceControlRecord *dcr;
    drive_number_t drive;
 
    if (sscanf(dir->msg, releasecmd, devname.c_str(), &drive) == 2) {
@@ -1270,7 +1270,7 @@ static bool release_cmd(JCR *jcr)
 static pthread_mutex_t bsr_mutex = PTHREAD_MUTEX_INITIALIZER;
 static uint32_t bsr_uniq = 0;
 
-static inline bool get_bootstrap_file(JCR *jcr, BSOCK *sock)
+static inline bool get_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock)
 {
    POOLMEM *fname = get_pool_memory(PM_FNAME);
    FILE *bs;
@@ -1324,7 +1324,7 @@ bail_out:
    return sock->fsend(OK_bootstrap);
 }
 
-static bool bootstrap_cmd(JCR *jcr)
+static bool bootstrap_cmd(JobControlRecord *jcr)
 {
    return get_bootstrap_file(jcr, jcr->dir_bsock);
 }
@@ -1332,13 +1332,13 @@ static bool bootstrap_cmd(JCR *jcr)
 /**
  * Autochanger command from Director
  */
-static bool changer_cmd(JCR *jcr)
+static bool changer_cmd(JobControlRecord *jcr)
 {
    slot_number_t src_slot, dst_slot;
-   POOL_MEM devname;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev;
-   DCR *dcr;
+   PoolMem devname;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev;
+   DeviceControlRecord *dcr;
    const char *cmd = NULL;
    bool ok = false;
    bool is_transfer = false;
@@ -1405,12 +1405,12 @@ static bool changer_cmd(JCR *jcr)
 /**
  * Read and return the Volume label
  */
-static bool readlabel_cmd(JCR *jcr)
+static bool readlabel_cmd(JobControlRecord *jcr)
 {
-   POOL_MEM devname;
-   BSOCK *dir = jcr->dir_bsock;
-   DEVICE *dev;
-   DCR *dcr;
+   PoolMem devname;
+   BareosSocket *dir = jcr->dir_bsock;
+   Device *dev;
+   DeviceControlRecord *dcr;
    slot_number_t slot;
    drive_number_t drive;
 
@@ -1448,9 +1448,9 @@ static bool readlabel_cmd(JCR *jcr)
  *
  *  Enter with the mutex set
  */
-static void read_volume_label(JCR *jcr, DCR *dcr, DEVICE *dev, slot_number_t Slot)
+static void read_volume_label(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, slot_number_t Slot)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    bsteal_lock_t hold;
 
    dcr->set_dev(dev);
@@ -1491,9 +1491,9 @@ bail_out:
  *         -1 on error on autochanger
  *         -2 on error locking the autochanger
  */
-static int try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t Slot, const char *VolName)
+static int try_autoload_device(JobControlRecord *jcr, DeviceControlRecord *dcr, slot_number_t Slot, const char *VolName)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
 
    bstrncpy(dcr->VolumeName, VolName, sizeof(dcr->VolumeName));
    dcr->VolCatInfo.Slot = Slot;
@@ -1502,7 +1502,7 @@ static int try_autoload_device(JCR *jcr, DCR *dcr, slot_number_t Slot, const cha
    return autoload_device(dcr, 0, dir);
 }
 
-static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)
+static void send_dir_busy_message(BareosSocket *dir, Device *dev)
 {
    if (dev->is_blocked()) {
       switch (dev->blocked()) {
@@ -1535,7 +1535,7 @@ static void send_dir_busy_message(BSOCK *dir, DEVICE *dev)
    }
 }
 
-static inline void set_storage_auth_key(JCR *jcr, char *key)
+static inline void set_storage_auth_key(JobControlRecord *jcr, char *key)
 {
    /*
     * If no key don't update anything
@@ -1559,7 +1559,7 @@ static inline void set_storage_auth_key(JCR *jcr, char *key)
 /**
  * Listen for incoming replication session from other SD.
  */
-static bool listen_cmd(JCR *jcr)
+static bool listen_cmd(JobControlRecord *jcr)
 {
    Dsm_check(200);
 
@@ -1569,15 +1569,15 @@ static bool listen_cmd(JCR *jcr)
 /**
  * Get address of storage daemon from Director
  */
-static bool replicate_cmd(JCR *jcr)
+static bool replicate_cmd(JobControlRecord *jcr)
 {
    int stored_port;                /* storage daemon port */
    int enable_ssl;                 /* enable ssl to sd */
    char JobName[MAX_NAME_LENGTH];
    char stored_addr[MAX_NAME_LENGTH];
-   POOL_MEM sd_auth_key(PM_MESSAGE);
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *sd;                      /* storage daemon bsock */
+   PoolMem sd_auth_key(PM_MESSAGE);
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *sd;                      /* storage daemon bsock */
 
    sd = New(BSOCK_TCP);
    if (me->nokeepalive) {
@@ -1653,7 +1653,7 @@ bail_out:
    return false;
 }
 
-static bool run_cmd(JCR *jcr)
+static bool run_cmd(JobControlRecord *jcr)
 {
    Dsm_check(200);
    Dmsg1(200, "Run_cmd: %s\n", jcr->dir_bsock->msg);
@@ -1668,13 +1668,13 @@ static bool run_cmd(JCR *jcr)
    }
 }
 
-static bool passive_cmd(JCR *jcr)
+static bool passive_cmd(JobControlRecord *jcr)
 {
    int filed_port;                 /* file daemon port */
    int enable_ssl;                 /* enable ssl to fd */
    char filed_addr[MAX_NAME_LENGTH];
-   BSOCK *dir = jcr->dir_bsock;
-   BSOCK *fd;                      /* file daemon bsock */
+   BareosSocket *dir = jcr->dir_bsock;
+   BareosSocket *fd;                      /* file daemon bsock */
 
    Dmsg1(100, "PassiveClientCmd: %s", dir->msg);
    if (sscanf(dir->msg, passiveclientcmd, filed_addr, &filed_port, &enable_ssl) != 3) {
@@ -1740,9 +1740,9 @@ bail_out:
    return false;
 }
 
-static bool pluginoptions_cmd(JCR *jcr)
+static bool pluginoptions_cmd(JobControlRecord *jcr)
 {
-   BSOCK *dir = jcr->dir_bsock;
+   BareosSocket *dir = jcr->dir_bsock;
    char plugin_options[2048];
 
    Dmsg1(100, "PluginOptionsCmd: %s", dir->msg);

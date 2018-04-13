@@ -83,7 +83,7 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
    time_t object_mtime;
    berrno be;
 
-   if (!m_rados_configstring) {
+   if (!rados_configstring_) {
       char *bp, *next_option;
       bool done;
 
@@ -93,9 +93,9 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
-      m_rados_configstring = bstrdup(dev_options);
+      rados_configstring_ = bstrdup(dev_options);
 
-      bp = m_rados_configstring;
+      bp = rados_configstring_;
       while (bp) {
          next_option = strchr(bp, ',');
          if (next_option) {
@@ -110,43 +110,43 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
             if (bstrncasecmp(bp, device_options[i].name, device_options[i].compare_size)) {
                switch (device_options[i].type) {
                case argument_conffile:
-                  m_rados_conffile = bp + device_options[i].compare_size;
+                  rados_conffile_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
 #if LIBRADOS_VERSION_CODE < 17408
                case argument_clientid:
-                  m_rados_clientid = bp + device_options[i].compare_size;
+                  rados_clientid_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
 #else
                case argument_clustername:
-                  m_rados_clustername = bp + device_options[i].compare_size;
+                  rados_clustername_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
                case argument_username:
-                  m_rados_username = bp + device_options[i].compare_size;
+                  rados_username_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
 #endif
                case argument_poolname:
-                  m_rados_poolname = bp + device_options[i].compare_size;
+                  rados_poolname_ = bp + device_options[i].compare_size;
                   done = true;
                   break;
 #ifdef HAVE_RADOS_STRIPER
                case argument_striped:
-                  m_stripe_volume = true;
+                  stripe_volume_ = true;
                   done = true;
                   break;
                case argument_stripe_unit:
-                  size_to_uint64(bp + device_options[i].compare_size, &m_stripe_unit);
+                  size_to_uint64(bp + device_options[i].compare_size, &stripe_unit_);
                   done = true;
                   break;
                case argument_object_size:
-                  size_to_uint64(bp + device_options[i].compare_size, &m_object_size);
+                  size_to_uint64(bp + device_options[i].compare_size, &object_size_);
                   done = true;
                   break;
                case argument_stripe_count:
-                  m_stripe_count = str_to_int64(bp + device_options[i].compare_size);
+                  stripe_count_ = str_to_int64(bp + device_options[i].compare_size);
                   done = true;
                   break;
 #endif
@@ -165,35 +165,35 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          bp = next_option;
       }
 
-      if (!m_rados_conffile) {
+      if (!rados_conffile_) {
          Mmsg0(errmsg, _("No rados config file configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
 #if LIBRADOS_VERSION_CODE < 17408
-      if (!m_rados_clientid) {
+      if (!rados_clientid_) {
          Mmsg1(errmsg, _("No client id configured defaulting to %s\n"), DEFAULT_CLIENTID);
-         m_rados_clientid = bstrdup(DEFAULT_CLIENTID);
+         rados_clientid_ = bstrdup(DEFAULT_CLIENTID);
       }
 #else
-      if (!m_rados_clustername) {
-         m_rados_clustername = bstrdup(DEFAULT_CLUSTERNAME);
+      if (!rados_clustername_) {
+         rados_clustername_ = bstrdup(DEFAULT_CLUSTERNAME);
       }
-      if (!m_rados_username) {
+      if (!rados_username_) {
          Mmsg1(errmsg, _("No username configured defaulting to %s\n"), DEFAULT_USERNAME);
-         m_rados_username = bstrdup(DEFAULT_USERNAME);
+         rados_username_ = bstrdup(DEFAULT_USERNAME);
       }
 #endif
 
-      if (!m_rados_poolname) {
+      if (!rados_poolname_) {
          Mmsg0(errmsg, _("No rados pool configured\n"));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
    }
 
-   if (!m_cluster_initialized) {
+   if (!cluster_initialized_) {
 #if LIBRADOS_VERSION_CODE >= 17408
       uint64_t rados_flags = 0;
 #endif
@@ -203,9 +203,9 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
        * for later version rados_create2() calls.
        */
 #if LIBRADOS_VERSION_CODE < 17408
-      status = rados_create(&m_cluster, m_rados_clientid);
+      status = rados_create(&cluster_, rados_clientid_);
 #else
-      status = rados_create2(&m_cluster, m_rados_clustername, m_rados_username, rados_flags);
+      status = rados_create2(&cluster_, rados_clustername_, rados_username_, rados_flags);
 #endif
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to create RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
@@ -213,59 +213,59 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
          goto bail_out;
       }
 
-      status = rados_conf_read_file(m_cluster, m_rados_conffile);
+      status = rados_conf_read_file(cluster_, rados_conffile_);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to read RADOS config %s: ERR=%s\n"), m_rados_conffile, be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to read RADOS config %s: ERR=%s\n"), rados_conffile_, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
-         rados_shutdown(m_cluster);
+         rados_shutdown(cluster_);
          goto bail_out;
       }
 
-      status = rados_connect(m_cluster);
+      status = rados_connect(cluster_);
       if (status < 0) {
          Mmsg1(errmsg, _("Unable to connect to RADOS cluster: ERR=%s\n"), be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
-         rados_shutdown(m_cluster);
+         rados_shutdown(cluster_);
          goto bail_out;
       }
 
-      m_cluster_initialized = true;
+      cluster_initialized_ = true;
    }
 
-   if (!m_ctx) {
-      status = rados_ioctx_create(m_cluster, m_rados_poolname, &m_ctx);
+   if (!ctx_) {
+      status = rados_ioctx_create(cluster_, rados_poolname_, &ctx_);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to create RADOS IO context for pool %s: ERR=%s\n"), m_rados_poolname, be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to create RADOS IO context for pool %s: ERR=%s\n"), rados_poolname_, be.bstrerror(-status));
          Emsg0(M_FATAL, 0, errmsg);
          goto bail_out;
       }
 
 #ifdef HAVE_RADOS_STRIPER
-      if (m_stripe_volume) {
-         status = rados_striper_create(m_ctx, &m_striper);
+      if (stripe_volume_) {
+         status = rados_striper_create(ctx_, &striper_);
          if (status < 0) {
-            Mmsg2(errmsg, _("Unable to create RADOS striper object for pool %s: ERR=%s\n"), m_rados_poolname, be.bstrerror(-status));
+            Mmsg2(errmsg, _("Unable to create RADOS striper object for pool %s: ERR=%s\n"), rados_poolname_, be.bstrerror(-status));
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
 
-         status = rados_striper_set_object_layout_stripe_unit(m_striper, m_stripe_unit);
+         status = rados_striper_set_object_layout_stripe_unit(striper_, stripe_unit_);
          if (status < 0) {
-            Mmsg3(errmsg, _("Unable to set RADOS striper unit size to %d  for pool %s: ERR=%s\n"), m_stripe_unit, m_rados_poolname, be.bstrerror(-status));
+            Mmsg3(errmsg, _("Unable to set RADOS striper unit size to %d  for pool %s: ERR=%s\n"), stripe_unit_, rados_poolname_, be.bstrerror(-status));
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
 
-         status = rados_striper_set_object_layout_stripe_count(m_striper, m_stripe_count);
+         status = rados_striper_set_object_layout_stripe_count(striper_, stripe_count_);
          if (status < 0) {
-            Mmsg3(errmsg, _("Unable to set RADOS striper stripe count to %d  for pool %s: ERR=%s\n"), m_stripe_count, m_rados_poolname, be.bstrerror(-status));
+            Mmsg3(errmsg, _("Unable to set RADOS striper stripe count to %d  for pool %s: ERR=%s\n"), stripe_count_, rados_poolname_, be.bstrerror(-status));
             Emsg0(M_FATAL, 0, errmsg);
             goto bail_out;
          }
 
-         status = rados_striper_set_object_layout_object_size(m_striper, m_object_size);
+         status = rados_striper_set_object_layout_object_size(striper_, object_size_);
          if (status < 0) {
-            Mmsg3(errmsg, _("Unable to set RADOS striper object size to %d  for pool %s: ERR=%s\n"), m_object_size, m_rados_poolname, be.bstrerror(-status));
+            Mmsg3(errmsg, _("Unable to set RADOS striper object size to %d  for pool %s: ERR=%s\n"), object_size_, rados_poolname_, be.bstrerror(-status));
              Emsg0(M_FATAL, 0, errmsg);
              goto bail_out;
          }
@@ -273,19 +273,19 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
 #endif
    }
 
-   Mmsg(m_virtual_filename, "%s", getVolCatName());
+   Mmsg(virtual_filename_, "%s", getVolCatName());
 
    /*
     * See if the object already exists.
     */
 #ifdef HAVE_RADOS_STRIPER
-   if (m_stripe_volume) {
-      status = rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime);
+   if (stripe_volume_) {
+      status = rados_striper_stat(striper_, virtual_filename_, &object_size, &object_mtime);
    } else {
-      status = rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime);
+      status = rados_stat(ctx_, virtual_filename_, &object_size, &object_mtime);
    }
 #else
-   status = rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime);
+   status = rados_stat(ctx_, virtual_filename_, &object_size, &object_mtime);
 #endif
 
    /*
@@ -300,13 +300,13 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
              * e.g. write one byte and then truncate it to zero bytes.
              */
 #ifdef HAVE_RADOS_STRIPER
-            if (m_stripe_volume) {
-               rados_striper_write(m_striper, m_virtual_filename, " ", 1, 0);
-               rados_striper_trunc(m_striper, m_virtual_filename, 0);
+            if (stripe_volume_) {
+               rados_striper_write(striper_, virtual_filename_, " ", 1, 0);
+               rados_striper_trunc(striper_, virtual_filename_, 0);
             } else {
 #endif
-               rados_write(m_ctx, m_virtual_filename, " ", 1, 0);
-               rados_trunc(m_ctx, m_virtual_filename, 0);
+               rados_write(ctx_, virtual_filename_, " ", 1, 0);
+               rados_trunc(ctx_, virtual_filename_, 0);
 #ifdef HAVE_RADOS_STRIPER
             }
 #endif
@@ -323,14 +323,14 @@ int rados_device::d_open(const char *pathname, int flags, int mode)
       }
    }
 
-   m_offset = 0;
+   offset_ = 0;
 
    return 0;
 
 bail_out:
-   if (m_cluster_initialized) {
-      rados_shutdown(m_cluster);
-      m_cluster_initialized = false;
+   if (cluster_initialized_) {
+      rados_shutdown(cluster_);
+      cluster_initialized_ = false;
    }
 
    return -1;
@@ -342,11 +342,11 @@ bail_out:
 ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t count)
 {
 #ifdef HAVE_RADOS_STRIPER
-   if (m_stripe_volume) {
-      return rados_striper_read(m_striper, m_virtual_filename, buffer, count, offset);
+   if (stripe_volume_) {
+      return rados_striper_read(striper_, virtual_filename_, buffer, count, offset);
    } else {
 #endif
-      return rados_read(m_ctx, m_virtual_filename, buffer, count, offset);
+      return rados_read(ctx_, virtual_filename_, buffer, count, offset);
 #ifdef HAVE_RADOS_STRIPER
    }
 #endif
@@ -357,12 +357,12 @@ ssize_t rados_device::read_object_data(boffset_t offset, char *buffer, size_t co
  */
 ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
 {
-   if (m_ctx) {
+   if (ctx_) {
       size_t nr_read = 0;
 
-      nr_read = read_object_data(m_offset, (char *)buffer, count);
+      nr_read = read_object_data(offset_, (char *)buffer, count);
       if (nr_read >= 0) {
-         m_offset += nr_read;
+         offset_ += nr_read;
       } else {
          errno = -nr_read;
          nr_read = -1;
@@ -382,16 +382,16 @@ ssize_t rados_device::d_read(int fd, void *buffer, size_t count)
 ssize_t rados_device::write_object_data(boffset_t offset, char *buffer, size_t count)
 {
 #if LIBRADOS_VERSION_CODE <= 17408
-   return = rados_write(m_ctx, m_virtual_filename, buffer, count, offset);
+   return = rados_write(ctx_, virtual_filename_, buffer, count, offset);
 #else
    int status;
 
 #ifdef HAVE_RADOS_STRIPER
-   if (m_striper) {
-      status = rados_striper_write(m_striper, m_virtual_filename, buffer, count, offset);
+   if (striper_) {
+      status = rados_striper_write(striper_, virtual_filename_, buffer, count, offset);
    } else {
 #endif
-      status = rados_write(m_ctx, m_virtual_filename, buffer, count, offset);
+      status = rados_write(ctx_, virtual_filename_, buffer, count, offset);
 #ifdef HAVE_RADOS_STRIPER
    }
 #endif
@@ -410,12 +410,12 @@ ssize_t rados_device::write_object_data(boffset_t offset, char *buffer, size_t c
  */
 ssize_t rados_device::d_write(int fd, const void *buffer, size_t count)
 {
-   if (m_ctx) {
+   if (ctx_) {
       size_t nr_written = 0;
 
-      nr_written = write_object_data(m_offset, (char *)buffer, count);
+      nr_written = write_object_data(offset_, (char *)buffer, count);
       if (nr_written >= 0) {
-         m_offset += nr_written;
+         offset_ += nr_written;
       }
 
       return nr_written;
@@ -430,15 +430,15 @@ int rados_device::d_close(int fd)
    /*
     * Destroy the IOcontext.
     */
-   if (m_ctx) {
+   if (ctx_) {
 #ifdef HAVE_RADOS_STRIPER
-      if (m_striper) {
-         rados_striper_destroy(m_striper);
-         m_striper = NULL;
+      if (striper_) {
+         rados_striper_destroy(striper_);
+         striper_ = NULL;
       }
 #endif
-      rados_ioctx_destroy(m_ctx);
-      m_ctx = NULL;
+      rados_ioctx_destroy(ctx_);
+      ctx_ = NULL;
    } else {
       errno = EBADF;
       return -1;
@@ -458,7 +458,7 @@ ssize_t rados_device::striper_volume_size()
    uint64_t object_size;
    time_t object_mtime;
 
-   if (rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime) == 0) {
+   if (rados_striper_stat(striper_, virtual_filename_, &object_size, &object_mtime) == 0) {
       return object_size;
    } else {
       return -1;
@@ -471,27 +471,27 @@ ssize_t rados_device::volume_size()
    uint64_t object_size;
    time_t object_mtime;
 
-   if (rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime) == 0) {
+   if (rados_stat(ctx_, virtual_filename_, &object_size, &object_mtime) == 0) {
       return object_size;
    } else {
       return -1;
    }
 }
 
-boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
+boffset_t rados_device::d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence)
 {
    switch (whence) {
    case SEEK_SET:
-      m_offset = offset;
+      offset_ = offset;
       break;
    case SEEK_CUR:
-      m_offset += offset;
+      offset_ += offset;
       break;
    case SEEK_END: {
       ssize_t filesize;
 
 #ifdef HAVE_RADOS_STRIPER
-      if (m_stripe_volume) {
+      if (stripe_volume_) {
          filesize = striper_volume_size();
       } else {
          filesize = volume_size();
@@ -501,7 +501,7 @@ boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
 #endif
 
       if (filesize >= 0) {
-         m_offset = filesize + offset;
+         offset_ = filesize + offset;
       } else {
          return -1;
       }
@@ -511,84 +511,84 @@ boffset_t rados_device::d_lseek(DCR *dcr, boffset_t offset, int whence)
       return -1;
    }
 
-   return m_offset;
+   return offset_;
 }
 
 #ifdef HAVE_RADOS_STRIPER
-bool rados_device::truncate_striper_volume(DCR *dcr)
+bool rados_device::truncate_striper_volume(DeviceControlRecord *dcr)
 {
    int status;
    uint64_t object_size;
    time_t object_mtime;
    berrno be;
 
-   status = rados_striper_trunc(m_striper, m_virtual_filename, 0);
+   status = rados_striper_trunc(striper_, virtual_filename_, 0);
    if (status < 0) {
       Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   status = rados_striper_stat(m_striper, m_virtual_filename, &object_size, &object_mtime);
+   status = rados_striper_stat(striper_, virtual_filename_, &object_size, &object_mtime);
    if (status < 0) {
-      Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+      Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), virtual_filename_, be.bstrerror(-status));
       Dmsg1(100, "%s", errmsg);
       return false;
    }
 
    if (object_size != 0) { /* rados_trunc() didn't work. */
-      status = rados_striper_remove(m_striper, m_virtual_filename);
+      status = rados_striper_remove(striper_, virtual_filename_);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), virtual_filename_, be.bstrerror(-status));
          Dmsg1(100, "%s", errmsg);
          return false;
       }
    }
 
-   m_offset = 0;
+   offset_ = 0;
    return true;
 }
 #endif
 
-bool rados_device::truncate_volume(DCR *dcr)
+bool rados_device::truncate_volume(DeviceControlRecord *dcr)
 {
    int status;
    uint64_t object_size;
    time_t object_mtime;
    berrno be;
 
-   status = rados_trunc(m_ctx, m_virtual_filename, 0);
+   status = rados_trunc(ctx_, virtual_filename_, 0);
    if (status < 0) {
       Mmsg2(errmsg, _("Unable to truncate device %s. ERR=%s\n"), prt_name, be.bstrerror(-status));
       Emsg0(M_FATAL, 0, errmsg);
       return false;
    }
 
-   status = rados_stat(m_ctx, m_virtual_filename, &object_size, &object_mtime);
+   status = rados_stat(ctx_, virtual_filename_, &object_size, &object_mtime);
    if (status < 0) {
-      Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+      Mmsg2(errmsg, _("Unable to stat volume %s. ERR=%s\n"), virtual_filename_, be.bstrerror(-status));
       Dmsg1(100, "%s", errmsg);
       return false;
    }
 
    if (object_size != 0) { /* rados_trunc() didn't work. */
-      status = rados_remove(m_ctx, m_virtual_filename);
+      status = rados_remove(ctx_, virtual_filename_);
       if (status < 0) {
-         Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), m_virtual_filename, be.bstrerror(-status));
+         Mmsg2(errmsg, _("Unable to remove volume %s. ERR=%s\n"), virtual_filename_, be.bstrerror(-status));
          Dmsg1(100, "%s", errmsg);
          return false;
       }
    }
 
-   m_offset = 0;
+   offset_ = 0;
    return true;
 }
 
-bool rados_device::d_truncate(DCR *dcr)
+bool rados_device::d_truncate(DeviceControlRecord *dcr)
 {
-   if (m_ctx) {
+   if (ctx_) {
 #ifdef HAVE_RADOS_STRIPER
-      if (m_stripe_volume) {
+      if (stripe_volume_) {
          return truncate_striper_volume(dcr);
       } else {
          return truncate_volume(dcr);
@@ -603,63 +603,63 @@ bool rados_device::d_truncate(DCR *dcr)
 
 rados_device::~rados_device()
 {
-   if (m_ctx) {
-      rados_ioctx_destroy(m_ctx);
-      m_ctx = NULL;
+   if (ctx_) {
+      rados_ioctx_destroy(ctx_);
+      ctx_ = NULL;
    }
 
-   if (m_cluster_initialized) {
-      rados_shutdown(m_cluster);
-      m_cluster_initialized = false;
+   if (cluster_initialized_) {
+      rados_shutdown(cluster_);
+      cluster_initialized_ = false;
    }
 
 #if LIBRADOS_VERSION_CODE < 17408
-   if (m_rados_clientid) {
-      free(m_rados_clientid);
+   if (rados_clientid_) {
+      free(rados_clientid_);
    }
 #else
-   if (m_rados_clustername) {
-      free(m_rados_clustername);
+   if (rados_clustername_) {
+      free(rados_clustername_);
    }
-   if (m_rados_username) {
-      free(m_rados_username);
+   if (rados_username_) {
+      free(rados_username_);
    }
 #endif
 
-   if (m_rados_configstring) {
-      free(m_rados_configstring);
+   if (rados_configstring_) {
+      free(rados_configstring_);
    }
 
-   free_pool_memory(m_virtual_filename);
+   free_pool_memory(virtual_filename_);
 }
 
 rados_device::rados_device()
 {
-   m_rados_configstring = NULL;
-   m_rados_conffile = NULL;
-   m_rados_poolname = NULL;
+   rados_configstring_ = NULL;
+   rados_conffile_ = NULL;
+   rados_poolname_ = NULL;
 #if LIBRADOS_VERSION_CODE < 17408
-   m_rados_clientid = NULL;
+   rados_clientid_ = NULL;
 #else
-   m_rados_clustername = NULL;
-   m_rados_username = NULL;
+   rados_clustername_ = NULL;
+   rados_username_ = NULL;
 #endif
-   m_cluster_initialized = false;
-   m_ctx = NULL;
+   cluster_initialized_ = false;
+   ctx_ = NULL;
 #ifdef HAVE_RADOS_STRIPER
-   m_stripe_volume = false;
-   m_stripe_unit = 4194304;
-   m_stripe_count = 1;
-   m_object_size = 4194304;
-   m_striper = NULL;
+   stripe_volume_ = false;
+   stripe_unit_ = 4194304;
+   stripe_count_ = 1;
+   object_size_ = 4194304;
+   striper_ = NULL;
 #endif
-   m_virtual_filename = get_pool_memory(PM_FNAME);
+   virtual_filename_ = get_pool_memory(PM_FNAME);
 }
 
 #ifdef HAVE_DYNAMIC_SD_BACKENDS
-extern "C" DEVICE SD_IMP_EXP *backend_instantiate(JCR *jcr, int device_type)
+extern "C" Device SD_IMP_EXP *backend_instantiate(JobControlRecord *jcr, int device_type)
 {
-   DEVICE *dev = NULL;
+   Device *dev = NULL;
 
    switch (device_type) {
    case B_RADOS_DEV:

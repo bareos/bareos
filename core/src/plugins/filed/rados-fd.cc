@@ -743,7 +743,7 @@ static bRC connect_to_rados(bpContext *ctx)
           * See if this uses the old clientid.
           */
          if (p_ctx->rados_clientid) {
-            POOL_MEM temp;
+            PoolMem temp;
 
             Mmsg(temp, "client.%s", p_ctx->rados_clientid);
             p_ctx->rados_username = bstrdup(temp.c_str());
@@ -821,7 +821,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
     * Create a snapshot and use it for consistent reading.
     */
    if (!p_ctx->rados_snapshotname) {
-      POOL_MEM snapshotname(PM_NAME);
+      PoolMem snapshotname(PM_NAME);
 
       Mmsg(snapshotname, "bareos_backup_%ld", p_ctx->JobId);
       p_ctx->rados_snapshotname = bstrdup(snapshotname.c_str());

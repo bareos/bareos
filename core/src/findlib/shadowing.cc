@@ -38,7 +38,7 @@
 /**
  * Check if a certain fileset include pattern shadows another pattern.
  */
-static inline bool check_include_pattern_shadowing(JCR *jcr,
+static inline bool check_include_pattern_shadowing(JobControlRecord *jcr,
                                                    const char *pattern1,
                                                    const char *pattern2,
                                                    bool recursive)
@@ -193,7 +193,7 @@ static inline b_fileset_shadow_type include_block_get_shadow_type(findINCEXE *in
 /**
  * See if there is any local shadowing within an include block.
  */
-static void check_local_fileset_shadowing(JCR *jcr,
+static void check_local_fileset_shadowing(JobControlRecord *jcr,
                                           findINCEXE *incexe,
                                           bool remove)
 {
@@ -274,7 +274,7 @@ static void check_local_fileset_shadowing(JCR *jcr,
  * See if there is any local shadowing within an include block or
  * any global shadowing between include blocks.
  */
-static inline void check_global_fileset_shadowing(JCR *jcr,
+static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
                                                   findFILESET *fileset,
                                                   bool remove)
 {
@@ -402,7 +402,7 @@ static inline void check_global_fileset_shadowing(JCR *jcr,
    }
 }
 
-void check_include_list_shadowing(JCR *jcr, findFILESET *fileset)
+void check_include_list_shadowing(JobControlRecord *jcr, findFILESET *fileset)
 {
    int i;
    findINCEXE *incexe;

@@ -23,7 +23,7 @@
 /*
  * Kern Sibbald, July MMII
  * Tree handling routines split into ua_tree.c July MMIII.
- * BSR (bootstrap record) handling routines split into
+ * BootStrapRecord (bootstrap record) handling routines split into
  * bsr.c July MMIII
  */
 /**
@@ -37,42 +37,42 @@
 #include "dird.h"
 
 /* Imported functions */
-extern void print_bsr(UAContext *ua, RBSR *bsr);
+extern void print_bsr(UaContext *ua, RestoreBootstrapRecord *bsr);
 
 
 /* Forward referenced functions */
 static int last_full_handler(void *ctx, int num_fields, char **row);
 static int jobid_handler(void *ctx, int num_fields, char **row);
-static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx);
+static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx);
 static int fileset_handler(void *ctx, int num_fields, char **row);
-static void free_name_list(NAME_LIST *name_list);
-static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date);
-static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx);
-static void free_rx(RESTORE_CTX *rx);
-static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *fname);
+static void free_name_list(NameList *name_list);
+static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *date);
+static bool build_directory_tree(UaContext *ua, RestoreContext *rx);
+static void free_rx(RestoreContext *rx);
+static void split_path_and_filename(UaContext *ua, RestoreContext *rx, char *fname);
 static int jobid_fileindex_handler(void *ctx, int num_fields, char **row);
-static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *file,
+static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char *file,
                                          char *date);
-static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *dir,
+static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char *dir,
                                         char *date);
-static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, bool dir);
-static bool get_client_name(UAContext *ua, RESTORE_CTX *rx);
-static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx);
-static bool get_date(UAContext *ua, char *date, int date_len);
+static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date, bool dir);
+static bool get_client_name(UaContext *ua, RestoreContext *rx);
+static bool get_restore_client_name(UaContext *ua, RestoreContext &rx);
+static bool get_date(UaContext *ua, char *date, int date_len);
 static int restore_count_handler(void *ctx, int num_fields, char **row);
-static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table);
-static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx);
+static bool insert_table_into_findex_list(UaContext *ua, RestoreContext *rx, char *table);
+static void get_and_display_basejobs(UaContext *ua, RestoreContext *rx);
 
 /**
  * Restore files
  */
-bool restore_cmd(UAContext *ua, const char *cmd)
+bool restore_cmd(UaContext *ua, const char *cmd)
 {
-   RESTORE_CTX rx;                    /* restore context */
-   POOL_MEM buf;
-   JOBRES *job;
+   RestoreContext rx;                    /* restore context */
+   PoolMem buf;
+   JobResource *job;
    int i;
-   JCR *jcr = ua->jcr;
+   JobControlRecord *jcr = ua->jcr;
    char *escaped_bsr_name = NULL;
    char *escaped_where_name = NULL;
    char *strip_prefix, *add_prefix, *add_suffix, *regexp;
@@ -217,13 +217,13 @@ bool restore_cmd(UAContext *ua, const char *cmd)
     * done by the NDMP state machine via robot and tape interface.
     */
    if (job->Protocol == PT_NDMP_NATIVE) {
-      ua->info_msg(_("Skipping BSR creation as we are doing NDMP_NATIVE restore.\n"));
+      ua->info_msg(_("Skipping BootStrapRecord creation as we are doing NDMP_NATIVE restore.\n"));
 
    } else {
       if (rx.bsr->JobId) {
          char ed1[50];
          if (!complete_bsr(ua, rx.bsr)) {   /* find Vol, SessId, SessTime from JobIds */
-            ua->error_msg(_("Unable to construct a valid BSR. Cannot continue.\n"));
+            ua->error_msg(_("Unable to construct a valid BootStrapRecord. Cannot continue.\n"));
             goto bail_out;
          }
          if (!(rx.selected_files = write_bsr_file(ua, rx))) {
@@ -352,7 +352,7 @@ bail_out:
 /**
  * Fill the rx->BaseJobIds and display the list
  */
-static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
+static void get_and_display_basejobs(UaContext *ua, RestoreContext *rx)
 {
    db_list_ctx jobids;
 
@@ -361,16 +361,16 @@ static void get_and_display_basejobs(UAContext *ua, RESTORE_CTX *rx)
    }
 
    if (jobids.count) {
-      POOL_MEM query(PM_MESSAGE);
+      PoolMem query(PM_MESSAGE);
 
       ua->send_msg(_("The restore will use the following job(s) as Base\n"));
-      ua->db->fill_query(query, B_DB::SQL_QUERY_uar_print_jobs, jobids.list);
+      ua->db->fill_query(query, BareosDb::SQL_QUERY_uar_print_jobs, jobids.list);
       ua->db->list_sql_query(ua->jcr, query.c_str(), ua->send, HORZ_LIST, true);
    }
    pm_strcpy(rx->BaseJobIds, jobids.list);
 }
 
-static void free_rx(RESTORE_CTX *rx)
+static void free_rx(RestoreContext *rx)
 {
    free_bsr(rx->bsr);
    rx->bsr = NULL;
@@ -393,7 +393,7 @@ static void free_rx(RESTORE_CTX *rx)
    free_name_list(&rx->name_list);
 }
 
-static bool has_value(UAContext *ua, int i)
+static bool has_value(UaContext *ua, int i)
 {
    if (!ua->argv[i]) {
       ua->error_msg(_("Missing value for keyword: %s\n"), ua->argk[i]);
@@ -405,10 +405,10 @@ static bool has_value(UAContext *ua, int i)
 /**
  * This gets the client name from which the backup was made
  */
-static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
+static bool get_client_name(UaContext *ua, RestoreContext *rx)
 {
    int i;
-   CLIENT_DBR cr;
+   ClientDbRecord cr;
    memset(&cr, 0, sizeof(cr));
 
    /*
@@ -447,7 +447,7 @@ static bool get_client_name(UAContext *ua, RESTORE_CTX *rx)
 /**
  * This is where we pick up a client name to restore to.
  */
-static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
+static bool get_restore_client_name(UaContext *ua, RestoreContext &rx)
 {
    int i;
 
@@ -481,7 +481,7 @@ static bool get_restore_client_name(UAContext *ua, RESTORE_CTX &rx)
  *            1  if jobid list made
  *            0  on error
  */
-static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
+static int user_select_jobids_or_files(UaContext *ua, RestoreContext *rx)
 {
    char *p;
    char date[MAX_TIME_LENGTH];
@@ -489,7 +489,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
    /* Include current second if using current time */
    utime_t now = time(NULL) + 1;
    JobId_t JobId;
-   JOB_DBR jr = { (JobId_t)-1 };
+   JobDbRecord jr = { (JobId_t)-1 };
    bool done = false;
    int i, j;
    const char *list[] = {
@@ -664,7 +664,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          }
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
-         ua->db->list_sql_query(ua->jcr, B_DB::SQL_QUERY_uar_list_jobs, ua->send, HORZ_LIST, true);
+         ua->db->list_sql_query(ua->jcr, BareosDb::SQL_QUERY_uar_list_jobs, ua->send, HORZ_LIST, true);
          ua->jcr->gui = gui_save;
          done = false;
          break;
@@ -678,7 +678,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
          len = strlen(ua->cmd);
          fname = (char *)malloc(len * 2 + 1);
          ua->db->escape_string(ua->jcr, fname, ua->cmd, len);
-         ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_file, rx->ClientName, fname);
+         ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_file, rx->ClientName, fname);
          free(fname);
          gui_save = ua->jcr->gui;
          ua->jcr->gui = true;
@@ -917,7 +917,7 @@ static int user_select_jobids_or_files(UAContext *ua, RESTORE_CTX *rx)
 /**
  * Get date from user
  */
-static bool get_date(UAContext *ua, char *date, int date_len)
+static bool get_date(UaContext *ua, char *date, int date_len)
 {
    ua->send_msg(_("The restored files will the most current backup\n"
                   "BEFORE the date you specify below.\n\n"));
@@ -937,7 +937,7 @@ static bool get_date(UAContext *ua, char *date, int date_len)
 /**
  * Insert a single file, or read a list of files from a file
  */
-static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, bool dir)
+static void insert_one_file_or_dir(UaContext *ua, RestoreContext *rx, char *date, bool dir)
 {
    FILE *ffd;
    char file[5000];
@@ -986,15 +986,15 @@ static void insert_one_file_or_dir(UAContext *ua, RESTORE_CTX *rx, char *date, b
  * lookup the most recent backup in the catalog to get the JobId
  * and FileIndex, then insert them into the findex list.
  */
-static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *file, char *date)
+static bool insert_file_into_findex_list(UaContext *ua, RestoreContext *rx, char *file, char *date)
 {
    strip_trailing_newline(file);
    split_path_and_filename(ua, rx, file);
 
    if (*rx->JobIds == 0) {
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex, date, rx->path, rx->fname, rx->ClientName);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_jobid_fileindex, date, rx->path, rx->fname, rx->ClientName);
    } else {
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobids_fileindex, rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_jobids_fileindex, rx->JobIds, date, rx->path, rx->fname, rx->ClientName);
    }
 
    /*
@@ -1016,7 +1016,7 @@ static bool insert_file_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *f
  * For a given path lookup the most recent backup in the catalog
  * to get the JobId and FileIndexes of all files in that directory.
  */
-static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *dir, char *date)
+static bool insert_dir_into_findex_list(UaContext *ua, RestoreContext *rx, char *dir, char *date)
 {
    strip_trailing_junk(dir);
 
@@ -1024,7 +1024,7 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
       ua->error_msg(_("No JobId specified cannot continue.\n"));
       return false;
    } else {
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex_from_dir, rx->JobIds, dir, rx->ClientName);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_jobid_fileindex_from_dir, rx->JobIds, dir, rx->ClientName);
    }
 
    /*
@@ -1045,11 +1045,11 @@ static bool insert_dir_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *di
 /**
  * Get the JobId and FileIndexes of all files in the specified table
  */
-static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *table)
+static bool insert_table_into_findex_list(UaContext *ua, RestoreContext *rx, char *table)
 {
    strip_trailing_junk(table);
 
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_jobid_fileindex_from_table, table);
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_jobid_fileindex_from_table, table);
 
    /*
     * Find and insert jobid and File Index
@@ -1066,7 +1066,7 @@ static bool insert_table_into_findex_list(UAContext *ua, RESTORE_CTX *rx, char *
    return true;
 }
 
-static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *name)
+static void split_path_and_filename(UaContext *ua, RestoreContext *rx, char *name)
 {
    char *p, *f;
 
@@ -1113,7 +1113,7 @@ static void split_path_and_filename(UAContext *ua, RESTORE_CTX *rx, char *name)
    Dmsg2(100, "split path=%s file=%s\n", rx->path, rx->fname);
 }
 
-static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
+static bool ask_for_fileregex(UaContext *ua, RestoreContext *rx)
 {
    if (find_arg(ua, NT_("all")) >= 0) {  /* if user enters all on command line */
       return true;                       /* select everything */
@@ -1160,7 +1160,7 @@ static bool ask_for_fileregex(UAContext *ua, RESTORE_CTX *rx)
  * should insert as
  * 0, 1, 2, 3, 4, 5, 6
  */
-static void add_delta_list_findex(RESTORE_CTX *rx, struct delta_list *lst)
+static void add_delta_list_findex(RestoreContext *rx, struct delta_list *lst)
 {
    if (lst == NULL) {
       return;
@@ -1171,9 +1171,9 @@ static void add_delta_list_findex(RESTORE_CTX *rx, struct delta_list *lst)
    add_findex(rx->bsr, lst->JobId, lst->FileIndex);
 }
 
-static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
+static bool build_directory_tree(UaContext *ua, RestoreContext *rx)
 {
-   TREE_CTX tree;
+   TreeContext tree;
    JobId_t JobId, last_JobId;
    char *p;
    bool OK = true;
@@ -1200,7 +1200,7 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
       /*
        * Use first JobId as estimate of the number of files to restore
        */
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_count_files, edit_int64(JobId, ed1));
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_count_files, edit_int64(JobId, ed1));
       if (!ua->db->sql_query(rx->query, restore_count_handler, (void *)rx)) {
          ua->error_msg("%s\n", ua->db->strerror());
       }
@@ -1314,11 +1314,11 @@ static bool build_directory_tree(UAContext *ua, RESTORE_CTX *rx)
 /**
  * This routine is used to get the current backup or a backup before the specified date.
  */
-static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *date)
+static bool select_backups_before_date(UaContext *ua, RestoreContext *rx, char *date)
 {
    int i;
-   CLIENT_DBR cr;
-   FILESET_DBR fsr;
+   ClientDbRecord cr;
+   FileSetDbRecord fsr;
    bool ok = false;
    char ed1[50], ed2[50];
    char pool_select[MAX_NAME_LENGTH];
@@ -1327,13 +1327,13 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Create temp tables
     */
-   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp);
-   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp1);
+   ua->db->sql_query(BareosDb::SQL_QUERY_uar_del_temp);
+   ua->db->sql_query(BareosDb::SQL_QUERY_uar_del_temp1);
 
-   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_create_temp)) {
+   if (!ua->db->sql_query(BareosDb::SQL_QUERY_uar_create_temp)) {
       ua->error_msg("%s\n", ua->db->strerror());
    }
-   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_create_temp1)) {
+   if (!ua->db->sql_query(BareosDb::SQL_QUERY_uar_create_temp1)) {
       ua->error_msg("%s\n", ua->db->strerror());
    }
    /*
@@ -1362,7 +1362,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
    if (i < 0) {                       /* fileset not found */
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_fileset, edit_int64(cr.ClientId, ed1), ed1);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_sel_fileset, edit_int64(cr.ClientId, ed1), ed1);
 
       start_prompt(ua, _("The defined FileSet resources are:\n"));
       if (!ua->db->sql_query(rx->query, fileset_handler, (void *)ua)) {
@@ -1387,7 +1387,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     */
    pool_select[0] = 0;
    if (rx->pool) {
-      POOL_DBR pr;
+      PoolDbRecord pr;
 
       memset(&pr, 0, sizeof(pr));
       bstrncpy(pr.Name, rx->pool->name(), sizeof(pr.Name));
@@ -1402,14 +1402,14 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Find JobId of last Full backup for this client, fileset
     */
    if (pool_select[0]) {
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_last_full, edit_int64(cr.ClientId, ed1), date, fsr.FileSet, pool_select);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_last_full, edit_int64(cr.ClientId, ed1), date, fsr.FileSet, pool_select);
 
       if (!ua->db->sql_query(rx->query)) {
          ua->error_msg("%s\n", ua->db->strerror());
          goto bail_out;
       }
    } else {
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_last_full_no_pool, edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_last_full_no_pool, edit_int64(cr.ClientId, ed1), date, fsr.FileSet);
 
       if (!ua->db->sql_query(rx->query)) {
          ua->error_msg("%s\n", ua->db->strerror());
@@ -1420,7 +1420,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Find all Volumes used by that JobId
     */
-   if (!ua->db->sql_query(B_DB::SQL_QUERY_uar_full)) {
+   if (!ua->db->sql_query(BareosDb::SQL_QUERY_uar_full)) {
       ua->error_msg("%s\n", ua->db->strerror());
       goto bail_out;
    }
@@ -1429,7 +1429,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Note, this is needed because I don't seem to get the callback from the call just above.
     */
    rx->JobTDate = 0;
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_all_temp1);
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_sel_all_temp1);
    if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1441,7 +1441,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find most recent Differential Job after Full save, if any
     */
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_dif,  edit_uint64(rx->JobTDate, ed1), date,
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_dif,  edit_uint64(rx->JobTDate, ed1), date,
                       edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!ua->db->sql_query(rx->query)) {
       ua->warning_msg("%s\n", ua->db->strerror());
@@ -1451,7 +1451,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     * Now update JobTDate to look into Differential, if any
     */
    rx->JobTDate = 0;
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_all_temp);
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_sel_all_temp);
    if (!ua->db->sql_query(rx->query, last_full_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1463,7 +1463,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    /*
     * Now find all Incremental Jobs after Full/dif save
     */
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_inc, edit_uint64(rx->JobTDate, ed1), date,
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_inc, edit_uint64(rx->JobTDate, ed1), date,
                       edit_int64(cr.ClientId, ed2), fsr.FileSet, pool_select);
    if (!ua->db->sql_query(rx->query)) {
       ua->warning_msg("%s\n", ua->db->strerror());
@@ -1474,7 +1474,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
     */
    rx->last_jobid[0] = rx->JobIds[0] = 0;
 
-   ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_jobid_temp);
+   ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_sel_jobid_temp);
    if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
       ua->warning_msg("%s\n", ua->db->strerror());
    }
@@ -1493,14 +1493,14 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
          }
 
          if (ua->pint32_val) {
-            POOL_MEM JobIds(PM_FNAME);
+            PoolMem JobIds(PM_FNAME);
 
             /*
              * Change the list of jobs needed to do the restore to the copies of the Job.
              */
             pm_strcpy(JobIds, rx->JobIds);
             rx->last_jobid[0] = rx->JobIds[0] = 0;
-            ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_sel_jobid_copies, JobIds.c_str());
+            ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_sel_jobid_copies, JobIds.c_str());
             if (!ua->db->sql_query(rx->query, jobid_handler, (void *)rx)) {
                ua->warning_msg("%s\n", ua->db->strerror());
             }
@@ -1510,7 +1510,7 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
       /*
        * Display a list of Jobs selected for this restore
        */
-      ua->db->fill_query(rx->query, B_DB::SQL_QUERY_uar_list_jobs_by_idlist, rx->JobIds);
+      ua->db->fill_query(rx->query, BareosDb::SQL_QUERY_uar_list_jobs_by_idlist, rx->JobIds);
       ua->db->list_sql_query(ua->jcr, rx->query, ua->send, HORZ_LIST, true);
 
       ok = true;
@@ -1519,15 +1519,15 @@ static bool select_backups_before_date(UAContext *ua, RESTORE_CTX *rx, char *dat
    }
 
 bail_out:
-   ua->db->sql_query(B_DB::SQL_QUERY_drop_deltabs);
-   ua->db->sql_query(B_DB::SQL_QUERY_uar_del_temp1);
+   ua->db->sql_query(BareosDb::SQL_QUERY_drop_deltabs);
+   ua->db->sql_query(BareosDb::SQL_QUERY_uar_del_temp1);
 
    return ok;
 }
 
 static int restore_count_handler(void *ctx, int num_fields, char **row)
 {
-   RESTORE_CTX *rx = (RESTORE_CTX *)ctx;
+   RestoreContext *rx = (RestoreContext *)ctx;
    rx->JobId = str_to_int64(row[0]);
    rx->found = true;
    return 0;
@@ -1539,7 +1539,7 @@ static int restore_count_handler(void *ctx, int num_fields, char **row)
  */
 static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
 {
-   RESTORE_CTX *rx = (RESTORE_CTX *)ctx;
+   RestoreContext *rx = (RestoreContext *)ctx;
 
    Dmsg2(200, "JobId=%s FileIndex=%s\n", row[0], row[1]);
    rx->JobId = str_to_int64(row[0]);
@@ -1554,7 +1554,7 @@ static int jobid_fileindex_handler(void *ctx, int num_fields, char **row)
  */
 static int jobid_handler(void *ctx, int num_fields, char **row)
 {
-   RESTORE_CTX *rx = (RESTORE_CTX *)ctx;
+   RestoreContext *rx = (RestoreContext *)ctx;
 
    if (bstrcmp(rx->last_jobid, row[0])) {
       return 0;                       /* duplicate id */
@@ -1572,7 +1572,7 @@ static int jobid_handler(void *ctx, int num_fields, char **row)
  */
 static int last_full_handler(void *ctx, int num_fields, char **row)
 {
-   RESTORE_CTX *rx = (RESTORE_CTX *)ctx;
+   RestoreContext *rx = (RestoreContext *)ctx;
 
    rx->JobTDate = str_to_int64(row[1]);
    return 0;
@@ -1585,7 +1585,7 @@ static int fileset_handler(void *ctx, int num_fields, char **row)
 {
    /* row[0] = FileSet (name) */
    if (row[0]) {
-      add_prompt((UAContext *)ctx, row[0]);
+      add_prompt((UaContext *)ctx, row[0]);
    }
    return 0;
 }
@@ -1593,7 +1593,7 @@ static int fileset_handler(void *ctx, int num_fields, char **row)
 /**
  * Free names in the list
  */
-static void free_name_list(NAME_LIST *name_list)
+static void free_name_list(NameList *name_list)
 {
    int i;
 
@@ -1605,9 +1605,9 @@ static void free_name_list(NAME_LIST *name_list)
    name_list->num_ids = 0;
 }
 
-void find_storage_resource(UAContext *ua, RESTORE_CTX &rx, char *Storage, char *MediaType)
+void find_storage_resource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType)
 {
-   STORERES *store;
+   StoreResource *store;
 
    if (rx.store) {
       Dmsg1(200, "Already have store=%s\n", rx.store->name());

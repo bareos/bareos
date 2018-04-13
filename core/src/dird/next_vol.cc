@@ -38,7 +38,7 @@ static int const dbglvl = 50;   /* debug level */
 /**
  * Set storage id if possible
  */
-void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
+void set_storageid_in_mr(StoreResource *store, MediaDbRecord *mr)
 {
    if (store != NULL) {
       mr->StorageId = store->StorageId;
@@ -53,18 +53,18 @@ void set_storageid_in_mr(STORERES *store, MEDIA_DBR *mr)
  *  jcr->wstore
  *  jcr->db
  *  jcr->pool
- *  MEDIA_DBR mr with PoolId set
+ *  MediaDbRecord mr with PoolId set
  *  unwanted_volumes -- list of volumes we don't want
  *  create -- whether or not to create a new volume
  *  prune -- whether or not to prune volumes
  */
-int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
+int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int index,
                                 const char *unwanted_volumes, bool create, bool prune)
 {
    int retry = 0;
    bool ok;
    bool InChanger;
-   STORERES *store = jcr->res.wstore;
+   StoreResource *store = jcr->res.wstore;
 
    bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
    Dmsg3(dbglvl, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
@@ -161,7 +161,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
             set_storageid_in_mr(store, mr);
             Dmsg1(dbglvl, "Find oldest=%d Volume\n", ok);
             if (ok && prune) {
-               UAContext *ua;
+               UaContext *ua;
                Dmsg0(dbglvl, "Try purge Volume.\n");
                /*
                 * 7.  Try to purging oldest volume only if not UA calling us.
@@ -214,7 +214,7 @@ int find_next_volume_for_append(JCR *jcr, MEDIA_DBR *mr, int index,
  * Check if any time limits or use limits have expired if so,
  * set the VolStatus appropriately.
  */
-bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
+bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool expired = false;
    char ed1[50];
@@ -293,7 +293,7 @@ bool has_volume_expired(JCR *jcr, MEDIA_DBR *mr)
  * Returns: on failure - reason = NULL
  *          on success - reason - pointer to reason
  */
-void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **reason)
+void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason)
 {
    int ok;
 
@@ -360,7 +360,7 @@ void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **r
       /*
        * Attempt prune of current volume to see if we can recycle it for use.
        */
-      UAContext *ua;
+      UaContext *ua;
 
       ua = new_ua_context(jcr);
       ok = prune_volume(ua, mr);
@@ -387,10 +387,10 @@ void check_if_volume_valid_or_recyclable(JCR *jcr, MEDIA_DBR *mr, const char **r
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store)
+bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StoreResource *store)
 {
-   MEDIA_DBR smr;                        /* for searching scratch pool */
-   POOL_DBR spr, pr;
+   MediaDbRecord smr;                        /* for searching scratch pool */
+   PoolDbRecord spr, pr;
    bool ok = false;
    bool found = false;
 
@@ -433,7 +433,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
       }
 
       if (found) {
-         POOL_MEM query(PM_MESSAGE);
+         PoolMem query(PM_MESSAGE);
 
          /*
           * Get pool record where the Scratch Volume will go to ensure that we can add a Volume.
@@ -455,7 +455,7 @@ bool get_scratch_volume(JCR *jcr, bool InChanger, MEDIA_DBR *mr, STORERES *store
             goto bail_out;
          }
 
-         memcpy(mr, &smr, sizeof(MEDIA_DBR));
+         memcpy(mr, &smr, sizeof(MediaDbRecord));
          set_storageid_in_mr(store, mr);
 
          /*

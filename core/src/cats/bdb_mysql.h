@@ -30,30 +30,30 @@
  */
 #define MYSQL_CHANGES_PER_BATCH_INSERT 32
 
-class B_DB_MYSQL: public B_DB_PRIV {
+class BareosDbMysql: public BareosDbPrivateInterface {
 private:
    /*
     * Members.
     */
-   MYSQL *m_db_handle;
-   MYSQL m_instance;
-   MYSQL_RES *m_result;
+   MYSQL *db_handle_;
+   MYSQL instance_;
+   MYSQL_RES *result_;
    static const char *query_definitions[];  /**< table of predefined sql queries */
 
 private:
    /*
     * Methods.
     */
-   bool open_database(JCR *jcr);
-   void close_database(JCR *jcr);
+   bool open_database(JobControlRecord *jcr);
+   void close_database(JobControlRecord *jcr);
    bool validate_connection(void);
    void thread_cleanup(void);
-   void escape_string(JCR *jcr, char *snew, char *old, int len);
-   char *escape_object(JCR *jcr, char *old, int len);
-   void unescape_object(JCR *jcr, char *from, int32_t expected_len,
+   void escape_string(JobControlRecord *jcr, char *snew, char *old, int len);
+   char *escape_object(JobControlRecord *jcr, char *old, int len);
+   void unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
                         POOLMEM *&dest, int32_t *len);
-   void start_transaction(JCR *jcr);
-   void end_transaction(JCR *jcr);
+   void start_transaction(JobControlRecord *jcr);
+   void end_transaction(JobControlRecord *jcr);
    bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx);
    bool sql_query_without_handler(const char *query, int flags = 0);
    void sql_free_result(void);
@@ -65,15 +65,15 @@ private:
    SQL_FIELD *sql_fetch_field(void);
    bool sql_field_is_not_null(int field_type);
    bool sql_field_is_numeric(int field_type);
-   bool sql_batch_start(JCR *jcr);
-   bool sql_batch_end(JCR *jcr, const char *error);
-   bool sql_batch_insert(JCR *jcr, ATTR_DBR *ar);
+   bool sql_batch_start(JobControlRecord *jcr);
+   bool sql_batch_end(JobControlRecord *jcr, const char *error);
+   bool sql_batch_insert(JobControlRecord *jcr, AttributesDbRecord *ar);
 
 public:
    /*
     * Methods.
     */
-   B_DB_MYSQL(JCR *jcr,
+   BareosDbMysql(JobControlRecord *jcr,
               const char *db_driver,
               const char *db_name,
               const char *db_user,
@@ -87,7 +87,7 @@ public:
               bool exit_on_fatal,
               bool need_private
               );
-   ~B_DB_MYSQL();
+   ~BareosDbMysql();
 };
 
 #endif /* __BDB_MYSQL_H_ */

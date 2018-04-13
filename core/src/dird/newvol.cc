@@ -41,8 +41,8 @@
 /*
  * Forward referenced functions
  */
-static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
-static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr);
+static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
+static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr);
 
 /**
  * Automatic Volume name creation using the LabelFormat
@@ -50,10 +50,10 @@ static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr
  * The media record must have the PoolId filled in when
  * calling this routine.
  */
-bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
+bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store)
 {
    bool retval = false;
-   POOL_DBR pr;
+   PoolDbRecord pr;
 
    memset(&pr, 0, sizeof(pr));
 
@@ -66,7 +66,7 @@ bool newVolume(JCR *jcr, MEDIA_DBR *mr, STORERES *store)
       goto bail_out;
    }
    if (pr.MaxVols == 0 || pr.NumVols < pr.MaxVols) {
-      memset(mr, 0, sizeof(MEDIA_DBR));
+      memset(mr, 0, sizeof(MediaDbRecord));
       set_pool_dbr_defaults_in_media_dbr(mr, &pr);
       jcr->VolumeName[0] = 0;
       bstrncpy(mr->MediaType, jcr->res.wstore->media_type, sizeof(mr->MediaType));
@@ -119,11 +119,11 @@ bail_out:
    return retval;
 }
 
-static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
+static bool create_simple_name(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    char num[20];
    db_int64_ctx ctx;
-   POOL_MEM query(PM_MESSAGE),
+   PoolMem query(PM_MESSAGE),
             name(PM_NAME);
    char ed1[50];
 
@@ -138,7 +138,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
       ctx.value = pr->NumVols+1;
    }
    for (int i=(int)ctx.value+1; i<(int)ctx.value+100; i++) {
-      MEDIA_DBR tmr;
+      MediaDbRecord tmr;
 
       memset(&tmr, 0, sizeof(tmr));
       sprintf(num, "%04d", i);
@@ -164,7 +164,7 @@ static bool create_simple_name(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
 /**
  * Perform full substitution on Label
  */
-static bool perform_full_name_substitution(JCR *jcr, MEDIA_DBR *mr, POOL_DBR *pr)
+static bool perform_full_name_substitution(JobControlRecord *jcr, MediaDbRecord *mr, PoolDbRecord *pr)
 {
    bool ok = false;
    POOLMEM *label = get_pool_memory(PM_FNAME);

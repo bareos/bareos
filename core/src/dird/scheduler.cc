@@ -47,8 +47,8 @@ const int dbglvl = DBGLVL;
 
 /* Local variables */
 struct job_item {
-   RUNRES *run;
-   JOBRES *job;
+   RunResource *run;
+   JobResource *job;
    time_t runtime;
    int Priority;
    dlink link;                        /* link for list */
@@ -62,7 +62,7 @@ static int const next_check_secs = 60;
 
 /* Forward referenced subroutines */
 static void find_runs();
-static void add_job(JOBRES *job, RUNRES *run, time_t now, time_t runtime);
+static void add_job(JobResource *job, RunResource *run, time_t now, time_t runtime);
 static void dump_job(job_item *ji, const char *msg);
 
 /* Imported subroutines */
@@ -88,11 +88,11 @@ void invalidate_schedules(void) {
  *         Main Bareos Scheduler
  *
  */
-JCR *wait_for_next_job(char *one_shot_job_to_run)
+JobControlRecord *wait_for_next_job(char *one_shot_job_to_run)
 {
-   JCR *jcr;
-   JOBRES *job;
-   RUNRES *run;
+   JobControlRecord *jcr;
+   JobResource *job;
+   RunResource *run;
    time_t now, prev;
    static bool first = true;
    job_item *next_job = NULL;
@@ -103,12 +103,12 @@ JCR *wait_for_next_job(char *one_shot_job_to_run)
       /* Create scheduled jobs list */
       jobs_to_run = New(dlist(next_job, &next_job->link));
       if (one_shot_job_to_run) {            /* one shot */
-         job = (JOBRES *)GetResWithName(R_JOB, one_shot_job_to_run);
+         job = (JobResource *)GetResWithName(R_JOB, one_shot_job_to_run);
          if (!job) {
             Emsg1(M_ABORT, 0, _("Job %s not found\n"), one_shot_job_to_run);
          }
          Dmsg1(5, "Found one_shot_job_to_run %s\n", one_shot_job_to_run);
-         jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+         jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
          set_jcr_defaults(jcr, job);
          return jcr;
       }
@@ -180,7 +180,7 @@ again:
       }
    }
 
-   jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+   jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
    run = next_job->run;               /* pick up needed values */
    job = next_job->job;
 
@@ -236,7 +236,7 @@ again:
    }
 
    if (run->storage) {
-      USTORERES store;
+      UnifiedStoreResource store;
       store.store = run->storage;
       pm_strcpy(store.store_source, _("run override"));
       set_rwstorage(jcr, &store); /* override storage */
@@ -313,9 +313,9 @@ bool is_doy_in_last_week(int year, int doy)
 static void find_runs()
 {
    time_t now, next_hour, runtime;
-   RUNRES *run;
-   JOBRES *job;
-   SCHEDRES *sched;
+   RunResource *run;
+   JobResource *job;
+   ScheduleResource *sched;
    struct tm tm;
    bool is_last_week = false;         /* are we in the last week of a month? */
    bool nh_is_last_week = false;      /* are we in the last week of a month? */
@@ -445,7 +445,7 @@ static void find_runs()
    Dmsg0(dbglvl, "Leave find_runs()\n");
 }
 
-static void add_job(JOBRES *job, RUNRES *run, time_t now, time_t runtime)
+static void add_job(JobResource *job, RunResource *run, time_t now, time_t runtime)
 {
    job_item *ji;
    bool inserted = false;

@@ -45,7 +45,7 @@
 #include "restore.h"
 #include "protos.h"                   /* file daemon prototypes */
 
-extern CLIENTRES *me;                 /* "Global" Client resource */
+extern ClientResource *me;                 /* "Global" Client resource */
 extern CONFIG *my_config;             /* Our Global config */
 
 void terminate_filed(int sig);

@@ -30,12 +30,12 @@
 #include "dird.h"
 
 /* Forward referenced subroutines */
-static void select_job_level(UAContext *ua, JCR *jcr);
-static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc);
-static void select_where_regexp(UAContext *ua, JCR *jcr);
-static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc);
-static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc);
-static int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc);
+static void select_job_level(UaContext *ua, JobControlRecord *jcr);
+static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
+static void select_where_regexp(UaContext *ua, JobControlRecord *jcr);
+static bool scan_command_line_arguments(UaContext *ua, RunContext &rc);
+static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
+static int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc);
 
 /* Imported variables */
 extern struct s_kw ReplaceOptions[];
@@ -46,11 +46,11 @@ extern struct s_kw ReplaceOptions[];
  * Returns: false on error
  *          true if OK
  */
-static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now)
+static inline bool rerun_job(UaContext *ua, JobId_t JobId, bool yes, utime_t now)
 {
-   JOB_DBR jr;
+   JobDbRecord jr;
    char dt[MAX_TIME_LENGTH];
-   POOL_MEM cmdline(PM_MESSAGE);
+   PoolMem cmdline(PM_MESSAGE);
 
    memset(&jr, 0, sizeof(jr));
    jr.JobId = JobId;
@@ -80,7 +80,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    pm_strcpy(ua->cmd, cmdline);
 
    if (jr.ClientId) {
-      CLIENT_DBR cr;
+      ClientDbRecord cr;
 
       memset(&cr, 0, sizeof(cr));
       cr.ClientId = jr.ClientId;
@@ -93,7 +93,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    }
 
    if (jr.PoolId) {
-      POOL_DBR pr;
+      PoolDbRecord pr;
 
       memset(&pr, 0, sizeof(pr));
       pr.PoolId = jr.PoolId;
@@ -108,7 +108,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
       switch (jr.JobType) {
       case JT_COPY:
       case JT_MIGRATE: {
-            JOBRES *job = NULL;
+            JobResource *job = NULL;
 
             job = ua->GetJobResWithName(jr.Name, false);
             if (job) {
@@ -120,7 +120,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
       case JT_BACKUP:
          switch (jr.JobLevel) {
          case L_VIRTUAL_FULL: {
-            JOBRES *job = NULL;
+            JobResource *job = NULL;
 
             job = ua->GetJobResWithName(jr.Name, false);
             if (job) {
@@ -160,7 +160,7 @@ static inline bool rerun_job(UAContext *ua, JobId_t JobId, bool yes, utime_t now
    }
 
    if (jr.FileSetId) {
-      FILESET_DBR fs;
+      FileSetDbRecord fs;
 
       memset(&fs, 0, sizeof(fs));
       fs.FileSetId = jr.FileSetId;
@@ -195,7 +195,7 @@ bail_out:
  * Returns: 0 on error
  *          1 if OK
  */
-bool rerun_cmd(UAContext *ua, const char *cmd)
+bool rerun_cmd(UaContext *ua, const char *cmd)
 {
    int i, j, d, h, s, u;
    int days = 0;
@@ -204,7 +204,7 @@ bool rerun_cmd(UAContext *ua, const char *cmd)
    int until_jobid = 0;
    JobId_t JobId;
    dbid_list ids;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
    utime_t now;
    time_t schedtime;
    char dt[MAX_TIME_LENGTH];
@@ -347,10 +347,10 @@ bail_out:
  *          JobId if OK
  *
  */
-int do_run_cmd(UAContext *ua, const char *cmd)
+int do_run_cmd(UaContext *ua, const char *cmd)
 {
-   JCR *jcr = NULL;
-   RUN_CTX rc;
+   JobControlRecord *jcr = NULL;
+   RunContext rc;
    int status, length;
    bool valid_response;
    bool do_pool_overrides = true;
@@ -369,10 +369,10 @@ int do_run_cmd(UAContext *ua, const char *cmd)
    }
 
    /*
-    * Create JCR to run job.  NOTE!!! after this point, free_jcr() before returning.
+    * Create JobControlRecord to run job.  NOTE!!! after this point, free_jcr() before returning.
     */
    if (!jcr) {
-      jcr = new_jcr(sizeof(JCR), dird_free_jcr);
+      jcr = new_jcr(sizeof(JobControlRecord), dird_free_jcr);
       set_jcr_defaults(jcr, rc.job);
       jcr->unlink_bsr = ua->jcr->unlink_bsr;    /* copy unlink flag from caller */
       ua->jcr->unlink_bsr = false;
@@ -537,12 +537,12 @@ bail_out:
    return 0;                       /* do not run */
 }
 
-bool run_cmd(UAContext *ua, const char *cmd)
+bool run_cmd(UaContext *ua, const char *cmd)
 {
    return (do_run_cmd(ua, ua->cmd) != 0);
 }
 
-int modify_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
+int modify_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    int opt;
 
@@ -829,7 +829,7 @@ try_again:
  * Reset the restore context.
  * This subroutine can be called multiple times, so it must keep any prior settings.
  */
-static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
+static bool reset_restore_context(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    jcr->res.verify_job = rc.verify_job;
    jcr->res.previous_job = rc.previous_job;
@@ -1021,7 +1021,7 @@ static bool reset_restore_context(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    return true;
 }
 
-static void select_where_regexp(UAContext *ua, JCR *jcr)
+static void select_where_regexp(UaContext *ua, JobControlRecord *jcr)
 {
    alist *regs;
    char *strip_prefix, *add_prefix, *add_suffix, *rwhere;
@@ -1159,7 +1159,7 @@ bail_out_reg:
    }
 }
 
-static void select_job_level(UAContext *ua, JCR *jcr)
+static void select_job_level(UaContext *ua, JobControlRecord *jcr)
 {
    if (jcr->is_JobType(JT_BACKUP)) {
       start_prompt(ua, _("Levels:\n"));
@@ -1223,10 +1223,10 @@ static void select_job_level(UAContext *ua, JCR *jcr)
    return;
 }
 
-static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
+static bool display_job_parameters(UaContext *ua, JobControlRecord *jcr, RunContext &rc)
 {
    char ec1[30];
-   JOBRES *job = rc.job;
+   JobResource *job = rc.job;
    char dt[MAX_TIME_LENGTH];
    const char *verify_list = rc.verify_list;
 
@@ -1402,7 +1402,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
                          jcr->plugin_options ? "\n" : "");
          }
       } else {  /* JT_VERIFY */
-         JOB_DBR jr;
+         JobDbRecord jr;
          const char *Name;
          if (jcr->res.verify_job) {
             Name = jcr->res.verify_job->name();
@@ -1721,7 +1721,7 @@ static bool display_job_parameters(UAContext *ua, JCR *jcr, RUN_CTX &rc)
    return true;
 }
 
-static bool scan_command_line_arguments(UAContext *ua, RUN_CTX &rc)
+static bool scan_command_line_arguments(UaContext *ua, RunContext &rc)
 {
    bool kw_ok;
    int i, j;

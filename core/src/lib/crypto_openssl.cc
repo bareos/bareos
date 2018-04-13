@@ -231,7 +231,7 @@ struct X509_Keypair {
 
 /* Message Digest Structure */
 struct Digest {
-   JCR *jcr;
+   JobControlRecord *jcr;
    crypto_digest_t type;
 
 #if OPENSSL_VERSION_NUMBER < 0x10100000L || defined(LIBRESSL_VERSION_NUMBER)
@@ -240,7 +240,7 @@ struct Digest {
       EVP_MD_CTX ctx;
 
    public:
-      Digest(JCR *jcr, crypto_digest_t type)
+      Digest(JobControlRecord *jcr, crypto_digest_t type)
          : jcr(jcr),
          type(type)  {
             EVP_MD_CTX_init(&ctx);
@@ -264,7 +264,7 @@ struct Digest {
          return *ctx;
       }
 
-      Digest(JCR *jcr, crypto_digest_t type)
+      Digest(JobControlRecord *jcr, crypto_digest_t type)
          : jcr(jcr),
          type(type)  {
             ctx = EVP_MD_CTX_new();
@@ -283,7 +283,7 @@ struct Digest {
 /* Message Signature Structure */
 struct Signature {
    SignatureData *sigData;
-   JCR *jcr;
+   JobControlRecord *jcr;
 };
 
 /* Encryption Session Data */
@@ -603,7 +603,7 @@ void crypto_keypair_free(X509_KEYPAIR *keypair)
  *  Returns: A pointer to a DIGEST object on success.
  *           NULL on failure.
  */
-DIGEST *crypto_digest_new(JCR *jcr, crypto_digest_t type)
+DIGEST *crypto_digest_new(JobControlRecord *jcr, crypto_digest_t type)
 {
    DIGEST *digest = new DIGEST(jcr, type);
    const EVP_MD *md = NULL; /* Quell invalid uninitialized warnings */
@@ -693,7 +693,7 @@ void crypto_digest_free(DIGEST *digest)
  *  Returns: A pointer to a SIGNATURE object on success.
  *           NULL on failure.
  */
-SIGNATURE *crypto_sign_new(JCR *jcr)
+SIGNATURE *crypto_sign_new(JobControlRecord *jcr)
 {
    SIGNATURE *sig;
 
@@ -944,7 +944,7 @@ int crypto_sign_encode(SIGNATURE *sig, uint8_t *dest, uint32_t *length)
 
  */
 
-SIGNATURE *crypto_sign_decode(JCR *jcr, const uint8_t *sigData, uint32_t length)
+SIGNATURE *crypto_sign_decode(JobControlRecord *jcr, const uint8_t *sigData, uint32_t length)
 {
    SIGNATURE *sig;
 #if (OPENSSL_VERSION_NUMBER >= 0x0090800FL)
@@ -1547,7 +1547,7 @@ void openssl_post_errors(int code, const char *errstring)
 /*
  * Post all per-thread openssl errors
  */
-void openssl_post_errors(JCR *jcr, int code, const char *errstring)
+void openssl_post_errors(JobControlRecord *jcr, int code, const char *errstring)
 {
    char buf[512];
    unsigned long sslerr;

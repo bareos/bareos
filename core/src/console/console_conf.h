@@ -55,7 +55,7 @@ enum {
 /* Definition of the contents of each Resource */
 
 /* Console "globals" */
-class CONRES : public TLSRES {
+class ConsoleResource : public TlsResource {
    public:
       char *rc_file;                     /**< startup file */
       char *history_file;                /**< command history file */
@@ -63,32 +63,32 @@ class CONRES : public TLSRES {
       uint32_t history_length;           /**< readline history length */
       char *director;                    /**< bind to director */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      CONRES() : TLSRES() {}
+      ConsoleResource() : TlsResource() {}
 };
 
 /* Director */
-class DIRRES : public TLSRES {
+class DirectorResource : public TlsResource {
    public:
       uint32_t DIRport;                  /**< UA server port */
       char *address;                     /**< UA server address */
       utime_t heartbeat_interval;        /**< Interval to send heartbeats to Dir */
-      DIRRES() : TLSRES() {}
+      DirectorResource() : TlsResource() {}
 };
 
 /* Define the Union of all the above
  * resource structure definitions.
  */
 union URES {
-   DIRRES res_dir;
-   CONRES res_cons;
-   RES hdr;
+   DirectorResource res_dir;
+   ConsoleResource res_cons;
+   CommonResourceHeader hdr;
 
-   URES() {new(&hdr) RES();}
+   URES() {new(&hdr) CommonResourceHeader();}
    ~URES() {}
 };
 
-extern CONRES *me;                    /* "Global" Client resource */
+extern ConsoleResource *me;                    /* "Global" Client resource */
 extern CONFIG *my_config;             /* Our Global config */
 
 void init_cons_config(CONFIG *config, const char *configfile, int exit_code);
-bool print_config_schema_json(POOL_MEM &buffer);
+bool print_config_schema_json(PoolMem &buffer);

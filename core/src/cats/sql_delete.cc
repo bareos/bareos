@@ -50,7 +50,7 @@
  *           PoolId = number of Pools deleted (should be 1)
  *           NumVols = number of Media records deleted
  */
-bool B_DB::delete_pool_record(JCR *jcr, POOL_DBR *pr)
+bool BareosDb::delete_pool_record(JobControlRecord *jcr, PoolDbRecord *pr)
 {
    bool retval = false;
    SQL_ROW row;
@@ -144,12 +144,12 @@ static int delete_handler(void *ctx, int num_fields, char **row)
  *       We call it from relabel and delete volume=, both ensure
  *       that the volume is properly purged.
  */
-static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
+static int do_media_purge(BareosDb *mdb, MediaDbRecord *mr)
 {
    int i;
    char ed1[50];
    struct s_del_ctx del;
-   POOL_MEM query(PM_MESSAGE);
+   PoolMem query(PM_MESSAGE);
 
    del.num_ids = 0;
    del.tot_ids = 0;
@@ -190,7 +190,7 @@ static int do_media_purge(B_DB *mdb, MEDIA_DBR *mr)
  * Returns: false on error
  *          true on success
  */
-bool B_DB::delete_media_record(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::delete_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
 
@@ -219,7 +219,7 @@ bail_out:
  * media record itself. But the media status
  * is changed to "Purged".
  */
-bool B_DB::purge_media_record(JCR *jcr, MEDIA_DBR *mr)
+bool BareosDb::purge_media_record(JobControlRecord *jcr, MediaDbRecord *mr)
 {
    bool retval = false;
 
