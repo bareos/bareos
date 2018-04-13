@@ -55,10 +55,6 @@ if [ $# -gt 0 ]; then
          db_type=$1
          shift
          ;;
-      ingres)
-         db_type=$1
-         shift
-         ;;
       *)
          ;;
    esac
@@ -82,9 +78,6 @@ case ${db_type} in
       ;;
    postgresql)
       sql_definitions="${bareos_sql_ddl}/creates/postgresql.sql"
-      ;;
-   ingres)
-      sql_definitions="${bareos_sql_ddl}/creates/ingres.sql"
       ;;
    *)
       echo "Unknown database type $1"
@@ -132,16 +125,6 @@ case ${db_type} in
          echo "Creation of Bareos PostgreSQL tables succeeded."
       else
          echo "Creation of Bareos PostgreSQL tables failed."
-      fi
-      ;;
-   ingres)
-      sql -u${db_user} $* ${db_name} < ${temp_sql_schema}
-
-      retval=$?
-      if test $retval = 0; then
-         echo "Creation of Bareos Ingres tables succeeded."
-      else
-         echo "Creation of Bareos Ingres tables failed."
       fi
       ;;
 esac

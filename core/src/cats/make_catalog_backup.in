@@ -61,9 +61,6 @@ if [ $# -ge 5 ]; then
      postgresql)
        db_type=$5
        ;;
-     ingres)
-       db_type=$5
-       ;;
      *)
        ;;
    esac

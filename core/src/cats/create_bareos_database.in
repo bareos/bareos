@@ -54,10 +54,6 @@ if [ $# -gt 0 ]; then
          db_type=$1
          shift
          ;;
-      ingres)
-         db_type=$1
-         shift
-         ;;
       *)
          ;;
    esac
@@ -132,27 +128,6 @@ END-OF-DATA
          echo "Database encoding bad. Do not use this database"
          echo " "
       fi
-      ;;
-   ingres)
-      #
-      # Use SQL_ASCII to be able to put any filename into
-      # the database even those created with unusual character sets
-      #
-      ENCODING="ENCODING 'SQL_ASCII'"
-
-      #
-      # use UTF8 if you are using standard Unix/Linux LANG specifications
-      # that use UTF8 -- this is normally the default and *should* be
-      # your standard.  Bareos works correctly *only* with correct UTF8.
-      #
-      # Note, with this encoding, if you have any "weird" filenames on
-      # your system (names generated from Win32 or Mac OS), you may
-      # get Bareos batch insert failures.
-      #
-      #ENCODING="ENCODING 'UTF8'"
-
-      createdb -u${db_user} $* ${db_name}
-      retval=$?
       ;;
    *)
       echo "Unknown database type $1"

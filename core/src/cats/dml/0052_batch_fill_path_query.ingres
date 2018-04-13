@@ -1,8 +1,0 @@
-INSERT INTO Path (Path)
-SELECT DISTINCT b.Path
-  FROM batch b
- WHERE NOT EXISTS (
-      SELECT Path
-	FROM Path p
-       WHERE p.Path = b.Path
-       )

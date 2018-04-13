@@ -61,10 +61,6 @@ if [ $# -gt 0 ]; then
          db_type=$1
          shift
          ;;
-      ingres)
-         db_type=$1
-         shift
-         ;;
       *)
          ;;
    esac
@@ -99,9 +95,6 @@ do
          ;;
       postgresql)
          DBVERSION=`psql -d ${db_name} -t --pset format=unaligned -c "SELECT MAX(VersionId) FROM Version;" $*`
-         ;;
-      ingres)
-         DBVERSION="@BDB_VERSION@"
          ;;
       *)
          echo "Unknown database type ${db_type}"
@@ -176,10 +169,6 @@ do
          ;;
       postgresql)
          psql -f ${temp_sql_schema} -d ${db_name} $*
-         retval=$?
-         ;;
-      ingres)
-         sql -u${db_user} $* ${db_name} < ${temp_sql_schema}
          retval=$?
          ;;
    esac

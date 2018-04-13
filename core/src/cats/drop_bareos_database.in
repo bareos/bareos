@@ -51,10 +51,6 @@ if [ $# -gt 0 ]; then
          db_type=$1
          shift
          ;;
-      ingres)
-         db_type=$1
-         shift
-         ;;
       *)
          ;;
    esac
@@ -86,10 +82,6 @@ case ${db_type} in
       ;;
    postgresql)
       dropdb $* ${db_name}
-      retval=$?
-      ;;
-   ingres)
-      destroydb -u${db_user} ${db_name}
       retval=$?
       ;;
 esac

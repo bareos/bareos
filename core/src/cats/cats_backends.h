@@ -81,7 +81,6 @@ static struct backend_interface_mapping_t {
    { "mysql", FALSE, SQL_INTERFACE_TYPE_MYSQL },
    { "postgresql", FALSE, SQL_INTERFACE_TYPE_POSTGRESQL },
    { "sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3 },
-   { "ingres", FALSE, SQL_INTERFACE_TYPE_INGRES },
    { NULL, FALSE, 0 }
 };
 #endif /* __CATS_BACKENDS_H_ */

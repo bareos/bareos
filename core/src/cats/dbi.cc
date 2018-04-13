@@ -108,9 +108,6 @@ B_DB_DBI::B_DB_DBI(JCR *jcr,
    } else if (bstrcasecmp(p, "sqlite3")) {
       m_db_type = SQL_TYPE_SQLITE3;
       bstrncpy(new_db_driver, "sqlite3", sizeof(new_db_driver));
-   } else if (bstrcasecmp(p, "ingres")) {
-      m_db_type = SQL_TYPE_INGRES;
-      bstrncpy(new_db_driver, "ingres", sizeof(new_db_driver));
    } else {
       Jmsg(jcr, M_ABORT, 0, _("Unknown database type: %s\n"), p);
       return;

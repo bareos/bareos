@@ -56,10 +56,6 @@ if [ $# -gt 0 ]; then
          db_type=$1
          shift
          ;;
-      ingres)
-         db_type=$1
-         shift
-         ;;
       *)
          ;;
    esac
@@ -99,16 +95,6 @@ case ${db_type} in
       ;;
    postgresql)
       psql -f ${temp_sql_grants} -d ${db_name} $*
-
-      retval=$?
-      ;;
-   ingres)
-      sql iidbdb $* << END-OF-DATA
-      CREATE USER ${db_user} ${pass}
-      \g
-END-OF-DATA
-
-      sql -u${db_user} $* ${db_name} < ${temp_sql_grants}
 
       retval=$?
       ;;
