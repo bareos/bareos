@@ -929,6 +929,8 @@ static int console_update_history(const char *histfile)
     * can use write_history to create it.
     */
    if (history_truncate_file(histfile, truncate_entries) == 0) {
+     ret = append_history(history_length, histfile);
+   } else {
       ret = write_history(histfile);
    }
 #endif
