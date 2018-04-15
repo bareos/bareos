@@ -27,6 +27,24 @@ ELSE()
    include_directories(. .. ../include ../lmdb)
 ENDIF()
 
+include_directories(
+   ${PTHREAD_INCLUDE_DIRS}
+   ${FASTLZ_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+   ${ACL_INCLUDE_DIRS}
+   ${LZO2_INCLUDE_DIRS}
+   ${CAP_INCLUDE_DIRS}
+   ${WRAP_INCLUDE_DIRS}
+)
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} ${Readline_INCLUDE_DIR} )
+
+MESSAGE( STATUS "src/filed build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
+
+
 set(FDSRCS accurate.cc authenticate.cc crypto.cc fd_plugins.cc fileset.cc sd_cmds.cc verify.cc
     accurate_htable.cc backup.cc dir_cmd.cc filed.cc heartbeat.cc socket_server.cc verify_vol.cc
     accurate_lmdb.cc compression.cc estimate.cc filed_conf.cc restore.cc status.cc)

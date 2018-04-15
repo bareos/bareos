@@ -1,0 +1,190 @@
+#!/bin/sh
+#
+# BAREOS interface to tape libraries and autoloaders for FreeBSD
+# (by Rudolf Cejka <cej...@fit.vutbr.cz>, v1.2, 2012/11/14)
+#
+# If you set in your Device resource
+#   Changer Command = "path-to-this-script/chio-changer %c %o %S %a %d"
+# you will have the following input to this script:
+#   chio-changer "changer-device" "command" "slot" "tape-device" "drive-index"
+#                       $1           $2       $3         $4            $5
+# for example (on a FreeBSD system):
+#   chio-changer /dev/ch0 load 1 /dev/nsa0 0
+#
+# If you change the script, take care to return either the chio exit
+# code or a 0. If the script exits with a non-zero exit code, BAREOS
+# will assume the request failed.
+#
+
+PROGNAME=`basename $0`
+
+# Uncomment the following line, if you want to log debug output.
+#DEBUG=/var/run/bareos/${PROGNAME}.log
+
+# Uncomment the following line, if you need to eject a tape before moving
+# it from the drive.
+#OFFLINE=yes
+
+# Uncomment one or more of the following lines, if you need to wait for
+# some time (in seconds) after unloading, loading or transferring a tape.
+#OFFLINE_SLEEP=10
+#LOAD_SLEEP=10
+#MOVE_SLEEP=10
+
+# Uncomment the following line, if you do not have a changer with volume
+# reader.
+#FAKE_BARCODES=/usr/local/etc/bareos-barcodes
+
+usage()
+{
+  cat <<EOF
+Usage: ${PROGNAME} <changer-device> <cmd> [slot] [tape-device] [drive-index]
+
+Commands (<cmd>):
+  unload          Unload a tape into the slot from where it was loaded
+  load <slot>     Load a tape from the slot <slot> (1-based)
+  transfer <slot> <slotdst> Transfer a tape from the slot <slot> to
+                  the slot <slotdst> (1-based)
+  list            List full storage slots
+  listall         List all storage slots and drives with source information
+  loaded          Give slot from where the tape was loaded (0 = empty drive)
+  slots           Give number of available slots
+
+Example:
+  ${PROGNAME} /dev/ch0 load 1        Load a tape from the slot 1
+
+EOF
+  exit 1
+}
+
+# Default settings
+CHANGER=/dev/ch0
+TAPE=/dev/nsa0
+DRIVE=0
+
+CHIO=/bin/chio
+MT=/usr/bin/mt
+
+if [ -n "${DEBUG}" ]; then
+  MSG=$0
+  for PAR; do MSG="${MSG} \"${PAR}\""; done
+  echo `date +"%Y/%m/%d %H:%M:%S"` ${MSG} >> ${DEBUG}
+fi
+
+if [ -n "$1" ]; then
+  CHANGER=$1;
+fi
+COMMAND=$2
+SLOT=$3
+SLOTDST=$4
+if [ -n "$4" ]; then
+  TAPE=$4
+fi
+if [ -n "$5" ]; then
+  DRIVE=$5
+fi
+
+case ${COMMAND} in
+unload)
+  if [ "${OFFLINE}" = yes ]; then
+    ${MT} -f ${TAPE} offline
+    if [ $? = 0 -a -n "${OFFLINE_SLEEP}" ]; then
+      sleep ${OFFLINE_SLEEP}
+    fi
+  fi
+  if [ -z "${SLOT}" ]; then
+    ${CHIO} -f ${CHANGER} return drive ${DRIVE}
+  else
+    ${CHIO} -f ${CHANGER} move drive ${DRIVE} slot $((${SLOT} - 1))
+  fi
+  if [ $? -ne 0 ]; then
+    # In case of an error, try to unload the cartridge to the first free slot
+    FREE=`${CHIO} -f ${CHANGER} status slot | \
+      sed -ne '/FULL/d;s/^slot *\([0-9]*\):.*/\1/p' | \
+      awk 'BEGIN { n = 0 } { n = $1 + 1; exit } END { print n }'`
+    if [ ${FREE} -gt 0 ]; then
+      ${CHIO} -f ${CHANGER} move drive ${DRIVE} slot $((${FREE} - 1))
+    else
+      exit 1
+    fi
+  fi
+  ;;
+load)
+  if [ -z "${SLOT}" ]; then
+    usage
+  fi
+  ${CHIO} -f ${CHANGER} move slot $((${SLOT} - 1)) drive ${DRIVE}
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  if [ -n "${LOAD_SLEEP}" ]; then
+    sleep ${LOAD_SLEEP}
+  fi
+  ;;
+transfer)
+  if [ -z "${SLOT}" -o -z "${SLOTDST}" ]; then
+    usage
+  fi
+  ${CHIO} -f ${CHANGER} move slot $((${SLOT} - 1)) slot $((${SLOTDST} - 1))
+  if [ $? -ne 0 ]; then
+    exit 1
+  fi
+  if [ -n "${MOVE_SLEEP}" ]; then
+    sleep ${MOVE_SLEEP}
+  fi
+  ;;
+list)
+  if [ -z "${FAKE_BARCODES}" ]; then
+    ${CHIO} -f ${CHANGER} status -v slot | \
+      sed -ne 's/^slot *\([0-9]*\):.*FULL.*voltag.*<\([^:]*\):.*/\1:\2/p' | \
+      awk -F: '{ print $1 + 1 ":" $2 }'
+  else
+    if [ -f "${FAKE_BARCODES}" ]; then
+      grep -v -e "^#" -e "^$" < ${FAKE_BARCODES}
+    else
+      echo "${PROGNAME}: Barcode file ${FAKE_BARCODES} is missing"
+      exit 1
+    fi
+  fi
+  ;;
+listall)
+  if [ -z "${FAKE_BARCODES}" ]; then
+    ${CHIO} -f ${CHANGER} status -vS | \
+      sed -ne '
+      s/^slot *\([0-9]*\):.*ENAB.*FULL.*voltag.*<\([^:]*\):.*/I:\1:F:\2/p;t
+      s/^slot *\([0-9]*\):.*FULL.*voltag.*<\([^:]*\):.*/S:\1:F:\2/p;t
+      s/^drive *\([0-9]*\):.*FULL.*voltag.*<\([^:]*\):.*source.*<[^0-9]*\([0-9]*\)>.*/D:\1:F:\3:\2/p;t
+      s/^slot *\([0-9]*\):.*ENAB.*voltag.*<\([^:]*\):.*/I:\1:E/p;t
+      s/^slot *\([0-9]*\):.*voltag.*<\([^:]*\):.*/S:\1:E/p;t
+      s/^drive *\([0-9]*\):.*voltag.*<\([^:]*\):.*/D:\1:E/p' | \
+      awk -F: '{ for (n = 1; n <= NF; n++) printf "%s%s",
+      (n == ($1 == "D" ? 4 : 2)) ? ($n == "" ? 0 : $n + 1) : $n,
+      (n == NF) ? "\n" : ":" }'
+  else
+    if [ -f "${FAKE_BARCODES}" ]; then
+      grep -v -e "^#" -e "^$" < ${FAKE_BARCODES} | \
+        awk -F: '{ print "S:" $1 (match($2, "^ *$") ? ":E" : ":F:" $2) }'
+    else
+      echo "${PROGNAME}: Barcode file ${FAKE_BARCODES} is missing"
+      exit 1
+    fi
+  fi
+  ;;
+loaded)
+  # If a tape is loaded, but the source slot is unknown (for example,
+  # after library reboot), try to report the first free slot
+  FREE=`${CHIO} -f ${CHANGER} status slot | \
+    sed -ne '/FULL/d;s/^slot *\([0-9]*\):.*/\1/p' | \
+    awk 'BEGIN { n = 0 } { n = $1 + 1; exit } END { print n }'`
+  ${CHIO} -f ${CHANGER} status -S drive | \
+    sed -ne 's/^drive *'${DRIVE}':.*FULL.*source.*<[^0-9]*\([0-9]*\)>.*/\1/p' \
+    | awk 'BEGIN { n = 0 } { n = ($1 == "") ? '${FREE}' : $1 + 1 } \
+    END { print n }'
+  ;;
+slots)
+  ${CHIO} -f ${CHANGER} status | grep -c "^slot "
+  ;;
+*)
+  usage
+  ;;
+esac

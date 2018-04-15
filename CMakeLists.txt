@@ -20,6 +20,10 @@
 cmake_minimum_required(VERSION 3.0)
 project(bareos)
 
+SET(CMAKE_SKIP_INSTALL_ALL_DEPENDENCY TRUE)
+SET(CMAKE_VERBOSE_MAKEFILE TRUE)
+
+
 # switch on CXX 11 Support
 #
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "SunOS")
@@ -35,9 +39,41 @@ endif()
 
 
 
-
 if (NOT ${CMAKE_SYSTEM_NAME} MATCHES "Windows")
-include_directories(/usr/include)
+   include_directories(/usr/include)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+
+   # sqlite, openssl, and readline are brew keg-only so not linked in local/include
+   SET(CMAKE_FIND_FRAMEWORK LAST)
+   SET(SQLITE_ROOT_DIR "/usr/local/opt/sqlite")
+   SET(Readline_ROOT_DIR "/usr/local/opt/readline")
+   SET(READLINE_INCLUDE_DIRS "/usr/local/opt/readline/include")
+   SET(OPENSSL_ROOT_DIR "/usr/local/opt/openssl")
+   SET(OPENSSL_INCLUDE_DIRS "/usr/local/opt/openssl/include")
+
+   include_directories(
+         /usr/local/include
+   )
+   IF( HAVE_OPENSSL )
+      include_directories( ${OPENSSL_INCLUDE_DIRS} )
+   ENDIF()
+   IF( HAVE_PTHREAD )
+      include_directories( ${PTHREAD_INCLUDE_DIRS} )
+   ENDIF()
+   IF( HAVE_FASTLZ )
+      include_directories( ${FASTLZ_INCLUDE_DIRS} )
+   ENDIF()
+
+   # sqlite and readline are brew keg-only so not linked in local/lib
+   link_directories(
+         /usr/local/lib
+   )
+
+   # Apple lib linker wants all symbols defined at link time by default.
+   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-undefined -Wl,dynamic_lookup")
+   set(CMAKE_MODULE_LINKER_FLAGS "${CMAKE_MODULE_LINKER_FLAGS} -Wl,-undefined -Wl,dynamic_lookup")
 endif()
 
 set(CMAKE_MODULE_PATH
@@ -47,8 +83,6 @@ set(CMAKE_MODULE_PATH
 SET(host ${CMAKE_SYSTEM})
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-
 
 
 
@@ -99,6 +133,15 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
    include_directories(/usr/local/include)
    link_directories(/usr/local/lib)
    link_libraries(intl)
+endif()
+
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   set(HAVE_DARWIN_OS 1)
+   set(NO_GETTEXT 1)
+   set(PSCMD "ps -e")
+   if(POLICY CMP0068)
+      cmake_policy(SET CMP0068 NEW)
+   endif()
 endif()
 
 # hpux
@@ -153,6 +196,9 @@ INCLUDE(BareosSetVariableDefaults)
 if (${CMAKE_SYSTEM_NAME} MATCHES "AIX")
    SET(ENABLE_NLS 0)
 endif()
+if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   SET(ENABLE_NLS 0)
+endif()
 
 INCLUDE(BareosGetDistInfo)
 
@@ -161,6 +207,11 @@ INCLUDE(BareosGenerateDebianInfo)
 IF (${CMAKE_SYSTEM_NAME} MATCHES "Windows")
    add_definitions(-DMINGW64 -DHAVE_WIN32 -DHAVE_MINGW -D_WIN32_WINNT=${WINDOWS_VERSION})
    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -m${WINDOWS_BITS} -mwin32 -mthreads")
+ENDIF()
+
+IF (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
+   set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-varargs -Wno-null-conversion")
+   set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-varargs -Wno-null-conversion")
 ENDIF()
 
 # set INSTALL_LIB_DIR automatically to lib or lib64 automatically
@@ -205,7 +256,6 @@ set(dbdriver sqlite3)
 set (BAREOS "Bareos")
 #set(CONFDIR \"${CMAKE_INSTALL_FULL_SYSCONFDIR}\")
 set(LOCALEDIR \"${CMAKE_INSTALL_FULL_LOCALEDIR}\")
-
 
 
 
@@ -353,7 +403,6 @@ MESSAGE( STATUS "MSVC70: " ${MSVC70} )
 MESSAGE( STATUS "MSVC71: " ${MSVC71} )
 MESSAGE( STATUS "MSVC80: " ${MSVC80} )
 MESSAGE( STATUS "CMAKE_COMPILER_2005: " ${CMAKE_COMPILER_2005} )
-
 
 # set this to true if you don't want to rebuild the object files if the rules have changed,
 # but not the actual source files or headers (e.g. if you changed the some compiler switches)
@@ -592,9 +641,11 @@ MESSAGE("   Install libraries:            ${libdir} ")
 MESSAGE("   Install system config files:  ${sysconfdir} ")
 MESSAGE("   Install Bareos config dir:    ${confdir} ")
 MESSAGE("   Install Bareos config files:  ${configtemplatedir} ")
+MESSAGE("   Log directory:                ${logdir} ")
 MESSAGE("   Scripts directory:            ${scriptdir} ")
 MESSAGE("   Archive directory:            ${archivedir} ")
 MESSAGE("   Working directory:            ${workingdir} ")
+MESSAGE("   BSR directory:                ${bsrdir} ")
 MESSAGE("   PID directory:                ${piddir} ")
 MESSAGE("   Subsys directory:             ${subsysdir} ")
 MESSAGE("   Man directory:                ${mandir} ")

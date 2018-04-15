@@ -32,6 +32,24 @@ ELSE()
    include_directories(../.. . ../../include ../../dird)
 ENDIF()
 
+include_directories(
+   ${PTHREAD_INCLUDE_DIRS}
+   ${FASTLZ_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+   ${ACL_INCLUDE_DIRS}
+   ${LZO2_INCLUDE_DIRS}
+   ${CAP_INCLUDE_DIRS}
+   ${WRAP_INCLUDE_DIRS}
+)
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} ${Readline_INCLUDE_DIR} )
+
+MESSAGE( STATUS "src/plugins/dird build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
+
+
 IF(HAVE_PYTHON)
    add_library(python-dir MODULE python-dir.cc)
    # do not prefix with "lib"

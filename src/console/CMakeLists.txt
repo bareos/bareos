@@ -19,6 +19,23 @@
 
 include_directories(. .. ../include )
 
+include_directories(
+   ${PTHREAD_INCLUDE_DIRS}
+   ${FASTLZ_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+   ${ACL_INCLUDE_DIRS}
+   ${LZO2_INCLUDE_DIRS}
+   ${CAP_INCLUDE_DIRS}
+   ${WRAP_INCLUDE_DIRS}
+)
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} ${Readline_INCLUDE_DIR} )
+
+MESSAGE( STATUS "src/console build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
+
 SET (BCONSSRCS console.cc console_conf.cc)
 IF(HAVE_WIN32)
    LIST(APPEND BCONSSRCS ../win32/console/consoleres.rc)

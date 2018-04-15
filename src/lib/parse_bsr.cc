@@ -214,16 +214,16 @@ BSR *parse_bsr(JCR *jcr, char *fname)
             fname, be.bstrerror());
    }
    lc->caller_ctx = (void *)jcr;
-   while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
+   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(300, "parse got token=%s\n", lex_tok_to_str(token));
-      if (token == T_EOL) {
+      if (token == BCT_EOL) {
          continue;
       }
       for (i=0; items[i].name; i++) {
          if (bstrcasecmp(items[i].name, lc->str)) {
-            token = lex_get_token(lc, T_ALL);
-            Dmsg1 (300, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
-            if (token != T_EQUALS) {
+            token = lex_get_token(lc, BCT_ALL);
+            Dmsg1 (300, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
+            if (token != BCT_EQUALS) {
                scan_err1(lc, "expected an equals, got: %s", lc->str);
                bsr = NULL;
                break;
@@ -269,8 +269,8 @@ static BSR *store_vol(LEX *lc, BSR *bsr)
    BSR_VOLUME *volume;
    char *p, *n;
 
-   token = lex_get_token(lc, T_STRING);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_STRING);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    if (bsr->volume) {
@@ -313,8 +313,8 @@ static BSR *store_mediatype(LEX *lc, BSR *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, T_STRING);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_STRING);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    if (!bsr->volume) {
@@ -333,8 +333,8 @@ static BSR *store_nothing(LEX *lc, BSR *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, T_STRING);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_STRING);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    return bsr;
@@ -347,8 +347,8 @@ static BSR *store_device(LEX *lc, BSR *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, T_STRING);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_STRING);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    if (!bsr->volume) {
@@ -369,8 +369,8 @@ static BSR *store_client(LEX *lc, BSR *bsr)
    BSR_CLIENT *client;
 
    for (;;) {
-      token = lex_get_token(lc, T_NAME);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_NAME);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       client = (BSR_CLIENT *)malloc(sizeof(BSR_CLIENT));
@@ -388,8 +388,8 @@ static BSR *store_client(LEX *lc, BSR *bsr)
             { }
          bc->next = client;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -402,8 +402,8 @@ static BSR *store_job(LEX *lc, BSR *bsr)
    BSR_JOB *job;
 
    for (;;) {
-      token = lex_get_token(lc, T_NAME);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_NAME);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       job = (BSR_JOB *)malloc(sizeof(BSR_JOB));
@@ -424,8 +424,8 @@ static BSR *store_job(LEX *lc, BSR *bsr)
             { }
          bc->next = job;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -438,8 +438,8 @@ static BSR *store_findex(LEX *lc, BSR *bsr)
    BSR_FINDEX *findex;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       findex = (BSR_FINDEX *)malloc(sizeof(BSR_FINDEX));
@@ -461,8 +461,8 @@ static BSR *store_findex(LEX *lc, BSR *bsr)
             {  }
          bs->next = findex;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -475,8 +475,8 @@ static BSR *store_jobid(LEX *lc, BSR *bsr)
    BSR_JOBID *jobid;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       jobid = (BSR_JOBID *)malloc(sizeof(BSR_JOBID));
@@ -498,8 +498,8 @@ static BSR *store_jobid(LEX *lc, BSR *bsr)
             {  }
          bs->next = jobid;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -510,8 +510,8 @@ static BSR *store_count(LEX *lc, BSR *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, T_PINT32);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_PINT32);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    bsr->count = lc->u.pint32_val;
@@ -524,8 +524,8 @@ static BSR *store_fileregex(LEX *lc, BSR *bsr)
    int token;
    int rc;
 
-   token = lex_get_token(lc, T_STRING);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_STRING);
+   if (token == BCT_ERROR) {
       return NULL;
    }
 
@@ -569,8 +569,8 @@ static BSR *store_volfile(LEX *lc, BSR *bsr)
    BSR_VOLFILE *volfile;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       volfile = (BSR_VOLFILE *)malloc(sizeof(BSR_VOLFILE));
@@ -592,8 +592,8 @@ static BSR *store_volfile(LEX *lc, BSR *bsr)
             {  }
          bs->next = volfile;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -609,8 +609,8 @@ static BSR *store_volblock(LEX *lc, BSR *bsr)
    BSR_VOLBLOCK *volblock;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       volblock = (BSR_VOLBLOCK *)malloc(sizeof(BSR_VOLBLOCK));
@@ -632,8 +632,8 @@ static BSR *store_volblock(LEX *lc, BSR *bsr)
             {  }
          bs->next = volblock;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -649,8 +649,8 @@ static BSR *store_voladdr(LEX *lc, BSR *bsr)
    BSR_VOLADDR *voladdr;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT64_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT64_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       voladdr = (BSR_VOLADDR *)malloc(sizeof(BSR_VOLADDR));
@@ -672,8 +672,8 @@ static BSR *store_voladdr(LEX *lc, BSR *bsr)
             {  }
          bs->next = voladdr;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -686,8 +686,8 @@ static BSR *store_sessid(LEX *lc, BSR *bsr)
    BSR_SESSID *sid;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32_RANGE);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32_RANGE);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       sid = (BSR_SESSID *)malloc(sizeof(BSR_SESSID));
@@ -709,8 +709,8 @@ static BSR *store_sessid(LEX *lc, BSR *bsr)
             {  }
          bs->next = sid;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -723,8 +723,8 @@ static BSR *store_sesstime(LEX *lc, BSR *bsr)
    BSR_SESSTIME *stime;
 
    for (;;) {
-      token = lex_get_token(lc, T_PINT32);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_PINT32);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       stime = (BSR_SESSTIME *)malloc(sizeof(BSR_SESSTIME));
@@ -745,8 +745,8 @@ static BSR *store_sesstime(LEX *lc, BSR *bsr)
             { }
          bs->next = stime;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -759,8 +759,8 @@ static BSR *store_stream(LEX *lc, BSR *bsr)
    BSR_STREAM *stream;
 
    for (;;) {
-      token = lex_get_token(lc, T_INT32);
-      if (token == T_ERROR) {
+      token = lex_get_token(lc, BCT_INT32);
+      if (token == BCT_ERROR) {
          return NULL;
       }
       stream = (BSR_STREAM *)malloc(sizeof(BSR_STREAM));
@@ -781,8 +781,8 @@ static BSR *store_stream(LEX *lc, BSR *bsr)
             { }
          bs->next = stream;
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token != T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token != BCT_COMMA) {
          break;
       }
    }
@@ -793,8 +793,8 @@ static BSR *store_slot(LEX *lc, BSR *bsr)
 {
    int token;
 
-   token = lex_get_token(lc, T_PINT32);
-   if (token == T_ERROR) {
+   token = lex_get_token(lc, BCT_PINT32);
+   if (token == BCT_ERROR) {
       return NULL;
    }
    if (!bsr->volume) {

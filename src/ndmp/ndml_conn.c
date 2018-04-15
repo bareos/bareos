@@ -823,7 +823,7 @@ ndmconn_xdr_nmb (struct ndmconn *conn,
 		}
 	}
 	if (nmb->header.error == NDMP0_NO_ERR) {
-		if (!(*xdr_body) (&conn->xdrs, &nmb->body)) {
+		if (!(*xdr_body) (&conn->xdrs, &nmb->body, 0)) {
 			ndmconn_abort (conn);
 			return ndmconn_set_err_msg (conn, "xdr-body");
 		}

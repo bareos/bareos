@@ -161,7 +161,7 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code,
    char *str;
 
    for (;;) {
-      lex_get_token(lc, T_NAME);            /* expect at least one type */
+      lex_get_token(lc, BCT_NAME);            /* expect at least one type */
       found = false;
       if (lc->str[0] == '!') {
          is_not = true;
@@ -195,7 +195,7 @@ static void scan_types(LEX *lc, MSGSRES *msg, int dest_code,
          break;
       }
       Dmsg0(900, "call lex_get_token() to eat comma\n");
-      lex_get_token(lc, T_ALL);          /* eat comma */
+      lex_get_token(lc, BCT_ALL);          /* eat comma */
    }
    Dmsg0(900, "Done scan_types()\n");
 }
@@ -260,10 +260,10 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             /*
              * Pick up a single facility.
              */
-            token = lex_get_token(lc, T_NAME);   /* Scan destination */
+            token = lex_get_token(lc, BCT_NAME);   /* Scan destination */
             pm_strcpy(dest, lc->str);
             dest_len = lc->str_len;
-            token = lex_get_token(lc, T_SKIP_EOL);
+            token = lex_get_token(lc, BCT_SKIP_EOL);
 
             scan_types(lc, (MSGSRES *)(item->value), item->code, dest, NULL, NULL);
             free_pool_memory(dest);
@@ -291,7 +291,7 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
           * Pick up comma separated list of destinations.
           */
          for (;;) {
-            token = lex_get_token(lc, T_NAME);   /* Scan destination */
+            token = lex_get_token(lc, BCT_NAME);   /* Scan destination */
             dest = check_pool_memory_size(dest, dest_len + lc->str_len + 2);
             if (dest[0] != 0) {
                pm_strcat(dest, " ");  /* Separate multiple destinations with space */
@@ -300,11 +300,11 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
             pm_strcat(dest, lc->str);
             dest_len += lc->str_len;
             Dmsg2(900, "store_msgs newdest=%s: dest=%s:\n", lc->str, NPRT(dest));
-            token = lex_get_token(lc, T_SKIP_EOL);
-            if (token == T_COMMA) {
+            token = lex_get_token(lc, BCT_SKIP_EOL);
+            if (token == BCT_COMMA) {
                continue;           /* Get another destination */
             }
-            if (token != T_EQUALS) {
+            if (token != BCT_EQUALS) {
                scan_err1(lc, _("expected an =, got: %s"), lc->str);
                return;
             }
@@ -322,12 +322,12 @@ static void store_msgs(LEX *lc, RES_ITEM *item, int index, int pass)
          /*
           * Pick up a single destination.
           */
-         token = lex_get_token(lc, T_NAME);   /* Scan destination */
+         token = lex_get_token(lc, BCT_NAME);   /* Scan destination */
          pm_strcpy(dest, lc->str);
          dest_len = lc->str_len;
-         token = lex_get_token(lc, T_SKIP_EOL);
+         token = lex_get_token(lc, BCT_SKIP_EOL);
          Dmsg1(900, "store_msgs dest=%s:\n", NPRT(dest));
-         if (token != T_EQUALS) {
+         if (token != BCT_EQUALS) {
             scan_err1(lc, _("expected an =, got: %s"), lc->str);
             return;
          }
@@ -355,7 +355,7 @@ static void store_name(LEX *lc, RES_ITEM *item, int index, int pass)
    POOLMEM *msg = get_pool_memory(PM_EMSG);
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (!is_name_valid(lc->str, msg)) {
       scan_err1(lc, "%s\n", msg);
       return;
@@ -386,7 +386,7 @@ static void store_strname(LEX *lc, RES_ITEM *item, int index, int pass)
    /*
     * Store the name
     */
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -408,7 +408,7 @@ static void store_str(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -430,7 +430,7 @@ static void store_stdstr(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -454,7 +454,7 @@ static void store_dir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -476,7 +476,7 @@ static void store_stdstrdir(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       /*
        * If a default was set free it first.
@@ -502,7 +502,7 @@ static void store_md5password(LEX *lc, RES_ITEM *item, int index, int pass)
    s_password *pwd;
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       pwd = item->pwdvalue;
 
@@ -546,7 +546,7 @@ static void store_clearpassword(LEX *lc, RES_ITEM *item, int index, int pass)
    s_password *pwd;
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    if (pass == 1) {
       pwd = item->pwdvalue;
 
@@ -572,7 +572,7 @@ static void store_res(LEX *lc, RES_ITEM *item, int index, int pass)
    RES *res;
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 2) {
       res = GetResWithName(item->code, lc->str);
       if (res == NULL) {
@@ -627,7 +627,7 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
       list = item->alistvalue[i];
 
       for (;;) {
-         lex_get_token(lc, T_NAME);   /* scan next item */
+         lex_get_token(lc, BCT_NAME);   /* scan next item */
          res = GetResWithName(item->code, lc->str);
          if (res == NULL) {
             scan_err3(lc, _("Could not find config Resource \"%s\" referenced on line %d : %s\n"),
@@ -639,7 +639,7 @@ static void store_alist_res(LEX *lc, RES_ITEM *item, int index, int pass)
          if (lc->ch != ',') {         /* if no other item follows */
             break;                    /* get out */
          }
-         lex_get_token(lc, T_ALL);    /* eat comma */
+         lex_get_token(lc, BCT_ALL);    /* eat comma */
       }
    }
    scan_to_eol(lc);
@@ -661,7 +661,7 @@ static void store_alist_str(LEX *lc, RES_ITEM *item, int index, int pass)
       }
       list = *(item->alistvalue);
 
-      lex_get_token(lc, T_STRING);   /* scan next item */
+      lex_get_token(lc, BCT_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
 
@@ -705,7 +705,7 @@ static void store_alist_dir(LEX *lc, RES_ITEM *item, int index, int pass)
       }
       list = *(item->alistvalue);
 
-      lex_get_token(lc, T_STRING);   /* scan next item */
+      lex_get_token(lc, BCT_STRING);   /* scan next item */
       Dmsg4(900, "Append %s to alist %p size=%d %s\n",
             lc->str, list, list->size(), item->name);
 
@@ -746,7 +746,7 @@ static void store_plugin_names(LEX *lc, RES_ITEM *item, int index, int pass)
    URES *res_all = (URES *)my_config->m_res_all;
 
    if (pass == 2) {
-      lex_get_token(lc, T_STRING);   /* scan next item */
+      lex_get_token(lc, BCT_STRING);   /* scan next item */
 
       if (!*(item->alistvalue)) {
          *(item->alistvalue) = New(alist(10, owned_by_alist));
@@ -786,7 +786,7 @@ static void store_defs(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    RES *res;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 2) {
       Dmsg2(900, "Code=%d name=%s\n", item->code, lc->str);
       res = GetResWithName(item->code, lc->str);
@@ -806,7 +806,7 @@ static void store_int16(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_INT16);
+   lex_get_token(lc, BCT_INT16);
    *(item->i16value) = lc->u.int16_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -817,7 +817,7 @@ static void store_int32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_INT32);
+   lex_get_token(lc, BCT_INT32);
    *(item->i32value) = lc->u.int32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -831,7 +831,7 @@ static void store_pint16(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_PINT16);
+   lex_get_token(lc, BCT_PINT16);
    *(item->ui16value) = lc->u.pint16_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -842,7 +842,7 @@ static void store_pint32(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_PINT32);
+   lex_get_token(lc, BCT_PINT32);
    *(item->ui32value) = lc->u.pint32_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -856,7 +856,7 @@ static void store_int64(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_INT64);
+   lex_get_token(lc, BCT_INT64);
    *(item->i64value) = lc->u.int64_val;
    scan_to_eol(lc);
    set_bit(index, res_all->hdr.item_present);
@@ -883,22 +883,22 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
    URES *res_all = (URES *)my_config->m_res_all;
 
    Dmsg0(900, "Enter store_unit\n");
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    errno = 0;
    switch (token) {
-   case T_NUMBER:
-   case T_IDENTIFIER:
-   case T_UNQUOTED_STRING:
+   case BCT_NUMBER:
+   case BCT_IDENTIFIER:
+   case BCT_UNQUOTED_STRING:
       bstrncpy(bsize, lc->str, sizeof(bsize));  /* save first part */
       /*
        * If terminated by space, scan and get modifier
        */
       while (lc->ch == ' ') {
-         token = lex_get_token(lc, T_ALL);
+         token = lex_get_token(lc, BCT_ALL);
          switch (token) {
-         case T_NUMBER:
-         case T_IDENTIFIER:
-         case T_UNQUOTED_STRING:
+         case BCT_NUMBER:
+         case BCT_IDENTIFIER:
+         case BCT_UNQUOTED_STRING:
             bstrncat(bsize, lc->str, sizeof(bsize));
             break;
          }
@@ -940,7 +940,7 @@ static void store_int_unit(LEX *lc, RES_ITEM *item, int index, int pass,
                 (type == STORE_SIZE)?_("size"):_("speed"), lc->str);
       return;
    }
-   if (token != T_EOL) {
+   if (token != BCT_EOL) {
       scan_to_eol(lc);
    }
    set_bit(index, res_all->hdr.item_present);
@@ -982,22 +982,22 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
    char period[500];
    URES *res_all = (URES *)my_config->m_res_all;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    errno = 0;
    switch (token) {
-   case T_NUMBER:
-   case T_IDENTIFIER:
-   case T_UNQUOTED_STRING:
+   case BCT_NUMBER:
+   case BCT_IDENTIFIER:
+   case BCT_UNQUOTED_STRING:
       bstrncpy(period, lc->str, sizeof(period));  /* get first part */
       /*
        * If terminated by space, scan and get modifier
        */
       while (lc->ch == ' ') {
-         token = lex_get_token(lc, T_ALL);
+         token = lex_get_token(lc, BCT_ALL);
          switch (token) {
-         case T_NUMBER:
-         case T_IDENTIFIER:
-         case T_UNQUOTED_STRING:
+         case BCT_NUMBER:
+         case BCT_IDENTIFIER:
+         case BCT_UNQUOTED_STRING:
             bstrncat(period, lc->str, sizeof(period));
             break;
          }
@@ -1012,7 +1012,7 @@ static void store_time(LEX *lc, RES_ITEM *item, int index, int pass)
       scan_err1(lc, _("expected a time period, got: %s"), lc->str);
       return;
    }
-   if (token != T_EOL) {
+   if (token != BCT_EOL) {
       scan_to_eol(lc);
    }
    set_bit(index, res_all->hdr.item_present);
@@ -1026,7 +1026,7 @@ static void store_bit(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       set_bit(item->code, item->bitvalue);
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
@@ -1047,7 +1047,7 @@ static void store_bool(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       *item->boolvalue = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
@@ -1069,7 +1069,7 @@ static void store_label(LEX *lc, RES_ITEM *item, int index, int pass)
    int i;
    URES *res_all = (URES *)my_config->m_res_all;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the label pass 2 so that type is defined
     */
@@ -1137,16 +1137,16 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
    } next_line = EMPTYLINE;
    int port = str_to_int32(item->default_value);
 
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token != T_BOB) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (token != BCT_BOB) {
       scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
    }
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token == T_EOB) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (token == BCT_EOB) {
       scan_err0(lc, _("Empty addr block is not allowed"));
    }
    do {
-      if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
+      if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
          scan_err1(lc, _("Expected a string, got: %s"), lc->str);
       }
       if (bstrcasecmp("ip", lc->str) || bstrcasecmp("ipv4", lc->str)) {
@@ -1162,19 +1162,19 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
          scan_err1(lc, _("Expected a string [ip|ipv4], got: %s"), lc->str);
       }
 #endif
-      token = lex_get_token(lc, T_SKIP_EOL);
-      if (token != T_EQUALS) {
+      token = lex_get_token(lc, BCT_SKIP_EOL);
+      if (token != BCT_EQUALS) {
          scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
       }
-      token = lex_get_token(lc, T_SKIP_EOL);
-      if (token != T_BOB) {
+      token = lex_get_token(lc, BCT_SKIP_EOL);
+      if (token != BCT_BOB) {
          scan_err1(lc, _("Expected a block begin { , got: %s"), lc->str);
       }
-      token = lex_get_token(lc, T_SKIP_EOL);
+      token = lex_get_token(lc, BCT_SKIP_EOL);
       exist = EMPTYLINE;
       port_str[0] = hostname_str[0] = '\0';
       do {
-         if (token != T_IDENTIFIER) {
+         if (token != BCT_IDENTIFIER) {
             scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
          }
          if (bstrcasecmp("port", lc->str)) {
@@ -1192,20 +1192,20 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
          } else {
             scan_err1(lc, _("Expected a identifier [addr|port], got: %s"), lc->str);
          }
-         token = lex_get_token(lc, T_SKIP_EOL);
-         if (token != T_EQUALS) {
+         token = lex_get_token(lc, BCT_SKIP_EOL);
+         if (token != BCT_EQUALS) {
             scan_err1(lc, _("Expected a equal =, got: %s"), lc->str);
          }
-         token = lex_get_token(lc, T_SKIP_EOL);
+         token = lex_get_token(lc, BCT_SKIP_EOL);
          switch (next_line) {
          case PORTLINE:
-            if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+            if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER || token == BCT_IDENTIFIER)) {
                scan_err1(lc, _("Expected a number or a string, got: %s"), lc->str);
             }
             bstrncpy(port_str, lc->str, sizeof(port_str));
             break;
          case ADDRLINE:
-            if (!(token == T_UNQUOTED_STRING || token == T_IDENTIFIER)) {
+            if (!(token == BCT_UNQUOTED_STRING || token == BCT_IDENTIFIER)) {
                scan_err1(lc, _("Expected an IP number or a hostname, got: %s"),
                          lc->str);
             }
@@ -1215,9 +1215,9 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
             scan_err0(lc, _("State machine mismatch"));
             break;
          }
-         token = lex_get_token(lc, T_SKIP_EOL);
-      } while (token == T_IDENTIFIER);
-      if (token != T_EOB) {
+         token = lex_get_token(lc, BCT_SKIP_EOL);
+      } while (token == BCT_IDENTIFIER);
+      if (token != BCT_EOB) {
          scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
       }
       if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_MULTIPLE,
@@ -1227,8 +1227,8 @@ static void store_addresses(LEX * lc, RES_ITEM * item, int index, int pass)
                    hostname_str, port_str, errmsg);
       }
       token = scan_to_next_not_eol(lc);
-   } while ((token == T_IDENTIFIER || token == T_UNQUOTED_STRING));
-   if (token != T_EOB) {
+   } while ((token == BCT_IDENTIFIER || token == BCT_UNQUOTED_STRING));
+   if (token != BCT_EOB) {
       scan_err1(lc, _("Expected a end of block }, got: %s"), lc->str);
    }
 }
@@ -1239,8 +1239,8 @@ static void store_addresses_address(LEX * lc, RES_ITEM * item, int index, int pa
    char errmsg[1024];
    int port = str_to_int32(item->default_value);
 
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER || token == BCT_IDENTIFIER)) {
       scan_err1(lc, _("Expected an IP number or a hostname, got: %s"), lc->str);
    }
    if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_ADDR,
@@ -1256,8 +1256,8 @@ static void store_addresses_port(LEX * lc, RES_ITEM * item, int index, int pass)
    char errmsg[1024];
    int port = str_to_int32(item->default_value);
 
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (!(token == T_UNQUOTED_STRING || token == T_NUMBER || token == T_IDENTIFIER)) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (!(token == BCT_UNQUOTED_STRING || token == BCT_NUMBER || token == BCT_IDENTIFIER)) {
       scan_err1(lc, _("Expected a port number or string, got: %s"), lc->str);
    }
    if (pass == 1 && !add_address(item->dlistvalue, IPADDR::R_SINGLE_PORT,

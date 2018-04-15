@@ -677,4 +677,6 @@ static PyMethodDef BareosFDMethods[] = {
    { "ClearSeenBitmap", PyBareosClearSeenBitmap, METH_VARARGS, "Clear bit in the Accurate Seen bitmap" },
    { NULL, NULL, 0, NULL }
 };
+
+
 #endif /* BPYTHONFD_H */

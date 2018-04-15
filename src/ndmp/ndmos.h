@@ -128,6 +128,7 @@
 #define NDMOS_ID_ULTRIX		NDMOS_IDENT('U','l','t','r')
 #define NDMOS_ID_TRU64		NDMOS_IDENT('T','R','U',64)
 #define NDMOS_ID_AIX		NDMOS_IDENT('A','I','X',0)
+#define NDMOS_ID_DARWIN		NDMOS_IDENT('D','R','W','N')
 
 /*
  * Only explicitly include config.h when we are doing standalone
@@ -156,10 +157,14 @@
 #ifdef HAVE_LINUX_OS
 #define NDMOS_ID	NDMOS_ID_LINUX
 #endif
+
+#ifdef HAVE_DARWIN_OS
+#define NDMOS_ID	NDMOS_ID_DARWIN
+#endif
 #endif /* !NDMOS_ID */
 
 /*
- * Do we got it?
+ * Did we get it?
  */
 #ifndef NDMOS_ID
 @@@@ You need to use -DNDMOS_ID=NDMOS_ID_xxxx
@@ -179,6 +184,10 @@
 
 #if NDMOS_ID == NDMOS_ID_LINUX
 #include "ndmos_linux.h"
+#endif
+
+#if NDMOS_ID == NDMOS_ID_DARWIN
+#include "ndmos_darwin.h"
 #endif
 
 

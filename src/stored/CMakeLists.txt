@@ -23,6 +23,23 @@ ELSE()
    include_directories(. .. ../lib ../include ../lmdb ../ndmp)
 ENDIF()
 
+include_directories(
+   ${PTHREAD_INCLUDE_DIRS}
+   ${FASTLZ_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+   ${ACL_INCLUDE_DIRS}
+   ${LZO2_INCLUDE_DIRS}
+   ${CAP_INCLUDE_DIRS}
+   ${WRAP_INCLUDE_DIRS}
+)
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} )
+
+MESSAGE( STATUS "src/stored build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
+
 if(NOT ${HAVE_DYNAMIC_SD_BACKENDS})
 
    set (AVAILABLE_DEVICE_API_SRCS

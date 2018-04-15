@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998,1999,2000
+ * Copyright (c) 1998,2001
  *	Traakan, Inc., Los Altos, CA
  *	All rights reserved.
  *
@@ -31,26 +31,45 @@
  * Ident:    $Id: $
  *
  * Description:
- *	#include the right O/S specific C file.
+ *	This contains the O/S (Operating System) specific
+ *	portions of NDMJOBLIB for the Linux platform.
+ *
+ *	This file is #include'd by ndmos.c when
+ *	selected by #ifdef's of NDMOS_ID.
+ *
+ *	There are four major portions:
+ *	1) Misc support routines: password check, local info, etc
+ *	2) Non-blocking I/O support routines
+ *	3) Tape interfacs ndmos_tape_xxx()
+ *	4) OS Specific NDMP request dispatcher which intercepts
+ *	   requests implemented here, such as SCSI operations
+ *	   and system configuration queries.
  */
 
 
-#include "ndmagents.h"
 
 
-#if NDMOS_ID == NDMOS_ID_FREEBSD
-#include "ndmos_freebsd.c"
-#endif
+/*
+ * #include "ndmagents.h" already done in ndmos.c
+ * Additional #include's, not needed in ndmos_linux.h, yet needed here.
+ */
+#include <sys/utsname.h>
 
-#if NDMOS_ID == NDMOS_ID_SOLARIS
-#include "ndmos_solaris.c"
-#endif
+int xdr_uint16_t(XDR *x, u_int16_t *u) { return xdr_u_int16_t(x, u); }
+int xdr_uint32_t(XDR *x, u_int32_t *u) { return xdr_u_int32_t(x, u); }
+int xdr_uint64_t(XDR *x, u_int64_t *u) { return xdr_u_int64_t(x, u); }
 
-#if NDMOS_ID == NDMOS_ID_LINUX
-#include "ndmos_linux.c"
-#endif
 
-#if NDMOS_ID == NDMOS_ID_DARWIN
-#include "ndmos_darwin.c"
-#endif
+/*
+ * Select common code fragments from ndmos_common.c
+ */
+#define NDMOS_COMMON_SYNC_CONFIG_INFO	/* from config file (ndmjob.conf) */
+#define NDMOS_COMMON_OK_NAME_PASSWORD
+#define NDMOS_COMMON_MD5
+#define NDMOS_COMMON_NONBLOCKING_IO_SUPPORT
+#define NDMOS_COMMON_TAPE_INTERFACE	/* uses tape simulator */
+#define NDMOS_COMMON_SCSI_INTERFACE	/* stub-out */
+#define NDMOS_COMMON_DISPATCH_REQUEST	/* no-op */
 
+
+#include "ndmos_common.c"
