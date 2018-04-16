@@ -303,7 +303,7 @@ static void store_authtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both pass 1 and pass 2
     */
@@ -358,7 +358,7 @@ static void store_devtype(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the label pass 2 so that type is defined
     */
@@ -396,7 +396,7 @@ static void store_io_direction(LEX *lc, RES_ITEM *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    for (i = 0; io_directions[i].name; i++) {
       if (bstrcasecmp(lc->str, io_directions[i].name)) {
          *(uint16_t *)(item->value) = io_directions[i].token & 0xffff;
@@ -419,7 +419,7 @@ static void store_compressionalgorithm(LEX *lc, RES_ITEM *item, int index, int p
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    for (i = 0; compression_algorithms[i].name; i++) {
       if (bstrcasecmp(lc->str, compression_algorithms[i].name)) {
          *(uint32_t *)(item->value) = compression_algorithms[i].token & 0xffffffff;

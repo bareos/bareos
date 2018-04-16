@@ -17,7 +17,23 @@
 #   Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
 #   02110-1301, USA.
 
-include_directories(../include .. ../dird ../filed ../stored)
+include_directories(
+   ../include .. ../dird ../filed ../stored
+   ${PTHREAD_INCLUDE_DIRS}
+   ${FASTLZ_INCLUDE_DIRS}
+   ${ZLIB_INCLUDE_DIRS}
+   ${ACL_INCLUDE_DIRS}
+   ${LZO2_INCLUDE_DIRS}
+   ${CAP_INCLUDE_DIRS}
+   ${WRAP_INCLUDE_DIRS}
+   )
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} )
+
+MESSAGE( STATUS "src/tools build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
 
 
 SET(BSMTPSRCS bsmtp.cc)

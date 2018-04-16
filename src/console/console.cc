@@ -52,7 +52,6 @@
 CONRES *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
-//extern int rl_catch_signals;
 
 /* Imported functions */
 extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
@@ -927,7 +926,7 @@ static int console_update_history(const char *histfile)
     * can use write_history to create it.
     */
    if (history_truncate_file(histfile, truncate_entries) == 0) {
-      ret = append_history(history_length, histfile);
+     ret = append_history(history_length, histfile);
    } else {
       ret = write_history(histfile);
    }

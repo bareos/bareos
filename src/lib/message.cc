@@ -867,9 +867,9 @@ void dispatch_message(JCR *jcr, int type, utime_t mtime, char *msg)
       mtime = time(NULL);
    }
 
+   *dt = 0;
+   dtlen = 0;
    if (mtime == 1) {
-      *dt = 0;
-      dtlen = 0;
       mtime = time(NULL);      /* Get time for SQL log */
    } else {
       dt_conversion = true;

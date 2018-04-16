@@ -317,6 +317,7 @@
 ./src/ndmp/ndml_util.c
 ./src/ndmp/ndml_chan.c
 ./src/ndmp/ndmos_linux.c
+./src/ndmp/ndmos_darwin.c
 ./src/ndmp/wraplib.c
 ./src/ndmp/ndmp4_pp.c
 ./src/ndmp/ndmp2_xmt.c

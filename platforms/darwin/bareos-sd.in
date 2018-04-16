@@ -1,0 +1,37 @@
+#! /bin/sh
+#
+# bareos       This shell script takes care of starting and stopping
+#	       the bareos Storage daemon.
+#
+# chkconfig: 2345 90 9
+# description: Backup Archiving REcovery Open Sourced.
+#
+#  For Bareos release @VERSION@ (@DATE@) -- @DISTNAME@
+#
+
+case "$1" in
+    start)
+       echo "Starting the Bareos Storage daemon: "
+       @sbindir@/bareos-sd $2 -c @confdir@/bareos-sd.conf
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && touch @subsysdir@/bareos-sd
+       ;;
+    stop)
+       echo "Stopping the Bareos Storage daemon: "
+#      killproc @sbindir@/bareos-sd
+       RETVAL=$?
+       echo
+       [ $RETVAL -eq 0 ] && rm -f @subsysdir@/bareos-sd
+       ;;
+    restart)
+       $0 stop
+       sleep 5
+       $0 start
+       ;;
+    *)
+       echo "Usage: $0 {start|stop|restart}"
+       exit 1
+       ;;
+esac
+exit 0

@@ -18,7 +18,6 @@
 #   02110-1301, USA.
 
 include_directories(../include ..
-   ${OPENSSL_INCLUDE_DIRS}
    ${PTHREAD_INCLUDE_DIRS}
    ${FASTLZ_INCLUDE_DIRS}
    ${ZLIB_INCLUDE_DIRS}
@@ -27,6 +26,13 @@ include_directories(../include ..
    ${CAP_INCLUDE_DIRS}
    ${WRAP_INCLUDE_DIRS}
    )
+include_directories(BEFORE ${OPENSSL_INCLUDE_DIRS} )
+
+MESSAGE( STATUS "src/lib build: " )
+get_property(got_d_include_dirs DIRECTORY PROPERTY INCLUDE_DIRECTORIES)
+foreach(_dir IN LISTS got_d_include_dirs)
+   message(STATUS "  -I ${_dir}")
+endforeach()
 
 set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 		../include/bc_types.h ../include/config.h
