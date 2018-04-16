@@ -79,7 +79,7 @@ if (${HAVE_DARWIN_OS})
 	set(RPCGEN_PARAMS "-C")
 	set(RPCGEN_OUTPUT_CWD TRUE)
 else()
-	set(RPCGEN_PARAMS "-C -M")
+	set(RPCGEN_PARAMS "-C" "-M")
    set(RPCGEN_OUTPUT_CWD FALSE)
 endif()
 
