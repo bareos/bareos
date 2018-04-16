@@ -266,7 +266,17 @@ static bool despool_data(DCR *dcr, bool commit)
     * in rdev and rdcr.
     */
    rdev = (DEVICE *)malloc(sizeof(DEVICE));
+
+   /*
+    * TODO: Why is this not using m_init_dev()?
+    * TODO: If the compiler expects a vtable, when does it get set?
+    * warning: destination for this 'memset' call is a pointer to dynamic class 'DEVICE'; vtable pointer
+    * will be overwritten [-Wdynamic-class-memaccess]
+    *
+    * Is the solution here to define a new spool_device class and then: rdev = new spool_device(dcr);
+    */
    memset(rdev, 0, sizeof(DEVICE));
+
    rdev->dev_name = get_memory(strlen(spool_name)+1);
    bstrncpy(rdev->dev_name, spool_name, sizeof_pool_memory(rdev->dev_name));
    rdev->errmsg = get_pool_memory(PM_EMSG);

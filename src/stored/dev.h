@@ -327,12 +327,12 @@ public:
    uint32_t max_concurrent_jobs;      /**< Maximum simultaneous jobs this drive */
    uint64_t max_volume_size;          /**< Max bytes to put on one volume */
    uint64_t max_file_size;            /**< Max file size to put in one file on volume */
-   uint64_t volume_capacity;          /**< Advisory capacity */
+   uint64_t volume_capacity;          /**< Advisory capacity */ /* NOTREAD  */
    uint64_t max_spool_size;           /**< Maximum spool file size */
    uint64_t spool_size;               /**< Current spool size for this device */
    uint32_t max_rewind_wait;          /**< Max secs to allow for rewind */
    uint32_t max_open_wait;            /**< Max secs to allow for open */
-   uint32_t max_open_vols;            /**< Max simultaneous open volumes */
+   uint32_t max_open_vols;            /**< Max simultaneous open volumes */ /* NOTREAD  */
 
    utime_t vol_poll_interval;         /**< Interval between polling Vol mount */
    DEVRES *device;                    /**< Pointer to Device Resource */
@@ -387,8 +387,8 @@ public:
    bool is_mounted() const { return bit_is_set(ST_MOUNTED, state); }
    bool is_unmountable() const { return ((is_file() && is_removable())); }
    int num_reserved() const { return m_num_reserved; };
-   bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); }
-   bool have_media() const { return bit_is_set(ST_MEDIA, state); }
+   bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); } /* NOTUSED  */
+   bool have_media() const { return bit_is_set(ST_MEDIA, state); } /* NOTUSED  */
    bool is_short_block() const { return bit_is_set(ST_SHORT, state); }
    bool is_busy() const { return bit_is_set(ST_READREADY, state) || num_writers || num_reserved(); }
    bool at_eof() const { return bit_is_set(ST_EOF, state); }
@@ -424,12 +424,12 @@ public:
    void set_append() { set_bit(ST_APPENDREADY, state); };
    void set_labeled() { set_bit(ST_LABEL, state); };
    inline void set_read() { set_bit(ST_READREADY, state); };
-   void set_offline() { set_bit(ST_OFFLINE, state); };
+   void set_offline() { set_bit(ST_OFFLINE, state); }; /* NOTUSED  */
    void set_mounted() { set_bit(ST_MOUNTED, state); };
-   void set_media() { set_bit(ST_MEDIA, state); };
+   void set_media() { set_bit(ST_MEDIA, state); }; /* NOTUSED  */
    void set_short_block() { set_bit(ST_SHORT, state); };
    void set_crypto_enabled() { set_bit(ST_CRYPTOKEY, state); };
-   void set_part_spooled(int val) {
+   void set_part_spooled(int val) { /* NOTUSED  */
       if (val)
          set_bit(ST_PART_SPOOLED, state);
       else
@@ -443,12 +443,12 @@ public:
    void clear_append() { clear_bit(ST_APPENDREADY, state); };
    void clear_read() { clear_bit(ST_READREADY, state); };
    void clear_labeled() { clear_bit(ST_LABEL, state); };
-   void clear_offline() { clear_bit(ST_OFFLINE, state); };
+   void clear_offline() { clear_bit(ST_OFFLINE, state); }; /* NOTUSED  */
    void clear_eot() { clear_bit(ST_EOT, state); };
    void clear_eof() { clear_bit(ST_EOF, state); };
    void clear_opened() { m_fd = -1; };
    void clear_mounted() { clear_bit(ST_MOUNTED, state); };
-   void clear_media() { clear_bit(ST_MEDIA, state); };
+   void clear_media() { clear_bit(ST_MEDIA, state); }; /* NOTUSED  */
    void clear_short_block() { clear_bit(ST_SHORT, state); };
    void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); };
    void clear_unload() { m_unload = false; UnloadVolName[0] = 0; };
@@ -552,15 +552,15 @@ public:
    void Unlock_acquire();
    void Lock_read_acquire();
    void Unlock_read_acquire();
-   void Lock_VolCatInfo();
-   void Unlock_VolCatInfo();
+   void Lock_VolCatInfo(); /* NOTIMPLEMENTED, NOTUSED  */
+   void Unlock_VolCatInfo(); /* NOTIMPLEMENTED, NOTUSED  */
 #endif
    int init_mutex();
    int init_acquire_mutex();
    int init_read_acquire_mutex();
-   int init_volcat_mutex();
+   int init_volcat_mutex(); /* NOTIMPLEMENTED, NOTUSED  */
    void set_mutex_priorities();
-   int next_vol_timedwait(const struct timespec *timeout);
+   int next_vol_timedwait(const struct timespec *timeout); /* NOTUSED  */
    void dblock(int why);
    void dunblock(bool locked = false);
    bool is_device_unmounted();
@@ -628,7 +628,7 @@ public:
    bool WroteVol;                     /**< Set if Volume written */
    bool NewFile;                      /**< Set when EOF written */
    bool reserved_volume;              /**< Set if we reserved a volume */
-   bool any_volume;                   /**< Any OK for dir_find_next... */
+   bool any_volume;                   /**< Any OK for dir_find_next... */ /* NOTREAD  */
    bool attached_to_dev;              /**< Set when attached to dev */
    bool keep_dcr;                     /**< Do not free dcr in release_dcr */
    uint32_t autodeflate;              /**< Try to autodeflate streams */
@@ -732,7 +732,7 @@ public:
     * Methods in mount.c
     */
    bool mount_next_write_volume();
-   bool mount_next_read_volume();
+   bool mount_next_read_volume(); /* NOTIMPLEMENTED, NOTUSED  */
    void mark_volume_in_error();
    void mark_volume_not_inchanger();
    int try_autolabel(bool opened);
