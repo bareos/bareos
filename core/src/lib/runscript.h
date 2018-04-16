@@ -81,7 +81,7 @@ public:
                                 /* Optional callback function passed to edit_job_code */
    alist *commands;             /* Use during parsing */
    bool run(JobControlRecord *job, const char *name=""); /* name must contain "Before" or "After" keyword */
-   bool can_run_at_level(int JobLevel) { return true;};        /* TODO */
+   bool can_run_at_level(int JobLevel) { return true;}        /* TODO */
    void set_command(const char *cmd, int cmd_type = SHELL_CMD);
    void set_target(const char *client_name);
    void reset_default(bool free_string = false);

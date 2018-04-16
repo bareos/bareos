@@ -37,7 +37,7 @@ static void configure_lex_error_handler(const char *file, int line, LEX *lc, Poo
    if (lc->caller_ctx) {
       ua = (UaContext *)(lc->caller_ctx);
       ua->error_msg("configure error: %s\n", msg.c_str());
-   };
+   }
 }
 
 static void configure_lex_error_handler(const char *file, int line, LEX *lc, const char *msg, ...)

@@ -136,9 +136,9 @@ private:
    /*
     * Methods
     */
-   int get_num_rows_filtered() { return num_rows_filtered; };
-   void set_num_rows_filtered(int value) { num_rows_filtered = value; };
-   void clear_num_rows_filtered() { set_num_rows_filtered(0); };
+   int get_num_rows_filtered() { return num_rows_filtered; }
+   void set_num_rows_filtered(int value) { num_rows_filtered = value; }
+   void clear_num_rows_filtered() { set_num_rows_filtered(0); }
 
    void create_new_res_filter(of_filter_type type, int column, int restype);
    bool process_text_buffer();
@@ -167,15 +167,15 @@ public:
                     int api_mode = API_MODE_OFF);
    ~OUTPUT_FORMATTER();
 
-   void set_mode(int mode) { api = mode; };
-   int get_mode() { return api; };
+   void set_mode(int mode) { api = mode; }
+   int get_mode() { return api; }
 
    /*
     * Allow to set compact output mode. Only used for json api mode.
     * There it can reduce the size of message by 1/3.
     */
-   void set_compact(bool value) { compact = value; };
-   bool get_compact() { return compact; };
+   void set_compact(bool value) { compact = value; }
+   bool get_compact() { return compact; }
 
    void object_start(const char *name = NULL);
    void object_end(const char *name = NULL);
@@ -218,7 +218,7 @@ public:
    void add_enabled_filter_tuple(int column, int restype);
    void add_disabled_filter_tuple(int column, int restype);
    void clear_filters();
-   bool has_filters() { return filters && !filters->empty(); };
+   bool has_filters() { return filters && !filters->empty(); }
    bool has_acl_filters();
    bool filter_data(void *data);
 

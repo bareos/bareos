@@ -295,38 +295,38 @@ public:
             Dmsg0(100, "Destruct JobControlRecord\n");
       }
 
-   void lock() {P(mutex); };
-   void unlock() {V(mutex); };
-   void inc_use_count(void) {lock(); _use_count++; unlock(); };
-   void dec_use_count(void) {lock(); _use_count--; unlock(); };
-   int32_t use_count() const { return _use_count; };
-   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); };
-   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); };
-   bool is_job_canceled() { return job_canceled(this); };
-   bool is_canceled() { return job_canceled(this); };
-   bool is_terminated_ok() { return job_terminated_successfully(this); };
-   bool is_incomplete() { return JobStatus == JS_Incomplete; };
-   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; };
-   bool is_JobType(int32_t JobType) { return JobType == JobType_; };
-   bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; };
-   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; };
-   void setJobType(int32_t JobType) { JobType_ = JobType; };
-   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; };
-   void forceJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; };
+   void lock() {P(mutex); }
+   void unlock() {V(mutex); }
+   void inc_use_count(void) {lock(); _use_count++; unlock(); }
+   void dec_use_count(void) {lock(); _use_count--; unlock(); }
+   int32_t use_count() const { return _use_count; }
+   void init_mutex(void) {pthread_mutex_init(&mutex, NULL); }
+   void destroy_mutex(void) {pthread_mutex_destroy(&mutex); }
+   bool is_job_canceled() { return job_canceled(this); }
+   bool is_canceled() { return job_canceled(this); }
+   bool is_terminated_ok() { return job_terminated_successfully(this); }
+   bool is_incomplete() { return JobStatus == JS_Incomplete; }
+   bool is_JobLevel(int32_t JobLevel) { return JobLevel == JobLevel_; }
+   bool is_JobType(int32_t JobType) { return JobType == JobType_; }
+   bool is_JobStatus(int32_t aJobStatus) { return aJobStatus == JobStatus; }
+   void setJobLevel(int32_t JobLevel) { JobLevel_ = JobLevel; }
+   void setJobType(int32_t JobType) { JobType_ = JobType; }
+   void setJobProtocol(int32_t JobProtocol) { Protocol_ = JobProtocol; }
+   void forceJobStatus(int32_t aJobStatus) { JobStatus = aJobStatus; }
    void setJobStarted();
-   int32_t getJobType() const { return JobType_; };
-   int32_t getJobLevel() const { return JobLevel_; };
-   int32_t getJobStatus() const { return JobStatus; };
-   int32_t getJobProtocol() const { return Protocol_; };
+   int32_t getJobType() const { return JobType_; }
+   int32_t getJobLevel() const { return JobLevel_; }
+   int32_t getJobStatus() const { return JobStatus; }
+   int32_t getJobProtocol() const { return Protocol_; }
    bool no_client_used() const {
       return (JobType_ == JT_MIGRATE ||
               JobType_ == JT_COPY ||
               JobLevel_ == L_VIRTUAL_FULL);
-   };
+   }
    bool is_plugin() const {
       return (cmd_plugin ||
               opt_plugin);
-   };
+   }
    const char *get_OperationName();       /**< in lib/jcr.c */
    const char *get_ActionName(bool past = false); /**< in lib/jcr.c */
    void setJobStatus(int newJobStatus);   /**< in lib/jcr.c */
@@ -335,7 +335,7 @@ public:
    bool JobReads();                       /**< in lib/jcr.c */
    void my_thread_send_signal(int sig);   /**< in lib/jcr.c */
    void set_killable(bool killable);      /**< in lib/jcr.c */
-   bool is_killable() const { return my_thread_killable; };
+   bool is_killable() const { return my_thread_killable; }
 
    /*
     * Global part of JobControlRecord common to all daemons
@@ -402,7 +402,7 @@ public:
    bool rerunning;                        /**< Rerunning an incomplete job */
    bool job_started;                      /**< Set when the job is actually started */
    bool suppress_output;                  /**< Set if this JobControlRecord should not output any Jmsgs */
-   JobControlRecord *cjcr;                             /**< Controlling JobControlRecord when this is a slave JobControlRecord being
+   JobControlRecord *cjcr;                /**< Controlling JobControlRecord when this is a slave JobControlRecord being
                                            * controlled by another JobControlRecord used for sending
                                            * normal and fatal errors.
                                            */
@@ -523,7 +523,7 @@ public:
    bool incremental;                      /**< Set if incremental for SINCE */
    utime_t mtime;                         /**< Begin time for SINCE */
    int listing;                           /**< Job listing in estimate */
-   long Ticket;                           /**< Ticket */
+   int32_t Ticket;                           /**< Ticket */
    char *big_buf;                         /**< I/O buffer */
    int32_t replace;                       /**< Replace options */
    FindFilesPacket *ff;                            /**< Find Files packet */
@@ -574,7 +574,7 @@ public:
    int32_t label_errors;                  /**< Count of label errors */
    bool session_opened;
    bool remote_replicate;                 /**< Replicate data to remote SD */
-   long Ticket;                           /**< Ticket for this job */
+   int32_t Ticket;                           /**< Ticket for this job */
    bool ignore_label_errors;              /**< Ignore Volume label errors */
    bool spool_attributes;                 /**< Set if spooling attributes */
    bool no_attributes;                    /**< Set if no attributes wanted */

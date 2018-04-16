@@ -286,7 +286,7 @@ private:
 
 public:
    Device();
-   virtual ~Device() {};
+   virtual ~Device() {}
    Device * volatile swap_dev;        /**< Swap vol from this device */
    dlist *attached_dcrs;              /**< Attached DeviceControlRecord list */
    bthread_mutex_t mutex_;           /**< Access control */
@@ -386,7 +386,7 @@ public:
    bool is_labeled() const { return bit_is_set(ST_LABEL, state); }
    bool is_mounted() const { return bit_is_set(ST_MOUNTED, state); }
    bool is_unmountable() const { return ((is_file() && is_removable())); }
-   int num_reserved() const { return num_reserved_; };
+   int num_reserved() const { return num_reserved_; }
    bool is_part_spooled() const { return bit_is_set(ST_PART_SPOOLED, state); }
    bool have_media() const { return bit_is_set(ST_MEDIA, state); }
    bool is_short_block() const { return bit_is_set(ST_SHORT, state); }
@@ -408,61 +408,61 @@ public:
    bool can_steal_lock() const { return blocked_ &&
                     (blocked_ == BST_UNMOUNTED ||
                      blocked_ == BST_WAITING_FOR_SYSOP ||
-                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
+                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
    bool waiting_for_mount() const { return
                     (blocked_ == BST_UNMOUNTED ||
                      blocked_ == BST_WAITING_FOR_SYSOP ||
-                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); };
-   bool must_unload() const { return unload_; };
-   bool must_load() const { return load_; };
+                     blocked_ == BST_UNMOUNTED_WAITING_FOR_SYSOP); }
+   bool must_unload() const { return unload_; }
+   bool must_load() const { return load_; }
    const char *strerror() const;
    const char *archive_name() const;
    const char *name() const;
    const char *print_name() const;    /**< Name for display purposes */
-   void set_eot() { set_bit(ST_EOT, state); };
-   void set_eof() { set_bit(ST_EOF, state); };
-   void set_append() { set_bit(ST_APPENDREADY, state); };
-   void set_labeled() { set_bit(ST_LABEL, state); };
-   inline void set_read() { set_bit(ST_READREADY, state); };
-   void set_offline() { set_bit(ST_OFFLINE, state); };
-   void set_mounted() { set_bit(ST_MOUNTED, state); };
-   void set_media() { set_bit(ST_MEDIA, state); };
-   void set_short_block() { set_bit(ST_SHORT, state); };
-   void set_crypto_enabled() { set_bit(ST_CRYPTOKEY, state); };
+   void set_eot() { set_bit(ST_EOT, state); }
+   void set_eof() { set_bit(ST_EOF, state); }
+   void set_append() { set_bit(ST_APPENDREADY, state); }
+   void set_labeled() { set_bit(ST_LABEL, state); }
+   inline void set_read() { set_bit(ST_READREADY, state); }
+   void set_offline() { set_bit(ST_OFFLINE, state); }
+   void set_mounted() { set_bit(ST_MOUNTED, state); }
+   void set_media() { set_bit(ST_MEDIA, state); }
+   void set_short_block() { set_bit(ST_SHORT, state); }
+   void set_crypto_enabled() { set_bit(ST_CRYPTOKEY, state); }
    void set_part_spooled(int val) {
       if (val)
          set_bit(ST_PART_SPOOLED, state);
       else
          clear_bit(ST_PART_SPOOLED, state);
-   };
+   }
    bool is_volume_to_unload() const { \
-      return unload_ && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; };
-   void set_load() { load_ = true; };
+      return unload_ && strcmp(VolHdr.VolumeName, UnloadVolName) == 0; }
+   void set_load() { load_ = true; }
    void inc_reserved() { num_reserved_++; }
-   void dec_reserved() { num_reserved_--; ASSERT(num_reserved_>=0); };
-   void clear_append() { clear_bit(ST_APPENDREADY, state); };
-   void clear_read() { clear_bit(ST_READREADY, state); };
-   void clear_labeled() { clear_bit(ST_LABEL, state); };
-   void clear_offline() { clear_bit(ST_OFFLINE, state); };
-   void clear_eot() { clear_bit(ST_EOT, state); };
-   void clear_eof() { clear_bit(ST_EOF, state); };
-   void clear_opened() { fd_ = -1; };
-   void clear_mounted() { clear_bit(ST_MOUNTED, state); };
-   void clear_media() { clear_bit(ST_MEDIA, state); };
-   void clear_short_block() { clear_bit(ST_SHORT, state); };
-   void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); };
-   void clear_unload() { unload_ = false; UnloadVolName[0] = 0; };
-   void clear_load() { load_ = false; };
-   char *bstrerror(void) { return errmsg; };
-   char *print_errmsg() { return errmsg; };
-   slot_number_t get_slot() const { return slot_; };
-   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
-   bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
+   void dec_reserved() { num_reserved_--; ASSERT(num_reserved_>=0); }
+   void clear_append() { clear_bit(ST_APPENDREADY, state); }
+   void clear_read() { clear_bit(ST_READREADY, state); }
+   void clear_labeled() { clear_bit(ST_LABEL, state); }
+   void clear_offline() { clear_bit(ST_OFFLINE, state); }
+   void clear_eot() { clear_bit(ST_EOT, state); }
+   void clear_eof() { clear_bit(ST_EOF, state); }
+   void clear_opened() { fd_ = -1; }
+   void clear_mounted() { clear_bit(ST_MOUNTED, state); }
+   void clear_media() { clear_bit(ST_MEDIA, state); }
+   void clear_short_block() { clear_bit(ST_SHORT, state); }
+   void clear_crypto_enabled() { clear_bit(ST_CRYPTOKEY, state); }
+   void clear_unload() { unload_ = false; UnloadVolName[0] = 0; }
+   void clear_load() { load_ = false; }
+   char *bstrerror(void) { return errmsg; }
+   char *print_errmsg() { return errmsg; }
+   slot_number_t get_slot() const { return slot_; }
+   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; }
+   bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
    void setVolCatName(const char *name) {
       bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
       setVolCatInfo(false);
-   };
-   char *getVolCatName() { return VolCatInfo.VolCatName; };
+   }
+   char *getVolCatName() { return VolCatInfo.VolCatName; }
 
    const char *mode_to_str(int mode);
    void set_unload();
@@ -483,25 +483,25 @@ public:
    void set_blocksizes(DeviceControlRecord* dcr);
    void set_label_blocksize(DeviceControlRecord* dcr);
 
-   uint32_t get_file() const { return file; };
-   uint32_t get_block_num() const { return block_num; };
-   int fd() const { return fd_; };
+   uint32_t get_file() const { return file; }
+   uint32_t get_block_num() const { return block_num; }
+   int fd() const { return fd_; }
 
    /*
     * Tape specific operations.
     */
-   virtual bool offline() { return true; };
-   virtual bool weof(int num) { return true; };
-   virtual bool fsf(int num) { return true; };
-   virtual bool bsf(int num) { return false; };
-   virtual bool fsr(int num) { return false; };
-   virtual bool bsr(int num) { return false; };
-   virtual bool load_dev() { return true; };
+   virtual bool offline() { return true; }
+   virtual bool weof(int num) { return true; }
+   virtual bool fsf(int num) { return true; }
+   virtual bool bsf(int num) { return false; }
+   virtual bool fsr(int num) { return false; }
+   virtual bool bsr(int num) { return false; }
+   virtual bool load_dev() { return true; }
    virtual void lock_door() {};
    virtual void unlock_door() {};
    virtual void clrerror(int func) {};
    virtual void set_os_device_parameters(DeviceControlRecord *dcr) {};
-   virtual int32_t get_os_tape_file() { return -1; };
+   virtual int32_t get_os_tape_file() { return -1; }
 
    /*
     * Generic operations.
@@ -514,11 +514,11 @@ public:
    virtual bool rewind(DeviceControlRecord *dcr);
    virtual bool update_pos(DeviceControlRecord *dcr);
    virtual bool reposition(DeviceControlRecord *dcr, uint32_t rfile, uint32_t rblock);
-   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout) { return true; };
-   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout) { return true; };
-   virtual bool device_status(bsdDevStatTrig *dst) { return false; };
-   boffset_t lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); };
-   bool truncate(DeviceControlRecord *dcr) { return d_truncate(dcr); };
+   virtual bool mount_backend(DeviceControlRecord *dcr, int timeout) { return true; }
+   virtual bool unmount_backend(DeviceControlRecord *dcr, int timeout) { return true; }
+   virtual bool device_status(bsdDevStatTrig *dst) { return false; }
+   boffset_t lseek(DeviceControlRecord *dcr, boffset_t offset, int whence) { return d_lseek(dcr, offset, whence); }
+   bool truncate(DeviceControlRecord *dcr) { return d_truncate(dcr); }
 
    /*
     * Low level operations
@@ -564,9 +564,9 @@ public:
    void dblock(int why);
    void dunblock(bool locked = false);
    bool is_device_unmounted();
-   void set_blocked(int block) { blocked_ = block; };
-   int blocked() const { return blocked_; };
-   bool is_blocked() const { return blocked_ != BST_NOT_BLOCKED; };
+   void set_blocked(int block) { blocked_ = block; }
+   int blocked() const { return blocked_; }
+   bool is_blocked() const { return blocked_ != BST_NOT_BLOCKED; }
    const char *print_blocked() const;
 
 protected:
@@ -663,39 +663,39 @@ public:
    /*
     * Methods
     */
-   void set_dev(Device *ndev) { dev = ndev; };
-   void set_found_in_use() { found_in_use_ = true; };
-   void set_will_write() { will_write_ = true; };
-   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; };
+   void set_dev(Device *ndev) { dev = ndev; }
+   void set_found_in_use() { found_in_use_ = true; }
+   void set_will_write() { will_write_ = true; }
+   void setVolCatInfo(bool valid) { VolCatInfo.is_valid = valid; }
 
-   void clear_found_in_use() { found_in_use_ = false; };
-   void clear_will_write() { will_write_ = false; };
+   void clear_found_in_use() { found_in_use_ = false; }
+   void clear_will_write() { will_write_ = false; }
 
-   bool is_reserved() const { return reserved_; };
+   bool is_reserved() const { return reserved_; }
    bool is_dev_locked() { return dev_locked_; }
-   bool is_writing() const { return will_write_; };
+   bool is_writing() const { return will_write_; }
 
-   void inc_dev_lock() { dev_lock_++; };
-   void dec_dev_lock() { dev_lock_--; };
-   bool found_in_use() const { return found_in_use_; };
+   void inc_dev_lock() { dev_lock_++; }
+   void dec_dev_lock() { dev_lock_--; }
+   bool found_in_use() const { return found_in_use_; }
 
-   bool haveVolCatInfo() const { return VolCatInfo.is_valid; };
+   bool haveVolCatInfo() const { return VolCatInfo.is_valid; }
    void setVolCatName(const char *name) {
      bstrncpy(VolCatInfo.VolCatName, name, sizeof(VolCatInfo.VolCatName));
      setVolCatInfo(false);
-   };
-   char *getVolCatName() { return VolCatInfo.VolCatName; };
+   }
+   char *getVolCatName() { return VolCatInfo.VolCatName; }
 
    /*
     * Methods in askdir.c
     */
    virtual DeviceControlRecord *get_new_spooling_dcr();
-   virtual bool dir_find_next_appendable_volume() { return true; };
-   virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; };
-   virtual bool dir_create_jobmedia_record(bool zero) { return true; };
-   virtual bool dir_update_file_attributes(DeviceRecord *record) { return true; };
+   virtual bool dir_find_next_appendable_volume() { return true; }
+   virtual bool dir_update_volume_info(bool label, bool update_LastWritten) { return true; }
+   virtual bool dir_create_jobmedia_record(bool zero) { return true; }
+   virtual bool dir_update_file_attributes(DeviceRecord *record) { return true; }
    virtual bool dir_ask_sysop_to_mount_volume(int mode);
-   virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; };
+   virtual bool dir_ask_sysop_to_create_appendable_volume() { return true; }
    virtual bool dir_get_volume_info(enum get_vol_info_rw writing);
 
    /*

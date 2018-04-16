@@ -306,7 +306,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                if (!save_resource(res_type, items, pass)) {
                   scan_err0(lc, _("save_resource failed"));
                   goto bail_out;
-               };
+               }
                break;
 
             case T_EOL:

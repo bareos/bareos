@@ -72,10 +72,10 @@ public:
       seen_bitmap_ = NULL;
       number_of_previous_files_ = 0;
       jcr_ = NULL;
-   };
+   }
 
    virtual ~BareosAccurateFilelist() {
-   };
+   }
 
    virtual bool init() = 0;
    virtual bool add_file(char *fname,
@@ -92,19 +92,19 @@ public:
    virtual bool send_deleted_list() = 0;
    void mark_file_as_seen(accurate_payload *payload) {
       set_bit(payload->filenr, seen_bitmap_);
-   };
+   }
 
    void unmark_file_as_seen(accurate_payload *payload) {
       clear_bit(payload->filenr, seen_bitmap_);
-   };
+   }
 
    void mark_all_files_as_seen() {
       set_bits(0, filenr_ - 1, seen_bitmap_);
-   };
+   }
 
    void unmark_all_files_as_seen() {
       clear_bits(0, filenr_ - 1, seen_bitmap_);
-   };
+   }
 };
 
 /*
@@ -131,11 +131,11 @@ public:
    BareosAccurateFilelistHtable(JobControlRecord *jcr, uint32_t number_of_files);
    ~BareosAccurateFilelistHtable() {
       destroy();
-   };
+   }
 
    bool init() {
       return true;
-   };
+   }
 
    bool add_file(char *fname,
                  int fname_length,

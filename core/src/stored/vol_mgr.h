@@ -70,28 +70,28 @@ public:
    char *vol_name;                    /**< Volume name */
    Device *dev;                       /**< Pointer to device to which we are attached */
 
-   void init_mutex() { pthread_mutex_init(&mutex_, NULL); };
-   void destroy_mutex() { pthread_mutex_destroy(&mutex_); };
-   void Lock() { P(mutex_); };
-   void Unlock() { V(mutex_); };
-   void inc_use_count(void) {P(mutex_); use_count_++; V(mutex_); };
-   void dec_use_count(void) {P(mutex_); use_count_--; V(mutex_); };
-   int32_t use_count() const { return use_count_; };
-   bool is_swapping() const { return swapping_; };
-   bool is_reading() const { return reading_; };
-   bool is_writing() const { return !reading_; };
-   void set_reading() { reading_ = true; };
-   void clear_reading() { reading_ = false; };
-   void set_swapping() { swapping_ = true; };
-   void clear_swapping() { swapping_ = false; };
-   bool is_in_use() const { return in_use_; };
-   void set_in_use() { in_use_ = true; };
-   void clear_in_use() { in_use_ = false; };
-   void set_slot(slot_number_t slot) { slot_ = slot; };
-   void clear_slot() { slot_ = -1; };
-   slot_number_t get_slot() const { return slot_; };
-   uint32_t get_jobid() const { return JobId_; };
-   void set_jobid(uint32_t JobId) { JobId_ = JobId; };
+   void init_mutex() { pthread_mutex_init(&mutex_, NULL); }
+   void destroy_mutex() { pthread_mutex_destroy(&mutex_); }
+   void Lock() { P(mutex_); }
+   void Unlock() { V(mutex_); }
+   void inc_use_count(void) {P(mutex_); use_count_++; V(mutex_); }
+   void dec_use_count(void) {P(mutex_); use_count_--; V(mutex_); }
+   int32_t use_count() const { return use_count_; }
+   bool is_swapping() const { return swapping_; }
+   bool is_reading() const { return reading_; }
+   bool is_writing() const { return !reading_; }
+   void set_reading() { reading_ = true; }
+   void clear_reading() { reading_ = false; }
+   void set_swapping() { swapping_ = true; }
+   void clear_swapping() { swapping_ = false; }
+   bool is_in_use() const { return in_use_; }
+   void set_in_use() { in_use_ = true; }
+   void clear_in_use() { in_use_ = false; }
+   void set_slot(slot_number_t slot) { slot_ = slot; }
+   void clear_slot() { slot_ = -1; }
+   slot_number_t get_slot() const { return slot_; }
+   uint32_t get_jobid() const { return JobId_; }
+   void set_jobid(uint32_t JobId) { JobId_ = JobId; }
 };
 
 #define foreach_vol(vol) \

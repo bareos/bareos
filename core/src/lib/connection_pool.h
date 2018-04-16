@@ -33,9 +33,9 @@ public:
    CONNECTION(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
    ~CONNECTION();
 
-   const char *name() { return name_; };
-   int protocol_version() { return protocol_version_; };
-   BareosSocket *bsock() { return socket_; };
+   const char *name() { return name_; }
+   int protocol_version() { return protocol_version_; }
+   BareosSocket *bsock() { return socket_; }
    bool authenticated() { return authenticated_; }
    bool in_use() { return in_use_; }
    time_t connect_time() { return connect_time_; }
@@ -43,8 +43,8 @@ public:
    bool check(int timeout = 0);
    bool wait(int timeout = 60);
    bool take();
-   void lock() { P(mutex_); };
-   void unlock() { V(mutex_); };
+   void lock() { P(mutex_); }
+   void unlock() { V(mutex_); }
 
 private:
    pthread_t tid_;

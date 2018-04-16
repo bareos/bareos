@@ -53,10 +53,10 @@ public:
    int64_t next();
    void begin();
    /* size() valid only if scan enabled on string */
-   int size() const { return num_items; };
-   char *get_list() { return str; };
+   int size() const { return num_items; }
+   char *get_list() { return str; }
    /* if errmsg == NULL, no error */
-   const char *get_errmsg() { return errmsg; };
+   const char *get_errmsg() { return errmsg; }
 };
 
 /**

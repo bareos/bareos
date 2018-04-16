@@ -98,7 +98,7 @@ public:
    /*
     * Methods
     */
-   void signal(int sig) { UA_sock->signal(sig); };
+   void signal(int sig) { UA_sock->signal(sig); }
    bool execute(ua_cmdstruct *cmd);
 
    /*
@@ -106,7 +106,7 @@ public:
     */
    bool acl_access_ok(int rcode, const char *item, bool audit_event = false);
    bool acl_no_restrictions(int acl);
-   bool acl_has_restrictions(int acl) { return !acl_no_restrictions(acl); };
+   bool acl_has_restrictions(int acl) { return !acl_no_restrictions(acl); }
 
    /*
     * Resource retrieval methods including check on ACL.
@@ -250,7 +250,7 @@ public:
     * Methods
     */
    RunContext() { memset(this, 0, sizeof(RunContext));
-               store = new UnifiedStoreResource; };
-   ~RunContext() { delete store; };
+               store = new UnifiedStoreResource; }
+   ~RunContext() { delete store; }
 };
 #endif

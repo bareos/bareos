@@ -72,10 +72,10 @@ public:
               int callback(void *item1, void *item2));
    int unreserve_slot();
    int flush();
-   bool full() { return size_ == (capacity_ - reserved_); };
-   bool empty() { return size_ == 0; };
-   bool is_flushing() { return flush_; };
-   int capacity() const { return capacity_; };
+   bool full() { return size_ == (capacity_ - reserved_); }
+   bool empty() { return size_ == 0; }
+   bool is_flushing() { return flush_; }
+   int capacity() const { return capacity_; }
 };
 
 /*

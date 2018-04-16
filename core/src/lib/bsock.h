@@ -176,18 +176,18 @@ public:
                                         s_password &password,
                                         TlsResource *tls_configuration);
 
-   void set_jcr(JobControlRecord *jcr) { jcr_ = jcr; };
-   void set_who(char *who) { who_ = who; };
-   void set_host(char *host) { host_ = host; };
-   void set_port(int port) { port_ = port; };
-   char *who() { return who_; };
-   char *host() { return host_; };
-   int port() { return port_; };
-   JobControlRecord *jcr() { return jcr_; };
-   JobControlRecord *get_jcr() { return jcr_; };
-   bool is_spooling() { return spool_; };
-   bool is_terminated() { return terminated_; };
-   bool is_timed_out() { return timed_out_; };
+   void set_jcr(JobControlRecord *jcr) { jcr_ = jcr; }
+   void set_who(char *who) { who_ = who; }
+   void set_host(char *host) { host_ = host; }
+   void set_port(int port) { port_ = port; }
+   char *who() { return who_; }
+   char *host() { return host_; }
+   int port() { return port_; }
+   JobControlRecord *jcr() { return jcr_; }
+   JobControlRecord *get_jcr() { return jcr_; }
+   bool is_spooling() { return spool_; }
+   bool is_terminated() { return terminated_; }
+   bool is_timed_out() { return timed_out_; }
    bool is_stop() { return errors || is_terminated(); }
    bool is_error() { errno = b_errno; return errors; }
    void set_data_end(int32_t FileIndex) {
@@ -195,22 +195,22 @@ public:
          FileIndex_ = FileIndex - 1;
          data_end_ = lseek(spool_fd_, 0, SEEK_CUR);
       }
-   };
-   boffset_t get_data_end() { return data_end_; };
-   int32_t get_FileIndex() { return FileIndex_; };
-   void set_bwlimit(int64_t maxspeed) { bwlimit_ = maxspeed; };
-   bool use_bwlimit() { return bwlimit_ > 0;};
-   void set_bwlimit_bursting() { use_bursting_ = true; };
-   void clear_bwlimit_bursting() { use_bursting_ = false; };
-   void set_keepalive() { use_keepalive_ = true; };
-   void clear_keepalive() { use_keepalive_ = false; };
-   void set_spooling() { spool_ = true; };
-   void clear_spooling() { spool_ = false; };
-   void set_timed_out() { timed_out_ = true; };
-   void clear_timed_out() { timed_out_ = false; };
-   void set_terminated() { terminated_ = true; };
-   void start_timer(int sec) { tid_ = start_bsock_timer(this, sec); };
-   void stop_timer() { stop_bsock_timer(tid_); };
+   }
+   boffset_t get_data_end() { return data_end_; }
+   int32_t get_FileIndex() { return FileIndex_; }
+   void set_bwlimit(int64_t maxspeed) { bwlimit_ = maxspeed; }
+   bool use_bwlimit() { return bwlimit_ > 0;}
+   void set_bwlimit_bursting() { use_bursting_ = true; }
+   void clear_bwlimit_bursting() { use_bursting_ = false; }
+   void set_keepalive() { use_keepalive_ = true; }
+   void clear_keepalive() { use_keepalive_ = false; }
+   void set_spooling() { spool_ = true; }
+   void clear_spooling() { spool_ = false; }
+   void set_timed_out() { timed_out_ = true; }
+   void clear_timed_out() { timed_out_ = false; }
+   void set_terminated() { terminated_ = true; }
+   void start_timer(int sec) { tid_ = start_bsock_timer(this, sec); }
+   void stop_timer() { stop_bsock_timer(tid_); }
 };
 
 /**

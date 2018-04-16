@@ -415,7 +415,7 @@ void jobstatus_to_ascii_gui(int JobStatus, char *msg, int maxlen)
    case JS_AttrInserting:
       cnv = _("Batch inserting file records");
       break;
-   };
+   }
 
    if (cnv) {
       bstrncpy(msg, cnv, maxlen);

@@ -189,7 +189,7 @@ inline void *dlist::last() const
 class dlistString
 {
 public:
-   char *c_str() { return str_; };
+   char *c_str() { return str_; }
 
 private:
    dlink link_;

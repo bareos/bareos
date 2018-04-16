@@ -330,7 +330,7 @@ public:
 
    /* Methods */
    UnifiedStoreResource() { store = NULL; store_source = get_pool_memory(PM_MESSAGE);
-              *store_source = 0; };
+              *store_source = 0; }
    ~UnifiedStoreResource() { destroy(); }
    void set_source(const char *where);
    void destroy();

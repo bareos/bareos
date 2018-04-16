@@ -105,7 +105,7 @@ public:
    void *first();
    void *last();
    void * operator [](int index) const;
-   int current() const { return cur_item; };
+   int current() const { return cur_item; }
    int size() const;
    void destroy();
    void grow(int num);
@@ -113,8 +113,8 @@ public:
    /*
     * Use it as a stack, pushing and poping from the end
     */
-   void push(void *item) { append(item); };
-   void *pop() { return remove(num_items - 1); };
+   void push(void *item) { append(item); }
+   void *pop() { return remove(num_items - 1); }
 };
 
 /**

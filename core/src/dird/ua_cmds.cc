@@ -1968,7 +1968,7 @@ static bool truncate_cmd(UaContext *ua, const char *cmd)
    if (!ua->db->get_query_dbids(ua->jcr, tmp, mediaIds)) {
       Dmsg0(100, "No results from db_get_query_dbids\n");
       goto bail_out;
-   };
+   }
 
    if (!mediaIds.size()) {
       Dmsg0(100, "Results are empty\n");

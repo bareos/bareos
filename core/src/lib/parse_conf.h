@@ -328,7 +328,7 @@ public:
    CommonResourceHeader hdr;
 
    /* Methods */
-   inline char *name() const { return this->hdr.name; };
+   inline char *name() const { return this->hdr.name; }
    bool print_config(PoolMem &buf, bool hide_sensitive_data = false, bool verbose = false);
    /*
     * validate can be defined by inherited classes,
@@ -428,11 +428,11 @@ public:
       CommonResourceHeader **res_head);
    void set_default_config_filename(const char *filename);
    void set_config_include_dir(const char *rel_path);
-   bool is_using_config_include_dir() { return use_config_include_dir_; };
+   bool is_using_config_include_dir() { return use_config_include_dir_; }
    bool parse_config();
    bool parse_config_file(const char *cf, void *caller_ctx, LEX_ERROR_HANDLER *scan_error = NULL,
                           LEX_WARNING_HANDLER *scan_warning = NULL, int32_t err_type = M_ERROR_TERM);
-   const char *get_base_config_path() { return used_config_path_; };
+   const char *get_base_config_path() { return used_config_path_; }
    void free_resources();
    CommonResourceHeader **save_resources();
    CommonResourceHeader **new_res_head();

@@ -102,7 +102,7 @@ public:
    char *log_timestamp_format;        /* Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /* Bandwidth limitation (global) */
 
-   ClientResource() : TlsResource() {};
+   ClientResource() : TlsResource() {}
 };
 
 /* Define the Union of all the above

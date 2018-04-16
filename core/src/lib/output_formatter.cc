@@ -892,7 +892,7 @@ void OUTPUT_FORMATTER::json_finalize_result(bool result)
    /*
     * empty result stack
     */
-   while (result_stack_json->pop()) {};
+   while (result_stack_json->pop()) {}
    result_stack_json->push(result_json);
 
    json_object_clear(result_json);

@@ -64,8 +64,8 @@ public:
    int destroy();
    int take_lock(take_lock_t *hold, int reason);
    int return_lock(take_lock_t *hold);
-   void new_reason(int nreason) { prev_reason = reason; reason = nreason; };
-   void restore_reason() { reason = prev_reason; prev_reason = 0; };
+   void new_reason(int nreason) { prev_reason = reason; reason = nreason; }
+   void restore_reason() { reason = prev_reason; prev_reason = 0; }
 
    int writelock(int reason, bool can_take=false);
    int writetrylock();

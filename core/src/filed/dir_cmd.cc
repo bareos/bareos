@@ -684,7 +684,7 @@ void *handle_connection_to_director(void *director_resource)
             Dmsg2(120, "Waiting for data from Director \"%s\" (timeout: %ds)\n",
                   dir_res->name(), timeout_data);
             data_available = dir_bsock->wait_data_intr(timeout_data);
-         };
+         }
          if (!quit_client_initiate_connection) {
             if (data_available < 0) {
                Emsg1(M_ABORT, 0, _("Failed while waiting for data from Director \"%s\"\n"), dir_res->name());

@@ -49,10 +49,10 @@ public:
    void *dequeue();
    int next_slot();
    int flush();
-   bool full() { return size_ == capacity_; };
-   bool empty() { return size_ == 0; };
-   bool is_flushing() { return flush_; };
-   int capacity() const { return capacity_; };
+   bool full() { return size_ == capacity_; }
+   bool empty() { return size_ == 0; }
+   bool is_flushing() { return flush_; }
+   int capacity() const { return capacity_; }
 };
 
 /**

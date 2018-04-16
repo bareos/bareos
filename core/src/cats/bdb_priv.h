@@ -48,9 +48,9 @@ private:
    /*
     * Methods
     */
-   int sql_num_rows(void) { return num_rows_; };
-   void sql_field_seek(int field) { field_number_ = field; };
-   int sql_num_fields(void) { return num_fields_; };
+   int sql_num_rows(void) { return num_rows_; }
+   void sql_field_seek(int field) { field_number_ = field; }
+   int sql_num_fields(void) { return num_fields_; }
    virtual void sql_free_result(void) = 0;
    virtual SQL_ROW sql_fetch_row(void) = 0;
    virtual bool sql_query_with_handler(const char *query, DB_RESULT_HANDLER *result_handler, void *ctx) = 0;
@@ -72,7 +72,7 @@ public:
     */
    BareosDbPrivateInterface() {
       queries = NULL;
-   };
-   virtual ~BareosDbPrivateInterface() {};
+   }
+   virtual ~BareosDbPrivateInterface() {}
 };
 #endif /* __BDB_PRIV_H_ */

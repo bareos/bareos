@@ -44,7 +44,7 @@ public:
   bool api;                        /* set if we want API output */
 
   /* Methods */
-  StatusPacket() { memset(this, 0, sizeof(StatusPacket)); };
-  ~StatusPacket() { };
+  StatusPacket() { memset(this, 0, sizeof(StatusPacket)); }
+  ~StatusPacket() { }
 };
 #endif

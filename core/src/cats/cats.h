@@ -463,8 +463,8 @@ public:
    int64_t value;                     /**< value returned */
    int count;                         /**< number of values seen */
 
-   db_int64_ctx() : value(0), count(0) {};
-   ~db_int64_ctx() {};
+   db_int64_ctx() : value(0), count(0) {}
+   ~db_int64_ctx() {}
 private:
    db_int64_ctx(const db_int64_ctx&);            /**< prohibit pass by value */
    db_int64_ctx &operator=(const db_int64_ctx&); /**< prohibit class assignment */
@@ -615,15 +615,15 @@ public:
    /*
     * Methods
     */
-   BareosDb() {};
-   virtual ~BareosDb() {};
-   const char *get_db_name(void) { return db_name_; };
-   const char *get_db_user(void) { return db_user_; };
-   bool is_connected(void) { return connected_; };
-   bool batch_insert_available(void) { return have_batch_insert_; };
-   bool is_private(void) { return is_private_; };
-   void set_private(bool is_private) { is_private_ = is_private; };
-   void increment_refcount(void) { ref_count_++; };
+   BareosDb() {}
+   virtual ~BareosDb() {}
+   const char *get_db_name(void) { return db_name_; }
+   const char *get_db_user(void) { return db_user_; }
+   bool is_connected(void) { return connected_; }
+   bool batch_insert_available(void) { return have_batch_insert_; }
+   bool is_private(void) { return is_private_; }
+   void set_private(bool is_private) { is_private_ = is_private; }
+   void increment_refcount(void) { ref_count_++; }
 
    /* bvfs.c */
    bool bvfs_update_path_hierarchy_cache(JobControlRecord *jcr, char *jobids);
@@ -784,14 +784,14 @@ public:
                                    bool mult_db_connections,
                                    bool get_pooled_connection = true,
                                    bool need_private = false);
-   int get_type_index(void) { return db_type_; };
+   int get_type_index(void) { return db_type_; }
    const char *get_type(void);
    void _lock_db(const char *file, int line);
    void _unlock_db(const char *file, int line);
    void print_lock_info(FILE *fp);
 
    /* Virtual low level methods */
-   virtual void thread_cleanup(void) {};
+   virtual void thread_cleanup(void) {}
    virtual void escape_string(JobControlRecord *jcr, char *snew, char *old, int len);
    virtual char *escape_object(JobControlRecord *jcr, char *old, int len);
    virtual void unescape_object(JobControlRecord *jcr, char *from, int32_t expected_len,
@@ -808,7 +808,7 @@ public:
    virtual bool big_sql_query(const char *query,
                               DB_RESULT_HANDLER *result_handler, void *ctx) {
       return sql_query(query, result_handler, ctx);
-   };
+   }
 
 #ifdef _BDB_PRIV_INTERFACE_
    /*
