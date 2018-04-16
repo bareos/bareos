@@ -52,9 +52,6 @@
 CONRES *me = NULL;                    /* Our Global resource */
 CONFIG *my_config = NULL;             /* Our Global config */
 
-#if ! defined(HAVE_DARWIN_OS)
-extern int rl_catch_signals;
-#endif
 
 /* Imported functions */
 extern bool parse_cons_config(CONFIG *config, const char *configfile, int exit_code);
