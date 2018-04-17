@@ -604,8 +604,8 @@ static char *item_generator(const char *text, int state,
   return ((char *)NULL);
 }
 
-/* gobal variables for the type and the item to search
- * the readline API doesn' permit to pass user data.
+/* global variables for the type and the item to search
+ * the readline API doesn't permit to pass user data.
  */
 static const char *cpl_item;
 static cpl_item_t cpl_type;
