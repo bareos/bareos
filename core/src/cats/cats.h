@@ -641,9 +641,9 @@ public:
    bool UpdateDB(const char *file, int line, JobControlRecord *jcr, const char *update_cmd, int nr_afr);
    int get_sql_record_max(JobControlRecord *jcr);
    void split_path_and_file(JobControlRecord *jcr, const char *fname);
-   void list_dashes(OUTPUT_FORMATTER *send);
+   void list_dashes(OutputFormatter *send);
    int list_result(void *vctx, int nb_col, char **row);
-   int list_result(JobControlRecord *jcr, OUTPUT_FORMATTER *send, e_list_type type);
+   int list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_type type);
    bool open_batch_connection(JobControlRecord *jcr);
    void db_debug_print(FILE *fp);
 
@@ -722,30 +722,30 @@ public:
    bool verify_media_ids_from_single_storage(JobControlRecord *jcr, dbid_list &mediaIds);
 
    /* sql_list.c */
-   void list_pool_records(JobControlRecord *jcr, PoolDbRecord *pr, OUTPUT_FORMATTER *sendit, e_list_type type);
+   void list_pool_records(JobControlRecord *jcr, PoolDbRecord *pr, OutputFormatter *sendit, e_list_type type);
    void list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname,
                             int jobstatus, int joblevel, const char* volumename, utime_t since_time, bool last,
-                            bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OUTPUT_FORMATTER *sendit);
-   void list_files_for_job(JobControlRecord *jcr, uint32_t jobid, OUTPUT_FORMATTER *sendit);
-   void list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_storage_records(JobControlRecord *jcr, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_jobmedia_records(JobControlRecord *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_volumes_of_jobid(JobControlRecord *jcr, JobId_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_joblog_records(JobControlRecord *jcr, JobId_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type);
+                            bool count, OutputFormatter *sendit, e_list_type type);
+   void list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit);
+   void list_files_for_job(JobControlRecord *jcr, uint32_t jobid, OutputFormatter *sendit);
+   void list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OutputFormatter *sendit, e_list_type type);
+   void list_storage_records(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type);
+   void list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OutputFormatter *sendit, e_list_type type);
+   void list_jobmedia_records(JobControlRecord *jcr, JobId_t JobId, OutputFormatter *sendit, e_list_type type);
+   void list_volumes_of_jobid(JobControlRecord *jcr, JobId_t JobId, OutputFormatter *sendit, e_list_type type);
+   void list_joblog_records(JobControlRecord *jcr, JobId_t JobId, const char *range, bool count, OutputFormatter *sendit, e_list_type type);
    void list_log_records(JobControlRecord *jcr, const char *clientname, const char *range,
-                         bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type);
-   bool list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
-   bool list_sql_query(JobControlRecord *jcr, SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose);
-   bool list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit, e_list_type type,
+                         bool reverse, OutputFormatter *sendit, e_list_type type);
+   void list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type);
+   bool list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JobControlRecord *jcr, SQL_QUERY_ENUM query, OutputFormatter *sendit, e_list_type type, bool verbose);
+   bool list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit, e_list_type type,
                        const char *description, bool verbose = false);
-   bool list_sql_query(JobControlRecord *jcr, SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
+   bool list_sql_query(JobControlRecord *jcr, SQL_QUERY_ENUM query, OutputFormatter *sendit,
                        e_list_type type, const char *description, bool verbose);
-   void list_client_records(JobControlRecord *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_copies_records(JobControlRecord *jcr, const char *range, const char *jobids, OUTPUT_FORMATTER *sendit, e_list_type type);
-   void list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit);
+   void list_client_records(JobControlRecord *jcr, char *clientname, OutputFormatter *sendit, e_list_type type);
+   void list_copies_records(JobControlRecord *jcr, const char *range, const char *jobids, OutputFormatter *sendit, e_list_type type);
+   void list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit);
 
    /* sql_query.c */
    const char *get_predefined_query_name(SQL_QUERY_ENUM query);
@@ -891,7 +891,7 @@ public:
    int32_t num_rows;
 
    e_list_type type;            /**< Vertical/Horizontal */
-   OUTPUT_FORMATTER *send;      /**< send data back */
+   OutputFormatter *send;      /**< send data back */
    bool once;                   /**< Used to print header one time */
    BareosDb *mdb;
    JobControlRecord *jcr;
@@ -907,7 +907,7 @@ public:
       }
    }
 
-   ListContext(JobControlRecord *j, BareosDb *m, OUTPUT_FORMATTER *h, e_list_type t) {
+   ListContext(JobControlRecord *j, BareosDb *m, OutputFormatter *h, e_list_type t) {
       line[0] = '\0';
       once = false;
       num_rows = 0;
@@ -922,5 +922,5 @@ public:
  * Some functions exported by sql.c for use within the cats directory.
  */
 int list_result(void *vctx, int cols, char **row);
-int list_result(JobControlRecord *jcr, BareosDb *mdb, OUTPUT_FORMATTER *send, e_list_type type);
+int list_result(JobControlRecord *jcr, BareosDb *mdb, OutputFormatter *send, e_list_type type);
 #endif /* __CATS_H_ */

@@ -103,7 +103,7 @@ typedef struct of_filter_tuple {
 /**
  * Actual output formatter class.
  */
-class DLL_IMP_EXP OUTPUT_FORMATTER : public SmartAlloc {
+class DLL_IMP_EXP OutputFormatter : public SmartAlloc {
 public:
    /*
     * Typedefs.
@@ -160,12 +160,12 @@ public:
    /*
     * Methods
     */
-   OUTPUT_FORMATTER(SEND_HANDLER *send_func,
+   OutputFormatter(SEND_HANDLER *send_func,
                     void *send_ctx,
                     FILTER_HANDLER *filter_func,
                     void *filter_ctx,
                     int api_mode = API_MODE_OFF);
-   ~OUTPUT_FORMATTER();
+   ~OutputFormatter();
 
    void set_mode(int mode) { api = mode; }
    int get_mode() { return api; }

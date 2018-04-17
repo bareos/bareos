@@ -445,7 +445,7 @@ static int max_length(int max_length)
 /**
  * List dashes as part of header for listing SQL results in a table
  */
-void BareosDb::list_dashes(OUTPUT_FORMATTER *send)
+void BareosDb::list_dashes(OutputFormatter *send)
 {
    int len;
    int num_fields;
@@ -480,7 +480,7 @@ int BareosDb::list_result(void *vctx, int nb_col, char **row)
    int num_fields;
    SQL_FIELD *field;
    e_list_type type;
-   OUTPUT_FORMATTER *send;
+   OutputFormatter *send;
    int col_len, max_len = 0;
    ListContext *pctx = (ListContext *)vctx;
 
@@ -716,7 +716,7 @@ int list_result(void *vctx, int nb_col, char **row)
  *
  * Return number of rows
  */
-int BareosDb::list_result(JobControlRecord *jcr, OUTPUT_FORMATTER *send, e_list_type type)
+int BareosDb::list_result(JobControlRecord *jcr, OutputFormatter *send, e_list_type type)
 {
    SQL_ROW row;
    char ewc[30];
@@ -790,7 +790,7 @@ int BareosDb::list_result(JobControlRecord *jcr, OUTPUT_FORMATTER *send, e_list_
    /*
     * See if filters are enabled for this list function.
     * We use this to shortcut for calling the filter_data() method in the
-    * OUTPUT_FORMATTER class.
+    * OutputFormatter class.
     */
    filters_enabled = send->has_filters();
 
@@ -965,7 +965,7 @@ int BareosDb::list_result(JobControlRecord *jcr, OUTPUT_FORMATTER *send, e_list_
  *
  * Return number of rows
  */
-int list_result(JobControlRecord *jcr, BareosDb *mdb, OUTPUT_FORMATTER *send, e_list_type type)
+int list_result(JobControlRecord *jcr, BareosDb *mdb, OutputFormatter *send, e_list_type type)
 {
    return mdb->list_result(jcr, send, type);
 }

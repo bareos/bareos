@@ -41,7 +41,7 @@ const char *json_error_message_template = "{ "
   "} "
 "}\n";
 
-OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
+OutputFormatter::OutputFormatter(SEND_HANDLER *send_func_arg,
                                    void *send_ctx_arg,
                                    FILTER_HANDLER *filter_func_arg,
                                    void *filter_ctx_arg,
@@ -68,7 +68,7 @@ OUTPUT_FORMATTER::OUTPUT_FORMATTER(SEND_HANDLER *send_func_arg,
 #endif
 }
 
-OUTPUT_FORMATTER::~OUTPUT_FORMATTER()
+OutputFormatter::~OutputFormatter()
 {
    if (hidden_columns) {
       free(hidden_columns);
@@ -86,7 +86,7 @@ OUTPUT_FORMATTER::~OUTPUT_FORMATTER()
 #endif
 }
 
-void OUTPUT_FORMATTER::object_start(const char *name)
+void OutputFormatter::object_start(const char *name)
 {
 #if HAVE_JANSSON
    json_t *json_object_current = NULL;
@@ -142,7 +142,7 @@ void OUTPUT_FORMATTER::object_start(const char *name)
    }
 }
 
-void OUTPUT_FORMATTER::object_end(const char *name)
+void OutputFormatter::object_end(const char *name)
 {
    Dmsg1(800, "obj end:   %s\n", name);
    switch (api) {
@@ -158,7 +158,7 @@ void OUTPUT_FORMATTER::object_end(const char *name)
    }
 }
 
-void OUTPUT_FORMATTER::array_start(const char *name)
+void OutputFormatter::array_start(const char *name)
 {
 #if HAVE_JANSSON
    json_t *json_object_current = NULL;
@@ -200,7 +200,7 @@ void OUTPUT_FORMATTER::array_start(const char *name)
    }
 }
 
-void OUTPUT_FORMATTER::array_end(const char *name)
+void OutputFormatter::array_end(const char *name)
 {
    Dmsg1(800, "array end:   %s\n", name);
    switch (api) {
@@ -216,7 +216,7 @@ void OUTPUT_FORMATTER::array_end(const char *name)
    }
 }
 
-void OUTPUT_FORMATTER::decoration(const char *fmt, ...)
+void OutputFormatter::decoration(const char *fmt, ...)
 {
    PoolMem string;
    va_list arg_ptr;
@@ -234,18 +234,18 @@ void OUTPUT_FORMATTER::decoration(const char *fmt, ...)
    }
 }
 
-void OUTPUT_FORMATTER::object_key_value_bool(const char *key, bool value)
+void OutputFormatter::object_key_value_bool(const char *key, bool value)
 {
    object_key_value_bool(key, NULL, value, NULL);
 }
 
-void OUTPUT_FORMATTER::object_key_value_bool(const char *key, bool value,
+void OutputFormatter::object_key_value_bool(const char *key, bool value,
                                              const char *value_fmt)
 {
    object_key_value_bool(key, NULL, value, value_fmt);
 }
 
-void OUTPUT_FORMATTER::object_key_value_bool(const char *key, const char *key_fmt,
+void OutputFormatter::object_key_value_bool(const char *key, const char *key_fmt,
                                              bool value, const char *value_fmt)
 {
    PoolMem string;
@@ -273,18 +273,18 @@ void OUTPUT_FORMATTER::object_key_value_bool(const char *key, const char *key_fm
    }
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value)
+void OutputFormatter::object_key_value(const char *key, uint64_t value)
 {
    object_key_value(key, NULL, value, NULL);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, uint64_t value,
+void OutputFormatter::object_key_value(const char *key, uint64_t value,
                                         const char *value_fmt)
 {
    object_key_value(key, NULL, value, value_fmt);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
+void OutputFormatter::object_key_value(const char *key, const char *key_fmt,
                                         uint64_t value, const char *value_fmt)
 {
    PoolMem string;
@@ -308,18 +308,18 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
    }
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value, int wrap)
+void OutputFormatter::object_key_value(const char *key, const char *value, int wrap)
 {
    object_key_value(key, NULL, value, NULL, wrap);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *value,
+void OutputFormatter::object_key_value(const char *key, const char *value,
                                         const char *value_fmt, int wrap)
 {
    object_key_value(key, NULL, value, value_fmt, wrap);
 }
 
-void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
+void OutputFormatter::object_key_value(const char *key, const char *key_fmt,
                                         const char *value, const char *value_fmt,
                                         int wrap)
 {
@@ -347,7 +347,7 @@ void OUTPUT_FORMATTER::object_key_value(const char *key, const char *key_fmt,
    }
 }
 
-void OUTPUT_FORMATTER::rewrap(PoolMem &string, int wrap)
+void OutputFormatter::rewrap(PoolMem &string, int wrap)
 {
    char *p, *q;
    int open = 0;
@@ -427,7 +427,7 @@ void OUTPUT_FORMATTER::rewrap(PoolMem &string, int wrap)
    string.strcpy(rewrap_string);
 }
 
-void OUTPUT_FORMATTER::create_new_res_filter(of_filter_type type, int column, int restype)
+void OutputFormatter::create_new_res_filter(of_filter_type type, int column, int restype)
 {
    of_filter_tuple *tuple;
 
@@ -443,7 +443,7 @@ void OUTPUT_FORMATTER::create_new_res_filter(of_filter_type type, int column, in
    filters->append(tuple);
 }
 
-void OUTPUT_FORMATTER::add_limit_filter_tuple(int limit)
+void OutputFormatter::add_limit_filter_tuple(int limit)
 {
    of_filter_tuple *tuple;
 
@@ -458,7 +458,7 @@ void OUTPUT_FORMATTER::add_limit_filter_tuple(int limit)
    filters->append(tuple);
 }
 
-void OUTPUT_FORMATTER::add_offset_filter_tuple(int offset)
+void OutputFormatter::add_offset_filter_tuple(int offset)
 {
    of_filter_tuple *tuple;
 
@@ -473,7 +473,7 @@ void OUTPUT_FORMATTER::add_offset_filter_tuple(int offset)
    filters->append(tuple);
 }
 
-void OUTPUT_FORMATTER::add_acl_filter_tuple(int column, int acltype)
+void OutputFormatter::add_acl_filter_tuple(int column, int acltype)
 {
    of_filter_tuple *tuple;
 
@@ -489,22 +489,22 @@ void OUTPUT_FORMATTER::add_acl_filter_tuple(int column, int acltype)
    filters->append(tuple);
 }
 
-void OUTPUT_FORMATTER::add_res_filter_tuple(int column, int restype)
+void OutputFormatter::add_res_filter_tuple(int column, int restype)
 {
    create_new_res_filter(OF_FILTER_RESOURCE, column, restype);
 }
 
-void OUTPUT_FORMATTER::add_enabled_filter_tuple(int column, int restype)
+void OutputFormatter::add_enabled_filter_tuple(int column, int restype)
 {
    create_new_res_filter(OF_FILTER_ENABLED, column, restype);
 }
 
-void OUTPUT_FORMATTER::add_disabled_filter_tuple(int column, int restype)
+void OutputFormatter::add_disabled_filter_tuple(int column, int restype)
 {
    create_new_res_filter(OF_FILTER_DISABLED, column, restype);
 }
 
-void OUTPUT_FORMATTER::clear_filters()
+void OutputFormatter::clear_filters()
 {
    if (filters) {
       if (!filters->empty()) {
@@ -515,7 +515,7 @@ void OUTPUT_FORMATTER::clear_filters()
    }
 }
 
-bool OUTPUT_FORMATTER::has_acl_filters()
+bool OutputFormatter::has_acl_filters()
 {
    of_filter_tuple *tuple;
 
@@ -530,7 +530,7 @@ bool OUTPUT_FORMATTER::has_acl_filters()
    return false;
 }
 
-bool OUTPUT_FORMATTER::filter_data(void *data)
+bool OutputFormatter::filter_data(void *data)
 {
    of_filter_state state;
    of_filter_tuple *tuple;
@@ -580,7 +580,7 @@ bool OUTPUT_FORMATTER::filter_data(void *data)
    return true;
 }
 
-void OUTPUT_FORMATTER::add_hidden_column(int column)
+void OutputFormatter::add_hidden_column(int column)
 {
    if (column >= 0 && column <= OF_MAX_NR_HIDDEN_COLUMNS) {
       /*
@@ -595,7 +595,7 @@ void OUTPUT_FORMATTER::add_hidden_column(int column)
    }
 }
 
-bool OUTPUT_FORMATTER::is_hidden_column(int column)
+bool OutputFormatter::is_hidden_column(int column)
 {
    if (!hidden_columns || column < 0 || column > OF_MAX_NR_HIDDEN_COLUMNS) {
       return false;
@@ -604,14 +604,14 @@ bool OUTPUT_FORMATTER::is_hidden_column(int column)
    return bit_is_set(column, hidden_columns);
 }
 
-void OUTPUT_FORMATTER::clear_hidden_columns()
+void OutputFormatter::clear_hidden_columns()
 {
    if (hidden_columns) {
       clear_all_bits(OF_MAX_NR_HIDDEN_COLUMNS, hidden_columns);
    }
 }
 
-bool OUTPUT_FORMATTER::process_text_buffer()
+bool OutputFormatter::process_text_buffer()
 {
    bool retval = false;
    PoolMem error_msg;
@@ -640,7 +640,7 @@ bool OUTPUT_FORMATTER::process_text_buffer()
    return retval;
 }
 
-void OUTPUT_FORMATTER::message(const char *type, PoolMem &message)
+void OutputFormatter::message(const char *type, PoolMem &message)
 {
    switch (api) {
 #if HAVE_JANSSON
@@ -662,7 +662,7 @@ void OUTPUT_FORMATTER::message(const char *type, PoolMem &message)
    }
 }
 
-void OUTPUT_FORMATTER::send_buffer()
+void OutputFormatter::send_buffer()
 {
    switch (api) {
 #if HAVE_JANSSON
@@ -675,7 +675,7 @@ void OUTPUT_FORMATTER::send_buffer()
    }
 }
 
-void OUTPUT_FORMATTER::finalize_result(bool result)
+void OutputFormatter::finalize_result(bool result)
 {
    switch (api) {
 #if HAVE_JANSSON
@@ -706,7 +706,7 @@ void OUTPUT_FORMATTER::finalize_result(bool result)
 }
 
 #if HAVE_JANSSON
-bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
+bool OutputFormatter::json_key_value_add_bool(const char *key, bool value)
 {
    json_t *json_obj = NULL;
 #if JANSSON_VERSION_HEX < 0x020400
@@ -738,7 +738,7 @@ bool OUTPUT_FORMATTER::json_key_value_add_bool(const char *key, bool value)
    return true;
 }
 
-bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
+bool OutputFormatter::json_key_value_add(const char *key, uint64_t value)
 {
    json_t *json_obj = NULL;
    PoolMem lkey(key);
@@ -753,7 +753,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, uint64_t value)
    return true;
 }
 
-bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
+bool OutputFormatter::json_key_value_add(const char *key, const char *value)
 {
    json_t *json_obj = NULL;
    PoolMem lkey(key);
@@ -769,7 +769,7 @@ bool OUTPUT_FORMATTER::json_key_value_add(const char *key, const char *value)
    return true;
 }
 
-void OUTPUT_FORMATTER::json_add_message(const char *type, PoolMem &message)
+void OutputFormatter::json_add_message(const char *type, PoolMem &message)
 {
    json_t *message_type_array;
    json_t *message_json=json_string(message.c_str());
@@ -786,7 +786,7 @@ void OUTPUT_FORMATTER::json_add_message(const char *type, PoolMem &message)
    json_array_append_new(message_type_array, message_json);
 }
 
-bool OUTPUT_FORMATTER::json_has_error_message()
+bool OutputFormatter::json_has_error_message()
 {
    bool retval = false;
 
@@ -797,7 +797,7 @@ bool OUTPUT_FORMATTER::json_has_error_message()
    return retval;
 }
 
-bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
+bool OutputFormatter::json_send_error_message(const char *message)
 {
    PoolMem json_error_message;
 
@@ -805,7 +805,7 @@ bool OUTPUT_FORMATTER::json_send_error_message(const char *message)
    return send_func(send_ctx, json_error_message.c_str());
 }
 
-void OUTPUT_FORMATTER::json_finalize_result(bool result)
+void OutputFormatter::json_finalize_result(bool result)
 {
    json_t *msg_obj = json_object();
    json_t *error_obj = NULL;

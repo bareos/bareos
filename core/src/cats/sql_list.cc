@@ -44,18 +44,18 @@
 /**
  * Submit general SQL query
  */
-bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
                           e_list_type type, bool verbose)
 {
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit, e_list_type type, bool verbose)
+bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit, e_list_type type, bool verbose)
 {
    return list_sql_query(jcr, query, sendit, type, "query", verbose);
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, const char *query, OutputFormatter *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    bool retval = false;
@@ -81,13 +81,13 @@ bail_out:
    return retval;
 }
 
-bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OUTPUT_FORMATTER *sendit,
+bool BareosDb::list_sql_query(JobControlRecord *jcr, BareosDb::SQL_QUERY_ENUM query, OutputFormatter *sendit,
                           e_list_type type, const char *description, bool verbose)
 {
    return list_sql_query(jcr, get_predefined_query(query), sendit, type, description, verbose);
 }
 
-void BareosDb::list_pool_records(JobControlRecord *jcr, PoolDbRecord *pdbr, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_pool_records(JobControlRecord *jcr, PoolDbRecord *pdbr, OutputFormatter *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 
@@ -132,7 +132,7 @@ bail_out:
    db_unlock(this);
 }
 
-void BareosDb::list_client_records(JobControlRecord *jcr, char *clientname, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_client_records(JobControlRecord *jcr, char *clientname, OutputFormatter *sendit, e_list_type type)
 {
    db_lock(this);
    PoolMem clientfilter(PM_MESSAGE);
@@ -163,7 +163,7 @@ bail_out:
    db_unlock(this);
 }
 
-void BareosDb::list_storage_records(JobControlRecord *jcr, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_storage_records(JobControlRecord *jcr, OutputFormatter *sendit, e_list_type type)
 {
    db_lock(this);
 
@@ -187,7 +187,7 @@ bail_out:
  * If VolumeName is non-zero, list the record for that Volume
  *   otherwise, list the Volumes in the Pool specified by PoolId
  */
-void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_media_records(JobControlRecord *jcr, MediaDbRecord *mdbr, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
    char esc[MAX_ESCAPE_NAME_LENGTH];
@@ -247,7 +247,7 @@ bail_out:
 
 
 
-void BareosDb::list_jobmedia_records(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_jobmedia_records(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -291,7 +291,7 @@ bail_out:
 }
 
 
-void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_volumes_of_jobid(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -326,7 +326,7 @@ bail_out:
 
 
 void BareosDb::list_copies_records(JobControlRecord *jcr, const char *range, const char *JobIds,
-                               OUTPUT_FORMATTER *send, e_list_type type)
+                               OutputFormatter *send, e_list_type type)
 {
    PoolMem str_jobids(PM_MESSAGE);
 
@@ -368,7 +368,7 @@ bail_out:
 }
 
 void BareosDb::list_log_records(JobControlRecord *jcr, const char *clientname, const char *range,
-                            bool reverse, OUTPUT_FORMATTER *sendit, e_list_type type)
+                            bool reverse, OutputFormatter *sendit, e_list_type type)
 {
    PoolMem client_filter(PM_MESSAGE);
 
@@ -424,7 +424,7 @@ bail_out:
    db_unlock(this);
 }
 
-void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const char *range, bool count, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_joblog_records(JobControlRecord *jcr, uint32_t JobId, const char *range, bool count, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -466,7 +466,7 @@ bail_out:
  * list job statistics records for certain jobid
  *
  */
-void BareosDb::list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_jobstatistics_records(JobControlRecord *jcr, uint32_t JobId, OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
 
@@ -498,7 +498,7 @@ bail_out:
  */
 void BareosDb::list_job_records(JobControlRecord *jcr, JobDbRecord *jr, const char *range, const char *clientname, int jobstatus,
                             int joblevel, const char *volumename, utime_t since_time, bool last, bool count,
-                            OUTPUT_FORMATTER *sendit, e_list_type type)
+                            OutputFormatter *sendit, e_list_type type)
 {
    char ed1[50];
    char dt[MAX_TIME_LENGTH];
@@ -579,7 +579,7 @@ bail_out:
 /**
  * List Job totals
  */
-void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_job_totals(JobControlRecord *jcr, JobDbRecord *jr, OutputFormatter *sendit)
 {
    db_lock(this);
 
@@ -619,7 +619,7 @@ bail_out:
    db_unlock(this);
 }
 
-void BareosDb::list_files_for_job(JobControlRecord *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
 {
    char ed1[50];
    ListContext lctx(jcr, this, sendit, NF_LIST);
@@ -665,7 +665,7 @@ bail_out:
    db_unlock(this);
 }
 
-void BareosDb::list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OUTPUT_FORMATTER *sendit)
+void BareosDb::list_base_files_for_job(JobControlRecord *jcr, JobId_t jobid, OutputFormatter *sendit)
 {
    char ed1[50];
    ListContext lctx(jcr, this, sendit, NF_LIST);
@@ -708,7 +708,7 @@ bail_out:
 /**
  * List fileset
  */
-void BareosDb::list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OUTPUT_FORMATTER *sendit, e_list_type type)
+void BareosDb::list_filesets(JobControlRecord *jcr, JobDbRecord *jr, const char *range, OutputFormatter *sendit, e_list_type type)
 {
    char esc[MAX_ESCAPE_NAME_LENGTH];
 

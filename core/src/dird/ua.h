@@ -77,7 +77,7 @@ public:
    uint32_t pint32_val;               /**< Positive integer */
    int32_t int32_val;                 /**< Positive/negative */
    int64_t int64_val;                 /**< Big int */
-   OUTPUT_FORMATTER *send;            /**< object instance to handle output */
+   OutputFormatter *send;            /**< object instance to handle output */
 
 private:
    /*
