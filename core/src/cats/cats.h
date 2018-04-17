@@ -554,7 +554,7 @@ typedef struct sql_field {
 } SQL_FIELD;
 #endif
 
-class CATS_IMP_EXP BareosDb: public SmartAlloc, public B_DB_QUERY_ENUM_CLASS {
+class CATS_IMP_EXP BareosDb: public SmartAlloc, public BareosDbQueryEnum {
 protected:
    /*
     * Members

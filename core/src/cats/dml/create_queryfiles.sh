@@ -47,7 +47,7 @@ printf "const char *BareosDb::query_names[] = {\n" >> $QUERY_NAMES_FILE
 > $QUERY_ENUM_FILE
 printf "%s\n\n" "$NOTE" >> $QUERY_ENUM_FILE
 cat >> $QUERY_ENUM_FILE << EOF
-class B_DB_QUERY_ENUM_CLASS {
+class BareosDbQueryEnum {
 public:
    typedef enum {
 EOF
