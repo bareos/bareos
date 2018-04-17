@@ -109,7 +109,7 @@ bail_out:
  * We use the data from the default options block.
  * e.g. the last option block in the include block.
  */
-static inline bool include_block_is_recursive(findINCEXE *incexe)
+static inline bool include_block_is_recursive(findIncludeExcludeItem *incexe)
 {
    int i;
    findFOPTS *fo;
@@ -128,7 +128,7 @@ static inline bool include_block_is_recursive(findINCEXE *incexe)
  * See if an options block of an include block has any wildcard
  * or regex settings which are not used for excluding.
  */
-static inline bool include_block_has_patterns(findINCEXE *incexe)
+static inline bool include_block_has_patterns(findIncludeExcludeItem *incexe)
 {
    int i;
    bool has_find_patterns = false;
@@ -176,7 +176,7 @@ static inline bool include_block_has_patterns(findINCEXE *incexe)
  * We use the data from the default options block.
  * e.g. the last option block in the include block.
  */
-static inline b_fileset_shadow_type include_block_get_shadow_type(findINCEXE *incexe)
+static inline b_fileset_shadow_type include_block_get_shadow_type(findIncludeExcludeItem *incexe)
 {
    int i;
    findFOPTS *fo;
@@ -194,7 +194,7 @@ static inline b_fileset_shadow_type include_block_get_shadow_type(findINCEXE *in
  * See if there is any local shadowing within an include block.
  */
 static void check_local_fileset_shadowing(JobControlRecord *jcr,
-                                          findINCEXE *incexe,
+                                          findIncludeExcludeItem *incexe,
                                           bool remove)
 {
    dlistString *str1, *str2, *next;
@@ -280,7 +280,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
 {
    int i, j;
    bool local_recursive, global_recursive;
-   findINCEXE *current, *compare_against;
+   findIncludeExcludeItem *current, *compare_against;
    dlistString *str1, *str2, *next;
 
    /*
@@ -288,7 +288,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
     * is any shadowing between the different sets.
     */
    for (i = 0; i < fileset->include_list.size(); i++) {
-      current = (findINCEXE *)fileset->include_list.get(i);
+      current = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
       /*
        * See if there is any local shadowing.
@@ -320,7 +320,7 @@ static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
        */
       local_recursive = include_block_is_recursive(current);
       for (j = i + 1; j < fileset->include_list.size(); j++) {
-         compare_against = (findINCEXE *)fileset->include_list.get(j);
+         compare_against = (findIncludeExcludeItem *)fileset->include_list.get(j);
 
          /*
           * Only check global shadowing against this include block
@@ -405,14 +405,14 @@ static inline void check_global_fileset_shadowing(JobControlRecord *jcr,
 void check_include_list_shadowing(JobControlRecord *jcr, findFILESET *fileset)
 {
    int i;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
    b_fileset_shadow_type shadow_type;
 
    /*
     * Walk the list of include blocks.
     */
    for (i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findINCEXE *)fileset->include_list.get(i);
+      incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
       /*
        * See if the shadow check option is enabled for this

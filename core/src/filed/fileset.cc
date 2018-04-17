@@ -81,7 +81,7 @@ bool init_fileset(JobControlRecord *jcr)
    return true;
 }
 
-static void append_file(JobControlRecord *jcr, findINCEXE *incexe,
+static void append_file(JobControlRecord *jcr, findIncludeExcludeItem *incexe,
                         const char *buf, bool is_file)
 {
    if (is_file) {
@@ -165,7 +165,7 @@ void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool is_file)
    }
 }
 
-findINCEXE *get_incexe(JobControlRecord *jcr)
+findIncludeExcludeItem *get_incexe(JobControlRecord *jcr)
 {
    if (jcr->ff && jcr->ff->fileset) {
       return jcr->ff->fileset->incexe;
@@ -174,7 +174,7 @@ findINCEXE *get_incexe(JobControlRecord *jcr)
    return NULL;
 }
 
-void set_incexe(JobControlRecord *jcr, findINCEXE *incexe)
+void set_incexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe)
 {
    findFILESET *fileset = jcr->ff->fileset;
    fileset->incexe = incexe;
@@ -387,7 +387,7 @@ bool term_fileset(JobControlRecord *jcr)
 #ifdef xxx_DEBUG_CODE
    for (int i = 0; i < fileset->include_list.size(); i++) {
       dlistString *node;
-      findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
       Dmsg0(400, "I\n");
       for (int j = 0; j < incexe->opts_list.size(); j++) {
@@ -441,7 +441,7 @@ bool term_fileset(JobControlRecord *jcr)
       }
    }
    for (int i = 0; i < fileset->exclude_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->exclude_list.get(i);
 
       Dmsg0(400, "E\n");
       for (int j = 0; j < incexe->opts_list.size(); j++) {
@@ -491,7 +491,7 @@ bool term_fileset(JobControlRecord *jcr)
     * Generate bEventPluginCommand events for each Options Plugin.
     */
    for (int i = 0; i < fileset->include_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);

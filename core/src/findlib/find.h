@@ -153,7 +153,7 @@ struct findFOPTS {
 /**
  * This is either an include item or an exclude item
  */
-struct findINCEXE {
+struct findIncludeExcludeItem {
    findFOPTS *current_opts;           /**< Points to current options structure */
    alist opts_list;                   /**< Options list */
    dlist name_list;                   /**< Filename list -- holds dlistString */
@@ -166,7 +166,7 @@ struct findINCEXE {
  */
 struct findFILESET {
    int state;
-   findINCEXE *incexe;                /**< Current item */
+   findIncludeExcludeItem *incexe;                /**< Current item */
    alist include_list;
    alist exclude_list;
 };

@@ -37,10 +37,10 @@
  */
 bool win32_onefs_is_disabled(findFILESET *fileset)
 {
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
 
    for (int i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findINCEXE *)fileset->include_list.get(i);
+      incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
       /*
        * Look through all files and check
        */
@@ -68,7 +68,7 @@ int get_win32_driveletters(findFILESET *fileset, char *szDrives)
    char drive[4], dt[16];
    struct stat sb;
    dlistString *node;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
 
    /*
     * szDrives must be at least 27 bytes long
@@ -100,7 +100,7 @@ int get_win32_driveletters(findFILESET *fileset, char *szDrives)
 
    if (fileset) {
       for (i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
          /*
           * Look through all files and check
@@ -167,14 +167,14 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
    char *fname;
    struct stat sb;
    dlistString *node;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
    POOLMEM *devicename;
 
    cnt = 0;
    if (fileset) {
       devicename = get_pool_memory(PM_FNAME);
       for (i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          /*
           * Look through all files and check
           */
@@ -214,7 +214,7 @@ int get_win32_virtualmountpoints(findFILESET *fileset, dlist **szVmps)
    return cnt;
 }
 
-static inline bool wanted_drive_type(const char *drive, findINCEXE *incexe)
+static inline bool wanted_drive_type(const char *drive, findIncludeExcludeItem *incexe)
 {
    int i,j;
    char dt[16];
@@ -261,11 +261,11 @@ bool expand_win32_fileset(findFILESET *fileset)
    int i;
    char *bp;
    dlistString *node;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
    char drives[MAX_NAME_LENGTH];
 
    for (i = 0; i < fileset->include_list.size(); i++) {
-      incexe = (findINCEXE *)fileset->include_list.get(i);
+      incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
       foreach_dlist(node, &incexe->name_list) {
          Dmsg1(100, "Checking %s\n", node->c_str());
          if (bstrcmp(node->c_str(), "/")) {
@@ -320,12 +320,12 @@ static inline int count_include_list_file_entries(FindFilesPacket *ff)
 {
    int cnt = 0;
    findFILESET *fileset;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
 
    fileset = ff->fileset;
    if (fileset) {
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          cnt += incexe->name_list.size();
       }
    }
@@ -367,7 +367,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
     * automatically exclude files from FilesNotToBackup Registry Key
     */
    for (int i = 0; i < ff->fileset->include_list.size(); i++) {
-      findINCEXE *incexe = (findINCEXE *)ff->fileset->include_list.get(i);
+      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)ff->fileset->include_list.get(i);
 
       for (int j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
@@ -396,7 +396,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
       DWORD cbSecurityDescriptor;    /* Size of security descriptor */
       FILETIME ftLastWriteTime;      /* Last write time */
       DWORD cchValue;                /* Size of value string */
-      findINCEXE *include;
+      findIncludeExcludeItem *include;
 
       /*
        * Make sure the variable are big enough to contain the data.
@@ -428,7 +428,7 @@ bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFil
           */
          new_preinclude(ff->fileset);
 
-         include = (findINCEXE*)ff->fileset->include_list.get(0);
+         include = (findIncludeExcludeItem*)ff->fileset->include_list.get(0);
 
          if (include->opts_list.size() == 0) {
             /*

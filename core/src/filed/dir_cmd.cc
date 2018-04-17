@@ -349,7 +349,7 @@ static bool validate_command(JobControlRecord *jcr, const char *cmd, alist *allo
 static inline void cleanup_fileset(JobControlRecord *jcr)
 {
    findFILESET *fileset;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
    findFOPTS *fo;
 
    fileset = jcr->ff->fileset;
@@ -358,7 +358,7 @@ static inline void cleanup_fileset(JobControlRecord *jcr)
        * Delete FileSet Include lists
        */
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          for (int j = 0; j < incexe->opts_list.size(); j++) {
             fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->plugin) {
@@ -398,7 +398,7 @@ static inline void cleanup_fileset(JobControlRecord *jcr)
        * Delete FileSet Exclude lists
        */
       for (int i = 0; i<fileset->exclude_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->exclude_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->exclude_list.get(i);
          for (int j = 0; j<incexe->opts_list.size(); j++) {
             fo = (findFOPTS *)incexe->opts_list.get(j);
             if (fo->size_match) {
@@ -1347,12 +1347,12 @@ static inline int count_include_list_file_entries(JobControlRecord *jcr)
 {
    int cnt = 0;
    findFILESET *fileset;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
 
    fileset = jcr->ff->fileset;
    if (fileset) {
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          cnt += incexe->name_list.size();
       }
    }
@@ -1750,7 +1750,7 @@ static inline void clear_flag_in_fileset(JobControlRecord *jcr, int flag, const 
    fileset = jcr->ff->fileset;
    if (fileset) {
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
          for (int j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
@@ -1781,7 +1781,7 @@ static inline void clear_compression_flag_in_fileset(JobControlRecord *jcr)
    fileset = jcr->ff->fileset;
    if (fileset) {
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
          for (int j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
@@ -1838,7 +1838,7 @@ static inline bool get_wanted_crypto_cipher(JobControlRecord *jcr, crypto_cipher
    fileset = jcr->ff->fileset;
    if (fileset) {
       for (int i = 0; i < fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
 
          for (int j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);

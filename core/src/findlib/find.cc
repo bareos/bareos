@@ -122,7 +122,7 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
       clear_all_bits(FO_MAX, ff->flags);
       for (i = 0; i < fileset->include_list.size(); i++) {
          dlistString *node;
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          fileset->incexe = incexe;
 
          /*
@@ -206,12 +206,12 @@ bool is_in_fileset(FindFilesPacket *ff)
    int i;
    char *fname;
    dlistString *node;
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
    findFILESET *fileset = ff->fileset;
 
    if (fileset) {
       for (i = 0; i < fileset->include_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->include_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
             Dmsg2(debuglevel, "Inc fname=%s ff->fname=%s\n", fname, ff->fname);
@@ -221,7 +221,7 @@ bool is_in_fileset(FindFilesPacket *ff)
          }
       }
       for (i = 0; i < fileset->exclude_list.size(); i++) {
-         incexe = (findINCEXE *)fileset->exclude_list.get(i);
+         incexe = (findIncludeExcludeItem *)fileset->exclude_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
             Dmsg2(debuglevel, "Exc fname=%s ff->fname=%s\n", fname, ff->fname);
@@ -241,7 +241,7 @@ bool accept_file(FindFilesPacket *ff)
    int fnm_flags;
    const char *basename;
    findFILESET *fileset = ff->fileset;
-   findINCEXE *incexe = fileset->incexe;
+   findIncludeExcludeItem *incexe = fileset->incexe;
    int (*match_func)(const char *pattern, const char *string, int flags);
 
    Dmsg1(debuglevel, "enter accept_file: fname=%s\n", ff->fname);
@@ -358,7 +358,7 @@ bool accept_file(FindFilesPacket *ff)
     */
    for (i = 0; i < fileset->exclude_list.size(); i++) {
       dlistString *node;
-      findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+      findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->exclude_list.get(i);
 
       for (j = 0; j < incexe->opts_list.size(); j++) {
          findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
@@ -461,12 +461,12 @@ int term_find_files(FindFilesPacket *ff)
 /**
  * Allocate a new include/exclude block.
  */
-findINCEXE *allocate_new_incexe(void)
+findIncludeExcludeItem *allocate_new_incexe(void)
 {
-   findINCEXE *incexe;
+   findIncludeExcludeItem *incexe;
 
-   incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-   memset(incexe, 0, sizeof(findINCEXE));
+   incexe = (findIncludeExcludeItem *)malloc(sizeof(findIncludeExcludeItem));
+   memset(incexe, 0, sizeof(findIncludeExcludeItem));
    incexe->opts_list.init(1, true);
    incexe->name_list.init();
    incexe->plugin_list.init();
@@ -477,7 +477,7 @@ findINCEXE *allocate_new_incexe(void)
 /**
  * Define a new Exclude block in the FileSet
  */
-findINCEXE *new_exclude(findFILESET *fileset)
+findIncludeExcludeItem *new_exclude(findFILESET *fileset)
 {
    /*
     * New exclude
@@ -491,7 +491,7 @@ findINCEXE *new_exclude(findFILESET *fileset)
 /**
  * Define a new Include block in the FileSet
  */
-findINCEXE *new_include(findFILESET *fileset)
+findIncludeExcludeItem *new_include(findFILESET *fileset)
 {
    /*
     * New include
@@ -507,7 +507,7 @@ findINCEXE *new_include(findFILESET *fileset)
  * That is the include is prepended to the other
  * Includes. This is used for plugin exclusions.
  */
-findINCEXE *new_preinclude(findFILESET *fileset)
+findIncludeExcludeItem *new_preinclude(findFILESET *fileset)
 {
    /*
     * New pre-include
@@ -521,7 +521,7 @@ findINCEXE *new_preinclude(findFILESET *fileset)
 /**
  * Create a new exclude block and prepend it to the list of exclude blocks.
  */
-findINCEXE *new_preexclude(findFILESET *fileset)
+findIncludeExcludeItem *new_preexclude(findFILESET *fileset)
 {
    /*
     * New pre-exclude
@@ -535,7 +535,7 @@ findINCEXE *new_preexclude(findFILESET *fileset)
 findFOPTS *start_options(FindFilesPacket *ff)
 {
    int state = ff->fileset->state;
-   findINCEXE *incexe = ff->fileset->incexe;
+   findIncludeExcludeItem *incexe = ff->fileset->incexe;
 
    if (state != state_options) {
       ff->fileset->state = state_options;
@@ -561,7 +561,7 @@ findFOPTS *start_options(FindFilesPacket *ff)
 /**
  * Used by plugins to define a new options block
  */
-void new_options(FindFilesPacket *ff, findINCEXE *incexe)
+void new_options(FindFilesPacket *ff, findIncludeExcludeItem *incexe)
 {
    findFOPTS *fo;
 

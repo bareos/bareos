@@ -182,7 +182,7 @@ main (int argc, char *const *argv)
       int i, j, k;
       /* Delete FileSet Include lists */
       for (i=0; i<fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          for (j=0; j<incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
             for (k=0; k<fo->regex.size(); k++) {
@@ -205,7 +205,7 @@ main (int argc, char *const *argv)
 
       /* Delete FileSet Exclude lists */
       for (i=0; i<fileset->exclude_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->exclude_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->exclude_list.get(i);
          for (j=0; j<incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
             fo->regex.destroy();
@@ -446,8 +446,8 @@ static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
             ie = jcr_fileset->include_items[i];
 
             /* New include */
-            fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-            memset(fileset->incexe, 0, sizeof(findINCEXE));
+            fileset->incexe = (findIncludeExcludeItem *)malloc(sizeof(findIncludeExcludeItem));
+            memset(fileset->incexe, 0, sizeof(findIncludeExcludeItem));
             fileset->incexe->opts_list.init(1, true);
             fileset->incexe->name_list.init(0, 0);
             fileset->include_list.append(fileset->incexe);
@@ -455,8 +455,8 @@ static bool copy_fileset(FindFilesPacket *ff, JobControlRecord *jcr)
             ie = jcr_fileset->exclude_items[i];
 
             /* New exclude */
-            fileset->incexe = (findINCEXE *)malloc(sizeof(findINCEXE));
-            memset(fileset->incexe, 0, sizeof(findINCEXE));
+            fileset->incexe = (findIncludeExcludeItem *)malloc(sizeof(findIncludeExcludeItem));
+            memset(fileset->incexe, 0, sizeof(findIncludeExcludeItem));
             fileset->incexe->opts_list.init(1, true);
             fileset->incexe->name_list.init(0, 0);
             fileset->exclude_list.append(fileset->incexe);

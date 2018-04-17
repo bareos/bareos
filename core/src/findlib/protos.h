@@ -49,13 +49,13 @@ DLL_IMP_EXP bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int sub
 DLL_IMP_EXP int term_find_files(FindFilesPacket *ff);
 DLL_IMP_EXP bool is_in_fileset(FindFilesPacket *ff);
 DLL_IMP_EXP bool accept_file(FindFilesPacket *ff);
-DLL_IMP_EXP findINCEXE *allocate_new_incexe(void);
-DLL_IMP_EXP findINCEXE *new_exclude(findFILESET *fileset);
-DLL_IMP_EXP findINCEXE *new_include(findFILESET *fileset);
-DLL_IMP_EXP findINCEXE *new_preinclude(findFILESET *fileset);
-DLL_IMP_EXP findINCEXE *new_preexclude(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *allocate_new_incexe(void);
+DLL_IMP_EXP findIncludeExcludeItem *new_exclude(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_include(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_preinclude(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_preexclude(findFILESET *fileset);
 DLL_IMP_EXP findFOPTS *start_options(FindFilesPacket *ff);
-DLL_IMP_EXP void new_options(FindFilesPacket *ff, findINCEXE *incexe);
+DLL_IMP_EXP void new_options(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
 
 /* match.c */
 DLL_IMP_EXP void init_include_exclude_files(FindFilesPacket *ff);

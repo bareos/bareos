@@ -77,8 +77,8 @@ int make_estimate(JobControlRecord *jcr);
 /* fileset.c */
 bool init_fileset(JobControlRecord *jcr);
 void add_file_to_fileset(JobControlRecord *jcr, const char *fname, bool is_file);
-findINCEXE *get_incexe(JobControlRecord *jcr);
-void set_incexe(JobControlRecord *jcr, findINCEXE *incexe);
+findIncludeExcludeItem *get_incexe(JobControlRecord *jcr);
+void set_incexe(JobControlRecord *jcr, findIncludeExcludeItem *incexe);
 int add_regex_to_fileset(JobControlRecord *jcr, const char *item, int type);
 int add_wild_to_fileset(JobControlRecord *jcr, const char *item, int type);
 int add_options_to_fileset(JobControlRecord *jcr, const char *item);

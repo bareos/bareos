@@ -137,8 +137,8 @@ struct b_plugin_ctx {
    bool restoreFileStarted;
    bool createFileCalled;
    char events[nbytes_for_bits(FD_NR_EVENTS + 1)]; /* enabled events bitmask */
-   findINCEXE *exclude;                            /* pointer to exclude files */
-   findINCEXE *include;                            /* pointer to include/exclude files */
+   findIncludeExcludeItem *exclude;                            /* pointer to exclude files */
+   findIncludeExcludeItem *include;                            /* pointer to include/exclude files */
    Plugin *plugin;                                 /* pointer to plugin of which this is an instance off */
 };
 
@@ -2306,7 +2306,7 @@ static void bareosFree(bpContext *ctx, const char *fname, int line, void *mem)
 static bRC bareosAddExclude(bpContext *ctx, const char *fname)
 {
    JobControlRecord *jcr;
-   findINCEXE *old;
+   findIncludeExcludeItem *old;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {
@@ -2355,7 +2355,7 @@ static bRC bareosAddExclude(bpContext *ctx, const char *fname)
 static bRC bareosAddInclude(bpContext *ctx, const char *fname)
 {
    JobControlRecord *jcr;
-   findINCEXE *old;
+   findIncludeExcludeItem *old;
    b_plugin_ctx *bctx;
 
    if (!is_ctx_good(ctx, jcr, bctx)) {

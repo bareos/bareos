@@ -54,7 +54,7 @@ bool adjust_compression_buffers(JobControlRecord *jcr)
       int i, j;
 
       for (i = 0; i < fileset->include_list.size(); i++) {
-         findINCEXE *incexe = (findINCEXE *)fileset->include_list.get(i);
+         findIncludeExcludeItem *incexe = (findIncludeExcludeItem *)fileset->include_list.get(i);
          for (j = 0; j < incexe->opts_list.size(); j++) {
             findFOPTS *fo = (findFOPTS *)incexe->opts_list.get(j);
 
