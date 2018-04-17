@@ -916,7 +916,7 @@ static DeviceControlRecord *find_device(JobControlRecord *jcr, PoolMem &devname,
 
    if (found) {
       Dmsg1(100, "Found device %s\n", device->name());
-      dcr = New(SD_DCR);
+      dcr = New(StorageDaemonDeviceControlRecord);
       setup_new_dcr_device(jcr, dcr, device->dev, blocksizes);
       dcr->set_will_write();
       dcr->device = device;

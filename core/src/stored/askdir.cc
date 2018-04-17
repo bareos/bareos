@@ -78,7 +78,7 @@ static char Device_update[] =
 /**
  * Send update information about a device to Director
  */
-bool SD_DCR::dir_update_device(JobControlRecord *jcr, Device *dev)
+bool StorageDaemonDeviceControlRecord::dir_update_device(JobControlRecord *jcr, Device *dev)
 {
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem dev_name, VolumeName, MediaType, ChangerName;
@@ -116,7 +116,7 @@ bool SD_DCR::dir_update_device(JobControlRecord *jcr, Device *dev)
    return ok;
 }
 
-bool SD_DCR::dir_update_changer(JobControlRecord *jcr, AUTOCHANGER *changer)
+bool StorageDaemonDeviceControlRecord::dir_update_changer(JobControlRecord *jcr, AUTOCHANGER *changer)
 {
    BareosSocket *dir = jcr->dir_bsock;
    PoolMem dev_name, MediaType;
@@ -237,7 +237,7 @@ static bool do_get_volume_info(DeviceControlRecord *dcr)
  *
  * Volume information returned in dcr->VolCatInfo
  */
-bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
+bool StorageDaemonDeviceControlRecord::dir_get_volume_info(enum get_vol_info_rw writing)
 {
    bool ok;
    BareosSocket *dir = jcr->dir_bsock;
@@ -266,7 +266,7 @@ bool SD_DCR::dir_get_volume_info(enum get_vol_info_rw writing)
  *
  * Volume information returned in dcr
  */
-bool SD_DCR::dir_find_next_appendable_volume()
+bool StorageDaemonDeviceControlRecord::dir_find_next_appendable_volume()
 {
     bool retval;
     BareosSocket *dir = jcr->dir_bsock;
@@ -339,7 +339,7 @@ get_out:
  * back to the director. The information comes from the
  * dev record.
  */
-bool SD_DCR::dir_update_volume_info(bool label, bool update_LastWritten)
+bool StorageDaemonDeviceControlRecord::dir_update_volume_info(bool label, bool update_LastWritten)
 {
    BareosSocket *dir = jcr->dir_bsock;
    VolumeCatalogInfo *vol = &dev->VolCatInfo;
@@ -419,7 +419,7 @@ bail_out:
 /**
  * After writing a Volume, create the JobMedia record.
  */
-bool SD_DCR::dir_create_jobmedia_record(bool zero)
+bool StorageDaemonDeviceControlRecord::dir_create_jobmedia_record(bool zero)
 {
    BareosSocket *dir = jcr->dir_bsock;
    char ed1[50];
@@ -496,7 +496,7 @@ bool SD_DCR::dir_create_jobmedia_record(bool zero)
  *
  * Now Restore Objects pass through here STREAM_RESTORE_OBJECT
  */
-bool SD_DCR::dir_update_file_attributes(DeviceRecord *record)
+bool StorageDaemonDeviceControlRecord::dir_update_file_attributes(DeviceRecord *record)
 {
    BareosSocket *dir = jcr->dir_bsock;
    ser_declare;
@@ -541,7 +541,7 @@ bool SD_DCR::dir_update_file_attributes(DeviceRecord *record)
  * actually be mounted. The calling routine must read it and
  * verify the label.
  */
-bool SD_DCR::dir_ask_sysop_to_create_appendable_volume()
+bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_create_appendable_volume()
 {
    int status = W_TIMEOUT;
    bool got_vol = false;
@@ -627,7 +627,7 @@ get_out:
  *
  * Note, must create dev->errmsg on error return.
  */
-bool SD_DCR::dir_ask_sysop_to_mount_volume(int mode)
+bool StorageDaemonDeviceControlRecord::dir_ask_sysop_to_mount_volume(int mode)
 {
    int status = W_TIMEOUT;
 
@@ -707,11 +707,11 @@ get_out:
    return true;
 }
 
-DeviceControlRecord *SD_DCR::get_new_spooling_dcr()
+DeviceControlRecord *StorageDaemonDeviceControlRecord::get_new_spooling_dcr()
 {
    DeviceControlRecord *dcr;
 
-   dcr = New(SD_DCR);
+   dcr = New(StorageDaemonDeviceControlRecord);
 
    return dcr;
 }
@@ -740,7 +740,7 @@ DeviceControlRecord *DeviceControlRecord::get_new_spooling_dcr()
 {
    DeviceControlRecord *dcr;
 
-   dcr = New(SD_DCR);
+   dcr = New(StorageDaemonDeviceControlRecord);
 
    return dcr;
 }

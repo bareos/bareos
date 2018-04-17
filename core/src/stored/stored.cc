@@ -632,7 +632,7 @@ void *device_initialization(void *arg)
          continue;
       }
 
-      dcr = New(SD_DCR);
+      dcr = New(StorageDaemonDeviceControlRecord);
       jcr->dcr = dcr;
       setup_new_dcr_device(jcr, dcr, dev, NULL);
       jcr->dcr->set_will_write();

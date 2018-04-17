@@ -760,12 +760,12 @@ public:
    bool rewrite_volume_label(bool recycle);
 };
 
-class SD_IMP_EXP SD_DCR : public DeviceControlRecord {
+class SD_IMP_EXP StorageDaemonDeviceControlRecord : public DeviceControlRecord {
 public:
    /*
     * Virtual Destructor.
     */
-   ~SD_DCR() {};
+   ~StorageDaemonDeviceControlRecord() {};
 
    /*
     * Methods overriding default implementations.

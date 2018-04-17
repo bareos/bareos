@@ -264,7 +264,7 @@ static bool use_device_cmd(JobControlRecord *jcr)
 #endif
 
    init_jcr_device_wait_timers(jcr);
-   jcr->dcr = New(SD_DCR);
+   jcr->dcr = New(StorageDaemonDeviceControlRecord);
    setup_new_dcr_device(jcr, jcr->dcr, NULL, NULL);
    if (rctx.append) {
       jcr->dcr->set_will_write();
