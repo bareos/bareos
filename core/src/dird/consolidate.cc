@@ -32,6 +32,12 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/consolidate.h"
+#include "dird/job.h"
+#include "dird/storage.h"
+#include "dird/ua_input.h"
+#include "dird/ua_server.h"
+#include "dird/ua_run.h"
 
 static const int debuglevel = 100;
 

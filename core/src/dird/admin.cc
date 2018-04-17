@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/admin.h"
+#include "dird/job.h"
+#include "dird/storage.h"
 
 static const int debuglevel = 100;
 

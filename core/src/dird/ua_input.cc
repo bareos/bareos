@@ -29,6 +29,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/ua_input.h"
+#include "dird/ua_cmds.h"
+#include "dird/ua_select.h"
 
 /* Imported variables */
 

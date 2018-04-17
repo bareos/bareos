@@ -30,6 +30,10 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/storage.h"
+#include "dird/ua_input.h"
+#include "dird/ua_select.h"
+#include "dird/ua_select.h"
 
 /* Imported variables */
 extern struct s_jt jobtypes[];

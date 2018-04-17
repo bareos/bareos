@@ -32,7 +32,12 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/job.h"
 #include "cats/sql_pooling.h"
+#include "dird/next_vol.h"
+#include "dird/ua_db.h"
+#include "dird/ua_output.h"
+#include "dird/ua_select.h"
 
 /* Imported subroutines */
 

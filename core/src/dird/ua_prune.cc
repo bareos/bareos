@@ -32,7 +32,12 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/ua_input.h"
 #include "cats/sql.h"
+#include "dird/ua_db.h"
+#include "dird/ua_select.h"
+#include "dird/ua_prune.h"
+#include "dird/ua_purge.h"
 
 /* Imported variables */
 

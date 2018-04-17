@@ -29,6 +29,8 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
 
 #if HAVE_NDMP
 

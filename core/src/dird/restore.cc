@@ -40,6 +40,14 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/backup.h"
+#include "dird/fd_cmds.h"
+#include "dird/getmsg.h"
+#include "dird/job.h"
+#include "dird/msgchan.h"
+#include "dird/restore.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
 
 /* Commands sent to File daemon */
 static char restorecmd[] =

@@ -3,7 +3,7 @@
 
    Copyright (C) 2003-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,15 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/msgchan.h"
+#include "dird/next_vol.h"
+#include "dird/ndmp_dma_storage.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
+#include "dird/ua_db.h"
+#include "dird/ua_input.h"
+#include "dird/ua_label.h"
+#include "dird/ua_select.h"
 
 /* Forward referenced functions */
 

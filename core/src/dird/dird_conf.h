@@ -27,7 +27,8 @@
  * @file
  * Director specific configuration and defines
  */
-
+#ifndef DIRD_DIRD_CONF_H_
+#define DIRD_DIRD_CONF_H_
 /* NOTE:  #includes at the end of this file */
 
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
@@ -648,3 +649,17 @@ union UnionOfResources {
 void init_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 bool propagate_jobdefs(int res_type, JobResource *res);
 bool validate_resource(int type, ResourceItem *items, BareosResource *res);
+
+bool print_datatype_schema_json(PoolMem &buffer, int level, const int type,
+                                ResourceItem items[], const bool last = false);
+#ifdef HAVE_JANSSON
+json_t *json_datatype(const int type, ResourceItem items[]);
+#endif
+const char *auth_protocol_to_str(uint32_t auth_protocol);
+const char *level_to_str(int level);
+extern "C" char *job_code_callback_director(JobControlRecord *jcr, const char*);
+const char *get_configure_usage_string();
+void destroy_configure_usage_string();
+bool populate_defs();
+
+#endif // DIRD_DIRD_CONF_H_

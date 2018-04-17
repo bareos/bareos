@@ -30,6 +30,13 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/authenticate.h"
+#include "dird/job.h"
+#include "dird/ua_cmds.h"
+#include "dird/ua_db.h"
+#include "dird/ua_input.h"
+#include "dird/ua_output.h"
+#include "dird/ua_server.h"
 
 /* Imported variables */
 

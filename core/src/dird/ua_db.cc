@@ -30,7 +30,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/ua_db.h"
 #include "cats/sql_pooling.h"
+#include "dird/ua_select.h"
 
 /* Imported subroutines */
 

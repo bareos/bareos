@@ -3,7 +3,7 @@
 
    Copyright (C) 2002-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -34,6 +34,14 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/next_vol.h"
+#include "dird/sd_cmds.h"
+#include "dird/ua_db.h"
+#include "dird/ua_update.h"
+#include "dird/ua_input.h"
+#include "dird/ua_select.h"
+#include "dird/ua_prune.h"
+#include "dird/ua_purge.h"
 
 /* Forward referenced functions */
 static bool purge_files_from_client(UaContext *ua, ClientResource *client);

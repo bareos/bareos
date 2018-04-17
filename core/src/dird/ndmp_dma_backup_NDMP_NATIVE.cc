@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2015 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -28,8 +28,15 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/job.h"
+#include "dird/next_vol.h"
+#include "dird/quota.h"
+#include "dird/storage.h"
 
 #if HAVE_NDMP
+#include "dird/ndmp_dma_backup_common.h"
+#include "dird/ndmp_dma_generic.h"
+#include "dird/ndmp_dma_storage.h"
 
 #define NDMP_NEED_ENV_KEYWORDS 1
 

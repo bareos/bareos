@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,21 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/backup.h"
+#include "dird/expand.h"
+#include "dird/fd_cmds.h"
+#include "dird/job.h"
+#include "dird/next_vol.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
+#include "dird/ua_db.h"
+#include "dird/ua_impexp.h"
+#include "dird/ua_input.h"
+#include "dird/ua_label.h"
+#include "dird/ua_select.h"
+#include "dird/ua_status.h"
+#include "dird/ua_purge.h"
+#include "dird/ua_run.h"
 
 /* Imported subroutines */
 

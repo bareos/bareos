@@ -31,6 +31,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/sd_cmds.h"
+#include "dird/ndmp_dma_storage.h"
+#include "dird/storage.h"
 
 /* Forward referenced functions */
 

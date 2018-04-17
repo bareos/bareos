@@ -1,7 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -199,5 +199,16 @@ static struct s_fs_opt FS_options[] = {
 #define PERMITTED_VERIFY_OPTIONS (const char *)"ipnugsamcd51"
 #define PERMITTED_ACCURATE_OPTIONS (const char *)"ipnugsamcd51A"
 #define PERMITTED_BASEJOB_OPTIONS (const char *)"ipnugsamcd51"
+
+void find_used_compressalgos(PoolMem* compressalgos, JobControlRecord* jcr);
+bool print_incexc_schema_json(PoolMem &buffer, int level,
+                              const int type, const bool last = false);
+bool print_options_schema_json(PoolMem &buffer, int level,
+                               const int type, const bool last = false);
+#ifdef HAVE_JANSSON
+json_t *json_incexc(const int type);
+json_t *json_options(const int type);
+#endif
+
 
 #endif /* _INC_CONF_H */

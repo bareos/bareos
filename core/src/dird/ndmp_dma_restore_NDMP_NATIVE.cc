@@ -29,13 +29,17 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/storage.h"
 
 #if HAVE_NDMP
+#include "dird/ndmp_dma_storage.h"
 
 #define NDMP_NEED_ENV_KEYWORDS 1
 
 #include "ndmp/ndmagents.h"
 #include "ndmp_dma_priv.h"
+#include "dird/ndmp_dma_restore_common.h"
+#include "dird/ndmp_dma_generic.h"
 
 /*
  * Fill the NDMP restore environment table with the data for the data agent to act on.

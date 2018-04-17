@@ -30,6 +30,12 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/job.h"
+#include "dird/scheduler.h"
+#include "dird/socket_server.h"
+#include "dird/stats.h"
+#include "dird/ua_db.h"
+
 #include "cats/cats_backends.h"
 #include "cats/sql.h"
 #include "cats/sql_pooling.h"

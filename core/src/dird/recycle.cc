@@ -30,6 +30,8 @@
  */
 #include "bareos.h"
 #include "dird.h"
+#include "dird/autorecycle.h"
+#include "dird/next_vol.h"
 
 /* Forward referenced functions */
 

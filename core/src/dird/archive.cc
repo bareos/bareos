@@ -30,6 +30,9 @@
  */
 #include "bareos.h"
 #include "dird.h"
+#include "dird/archive.h"
+#include "dird/job.h"
+#include "dird/storage.h"
 
 static const int debuglevel = 100;
 

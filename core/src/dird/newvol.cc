@@ -37,7 +37,11 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/expand.h"
+#include "dird/next_vol.h"
 #include "cats/sql.h"
+#include "dird/ua_db.h"
+#include "dird/ua_label.h"
 
 /*
  * Forward referenced functions

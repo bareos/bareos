@@ -28,6 +28,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/ua_select.h"
 
 static void configure_lex_error_handler(const char *file, int line, LEX *lc, PoolMem &msg)
 {

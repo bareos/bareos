@@ -32,6 +32,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/fd_cmds.h"
 
 static const int debuglevel = 50;
 

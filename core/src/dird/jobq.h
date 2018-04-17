@@ -70,4 +70,6 @@ extern int jobq_destroy(jobq_t *wq);
 extern int jobq_add(jobq_t *wq, JobControlRecord *jcr);
 extern int jobq_remove(jobq_t *wq, JobControlRecord *jcr);
 
+bool inc_read_store(JobControlRecord *jcr);
+void dec_read_store(JobControlRecord *jcr);
 #endif /* __JOBQ_H */

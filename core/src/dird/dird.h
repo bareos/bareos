@@ -27,7 +27,8 @@
  * @file
  * Includes specific to the Director
  */
-
+#ifndef DIRD_DIRD_H_
+#define DIRD_DIRD_H_
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "lib/breg.h"
@@ -189,4 +190,5 @@ struct runtime_job_status_t {
 #define FD_VERSION_53 53
 #define FD_VERSION_54 54
 
-#include "protos.h"
+
+#endif // DIRD_DIRD_H_

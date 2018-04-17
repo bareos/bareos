@@ -39,6 +39,8 @@
 #include "lib/fnmatch.h"
 #endif
 #include "findlib/find.h"
+#include "dird/ua_input.h"
+#include "dird/ua_server.h"
 
 /* Forward referenced commands */
 static int markcmd(UaContext *ua, TreeContext *tree);

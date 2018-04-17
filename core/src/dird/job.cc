@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2016 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,33 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/admin.h"
+#include "dird/archive.h"
+#include "dird/autoprune.h"
+#include "dird/backup.h"
+#include "dird/consolidate.h"
+#include "dird/fd_cmds.h"
+#include "dird/job.h"
+#include "dird/migration.h"
+#include "dird/restore.h"
+#include "dird/sd_cmds.h"
+#include "dird/stats.h"
+#include "dird/storage.h"
+#include "dird/ua_cmds.h"
+#include "dird/ua_db.h"
+#include "dird/ua_input.h"
+#include "dird/ua_server.h"
+#include "dird/ua_run.h"
+#include "dird/vbackup.h"
+#include "dird/verify.h"
+
+#include "dird/ndmp_dma_backup_common.h"
+#include "dird/ndmp_dma_backup.h"
+#include "dird/ndmp_dma_backup_NATIVE_NDMP.h"
+#include "dird/ndmp_dma_restore_common.h"
+#include "dird/ndmp_dma_restore_NDMP_BAREOS.h"
+#include "dird/ndmp_dma_restore_NDMP_NATIVE.h"
+
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
 

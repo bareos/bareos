@@ -30,6 +30,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/ua_db.h"
+#include "dird/ua_input.h"
+#include "dird/ua_select.h"
 
 extern DirectorResource *director;
 

@@ -31,6 +31,12 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "dird/next_vol.h"
+#include "dird/sd_cmds.h"
+#include "dird/storage.h"
+#include "dird/ua_db.h"
+#include "dird/ua_input.h"
+#include "dird/ua_select.h"
 
 /* Forward referenced functions */
 static bool update_volume(UaContext *ua);
