@@ -30,7 +30,7 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"
@@ -273,7 +273,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
 
    switch (event->eventType) {
    case bEventJobStart:
-      Dmsg(ctx, dbglvl, "bpipe-fd: JobStart=%s\n", (char *)value);
+      Dmsg(ctx, debuglevel, "bpipe-fd: JobStart=%s\n", (char *)value);
       break;
    case bEventRestoreCommand:
       /*
@@ -308,7 +308,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       break;
    default:
       Jmsg(ctx, M_FATAL, "bpipe-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, dbglvl, "bpipe-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "bpipe-fd: unknown event=%d\n", event->eventType);
       retval = bRC_Error;
       break;
    }
@@ -372,16 +372,16 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    io->io_errno = 0;
    switch(io->func) {
    case IO_OPEN:
-      Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN\n");
+      Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN\n");
       if (io->flags & (O_CREAT | O_WRONLY)) {
          char *writer_codes = apply_rp_codes(ctx);
 
          p_ctx->pfd = open_bpipe(writer_codes, 0, "w");
-         Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", p_ctx->pfd, writer_codes);
+         Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p writer=%s\n", p_ctx->pfd, writer_codes);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
-            Dmsg(ctx, dbglvl, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
+            Dmsg(ctx, debuglevel, "bpipe-fd: Open pipe writer=%s failed: ERR=%s\n", writer_codes, strerror(io->io_errno));
             if (writer_codes) {
                free(writer_codes);
             }
@@ -392,11 +392,11 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          }
       } else {
          p_ctx->pfd = open_bpipe(p_ctx->reader, 0, "r", false);
-         Dmsg(ctx, dbglvl, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd, p_ctx->reader);
+         Dmsg(ctx, debuglevel, "bpipe-fd: IO_OPEN fd=%p reader=%s\n", p_ctx->pfd, p_ctx->reader);
          if (!p_ctx->pfd) {
             io->io_errno = errno;
             Jmsg(ctx, M_FATAL, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
-            Dmsg(ctx, dbglvl, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
+            Dmsg(ctx, debuglevel, "bpipe-fd: Open pipe reader=%s failed: ERR=%s\n", p_ctx->reader, strerror(io->io_errno));
             return bRC_Error;
          }
       }
@@ -405,41 +405,41 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
    case IO_READ:
       if (!p_ctx->pfd) {
          Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL read FD\n");
-         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL read FD\n");
+         Dmsg(ctx, debuglevel, "bpipe-fd: Logic error: NULL read FD\n");
          return bRC_Error;
       }
       io->status = fread(io->buf, 1, io->count, p_ctx->pfd->rfd);
       if (io->status == 0 && ferror(p_ctx->pfd->rfd)) {
          io->io_errno = errno;
          Jmsg(ctx, M_FATAL, "bpipe-fd: Pipe read error: ERR=%s\n", strerror(io->io_errno));
-         Dmsg(ctx, dbglvl, "bpipe-fd: Pipe read error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, debuglevel, "bpipe-fd: Pipe read error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
    case IO_WRITE:
       if (!p_ctx->pfd) {
          Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL write FD\n");
-         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL write FD\n");
+         Dmsg(ctx, debuglevel, "bpipe-fd: Logic error: NULL write FD\n");
          return bRC_Error;
       }
       io->status = fwrite(io->buf, 1, io->count, p_ctx->pfd->wfd);
       if (io->status == 0 && ferror(p_ctx->pfd->wfd)) {
          io->io_errno = errno;
          Jmsg(ctx, M_FATAL, "bpipe-fd: Pipe write error: ERR=%s\n", strerror(io->io_errno));
-         Dmsg(ctx, dbglvl, "bpipe-fd: Pipe write error: ERR=%s\n", strerror(io->io_errno));
+         Dmsg(ctx, debuglevel, "bpipe-fd: Pipe write error: ERR=%s\n", strerror(io->io_errno));
          return bRC_Error;
       }
       break;
    case IO_CLOSE:
       if (!p_ctx->pfd) {
          Jmsg(ctx, M_FATAL, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
-         Dmsg(ctx, dbglvl, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
+         Dmsg(ctx, debuglevel, "bpipe-fd: Logic error: NULL FD on bpipe close\n");
          return bRC_Error;
       }
       io->status = close_bpipe(p_ctx->pfd);
       if (io->status) {
          Jmsg(ctx, M_FATAL, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
-         Dmsg(ctx, dbglvl, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
+         Dmsg(ctx, debuglevel, "bpipe-fd: Error closing stream for pseudo file %s: %d\n", p_ctx->fname, io->status);
       }
       break;
    case IO_SEEK:
@@ -696,7 +696,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    bp = strchr(plugin_definition, ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "bpipe-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, debuglevel, "bpipe-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -726,7 +726,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
           * Parsing something fishy ? e.g. partly with known keywords.
           */
          Jmsg(ctx, M_FATAL, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition (%s)\n", plugin_definition);
-         Dmsg(ctx, dbglvl, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition (%s)\n", plugin_definition);
+         Dmsg(ctx, debuglevel, "bpipe-fd: Found mixing of old and new syntax, please fix your plugin definition (%s)\n", plugin_definition);
          goto bail_out;
       }
 
@@ -832,7 +832,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
                      Jmsg(ctx, M_FATAL, 
                            "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
                            argument_value);
-                     Dmsg(ctx, dbglvl,
+                     Dmsg(ctx, debuglevel,
                            "bpipe-fd: file argument (%s) must contain a directory structure. Please fix your plugin definition\n",
                            argument_value);
                      goto bail_out;
@@ -875,7 +875,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
           */
          if (!plugin_arguments[i].name) {
             Jmsg(ctx, M_FATAL, "bpipe-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-            Dmsg(ctx, dbglvl, "bpipe-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+            Dmsg(ctx, debuglevel, "bpipe-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
             goto bail_out;
          }
       }
@@ -901,19 +901,19 @@ static bRC plugin_has_all_arguments(bpContext *ctx)
 
    if (!p_ctx->fname) {
       Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin File argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin File argument not specified.\n");
+      Dmsg(ctx, debuglevel, "bpipe-fd: Plugin File argument not specified.\n");
       retval = bRC_Error;
    }
 
    if (!p_ctx->reader) {
       Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Reader argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin Reader argument not specified.\n");
+      Dmsg(ctx, debuglevel, "bpipe-fd: Plugin Reader argument not specified.\n");
       retval = bRC_Error;
    }
 
    if (!p_ctx->writer) {
       Jmsg(ctx, M_FATAL, _("bpipe-fd: Plugin Writer argument not specified.\n"));
-      Dmsg(ctx, dbglvl, "bpipe-fd: Plugin Writer argument not specified.\n");
+      Dmsg(ctx, debuglevel, "bpipe-fd: Plugin Writer argument not specified.\n");
       retval = bRC_Error;
    }
 

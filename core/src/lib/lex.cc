@@ -35,7 +35,7 @@
 extern int debug_level;
 
 /* Debug level for this source file */
-static const int dbglvl = 5000;
+static const int debuglevel = 5000;
 
 /*
  * Scan to "logical" end of line. I.e. end of line,
@@ -46,7 +46,7 @@ void scan_to_eol(LEX *lc)
 {
    int token;
 
-   Dmsg0(dbglvl, "start scan to eof\n");
+   Dmsg0(debuglevel, "start scan to eof\n");
    while ((token = lex_get_token(lc, T_ALL)) != T_EOL) {
       if (token == T_EOB) {
          lex_unget_char(lc);
@@ -185,7 +185,7 @@ LEX *lex_close_file(LEX *lf)
    if (lf == NULL) {
       Emsg0(M_ABORT, 0, _("Close of NULL file\n"));
    }
-   Dmsg1(dbglvl, "Close lex file: %s\n", lf->fname);
+   Dmsg1(debuglevel, "Close lex file: %s\n", lf->fname);
 
    of = lf->next;
    if (lf->bpipe) {
@@ -194,7 +194,7 @@ LEX *lex_close_file(LEX *lf)
    } else {
       fclose(lf->fd);
    }
-   Dmsg1(dbglvl, "Close cfg file %s\n", lf->fname);
+   Dmsg1(debuglevel, "Close cfg file %s\n", lf->fname);
    free(lf->fname);
    free_memory(lf->line);
    free_memory(lf->str);
@@ -203,7 +203,7 @@ LEX *lex_close_file(LEX *lf)
       of->options = lf->options;      /* preserve options */
       of->error_counter += lf->error_counter; /* summarize the errors */
       memcpy(lf, of, sizeof(LEX));
-      Dmsg1(dbglvl, "Restart scan of cfg file %s\n", of->fname);
+      Dmsg1(debuglevel, "Restart scan of cfg file %s\n", of->fname);
    } else {
       of = lf;
       lf = NULL;
@@ -355,7 +355,7 @@ LEX *lex_new_buffer(LEX *lf,
                     LEX_WARNING_HANDLER *scan_warning)
 {
    lf = lex_add(lf, NULL, NULL, NULL, scan_error, scan_warning);
-   Dmsg1(dbglvl, "Return lex=%x\n", lf);
+   Dmsg1(debuglevel, "Return lex=%x\n", lf);
 
    return lf;
 }
@@ -397,7 +397,7 @@ int lex_get_char(LEX *lf)
    } else {
       lf->col_no++;
    }
-   Dmsg2(dbglvl, "lex_get_char: %c %d\n", lf->ch, lf->ch);
+   Dmsg2(debuglevel, "lex_get_char: %c %d\n", lf->ch, lf->ch);
 
    return lf->ch;
 }
@@ -546,12 +546,12 @@ int lex_get_token(LEX *lf, int expect)
       to tell which byte we are expecting. */
    int bom_bytes_seen = 0;
 
-   Dmsg0(dbglvl, "enter lex_get_token\n");
+   Dmsg0(debuglevel, "enter lex_get_token\n");
    while (token == T_NONE) {
       ch = lex_get_char(lf);
       switch (lf->state) {
       case lex_none:
-         Dmsg2(dbglvl, "Lex state lex_none ch=%d,%x\n", ch, ch);
+         Dmsg2(debuglevel, "Lex state lex_none ch=%d,%x\n", ch, ch);
          if (B_ISSPACE(ch))
             break;
          if (B_ISALPHA(ch)) {
@@ -572,11 +572,11 @@ int lex_get_token(LEX *lf, int expect)
             begin_str(lf, ch);
             break;
          }
-         Dmsg0(dbglvl, "Enter lex_none switch\n");
+         Dmsg0(debuglevel, "Enter lex_none switch\n");
          switch (ch) {
          case L_EOF:
             token = T_EOF;
-            Dmsg0(dbglvl, "got L_EOF set token=T_EOF\n");
+            Dmsg0(debuglevel, "got L_EOF set token=T_EOF\n");
             break;
          case '#':
             lf->state = lex_comment;
@@ -607,7 +607,7 @@ int lex_get_token(LEX *lf, int expect)
             }
             break;
          case L_EOL:
-            Dmsg0(dbglvl, "got L_EOL set token=T_EOL\n");
+            Dmsg0(debuglevel, "got L_EOL set token=T_EOL\n");
             if (expect != T_SKIP_EOL) {
                token = T_EOL;
             }
@@ -649,7 +649,7 @@ int lex_get_token(LEX *lf, int expect)
          }
          break;
       case lex_comment:
-         Dmsg1(dbglvl, "Lex state lex_comment ch=%x\n", ch);
+         Dmsg1(debuglevel, "Lex state lex_comment ch=%x\n", ch);
          if (ch == L_EOL) {
             lf->state = lex_none;
             if (expect != T_SKIP_EOL) {
@@ -660,7 +660,7 @@ int lex_get_token(LEX *lf, int expect)
          }
          break;
       case lex_number:
-         Dmsg2(dbglvl, "Lex state lex_number ch=%x %c\n", ch, ch);
+         Dmsg2(debuglevel, "Lex state lex_number ch=%x %c\n", ch, ch);
          if (ch == L_EOF) {
             token = T_ERROR;
             break;
@@ -685,10 +685,10 @@ int lex_get_token(LEX *lf, int expect)
             token = T_ERROR;
             break;
          }
-         Dmsg1(dbglvl, "Lex state lex_ip_addr ch=%x\n", ch);
+         Dmsg1(debuglevel, "Lex state lex_ip_addr ch=%x\n", ch);
          break;
       case lex_string:
-         Dmsg1(dbglvl, "Lex state lex_string ch=%x\n", ch);
+         Dmsg1(debuglevel, "Lex state lex_string ch=%x\n", ch);
          if (ch == L_EOF) {
             token = T_ERROR;
             break;
@@ -703,7 +703,7 @@ int lex_get_token(LEX *lf, int expect)
          add_str(lf, ch);
          break;
       case lex_identifier:
-         Dmsg2(dbglvl, "Lex state lex_identifier ch=%x %c\n", ch, ch);
+         Dmsg2(debuglevel, "Lex state lex_identifier ch=%x %c\n", ch, ch);
          if (B_ISALPHA(ch)) {
             add_str(lf, ch);
             break;
@@ -726,7 +726,7 @@ int lex_get_token(LEX *lf, int expect)
          add_str(lf, ch);
          break;
       case lex_quoted_string:
-         Dmsg2(dbglvl, "Lex state lex_quoted_string ch=%x %c\n", ch, ch);
+         Dmsg2(debuglevel, "Lex state lex_quoted_string ch=%x %c\n", ch, ch);
          if (ch == L_EOF) {
             token = T_ERROR;
             break;
@@ -843,10 +843,10 @@ int lex_get_token(LEX *lf, int expect)
          }
          break;
       }
-      Dmsg4(dbglvl, "ch=%d state=%s token=%s %c\n", ch, lex_state_to_str(lf->state),
+      Dmsg4(debuglevel, "ch=%d state=%s token=%s %c\n", ch, lex_state_to_str(lf->state),
         lex_tok_to_str(token), ch);
    }
-   Dmsg2(dbglvl, "lex returning: line %d token: %s\n", lf->line_no, lex_tok_to_str(token));
+   Dmsg2(debuglevel, "lex returning: line %d token: %s\n", lf->line_no, lex_tok_to_str(token));
    lf->token = token;
 
    /*
@@ -924,7 +924,7 @@ int lex_get_token(LEX *lf, int expect)
       break;
 
    case T_INT64:
-      Dmsg2(dbglvl, "int64=:%s: %f\n", lf->str, strtod(lf->str, NULL));
+      Dmsg2(debuglevel, "int64=:%s: %f\n", lf->str, strtod(lf->str, NULL));
       if (token != T_NUMBER || !is_a_number(lf->str)) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);

@@ -33,7 +33,7 @@
 #include "bareos.h"
 #include "dird.h"
 
-static const int dbglvl = 50;
+static const int debuglevel = 50;
 
 /*
  * Commands sent to Storage daemon and File daemon and received from the User Agent
@@ -73,7 +73,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
    bash_spaces(dirname);
 
    if (!sd->fsend(hello, dirname)) {
-      Dmsg1(dbglvl, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
+      Dmsg1(debuglevel, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
       Jmsg(jcr, M_FATAL, 0, _("Error sending Hello to Storage daemon. ERR=%s\n"), bnet_strerror(sd));
       return false;
    }
@@ -81,7 +81,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
    auth_success = sd->authenticate_outbound_connection(
        jcr, "Storage daemon", dirname, store->password, store);
    if (!auth_success) {
-      Dmsg2(dbglvl,
+      Dmsg2(debuglevel,
             "Director unable to authenticate with Storage daemon at \"%s:%d\"\n",
             sd->host(),
             sd->port());
@@ -105,7 +105,7 @@ bool authenticate_with_storage_daemon(JobControlRecord *jcr, StoreResource *stor
 
    Dmsg1(110, "<stored: %s", sd->msg);
    if (!bstrncmp(sd->msg, OKhello, sizeof(OKhello))) {
-      Dmsg0(dbglvl, _("Storage daemon rejected Hello command\n"));
+      Dmsg0(debuglevel, _("Storage daemon rejected Hello command\n"));
       Jmsg2(jcr, M_FATAL, 0, _("Storage daemon at \"%s:%d\" rejected Hello command\n"),
             sd->host(), sd->port());
       return false;
@@ -142,13 +142,13 @@ bool authenticate_with_file_daemon(JobControlRecord *jcr)
            fd->host(), fd->port(), fd->bstrerror());
       return false;
    }
-   Dmsg1(dbglvl, "Sent: %s", fd->msg);
+   Dmsg1(debuglevel, "Sent: %s", fd->msg);
 
 auth_success =
     fd->authenticate_outbound_connection(jcr, "File Daemon", dirname, client->password, client);
 
 if (!auth_success) {
-   Dmsg2(dbglvl, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
+   Dmsg2(debuglevel, "Unable to authenticate with File daemon at \"%s:%d\"\n", fd->host(), fd->port());
    Jmsg(jcr,
         M_FATAL,
         0,
@@ -166,7 +166,7 @@ if (!auth_success) {
 
    Dmsg1(116, ">filed: %s", fd->msg);
    if (fd->recv() <= 0) {
-      Dmsg1(dbglvl, _("Bad response from File daemon to Hello command: ERR=%s\n"),
+      Dmsg1(debuglevel, _("Bad response from File daemon to Hello command: ERR=%s\n"),
             bnet_strerror(fd));
       Jmsg(jcr, M_FATAL, 0, _("Bad response from File daemon at \"%s:%d\" to Hello command: ERR=%s\n"),
            fd->host(), fd->port(), fd->bstrerror());
@@ -177,7 +177,7 @@ if (!auth_success) {
    jcr->FDVersion = 0;
    if (!bstrncmp(fd->msg, FDOKhello, sizeof(FDOKhello)) &&
        sscanf(fd->msg, FDOKnewHello, &jcr->FDVersion) != 1) {
-      Dmsg0(dbglvl, _("File daemon rejected Hello command\n"));
+      Dmsg0(debuglevel, _("File daemon rejected Hello command\n"));
       Jmsg(jcr, M_FATAL, 0, _("File daemon at \"%s:%d\" rejected Hello command\n"),
            fd->host(), fd->port());
       return false;

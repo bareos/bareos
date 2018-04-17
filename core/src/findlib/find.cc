@@ -36,7 +36,7 @@
 #include "jcr.h"
 #include "find.h"
 
-static const int dbglvl = 450;
+static const int debuglevel = 450;
 
 int32_t name_max;              /* filename max length */
 int32_t path_max;              /* path name max length */
@@ -74,7 +74,7 @@ FindFilesPacket *init_find_files()
    path_max++;                        /* add for EOS */
    name_max++;                        /* add for EOS */
 
-  Dmsg1(dbglvl, "init_find_files ff=%p\n", ff);
+  Dmsg1(debuglevel, "init_find_files ff=%p\n", ff);
   return ff;
 }
 
@@ -85,15 +85,15 @@ FindFilesPacket *init_find_files()
  */
 void set_find_options(FindFilesPacket *ff, bool incremental, time_t save_time)
 {
-  Dmsg0(dbglvl, "Enter set_find_options()\n");
+  Dmsg0(debuglevel, "Enter set_find_options()\n");
   ff->incremental = incremental;
   ff->save_time = save_time;
-  Dmsg0(dbglvl, "Leave set_find_options()\n");
+  Dmsg0(debuglevel, "Leave set_find_options()\n");
 }
 
 void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRecord *jcr, FindFilesPacket *ff))
 {
-   Dmsg0(dbglvl, "Enter set_find_changed_function()\n");
+   Dmsg0(debuglevel, "Enter set_find_changed_function()\n");
    ff->check_fct = check_fct;
 }
 
@@ -166,7 +166,7 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
          foreach_dlist(node, &incexe->name_list) {
             char *fname = node->c_str();
 
-            Dmsg1(dbglvl, "F %s\n", fname);
+            Dmsg1(debuglevel, "F %s\n", fname);
             ff->top_fname = fname;
             if (find_one_file(jcr, ff, our_callback, ff->top_fname, (dev_t)-1, true) == 0) {
                return 0;                  /* error return */
@@ -183,7 +183,7 @@ int find_files(JobControlRecord *jcr, FindFilesPacket *ff,
                Jmsg(jcr, M_FATAL, 0, _("Plugin: \"%s\" not found.\n"), fname);
                return 0;
             }
-            Dmsg1(dbglvl, "PluginCommand: %s\n", fname);
+            Dmsg1(debuglevel, "PluginCommand: %s\n", fname);
             ff->top_fname = fname;
             ff->cmd_plugin = true;
             plugin_save(jcr, ff, true);
@@ -214,7 +214,7 @@ bool is_in_fileset(FindFilesPacket *ff)
          incexe = (findINCEXE *)fileset->include_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
-            Dmsg2(dbglvl, "Inc fname=%s ff->fname=%s\n", fname, ff->fname);
+            Dmsg2(debuglevel, "Inc fname=%s ff->fname=%s\n", fname, ff->fname);
             if (bstrcmp(fname, ff->fname)) {
                return true;
             }
@@ -224,7 +224,7 @@ bool is_in_fileset(FindFilesPacket *ff)
          incexe = (findINCEXE *)fileset->exclude_list.get(i);
          foreach_dlist(node, &incexe->name_list) {
             fname = node->c_str();
-            Dmsg2(dbglvl, "Exc fname=%s ff->fname=%s\n", fname, ff->fname);
+            Dmsg2(debuglevel, "Exc fname=%s ff->fname=%s\n", fname, ff->fname);
             if (bstrcmp(fname, ff->fname)) {
                return true;
             }
@@ -244,7 +244,7 @@ bool accept_file(FindFilesPacket *ff)
    findINCEXE *incexe = fileset->incexe;
    int (*match_func)(const char *pattern, const char *string, int flags);
 
-   Dmsg1(dbglvl, "enter accept_file: fname=%s\n", ff->fname);
+   Dmsg1(debuglevel, "enter accept_file: fname=%s\n", ff->fname);
    if (bit_is_set(FO_ENHANCEDWILD, ff->flags)) {
       match_func = fnmatch;
       if ((basename = last_path_separator(ff->fname)) != NULL)
@@ -273,7 +273,7 @@ bool accept_file(FindFilesPacket *ff)
          for (k = 0; k < fo->wilddir.size(); k++) {
             if (match_func((char *)fo->wilddir.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                if (bit_is_set(FO_EXCLUDE, ff->flags)) {
-                  Dmsg2(dbglvl, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k), ff->fname);
+                  Dmsg2(debuglevel, "Exclude wilddir: %s file=%s\n", (char *)fo->wilddir.get(k), ff->fname);
                   return false;       /* reject dir */
                }
                return true;           /* accept dir */
@@ -283,7 +283,7 @@ bool accept_file(FindFilesPacket *ff)
          for (k = 0; k < fo->wildfile.size(); k++) {
             if (match_func((char *)fo->wildfile.get(k), ff->fname, fnmode | fnm_flags) == 0) {
                if (bit_is_set(FO_EXCLUDE, ff->flags)) {
-                  Dmsg2(dbglvl, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k), ff->fname);
+                  Dmsg2(debuglevel, "Exclude wildfile: %s file=%s\n", (char *)fo->wildfile.get(k), ff->fname);
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -293,7 +293,7 @@ bool accept_file(FindFilesPacket *ff)
          for (k = 0; k < fo->wildbase.size(); k++) {
             if (match_func((char *)fo->wildbase.get(k), basename, fnmode | fnm_flags) == 0) {
                if (bit_is_set(FO_EXCLUDE, ff->flags)) {
-                  Dmsg2(dbglvl, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k), basename);
+                  Dmsg2(debuglevel, "Exclude wildbase: %s file=%s\n", (char *)fo->wildbase.get(k), basename);
                   return false;       /* reject file */
                }
                return true;           /* accept file */
@@ -304,7 +304,7 @@ bool accept_file(FindFilesPacket *ff)
       for (k = 0; k < fo->wild.size(); k++) {
          if (match_func((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
             if (bit_is_set(FO_EXCLUDE, ff->flags)) {
-               Dmsg2(dbglvl, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k), ff->fname);
+               Dmsg2(debuglevel, "Exclude wild: %s file=%s\n", (char *)fo->wild.get(k), ff->fname);
                return false;          /* reject file */
             }
             return true;              /* accept file */
@@ -348,7 +348,7 @@ bool accept_file(FindFilesPacket *ff)
           fo->regexdir.size() == 0 && fo->wilddir.size() == 0 &&
           fo->regexfile.size() == 0 && fo->wildfile.size() == 0 &&
           fo->wildbase.size() == 0) {
-         Dmsg1(dbglvl, "Empty options, rejecting: %s\n", ff->fname);
+         Dmsg1(debuglevel, "Empty options, rejecting: %s\n", ff->fname);
          return false;              /* reject file */
       }
    }
@@ -365,7 +365,7 @@ bool accept_file(FindFilesPacket *ff)
          fnm_flags = bit_is_set(FO_IGNORECASE, fo->flags) ? FNM_CASEFOLD : 0;
          for (k = 0; k < fo->wild.size(); k++) {
             if (fnmatch((char *)fo->wild.get(k), ff->fname, fnmode | fnm_flags) == 0) {
-               Dmsg1(dbglvl, "Reject wild1: %s\n", ff->fname);
+               Dmsg1(debuglevel, "Reject wild1: %s\n", ff->fname);
                return false;          /* reject file */
             }
          }
@@ -376,7 +376,7 @@ bool accept_file(FindFilesPacket *ff)
          char *fname = node->c_str();
 
          if (fnmatch(fname, ff->fname, fnmode|fnm_flags) == 0) {
-            Dmsg1(dbglvl, "Reject wild2: %s\n", ff->fname);
+            Dmsg1(debuglevel, "Reject wild2: %s\n", ff->fname);
             return false;          /* reject file */
          }
       }
@@ -423,7 +423,7 @@ static int our_callback(JobControlRecord *jcr, FindFilesPacket *ff, bool top_lev
       if (accept_file(ff)) {
          return ff->file_save(jcr, ff, top_level);
       } else {
-         Dmsg1(dbglvl, "Skip file %s\n", ff->fname);
+         Dmsg1(debuglevel, "Skip file %s\n", ff->fname);
          return -1;                   /* ignore this file */
       }
 

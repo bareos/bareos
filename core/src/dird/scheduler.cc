@@ -43,7 +43,7 @@
 #define DBGLVL 200
 #endif
 
-const int dbglvl = DBGLVL;
+const int debuglevel = DBGLVL;
 
 /* Local variables */
 struct job_item {
@@ -97,7 +97,7 @@ JobControlRecord *wait_for_next_job(char *one_shot_job_to_run)
    static bool first = true;
    job_item *next_job = NULL;
 
-   Dmsg0(dbglvl, "Enter wait_for_next_job\n");
+   Dmsg0(debuglevel, "Enter wait_for_next_job\n");
    if (first) {
       first = false;
       /* Create scheduled jobs list */
@@ -262,7 +262,7 @@ again:
       jcr->MaxRunSchedTime = run->MaxRunSchedTime;
    }
 
-   Dmsg0(dbglvl, "Leave wait_for_next_job()\n");
+   Dmsg0(debuglevel, "Leave wait_for_next_job()\n");
    return jcr;
 }
 
@@ -323,7 +323,7 @@ static void find_runs()
    /* Items corresponding to above at the next hour */
    int nh_hour, nh_mday, nh_wday, nh_month, nh_wom, nh_woy, nh_yday;
 
-   Dmsg0(dbglvl, "enter find_runs()\n");
+   Dmsg0(debuglevel, "enter find_runs()\n");
 
    /*
     * Compute values for time now
@@ -338,7 +338,7 @@ static void find_runs()
    woy = tm_woy(now);                 /* get week of year */
    yday = tm.tm_yday;                 /* get day of year */
 
-   Dmsg8(dbglvl, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+   Dmsg8(debuglevel, "now = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
          now, hour, month, mday, wday, wom, woy, yday);
 
    is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , yday);
@@ -358,7 +358,7 @@ static void find_runs()
    nh_woy = tm_woy(next_hour);        /* get week of year */
    nh_yday = tm.tm_yday;              /* get day of year */
 
-   Dmsg8(dbglvl, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
+   Dmsg8(debuglevel, "nh = %x: h=%d m=%d md=%d wd=%d wom=%d woy=%d yday=%d\n",
          next_hour, nh_hour, nh_month, nh_mday, nh_wday, nh_wom, nh_woy, nh_yday);
 
    nh_is_last_week = is_doy_in_last_week(tm.tm_year + 1900 , nh_yday);
@@ -376,7 +376,7 @@ static void find_runs()
          continue;                    /* no, skip this job */
       }
 
-      Dmsg1(dbglvl, "Got job: %s\n", job->hdr.name);
+      Dmsg1(debuglevel, "Got job: %s\n", job->hdr.name);
       for (run = sched->run; run; run = run->next) {
          bool run_now, run_nh;
          /*
@@ -421,7 +421,7 @@ static void find_runs()
                  (bit_is_set(nh_wom, run->wom) || (run->last_set && nh_is_last_week)) &&
                   bit_is_set(nh_woy, run->woy);
 
-         Dmsg3(dbglvl, "run@%p: run_now=%d run_nh=%d\n", run, run_now, run_nh);
+         Dmsg3(debuglevel, "run@%p: run_now=%d run_nh=%d\n", run, run_now, run_nh);
 
          if (run_now || run_nh) {
            /*
@@ -442,7 +442,7 @@ static void find_runs()
       }
    }
    UnlockRes();
-   Dmsg0(dbglvl, "Leave find_runs()\n");
+   Dmsg0(debuglevel, "Leave find_runs()\n");
 }
 
 static void add_job(JobResource *job, RunResource *run, time_t now, time_t runtime)
@@ -504,11 +504,11 @@ static void dump_job(job_item *ji, const char *msg)
 #ifdef SCHED_DEBUG
    char dt[MAX_TIME_LENGTH];
    int save_debug = debug_level;
-   if (debug_level < dbglvl) {
+   if (debug_level < debuglevel) {
       return;
    }
    bstrftime_nc(dt, sizeof(dt), ji->runtime);
-   Dmsg4(dbglvl, "%s: Job=%s priority=%d run %s\n", msg, ji->job->hdr.name,
+   Dmsg4(debuglevel, "%s: Job=%s priority=%d run %s\n", msg, ji->job->hdr.name,
       ji->Priority, dt);
    fflush(stdout);
    debug_level = save_debug;

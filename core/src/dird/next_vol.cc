@@ -33,7 +33,7 @@
 #include "bareos.h"
 #include "dird.h"
 
-static int const dbglvl = 50;   /* debug level */
+static int const debuglevel = 50;   /* debug level */
 
 /**
  * Set storage id if possible
@@ -67,7 +67,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
    StoreResource *store = jcr->res.wstore;
 
    bstrncpy(mr->MediaType, store->media_type, sizeof(mr->MediaType));
-   Dmsg3(dbglvl, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
+   Dmsg3(debuglevel, "find_next_vol_for_append: JobId=%u PoolId=%d, MediaType=%s\n",
          (uint32_t)jcr->JobId, (int)mr->PoolId, mr->MediaType);
 
    /*
@@ -91,7 +91,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
          /*
           * No volume found, apply algorithm
           */
-         Dmsg4(dbglvl, "after find_next_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
+         Dmsg4(debuglevel, "after find_next_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
                ok, index, InChanger, mr->VolStatus);
 
          /*
@@ -99,7 +99,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
           */
          ok = find_recycled_volume(jcr, InChanger, mr, store, unwanted_volumes);
          set_storageid_in_mr(store, mr);
-         Dmsg2(dbglvl, "find_recycled_volume ok=%d FW=%d\n", ok, mr->FirstWritten);
+         Dmsg2(debuglevel, "find_recycled_volume ok=%d FW=%d\n", ok, mr->FirstWritten);
          if (!ok) {
             /*
              * 3. Try recycling any purged volume
@@ -111,20 +111,20 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
                 * 4. Try pruning Volumes
                 */
                if (prune) {
-                  Dmsg0(dbglvl, "Call prune_volumes\n");
+                  Dmsg0(debuglevel, "Call prune_volumes\n");
                   prune_volumes(jcr, InChanger, mr, store);
                }
                ok = recycle_oldest_purged_volume(jcr, InChanger, mr, store, unwanted_volumes);
                set_storageid_in_mr(store, mr);  /* put StorageId in new record */
                if (!ok && create) {
-                  Dmsg4(dbglvl, "after prune volumes_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
+                  Dmsg4(debuglevel, "after prune volumes_vol ok=%d index=%d InChanger=%d Vstat=%s\n",
                         ok, index, InChanger, mr->VolStatus);
                   /*
                    * 5. Try pulling a volume from the Scratch pool
                    */
                   ok = get_scratch_volume(jcr, InChanger, mr, store);
                   set_storageid_in_mr(store, mr);  /* put StorageId in new record */
-                  Dmsg4(dbglvl, "after get scratch volume ok=%d index=%d InChanger=%d Vstat=%s\n",
+                  Dmsg4(debuglevel, "after get scratch volume ok=%d index=%d InChanger=%d Vstat=%s\n",
                         ok, index, InChanger, mr->VolStatus);
                }
                /*
@@ -150,7 +150,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
           */
          if (!ok && (jcr->res.pool->purge_oldest_volume ||
                      jcr->res.pool->recycle_oldest_volume)) {
-            Dmsg2(dbglvl, "No next volume found. PurgeOldest=%d\n RecyleOldest=%d",
+            Dmsg2(debuglevel, "No next volume found. PurgeOldest=%d\n RecyleOldest=%d",
                   jcr->res.pool->purge_oldest_volume, jcr->res.pool->recycle_oldest_volume);
 
             /*
@@ -159,10 +159,10 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
             set_storageid_in_mr(store, mr);
             ok = jcr->db->find_next_volume(jcr, -1, InChanger, mr, unwanted_volumes);
             set_storageid_in_mr(store, mr);
-            Dmsg1(dbglvl, "Find oldest=%d Volume\n", ok);
+            Dmsg1(debuglevel, "Find oldest=%d Volume\n", ok);
             if (ok && prune) {
                UaContext *ua;
-               Dmsg0(dbglvl, "Try purge Volume.\n");
+               Dmsg0(debuglevel, "Try purge Volume.\n");
                /*
                 * 7.  Try to purging oldest volume only if not UA calling us.
                 */
@@ -181,13 +181,13 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
 
                if (ok) {
                   ok = recycle_volume(jcr, mr);
-                  Dmsg1(dbglvl, "Recycle after purge oldest=%d\n", ok);
+                  Dmsg1(debuglevel, "Recycle after purge oldest=%d\n", ok);
                }
             }
          }
       }
 
-      Dmsg2(dbglvl, "VolJobs=%d FirstWritten=%d\n", mr->VolJobs, mr->FirstWritten);
+      Dmsg2(debuglevel, "VolJobs=%d FirstWritten=%d\n", mr->VolJobs, mr->FirstWritten);
       if (ok) {
          /*
           * If we can use the volume, check if it is expired
@@ -205,7 +205,7 @@ int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int in
    }
 
    db_unlock(jcr->db);
-   Dmsg1(dbglvl, "return ok=%d find_next_vol\n", ok);
+   Dmsg1(debuglevel, "return ok=%d find_next_vol\n", ok);
 
    return ok;
 }
@@ -245,7 +245,7 @@ bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
           */
          Jmsg(jcr, M_INFO, 0, _("Max Volume jobs=%s exceeded. Marking Volume \"%s\" as Used.\n"),
               edit_uint64_with_commas(mr->MaxVolJobs, ed1), mr->VolumeName);
-         Dmsg3(dbglvl, "MaxVolJobs=%d JobId=%d Vol=%s\n", mr->MaxVolJobs,
+         Dmsg3(debuglevel, "MaxVolJobs=%d JobId=%d Vol=%s\n", mr->MaxVolJobs,
                (uint32_t)jcr->JobId, mr->VolumeName);
          bstrncpy(mr->VolStatus, "Used", sizeof(mr->VolStatus));
          expired = true;
@@ -275,14 +275,14 @@ bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr)
       /*
        * Need to update media
        */
-      Dmsg1(dbglvl, "Vol=%s has expired update media record\n", mr->VolumeName);
+      Dmsg1(debuglevel, "Vol=%s has expired update media record\n", mr->VolumeName);
       set_storageid_in_mr(NULL, mr);
       if (!jcr->db->update_media_record(jcr, mr)) {
          Jmsg(jcr, M_ERROR, 0, _("Catalog error updating volume \"%s\". ERR=%s"),
               mr->VolumeName, jcr->db->strerror());
       }
    }
-   Dmsg2(dbglvl, "Vol=%s expired=%d\n", mr->VolumeName, expired);
+   Dmsg2(debuglevel, "Vol=%s expired=%d\n", mr->VolumeName, expired);
 
    return expired;
 }

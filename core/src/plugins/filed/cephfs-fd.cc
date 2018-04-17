@@ -31,7 +31,7 @@
 #include <dirent.h>
 #include <cephfs/libcephfs.h>
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
@@ -279,7 +279,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "cephfs-fd: entering freePlugin\n");
+   Dmsg(ctx, debuglevel, "cephfs-fd: entering freePlugin\n");
 
    if (p_ctx->path_list) {
       free_path_list(p_ctx->path_list);
@@ -320,7 +320,7 @@ static bRC freePlugin(bpContext *ctx)
    free(p_ctx);
    p_ctx = NULL;
 
-   Dmsg(ctx, dbglvl, "cephfs-fd: leaving freePlugin\n");
+   Dmsg(ctx, debuglevel, "cephfs-fd: leaving freePlugin\n");
 
    return bRC_OK;
 }
@@ -398,7 +398,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       break;
    default:
       Jmsg(ctx, M_FATAL, "cephfs-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, dbglvl, "cephfs-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "cephfs-fd: unknown event=%d\n", event->eventType);
       retval = bRC_Error;
       break;
    }
@@ -499,7 +499,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
 
          pm_strcpy(p_ctx->next_filename, p_ctx->cwd);
 
-         Dmsg(ctx, dbglvl, "cephfs-fd: next file to backup %s\n", p_ctx->next_filename);
+         Dmsg(ctx, debuglevel, "cephfs-fd: next file to backup %s\n", p_ctx->next_filename);
 
          return bRC_More;
       }
@@ -564,7 +564,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
 
       if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) {
-         Dmsg(ctx, dbglvl, "cephfs-fd: file %s skipped due to current fileset settings\n", p_ctx->next_filename);
+         Dmsg(ctx, debuglevel, "cephfs-fd: file %s skipped due to current fileset settings\n", p_ctx->next_filename);
          continue;
       }
 
@@ -574,7 +574,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       break;
    }
 
-   Dmsg(ctx, dbglvl, "cephfs-fd: next file to backup %s\n", p_ctx->next_filename);
+   Dmsg(ctx, debuglevel, "cephfs-fd: next file to backup %s\n", p_ctx->next_filename);
 
    return bRC_More;
 }
@@ -723,7 +723,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
    case L_DIFFERENTIAL:
       switch (bfuncs->checkChanges(ctx, sp)) {
       case bRC_Seen:
-         Dmsg(ctx, dbglvl, "cephfs-fd: skipping %s checkChanges returns bRC_Seen\n", p_ctx->next_filename);
+         Dmsg(ctx, debuglevel, "cephfs-fd: skipping %s checkChanges returns bRC_Seen\n", p_ctx->next_filename);
          switch (sp->type) {
          case FT_DIRBEGIN:
          case FT_DIREND:
@@ -858,7 +858,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    bp = strchr(plugin_definition, ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "cephfs-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, debuglevel, "cephfs-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -882,7 +882,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument_value = strchr(bp, '=');
       if (!argument_value) {
          Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "cephfs-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, debuglevel, "cephfs-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -941,7 +941,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        */
       if (!plugin_arguments[i].name) {
          Jmsg(ctx, M_FATAL, "cephfs-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "cephfs-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, debuglevel, "cephfs-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -1166,9 +1166,9 @@ static bRC end_restore_job(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "cephfs-fd: entering end_restore_job\n");
+   Dmsg(ctx, debuglevel, "cephfs-fd: entering end_restore_job\n");
 
-   Dmsg(ctx, dbglvl, "cephfs-fd: leaving end_restore_job\n");
+   Dmsg(ctx, debuglevel, "cephfs-fd: leaving end_restore_job\n");
 
    return retval;
 }

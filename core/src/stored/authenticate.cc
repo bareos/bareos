@@ -30,7 +30,7 @@
 #include "bareos.h"
 #include "stored.h"
 
-const int dbglvl = 50;
+const int debuglevel = 50;
 
 static char Dir_sorry[] =
    "3999 No go\n";
@@ -61,7 +61,7 @@ bool authenticate_director(JobControlRecord *jcr)
     * Sanity check.
     */
    if (dir->msglen < 25 || dir->msglen > 500) {
-      Dmsg2(dbglvl, "Bad Hello command from Director at %s. Len=%d.\n",
+      Dmsg2(debuglevel, "Bad Hello command from Director at %s. Len=%d.\n",
             dir->who(), dir->msglen);
       Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s. Len=%d.\n"),
             dir->who(), dir->msglen);
@@ -72,7 +72,7 @@ bool authenticate_director(JobControlRecord *jcr)
 
    if (sscanf(dir->msg, "Hello Director %127s calling", dirname) != 1) {
       dir->msg[100] = 0;
-      Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n",
+      Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n",
             dir->who(), dir->msg);
       Jmsg2(jcr, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"),
             dir->who(), dir->msg);
@@ -85,7 +85,7 @@ bool authenticate_director(JobControlRecord *jcr)
    jcr->director = director;
 
    if (!director) {
-      Dmsg2(dbglvl, "Connection from unknown Director %s at %s rejected.\n",
+      Dmsg2(debuglevel, "Connection from unknown Director %s at %s rejected.\n",
             dirname, dir->who());
       Jmsg(jcr, M_FATAL, 0, _("Connection from unknown Director %s at %s rejected.\n"
                               "Please see %s for help.\n"),
@@ -98,7 +98,7 @@ bool authenticate_director(JobControlRecord *jcr)
                                              director->name(), director->password,
                                              director)) {
       dir->fsend("%s", Dir_sorry);
-      Dmsg2(dbglvl, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
+      Dmsg2(debuglevel, "Unable to authenticate Director \"%s\" at %s.\n", director->name(), dir->who());
       Jmsg1(jcr, M_ERROR, 0, _("Unable to authenticate Director at %s.\n"), dir->who());
       bmicrosleep(5, 0);
       free_pool_memory(dirname);
@@ -124,7 +124,7 @@ bool authenticate_storagedaemon(JobControlRecord *jcr)
    const char *identity =
        "* replicate *";
 
-   Dmsg2(dbglvl, "authenticate_storagedaemon %s %s\n", identity, (unsigned char *)password.value);
+   Dmsg2(debuglevel, "authenticate_storagedaemon %s %s\n", identity, (unsigned char *)password.value);
    if (!sd->authenticate_inbound_connection(jcr, "Storage daemon", identity, password, me)) {
       Jmsg1(
           jcr,

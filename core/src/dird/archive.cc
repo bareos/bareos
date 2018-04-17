@@ -31,7 +31,7 @@
 #include "bareos.h"
 #include "dird.h"
 
-static const int dbglvl = 100;
+static const int debuglevel = 100;
 
 bool do_archive_init(JobControlRecord *jcr)
 {
@@ -74,7 +74,7 @@ void archive_cleanup(JobControlRecord *jcr, int TermCode)
    const char *term_msg;
    int msg_type;
 
-   Dmsg0(dbglvl, "Enter archive_cleanup()\n");
+   Dmsg0(debuglevel, "Enter archive_cleanup()\n");
 
    update_job_end(jcr, TermCode);
 
@@ -121,5 +121,5 @@ void archive_cleanup(JobControlRecord *jcr, int TermCode)
         edt,
         term_msg);
 
-   Dmsg0(dbglvl, "Leave archive_cleanup()\n");
+   Dmsg0(debuglevel, "Leave archive_cleanup()\n");
 }

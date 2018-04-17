@@ -31,9 +31,9 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
 #ifdef SD_DEBUG_LOCK
-const int dbglvl = 0;
+const int debuglevel = 0;
 #else
-const int dbglvl = 500;
+const int debuglevel = 500;
 #endif
 
 /**
@@ -153,7 +153,7 @@ void DeviceControlRecord::dbg_mLock(const char *file, int line, bool locked)
       real_V(r_mutex);
       return;
    }
-   Dmsg3(sd_dbglvl, "mLock %d from %s:%d\n", locked, file, line);
+   Dmsg3(sd_debuglevel, "mLock %d from %s:%d\n", locked, file, line);
    dev->dbg_rLock(file,line,locked);
    inc_dev_lock();
    real_V(r_mutex);
@@ -162,7 +162,7 @@ void DeviceControlRecord::dbg_mLock(const char *file, int line, bool locked)
 
 void DeviceControlRecord::dbg_mUnlock(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "mUnlock from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "mUnlock from %s:%d\n", file, line);
    real_P(r_mutex);
    if (!is_dev_locked()) {
       real_P(r_mutex);
@@ -184,12 +184,12 @@ void DeviceControlRecord::dbg_mUnlock(const char *file, int line)
  */
 void Device::dbg_Lock(const char *file, int line)
 {
-   Dmsg3(sd_dbglvl, "Lock from %s:%d precnt=%d\n", file, line, count_);
+   Dmsg3(sd_debuglevel, "Lock from %s:%d precnt=%d\n", file, line, count_);
    /* Note, this *really* should be protected by a mutex, but
     *  since it is only debug code we don't worry too much.
     */
    if (count_ > 0 && pthread_equal(pid_, pthread_self())) {
-      Dmsg4(sd_dbglvl, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d count_=%d\n",
+      Dmsg4(sd_debuglevel, "Possible DEADLOCK!! lock held by JobId=%u from %s:%d count_=%d\n",
             get_jobid_from_tid(pid_),
             file, line, count_);
    }
@@ -201,37 +201,37 @@ void Device::dbg_Lock(const char *file, int line)
 void Device::dbg_Unlock(const char *file, int line)
 {
    count_--;
-   Dmsg3(sd_dbglvl, "Unlock from %s:%d postcnt=%d\n", file, line, count_);
+   Dmsg3(sd_debuglevel, "Unlock from %s:%d postcnt=%d\n", file, line, count_);
    bthread_mutex_unlock_p(&mutex_, file, line);
 }
 
 void Device::dbg_rUnlock(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "rUnlock from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "rUnlock from %s:%d\n", file, line);
    dbg_Unlock(file, line);
 }
 
 void Device::dbg_Lock_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_acquire from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "Lock_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&acquire_mutex, file, line);
 }
 
 void Device::dbg_Unlock_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_acquire from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "Unlock_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&acquire_mutex, file, line);
 }
 
 void Device::dbg_Lock_read_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Lock_read_acquire from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "Lock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_lock_p(&read_acquire_mutex, file, line);
 }
 
 void Device::dbg_Unlock_read_acquire(const char *file, int line)
 {
-   Dmsg2(sd_dbglvl, "Unlock_read_acquire from %s:%d\n", file, line);
+   Dmsg2(sd_debuglevel, "Unlock_read_acquire from %s:%d\n", file, line);
    bthread_mutex_unlock_p(&read_acquire_mutex, file, line);
 }
 
@@ -370,7 +370,7 @@ int Device::next_vol_timedwait(const struct timespec *timeout)
 #ifdef SD_DEBUG_LOCK
 void Device::dbg_rLock(const char *file, int line, bool locked)
 {
-   Dmsg3(sd_dbglvl, "rLock blked=%s from %s:%d\n", print_blocked(),
+   Dmsg3(sd_debuglevel, "rLock blked=%s from %s:%d\n", print_blocked(),
          file, line);
    if (!locked) {
       /*
@@ -394,7 +394,7 @@ void Device::rLock(bool locked)
          int status;
          char ed1[50], ed2[50];
 
-         Dmsg3(sd_dbglvl, "rLock blked=%s no_wait=%s me=%s\n",
+         Dmsg3(sd_debuglevel, "rLock blked=%s no_wait=%s me=%s\n",
                print_blocked(),
                edit_pthread(no_wait_id, ed1, sizeof(ed1)),
                edit_pthread(pthread_self(), ed2, sizeof(ed2)));
@@ -424,7 +424,7 @@ void _block_device(const char *file, int line, Device *dev, int state)
    ASSERT(dev->blocked() == BST_NOT_BLOCKED);
    dev->set_blocked(state);           /* make other threads wait */
    dev->no_wait_id = pthread_self();  /* allow us to continue */
-   Dmsg3(sd_dbglvl, "set blocked=%s from %s:%d\n", dev->print_blocked(), file, line);
+   Dmsg3(sd_debuglevel, "set blocked=%s from %s:%d\n", dev->print_blocked(), file, line);
 }
 
 /**
@@ -434,7 +434,7 @@ void _block_device(const char *file, int line, Device *dev, int state)
  */
 void _unblock_device(const char *file, int line, Device *dev)
 {
-   Dmsg3(sd_dbglvl, "unblock %s from %s:%d\n", dev->print_blocked(), file, line);
+   Dmsg3(sd_debuglevel, "unblock %s from %s:%d\n", dev->print_blocked(), file, line);
 // ASSERT(lmgr_mutex_is_locked(&dev->mutex_) == 1);
    ASSERT(dev->blocked());
    dev->set_blocked(BST_NOT_BLOCKED);
@@ -450,13 +450,13 @@ void _unblock_device(const char *file, int line, Device *dev)
  */
 void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state)
 {
-   Dmsg3(sd_dbglvl, "steal lock. old=%s from %s:%d\n", dev->print_blocked(),
+   Dmsg3(sd_debuglevel, "steal lock. old=%s from %s:%d\n", dev->print_blocked(),
       file, line);
    hold->dev_blocked = dev->blocked();
    hold->dev_prev_blocked = dev->dev_prev_blocked;
    hold->no_wait_id = dev->no_wait_id;
    dev->set_blocked(state);
-   Dmsg1(sd_dbglvl, "steal lock. new=%s\n", dev->print_blocked());
+   Dmsg1(sd_debuglevel, "steal lock. new=%s\n", dev->print_blocked());
    dev->no_wait_id = pthread_self();
    dev->Unlock();
 }
@@ -467,13 +467,13 @@ void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *
  */
 void _give_back_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold)
 {
-   Dmsg3(sd_dbglvl, "return lock. old=%s from %s:%d\n",
+   Dmsg3(sd_debuglevel, "return lock. old=%s from %s:%d\n",
       dev->print_blocked(), file, line);
    dev->Lock();
    dev->set_blocked(hold->dev_blocked);
    dev->dev_prev_blocked = hold->dev_prev_blocked;
    dev->no_wait_id = hold->no_wait_id;
-   Dmsg1(sd_dbglvl, "return lock. new=%s\n", dev->print_blocked());
+   Dmsg1(sd_debuglevel, "return lock. new=%s\n", dev->print_blocked());
    if (dev->num_waiting > 0) {
       pthread_cond_broadcast(&dev->wait); /* wake them up */
    }

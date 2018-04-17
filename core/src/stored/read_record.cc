@@ -40,7 +40,7 @@
 
 /* Forward referenced functions */
 
-static const int dbglvl = 500;
+static const int debuglevel = 500;
 
 static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL *sessrec)
 {
@@ -71,7 +71,7 @@ static void handle_session_record(Device *dev, DeviceRecord *rec, SESSION_LABEL 
       rtype = buf;
       break;
    }
-   Dmsg5(dbglvl, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
+   Dmsg5(debuglevel, _("%s Record: VolSessionId=%d VolSessionTime=%d JobId=%d DataLen=%d\n"),
          rtype, rec->VolSessionId, rec->VolSessionTime, rec->Stream, rec->data_len);
 }
 
@@ -163,7 +163,7 @@ void read_context_set_record(DeviceControlRecord *dcr, READ_CTX *rctx)
    if (!found) {
       rec = new_record();
       rctx->recs->prepend(rec);
-      Dmsg3(dbglvl, "New record for state=%s SI=%d ST=%d\n",
+      Dmsg3(debuglevel, "New record for state=%s SI=%d ST=%d\n",
             rec_state_bits_to_str(rec),
             dcr->block->VolSessionId,
             dcr->block->VolSessionTime);
@@ -261,7 +261,7 @@ bool read_next_block_from_device(DeviceControlRecord *dcr,
          }
       }
 
-      Dmsg2(dbglvl, "Read new block at pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
+      Dmsg2(debuglevel, "Read new block at pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
       return true;
    }
 }
@@ -288,7 +288,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
          return false;
       }
 
-      Dmsg5(dbglvl, "read-OK. state_bits=%s blk=%d rem=%d file:block=%u:%u\n",
+      Dmsg5(debuglevel, "read-OK. state_bits=%s blk=%d rem=%d file:block=%u:%u\n",
             rec_state_bits_to_str(rec), block->BlockNumber, rec->remainder,
             dev->file, dev->block_num);
 
@@ -299,7 +299,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
        *  get all the data.
        */
       rctx->records_processed++;
-      Dmsg6(dbglvl, "recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+      Dmsg6(debuglevel, "recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
             rctx->records_processed, rec_state_bits_to_str(rec), block->BlockNumber,
             rec->VolSessionId, rec->VolSessionTime, rec->FileIndex);
 
@@ -332,10 +332,10 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
          rec->match_stat = match_bsr(jcr->bsr, rec, &dev->VolHdr, &rctx->sessrec, jcr);
          if (rec->match_stat == -1) {        /* no more possible matches */
             *done = true;                    /* all items found, stop */
-            Dmsg2(dbglvl, "All done=(file:block) %u:%u\n", dev->file, dev->block_num);
+            Dmsg2(debuglevel, "All done=(file:block) %u:%u\n", dev->file, dev->block_num);
             return false;
          } else if (rec->match_stat == 0) {  /* no match */
-            Dmsg4(dbglvl, "BootStrapRecord no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
+            Dmsg4(debuglevel, "BootStrapRecord no match: clear rem=%d FI=%d before set_eof pos %u:%u\n",
                rec->remainder, rec->FileIndex, dev->file, dev->block_num);
             rec->remainder = 0;
             clear_bit(REC_PARTIAL_RECORD, rec->state_bits);
@@ -349,7 +349,7 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
       dcr->VolLastIndex = rec->FileIndex;    /* let caller know where we are */
 
       if (is_partial_record(rec)) {
-         Dmsg6(dbglvl, "Partial, break. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+         Dmsg6(debuglevel, "Partial, break. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
                rctx->records_processed, rec_state_bits_to_str(rec), block->BlockNumber, rec->VolSessionId,
                rec->VolSessionTime, rec->FileIndex);
          return false;                       /* read second part of record */
@@ -357,13 +357,13 @@ bool read_next_record_from_block(DeviceControlRecord *dcr, READ_CTX *rctx, bool 
 
       if (rctx->lastFileIndex != READ_NO_FILEINDEX && rctx->lastFileIndex != rec->FileIndex) {
          if (is_this_bsr_done(jcr->bsr, rec) && try_device_repositioning(jcr, rec, dcr)) {
-            Dmsg2(dbglvl, "This bsr done, break pos %u:%u\n", dev->file, dev->block_num);
+            Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n", dev->file, dev->block_num);
             return false;
          }
-         Dmsg2(dbglvl, "==== inside LastIndex=%d FileIndex=%d\n", rctx->lastFileIndex, rec->FileIndex);
+         Dmsg2(debuglevel, "==== inside LastIndex=%d FileIndex=%d\n", rctx->lastFileIndex, rec->FileIndex);
       }
 
-      Dmsg2(dbglvl, "==== LastIndex=%d FileIndex=%d\n", rctx->lastFileIndex, rec->FileIndex);
+      Dmsg2(debuglevel, "==== LastIndex=%d FileIndex=%d\n", rctx->lastFileIndex, rec->FileIndex);
       rctx->lastFileIndex = rec->FileIndex;
 
       return true;
@@ -423,13 +423,13 @@ bool read_records(DeviceControlRecord *dcr,
          read_context_set_record(dcr, rctx);
       }
 
-      Dmsg3(dbglvl, "Before read rec loop. stat=%s blk=%d rem=%d\n",
+      Dmsg3(debuglevel, "Before read rec loop. stat=%s blk=%d rem=%d\n",
             rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber, rctx->rec->remainder);
 
       rctx->records_processed = 0;
       clear_all_bits(REC_STATE_MAX, rctx->rec->state_bits);
       rctx->lastFileIndex = READ_NO_FILEINDEX;
-      Dmsg1(dbglvl, "Block %s empty\n", is_block_empty(rctx->rec) ? "is" : "NOT");
+      Dmsg1(debuglevel, "Block %s empty\n", is_block_empty(rctx->rec) ? "is" : "NOT");
 
       /*
        * Process the block and read all records in the block and send
@@ -449,7 +449,7 @@ bool read_records(DeviceControlRecord *dcr,
          } else {
             DeviceRecord *rec;
 
-            Dmsg6(dbglvl, "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
+            Dmsg6(debuglevel, "OK callback. recno=%d state_bits=%s blk=%d SI=%d ST=%d FI=%d\n",
                   rctx->records_processed, rec_state_bits_to_str(rctx->rec), dcr->block->BlockNumber,
                   rctx->rec->VolSessionId, rctx->rec->VolSessionTime, rctx->rec->FileIndex);
 
@@ -483,11 +483,11 @@ bool read_records(DeviceControlRecord *dcr,
              *  be turned on.
              */
             if (crypto_digest_stream_type(rec->Stream) != CRYPTO_DIGEST_NONE) {
-               Dmsg3(dbglvl, "=== Have digest FI=%u before bsr check pos %u:%u\n",
+               Dmsg3(debuglevel, "=== Have digest FI=%u before bsr check pos %u:%u\n",
                      rec->FileIndex, dev->file, dev->block_num);
                if (is_this_bsr_done(jcr->bsr, rec) && try_repositioning(jcr, rec, dcr)) {
-                  Dmsg1(dbglvl, "==== BootStrapRecord done at FI=%d\n", rec->FileIndex);
-                  Dmsg2(dbglvl, "This bsr done, break pos %u:%u\n",
+                  Dmsg1(debuglevel, "==== BootStrapRecord done at FI=%d\n", rec->FileIndex);
+                  Dmsg2(debuglevel, "This bsr done, break pos %u:%u\n",
                         dev->file, dev->block_num);
                   break;
                }
@@ -506,9 +506,9 @@ bool read_records(DeviceControlRecord *dcr,
             }
          }
       }
-      Dmsg2(dbglvl, "After end recs in block. pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
+      Dmsg2(debuglevel, "After end recs in block. pos=%u:%u\n", dcr->dev->file, dcr->dev->block_num);
    }
-// Dmsg2(dbglvl, "Position=(file:block) %u:%u\n", dcr->dev->file, dcr->dev->block_num);
+// Dmsg2(debuglevel, "Position=(file:block) %u:%u\n", dcr->dev->file, dcr->dev->block_num);
 
    free_read_context(rctx);
    print_block_read_errors(jcr, dcr->block);

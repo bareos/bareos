@@ -28,7 +28,7 @@
 #include "bareos.h"
 #include "jcr.h"
 
-const int dbglvl = 900;
+const int debuglevel = 900;
 
 /* Forward referenced functions */
 static void stop_btimer(btimer_t *wid);
@@ -66,7 +66,7 @@ btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
    wid->wd->interval = wait;
    register_watchdog(wid->wd);
 
-   Dmsg3(dbglvl, "Start child timer %p, pid %d for %d secs.\n", wid, pid, wait);
+   Dmsg3(debuglevel, "Start child timer %p, pid %d for %d secs.\n", wid, pid, wait);
    return wid;
 }
 
@@ -76,10 +76,10 @@ btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait)
 void stop_child_timer(btimer_t *wid)
 {
    if (wid == NULL) {
-      Dmsg0(dbglvl, "stop_child_timer called with NULL btimer_id\n");
+      Dmsg0(debuglevel, "stop_child_timer called with NULL btimer_id\n");
       return;
    }
-   Dmsg2(dbglvl, "Stop child timer %p pid %d\n", wid, wid->pid);
+   Dmsg2(debuglevel, "Stop child timer %p pid %d\n", wid, wid->pid);
    stop_btimer(wid);
 }
 
@@ -100,7 +100,7 @@ static void callback_child_timer(watchdog_t *self)
       /* First kill attempt; try killing it softly (kill -SONG) first */
       wid->killed = true;
 
-      Dmsg2(dbglvl, "watchdog %p term PID %d\n", self, wid->pid);
+      Dmsg2(debuglevel, "watchdog %p term PID %d\n", self, wid->pid);
 
       /* Kill -TERM the specified PID, and reschedule a -KILL for 5 seconds
        * later. (Warning: this should let dvd-writepart enough time to term
@@ -111,7 +111,7 @@ static void callback_child_timer(watchdog_t *self)
       self->interval = 5;
    } else {
       /* This is the second call - terminate with prejudice. */
-      Dmsg2(dbglvl, "watchdog %p kill PID %d\n", self, wid->pid);
+      Dmsg2(debuglevel, "watchdog %p kill PID %d\n", self, wid->pid);
 
       kill(wid->pid, SIGKILL);
 
@@ -135,7 +135,7 @@ btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait
 
    wid = btimer_start_common(wait);
    if (wid == NULL) {
-      Dmsg1(dbglvl, "start_thread_timer return NULL from common. wait=%d.\n", wait);
+      Dmsg1(debuglevel, "start_thread_timer return NULL from common. wait=%d.\n", wait);
       return NULL;
    }
 
@@ -147,7 +147,7 @@ btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait
    wid->wd->interval = wait;
    register_watchdog(wid->wd);
 
-   Dmsg3(dbglvl, "Start thread timer %p tid %s for %d secs.\n",
+   Dmsg3(debuglevel, "Start thread timer %p tid %s for %d secs.\n",
          wid, edit_pthread(tid, ed1, sizeof(ed1)), wait);
 
    return wid;
@@ -183,7 +183,7 @@ btimer_t *start_bsock_timer(BareosSocket *bsock, uint32_t wait)
    wid->wd->interval = wait;
    register_watchdog(wid->wd);
 
-   Dmsg4(dbglvl, "Start bsock timer %p tid=%s for %d secs at %d\n",
+   Dmsg4(debuglevel, "Start bsock timer %p tid=%s for %d secs at %d\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), wait, time(NULL));
 
    return wid;
@@ -201,7 +201,7 @@ void stop_bsock_timer(btimer_t *wid)
       return;
    }
 
-   Dmsg3(dbglvl, "Stop bsock timer %p tid=%s at %d.\n",
+   Dmsg3(debuglevel, "Stop bsock timer %p tid=%s at %d.\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
    stop_btimer(wid);
 }
@@ -215,11 +215,11 @@ void stop_thread_timer(btimer_t *wid)
    char ed1[50];
 
    if (wid == NULL) {
-      Dmsg0(dbglvl, "stop_thread_timer called with NULL btimer_id\n");
+      Dmsg0(debuglevel, "stop_thread_timer called with NULL btimer_id\n");
       return;
    }
 
-   Dmsg2(dbglvl, "Stop thread timer %p tid=%s.\n",
+   Dmsg2(debuglevel, "Stop thread timer %p tid=%s.\n",
          wid, edit_pthread(wid->tid, ed1, sizeof(ed1)));
    stop_btimer(wid);
 }
@@ -238,11 +238,11 @@ static void callback_thread_timer(watchdog_t *self)
    char ed1[50];
    btimer_t *wid = (btimer_t *)self->data;
 
-   Dmsg4(dbglvl, "thread timer %p kill %s tid=%p at %d.\n", self,
+   Dmsg4(debuglevel, "thread timer %p kill %s tid=%p at %d.\n", self,
          wid->type == TYPE_BSOCK ? "bsock" : "thread",
          edit_pthread(wid->tid, ed1, sizeof(ed1)), time(NULL));
    if (wid->jcr) {
-      Dmsg2(dbglvl, "killed JobId=%u Job=%s\n", wid->jcr->JobId, wid->jcr->Job);
+      Dmsg2(debuglevel, "killed JobId=%u Job=%s\n", wid->jcr->JobId, wid->jcr->Job);
    }
 
    if (wid->type == TYPE_BSOCK && wid->bsock) {

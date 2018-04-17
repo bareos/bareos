@@ -38,7 +38,7 @@
 #include "dird.h"
 #include "findlib/find.h"
 
-const int dbglvl = 400;
+const int debuglevel = 400;
 
 /* Commands sent to File daemon */
 static char filesetcmd[] =
@@ -970,10 +970,10 @@ int get_attributes_and_put_in_catalog(JobControlRecord *jcr)
       skip_spaces(&p);
       skip_nonspaces(&p);             /* skip Opts_Digest */
       p++;                            /* skip space */
-      Dmsg1(dbglvl, "Stream=%d\n", stream);
+      Dmsg1(debuglevel, "Stream=%d\n", stream);
       if (stream == STREAM_UNIX_ATTRIBUTES || stream == STREAM_UNIX_ATTRIBUTES_EX) {
          if (jcr->cached_attribute) {
-            Dmsg3(dbglvl, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname,
+            Dmsg3(debuglevel, "Cached attr. Stream=%d fname=%s\n", ar->Stream, ar->fname,
                ar->attr);
             if (!jcr->db->create_file_attributes_record(jcr, ar)) {
                Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->strerror());
@@ -1004,8 +1004,8 @@ int get_attributes_and_put_in_catalog(JobControlRecord *jcr)
          ar->DeltaSeq = 0;
          jcr->cached_attribute = true;
 
-         Dmsg2(dbglvl, "dird<filed: stream=%d %s\n", stream, jcr->fname);
-         Dmsg1(dbglvl, "dird<filed: attr=%s\n", ar->attr);
+         Dmsg2(debuglevel, "dird<filed: stream=%d %s\n", stream, jcr->fname);
+         Dmsg1(debuglevel, "dird<filed: attr=%s\n", ar->attr);
          jcr->FileId = ar->FileId;
       } else if (crypto_digest_stream_type(stream) != CRYPTO_DIGEST_NONE) {
          size_t length;
@@ -1027,7 +1027,7 @@ int get_attributes_and_put_in_catalog(JobControlRecord *jcr)
          length = strlen(Digest.c_str());
          digest.check_size(length * 2 + 1);
          jcr->db->escape_string(jcr, digest.c_str(), Digest.c_str(), length);
-         Dmsg4(dbglvl, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
+         Dmsg4(debuglevel, "stream=%d DigestLen=%d Digest=%s type=%d\n", stream,
                strlen(digest.c_str()), digest.c_str(), ar->DigestType);
       }
       jcr->jr.JobFiles = jcr->JobFiles = file_index;
@@ -1041,7 +1041,7 @@ int get_attributes_and_put_in_catalog(JobControlRecord *jcr)
    }
 
    if (jcr->cached_attribute) {
-      Dmsg3(dbglvl, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,
+      Dmsg3(debuglevel, "Cached attr with digest. Stream=%d fname=%s attr=%s\n", ar->Stream,
          ar->fname, ar->attr);
       if (!jcr->db->create_file_attributes_record(jcr, ar)) {
          Jmsg1(jcr, M_FATAL, 0, _("Attribute create error. %s"), jcr->db->strerror());

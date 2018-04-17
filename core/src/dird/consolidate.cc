@@ -33,7 +33,7 @@
 #include "bareos.h"
 #include "dird.h"
 
-static const int dbglvl = 100;
+static const int debuglevel = 100;
 
 bool do_consolidate_init(JobControlRecord *jcr)
 {
@@ -58,7 +58,7 @@ static inline void start_new_consolidation_job(JobControlRecord *jcr, char *jobn
    ua->batch = true;
    Mmsg(ua->cmd, "run job=\"%s\" jobid=%s level=VirtualFull %s", jobname, jcr->vf_jobids, jcr->accurate ? "accurate=yes" : "accurate=no");
 
-   Dmsg1(dbglvl, "=============== consolidate cmd=%s\n", ua->cmd);
+   Dmsg1(debuglevel, "=============== consolidate cmd=%s\n", ua->cmd);
    parse_ua_args(ua);                 /* parse command */
 
    jobid = do_run_cmd(ua, ua->cmd);
@@ -303,7 +303,7 @@ void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
    const char *term_msg;
    char sdt[50], edt[50], schedt[50];
 
-   Dmsg0(dbglvl, "Enter backup_cleanup()\n");
+   Dmsg0(debuglevel, "Enter backup_cleanup()\n");
 
    update_job_end(jcr, TermCode);
 
@@ -349,5 +349,5 @@ void consolidate_cleanup(JobControlRecord *jcr, int TermCode)
         edt,
         term_msg);
 
-   Dmsg0(dbglvl, "Leave consolidate_cleanup()\n");
+   Dmsg0(debuglevel, "Leave consolidate_cleanup()\n");
 }

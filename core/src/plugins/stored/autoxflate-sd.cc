@@ -126,7 +126,7 @@ struct plugin_ctx {
    uint64_t inflate_bytes_out;
 };
 
-static int const dbglvl = 200;
+static int const debuglevel = 200;
 
 #ifdef __cplusplus
 extern "C" {
@@ -182,7 +182,7 @@ static bRC newPlugin(bpContext *ctx)
    struct plugin_ctx *p_ctx;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg(ctx, dbglvl, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
+   Dmsg(ctx, debuglevel, "autoxflate-sd: newPlugin JobId=%d\n", JobId);
 
    p_ctx = (struct plugin_ctx *)malloc(sizeof(struct plugin_ctx));
    if (!p_ctx) {
@@ -219,10 +219,10 @@ static bRC freePlugin(bpContext *ctx)
    struct plugin_ctx *p_ctx = (struct plugin_ctx *)ctx->pContext;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg(ctx, dbglvl, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
+   Dmsg(ctx, debuglevel, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
 
    if (!p_ctx) {
-      Dmsg(ctx, dbglvl, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
+      Dmsg(ctx, debuglevel, "autoxflate-sd: freePlugin JobId=%d\n", JobId);
       return bRC_Error;
    }
 
@@ -239,7 +239,7 @@ static bRC freePlugin(bpContext *ctx)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg(ctx, dbglvl, "autoxflate-sd: getPluginValue var=%d\n", var);
+   Dmsg(ctx, debuglevel, "autoxflate-sd: getPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -249,7 +249,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg(ctx, dbglvl, "autoxflate-sd: setPluginValue var=%d\n", var);
+   Dmsg(ctx, debuglevel, "autoxflate-sd: setPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -269,7 +269,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
    case bsdEventJobEnd:
       return handleJobEnd(ctx);
    default:
-      Dmsg(ctx, dbglvl, "autoxflate-sd: Unknown event %d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "autoxflate-sd: Unknown event %d\n", event->eventType);
       return bRC_Error;
    }
 
@@ -288,7 +288,7 @@ static bRC handleJobEnd(bpContext *ctx)
    }
 
    if (p_ctx->inflate_bytes_in) {
-      Dmsg(ctx, dbglvl, "autoxflate-sd: inflate ratio: %lld/%lld = %0.2f%%\n" ,
+      Dmsg(ctx, debuglevel, "autoxflate-sd: inflate ratio: %lld/%lld = %0.2f%%\n" ,
            p_ctx->inflate_bytes_out, p_ctx->inflate_bytes_in,
           (p_ctx->inflate_bytes_out * 100.0 / p_ctx->inflate_bytes_in));
       Jmsg(ctx, M_INFO, _("autoxflate-sd: inflate ratio: %0.2f%%\n"),
@@ -296,7 +296,7 @@ static bRC handleJobEnd(bpContext *ctx)
    }
 
    if (p_ctx->deflate_bytes_in) {
-      Dmsg(ctx, dbglvl, "autoxflate-sd: deflate ratio: %lld/%lld =  %0.2f%%\n",
+      Dmsg(ctx, debuglevel, "autoxflate-sd: deflate ratio: %lld/%lld =  %0.2f%%\n",
            p_ctx->deflate_bytes_out,
            p_ctx->deflate_bytes_in,
           (p_ctx->deflate_bytes_out * 100.0 / p_ctx->deflate_bytes_in));

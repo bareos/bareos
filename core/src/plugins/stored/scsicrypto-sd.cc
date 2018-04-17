@@ -116,7 +116,7 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-static int const dbglvl = 200;
+static int const debuglevel = 200;
 
 #ifdef __cplusplus
 extern "C" {
@@ -136,7 +136,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
 {
    bfuncs = lbfuncs;       /* set Bareos funct pointers */
    binfo  = lbinfo;
-   Dmsg2(dbglvl, "scsicrypto-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
+   Dmsg2(debuglevel, "scsicrypto-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
    *pinfo  = &pluginInfo;  /* return pointer to our info */
    *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
@@ -167,7 +167,7 @@ static bRC newPlugin(bpContext *ctx)
    int JobId = 0;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "scsicrypto-sd: newPlugin JobId=%d\n", JobId);
+   Dmsg1(debuglevel, "scsicrypto-sd: newPlugin JobId=%d\n", JobId);
 
    /*
     * Only register plugin events we are interested in.
@@ -217,7 +217,7 @@ static bRC freePlugin(bpContext *ctx)
    int JobId = 0;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "scsicrypto-sd: freePlugin JobId=%d\n", JobId);
+   Dmsg1(debuglevel, "scsicrypto-sd: freePlugin JobId=%d\n", JobId);
 
    return bRC_OK;
 }
@@ -227,7 +227,7 @@ static bRC freePlugin(bpContext *ctx)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "scsicrypto-sd: getPluginValue var=%d\n", var);
+   Dmsg1(debuglevel, "scsicrypto-sd: getPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -237,7 +237,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "scsicrypto-sd: setPluginValue var=%d\n", var);
+   Dmsg1(debuglevel, "scsicrypto-sd: setPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -261,7 +261,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
    case bsdEventVolumeStatus:
       return send_volume_encryption_status(value);
    default:
-      Dmsg1(dbglvl, "scsicrypto-sd: Unknown event %d\n", event->eventType);
+      Dmsg1(debuglevel, "scsicrypto-sd: Unknown event %d\n", event->eventType);
       return bRC_Error;
    }
 
@@ -319,17 +319,17 @@ static bRC do_set_scsi_encryption_key(void *value)
     */
    dcr = (DeviceControlRecord *)value;
    if (!dcr) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
    }
    dev = dcr->dev;
    if (!dev) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: dev is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: dev is not set!\n");
       return bRC_Error;
    }
    device = dev->device;
    if (!device) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: device is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: device is not set!\n");
       return bRC_Error;
    }
 
@@ -342,7 +342,7 @@ static bRC do_set_scsi_encryption_key(void *value)
 
    *StoredVolEncrKey = '\0';
    if (!get_volume_encryption_key(dcr, StoredVolEncrKey)) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Could not get_volume_encryption_key!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Could not get_volume_encryption_key!\n");
 
       /*
        * Check if encryption key is needed for reading this volume.
@@ -350,7 +350,7 @@ static bRC do_set_scsi_encryption_key(void *value)
       P(crypto_operation_mutex);
       if (!need_scsi_crypto_key(dev->fd(), dev->dev_name, true)) {
          V(crypto_operation_mutex);
-         Dmsg0(dbglvl, "scsicrypto-sd: No encryption key needed!\n");
+         Dmsg0(debuglevel, "scsicrypto-sd: No encryption key needed!\n");
          return bRC_OK;
       }
       V(crypto_operation_mutex);
@@ -362,7 +362,7 @@ static bRC do_set_scsi_encryption_key(void *value)
     * See if a volume encryption key is available.
     */
    if (!*StoredVolEncrKey) {
-      Dmsg0(dbglvl, "scsicrypto-sd: No encryption key to load on device\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: No encryption key to load on device\n");
       return bRC_OK;
    }
 
@@ -396,7 +396,7 @@ static bRC do_set_scsi_encryption_key(void *value)
       }
    }
 
-   Dmsg1(dbglvl, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
+   Dmsg1(debuglevel, "scsicrypto-sd: Loading new crypto key %s\n", VolEncrKey);
 
    P(crypto_operation_mutex);
    if (set_scsi_encryption_key(dev->fd(), dev->dev_name, VolEncrKey)) {
@@ -421,17 +421,17 @@ static bRC do_clear_scsi_encryption_key(void *value)
     */
    dcr = (DeviceControlRecord *)value;
    if (!dcr) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: dcr is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: dcr is not set!\n");
       return bRC_Error;
    }
    dev = dcr->dev;
    if (!dev) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: dev is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: dev is not set!\n");
       return bRC_Error;
    }
    device = dev->device;
    if (!device) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Error: device is not set!\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Error: device is not set!\n");
       return bRC_Error;
    }
 
@@ -452,7 +452,7 @@ static bRC do_clear_scsi_encryption_key(void *value)
       need_to_clear = dev->is_crypto_enabled();
    }
    if (need_to_clear) {
-      Dmsg0(dbglvl, "scsicrypto-sd: Clearing crypto key\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Clearing crypto key\n");
       if (clear_scsi_encryption_key(dev->fd(), dev->dev_name)) {
          dev->clear_crypto_enabled();
          V(crypto_operation_mutex);
@@ -462,7 +462,7 @@ static bRC do_clear_scsi_encryption_key(void *value)
          return bRC_Error;
       }
    } else {
-      Dmsg0(dbglvl, "scsicrypto-sd: Not clearing crypto key because encryption is currently not enabled on drive\n");
+      Dmsg0(debuglevel, "scsicrypto-sd: Not clearing crypto key because encryption is currently not enabled on drive\n");
       V(crypto_operation_mutex);
       return bRC_OK;
    }

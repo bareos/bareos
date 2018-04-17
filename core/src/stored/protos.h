@@ -226,38 +226,38 @@ DLL_IMP_EXP extern int vol_list_lock_count;
 DLL_IMP_EXP extern int read_vol_list_lock_count;
 
 #define lock_reservations() \
-         do { Dmsg3(sd_dbglvl, "lock_reservations at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "lock_reservations at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     reservations_lock_count); \
               _lock_reservations(__FILE__, __LINE__); \
-              Dmsg0(sd_dbglvl, "lock_reservations: got lock\n"); \
+              Dmsg0(sd_debuglevel, "lock_reservations: got lock\n"); \
          } while (0)
 #define unlock_reservations() \
-         do { Dmsg3(sd_dbglvl, "unlock_reservations at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "unlock_reservations at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     reservations_lock_count); \
               _unlock_reservations(); } while (0)
 #define lock_volumes() \
-         do { Dmsg3(sd_dbglvl, "lock_volumes at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "lock_volumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     vol_list_lock_count); \
               _lock_volumes(__FILE__, __LINE__); \
-              Dmsg0(sd_dbglvl, "lock_volumes: got lock\n"); \
+              Dmsg0(sd_debuglevel, "lock_volumes: got lock\n"); \
          } while (0)
 #define unlock_volumes() \
-         do { Dmsg3(sd_dbglvl, "unlock_volumes at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "unlock_volumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     vol_list_lock_count); \
               _unlock_volumes(); } while (0)
 #define lock_read_volumes() \
-         do { Dmsg3(sd_dbglvl, "lock_read_volumes at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "lock_read_volumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     read_vol_list_lock_count); \
               _lock_read_volumes(__FILE__, __LINE__); \
-              Dmsg0(sd_dbglvl, "lock_read_volumes: got lock\n"); \
+              Dmsg0(sd_debuglevel, "lock_read_volumes: got lock\n"); \
          } while (0)
 #define unlock_read_volumes() \
-         do { Dmsg3(sd_dbglvl, "unlock_read_volumes at %s:%d precnt=%d\n", \
+         do { Dmsg3(sd_debuglevel, "unlock_read_volumes at %s:%d precnt=%d\n", \
                     __FILE__, __LINE__, \
                     read_vol_list_lock_count); \
               _unlock_read_volumes(); } while (0)

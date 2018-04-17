@@ -33,7 +33,7 @@
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
-const int dbglvl = 400;
+const int debuglevel = 400;
 
 static pthread_mutex_t device_release_mutex = PTHREAD_MUTEX_INITIALIZER;
 static pthread_cond_t wait_device_release = PTHREAD_COND_INITIALIZER;
@@ -57,7 +57,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
    JobControlRecord *jcr = dcr->jcr;
 
    dev->Lock();
-   Dmsg1(dbglvl, "Enter blocked=%s\n", dev->print_blocked());
+   Dmsg1(debuglevel, "Enter blocked=%s\n", dev->print_blocked());
 
    /*
     * Since we want to mount a tape, make sure current one is
@@ -85,7 +85,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
    }
 
    if (!unmounted) {
-      Dmsg1(dbglvl, "blocked=%s\n", dev->print_blocked());
+      Dmsg1(debuglevel, "blocked=%s\n", dev->print_blocked());
       dev->dev_prev_blocked = dev->blocked();
       dev->set_blocked(BST_WAITING_FOR_SYSOP); /* indicate waiting for mount */
    }
@@ -97,14 +97,14 @@ int wait_for_sysop(DeviceControlRecord *dcr)
       timeout.tv_nsec = tv.tv_usec * 1000;
       timeout.tv_sec = tv.tv_sec + add_wait;
 
-      Dmsg4(dbglvl, "I'm going to sleep on device %s. HB=%d rem_wait=%d add_wait=%d\n",
+      Dmsg4(debuglevel, "I'm going to sleep on device %s. HB=%d rem_wait=%d add_wait=%d\n",
          dev->print_name(), (int)me->heartbeat_interval, dev->rem_wait_sec, add_wait);
       start = time(NULL);
 
       /* Wait required time */
       status = pthread_cond_timedwait(&dev->wait_next_vol, &dev->mutex_, &timeout);
 
-      Dmsg2(dbglvl, "Wokeup from sleep on device status=%d blocked=%s\n", status,
+      Dmsg2(debuglevel, "Wokeup from sleep on device status=%d blocked=%s\n", status,
          dev->print_blocked());
       now = time(NULL);
       total_waited = now - first_start;
@@ -116,7 +116,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
             /* send heartbeats */
             if (jcr->file_bsock) {
                jcr->file_bsock->signal(BNET_HEARTBEAT);
-               Dmsg0(dbglvl, "Send heartbeat to FD.\n");
+               Dmsg0(debuglevel, "Send heartbeat to FD.\n");
             }
             if (jcr->dir_bsock) {
                jcr->dir_bsock->signal(BNET_HEARTBEAT);
@@ -140,7 +140,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
       }
 
       if (dev->rem_wait_sec <= 0) {  /* on exceeding wait time return */
-         Dmsg0(dbglvl, "Exceed wait time.\n");
+         Dmsg0(debuglevel, "Exceed wait time.\n");
          status = W_TIMEOUT;
          break;
       }
@@ -152,7 +152,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
 
       if (!unmounted && dev->vol_poll_interval &&
           (total_waited >= dev->vol_poll_interval)) {
-         Dmsg1(dbglvl, "poll return in wait blocked=%s\n", dev->print_blocked());
+         Dmsg1(debuglevel, "poll return in wait blocked=%s\n", dev->print_blocked());
          dev->poll = true;            /* returning a poll event */
          status = W_POLL;
          break;
@@ -161,7 +161,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
        * Check if user mounted the device while we were waiting
        */
       if (dev->blocked() == BST_MOUNT) {   /* mount request ? */
-         Dmsg0(dbglvl, "Mounted return.\n");
+         Dmsg0(debuglevel, "Mounted return.\n");
          status = W_MOUNT;
          break;
       }
@@ -172,7 +172,7 @@ int wait_for_sysop(DeviceControlRecord *dcr)
        */
       if (status != ETIMEDOUT) {
          berrno be;
-         Dmsg2(dbglvl, "Wake return. status=%d. ERR=%s\n", status, be.bstrerror(status));
+         Dmsg2(debuglevel, "Wake return. status=%d. ERR=%s\n", status, be.bstrerror(status));
          status = W_WAKE;          /* someone woke us */
          break;
       }
@@ -200,9 +200,9 @@ int wait_for_sysop(DeviceControlRecord *dcr)
 
    if (!unmounted) {
       dev->set_blocked(dev->dev_prev_blocked);    /* restore entry state */
-      Dmsg1(dbglvl, "set %s\n", dev->print_blocked());
+      Dmsg1(debuglevel, "set %s\n", dev->print_blocked());
    }
-   Dmsg1(dbglvl, "Exit blocked=%s\n", dev->print_blocked());
+   Dmsg1(debuglevel, "Exit blocked=%s\n", dev->print_blocked());
    dev->Unlock();
    return status;
 }
@@ -228,7 +228,7 @@ bool wait_for_device(JobControlRecord *jcr, int &retries)
    const int max_wait_time = 1 * 60;       /* wait 1 minute */
    char ed1[50];
 
-   Dmsg0(dbglvl, "Enter wait_for_device\n");
+   Dmsg0(debuglevel, "Enter wait_for_device\n");
    P(device_release_mutex);
 
    if (++retries % 5 == 0) {
@@ -241,14 +241,14 @@ bool wait_for_device(JobControlRecord *jcr, int &retries)
    timeout.tv_nsec = tv.tv_usec * 1000;
    timeout.tv_sec = tv.tv_sec + max_wait_time;
 
-   Dmsg0(dbglvl, "Going to wait for a device.\n");
+   Dmsg0(debuglevel, "Going to wait for a device.\n");
 
    /* Wait required time */
    status = pthread_cond_timedwait(&wait_device_release, &device_release_mutex, &timeout);
-   Dmsg1(dbglvl, "Wokeup from sleep on device status=%d\n", status);
+   Dmsg1(debuglevel, "Wokeup from sleep on device status=%d\n", status);
 
    V(device_release_mutex);
-   Dmsg1(dbglvl, "Return from wait_device ok=%d\n", ok);
+   Dmsg1(debuglevel, "Return from wait_device ok=%d\n", ok);
    return ok;
 }
 

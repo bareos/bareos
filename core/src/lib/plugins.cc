@@ -85,7 +85,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result);
 
 #include "plugins.h"
 
-static const int dbglvl = 50;
+static const int debuglevel = 50;
 
 /*
  * Create a new plugin "class" entry and enter it in the list of plugins.
@@ -143,7 +143,7 @@ static bool load_a_plugin(void *binfo,
 
       Jmsg(NULL, M_ERROR, 0, _("dlopen plugin %s failed: ERR=%s\n"),
            plugin_pathname, NPRT(error));
-      Dmsg2(dbglvl, "dlopen plugin %s failed: ERR=%s\n",
+      Dmsg2(debuglevel, "dlopen plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(error));
 
       close_plugin(plugin);
@@ -158,7 +158,7 @@ static bool load_a_plugin(void *binfo,
    if (!loadPlugin) {
       Jmsg(NULL, M_ERROR, 0, _("Lookup of loadPlugin in plugin %s failed: ERR=%s\n"),
            plugin_pathname, NPRT(dlerror()));
-      Dmsg2(dbglvl, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
+      Dmsg2(debuglevel, "Lookup of loadPlugin in plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(dlerror()));
 
       close_plugin(plugin);
@@ -170,7 +170,7 @@ static bool load_a_plugin(void *binfo,
    if (!plugin->unloadPlugin) {
       Jmsg(NULL, M_ERROR, 0, _("Lookup of unloadPlugin in plugin %s failed: ERR=%s\n"),
            plugin_pathname, NPRT(dlerror()));
-      Dmsg2(dbglvl, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
+      Dmsg2(debuglevel, "Lookup of unloadPlugin in plugin %s failed: ERR=%s\n",
             plugin_pathname, NPRT(dlerror()));
 
       close_plugin(plugin);
@@ -219,7 +219,7 @@ bool load_plugins(void *binfo,
    bool need_slash = false;
    int len;
 
-   Dmsg0(dbglvl, "load_plugins\n");
+   Dmsg0(debuglevel, "load_plugins\n");
 
    len = strlen(plugin_dir);
    if (len > 0) {
@@ -275,7 +275,7 @@ bool load_plugins(void *binfo,
          berrno be;
          Jmsg(NULL, M_ERROR_TERM, 0, _("Failed to open Plugin directory %s: ERR=%s\n"),
                plugin_dir, be.bstrerror());
-         Dmsg2(dbglvl, "Failed to open Plugin directory %s: ERR=%s\n",
+         Dmsg2(debuglevel, "Failed to open Plugin directory %s: ERR=%s\n",
                plugin_dir, be.bstrerror());
          goto bail_out;
       }
@@ -291,7 +291,7 @@ bool load_plugins(void *binfo,
 #endif
             if (!found) {
                Jmsg(NULL, M_WARNING, 0, _("Failed to find any plugins in %s\n"), plugin_dir);
-               Dmsg1(dbglvl, "Failed to find any plugins in %s\n", plugin_dir);
+               Dmsg1(debuglevel, "Failed to find any plugins in %s\n", plugin_dir);
             }
             break;
          }
@@ -304,10 +304,10 @@ bool load_plugins(void *binfo,
          len = strlen(result->d_name);
          type_len = strlen(type);
          if (len < type_len + 1 || !bstrcmp(&result->d_name[len - type_len], type)) {
-            Dmsg3(dbglvl, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
+            Dmsg3(debuglevel, "Rejected plugin: want=%s name=%s len=%d\n", type, result->d_name, len);
             continue;
          }
-         Dmsg2(dbglvl, "Found plugin: name=%s len=%d\n", result->d_name, len);
+         Dmsg2(debuglevel, "Found plugin: name=%s len=%d\n", result->d_name, len);
 
          pm_strcpy(fname, plugin_dir);
          if (need_slash) {

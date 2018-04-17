@@ -32,7 +32,7 @@
 #include "filed.h"
 #include "accurate.h"
 
-static int dbglvl = 100;
+static int debuglevel = 100;
 
 BareosAccurateFilelistHtable::BareosAccurateFilelistHtable(JobControlRecord *jcr, uint32_t number_of_files)
 {
@@ -81,9 +81,9 @@ bool BareosAccurateFilelistHtable::add_file( char *fname,
    file_list_->insert(item->fname, item);
 
    if (chksum) {
-      Dmsg4(dbglvl, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname, lstat, delta_seq, chksum);
+      Dmsg4(debuglevel, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname, lstat, delta_seq, chksum);
    } else {
-      Dmsg2(dbglvl, "add fname=<%s> lstat=%s\n", fname, lstat);
+      Dmsg2(debuglevel, "add fname=<%s> lstat=%s\n", fname, lstat);
    }
 
    return retval;
@@ -134,7 +134,7 @@ bool BareosAccurateFilelistHtable::send_base_file_list()
 
    foreach_htable(elt, file_list_) {
       if (bit_is_set(elt->payload.filenr, seen_bitmap_)) {
-         Dmsg1(dbglvl, "base file fname=%s\n", elt->fname);
+         Dmsg1(debuglevel, "base file fname=%s\n", elt->fname);
          decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = elt->fname;
          ff_pkt->statp = statp;
@@ -166,7 +166,7 @@ bool BareosAccurateFilelistHtable::send_deleted_list()
           plugin_check_file(jcr_, elt->fname)) {
          continue;
       }
-      Dmsg1(dbglvl, "deleted fname=%s\n", elt->fname);
+      Dmsg1(debuglevel, "deleted fname=%s\n", elt->fname);
       ff_pkt->fname = elt->fname;
       decode_stat(elt->payload.lstat, &statp, sizeof(statp), &LinkFIc); /* decode catalog stat */
       ff_pkt->statp.st_mtime = statp.st_mtime;

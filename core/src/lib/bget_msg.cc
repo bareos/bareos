@@ -33,7 +33,7 @@
 static char OK_msg[]   = "2000 OK\n";
 static char TERM_msg[] = "2999 Terminate\n";
 
-#define msglvl 500
+#define messagelevel 500
 
 /**
  * This routine does a bnet_recv(), then if a signal was
@@ -61,10 +61,10 @@ int bget_msg(BareosSocket *sock)
       /* BNET_SIGNAL (-1) return from bnet_recv() => network signal */
       switch (sock->msglen) {
       case BNET_EOD:               /* end of data */
-         Dmsg0(msglvl, "Got BNET_EOD\n");
+         Dmsg0(messagelevel, "Got BNET_EOD\n");
          return n;
       case BNET_EOD_POLL:
-         Dmsg0(msglvl, "Got BNET_EOD_POLL\n");
+         Dmsg0(messagelevel, "Got BNET_EOD_POLL\n");
          if (sock->is_terminated()) {
             sock->fsend(TERM_msg);
          } else {
@@ -72,11 +72,11 @@ int bget_msg(BareosSocket *sock)
          }
          return n;                 /* end of data */
       case BNET_TERMINATE:
-         Dmsg0(msglvl, "Got BNET_TERMINATE\n");
+         Dmsg0(messagelevel, "Got BNET_TERMINATE\n");
          sock->set_terminated();
          return n;
       case BNET_POLL:
-         Dmsg0(msglvl, "Got BNET_POLL\n");
+         Dmsg0(messagelevel, "Got BNET_POLL\n");
          if (sock->is_terminated()) {
             sock->fsend(TERM_msg);
          } else {
@@ -88,7 +88,7 @@ int bget_msg(BareosSocket *sock)
          break;
       case BNET_STATUS:
          /* *****FIXME***** Implement BNET_STATUS */
-         Dmsg0(msglvl, "Got BNET_STATUS\n");
+         Dmsg0(messagelevel, "Got BNET_STATUS\n");
          sock->fsend(_("Status OK\n"));
          sock->signal(BNET_EOD);
          break;

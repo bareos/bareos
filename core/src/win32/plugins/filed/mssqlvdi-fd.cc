@@ -47,7 +47,7 @@
 #include <adoid.h>
 #include <adoint.h>
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Zilvinas Krapavickas"
@@ -310,7 +310,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: entering freePlugin\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering freePlugin\n");
 
    /*
     * Close any open VDI deviceset.
@@ -385,7 +385,7 @@ static bRC freePlugin(bpContext *ctx)
     */
    CoUninitialize();
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: leaving freePlugin\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving freePlugin\n");
 
    return bRC_OK;
 }
@@ -455,7 +455,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       break;
    default:
       Jmsg(ctx, M_FATAL, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, dbglvl, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: unknown event=%d\n", event->eventType);
       retval = bRC_Error;
       break;
    }
@@ -506,12 +506,12 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       break;
    default:
       Jmsg(ctx, M_FATAL, "Unsuported backup level (%c).\n", p_ctx->backup_level);
-      Dmsg(ctx, dbglvl, "Unsuported backup level (%c).\n", p_ctx->backup_level);
+      Dmsg(ctx, debuglevel, "Unsuported backup level (%c).\n", p_ctx->backup_level);
       return bRC_Error;
    }
 
    p_ctx->filename = bstrdup(fname.c_str());
-   Dmsg(ctx, dbglvl, "startBackupFile: Generated filename %s\n", p_ctx->filename);
+   Dmsg(ctx, debuglevel, "startBackupFile: Generated filename %s\n", p_ctx->filename);
 
    sp->fname = p_ctx->filename;
    sp->type = FT_REG;
@@ -624,7 +624,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    bp = strchr(plugin_definition, ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, debuglevel, "Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -648,7 +648,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument_value = strchr(bp, '=');
       if (!argument_value) {
          Jmsg(ctx, M_FATAL, "Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "Illegal argument %s without value\n", argument);
+         Dmsg(ctx, debuglevel, "Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -742,7 +742,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        */
       if (!plugin_arguments[i].name) {
          Jmsg(ctx, M_FATAL, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, debuglevel, "Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -832,7 +832,7 @@ static void comReportError(bpContext *ctx, HRESULT hrErr)
    description = BSTR_2_str(pDescription);
    if (source && description) {
       Jmsg(ctx, M_FATAL, "%s(x%X): %s\n", source, hrErr, description);
-      Dmsg(ctx, dbglvl, "%s(x%X): %s\n", source, hrErr, description);
+      Dmsg(ctx, debuglevel, "%s(x%X): %s\n", source, hrErr, description);
    }
 
    if (source) {
@@ -907,7 +907,7 @@ static bool adoGetErrors(bpContext *ctx, _ADOConnection *adoConnection, PoolMem 
 
       description = BSTR_2_str(pDescription);
       if (description) {
-         Dmsg(ctx, dbglvl, "adoGetErrors: ADO error %s\n", description);
+         Dmsg(ctx, debuglevel, "adoGetErrors: ADO error %s\n", description);
          pm_strcat(ado_errorstr, description);
          pm_strcat(ado_errorstr, "\n");
          free(description);
@@ -938,7 +938,7 @@ static bool adoReportError(bpContext *ctx)
 
    if (p_ctx->ado_errorstr) {
       Jmsg(ctx, M_FATAL, "%s\n", p_ctx->ado_errorstr);
-      Dmsg(ctx, dbglvl, "%s\n", p_ctx->ado_errorstr);
+      Dmsg(ctx, debuglevel, "%s\n", p_ctx->ado_errorstr);
 
       free(p_ctx->ado_errorstr);
       p_ctx->ado_errorstr = NULL;
@@ -1140,7 +1140,7 @@ static void set_ado_connect_string(bpContext *ctx)
       pm_strcat(ado_connect_string, ";Integrated Security=SSPI;");
    }
 
-   Dmsg(ctx, dbglvl, "set_ado_connect_string: ADO Connect String '%s'\n", ado_connect_string.c_str());
+   Dmsg(ctx, debuglevel, "set_ado_connect_string: ADO Connect String '%s'\n", ado_connect_string.c_str());
 
    if (p_ctx->ado_connect_string) {
       free(p_ctx->ado_connect_string);
@@ -1201,7 +1201,7 @@ static inline void perform_ado_backup(bpContext *ctx)
         break;
    }
 
-   Dmsg(ctx, dbglvl, "perform_ado_backup: ADO Query '%s'\n", ado_query.c_str());
+   Dmsg(ctx, debuglevel, "perform_ado_backup: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
    free_pool_memory(vdsname);
@@ -1284,7 +1284,7 @@ static inline void perform_ado_restore(bpContext *ctx)
       pm_strcat(ado_query, ", REPLACE");
    }
 
-   Dmsg(ctx, dbglvl, "perform_ado_restore: ADO Query '%s'\n", ado_query.c_str());
+   Dmsg(ctx, debuglevel, "perform_ado_restore: ADO Query '%s'\n", ado_query.c_str());
 
    p_ctx->ado_query = bstrdup(ado_query.c_str());
    free_pool_memory(vdsname);
@@ -1303,7 +1303,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
    _ADOConnection *adoConnection = NULL;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   Dmsg(ctx, dbglvl, "run_ado_query: ADO Query '%s'\n", query);
+   Dmsg(ctx, debuglevel, "run_ado_query: ADO Query '%s'\n", query);
 
    /*
     * Create a COM instance for an ActiveX® Data Objects connection.
@@ -1327,7 +1327,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
 
       adoGetErrors(ctx, adoConnection, ado_errorstr);
       Jmsg(ctx, M_FATAL, "Failed to connect to database, %s\n", ado_errorstr.c_str());
-      Dmsg(ctx, dbglvl, "Failed to connect to database, %s\n", ado_errorstr.c_str());
+      Dmsg(ctx, debuglevel, "Failed to connect to database, %s\n", ado_errorstr.c_str());
       goto cleanup;
    }
 
@@ -1341,7 +1341,7 @@ static inline bool run_ado_query(bpContext *ctx, const char *query)
 
       adoGetErrors(ctx, adoConnection, ado_errorstr);
       Jmsg(ctx, M_FATAL, "Failed to execute query %s on database, %s\n", query, ado_errorstr.c_str());
-      Dmsg(ctx, dbglvl, "Failed to execute query %s on database, %s\n", query, ado_errorstr.c_str());
+      Dmsg(ctx, debuglevel, "Failed to execute query %s on database, %s\n", query, ado_errorstr.c_str());
       goto cleanup;
    }
 
@@ -1476,7 +1476,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
    hr = p_ctx->VDIDeviceSet->GetConfiguration(VDI_DEFAULT_WAIT, &p_ctx->VDIConfig);
    if (!SUCCEEDED(hr)) {
       Jmsg(ctx, M_FATAL, "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration failed\n");
-      Dmsg(ctx, dbglvl, "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration failed\n");
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: IClientVirtualDeviceSet2::GetConfiguration failed\n");
       goto bail_out;
    }
 
@@ -1486,7 +1486,7 @@ static inline bool setup_vdi_device(bpContext *ctx, struct io_pkt *io)
 
       sprintf_s(vdsname, sizeof(vdsname), "%S", p_ctx->vdsname);
       Jmsg(ctx, M_FATAL, "mssqlvdi-fd: IClientVirtualDeviceSet2::OpenDevice(%s)\n", vdsname);
-      Dmsg(ctx, dbglvl, "mssqlvdi-fd: IClientVirtualDeviceSet2::OpenDevice(%s)\n", vdsname);
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: IClientVirtualDeviceSet2::OpenDevice(%s)\n", vdsname);
       goto bail_out;
    }
 
@@ -1605,7 +1605,7 @@ static inline bool perform_vdi_io(bpContext *ctx, struct io_pkt *io, DWORD *comp
    hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT , &cmd);
    if (!SUCCEEDED(hr)) {
       Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
-      Dmsg(ctx, dbglvl, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: IClientVirtualDevice::GetCommand: x%X\n", hr);
       goto bail_out;
    }
 
@@ -1653,7 +1653,7 @@ static inline bool perform_vdi_io(bpContext *ctx, struct io_pkt *io, DWORD *comp
    hr = p_ctx->VDIDevice->CompleteCommand(cmd, *completionCode, io->status, 0);
    if (!SUCCEEDED(hr)) {
       Jmsg(ctx, M_ERROR, "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
-      Dmsg(ctx, dbglvl, "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
+      Dmsg(ctx, debuglevel, "mssqlvdi-fd: IClientVirtualDevice::CompleteCommand: x%X\n", hr);
       goto bail_out;
    }
 
@@ -1692,7 +1692,7 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
    VDC_Command *cmd;
    plugin_ctx *p_ctx = (plugin_ctx *)ctx->pContext;
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: entering tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering tear_down_vdi_device\n");
 
    /*
     * Check if the VDI device is closed.
@@ -1701,7 +1701,7 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
       hr = p_ctx->VDIDevice->GetCommand(VDI_WAIT_TIMEOUT , &cmd);
       if (hr != VD_E_CLOSE) {
          Jmsg(ctx, M_ERROR, "Abnormal termination, VDIDevice not closed.\n");
-         Dmsg(ctx, dbglvl, "Abnormal termination, VDIDevice not closed.\n");
+         Dmsg(ctx, debuglevel, "Abnormal termination, VDIDevice not closed.\n");
          goto bail_out;
       }
    }
@@ -1725,7 +1725,7 @@ static inline bool tear_down_vdi_device(bpContext *ctx, struct io_pkt *io)
    io->lerror = 0;
    io->win32 = false;
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
 
    return true;
 
@@ -1735,7 +1735,7 @@ bail_out:
     */
    comReportError(ctx, hr);
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving tear_down_vdi_device\n");
 
    return false;
 }
@@ -1804,7 +1804,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
          }
       } else {
          Jmsg(ctx, M_ERROR, "Illegal Seek request on VDIDevice.");
-         Dmsg(ctx, dbglvl, "Illegal Seek request on VDIDevice.");
+         Dmsg(ctx, debuglevel, "Illegal Seek request on VDIDevice.");
          goto bail_out;
       }
       break;
@@ -1845,7 +1845,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: entering end_restore_job\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: entering end_restore_job\n");
 
    if (!p_ctx->RestoreToFile && p_ctx->RecoverAfterRestore) {
       if (!perform_ado_recover(ctx)) {
@@ -1853,7 +1853,7 @@ static bRC end_restore_job(bpContext *ctx, void *value)
       }
    }
 
-   Dmsg(ctx, dbglvl, "mssqlvdi-fd: leaving end_restore_job\n");
+   Dmsg(ctx, debuglevel, "mssqlvdi-fd: leaving end_restore_job\n");
 
    return retval;
 }

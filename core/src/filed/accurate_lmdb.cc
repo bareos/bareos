@@ -33,7 +33,7 @@
 
 #include "accurate.h"
 
-static int dbglvl = 100;
+static int debuglevel = 100;
 
 #define AVG_NR_BYTES_PER_ENTRY 256
 #define B_PAGE_SIZE 4096
@@ -177,9 +177,9 @@ retry:
    switch (result) {
    case 0:
       if (chksum) {
-         Dmsg4(dbglvl, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname, lstat, delta_seq, chksum);
+         Dmsg4(debuglevel, "add fname=<%s> lstat=%s delta_seq=%i chksum=%s\n", fname, lstat, delta_seq, chksum);
       } else {
-         Dmsg2(dbglvl, "add fname=<%s> lstat=%s\n", fname, lstat);
+         Dmsg2(debuglevel, "add fname=<%s> lstat=%s\n", fname, lstat);
       }
       retval = true;
       break;
@@ -416,7 +416,7 @@ bool BareosAccurateFilelistLmdb::send_base_file_list()
       while ((result = mdb_cursor_get(cursor, &key, &data, MDB_NEXT)) == 0) {
          payload = (accurate_payload *)data.mv_data;
          if (bit_is_set(payload->filenr, seen_bitmap_)) {
-            Dmsg1(dbglvl, "base file fname=%s\n", key.mv_data);
+            Dmsg1(debuglevel, "base file fname=%s\n", key.mv_data);
             decode_stat(payload->lstat, &ff_pkt->statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
             ff_pkt->fname = (char *)key.mv_data;
             encode_and_send_attributes(jcr_, ff_pkt, stream);
@@ -482,7 +482,7 @@ bool BareosAccurateFilelistLmdb::send_deleted_list()
             continue;
          }
 
-         Dmsg1(dbglvl, "deleted fname=%s\n", key.mv_data);
+         Dmsg1(debuglevel, "deleted fname=%s\n", key.mv_data);
          decode_stat(payload->lstat, &statp, sizeof(struct stat), &LinkFIc); /* decode catalog stat */
          ff_pkt->fname = (char *)key.mv_data;
          ff_pkt->statp.st_mtime = statp.st_mtime;

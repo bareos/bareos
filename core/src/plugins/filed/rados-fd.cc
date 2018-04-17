@@ -29,7 +29,7 @@
 
 #include <rados/librados.h>
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
@@ -261,7 +261,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "rados-fd: entering freePlugin\n");
+   Dmsg(ctx, debuglevel, "rados-fd: entering freePlugin\n");
 
    if (p_ctx->snap_id) {
       rados_ioctx_snap_remove(p_ctx->ioctx, p_ctx->rados_snapshotname);
@@ -310,7 +310,7 @@ static bRC freePlugin(bpContext *ctx)
    free(p_ctx);
    p_ctx = NULL;
 
-   Dmsg(ctx, dbglvl, "rados-fd: leaving freePlugin\n");
+   Dmsg(ctx, debuglevel, "rados-fd: leaving freePlugin\n");
 
    return bRC_OK;
 }
@@ -388,7 +388,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       break;
    default:
       Jmsg(ctx, M_FATAL, "rados-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, dbglvl, "rados-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "rados-fd: unknown event=%d\n", event->eventType);
       retval = bRC_Error;
       break;
    }
@@ -601,7 +601,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    bp = strchr(plugin_definition, ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "rados-fd: Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "rados-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, debuglevel, "rados-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -625,7 +625,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument_value = strchr(bp, '=');
       if (!argument_value) {
          Jmsg(ctx, M_FATAL, "rados-fd: Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "rados-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, debuglevel, "rados-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -699,7 +699,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        */
       if (!plugin_arguments[i].name) {
          Jmsg(ctx, M_FATAL, "rados-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "rados-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, debuglevel, "rados-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -965,7 +965,7 @@ static bRC pluginIO(bpContext *ctx, struct io_pkt *io)
       break;
    case IO_SEEK:
       Jmsg(ctx, M_ERROR, "rados-fd: Illegal Seek request on rados device.");
-      Dmsg(ctx, dbglvl, "rados-fd: Illegal Seek request on rados device.");
+      Dmsg(ctx, debuglevel, "rados-fd: Illegal Seek request on rados device.");
       io->io_errno = EINVAL;
       goto bail_out;
    }
@@ -992,9 +992,9 @@ static bRC end_restore_job(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "rados-fd: entering end_restore_job\n");
+   Dmsg(ctx, debuglevel, "rados-fd: entering end_restore_job\n");
 
-   Dmsg(ctx, dbglvl, "rados-fd: leaving end_restore_job\n");
+   Dmsg(ctx, debuglevel, "rados-fd: leaving end_restore_job\n");
 
    return retval;
 }

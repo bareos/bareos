@@ -31,7 +31,7 @@
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
 
-static int const rdbglvl = 100;
+static int const rdebuglevel = 100;
 
 /* Forward referenced functions */
 static void attach_dcr_to_dev(DeviceControlRecord *dcr);
@@ -59,11 +59,11 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
    int vol_label_status;
    int retry = 0;
 
-   Enter(rdbglvl);
+   Enter(rdebuglevel);
    dev = dcr->dev;
    dev->Lock_read_acquire();
-   Dmsg2(rdbglvl, "dcr=%p dev=%p\n", dcr, dcr->dev);
-   Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
+   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
+   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
    dev->dblock(BST_DOING_ACQUIRE);
 
    if (dev->num_writers > 0) {
@@ -91,7 +91,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
    }
    set_dcr_from_vol(dcr, vol);
 
-   Dmsg2(rdbglvl, "Want Vol=%s Slot=%d\n", vol->VolumeName, vol->Slot);
+   Dmsg2(rdebuglevel, "Want Vol=%s Slot=%d\n", vol->VolumeName, vol->Slot);
 
    /*
     * If the MediaType requested for this volume is not the
@@ -105,7 +105,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
     * them such as the block pointer (size may change), but we do
     * not release the dcr.
     */
-   Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
+   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
    if (dcr->media_type[0] && !bstrcmp(dcr->media_type, dev->device->media_type)) {
       ReserveContext rctx;
       DirectorStorage *store;
@@ -114,7 +114,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
       Jmsg3(jcr, M_INFO, 0, _("Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
                               "  device=%s\n"),
             dcr->media_type, dev->device->media_type, dev->print_name());
-      Dmsg3(rdbglvl, "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
+      Dmsg3(rdebuglevel, "Changing read device. Want Media Type=\"%s\" have=\"%s\"\n"
                      "  device=%s\n",
             dcr->media_type, dev->device->media_type, dev->print_name());
 
@@ -168,17 +168,17 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
          /* error */
          Jmsg1(jcr, M_FATAL, 0, _("No suitable device found to read Volume \"%s\"\n"),
             vol->VolumeName);
-         Dmsg1(rdbglvl, "No suitable device found to read Volume \"%s\"\n", vol->VolumeName);
+         Dmsg1(rdebuglevel, "No suitable device found to read Volume \"%s\"\n", vol->VolumeName);
          goto get_out;
       }
    }
-   Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
+   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
 
    dev->clear_unload();
 
    if (dev->vol && dev->vol->is_swapping()) {
       dev->vol->set_slot(vol->Slot);
-      Dmsg3(rdbglvl, "swapping: slot=%d Vol=%s dev=%s\n", dev->vol->get_slot(),
+      Dmsg3(rdebuglevel, "swapping: slot=%d Vol=%s dev=%s\n", dev->vol->get_slot(),
             dev->vol->vol_name, dev->print_name());
    }
 
@@ -192,9 +192,9 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
    /*
     * Volume info is always needed because of VolParts
     */
-   Dmsg1(rdbglvl, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
+   Dmsg1(rdebuglevel, "dir_get_volume_info vol=%s\n", dcr->VolumeName);
    if (!dcr->dir_get_volume_info(GET_VOL_INFO_FOR_READ)) {
-      Dmsg2(rdbglvl, "dir_get_vol_info failed for vol=%s: %s\n",
+      Dmsg2(rdebuglevel, "dir_get_vol_info failed for vol=%s: %s\n",
             dcr->VolumeName, jcr->errmsg);
       Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
    }
@@ -234,7 +234,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
        * This code ensures that the device is ready for reading. If it is a file,
        * it opens it. If it is a tape, it checks the volume name
        */
-      Dmsg1(rdbglvl, "stored: open vol=%s\n", dcr->VolumeName);
+      Dmsg1(rdebuglevel, "stored: open vol=%s\n", dcr->VolumeName);
       if (!dev->open(dcr, OPEN_READ_ONLY)) {
          if (!dev->poll) {
             Jmsg3(jcr, M_WARNING, 0, _("Read open device %s Volume \"%s\" failed: ERR=%s\n"),
@@ -242,7 +242,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
          }
          goto default_path;
       }
-      Dmsg1(rdbglvl, "opened dev %s OK\n", dev->print_name());
+      Dmsg1(rdebuglevel, "opened dev %s OK\n", dev->print_name());
 
       /*
        * See if we are changing the volume in the device.
@@ -256,18 +256,18 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
         /*
          * Read Volume Label
          */
-        Dmsg0(rdbglvl, "calling read-vol-label\n");
+        Dmsg0(rdebuglevel, "calling read-vol-label\n");
         vol_label_status = read_dev_volume_label(dcr);
       }
 
       switch (vol_label_status) {
       case VOL_OK:
-         Dmsg0(rdbglvl, "Got correct volume.\n");
+         Dmsg0(rdebuglevel, "Got correct volume.\n");
          retval = true;
          dev->VolCatInfo = dcr->VolCatInfo;     /* structure assignment */
          break;                    /* got it */
       case VOL_IO_ERROR:
-         Dmsg0(rdbglvl, "IO Error\n");
+         Dmsg0(rdebuglevel, "IO Error\n");
          /*
           * Send error message generated by read_dev_volume_label() only when we really had a tape
           * mounted. This supresses superfluous error messages when nothing is mounted.
@@ -277,7 +277,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
          }
          goto default_path;
       case VOL_NAME_ERROR:
-         Dmsg3(rdbglvl, "Vol name=%s want=%s drv=%s.\n", dev->VolHdr.VolumeName,
+         Dmsg3(rdebuglevel, "Vol name=%s want=%s drv=%s.\n", dev->VolHdr.VolumeName,
                dcr->VolumeName, dev->print_name());
          if (dev->is_volume_to_unload()) {
             goto default_path;
@@ -295,7 +295,7 @@ bool acquire_device_for_read(DeviceControlRecord *dcr)
       default:
          Jmsg1(jcr, M_WARNING, 0, "Read acquire: %s", jcr->errmsg);
 default_path:
-         Dmsg0(rdbglvl, "default path\n");
+         Dmsg0(rdebuglevel, "default path\n");
          tape_previously_mounted = true;
 
          /*
@@ -311,7 +311,7 @@ default_path:
           */
          if (try_autochanger) {
             int status;
-            Dmsg2(rdbglvl, "calling autoload Vol=%s Slot=%d\n",
+            Dmsg2(rdebuglevel, "calling autoload Vol=%s Slot=%d\n",
                   dcr->VolumeName, dcr->VolCatInfo.Slot);
             status = autoload_device(dcr, 0, NULL);
             if (status > 0) {
@@ -323,7 +323,7 @@ default_path:
          /*
           * Mount a specific volume and no other
           */
-         Dmsg0(rdbglvl, "calling dir_ask_sysop\n");
+         Dmsg0(rdebuglevel, "calling dir_ask_sysop\n");
          if (!dcr->dir_ask_sysop_to_mount_volume(ST_READREADY)) {
             goto get_out;             /* error return */
          }
@@ -370,12 +370,12 @@ get_out:
       dev->Unlock();               /* dunblock() unlock the device too */
    }
 
-   Dmsg2(rdbglvl, "dcr=%p dev=%p\n", dcr, dcr->dev);
-   Dmsg2(rdbglvl, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
+   Dmsg2(rdebuglevel, "dcr=%p dev=%p\n", dcr, dcr->dev);
+   Dmsg2(rdebuglevel, "MediaType dcr=%s dev=%s\n", dcr->media_type, dev->device->media_type);
 
    dev->Unlock_read_acquire();
 
-   Leave(rdbglvl);
+   Leave(rdebuglevel);
 
    return retval;
 }

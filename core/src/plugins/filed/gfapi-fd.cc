@@ -30,7 +30,7 @@
 
 #include <api/glfs.h>
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
@@ -396,7 +396,7 @@ static bRC freePlugin(bpContext *ctx)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "gfapi-fd: entering freePlugin\n");
+   Dmsg(ctx, debuglevel, "gfapi-fd: entering freePlugin\n");
 
    if (p_ctx->file_list_handle) {
       fclose(p_ctx->file_list_handle);
@@ -454,7 +454,7 @@ static bRC freePlugin(bpContext *ctx)
    free(p_ctx);
    p_ctx = NULL;
 
-   Dmsg(ctx, dbglvl, "gfapi-fd: leaving freePlugin\n");
+   Dmsg(ctx, debuglevel, "gfapi-fd: leaving freePlugin\n");
 
    return bRC_OK;
 }
@@ -532,7 +532,7 @@ static bRC handlePluginEvent(bpContext *ctx, bEvent *event, void *value)
       break;
    default:
       Jmsg(ctx, M_FATAL, "gfapi-fd: unknown event=%d\n", event->eventType);
-      Dmsg(ctx, dbglvl, "gfapi-fd: unknown event=%d\n", event->eventType);
+      Dmsg(ctx, debuglevel, "gfapi-fd: unknown event=%d\n", event->eventType);
       retval = bRC_Error;
       break;
    }
@@ -638,7 +638,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
           */
          gf_mapping = find_glustermap_eventtype(p_ctx->next_filename);
          if (!gf_mapping) {
-            Dmsg(ctx, dbglvl, "gfapi-fd: Unknown glusterfind entry %s\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: Unknown glusterfind entry %s\n", p_ctx->next_filename);
             continue;
          }
 
@@ -681,7 +681,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
             continue;
          default:
             Jmsg(ctx, M_ERROR, "Unrecognized glusterfind entry %s\n", p_ctx->next_filename);
-            Dmsg(ctx, dbglvl, "gfapi-fd: Skipping glusterfind entry %s\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: Skipping glusterfind entry %s\n", p_ctx->next_filename);
             continue;
          }
 
@@ -689,7 +689,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
           * If we have a basename we should filter on that.
           */
          if (p_ctx->basedir && !bstrncmp(p_ctx->basedir, p_ctx->next_filename, strlen(p_ctx->basedir))) {
-            Dmsg(ctx, dbglvl, "gfapi-fd: next file %s not under basedir %d\n",
+            Dmsg(ctx, debuglevel, "gfapi-fd: next file %s not under basedir %d\n",
                  p_ctx->next_filename, p_ctx->basedir);
             continue;
          }
@@ -732,7 +732,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
 
             pm_strcpy(p_ctx->next_filename, p_ctx->cwd);
 
-            Dmsg(ctx, dbglvl, "gfapi-fd: next file to backup %s\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: next file to backup %s\n", p_ctx->next_filename);
 
             return bRC_More;
          }
@@ -808,7 +808,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       memcpy(&sp.statp, &p_ctx->statp, sizeof(sp.statp));
 
       if (bfuncs->AcceptFile(ctx, &sp) == bRC_Skip) {
-         Dmsg(ctx, dbglvl, "gfapi-fd: file %s skipped due to current fileset settings\n", p_ctx->next_filename);
+         Dmsg(ctx, debuglevel, "gfapi-fd: file %s skipped due to current fileset settings\n", p_ctx->next_filename);
          continue;
       }
 
@@ -818,7 +818,7 @@ static bRC get_next_file_to_backup(bpContext *ctx)
       break;
    }
 
-   Dmsg(ctx, dbglvl, "gfapi-fd: next file to backup %s\n", p_ctx->next_filename);
+   Dmsg(ctx, debuglevel, "gfapi-fd: next file to backup %s\n", p_ctx->next_filename);
 
    return bRC_More;
 }
@@ -962,7 +962,7 @@ static bRC startBackupFile(bpContext *ctx, struct save_pkt *sp)
       case L_DIFFERENTIAL:
          switch (bfuncs->checkChanges(ctx, sp)) {
          case bRC_Seen:
-            Dmsg(ctx, dbglvl, "gfapi-fd: skipping %s checkChanges returns bRC_Seen\n", p_ctx->next_filename);
+            Dmsg(ctx, debuglevel, "gfapi-fd: skipping %s checkChanges returns bRC_Seen\n", p_ctx->next_filename);
             switch (sp->type) {
             case FT_DIRBEGIN:
             case FT_DIREND:
@@ -1103,7 +1103,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
    bp = strchr(plugin_definition, ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "gfapi-fd: Illegal plugin definition %s\n", plugin_definition);
-      Dmsg(ctx, dbglvl, "gfapi-fd: Illegal plugin definition %s\n", plugin_definition);
+      Dmsg(ctx, debuglevel, "gfapi-fd: Illegal plugin definition %s\n", plugin_definition);
       goto bail_out;
    }
 
@@ -1127,7 +1127,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
       argument_value = strchr(bp, '=');
       if (!argument_value) {
          Jmsg(ctx, M_FATAL, "gfapi-fd: Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "gfapi-fd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, debuglevel, "gfapi-fd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -1192,7 +1192,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value)
        */
       if (!plugin_arguments[i].name) {
          Jmsg(ctx, M_FATAL, "gfapi-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
-         Dmsg(ctx, dbglvl, "gfapi-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
+         Dmsg(ctx, debuglevel, "gfapi-fd: Illegal argument %s with value %s in plugin definition\n", argument, argument_value);
          goto bail_out;
       }
    }
@@ -1589,7 +1589,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
       p_ctx->crawl_fs = false;
       if ((p_ctx->file_list_handle = fopen(p_ctx->gf_file_list, "r")) == (FILE *)NULL) {
          Jmsg(ctx, M_FATAL, "Failed to open %s for reading files to backup\n", p_ctx->gf_file_list);
-         Dmsg(ctx, dbglvl, "Failed to open %s for reading files to backup\n", p_ctx->gf_file_list);
+         Dmsg(ctx, debuglevel, "Failed to open %s for reading files to backup\n", p_ctx->gf_file_list);
          goto bail_out;
       }
 
@@ -1603,7 +1603,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
          case L_DIFFERENTIAL:
             if (bfuncs->SetSeenBitmap(ctx, true, NULL) != bRC_OK) {
                Jmsg(ctx, M_FATAL, "Failed to enable all entries in Seen bitmap, not an accurate backup ?\n");
-               Dmsg(ctx, dbglvl, "Failed to enable all entries in Seen bitmap, not an accurate backup ?\n");
+               Dmsg(ctx, debuglevel, "Failed to enable all entries in Seen bitmap, not an accurate backup ?\n");
                goto bail_out;
             }
             break;
@@ -1630,7 +1630,7 @@ static bRC setup_backup(bpContext *ctx, void *value)
          break;
       case bRC_Error:
          Jmsg(ctx, M_FATAL, "Failed to get first file to backup\n");
-         Dmsg(ctx, dbglvl, "Failed to get first file to backup\n");
+         Dmsg(ctx, debuglevel, "Failed to get first file to backup\n");
          goto bail_out;
       default:
          retval = bRC_OK;
@@ -1816,9 +1816,9 @@ static bRC end_restore_job(bpContext *ctx, void *value)
       return bRC_Error;
    }
 
-   Dmsg(ctx, dbglvl, "gfapi-fd: entering end_restore_job\n");
+   Dmsg(ctx, debuglevel, "gfapi-fd: entering end_restore_job\n");
 
-   Dmsg(ctx, dbglvl, "gfapi-fd: leaving end_restore_job\n");
+   Dmsg(ctx, debuglevel, "gfapi-fd: leaving end_restore_job\n");
 
    return retval;
 }

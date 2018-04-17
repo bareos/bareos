@@ -46,7 +46,7 @@
 #include "bareos.h"
 #include "jcr.h"
 
-const int dbglvl = 3400;
+const int debuglevel = 3400;
 
 /* External variables we reference */
 
@@ -394,7 +394,7 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
    struct sigaction sigtimer;
    int status;
 
-   Dmsg0(dbglvl, "Enter new_jcr\n");
+   Dmsg0(debuglevel, "Enter new_jcr\n");
 
    setup_tsd_key();
 
@@ -461,12 +461,12 @@ JobControlRecord *new_jcr(int size, JCR_free_HANDLER *daemon_free_jcr)
  */
 static void remove_jcr(JobControlRecord *jcr)
 {
-   Dmsg0(dbglvl, "Enter remove_jcr\n");
+   Dmsg0(debuglevel, "Enter remove_jcr\n");
    if (!jcr) {
       Emsg0(M_ABORT, 0, _("NULL jcr.\n"));
    }
    jcrs->remove(jcr);
-   Dmsg0(dbglvl, "Leave remove_jcr\n");
+   Dmsg0(debuglevel, "Leave remove_jcr\n");
 }
 
 /*
@@ -569,7 +569,7 @@ void b_free_jcr(const char *file, int line, JobControlRecord *jcr)
 {
    struct s_last_job *je;
 
-   Dmsg3(dbglvl, "Enter free_jcr jid=%u from %s:%d\n", jcr->JobId, file, line);
+   Dmsg3(debuglevel, "Enter free_jcr jid=%u from %s:%d\n", jcr->JobId, file, line);
 
 #else
 
@@ -577,7 +577,7 @@ void free_jcr(JobControlRecord *jcr)
 {
    struct s_last_job *je;
 
-   Dmsg3(dbglvl, "Enter free_jcr jid=%u use_count=%d Job=%s\n",
+   Dmsg3(debuglevel, "Enter free_jcr jid=%u use_count=%d Job=%s\n",
          jcr->JobId, jcr->use_count(), jcr->Job);
 
 #endif
@@ -589,7 +589,7 @@ void free_jcr(JobControlRecord *jcr)
          jcr->use_count(), jcr->JobId);
    }
    if (jcr->JobId > 0) {
-      Dmsg3(dbglvl, "Dec free_jcr jid=%u use_count=%d Job=%s\n",
+      Dmsg3(debuglevel, "Dec free_jcr jid=%u use_count=%d Job=%s\n",
          jcr->JobId, jcr->use_count(), jcr->Job);
    }
    if (jcr->use_count() > 0) {          /* if in use */
@@ -597,7 +597,7 @@ void free_jcr(JobControlRecord *jcr)
       return;
    }
    if (jcr->JobId > 0) {
-      Dmsg3(dbglvl, "remove jcr jid=%u use_count=%d Job=%s\n",
+      Dmsg3(debuglevel, "remove jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
    }
    remove_jcr(jcr);                   /* remove Jcr from chain */
@@ -606,7 +606,7 @@ void free_jcr(JobControlRecord *jcr)
    dequeue_messages(jcr);
    call_job_end_callbacks(jcr);                  /* call registered callbacks */
 
-   Dmsg1(dbglvl, "End job=%d\n", jcr->JobId);
+   Dmsg1(debuglevel, "End job=%d\n", jcr->JobId);
 
    /*
     * Keep some statistics
@@ -663,7 +663,7 @@ void free_jcr(JobControlRecord *jcr)
 
    free_common_jcr(jcr);
    close_msg(NULL);                   /* flush any daemon messages */
-   Dmsg0(dbglvl, "Exit free_jcr\n");
+   Dmsg0(debuglevel, "Exit free_jcr\n");
 }
 
 void JobControlRecord::set_killable(bool killable)
@@ -766,7 +766,7 @@ JobControlRecord *get_jcr_by_id(uint32_t JobId)
    foreach_jcr(jcr) {
       if (jcr->JobId == JobId) {
          jcr->inc_use_count();
-         Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
          break;
       }
@@ -816,7 +816,7 @@ JobControlRecord *get_jcr_by_session(uint32_t SessionId, uint32_t SessionTime)
       if (jcr->VolSessionId == SessionId &&
           jcr->VolSessionTime == SessionTime) {
          jcr->inc_use_count();
-         Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
          break;
       }
@@ -846,7 +846,7 @@ JobControlRecord *get_jcr_by_partial_name(char *Job)
    foreach_jcr(jcr) {
       if (bstrncmp(Job, jcr->Job, len)) {
          jcr->inc_use_count();
-         Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
          break;
       }
@@ -874,7 +874,7 @@ JobControlRecord *get_jcr_by_full_name(char *Job)
    foreach_jcr(jcr) {
       if (bstrcmp(jcr->Job, Job)) {
          jcr->inc_use_count();
-         Dmsg3(dbglvl, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc get_jcr jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
          break;
       }
@@ -1054,7 +1054,7 @@ static void lock_jcr_chain()
 #endif
 {
 #ifdef TRACE_JCR_CHAIN
-   Dmsg3(dbglvl, "Lock jcr chain %d from %s:%d\n", ++lock_count, fname, line);
+   Dmsg3(debuglevel, "Lock jcr chain %d from %s:%d\n", ++lock_count, fname, line);
 #endif
    P(jcr_lock);
 }
@@ -1069,7 +1069,7 @@ static void unlock_jcr_chain()
 #endif
 {
 #ifdef TRACE_JCR_CHAIN
-   Dmsg3(dbglvl, "Unlock jcr chain %d from %s:%d\n", lock_count--, fname, line);
+   Dmsg3(debuglevel, "Unlock jcr chain %d from %s:%d\n", lock_count--, fname, line);
 #endif
    V(jcr_lock);
 }
@@ -1097,7 +1097,7 @@ JobControlRecord *jcr_walk_start()
    if (jcr) {
       jcr->inc_use_count();
       if (jcr->JobId > 0) {
-         Dmsg3(dbglvl, "Inc walk_start jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc walk_start jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
       }
    }
@@ -1117,7 +1117,7 @@ JobControlRecord *jcr_walk_next(JobControlRecord *prev_jcr)
    if (jcr) {
       jcr->inc_use_count();
       if (jcr->JobId > 0) {
-         Dmsg3(dbglvl, "Inc walk_next jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Inc walk_next jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
       }
    }
@@ -1135,7 +1135,7 @@ void jcr_walk_end(JobControlRecord *jcr)
 {
    if (jcr) {
       if (jcr->JobId > 0) {
-         Dmsg3(dbglvl, "Free walk_end jid=%u use_count=%d Job=%s\n",
+         Dmsg3(debuglevel, "Free walk_end jid=%u use_count=%d Job=%s\n",
             jcr->JobId, jcr->use_count(), jcr->Job);
       }
       free_jcr(jcr);
@@ -1186,13 +1186,13 @@ static void jcr_timeout_check(watchdog_t *self)
    BareosSocket *bs;
    time_t timer_start;
 
-   Dmsg0(dbglvl, "Start JobControlRecord timeout checks\n");
+   Dmsg0(debuglevel, "Start JobControlRecord timeout checks\n");
 
    /* Walk through all JCRs checking if any one is
     * blocked for more than specified max time.
     */
    foreach_jcr(jcr) {
-      Dmsg2(dbglvl, "jcr_timeout_check JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
+      Dmsg2(debuglevel, "jcr_timeout_check JobId=%u jcr=0x%x\n", jcr->JobId, jcr);
       if (jcr->JobId == 0) {
          continue;
       }
@@ -1235,7 +1235,7 @@ static void jcr_timeout_check(watchdog_t *self)
    }
    endeach_jcr(jcr);
 
-   Dmsg0(dbglvl, "Finished JobControlRecord timeout checks\n");
+   Dmsg0(debuglevel, "Finished JobControlRecord timeout checks\n");
 }
 
 /*

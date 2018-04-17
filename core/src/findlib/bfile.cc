@@ -33,7 +33,7 @@
 #include "bareos.h"
 #include "find.h"
 
-const int dbglvl = 200;
+const int debuglevel = 200;
 
 DLL_IMP_EXP int (*plugin_bopen)(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode) = NULL;
 DLL_IMP_EXP int (*plugin_bclose)(BareosWinFilePacket *bfd) = NULL;
@@ -1108,7 +1108,7 @@ int bopen(BareosWinFilePacket *bfd, const char *fname, int flags, mode_t mode, d
    }
 
    /* Normal file open */
-   Dmsg1(dbglvl, "open file %s\n", fname);
+   Dmsg1(debuglevel, "open file %s\n", fname);
 
    /* We use fnctl to set O_NOATIME if requested to avoid open error */
    bfd->fid = open(fname, flags & ~O_NOATIME, mode);

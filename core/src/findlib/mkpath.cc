@@ -37,7 +37,7 @@
 #include "bareos.h"
 #include "jcr.h"
 
-#define dbglvl 50
+#define debuglevel 50
 
 /**
  *  * For old systems that don't have lchown() use chown()

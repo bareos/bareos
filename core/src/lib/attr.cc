@@ -31,7 +31,7 @@
 #include "jcr.h"
 #include "lib/breg.h"
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 Attributes *new_attr(JobControlRecord *jcr)
 {
@@ -70,13 +70,13 @@ int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, i
     *
     */
    attr->stream = stream;
-   Dmsg1(dbglvl, "Attr: %s\n", rec);
+   Dmsg1(debuglevel, "Attr: %s\n", rec);
    if (sscanf(rec, "%d %d", &attr->file_index, &attr->type) != 2) {
       Jmsg(jcr, M_FATAL, 0, _("Error scanning attributes: %s\n"), rec);
-      Dmsg1(dbglvl, "\nError scanning attributes. %s\n", rec);
+      Dmsg1(debuglevel, "\nError scanning attributes. %s\n", rec);
       return 0;
    }
-   Dmsg2(dbglvl, "Got Attr: FilInx=%d type=%d\n", attr->file_index, attr->type);
+   Dmsg2(debuglevel, "Got Attr: FilInx=%d type=%d\n", attr->file_index, attr->type);
    /*
     * Note AR_DATA_STREAM should never be set since it is encoded
     *  at the end of the attributes.
@@ -127,7 +127,7 @@ int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, i
          }
       }
    }
-   Dmsg8(dbglvl, "unpack_attr FI=%d Type=%d fname=%s attr=%s lname=%s attrEx=%s datastr=%d delta_seq=%d\n",
+   Dmsg8(debuglevel, "unpack_attr FI=%d Type=%d fname=%s attr=%s lname=%s attrEx=%s datastr=%d delta_seq=%d\n",
       attr->file_index, attr->type, attr->fname, attr->attr, attr->lname,
       attr->attrEx, attr->data_stream, attr->delta_seq);
    *attr->ofname = 0;
@@ -308,6 +308,6 @@ void print_ls_output(JobControlRecord *jcr, Attributes *attr)
 {
    PoolMem resultbuffer(PM_MESSAGE);
    attr_to_ls_output(resultbuffer, jcr, attr);
-   Dmsg1(dbglvl, "%s", resultbuffer.c_str());
+   Dmsg1(debuglevel, "%s", resultbuffer.c_str());
    Jmsg(jcr, M_RESTORED, 1, "%s", resultbuffer.c_str());
 }

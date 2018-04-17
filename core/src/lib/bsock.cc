@@ -356,7 +356,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
                                  bool initiated_by_remote) {
 
                                   btimer_t *tid       = NULL;
-   const int dbglvl    = 50;
+   const int debuglevel    = 50;
    bool compatible     = true;
    bool auth_success   = false;
    uint32_t local_tls_policy = GetNeedFromConfiguration(tls_configuration);
@@ -365,7 +365,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
    TlsBase * selected_local_tls = nullptr;
 
    if (jcr && job_canceled(jcr)) {
-      Dmsg0(dbglvl, "Failed, because job is canceled.\n");
+      Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false; /* force quick exit */
       goto auth_fatal;
    }
@@ -399,10 +399,10 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
           */
          auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
          if (!auth_success) {
-            Dmsg1(dbglvl, "Respond cram-get-auth failed with %s\n", who());
+            Dmsg1(debuglevel, "Respond cram-get-auth failed with %s\n", who());
          }
       } else {
-         Dmsg1(dbglvl, "Challenge cram-auth failed with %s\n", who());
+         Dmsg1(debuglevel, "Challenge cram-auth failed with %s\n", who());
       }
    } else {
       /*
@@ -410,14 +410,14 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
        */
       auth_success = cram_md5_respond(this, password.value, &remote_tls_policy, &compatible);
       if (!auth_success) {
-         Dmsg1(dbglvl, "cram_respond failed for %s\n", who());
+         Dmsg1(debuglevel, "cram_respond failed for %s\n", who());
       } else {
          /*
           * Challenge Remote.
           */
          auth_success = cram_md5_challenge(this, password.value, local_tls_policy, compatible);
          if (!auth_success) {
-            Dmsg1(dbglvl, "cram_challenge failed for %s\n", who());
+            Dmsg1(debuglevel, "cram_challenge failed for %s\n", who());
          }
       }
    }
@@ -435,7 +435,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
    }
 
    if (jcr && job_canceled(jcr)) {
-      Dmsg0(dbglvl, "Failed, because job is canceled.\n");
+      Dmsg0(debuglevel, "Failed, because job is canceled.\n");
       auth_success = false; /* force quick exit */
       goto auth_fatal;
    }
@@ -460,7 +460,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
          }
          if (!bnet_tls_server(tls_ctx, this, verify_list)) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
-            Dmsg0(dbglvl, "TLS negotiation failed.\n");
+            Dmsg0(debuglevel, "TLS negotiation failed.\n");
             auth_success = false;
             goto auth_fatal;
          }
@@ -475,7 +475,7 @@ bool BareosSocket::two_way_authenticate(JobControlRecord *jcr,
                               selected_local_tls->GetVerifyPeer(),
                               selected_local_tls->GetVerifyList())) {
             Jmsg(jcr, M_FATAL, 0, _("TLS negotiation failed.\n"));
-            Dmsg0(dbglvl, "TLS negotiation failed.\n");
+            Dmsg0(debuglevel, "TLS negotiation failed.\n");
             auth_success = false;
             goto auth_fatal;
          }

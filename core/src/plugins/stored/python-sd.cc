@@ -36,7 +36,7 @@
 #error "Need at least Python version 2.6 or newer"
 #endif
 
-static const int dbglvl = 150;
+static const int debuglevel = 150;
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"
@@ -429,7 +429,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
    bp = strchr(plugin_definition.c_str(), ':');
    if (!bp) {
       Jmsg(ctx, M_FATAL, "python-sd: Illegal plugin definition %s\n", plugin_definition.c_str());
-      Dmsg(ctx, dbglvl, "python-sd: Illegal plugin definition %s\n", plugin_definition.c_str());
+      Dmsg(ctx, debuglevel, "python-sd: Illegal plugin definition %s\n", plugin_definition.c_str());
       goto bail_out;
    }
 
@@ -455,7 +455,7 @@ static bRC parse_plugin_definition(bpContext *ctx, void *value, PoolMem &plugin_
       argument_value = strchr(bp, '=');
       if (!argument_value) {
          Jmsg(ctx, M_FATAL, "python-sd: Illegal argument %s without value\n", argument);
-         Dmsg(ctx, dbglvl, "python-sd: Illegal argument %s without value\n", argument);
+         Dmsg(ctx, debuglevel, "python-sd: Illegal argument %s without value\n", argument);
          goto bail_out;
       }
       *argument_value++ = '\0';
@@ -650,7 +650,7 @@ static void PyErrorHandler(bpContext *ctx, int msgtype)
    Py_XDECREF(value);
    Py_XDECREF(traceback);
 
-   Dmsg(ctx, dbglvl, "python-sd: %s\n", error_string);
+   Dmsg(ctx, debuglevel, "python-sd: %s\n", error_string);
    if (msgtype) {
       Jmsg(ctx, msgtype, "python-sd: %s\n", error_string);
    }
@@ -704,17 +704,17 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
     * Try to load the Python module by name.
     */
    if (p_ctx->module_name) {
-      Dmsg(ctx, dbglvl, "python-sd: Trying to load module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, debuglevel, "python-sd: Trying to load module with name %s\n", p_ctx->module_name);
       pName = PyString_FromString(p_ctx->module_name);
       p_ctx->pModule = PyImport_Import(pName);
       Py_DECREF(pName);
 
       if (!p_ctx->pModule) {
-         Dmsg(ctx, dbglvl, "python-sd: Failed to load module with name %s\n", p_ctx->module_name);
+         Dmsg(ctx, debuglevel, "python-sd: Failed to load module with name %s\n", p_ctx->module_name);
          goto bail_out;
       }
 
-      Dmsg(ctx, dbglvl, "python-sd: Successfully loaded module with name %s\n", p_ctx->module_name);
+      Dmsg(ctx, debuglevel, "python-sd: Successfully loaded module with name %s\n", p_ctx->module_name);
 
       /*
        * Get the Python dictionary for lookups in the Python namespace.
@@ -749,7 +749,7 @@ static bRC PyLoadModule(bpContext *ctx, void *value)
             Py_DECREF(pRetVal);
          }
       } else {
-         Dmsg(ctx, dbglvl, "python-sd: Failed to find function named load_bareos_plugins()\n");
+         Dmsg(ctx, debuglevel, "python-sd: Failed to find function named load_bareos_plugins()\n");
          goto bail_out;
       }
 
@@ -805,7 +805,7 @@ static bRC PyParsePluginDefinition(bpContext *ctx, void *value)
 
       return retval;
    } else {
-      Dmsg(ctx, dbglvl, "python-sd: Failed to find function named parse_plugin_definition()\n");
+      Dmsg(ctx, debuglevel, "python-sd: Failed to find function named parse_plugin_definition()\n");
       return bRC_Error;
    }
 
@@ -853,7 +853,7 @@ static bRC PyHandlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
          Py_DECREF(pRetVal);
       }
    } else {
-      Dmsg(ctx, dbglvl, "python-sd: Failed to find function named handle_plugin_event()\n");
+      Dmsg(ctx, debuglevel, "python-sd: Failed to find function named handle_plugin_event()\n");
    }
 
    return retval;
@@ -946,7 +946,7 @@ static PyObject *PyBareosGetValue(PyObject *self, PyObject *args)
    }
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
+      Dmsg(ctx, debuglevel, "python-sd: PyBareosGetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -998,7 +998,7 @@ static PyObject *PyBareosSetValue(PyObject *self, PyObject *args)
    }
    default:
       ctx = PyGetbpContext(pyCtx);
-      Dmsg(ctx, dbglvl, "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
+      Dmsg(ctx, debuglevel, "python-sd: PyBareosSetValue unknown variable requested %d\n", var);
       break;
    }
 
@@ -1083,7 +1083,7 @@ static PyObject *PyBareosRegisterEvents(PyObject *self, PyObject *args)
       event = PyInt_AsLong(pyEvent);
 
       if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-         Dmsg(ctx, dbglvl, "python-sd: PyBareosRegisterEvents registering event %d\n", event);
+         Dmsg(ctx, debuglevel, "python-sd: PyBareosRegisterEvents registering event %d\n", event);
          retval = bfuncs->registerBareosEvents(ctx, 1, event);
 
          if (retval != bRC_OK) {
@@ -1127,7 +1127,7 @@ static PyObject *PyBareosUnRegisterEvents(PyObject *self, PyObject *args)
       event = PyInt_AsLong(pyEvent);
 
       if (event >= bsdEventJobStart && event <= bsdEventWriteRecordTranslation) {
-         Dmsg(ctx, dbglvl, "PyBareosUnRegisterEvents: registering event %d\n", event);
+         Dmsg(ctx, debuglevel, "PyBareosUnRegisterEvents: registering event %d\n", event);
          retval = bfuncs->unregisterBareosEvents(ctx, 1, event);
 
          if (retval != bRC_OK) {

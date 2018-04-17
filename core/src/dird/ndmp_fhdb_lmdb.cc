@@ -57,7 +57,7 @@ struct fhdb_state {
    MDB_txn *db_ro_txn;
 };
 
-static int dbglvl = 100;
+static int debuglevel = 100;
 
 /*
  * Payload = 8 + 8 + 96 = 112 bytes + namelength.
@@ -109,7 +109,7 @@ retry:
       result = mdb_put(fhdb_state->db_rw_txn, fhdb_state->db_dbi, &key, &data, 0);
       switch (result) {
       case 0:
-         Dmsg3(dbglvl, "added file \"%s\", node=%llu, dir_node=%llu\n", raw_name, payload->node, payload->dir_node);
+         Dmsg3(debuglevel, "added file \"%s\", node=%llu, dir_node=%llu\n", raw_name, payload->node, payload->dir_node);
          break;
       case MDB_TXN_FULL:
          /*
@@ -122,18 +122,18 @@ retry:
             if (result == 0) {
                goto retry;
             } else {
-               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Dmsg1(debuglevel, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
                goto bail_out;
             }
          } else {
-            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Dmsg1(debuglevel, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             goto bail_out;
          }
          break;
       default:
-         Dmsg2(dbglvl, _("Unable to insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
+         Dmsg2(debuglevel, _("Unable to insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          Jmsg2(nis->jcr, M_FATAL, 0, _("Unable insert new data at %llu: %s\n"), payload->node,  mdb_strerror(result));
          goto bail_out;
       }
@@ -162,7 +162,7 @@ extern "C" int bndmp_fhdb_lmdb_add_node(struct ndmlog *ixlog, int tagc,
       struct fhdb_state *fhdb_state = (struct fhdb_state *)nis->fhdb_state;
 
       Dmsg1(100, "{ NULL, %llu , 0},\n", node);
-      Dmsg1(dbglvl, "bndmp_fhdb_lmdb_add_node node:[%llu]\n", node);
+      Dmsg1(debuglevel, "bndmp_fhdb_lmdb_add_node node:[%llu]\n", node);
 
       /*
        * Need to update which means we first get the existing data
@@ -208,18 +208,18 @@ retry_del:
                if (result == 0) {
                   goto retry_del;
                } else {
-                  Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+                  Dmsg1(debuglevel, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
                   goto bail_out;
                }
             } else {
-               Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               Dmsg1(debuglevel, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                goto bail_out;
             }
             break;
          default:
-            Dmsg1(dbglvl, _("Unable delete old data: %s\n"), mdb_strerror(result));
+            Dmsg1(debuglevel, _("Unable delete old data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable delete old data: %s\n"), mdb_strerror(result));
             goto bail_out;
          }
@@ -243,18 +243,18 @@ retry_put:
                if (result == 0) {
                   goto retry_put;
                } else {
-                  Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+                  Dmsg1(debuglevel, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                   Jmsg1(nis->jcr, M_FATAL, 0, _("Unable create new transaction: %s\n"), mdb_strerror(result));
                   goto bail_out;
                }
             } else {
-               Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+               Dmsg1(debuglevel, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
                goto bail_out;
             }
             break;
          default:
-            Dmsg1(dbglvl, _("Unable put new data: %s\n"), mdb_strerror(result));
+            Dmsg1(debuglevel, _("Unable put new data: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable put new data: %s\n"), mdb_strerror(result));
             goto bail_out;
          }
@@ -270,18 +270,18 @@ retry_put:
             if (result == 0) {
                goto retry_get;
             } else {
-               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Dmsg1(debuglevel, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                goto bail_out;
             }
          } else {
-            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Dmsg1(debuglevel, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             goto bail_out;
          }
          break;
       default:
-         Dmsg1(dbglvl, _("Unable get old data: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable get old data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable get old data: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
@@ -344,18 +344,18 @@ retry:
             if (result == 0) {
                goto retry;
             } else {
-               Dmsg1(dbglvl, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
+               Dmsg1(debuglevel, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create new transaction: %s\n"), mdb_strerror(result));
                goto bail_out;
             }
          } else {
-            Dmsg1(dbglvl, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
+            Dmsg1(debuglevel, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to commit full transaction: %s\n"), mdb_strerror(result));
             goto bail_out;
          }
          break;
       default:
-         Dmsg1(dbglvl, _("Unable insert new data: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable insert new data: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable insert new data: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
@@ -405,7 +405,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
       result = mdb_env_create(&fhdb_state->db_env);
       if (result) {
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
-         Dmsg1(dbglvl, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable to create MDB environment: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
@@ -423,7 +423,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
 
       result = mdb_env_set_mapsize(fhdb_state->db_env, mapsize);
       if (result) {
-         Dmsg1(dbglvl, _("Unable to set MDB mapsize: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable to set MDB mapsize: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to set MDB mapsize: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
@@ -433,7 +433,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
        */
       result = mdb_env_set_maxreaders(fhdb_state->db_env, 1);
       if (result) {
-         Dmsg1(dbglvl, _("Unable to set MDB maxreaders: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable to set MDB maxreaders: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to set MDB maxreaders: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
@@ -441,7 +441,7 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
       Mmsg(fhdb_state->lmdb_name, "%s/.fhdb_lmdb.%d", working_directory, nis->jcr->JobId);
       result = mdb_env_open(fhdb_state->db_env, fhdb_state->lmdb_name, MDB_NOSUBDIR | MDB_NOLOCK | MDB_NOSYNC, 0600);
       if (result) {
-         Dmsg2(dbglvl, _("Unable to create LMDB database %s: %s. Check OS ulimit settings or adapt FileHistorySize\n"),
+         Dmsg2(debuglevel, _("Unable to create LMDB database %s: %s. Check OS ulimit settings or adapt FileHistorySize\n"),
                fhdb_state->lmdb_name, mdb_strerror(result));
          Jmsg2(nis->jcr, M_FATAL, 0, _("Unable to create LMDB database %s: %s. Check OS ulimit settings or adapt FileHistorySize\n"),
                fhdb_state->lmdb_name, mdb_strerror(result));
@@ -450,14 +450,14 @@ void ndmp_fhdb_lmdb_register(struct ndmlog *ixlog)
 
       result = mdb_txn_begin(fhdb_state->db_env, NULL, 0, &fhdb_state->db_rw_txn);
       if (result) {
-         Dmsg1(dbglvl, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to start a write transaction: %s\n"), mdb_strerror(result));
          goto bail_out;
       }
 
       result = mdb_dbi_open(fhdb_state->db_rw_txn, NULL, MDB_CREATE | MDB_INTEGERKEY | MDB_DUPSORT, &fhdb_state->db_dbi);
       if (result) {
-         Dmsg1(dbglvl, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
+         Dmsg1(debuglevel, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
          Jmsg1(nis->jcr, M_FATAL, 0, _("Unable to open LMDB internal database: %s\n"), mdb_strerror(result));
       }
 
@@ -563,10 +563,10 @@ static inline void calculate_path(uint64_t node, fhdb_state *fhdb_state)
          case MDB_NOTFOUND:
             break;
          case EINVAL:
-            Dmsg1(dbglvl, "%s\n", mdb_strerror(result));
+            Dmsg1(debuglevel, "%s\n", mdb_strerror(result));
             break;
          default:
-            Dmsg1(dbglvl, "%s\n", mdb_strerror(result));
+            Dmsg1(debuglevel, "%s\n", mdb_strerror(result));
             break;
       }
    }
@@ -587,14 +587,14 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
 
    result = mdb_cursor_open(fhdb_state->db_ro_txn, fhdb_state->db_dbi, &cursor);
    if (result) {
-      Dmsg1(dbglvl, "%s\n", mdb_strerror(result));
+      Dmsg1(debuglevel, "%s\n", mdb_strerror(result));
    }
 
    rkey.mv_data = &node;
    rkey.mv_size = sizeof(node);
    result = mdb_cursor_get(cursor, &rkey, &rdata, MDB_FIRST);
    if (result) {
-      Dmsg1(dbglvl, "%s\n", mdb_strerror(result));
+      Dmsg1(debuglevel, "%s\n", mdb_strerror(result));
    }
 
    while (!result) {
@@ -631,7 +631,7 @@ static inline void process_lmdb(NIS *nis, struct fhdb_state *fhdb_state)
          result = mdb_cursor_get(cursor, &rkey, &rdata, MDB_NEXT);
          break;
       default:
-         Dmsg1(dbglvl, "%s\n", mdb_strerror(result));
+         Dmsg1(debuglevel, "%s\n", mdb_strerror(result));
          break;
       }
    }

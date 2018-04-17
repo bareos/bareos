@@ -33,7 +33,7 @@
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 
-const int dbglvl = 250;
+const int debuglevel = 250;
 #ifdef HAVE_WIN32
 const char *plugin_type = "-sd.dll";
 #else
@@ -253,12 +253,12 @@ static inline bool trigger_plugin_event(JobControlRecord *jcr, bsdEventType even
    bool stop = false;
 
    if (!is_event_enabled(ctx, eventType)) {
-      Dmsg1(dbglvl, "Event %d disabled for this plugin.\n", eventType);
+      Dmsg1(debuglevel, "Event %d disabled for this plugin.\n", eventType);
       goto bail_out;
    }
 
    if (is_plugin_disabled(ctx)) {
-      Dmsg0(dbglvl, "Plugin disabled.\n");
+      Dmsg0(debuglevel, "Plugin disabled.\n");
       goto bail_out;
    }
 
@@ -319,12 +319,12 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
    bRC rc = bRC_OK;
 
    if (!sd_plugin_list) {
-      Dmsg0(dbglvl, "No bplugin_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No bplugin_list: generate_plugin_event ignored.\n");
       goto bail_out;
    }
 
    if (!jcr) {
-      Dmsg0(dbglvl, "No jcr: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No jcr: generate_plugin_event ignored.\n");
       goto bail_out;
    }
 
@@ -332,14 +332,14 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
     * Return if no plugins loaded
     */
    if (!jcr->plugin_ctx_list) {
-      Dmsg0(dbglvl, "No plugin_ctx_list: generate_plugin_event ignored.\n");
+      Dmsg0(debuglevel, "No plugin_ctx_list: generate_plugin_event ignored.\n");
       goto bail_out;
    }
 
    plugin_ctx_list = jcr->plugin_ctx_list;
    event.eventType = eventType;
 
-   Dmsg2(dbglvl, "sd-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
+   Dmsg2(debuglevel, "sd-plugin_ctx_list=%p JobId=%d\n", plugin_ctx_list, jcr->JobId);
 
    /*
     * See if we need to trigger the loaded plugins in reverse order.
@@ -363,7 +363,7 @@ bRC generate_plugin_event(JobControlRecord *jcr, bsdEventType eventType, void *v
    }
 
    if (jcr->is_job_canceled()) {
-      Dmsg0(dbglvl, "Cancel return from generate_plugin_event\n");
+      Dmsg0(debuglevel, "Cancel return from generate_plugin_event\n");
       rc = bRC_Cancel;
    }
 
@@ -406,9 +406,9 @@ void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
    Plugin *plugin;
    int i;
 
-   Dmsg0(dbglvl, "Load sd plugins\n");
+   Dmsg0(debuglevel, "Load sd plugins\n");
    if (!plugin_dir) {
-      Dmsg0(dbglvl, "No sd plugin dir!\n");
+      Dmsg0(debuglevel, "No sd plugin dir!\n");
       return;
    }
    sd_plugin_list = New(alist(10, not_owned_by_alist));
@@ -420,7 +420,7 @@ void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
       if (sd_plugin_list->size() == 0) {
          delete sd_plugin_list;
          sd_plugin_list = NULL;
-         Dmsg0(dbglvl, "No plugins loaded\n");
+         Dmsg0(debuglevel, "No plugins loaded\n");
          return;
       }
    }
@@ -428,10 +428,10 @@ void load_sd_plugins(const char *plugin_dir, alist *plugin_names)
     * Verify that the plugin is acceptable, and print information about it.
     */
    foreach_alist_index(i, plugin, sd_plugin_list) {
-      Dmsg1(dbglvl, "Loaded plugin: %s\n", plugin->file);
+      Dmsg1(debuglevel, "Loaded plugin: %s\n", plugin->file);
    }
 
-   Dmsg1(dbglvl, "num plugins=%d\n", sd_plugin_list->size());
+   Dmsg1(debuglevel, "num plugins=%d\n", sd_plugin_list->size());
    dbg_plugin_add_hook(dump_sd_plugin);
    dbg_print_plugin_add_hook(dump_sd_plugins);
 }
@@ -505,7 +505,7 @@ static inline bpContext *instantiate_plugin(JobControlRecord *jcr, Plugin *plugi
    b_ctx->jcr = jcr;
    b_ctx->plugin = plugin;
 
-   Dmsg2(dbglvl, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   Dmsg2(debuglevel, "Instantiate dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
 
    ctx = (bpContext *)malloc(sizeof(bpContext));
    ctx->instance = instance;
@@ -626,9 +626,9 @@ void new_plugins(JobControlRecord *jcr)
    Plugin *plugin;
    int i, num;
 
-   Dmsg0(dbglvl, "=== enter new_plugins ===\n");
+   Dmsg0(debuglevel, "=== enter new_plugins ===\n");
    if (!sd_plugin_list) {
-      Dmsg0(dbglvl, "No sd plugin list!\n");
+      Dmsg0(debuglevel, "No sd plugin list!\n");
       return;
    }
    if (jcr->is_job_canceled()) {
@@ -642,7 +642,7 @@ void new_plugins(JobControlRecord *jcr)
    }
 
    num = sd_plugin_list->size();
-   Dmsg1(dbglvl, "sd-plugin-list size=%d\n", num);
+   Dmsg1(debuglevel, "sd-plugin-list size=%d\n", num);
    if (num == 0) {
       return;
    }
@@ -667,7 +667,7 @@ void free_plugins(JobControlRecord *jcr)
       return;
    }
 
-   Dmsg2(dbglvl, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
+   Dmsg2(debuglevel, "Free instance dir-plugin_ctx_list=%p JobId=%d\n", jcr->plugin_ctx_list, jcr->JobId);
    foreach_alist(ctx, jcr->plugin_ctx_list) {
       /*
        * Free the plugin instance
@@ -698,11 +698,11 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
    switch (var) {               /* General variables, no need of ctx */
    case bsdVarCompatible:
       *((bool *)value) = me->compatible;
-      Dmsg1(dbglvl, "sd-plugin: return bsdVarCompatible=%s\n", (me->compatible) ? "true" : "false");
+      Dmsg1(debuglevel, "sd-plugin: return bsdVarCompatible=%s\n", (me->compatible) ? "true" : "false");
       break;
    case bsdVarPluginDir:
       *((char **)value) = me->plugin_directory;
-      Dmsg1(dbglvl, "sd-plugin: return bsdVarPluginDir=%s\n", me->plugin_directory);
+      Dmsg1(debuglevel, "sd-plugin: return bsdVarPluginDir=%s\n", me->plugin_directory);
       break;
    default:
       if (!ctx) {
@@ -720,28 +720,28 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       switch (var) {
       case bsdVarJob:
          *((char **)value) = jcr->job_name;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
          break;
       case bsdVarLevel:
          *((int *)value) = jcr->getJobLevel();
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarLevel=%c\n", jcr->getJobLevel());
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarLevel=%c\n", jcr->getJobLevel());
          break;
       case bsdVarType:
          *((int *)value) = jcr->getJobType();
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarType=%c\n", jcr->getJobType());
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarType=%c\n", jcr->getJobType());
          break;
       case bsdVarJobId:
          *((int *)value) = jcr->JobId;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobId=%d\n", jcr->JobId);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobId=%d\n", jcr->JobId);
          break;
       case bsdVarClient:
          *((char **)value) = jcr->client_name;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarClient=%s\n", NPRT(*((char **)value)));
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarClient=%s\n", NPRT(*((char **)value)));
          break;
       case bsdVarPool:
          if (jcr->dcr) {
             *((char **)value) = jcr->dcr->pool_name;
-            Dmsg1(dbglvl, "sd-plugin: return bsdVarPool=%s\n", NPRT(*((char **)value)));
+            Dmsg1(debuglevel, "sd-plugin: return bsdVarPool=%s\n", NPRT(*((char **)value)));
          } else {
             retval = bRC_Error;
          }
@@ -749,7 +749,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       case bsdVarPoolType:
          if (jcr->dcr) {
             *((char **)value) = jcr->dcr->pool_type;
-            Dmsg1(dbglvl, "sd-plugin: return bsdVarPoolType=%s\n", NPRT(*((char **)value)));
+            Dmsg1(debuglevel, "sd-plugin: return bsdVarPoolType=%s\n", NPRT(*((char **)value)));
          } else {
             retval = bRC_Error;
          }
@@ -757,7 +757,7 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       case bsdVarStorage:
          if (jcr->dcr && jcr->dcr->device) {
             *((char **)value) = jcr->dcr->device->name();
-            Dmsg1(dbglvl, "sd-plugin: return bsdVarStorage=%s\n", NPRT(*((char **)value)));
+            Dmsg1(debuglevel, "sd-plugin: return bsdVarStorage=%s\n", NPRT(*((char **)value)));
          } else {
             retval = bRC_Error;
          }
@@ -765,39 +765,39 @@ static bRC bareosGetValue(bpContext *ctx, bsdrVariable var, void *value)
       case bsdVarMediaType:
          if (jcr->dcr) {
             *((char **)value) = jcr->dcr->media_type;
-            Dmsg1(dbglvl, "sd-plugin: return bsdVarMediaType=%s\n", NPRT(*((char **)value)));
+            Dmsg1(debuglevel, "sd-plugin: return bsdVarMediaType=%s\n", NPRT(*((char **)value)));
          } else {
             retval = bRC_Error;
          }
          break;
       case bsdVarJobName:
          *((char **)value) = jcr->Job;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobName=%s\n", NPRT(*((char **)value)));
          break;
       case bsdVarJobStatus:
          *((int *)value) = jcr->JobStatus;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobStatus=%c\n", jcr->JobStatus);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobStatus=%c\n", jcr->JobStatus);
          break;
       case bsdVarVolumeName:
          if (jcr->dcr) {
             *((char **)value) = jcr->dcr->VolumeName;
-            Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", NPRT(*((char **)value)));
+            Dmsg1(debuglevel, "sd-plugin: return bsdVarVolumeName=%s\n", NPRT(*((char **)value)));
          } else {
             retval = bRC_Error;
          }
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarVolumeName=%s\n", jcr->VolumeName);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarVolumeName=%s\n", jcr->VolumeName);
          break;
       case bsdVarJobErrors:
          *((int *)value) = jcr->JobErrors;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobErrors=%d\n", jcr->JobErrors);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobErrors=%d\n", jcr->JobErrors);
          break;
       case bsdVarJobFiles:
          *((int *)value) = jcr->JobFiles;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobFiles=%d\n", jcr->JobFiles);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobFiles=%d\n", jcr->JobFiles);
          break;
       case bsdVarJobBytes:
          *((uint64_t *)value) = jcr->JobBytes;
-         Dmsg1(dbglvl, "sd-plugin: return bsdVarJobBytes=%d\n", jcr->JobBytes);
+         Dmsg1(debuglevel, "sd-plugin: return bsdVarJobBytes=%d\n", jcr->JobBytes);
          break;
       default:
          break;
@@ -819,7 +819,7 @@ static bRC bareosSetValue(bpContext *ctx, bsdwVariable var, void *value)
       return bRC_Error;
    }
 
-   Dmsg1(dbglvl, "sd-plugin: bareosSetValue var=%d\n", var);
+   Dmsg1(debuglevel, "sd-plugin: bareosSetValue var=%d\n", var);
    switch (var) {
    case bsdwVarVolumeName:
       pm_strcpy(jcr->VolumeName, ((char *)value));
@@ -851,7 +851,7 @@ static bRC bareosRegisterEvents(bpContext *ctx, int nr_events, ...)
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
-      Dmsg1(dbglvl, "sd-plugin: Plugin registered event=%u\n", event);
+      Dmsg1(debuglevel, "sd-plugin: Plugin registered event=%u\n", event);
       set_bit(event, b_ctx->events);
    }
    va_end(args);
@@ -872,7 +872,7 @@ static bRC bareosUnRegisterEvents(bpContext *ctx, int nr_events, ...)
    va_start(args, nr_events);
    for (i = 0; i < nr_events; i++) {
       event = va_arg(args, uint32_t);
-      Dmsg1(dbglvl, "sd-plugin: Plugin unregistered event=%u\n", event);
+      Dmsg1(debuglevel, "sd-plugin: Plugin unregistered event=%u\n", event);
       clear_bit(event, b_ctx->events);
    }
    va_end(args);

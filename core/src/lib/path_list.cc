@@ -25,7 +25,7 @@
 
 #include "bareos.h"
 
-#define dbglvl 50
+#define debuglevel 50
 
 typedef struct PrivateCurDir {
    hlink link;
@@ -71,7 +71,7 @@ bool path_list_add(htable *path_list, uint32_t len, const char *fname)
 
    path_list->insert(item->fname, item);
 
-   Dmsg1(dbglvl, "add fname=<%s>\n", fname);
+   Dmsg1(debuglevel, "add fname=<%s>\n", fname);
 
    return true;
 }
@@ -108,7 +108,7 @@ bool path_list_lookup(htable *path_list, const char *fname)
       found = true;
    }
 
-   Dmsg2(dbglvl, "lookup <%s> %s\n", filename, found ? "ok" : "not ok");
+   Dmsg2(debuglevel, "lookup <%s> %s\n", filename, found ? "ok" : "not ok");
 
    return found;
 }

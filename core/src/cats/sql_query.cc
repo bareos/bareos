@@ -31,7 +31,7 @@
 
 #include "cats.h"
 
-static const int dbglvl = 100;
+static const int debuglevel = 100;
 
 const char *BareosDb::get_predefined_query_name(BareosDb::SQL_QUERY_ENUM query) {
   return query_names[query];
@@ -93,13 +93,13 @@ void BareosDb::fill_query_va_list(PoolMem &query, BareosDb::SQL_QUERY_ENUM prede
    query_name = get_predefined_query_name(predefined_query);
    query_template = get_predefined_query(predefined_query);
 
-   Dmsg3(dbglvl, "called: %s with query name %s (%d)\n", __PRETTY_FUNCTION__, query_name, predefined_query);
+   Dmsg3(debuglevel, "called: %s with query name %s (%d)\n", __PRETTY_FUNCTION__, query_name, predefined_query);
 
    if (query_template) {
       query.bvsprintf(query_template, arg_ptr);
    }
 
-   Dmsg2(dbglvl, "called: %s query is now %s\n", __PRETTY_FUNCTION__, query.c_str());
+   Dmsg2(debuglevel, "called: %s query is now %s\n", __PRETTY_FUNCTION__, query.c_str());
 }
 
 
@@ -121,7 +121,7 @@ bool BareosDb::sql_query(const char *query, int flags)
 {
    bool retval;
 
-   Dmsg2(dbglvl, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
+   Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
    db_lock(this);
    retval = sql_query_without_handler(query, flags);
@@ -137,7 +137,7 @@ bool BareosDb::sql_query(const char *query, DB_RESULT_HANDLER *result_handler, v
 {
    bool retval;
 
-   Dmsg2(dbglvl, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
+   Dmsg2(debuglevel, "called: %s with query %s\n", __PRETTY_FUNCTION__, query);
 
    db_lock(this);
    retval = sql_query_with_handler(query, result_handler, ctx);

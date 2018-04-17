@@ -31,7 +31,7 @@
 #include "bareos.h"
 #include "filed.h"
 
-const int dbglvl = 50;
+const int debuglevel = 50;
 
 /* Version at end of Hello
  *   prior to 10Mar08 no version
@@ -73,7 +73,7 @@ static inline void delay()
 
 static inline void authenticate_failed(JobControlRecord *jcr, PoolMem &message)
 {
-   Dmsg0(dbglvl, message.c_str());
+   Dmsg0(debuglevel, message.c_str());
    Jmsg0(jcr, M_FATAL, 0, message.c_str());
    delay();
 }

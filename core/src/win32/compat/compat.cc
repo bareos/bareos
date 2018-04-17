@@ -55,7 +55,7 @@
  * depending on whether we are building the 32 bit version or
  * the 64 bit version.
  */
-static const int dbglvl = 500;
+static const int debuglevel = 500;
 
 #define MAX_PATHLENGTH  1024
 
@@ -136,7 +136,7 @@ static void VSSPathConvertCleanup(void *arg)
 {
    thread_vss_path_convert *tvpc = (thread_vss_path_convert *)arg;
 
-   Dmsg1(dbglvl, "VSSPathConvertCleanup: Cleanup thread specific conversion pointers at address %p\n", tvpc);
+   Dmsg1(debuglevel, "VSSPathConvertCleanup: Cleanup thread specific conversion pointers at address %p\n", tvpc);
 
    free(tvpc);
 }
@@ -166,7 +166,7 @@ bool SetVSSPathConvert(t_pVSSPathConvert pPathConvert, t_pVSSPathConvertW pPathC
       }
    }
 
-   Dmsg1(dbglvl, "SetVSSPathConvert: Setup thread specific conversion pointers at address %p\n", tvpc);
+   Dmsg1(debuglevel, "SetVSSPathConvert: Setup thread specific conversion pointers at address %p\n", tvpc);
 
    tvpc->pPathConvert = pPathConvert;
    tvpc->pPathConvertW = pPathConvertW;
@@ -201,7 +201,7 @@ static void Win32ConvCleanupCache(void *arg)
 {
    thread_conversion_cache *tcc = (thread_conversion_cache *)arg;
 
-   Dmsg1(dbglvl, "Win32ConvCleanupCache: Cleanup of thread specific cache at address %p\n", tcc);
+   Dmsg1(debuglevel, "Win32ConvCleanupCache: Cleanup of thread specific cache at address %p\n", tcc);
 
    free_pool_memory(tcc->pWin32ConvUCS2Cache);
    free_pool_memory(tcc->pWin32ConvUTF8Cache);
@@ -237,7 +237,7 @@ static thread_conversion_cache *Win32ConvInitCache()
       goto bail_out;
    }
 
-   Dmsg1(dbglvl, "Win32ConvInitCache: Setup of thread specific cache at address %p\n", tcc);
+   Dmsg1(debuglevel, "Win32ConvInitCache: Setup of thread specific cache at address %p\n", tcc);
 
    return tcc;
 
@@ -335,7 +335,7 @@ static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_nam
    char *tname = win32_name;
    thread_vss_path_convert *tvpc;
 
-   Dmsg0(dbglvl, "Enter convert_unix_to_win32_path\n");
+   Dmsg0(debuglevel, "Enter convert_unix_to_win32_path\n");
 
    tvpc = Win32GetPathConvert();
    if (IsPathSeparator(name[0]) &&
@@ -396,7 +396,7 @@ static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_nam
     * \\\\?\\GLOBALROOT\\Device\\HarddiskVolumeShadowCopy1\\bareos\\uninstall.exe
     * from c:\bareos\uninstall.exe
     */
-   Dmsg1(dbglvl, "path=%s\n", tname);
+   Dmsg1(debuglevel, "path=%s\n", tname);
    if (tvpc) {
       POOLMEM *pszBuf = get_pool_memory(PM_FNAME);
 
@@ -406,7 +406,7 @@ static inline void conv_unix_to_vss_win32_path(const char *name, char *win32_nam
       free_pool_memory(pszBuf);
    }
 
-   Dmsg1(dbglvl, "Leave cvt_u_to_win32_path path=%s\n", tname);
+   Dmsg1(debuglevel, "Leave cvt_u_to_win32_path path=%s\n", tname);
 }
 
 /**
@@ -438,13 +438,13 @@ DLL_IMP_EXP void unix_name_to_win32(POOLMEM *&win32_name, const char *name)
  */
 static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawPath /*= NULL*/)
 {
-   Dmsg0(dbglvl, "Enter make_wchar_win32_path\n");
+   Dmsg0(debuglevel, "Enter make_wchar_win32_path\n");
    if (pBIsRawPath) {
       *pBIsRawPath = FALSE;              /* Initialize, set later */
    }
 
    if (!p_GetCurrentDirectoryW) {
-      Dmsg0(dbglvl, "Leave make_wchar_win32_path no change \n");
+      Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
       return pszUCSPath;
    }
 
@@ -454,7 +454,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
     * If it has already the desired form, exit without changes
     */
    if (wcslen(name) > 3 && wcsncmp(name, L"\\\\?\\", 4) == 0) {
-      Dmsg0(dbglvl, "Leave make_wchar_win32_path no change \n");
+      Dmsg0(debuglevel, "Leave make_wchar_win32_path no change \n");
       return pszUCSPath;
    }
 
@@ -680,7 +680,7 @@ static inline POOLMEM *make_wchar_win32_path(POOLMEM *pszUCSPath, BOOL *pBIsRawP
    free_pool_memory(pszUCSPath);
    free_pool_memory((POOLMEM *)pwszCurDirBuf);
 
-   Dmsg1(dbglvl, "Leave make_wchar_win32_path=%s\n", pwszBuf);
+   Dmsg1(debuglevel, "Leave make_wchar_win32_path=%s\n", pwszBuf);
    return (POOLMEM *)pwszBuf;
 }
 
@@ -996,7 +996,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
     * So if p_CreateDirectoryW is not available we refuse to do anything.
     */
    if (!p_CreateDirectoryW) {
-      Dmsg0(dbglvl, "CreateJunction: CreateDirectoryW not found, doing nothing\n");
+      Dmsg0(debuglevel, "CreateJunction: CreateDirectoryW not found, doing nothing\n");
       return false;
    }
 
@@ -1027,7 +1027,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
    }
 
    if (!p_CreateDirectoryW((LPCWSTR)szJunctionW, NULL)) {
-      Dmsg1(dbglvl, "CreateDirectory Failed:%s\n", errorString());
+      Dmsg1(debuglevel, "CreateDirectory Failed:%s\n", errorString());
       goto bail_out;
    }
 
@@ -1043,7 +1043,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
                         NULL);
 
    if (hDir == INVALID_HANDLE_VALUE){
-      Dmsg0(dbglvl, "INVALID_FILE_HANDLE");
+      Dmsg0(debuglevel, "INVALID_FILE_HANDLE");
       RemoveDirectoryW((LPCWSTR)szJunctionW);
       goto bail_out;
    }
@@ -1095,7 +1095,7 @@ bool CreateJunction(const char *szJunction, const char *szPath)
                         0,
                         &dwRet,
                         0)) {
-      Dmsg1(dbglvl, "DeviceIoControl Failed:%s\n", errorString());
+      Dmsg1(debuglevel, "DeviceIoControl Failed:%s\n", errorString());
       CloseHandle(hDir);
       RemoveDirectoryW((LPCWSTR)szJunctionW);
       goto bail_out;
@@ -1170,7 +1170,7 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&d
       }
 
       if (h == INVALID_HANDLE_VALUE) {
-         Dmsg1(dbglvl, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
+         Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
          free_pool_memory(pwszBuf);
          return false;
       }
@@ -1190,7 +1190,7 @@ static inline bool get_volume_mount_point_data(const char *filename, POOLMEM *&d
                       NULL);
 
       if (h == INVALID_HANDLE_VALUE) {
-         Dmsg1(dbglvl, "Invalid handle from CreateFile(%s)\n", win32_fname);
+         Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
          free_pool_memory(win32_fname);
          return false;
       }
@@ -1259,7 +1259,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
       }
 
       if (h == INVALID_HANDLE_VALUE) {
-         Dmsg1(dbglvl, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
+         Dmsg1(debuglevel, "Invalid handle from CreateFileW(%s)\n", pwszBuf);
          free_pool_memory(pwszBuf);
          return -1;
       }
@@ -1279,7 +1279,7 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
                       NULL);
 
       if (h == INVALID_HANDLE_VALUE) {
-         Dmsg1(dbglvl, "Invalid handle from CreateFile(%s)\n", win32_fname);
+         Dmsg1(debuglevel, "Invalid handle from CreateFile(%s)\n", win32_fname);
          free_pool_memory(win32_fname);
          return -1;
       }
@@ -1331,18 +1331,18 @@ static inline ssize_t get_symlink_data(const char *filename, POOLMEM *&symlinkta
          ofs = 0;
          if (bstrncasecmp(path, "\\??\\", 4)) { /* skip \\??\\ if exists */
             ofs = 4;
-            Dmsg0(dbglvl, "\\??\\ was in filename, skipping\n");
+            Dmsg0(debuglevel, "\\??\\ was in filename, skipping\n");
          }
 
          if (bstrncasecmp(path, "?\\", 2)) { /* skip ?\\ if exists, this is a MountPoint that we opened as Symlink */
             ofs = 2;
-            Dmsg0(dbglvl, "?\\ was in filename, skipping, use of MountPointReparseDataBuffer is needed\n");
+            Dmsg0(debuglevel, "?\\ was in filename, skipping, use of MountPointReparseDataBuffer is needed\n");
          }
 
          pm_strcpy(symlinktarget, path + ofs);
          free_pool_memory(path);
       } else {
-         Dmsg1(dbglvl, "DeviceIoControl failed:%s\n", errorString());
+         Dmsg1(debuglevel, "DeviceIoControl failed:%s\n", errorString());
       }
 
       CloseHandle(h);
@@ -1405,7 +1405,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
       POOLMEM* pwszBuf = get_pool_memory (PM_FNAME);
       make_win32_path_UTF8_2_wchar(pwszBuf, filename);
 
-      Dmsg1(dbglvl, "FindFirstFileW=%s\n", pwszBuf);
+      Dmsg1(debuglevel, "FindFirstFileW=%s\n", pwszBuf);
       fh = p_FindFirstFileW((LPCWSTR)pwszBuf, &info_w);
 #if (_WIN32_WINNT >= 0x0600)
       if (fh != INVALID_HANDLE_VALUE) {
@@ -1426,7 +1426,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
       win32_fname = get_pool_memory(PM_FNAME);
       unix_name_to_win32(win32_fname, filename);
 
-      Dmsg1(dbglvl, "FindFirstFileA=%s\n", win32_fname);
+      Dmsg1(debuglevel, "FindFirstFileA=%s\n", win32_fname);
       fh = p_FindFirstFileA(win32_fname, &info_a);
 #if (_WIN32_WINNT >= 0x0600)
       if (h != INVALID_HANDLE_VALUE) {
@@ -1442,7 +1442,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
 
       free_pool_memory(win32_fname);
    } else {
-      Dmsg0(dbglvl, "No findFirstFile A or W found\n");
+      Dmsg0(debuglevel, "No findFirstFile A or W found\n");
    }
 
    /*
@@ -1553,10 +1553,10 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             POOLMEM *vmp = get_pool_memory(PM_NAME);
             if (get_volume_mount_point_data(filename, vmp)) {
                if (bstrncasecmp(vmp, "\\??\\volume{", 11)) {
-                  Dmsg2(dbglvl, "Volume Mount Point %s points to: %s\n", filename, vmp);
+                  Dmsg2(debuglevel, "Volume Mount Point %s points to: %s\n", filename, vmp);
                   sb->st_rdev |= FILE_ATTRIBUTE_VOLUME_MOUNT_POINT;
                } else {
-                  Dmsg2(dbglvl, "Junction Point %s points to: %s\n", filename, vmp);
+                  Dmsg2(debuglevel, "Junction Point %s points to: %s\n", filename, vmp);
                   sb->st_rdev |= FILE_ATTRIBUTES_JUNCTION_POINT;
                   sb->st_mode |= S_IFLNK;
                   sb->st_mode &= ~S_IFDIR;
@@ -1568,7 +1568,7 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
          case IO_REPARSE_TAG_SYMLINK: {
             POOLMEM *slt;
 
-            Dmsg0(dbglvl, "We have a symlinked directory!\n");
+            Dmsg0(debuglevel, "We have a symlinked directory!\n");
             sb->st_rdev |= FILE_ATTRIBUTES_SYMBOLIC_LINK;
             sb->st_mode |= S_IFLNK;
             sb->st_mode &= ~S_IFDIR;
@@ -1577,13 +1577,13 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             slt = check_pool_memory_size(slt, MAX_PATH * sizeof(wchar_t));
 
             if (get_symlink_data(filename, slt)) {
-               Dmsg2(dbglvl, "Symlinked Directory %s points to: %s\n", filename, slt);
+               Dmsg2(debuglevel, "Symlinked Directory %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
             break;
          }
          default:
-            Dmsg1(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
+            Dmsg1(debuglevel, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
             break;
          }
       }
@@ -1596,17 +1596,17 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
          case IO_REPARSE_TAG_SYMLINK: {
             POOLMEM *slt = get_pool_memory(PM_NAME);
 
-            Dmsg0(dbglvl, "We have a symlinked file!\n");
+            Dmsg0(debuglevel, "We have a symlinked file!\n");
             sb->st_mode |= S_IFLNK;
 
             if (get_symlink_data(filename, slt)) {
-               Dmsg2(dbglvl, "Symlinked File %s points to: %s\n", filename, slt);
+               Dmsg2(debuglevel, "Symlinked File %s points to: %s\n", filename, slt);
             }
             free_pool_memory(slt);
             break;
          }
          case IO_REPARSE_TAG_DEDUP:
-            Dmsg0(dbglvl, "We have a deduplicated file!\n");
+            Dmsg0(debuglevel, "We have a deduplicated file!\n");
             sb->st_rdev |= FILE_ATTRIBUTES_DEDUPED_ITEM;
 
             /*
@@ -1615,13 +1615,13 @@ static int get_windows_file_info(const char *filename, struct stat *sb, bool is_
             sb->st_mode |= S_IFREG;
             break;
          default:
-            Dmsg1(dbglvl, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
+            Dmsg1(debuglevel, "IO_REPARSE_TAG_MOUNT_POINT with unhandled IO_REPARSE_TAG %d\n", *pdwReserved0);
             break;
          }
       }
    }
 
-   Dmsg2(dbglvl, "st_rdev=%d filename=%s\n", sb->st_rdev, filename);
+   Dmsg2(debuglevel, "st_rdev=%d filename=%s\n", sb->st_rdev, filename);
 
    sb->st_size = *pnFileSizeHigh;
    sb->st_size <<= 32;
@@ -1657,7 +1657,7 @@ int fstat(intptr_t fd, struct stat *sb)
    sb->st_ino |= info.nFileIndexLow;
    sb->st_nlink = (short)info.nNumberOfLinks;
    if (sb->st_nlink > 1) {
-      Dmsg1(dbglvl,  "st_nlink=%d\n", sb->st_nlink);
+      Dmsg1(debuglevel,  "st_nlink=%d\n", sb->st_nlink);
    }
 
    sb->st_mode = 0777;
@@ -1675,7 +1675,7 @@ int fstat(intptr_t fd, struct stat *sb)
       sb->st_rdev = info.dwFileAttributes;
    }
 
-   Dmsg3(dbglvl, "st_rdev=%d sizino=%d ino=%lld\n",
+   Dmsg3(debuglevel, "st_rdev=%d sizino=%d ino=%lld\n",
          sb->st_rdev, sizeof(sb->st_ino), (long long)sb->st_ino);
 
    sb->st_size = info.nFileSizeHigh;
@@ -1937,7 +1937,7 @@ int stat(const char *filename, struct stat *sb)
    }
    rval = 0;
 
-   Dmsg3(dbglvl, "sizino=%d ino=%lld filename=%s\n", sizeof(sb->st_ino), (long long)sb->st_ino, filename);
+   Dmsg3(debuglevel, "sizino=%d ino=%lld filename=%s\n", sizeof(sb->st_ino), (long long)sb->st_ino, filename);
 
    return rval;
 
@@ -2051,7 +2051,7 @@ ssize_t readlink(const char *path, char *buf, size_t bufsiz)
 {
    POOLMEM *slt = get_pool_memory(PM_NAME);
 
-   Dmsg1(dbglvl, "readlink called for path %s\n", path);
+   Dmsg1(debuglevel, "readlink called for path %s\n", path);
    get_symlink_data(path, slt);
 
    strncpy(buf, slt, bufsiz - 1);
@@ -2086,7 +2086,7 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
       Dmsg0(130, "We have a File Symbolic Link \n");
    }
 
-   Dmsg2(dbglvl, "symlink called name1=%s, name2=%s\n", name1, name2);
+   Dmsg2(debuglevel, "symlink called name1=%s, name2=%s\n", name1, name2);
    if (p_CreateSymbolicLinkW) {
       /*
        * Dynamically allocate enough space for UCS2 filename
@@ -2108,7 +2108,7 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
       free_pool_memory(pwszBuf2);
 
       if (!b) {
-         Dmsg1(dbglvl, "CreateSymbolicLinkW failed:%s\n", errorString());
+         Dmsg1(debuglevel, "CreateSymbolicLinkW failed:%s\n", errorString());
          goto bail_out;
       }
    } else if (p_CreateSymbolicLinkA) {
@@ -2123,7 +2123,7 @@ int win32_symlink(const char *name1, const char *name2, _dev_t st_rdev)
       free_pool_memory(win32_name2);
 
       if (!b) {
-         Dmsg1(dbglvl, "CreateSymbolicLinkA failed:%s\n", errorString());
+         Dmsg1(debuglevel, "CreateSymbolicLinkA failed:%s\n", errorString());
          goto bail_out;
       }
    } else {
@@ -2295,13 +2295,13 @@ DIR *opendir(const char *path)
       return NULL;
    }
 
-   Dmsg1(dbglvl, "Opendir path=%s\n", path);
+   Dmsg1(debuglevel, "Opendir path=%s\n", path);
    rval = (_dir *)malloc(sizeof(_dir));
    memset (rval, 0, sizeof (_dir));
 
    win32_path = get_pool_memory(PM_FNAME);
    unix_name_to_win32(win32_path, path);
-   Dmsg1(dbglvl, "win32 path=%s\n", win32_path);
+   Dmsg1(debuglevel, "win32 path=%s\n", win32_path);
 
    /*
     * Add backslash only if there is none yet (think of c:\)
@@ -2336,7 +2336,7 @@ DIR *opendir(const char *path)
       goto bail_out;
    }
 
-   Dmsg3(dbglvl, "opendir(%s)\n\tspec=%s,\n\tFindFirstFile returns %d\n", path, rval->spec, rval->dirh);
+   Dmsg3(debuglevel, "opendir(%s)\n\tspec=%s,\n\tFindFirstFile returns %d\n", path, rval->spec, rval->dirh);
 
    rval->offset = 0;
    if (rval->dirh == INVALID_HANDLE_VALUE) {
@@ -2344,11 +2344,11 @@ DIR *opendir(const char *path)
    }
 
    if (rval->valid_w) {
-      Dmsg1(dbglvl, "\tFirstFile=%s\n", rval->data_w.cFileName);
+      Dmsg1(debuglevel, "\tFirstFile=%s\n", rval->data_w.cFileName);
    }
 
    if (rval->valid_a) {
-      Dmsg1(dbglvl, "\tFirstFile=%s\n", rval->data_a.cFileName);
+      Dmsg1(debuglevel, "\tFirstFile=%s\n", rval->data_a.cFileName);
    }
 
    return (DIR *)rval;
@@ -2409,7 +2409,7 @@ int readdir_r(DIR *dirp, struct dirent *entry, struct dirent **result)
       }
 
       *result = entry;              /* return entry address */
-      Dmsg4(dbglvl, "readdir_r(%p, { d_name=\"%s\", d_reclen=%d, d_off=%d\n",
+      Dmsg4(debuglevel, "readdir_r(%p, { d_name=\"%s\", d_reclen=%d, d_off=%d\n",
             dirp, entry->d_name, entry->d_reclen, entry->d_off);
    } else {
       errno = b_errno_win32;
@@ -2508,7 +2508,7 @@ static DWORD fill_attribute(DWORD attr, mode_t mode, _dev_t rdev)
 {
    bool compatible = false;
 
-   Dmsg1(dbglvl, "  before attr=%lld\n", (uint64_t) attr);
+   Dmsg1(debuglevel, "  before attr=%lld\n", (uint64_t) attr);
 
    /*
     * First see if there are any old encoded attributes in the mode.
@@ -2598,7 +2598,7 @@ static DWORD fill_attribute(DWORD attr, mode_t mode, _dev_t rdev)
       }
    }
 
-   Dmsg1(dbglvl, "  after attr=%lld\n", (uint64_t)attr);
+   Dmsg1(debuglevel, "  after attr=%lld\n", (uint64_t)attr);
 
    return attr;
 }
@@ -2608,7 +2608,7 @@ int win32_chmod(const char *path, mode_t mode, _dev_t rdev)
    bool ret = false;
    DWORD attr;
 
-   Dmsg3(dbglvl, "win32_chmod(path=%s mode=%lld, rdev=%lld)\n",
+   Dmsg3(debuglevel, "win32_chmod(path=%s mode=%lld, rdev=%lld)\n",
          path, (uint64_t)mode, (uint64_t)rdev);
 
    if (p_GetFileAttributesW) {
@@ -2625,22 +2625,22 @@ int win32_chmod(const char *path, mode_t mode, _dev_t rdev)
          ret = p_SetFileAttributesW((LPCWSTR)pwszBuf, attr);
       }
       free_pool_memory(pwszBuf);
-      Dmsg0(dbglvl, "Leave win32_chmod. AttributesW\n");
+      Dmsg0(debuglevel, "Leave win32_chmod. AttributesW\n");
    } else if (p_GetFileAttributesA) {
       attr = p_GetFileAttributesA(path);
       if (attr != INVALID_FILE_ATTRIBUTES) {
          attr = fill_attribute(attr, mode, rdev);
          ret = p_SetFileAttributesA(path, attr);
       }
-      Dmsg0(dbglvl, "Leave win32_chmod did AttributesA\n");
+      Dmsg0(debuglevel, "Leave win32_chmod did AttributesA\n");
    } else {
-      Dmsg0(dbglvl, "Leave win32_chmod did nothing\n");
+      Dmsg0(debuglevel, "Leave win32_chmod did nothing\n");
    }
 
    if (!ret) {
       const char *err = errorString();
 
-      Dmsg2(dbglvl, "Get/SetFileAttributes(%s): %s\n", path, err);
+      Dmsg2(debuglevel, "Get/SetFileAttributes(%s): %s\n", path, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
 
@@ -2678,7 +2678,7 @@ int win32_chdir(const char *dir)
 
 int win32_mkdir(const char *dir)
 {
-   Dmsg1(dbglvl, "enter win32_mkdir. dir=%s\n", dir);
+   Dmsg1(debuglevel, "enter win32_mkdir. dir=%s\n", dir);
    if (p_wmkdir){
       int n;
       POOLMEM *pwszBuf;
@@ -2687,12 +2687,12 @@ int win32_mkdir(const char *dir)
       make_win32_path_UTF8_2_wchar(pwszBuf, dir);
       n = p_wmkdir((LPCWSTR)pwszBuf);
       free_pool_memory(pwszBuf);
-      Dmsg0(dbglvl, "Leave win32_mkdir did wmkdir\n");
+      Dmsg0(debuglevel, "Leave win32_mkdir did wmkdir\n");
 
       return n;
    }
 
-   Dmsg0(dbglvl, "Leave win32_mkdir did _mkdir\n");
+   Dmsg0(debuglevel, "Leave win32_mkdir did _mkdir\n");
    return _mkdir(dir);
 }
 
@@ -3311,7 +3311,7 @@ static BOOL CreateChildProcessW(const char *comspec, const char *cmdLine,
    /*
     * Create the child process.
     */
-   Dmsg2(dbglvl, "Calling CreateProcess(%s, %s, ...)\n", comspec_wchar, cmdLine_wchar);
+   Dmsg2(debuglevel, "Calling CreateProcess(%s, %s, ...)\n", comspec_wchar, cmdLine_wchar);
 
    /*
     * Try to execute program
@@ -3362,7 +3362,7 @@ static BOOL CreateChildProcessA(const char *comspec, char *cmdLine,
    /*
     * Create the child process.
     */
-   Dmsg2(dbglvl, "Calling CreateProcess(%s, %s, ...)\n", comspec, cmdLine);
+   Dmsg2(debuglevel, "Calling CreateProcess(%s, %s, ...)\n", comspec, cmdLine);
 
    /*
     * Try to execute program
@@ -3442,7 +3442,7 @@ HANDLE CreateChildProcess(const char *cmdline, HANDLE in, HANDLE out, HANDLE err
       ErrorExit("CreateProcess failed\n");
       const char *err = errorString();
 
-      Dmsg3(dbglvl, "CreateProcess(%s, %s, ...)=%s\n",comspec,cmdLine.c_str(),err);
+      Dmsg3(debuglevel, "CreateProcess(%s, %s, ...)=%s\n",comspec,cmdLine.c_str(),err);
       LocalFree((void *)err);
 
       return INVALID_HANDLE_VALUE;
@@ -3648,7 +3648,7 @@ int close_bpipe(Bpipe *bpipe)
          const char *err = errorString();
 
          rval = b_errno_win32;
-         Dmsg1(dbglvl, "GetExitCode error %s\n", err);
+         Dmsg1(debuglevel, "GetExitCode error %s\n", err);
          LocalFree((void *)err);
          break;
       }
@@ -3745,7 +3745,7 @@ int utime(const char *filename, struct utimbuf *times)
    if (h == INVALID_HANDLE_VALUE) {
       const char *err = errorString();
 
-      Dmsg2(dbglvl, "Cannot open file \"%s\" for utime(): ERR=%s", filename, err);
+      Dmsg2(debuglevel, "Cannot open file \"%s\" for utime(): ERR=%s", filename, err);
       LocalFree((void *)err);
       errno = b_errno_win32;
 

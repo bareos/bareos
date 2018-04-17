@@ -29,7 +29,7 @@
 #include "bareos.h"
 #include "filed.h"
 
-static int dbglvl = 100;
+static int debuglevel = 100;
 
 void *handle_stored_connection(BareosSocket *sd)
 {
@@ -53,7 +53,7 @@ void *handle_stored_connection(BareosSocket *sd)
       char *who = bnet_get_peer(sd, addr, sizeof(addr)) ? sd->who() : addr;
 
       sd->msg[100] = 0;
-      Dmsg2(dbglvl, "Bad Hello command from Director at %s: %s\n", sd->who(), sd->msg);
+      Dmsg2(debuglevel, "Bad Hello command from Director at %s: %s\n", sd->who(), sd->msg);
       Jmsg2(NULL, M_FATAL, 0, _("Bad Hello command from Director at %s: %s\n"), who, sd->msg);
       sd->close();
       delete sd;

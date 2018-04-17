@@ -54,7 +54,7 @@
 #define MIN_BUF_SIZE (MIN_PAGES * B_PAGE_SIZE) /* 128 Kb */
 #define MAX_BUF_SIZE (MAX_PAGES * B_PAGE_SIZE) /* approx 10MB */
 
-static const int dbglvl = 500;
+static const int debuglevel = 500;
 
 /*
  * htable (Hash Table) class.
@@ -131,7 +131,7 @@ void htable::hash_index(char *key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
 }
 
 void htable::hash_index(uint32_t key)
@@ -142,7 +142,7 @@ void htable::hash_index(uint32_t key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
 }
 
 void htable::hash_index(uint64_t key)
@@ -153,7 +153,7 @@ void htable::hash_index(uint64_t key)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
 }
 
 void htable::hash_index(uint8_t *key, uint32_t keylen)
@@ -167,7 +167,7 @@ void htable::hash_index(uint8_t *key, uint32_t keylen)
     * Multiply by large prime number, take top bits, mask for remainder.
     */
    index = ((hash * 1103515249) >> rshift) & mask;
-   Dmsg2(dbglvl, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Leave hash_index hash=0x%llx index=%d\n", hash, index);
 }
 
 /*
@@ -357,10 +357,10 @@ bool htable::insert(char *key, void *item)
    }
 
    ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Insert: hash=%p index=%d\n", hash, index);
    hp = (hlink *)(((char *)item) + loffset);
 
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
+   Dmsg4(debuglevel, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
 
    hp->next = table[index];
    hp->hash = hash;
@@ -369,15 +369,15 @@ bool htable::insert(char *key, void *item)
    hp->key_len = 0;
    table[index] = hp;
 
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%s\n",
+   Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%s\n",
          hp->next, hp->hash, hp->key.char_key);
 
    if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
+      Dmsg2(debuglevel, "num_items=%d max_items=%d\n", num_items, max_items);
       grow_table();
    }
 
-   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%s\n", index, num_items, key);
+   Dmsg3(debuglevel, "Leave insert index=%d num_items=%d key=%s\n", index, num_items, key);
 
    return true;
 }
@@ -391,10 +391,10 @@ bool htable::insert(uint32_t key, void *item)
    }
 
    ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Insert: hash=%p index=%d\n", hash, index);
    hp = (hlink *)(((char *)item) + loffset);
 
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
+   Dmsg4(debuglevel, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
 
    hp->next = table[index];
    hp->hash = hash;
@@ -403,14 +403,14 @@ bool htable::insert(uint32_t key, void *item)
    hp->key_len = 0;
    table[index] = hp;
 
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%ld\n", hp->next, hp->hash, hp->key.uint32_key);
+   Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%ld\n", hp->next, hp->hash, hp->key.uint32_key);
 
    if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
+      Dmsg2(debuglevel, "num_items=%d max_items=%d\n", num_items, max_items);
       grow_table();
    }
 
-   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%ld\n", index, num_items, key);
+   Dmsg3(debuglevel, "Leave insert index=%d num_items=%d key=%ld\n", index, num_items, key);
 
    return true;
 }
@@ -424,10 +424,10 @@ bool htable::insert(uint64_t key, void *item)
    }
 
    ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Insert: hash=%p index=%d\n", hash, index);
    hp = (hlink *)(((char *)item) + loffset);
 
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
+   Dmsg4(debuglevel, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
 
    hp->next = table[index];
    hp->hash = hash;
@@ -436,14 +436,14 @@ bool htable::insert(uint64_t key, void *item)
    hp->key_len = 0;
    table[index] = hp;
 
-   Dmsg3(dbglvl, "Insert hp->next=%p hp->hash=0x%llx hp->key=%lld\n", hp->next, hp->hash, hp->key.uint64_key);
+   Dmsg3(debuglevel, "Insert hp->next=%p hp->hash=0x%llx hp->key=%lld\n", hp->next, hp->hash, hp->key.uint64_key);
 
    if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
+      Dmsg2(debuglevel, "num_items=%d max_items=%d\n", num_items, max_items);
       grow_table();
    }
 
-   Dmsg3(dbglvl, "Leave insert index=%d num_items=%d key=%lld\n", index, num_items, key);
+   Dmsg3(debuglevel, "Leave insert index=%d num_items=%d key=%lld\n", index, num_items, key);
 
    return true;
 }
@@ -457,10 +457,10 @@ bool htable::insert(uint8_t *key, uint32_t key_len, void *item)
    }
 
    ASSERT(index < buckets);
-   Dmsg2(dbglvl, "Insert: hash=%p index=%d\n", hash, index);
+   Dmsg2(debuglevel, "Insert: hash=%p index=%d\n", hash, index);
    hp = (hlink *)(((char *)item) + loffset);
 
-   Dmsg4(dbglvl, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
+   Dmsg4(debuglevel, "Insert hp=%p index=%d item=%p offset=%u\n", hp, index, item, loffset);
 
    hp->next = table[index];
    hp->hash = hash;
@@ -469,14 +469,14 @@ bool htable::insert(uint8_t *key, uint32_t key_len, void *item)
    hp->key_len = key_len;
    table[index] = hp;
 
-   Dmsg2(dbglvl, "Insert hp->next=%p hp->hash=0x%llx\n", hp->next, hp->hash);
+   Dmsg2(debuglevel, "Insert hp->next=%p hp->hash=0x%llx\n", hp->next, hp->hash);
 
    if (++num_items >= max_items) {
-      Dmsg2(dbglvl, "num_items=%d max_items=%d\n", num_items, max_items);
+      Dmsg2(debuglevel, "num_items=%d max_items=%d\n", num_items, max_items);
       grow_table();
    }
 
-   Dmsg2(dbglvl, "Leave insert index=%d num_items=%d\n", index, num_items);
+   Dmsg2(debuglevel, "Leave insert index=%d num_items=%d\n", index, num_items);
 
    return true;
 }
@@ -487,7 +487,7 @@ void *htable::lookup(char *key)
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_CHAR);
       if (hash == hp->hash && bstrcmp(key, hp->key.char_key)) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp) - loffset);
+         Dmsg1(debuglevel, "lookup return %p\n", ((char *)hp) - loffset);
          return ((char *)hp) - loffset;
       }
    }
@@ -501,7 +501,7 @@ void *htable::lookup(uint32_t key)
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_UINT32);
       if (hash == hp->hash && key == hp->key.uint32_key) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp) - loffset);
+         Dmsg1(debuglevel, "lookup return %p\n", ((char *)hp) - loffset);
          return ((char *)hp) - loffset;
       }
    }
@@ -515,7 +515,7 @@ void *htable::lookup(uint64_t key)
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_UINT64);
       if (hash == hp->hash && key == hp->key.uint64_key) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp) - loffset);
+         Dmsg1(debuglevel, "lookup return %p\n", ((char *)hp) - loffset);
          return ((char *)hp) - loffset;
       }
    }
@@ -529,7 +529,7 @@ void *htable::lookup(uint8_t *key, uint32_t key_len)
    for (hlink *hp = table[index]; hp; hp = (hlink *)hp->next) {
       ASSERT(hp->key_type == KEY_TYPE_BINARY);
       if (hash == hp->hash && memcmp(key, hp->key.binary_key, hp->key_len) == 0) {
-         Dmsg1(dbglvl, "lookup return %p\n", ((char *)hp) - loffset);
+         Dmsg1(debuglevel, "lookup return %p\n", ((char *)hp) - loffset);
          return ((char *)hp) - loffset;
       }
    }
@@ -539,7 +539,7 @@ void *htable::lookup(uint8_t *key, uint32_t key_len)
 
 void *htable::next()
 {
-   Dmsg1(dbglvl, "Enter next: walkptr=%p\n", walkptr);
+   Dmsg1(debuglevel, "Enter next: walkptr=%p\n", walkptr);
    if (walkptr) {
       walkptr = (hlink *)(walkptr->next);
    }
@@ -547,40 +547,40 @@ void *htable::next()
    while (!walkptr && walk_index < buckets) {
       walkptr = table[walk_index++];
       if (walkptr) {
-         Dmsg3(dbglvl, "new walkptr=%p next=%p inx=%d\n", walkptr,
+         Dmsg3(debuglevel, "new walkptr=%p next=%p inx=%d\n", walkptr,
             walkptr->next, walk_index-1);
       }
    }
 
    if (walkptr) {
-      Dmsg2(dbglvl, "next: rtn %p walk_index=%d\n",
+      Dmsg2(debuglevel, "next: rtn %p walk_index=%d\n",
          ((char *)walkptr) - loffset, walk_index);
       return ((char *)walkptr) - loffset;
    }
-   Dmsg0(dbglvl, "next: return NULL\n");
+   Dmsg0(debuglevel, "next: return NULL\n");
 
    return NULL;
 }
 
 void *htable::first()
 {
-   Dmsg0(dbglvl, "Enter first\n");
+   Dmsg0(debuglevel, "Enter first\n");
    walkptr = table[0];                /* get first bucket */
    walk_index = 1;                    /* Point to next index */
 
    while (!walkptr && walk_index < buckets) {
       walkptr = table[walk_index++];  /* go to next bucket */
       if (walkptr) {
-         Dmsg3(dbglvl, "first new walkptr=%p next=%p inx=%d\n", walkptr,
+         Dmsg3(debuglevel, "first new walkptr=%p next=%p inx=%d\n", walkptr,
             walkptr->next, walk_index-1);
       }
    }
 
    if (walkptr) {
-      Dmsg1(dbglvl, "Leave first walkptr=%p\n", walkptr);
+      Dmsg1(debuglevel, "Leave first walkptr=%p\n", walkptr);
       return ((char *)walkptr) - loffset;
    }
-   Dmsg0(dbglvl, "Leave first walkptr=NULL\n");
+   Dmsg0(debuglevel, "Leave first walkptr=NULL\n");
 
    return NULL;
 }

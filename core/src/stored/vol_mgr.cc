@@ -31,7 +31,7 @@
 #include "bareos.h"
 #include "stored.h"
 
-const int dbglvl = 150;
+const int debuglevel = 150;
 
 static brwlock_t vol_list_lock;
 static dlist *vol_list = NULL;
@@ -175,9 +175,9 @@ void add_read_volume(JobControlRecord *jcr, const char *VolumeName)
    vol = (VolumeReservationItem *)read_vol_list->binary_insert(nvol, read_compare);
    if (vol != nvol) {
       free_read_vol_item(nvol);
-      Dmsg2(dbglvl, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
+      Dmsg2(debuglevel, "read_vol=%s JobId=%d already in list.\n", VolumeName, jcr->JobId);
    } else {
-      Dmsg2(dbglvl, "add_read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
+      Dmsg2(debuglevel, "add_read_vol=%s JobId=%d\n", VolumeName, jcr->JobId);
    }
    unlock_read_volumes();
 }
@@ -199,7 +199,7 @@ void remove_read_volume(JobControlRecord *jcr, const char *VolumeName)
    free(vol.vol_name);
 
    if (fvol) {
-      Dmsg3(dbglvl, "remove_read_vol=%s JobId=%d found=%d\n", VolumeName, jcr->JobId, fvol!=NULL);
+      Dmsg3(debuglevel, "remove_read_vol=%s JobId=%d found=%d\n", VolumeName, jcr->JobId, fvol!=NULL);
    }
    if (fvol) {
       read_vol_list->remove(fvol);
@@ -220,7 +220,7 @@ static VolumeReservationItem *find_read_volume(const char *VolumeName)
    VolumeReservationItem vol, *fvol;
 
    if (read_vol_list->empty()) {
-      Dmsg0(dbglvl, "find_read_vol: read_vol_list empty.\n");
+      Dmsg0(debuglevel, "find_read_vol: read_vol_list empty.\n");
       return NULL;
    }
 
@@ -238,7 +238,7 @@ static VolumeReservationItem *find_read_volume(const char *VolumeName)
    fvol = (VolumeReservationItem *)read_vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
 
-   Dmsg2(dbglvl, "find_read_vol=%s found=%d\n", VolumeName, fvol!=NULL);
+   Dmsg2(debuglevel, "find_read_vol=%s found=%d\n", VolumeName, fvol!=NULL);
    unlock_read_volumes();
 
    return fvol;
@@ -265,7 +265,7 @@ static void debug_list_volumes(const char *imsg)
          Mmsg(msg, "List %s: %s in_use=%d swap=%d no dev\n", imsg, vol->vol_name,
               vol->is_in_use(), vol->is_swapping());
       }
-      Dmsg1(dbglvl, "%s", msg.c_str());
+      Dmsg1(debuglevel, "%s", msg.c_str());
    }
    endeach_vol(vol);
 }
@@ -283,7 +283,7 @@ static VolumeReservationItem *new_vol_item(DeviceControlRecord *dcr, const char 
    vol->vol_name = bstrdup(VolumeName);
    if (dcr) {
       vol->dev = dcr->dev;
-      Dmsg3(dbglvl, "new Vol=%s at %p dev=%s\n",
+      Dmsg3(debuglevel, "new Vol=%s at %p dev=%s\n",
             VolumeName, vol->vol_name, vol->dev->print_name());
    }
    vol->init_mutex();
@@ -397,7 +397,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
    }
    ASSERT(dev != NULL);
 
-   Dmsg2(dbglvl, "enter reserve_volume=%s drive=%s\n", VolumeName, dcr->dev->print_name());
+   Dmsg2(debuglevel, "enter reserve_volume=%s drive=%s\n", VolumeName, dcr->dev->print_name());
 
    /*
     * If aquiring a volume for writing it may not be on the read volume list.
@@ -414,7 +414,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
     * scheduled job can reserve it.
     */
    lock_volumes();
-   if (debug_level >= dbglvl) {
+   if (debug_level >= debuglevel) {
       debug_list_volumes("begin reserve_volume");
    }
 
@@ -423,7 +423,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
     */
    if (dev->vol) {
       vol = dev->vol;
-      Dmsg4(dbglvl, "Vol attached=%s, newvol=%s volinuse=%d on %s\n",
+      Dmsg4(debuglevel, "Vol attached=%s, newvol=%s volinuse=%d on %s\n",
             vol->vol_name, VolumeName, vol->is_in_use(), dev->print_name());
       /*
        * Make sure we don't remove the current volume we are inserting
@@ -431,7 +431,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
        * is not being used and is marked as not reserved.
        */
       if (bstrcmp(vol->vol_name, VolumeName)) {
-         Dmsg2(dbglvl, "=== set reserved vol=%s dev=%s\n", VolumeName,
+         Dmsg2(debuglevel, "=== set reserved vol=%s dev=%s\n", VolumeName,
                vol->dev->print_name());
          goto get_out;                  /* Volume already on this device */
       } else {
@@ -439,11 +439,11 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
           * Don't release a volume if it was reserved by someone other than us
           */
          if (vol->is_in_use() && !dcr->reserved_volume) {
-            Dmsg1(dbglvl, "Cannot free vol=%s. It is reserved.\n", vol->vol_name);
+            Dmsg1(debuglevel, "Cannot free vol=%s. It is reserved.\n", vol->vol_name);
             vol = NULL;                  /* vol in use */
             goto get_out;
          }
-         Dmsg2(dbglvl, "reserve_vol free vol=%s at %p\n", vol->vol_name, vol->vol_name);
+         Dmsg2(debuglevel, "reserve_vol free vol=%s at %p\n", vol->vol_name, vol->vol_name);
 
          /*
           * If old Volume is still mounted, must unload it
@@ -454,7 +454,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
          }
          free_volume(dev);              /* Release old volume entry */
 
-         if (debug_level >= dbglvl) {
+         if (debug_level >= debuglevel) {
             debug_list_volumes("reserve_vol free");
          }
       }
@@ -487,14 +487,14 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
    }
 
    if (vol != nvol) {
-      Dmsg2(dbglvl, "Found vol=%s dev-same=%d\n", vol->vol_name, dev==vol->dev);
+      Dmsg2(debuglevel, "Found vol=%s dev-same=%d\n", vol->vol_name, dev==vol->dev);
 
       /*
        * At this point, a Volume with this name already is in the list,
        * so we simply release our new Volume entry. Note, this should
        * only happen if we are moving the volume from one drive to another.
        */
-      Dmsg2(dbglvl, "reserve_vol free-tmp vol=%s at %p\n", vol->vol_name, vol->vol_name);
+      Dmsg2(debuglevel, "reserve_vol free-tmp vol=%s at %p\n", vol->vol_name, vol->vol_name);
 
       /*
        * Clear dev pointer so that free_vol_item() doesn't take away our volume.
@@ -503,7 +503,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
       free_vol_item(nvol);
 
       if (vol->dev) {
-         Dmsg2(dbglvl, "dev=%s vol->dev=%s\n", dev->print_name(), vol->dev->print_name());
+         Dmsg2(debuglevel, "dev=%s vol->dev=%s\n", dev->print_name(), vol->dev->print_name());
       }
 
       /*
@@ -517,7 +517,7 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
          if (!vol->dev->is_busy() && !vol->is_swapping()) {
             slot_number_t slot;
 
-            Dmsg3(dbglvl, "==== Swap vol=%s from dev=%s to %s\n",
+            Dmsg3(debuglevel, "==== Swap vol=%s from dev=%s to %s\n",
                   VolumeName, vol->dev->print_name(), dev->print_name());
             free_volume(dev);            /* free any volume attached to our drive */
             Dmsg1(50, "set_unload dev=%s\n", dev->print_name());
@@ -542,14 +542,14 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
                   vol->dev->num_reserved(), vol->is_swapping(),
                   VolumeName, vol->dev->print_name(), dev->print_name());
             if (vol->is_swapping() && dev->swap_dev) {
-               Dmsg3(dbglvl, "Swap failed vol=%s from=%s to dev=%s\n",
+               Dmsg3(debuglevel, "Swap failed vol=%s from=%s to dev=%s\n",
                      vol->vol_name, dev->swap_dev->print_name(), dev->print_name());
             } else {
-               Dmsg3(dbglvl, "Swap failed vol=%s from=%p to dev=%s\n",
+               Dmsg3(debuglevel, "Swap failed vol=%s from=%p to dev=%s\n",
                      vol->vol_name, dev->swap_dev, dev->print_name());
             }
 
-            if (debug_level >= dbglvl) {
+            if (debug_level >= debuglevel) {
                debug_list_volumes("failed swap");
             }
 
@@ -565,14 +565,14 @@ VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *Volu
 
 get_out:
    if (vol) {
-      Dmsg2(dbglvl, "=== set in_use. vol=%s dev=%s\n", vol->vol_name,
+      Dmsg2(debuglevel, "=== set in_use. vol=%s dev=%s\n", vol->vol_name,
             vol->dev->print_name());
       vol->set_in_use();
       dcr->reserved_volume = true;
       bstrncpy(dcr->VolumeName, vol->vol_name, sizeof(dcr->VolumeName));
    }
 
-   if (debug_level >= dbglvl) {
+   if (debug_level >= debuglevel) {
       debug_list_volumes("end new volume");
    }
 
@@ -602,7 +602,7 @@ VolumeReservationItem *vol_walk_start()
    vol = (VolumeReservationItem *)vol_list->first();
    if (vol) {
       vol->inc_use_count();
-      Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Inc walk_start use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
    }
    unlock_volumes();
@@ -621,7 +621,7 @@ VolumeReservationItem *vol_walk_next(VolumeReservationItem *prev_vol)
    vol = (VolumeReservationItem *)vol_list->next(prev_vol);
    if (vol) {
       vol->inc_use_count();
-      Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Inc walk_next use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
    }
    if (prev_vol) {
@@ -639,7 +639,7 @@ void vol_walk_end(VolumeReservationItem *vol)
 {
    if (vol) {
       lock_volumes();
-      Dmsg2(dbglvl, "Free walk_end use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Free walk_end use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
       free_vol_item(vol);
       unlock_volumes();
@@ -668,7 +668,7 @@ VolumeReservationItem *read_vol_walk_start()
    vol = (VolumeReservationItem *)read_vol_list->first();
    if (vol) {
       vol->inc_use_count();
-      Dmsg2(dbglvl, "Inc walk_start use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Inc walk_start use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
    }
    unlock_read_volumes();
@@ -687,7 +687,7 @@ VolumeReservationItem *read_vol_walk_next(VolumeReservationItem *prev_vol)
    vol = (VolumeReservationItem *)read_vol_list->next(prev_vol);
    if (vol) {
       vol->inc_use_count();
-      Dmsg2(dbglvl, "Inc walk_next use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Inc walk_next use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
    }
    if (prev_vol) {
@@ -705,7 +705,7 @@ void read_vol_walk_end(VolumeReservationItem *vol)
 {
    if (vol) {
       lock_read_volumes();
-      Dmsg2(dbglvl, "Free walk_end use_count=%d volname=%s\n",
+      Dmsg2(debuglevel, "Free walk_end use_count=%d volname=%s\n",
             vol->use_count(), vol->vol_name);
       free_read_vol_item(vol);
       unlock_read_volumes();
@@ -730,9 +730,9 @@ static VolumeReservationItem *find_volume(const char *VolumeName)
    vol.vol_name = bstrdup(VolumeName);
    fvol = (VolumeReservationItem *)vol_list->binary_search(&vol, compare_by_volumename);
    free(vol.vol_name);
-   Dmsg2(dbglvl, "find_vol=%s found=%d\n", VolumeName, fvol!=NULL);
+   Dmsg2(debuglevel, "find_vol=%s found=%d\n", VolumeName, fvol!=NULL);
 
-   if (debug_level >= dbglvl) {
+   if (debug_level >= debuglevel) {
       debug_list_volumes("find_volume");
    }
 
@@ -755,21 +755,21 @@ bool volume_unused(DeviceControlRecord *dcr)
    Device *dev = dcr->dev;
 
    if (!dev->vol) {
-      Dmsg1(dbglvl, "vol_unused: no vol on %s\n", dev->print_name());
-      if (debug_level >= dbglvl) {
+      Dmsg1(debuglevel, "vol_unused: no vol on %s\n", dev->print_name());
+      if (debug_level >= debuglevel) {
          debug_list_volumes("null vol cannot unreserve_volume");
       }
 
       return false;
    }
 
-   Dmsg1(dbglvl, "=== clear in_use vol=%s\n", dev->vol->vol_name);
+   Dmsg1(debuglevel, "=== clear in_use vol=%s\n", dev->vol->vol_name);
    dev->vol->clear_in_use();
 
    if (dev->vol->is_swapping()) {
-      Dmsg1(dbglvl, "vol_unused: vol being swapped on %s\n", dev->print_name());
+      Dmsg1(debuglevel, "vol_unused: vol being swapped on %s\n", dev->print_name());
 
-      if (debug_level >= dbglvl) {
+      if (debug_level >= debuglevel) {
          debug_list_volumes("swapping vol cannot free_volume");
       }
       return false;
@@ -781,7 +781,7 @@ bool volume_unused(DeviceControlRecord *dcr)
     * explicitly read in this drive. This allows the SD to remember
     * where the tapes are or last were.
     */
-   Dmsg4(dbglvl, "=== set not reserved vol=%s num_writers=%d dev_reserved=%d dev=%s\n",
+   Dmsg4(debuglevel, "=== set not reserved vol=%s num_writers=%d dev_reserved=%d dev=%s\n",
       dev->vol->vol_name, dev->num_writers, dev->num_reserved(), dev->print_name());
    if (dev->is_tape() || dev->is_autochanger()) {
       return true;
@@ -804,7 +804,7 @@ bool free_volume(Device *dev)
    lock_volumes();
    vol = dev->vol;
    if (vol == NULL) {
-      Dmsg1(dbglvl, "No vol on dev %s\n", dev->print_name());
+      Dmsg1(debuglevel, "No vol on dev %s\n", dev->print_name());
       unlock_volumes();
       return false;
    }
@@ -813,7 +813,7 @@ bool free_volume(Device *dev)
     * Don't free a volume while it is being swapped
     */
    if (!vol->is_swapping()) {
-      Dmsg1(dbglvl, "=== clear in_use vol=%s\n", vol->vol_name);
+      Dmsg1(debuglevel, "=== clear in_use vol=%s\n", vol->vol_name);
       dev->vol = NULL;
 
       /*
@@ -827,14 +827,14 @@ bool free_volume(Device *dev)
           !dev->is_file()) {
          vol_list->remove(vol);
       }
-      Dmsg2(dbglvl, "=== remove volume %s dev=%s\n", vol->vol_name, dev->print_name());
+      Dmsg2(debuglevel, "=== remove volume %s dev=%s\n", vol->vol_name, dev->print_name());
       free_vol_item(vol);
 
-      if (debug_level >= dbglvl) {
+      if (debug_level >= debuglevel) {
          debug_list_volumes("free_volume");
       }
    } else {
-      Dmsg1(dbglvl, "=== cannot clear swapping vol=%s\n", vol->vol_name);
+      Dmsg1(debuglevel, "=== cannot clear swapping vol=%s\n", vol->vol_name);
    }
    unlock_volumes();
 // pthread_cond_broadcast(&wait_next_vol);
@@ -865,9 +865,9 @@ static inline void free_volume_list(const char *what, dlist *vollist)
 
    foreach_dlist(vol, vollist) {
       if (vol->dev) {
-         Dmsg3(dbglvl, "free %s Volume=%s dev=%s\n", what, vol->vol_name, vol->dev->print_name());
+         Dmsg3(debuglevel, "free %s Volume=%s dev=%s\n", what, vol->vol_name, vol->dev->print_name());
       } else {
-         Dmsg2(dbglvl, "free %s Volume=%s No dev\n", what, vol->vol_name);
+         Dmsg2(debuglevel, "free %s Volume=%s No dev\n", what, vol->vol_name);
       }
       free(vol->vol_name);
       vol->vol_name = NULL;
@@ -927,26 +927,26 @@ bool DeviceControlRecord::can_i_use_volume()
    lock_volumes();
    vol = find_volume(VolumeName);
    if (!vol) {
-      Dmsg1(dbglvl, "Vol=%s not in use.\n", VolumeName);
+      Dmsg1(debuglevel, "Vol=%s not in use.\n", VolumeName);
       goto get_out;                   /* vol not in list */
    }
    ASSERT(vol->dev != NULL);
 
    if (dev == vol->dev) {        /* same device OK */
-      Dmsg1(dbglvl, "Vol=%s on same dev.\n", VolumeName);
+      Dmsg1(debuglevel, "Vol=%s on same dev.\n", VolumeName);
       goto get_out;
    } else {
-      Dmsg3(dbglvl, "Vol=%s on %s we have %s\n", VolumeName,
+      Dmsg3(debuglevel, "Vol=%s on %s we have %s\n", VolumeName,
             vol->dev->print_name(), dev->print_name());
    }
    /* ***FIXME*** check this ... */
    if (!vol->dev->is_busy()) {
-      Dmsg2(dbglvl, "Vol=%s dev=%s not busy.\n", VolumeName, vol->dev->print_name());
+      Dmsg2(debuglevel, "Vol=%s dev=%s not busy.\n", VolumeName, vol->dev->print_name());
       goto get_out;
    } else {
-      Dmsg2(dbglvl, "Vol=%s dev=%s busy.\n", VolumeName, vol->dev->print_name());
+      Dmsg2(debuglevel, "Vol=%s dev=%s busy.\n", VolumeName, vol->dev->print_name());
    }
-   Dmsg2(dbglvl, "Vol=%s in use by %s.\n", VolumeName, vol->dev->print_name());
+   Dmsg2(debuglevel, "Vol=%s in use by %s.\n", VolumeName, vol->dev->print_name());
    rtn = false;
 
 get_out:
@@ -969,9 +969,9 @@ dlist *dup_vol_list(JobControlRecord *jcr)
    dlist *temp_vol_list;
    VolumeReservationItem *vol = NULL;
 
-   Dmsg0(dbglvl, "lock volumes\n");
+   Dmsg0(debuglevel, "lock volumes\n");
 
-   Dmsg0(dbglvl, "duplicate vol list\n");
+   Dmsg0(debuglevel, "duplicate vol list\n");
    temp_vol_list = New(dlist(vol, &vol->link));
    foreach_vol(vol) {
       VolumeReservationItem *nvol, *tvol;
@@ -987,7 +987,7 @@ dlist *dup_vol_list(JobControlRecord *jcr)
       }
    }
    endeach_vol(vol);
-   Dmsg0(dbglvl, "unlock volumes\n");
+   Dmsg0(debuglevel, "unlock volumes\n");
 
    return temp_vol_list;
 }

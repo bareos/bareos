@@ -78,7 +78,7 @@ static psdFuncs pluginFuncs = {
    handlePluginEvent
 };
 
-static int const dbglvl = 200;
+static int const debuglevel = 200;
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,7 +98,7 @@ bRC DLL_IMP_EXP loadPlugin(bsdInfo *lbinfo,
 {
    bfuncs = lbfuncs;       /* set Bareos funct pointers */
    binfo  = lbinfo;
-   Dmsg2(dbglvl, "scsitapealert-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
+   Dmsg2(debuglevel, "scsitapealert-sd: Loaded: size=%d version=%d\n", bfuncs->size, bfuncs->version);
    *pinfo  = &pluginInfo;  /* return pointer to our info */
    *pfuncs = &pluginFuncs; /* return pointer to our functions */
 
@@ -129,7 +129,7 @@ static bRC newPlugin(bpContext *ctx)
    int JobId = 0;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "scsitapealert-sd: newPlugin JobId=%d\n", JobId);
+   Dmsg1(debuglevel, "scsitapealert-sd: newPlugin JobId=%d\n", JobId);
 
    /*
     * Only register plugin events we are interested in.
@@ -154,7 +154,7 @@ static bRC freePlugin(bpContext *ctx)
    int JobId = 0;
 
    bfuncs->getBareosValue(ctx, bsdVarJobId, (void *)&JobId);
-   Dmsg1(dbglvl, "scsitapealert-sd: freePlugin JobId=%d\n", JobId);
+   Dmsg1(debuglevel, "scsitapealert-sd: freePlugin JobId=%d\n", JobId);
 
    return bRC_OK;
 }
@@ -164,7 +164,7 @@ static bRC freePlugin(bpContext *ctx)
  */
 static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "scsitapealert-sd: getPluginValue var=%d\n", var);
+   Dmsg1(debuglevel, "scsitapealert-sd: getPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -174,7 +174,7 @@ static bRC getPluginValue(bpContext *ctx, psdVariable var, void *value)
  */
 static bRC setPluginValue(bpContext *ctx, psdVariable var, void *value)
 {
-   Dmsg1(dbglvl, "scsitapealert-sd: setPluginValue var=%d\n", var);
+   Dmsg1(debuglevel, "scsitapealert-sd: setPluginValue var=%d\n", var);
 
    return bRC_OK;
 }
@@ -191,7 +191,7 @@ static bRC handlePluginEvent(bpContext *ctx, bsdEvent *event, void *value)
    case bsdEventVolumeUnload:
       return handle_tapealert_readout(value);
    default:
-      Dmsg1(dbglvl, "scsitapealert-sd: Unknown event %d\n", event->eventType);
+      Dmsg1(debuglevel, "scsitapealert-sd: Unknown event %d\n", event->eventType);
       return bRC_Error;
    }
 
@@ -227,20 +227,20 @@ static bRC handle_tapealert_readout(void *value)
     * See if drive tapealert is enabled.
     */
    if (!device->drive_tapealert_enabled) {
-      Dmsg1(dbglvl, "scsitapealert-sd: tapealert is not enabled on device %s\n", dev->dev_name);
+      Dmsg1(debuglevel, "scsitapealert-sd: tapealert is not enabled on device %s\n", dev->dev_name);
       return bRC_OK;
    }
 
-   Dmsg1(dbglvl, "scsitapealert-sd: checking for tapealerts on device %s\n", dev->dev_name);
+   Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s\n", dev->dev_name);
    P(tapealert_operation_mutex);
    get_tapealert_flags(dev->fd(), dev->dev_name, &flags);
    V(tapealert_operation_mutex);
 
-   Dmsg1(dbglvl, "scsitapealert-sd: checking for tapealerts on device %s DONE\n", dev->dev_name);
-   Dmsg1(dbglvl, "scsitapealert-sd: flags: %ld \n", flags);
+   Dmsg1(debuglevel, "scsitapealert-sd: checking for tapealerts on device %s DONE\n", dev->dev_name);
+   Dmsg1(debuglevel, "scsitapealert-sd: flags: %ld \n", flags);
 
    if (flags) {
-      Dmsg1(dbglvl, "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n", dev->dev_name);
+      Dmsg1(debuglevel, "scsitapealert-sd: tapealerts on device %s, calling UpdateTapeAlerts\n", dev->dev_name);
       bfuncs->UpdateTapeAlert(dcr, flags);
    }
 
