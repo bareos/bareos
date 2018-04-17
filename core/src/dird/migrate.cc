@@ -41,6 +41,8 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "cats/sql.h"
+
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else

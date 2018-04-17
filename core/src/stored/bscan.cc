@@ -35,6 +35,8 @@
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
+#include "cats/cats_backends.h"
+#include "cats/sql.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

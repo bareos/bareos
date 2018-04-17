@@ -30,6 +30,9 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "cats/cats_backends.h"
+#include "cats/sql.h"
+#include "cats/sql_pooling.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else

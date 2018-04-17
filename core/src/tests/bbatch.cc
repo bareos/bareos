@@ -45,6 +45,8 @@
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"
+#include "cats/cats_backends.h"
+#include "cats/sql.h"
 
 /* Forward referenced functions */
 static void *do_batch(void *);

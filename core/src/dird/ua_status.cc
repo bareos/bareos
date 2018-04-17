@@ -30,6 +30,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "cats/sql_pooling.h"
 
 #define DEFAULT_STATUS_SCHED_DAYS 7
 

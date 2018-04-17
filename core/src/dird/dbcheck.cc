@@ -29,6 +29,7 @@
 
 #include "bareos.h"
 #include "cats/cats.h"
+#include "cats/cats_backends.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
 

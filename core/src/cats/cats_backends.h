@@ -83,4 +83,25 @@ static struct backend_interface_mapping_t {
    { "sqlite3", FALSE, SQL_INTERFACE_TYPE_SQLITE3 },
    { NULL, FALSE, 0 }
 };
+
+#if defined(HAVE_DYNAMIC_CATS_BACKENDS)
+DLL_IMP_EXP void db_set_backend_dirs(alist *new_backend_dirs);
+#endif
+DLL_IMP_EXP void db_flush_backends(void);
+DLL_IMP_EXP BareosDb *db_init_database(JobControlRecord *jcr,
+                       const char *db_driver,
+                       const char *db_name,
+                       const char *db_user,
+                       const char *db_password,
+                       const char *db_address,
+                       int db_port,
+                       const char *db_socket,
+                       bool mult_db_connections,
+                       bool disable_batch_insert,
+                       bool try_reconnect,
+                       bool exit_on_fatal,
+                       bool need_private = false);
+
+
+
 #endif /* __CATS_BACKENDS_H_ */

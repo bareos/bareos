@@ -37,6 +37,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "cats/sql.h"
 
 /*
  * Forward referenced functions

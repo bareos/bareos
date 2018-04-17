@@ -879,7 +879,6 @@ struct SqlPoolDescriptor {
    dlink link;                            /**< list management */
 };
 
-#include "protos.h"
 #include "jcr.h"
 
 /**

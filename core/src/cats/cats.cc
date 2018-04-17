@@ -33,6 +33,7 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
+#include "sql_pooling.h"
 
 /* pull in the generated query_names definitions */
 #include "bdb_query_names.inc"

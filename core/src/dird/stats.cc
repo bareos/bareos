@@ -29,7 +29,7 @@
 
 #include "bareos.h"
 #include "dird.h"
-
+#include "cats/sql_pooling.h"
 /*
  * Commands received from storage daemon that need scanning
  */

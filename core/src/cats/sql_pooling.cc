@@ -33,6 +33,7 @@
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 
 #include "cats.h"
+#include "cats_backends.h"
 
 /**
  * Get a non-pooled connection used when either sql pooling is
