@@ -92,7 +92,7 @@ bool connect_to_storage_daemon(JobControlRecord *jcr, int retry_interval,
       return true;                    /* already connected */
    }
 
-   sd = New(BSOCK_TCP);
+   sd = New(BareosSocketTCP);
 
    /*
     * If there is a write storage use it

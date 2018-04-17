@@ -121,7 +121,7 @@ static inline bool connect_outbound_to_file_daemon(JobControlRecord *jcr, int re
       return false;
    }
 
-   fd = New(BSOCK_TCP);
+   fd = New(BareosSocketTCP);
    if (me->nokeepalive) {
       fd->clear_keepalive();
    }

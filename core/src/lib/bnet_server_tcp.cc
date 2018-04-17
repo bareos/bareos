@@ -358,7 +358,7 @@ void bnet_thread_server_tcp(dlist *addr_list,
             V(mutex);
 
             BareosSocket *bs;
-            bs = New(BSOCK_TCP);
+            bs = New(BareosSocketTCP);
             if (nokeepalive) {
                bs->clear_keepalive();
             }

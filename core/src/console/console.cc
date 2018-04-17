@@ -1009,7 +1009,7 @@ static bool select_director(const char *director, DirectorResource **ret_dir, Co
    }
 
    if (!dir) {                  /* prompt for director */
-      UA_sock = New(BSOCK_TCP);
+      UA_sock = New(BareosSocketTCP);
 try_again:
       sendit(_("Available Directors:\n"));
       LockRes();
@@ -1307,7 +1307,7 @@ int main(int argc, char *argv[])
       heart_beat = 0;
    }
 
-   UA_sock = New(BSOCK_TCP);
+   UA_sock = New(BareosSocketTCP);
    if (!UA_sock->connect(NULL, 5, 15, heart_beat, "Director daemon", dir->address, NULL, dir->DIRport, false)) {
       delete UA_sock;
       terminate_console(0);

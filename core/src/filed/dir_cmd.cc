@@ -1661,7 +1661,7 @@ static bool storage_cmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd;                      /* storage daemon bsock */
 
-   sd = New(BSOCK_TCP);
+   sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
       sd->clear_keepalive();
    }
@@ -2261,7 +2261,7 @@ static BareosSocket *connect_to_director(JobControlRecord *jcr, DirectorResource
 
    ASSERT(dir_res != NULL);
 
-   dir = New(BSOCK_TCP);
+   dir = New(BareosSocketTCP);
    if (me->nokeepalive) {
       dir->clear_keepalive();
    }

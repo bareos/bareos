@@ -1579,7 +1579,7 @@ static bool replicate_cmd(JobControlRecord *jcr)
    BareosSocket *dir = jcr->dir_bsock;
    BareosSocket *sd;                      /* storage daemon bsock */
 
-   sd = New(BSOCK_TCP);
+   sd = New(BareosSocketTCP);
    if (me->nokeepalive) {
       sd->clear_keepalive();
    }
@@ -1687,7 +1687,7 @@ static bool passive_cmd(JobControlRecord *jcr)
 
    jcr->passive_client = true;
 
-   fd = New(BSOCK_TCP);
+   fd = New(BareosSocketTCP);
    if (me->nokeepalive) {
       fd->clear_keepalive();
    }

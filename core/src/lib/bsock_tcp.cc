@@ -50,28 +50,28 @@
 #define socketClose(fd)           ::close(fd)
 #endif
 
-BSOCK_TCP::BSOCK_TCP() : BareosSocket()
+BareosSocketTCP::BareosSocketTCP() : BareosSocket()
 {
 }
 
-BSOCK_TCP::~BSOCK_TCP()
+BareosSocketTCP::~BareosSocketTCP()
 {
    destroy();
 }
 
-BareosSocket *BSOCK_TCP::clone()
+BareosSocket *BareosSocketTCP::clone()
 {
-   BSOCK_TCP *clone;
+   BareosSocketTCP *clone;
    POOLMEM *o_msg, *o_errmsg;
 
-   clone = New(BSOCK_TCP);
+   clone = New(BareosSocketTCP);
 
    /*
     * Copy the data from the original BareosSocket but preserve the msg and errmsg buffers.
     */
    o_msg = clone->msg;
    o_errmsg = clone->errmsg;
-   memcpy((void *)clone, (void *)this, sizeof(BSOCK_TCP));
+   memcpy((void *)clone, (void *)this, sizeof(BareosSocketTCP));
    clone->msg = o_msg;
    clone->errmsg = o_errmsg;
 
@@ -96,7 +96,7 @@ BareosSocket *BSOCK_TCP::clone()
  * Note, you must have called the constructor prior to calling
  * this routine.
  */
-bool BSOCK_TCP::connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
+bool BareosSocketTCP::connect(JobControlRecord * jcr, int retry_interval, utime_t max_retry_time,
                         utime_t heart_beat, const char *name, char *host,
                         char *service, int port, bool verbose)
 {
@@ -149,7 +149,7 @@ bail_out:
 /*
  * Finish initialization of the pocket structure.
  */
-void BSOCK_TCP::fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host,
+void BareosSocketTCP::fin_init(JobControlRecord * jcr, int sockfd, const char *who, const char *host,
                          int port, struct sockaddr *lclient_addr)
 {
    Dmsg3(100, "who=%s host=%s port=%d\n", who, host, port);
@@ -166,7 +166,7 @@ void BSOCK_TCP::fin_init(JobControlRecord * jcr, int sockfd, const char *who, co
  * Returns NULL
  * Returns BareosSocket * pointer on success
  */
-bool BSOCK_TCP::open(JobControlRecord *jcr, const char *name, char *host, char *service,
+bool BareosSocketTCP::open(JobControlRecord *jcr, const char *name, char *host, char *service,
                      int port, utime_t heart_beat, int *fatal)
 {
    int sockfd = -1;
@@ -325,7 +325,7 @@ bool BSOCK_TCP::open(JobControlRecord *jcr, const char *name, char *host, char *
 }
 
 
-bool BSOCK_TCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
+bool BareosSocketTCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, int keepalive_start, int keepalive_interval)
 {
    int value = int(enable);
 
@@ -374,7 +374,7 @@ bool BSOCK_TCP::set_keepalive(JobControlRecord *jcr, int sockfd, bool enable, in
 }
 
 
-bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
+bool BareosSocketTCP::send_packet(int32_t *hdr, int32_t pktsiz)
 {
    Enter(400);
 
@@ -429,7 +429,7 @@ bool BSOCK_TCP::send_packet(int32_t *hdr, int32_t pktsiz)
  * Returns: false on failure
  *          true  on success
  */
-bool BSOCK_TCP::send()
+bool BareosSocketTCP::send()
 {
    /*
     * Send msg (length: msglen).
@@ -527,7 +527,7 @@ bool BSOCK_TCP::send()
  *    4. Error
  *  Using is_bnet_stop() and is_bnet_error() you can figure this all out.
  */
-int32_t BSOCK_TCP::recv()
+int32_t BareosSocketTCP::recv()
 {
    int32_t nbytes;
    int32_t pktsiz;
@@ -661,7 +661,7 @@ get_out:
    return nbytes;                  /* return actual length of message */
 }
 
-int BSOCK_TCP::get_peer(char *buf, socklen_t buflen)
+int BareosSocketTCP::get_peer(char *buf, socklen_t buflen)
 {
 #if !defined(HAVE_WIN32)
     if (peer_addr.sin_family == 0) {
@@ -685,7 +685,7 @@ int BSOCK_TCP::get_peer(char *buf, socklen_t buflen)
  * Returns: false on failure
  *          true  on success
  */
-bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
+bool BareosSocketTCP::set_buffer_size(uint32_t size, int rw)
 {
    uint32_t dbuf_size, start_size;
 
@@ -759,7 +759,7 @@ bool BSOCK_TCP::set_buffer_size(uint32_t size, int rw)
  *
  * Returns previous socket flag
  */
-int BSOCK_TCP::set_nonblocking()
+int BareosSocketTCP::set_nonblocking()
 {
 #ifndef HAVE_WIN32
    int oflags;
@@ -799,7 +799,7 @@ int BSOCK_TCP::set_nonblocking()
  *
  * Returns previous socket flags
  */
-int BSOCK_TCP::set_blocking()
+int BareosSocketTCP::set_blocking()
 {
 #ifndef HAVE_WIN32
    int oflags;
@@ -837,7 +837,7 @@ int BSOCK_TCP::set_blocking()
 /*
  * Restores socket flags
  */
-void BSOCK_TCP::restore_blocking(int flags)
+void BareosSocketTCP::restore_blocking(int flags)
 {
 #ifndef HAVE_WIN32
    if ((fcntl(fd_, F_SETFL, flags)) < 0) {
@@ -862,7 +862,7 @@ void BSOCK_TCP::restore_blocking(int flags)
  *          0 if timeout
  *         -1 if error
  */
-int BSOCK_TCP::wait_data(int sec, int usec)
+int BareosSocketTCP::wait_data(int sec, int usec)
 {
    int msec;
 
@@ -883,7 +883,7 @@ int BSOCK_TCP::wait_data(int sec, int usec)
 /*
  * As above, but returns on interrupt
  */
-int BSOCK_TCP::wait_data_intr(int sec, int usec)
+int BareosSocketTCP::wait_data_intr(int sec, int usec)
 {
    int msec;
 
@@ -905,7 +905,7 @@ int BSOCK_TCP::wait_data_intr(int sec, int usec)
 #define SHUT_RDWR 2
 #endif
 
-void BSOCK_TCP::close()
+void BareosSocketTCP::close()
 {
    if (!cloned_) {
       clear_locking();
@@ -929,7 +929,7 @@ void BSOCK_TCP::close()
    return;
 }
 
-void BSOCK_TCP::destroy()
+void BareosSocketTCP::destroy()
 {
    if (msg) {
       free_pool_memory(msg);
@@ -960,7 +960,7 @@ void BSOCK_TCP::destroy()
  * It is possible that the total bytes require in several
  * read requests
  */
-int32_t BSOCK_TCP::read_nbytes(char *ptr, int32_t nbytes)
+int32_t BareosSocketTCP::read_nbytes(char *ptr, int32_t nbytes)
 {
    int32_t nleft, nread;
 
@@ -1026,7 +1026,7 @@ int32_t BSOCK_TCP::read_nbytes(char *ptr, int32_t nbytes)
  * Write nbytes to the network.
  * It may require several writes.
  */
-int32_t BSOCK_TCP::write_nbytes(char *ptr, int32_t nbytes)
+int32_t BareosSocketTCP::write_nbytes(char *ptr, int32_t nbytes)
 {
    int32_t nleft, nwritten;
 
