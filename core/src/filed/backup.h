@@ -3,7 +3,7 @@
 
    Copyright (C) 2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,4 +60,10 @@ struct b_ctx {
    DIGEST *signing_digest;      /* Signing Digest */
    CIPHER_CONTEXT *cipher_ctx;  /* Cipher context */
 };
+
+bool blast_data_to_storage_daemon(JobControlRecord *jcr, char *addr, crypto_cipher_t cipher);
+bool encode_and_send_attributes(JobControlRecord *jcr, FindFilesPacket *ff_pkt, int &data_stream);
+void strip_path(FindFilesPacket *ff_pkt);
+void unstrip_path(FindFilesPacket *ff_pkt);
+
 #endif

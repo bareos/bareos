@@ -30,6 +30,8 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "filed/dir_cmd.h"
+#include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
 
 /* Imported Functions */

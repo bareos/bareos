@@ -43,7 +43,6 @@
 #include "ch.h"
 #include "backup.h"
 #include "restore.h"
-#include "protos.h"                   /* file daemon prototypes */
 
 extern ClientResource *me;                 /* "Global" Client resource */
 extern ConfigurationParser *my_config;             /* Our Global config */

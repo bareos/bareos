@@ -193,4 +193,13 @@ public:
 };
 #endif /* HAVE_LMDB */
 
+bool accurate_finish(JobControlRecord *jcr);
+bool accurate_check_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
+bool accurate_mark_file_as_seen(JobControlRecord *jcr, char *fname);
+bool accurate_unmark_file_as_seen(JobControlRecord *jcr, char *fname);
+bool accurate_mark_all_files_as_seen(JobControlRecord *jcr);
+bool accurate_unmark_all_files_as_seen(JobControlRecord *jcr);
+void accurate_free(JobControlRecord *jcr);
+
+
 #endif /* ACCURATE_H */

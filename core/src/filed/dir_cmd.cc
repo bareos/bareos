@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -31,6 +31,12 @@
 #include "bareos.h"
 #include "filed.h"
 #include "ch.h"
+#include "filed/authenticate.h"
+#include "filed/dir_cmd.h"
+#include "filed/estimate.h"
+#include "filed/heartbeat.h"
+#include "filed/fileset.h"
+#include "filed/verify.h"
 
 #if defined(WIN32_VSS)
 #include "vss.h"

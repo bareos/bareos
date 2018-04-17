@@ -23,7 +23,8 @@
 
 #include "bareos.h"
 #include "filed.h"
-#include "accurate.h"
+#include "filed/accurate.h"
+#include "filed/verify.h"
 
 static int debuglevel = 100;
 

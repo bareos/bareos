@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
-   Copyright (C) 2014-2014 Bareos GmbH & Co. KG
+   Copyright (C) 2014-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -30,6 +30,8 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "filed/dir_cmd.h"
+#include "filed/sd_cmds.h"
 
 /* Global variables */
 static workq_t socket_workq;

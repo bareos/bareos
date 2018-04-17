@@ -28,6 +28,7 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "filed/authenticate.h"
 
 static int debuglevel = 100;
 

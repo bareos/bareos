@@ -1,6 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
    Copyright (C) 2009 Free Software Foundation Europe e.V.
 
    This program is Free Software; you can redistribute it and/or
@@ -61,5 +62,11 @@ struct r_ctx {
    RestoreCipherContext cipher_ctx;      /* Cryptographic restore context (if any) for file */
    RestoreCipherContext fork_cipher_ctx; /* Cryptographic restore context (if any) for alternative stream */
 };
+
+void do_restore(JobControlRecord *jcr);
+void free_session(r_ctx &rctx);
+int do_file_digest(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level);
+bool sparse_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, uint64_t *addr, char **data, uint32_t *length);
+bool store_data(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length, bool win32_decomp);
 
 #endif
