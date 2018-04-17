@@ -1030,7 +1030,7 @@ static bool runbefore_cmd(JobControlRecord *jcr)
 {
    bool ok;
    POOLMEM *cmd;
-   RUNSCRIPT *script;
+   RunScript *script;
    BareosSocket *dir = jcr->dir_bsock;
 
    if (!me->compatible) {
@@ -1094,7 +1094,7 @@ static bool runafter_cmd(JobControlRecord *jcr)
 {
    BareosSocket *dir = jcr->dir_bsock;
    POOLMEM *cmd;
-   RUNSCRIPT *script;
+   RunScript *script;
 
    if (!me->compatible) {
       dir->fsend(BadRunAfterJob);
@@ -1128,7 +1128,7 @@ static bool runafter_cmd(JobControlRecord *jcr)
 static bool runscript_cmd(JobControlRecord *jcr)
 {
    POOLMEM *msg;
-   RUNSCRIPT *cmd;
+   RunScript *cmd;
    BareosSocket *dir = jcr->dir_bsock;
    int on_success, on_failure, fail_on_error;
 

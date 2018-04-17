@@ -2114,7 +2114,7 @@ static DatatypeName datatype_names[] = {
    { CFG_TYPE_LEVEL, "BACKUP_LEVEL", "Backup Level" },
    { CFG_TYPE_REPLACE, "REPLACE_OPTION", "Replace option" },
    { CFG_TYPE_SHRTRUNSCRIPT, "RUNSCRIPT_SHORT", "Short Runscript definition" },
-   { CFG_TYPE_RUNSCRIPT, "RUNSCRIPT", "Runscript" },
+   { CFG_TYPE_RUNSCRIPT, "RunScript", "Runscript" },
    { CFG_TYPE_RUNSCRIPT_CMD, "RUNSCRIPT_COMMAND", "Runscript Command" },
    { CFG_TYPE_RUNSCRIPT_TARGET, "RUNSCRIPT_TARGET", "Runscript Target (Host)" },
    { CFG_TYPE_RUNSCRIPT_BOOL, "RUNSCRIPT_BOOLEAN", "Runscript Boolean" },

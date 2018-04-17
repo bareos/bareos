@@ -24,7 +24,7 @@
  */
 /**
  * @file
- * BAREOS RUNSCRIPT Structure definition for FileDaemon and Director
+ * BAREOS RunScript Structure definition for FileDaemon and Director
  */
 
 #ifndef __RUNSCRIPT_H_
@@ -37,7 +37,7 @@
  * #define USE_RUNSCRIPT
  * #include "lib/runscript.h"
  *
- * RUNSCRIPT *script = new_runscript();
+ * RunScript *script = new_runscript();
  * script->set_command("/bin/sleep 20");
  * script->on_failure = true;
  * script->when = SCRIPT_After;
@@ -47,7 +47,7 @@
  */
 
 /**
- * RUNSCRIPT->when can take following bit values:
+ * RunScript->when can take following bit values:
  */
 enum {
    SCRIPT_Never = 0,
@@ -65,7 +65,7 @@ enum {
 /**
  * Structure for RunScript ressource
  */
-class DLL_IMP_EXP RUNSCRIPT {
+class DLL_IMP_EXP RunScript {
 public:
    POOLMEM *command;            /* Command string */
    POOLMEM *target;             /* Host target */
@@ -91,20 +91,20 @@ public:
    void set_job_code_callback(job_code_callback_t job_code_callback);
 };
 
-/* create new RUNSCRIPT (set all value to 0) */
-DLL_IMP_EXP RUNSCRIPT *new_runscript();
+/* create new RunScript (set all value to 0) */
+DLL_IMP_EXP RunScript *new_runscript();
 
-/* create new RUNSCRIPT from another */
-DLL_IMP_EXP RUNSCRIPT *copy_runscript(RUNSCRIPT *src);
+/* create new RunScript from another */
+DLL_IMP_EXP RunScript *copy_runscript(RunScript *src);
 
 /* launch each script from runscripts*/
 DLL_IMP_EXP int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *name,
                 alist *allowed_script_dirs = NULL);
 
-/* free RUNSCRIPT (and all POOLMEM) */
-DLL_IMP_EXP void free_runscript(RUNSCRIPT *script);
+/* free RunScript (and all POOLMEM) */
+DLL_IMP_EXP void free_runscript(RunScript *script);
 
-/* foreach_alist free RUNSCRIPT */
+/* foreach_alist free RunScript */
 DLL_IMP_EXP void free_runscripts(alist *runscripts); /* you have to free alist */
 
 extern DLL_IMP_EXP bool (*console_command)(JobControlRecord *jcr, const char *cmd);

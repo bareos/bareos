@@ -90,7 +90,7 @@ DLL_IMP_EXP alist *get_bregexps(const char *where);
 /* apply every regexps from the alist */
 DLL_IMP_EXP bool apply_bregexps(const char *fname, alist *bregexps, char **result);
 
-/* foreach_alist free RUNSCRIPT */
+/* foreach_alist free RunScript */
 DLL_IMP_EXP void free_bregexps(alist *bregexps); /* you have to free alist */
 
 /* get regexp size */

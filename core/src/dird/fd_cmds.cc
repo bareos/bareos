@@ -652,7 +652,7 @@ bool send_exclude_list(JobControlRecord *jcr)
  */
 static inline bool have_client_runscripts(alist *run_scripts)
 {
-   RUNSCRIPT *cmd;
+   RunScript *cmd;
    bool retval = false;
 
    if (run_scripts->empty()) {
@@ -677,7 +677,7 @@ static inline bool have_client_runscripts(alist *run_scripts)
 int send_runscripts_commands(JobControlRecord *jcr)
 {
    int result;
-   RUNSCRIPT *cmd;
+   RunScript *cmd;
    POOLMEM *msg, *ehost;
    BareosSocket *fd = jcr->file_bsock;
    bool has_before_jobs = false;

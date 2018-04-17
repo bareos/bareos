@@ -590,7 +590,7 @@ static ResourceTable resources[] = {
  * but use a global separate resource for holding the
  * runscript data.
  */
-static RUNSCRIPT res_runscript;
+static RunScript res_runscript;
 
 /**
  * new RunScript items
@@ -1377,7 +1377,7 @@ char *CatalogResource::display(POOLMEM *dst)
 static inline void print_config_runscript(ResourceItem *item, PoolMem &cfg_str)
 {
    PoolMem temp;
-   RUNSCRIPT *runscript;
+   RunScript *runscript;
    alist *list;
 
    list = *item->alistvalue;
@@ -3238,7 +3238,7 @@ bool propagate_jobdefs(int res_type, JobResource *res)
        * Handle RunScripts alists specifically
        */
       if (jobdefs->RunScripts) {
-         RUNSCRIPT *rs, *elt;
+         RunScript *rs, *elt;
 
          if (!res->RunScripts) {
             res->RunScripts = New(alist(10, not_owned_by_alist));
@@ -3743,11 +3743,11 @@ static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int p
 
    if (pass == 2) {
       if (bstrcmp(lc->str, "%c")) {
-         ((RUNSCRIPT *)item->value)->set_target(lc->str);
+         ((RunScript *)item->value)->set_target(lc->str);
       } else if (bstrcasecmp(lc->str, "yes")) {
-         ((RUNSCRIPT *)item->value)->set_target("%c");
+         ((RunScript *)item->value)->set_target("%c");
       } else if (bstrcasecmp(lc->str, "no")) {
-         ((RUNSCRIPT *)item->value)->set_target("");
+         ((RunScript *)item->value)->set_target("");
       } else {
          CommonResourceHeader *res;
 
@@ -3756,7 +3756,7 @@ static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int p
                       lc->str, lc->line_no, lc->line);
          }
 
-         ((RUNSCRIPT *)item->value)->set_target(lc->str);
+         ((RunScript *)item->value)->set_target(lc->str);
       }
    }
    scan_to_eol(lc);
@@ -3776,8 +3776,8 @@ static void store_runscript_cmd(LEX *lc, ResourceItem *item, int index, int pass
        * Each runscript command takes 2 entries in commands list
        */
       pm_strcpy(c, lc->str);
-      ((RUNSCRIPT *)item->value)->commands->prepend(c); /* command line */
-      ((RUNSCRIPT *)item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
+      ((RunScript *)item->value)->commands->prepend(c); /* command line */
+      ((RunScript *)item->value)->commands->prepend((void *)(intptr_t)item->code); /* command type */
    }
    scan_to_eol(lc);
 }
@@ -3788,7 +3788,7 @@ static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pa
    alist **runscripts = item->alistvalue;
 
    if (pass == 2) {
-      RUNSCRIPT *script = new_runscript();
+      RunScript *script = new_runscript();
       script->set_job_code_callback(job_code_callback_director);
 
       script->set_command(lc->str);
@@ -3943,8 +3943,8 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
       res_runscript.set_job_code_callback(job_code_callback_director);
       while ((c = (char *)res_runscript.commands->pop()) != NULL) {
          t = (intptr_t)res_runscript.commands->pop();
-         RUNSCRIPT *script = new_runscript();
-         memcpy(script, &res_runscript, sizeof(RUNSCRIPT));
+         RunScript *script = new_runscript();
+         memcpy(script, &res_runscript, sizeof(RunScript));
          script->command = c;
          script->cmd_type = t;
          /*

@@ -36,17 +36,17 @@
 bool (*console_command)(JobControlRecord *jcr, const char *cmd) = NULL;
 
 
-RUNSCRIPT *new_runscript()
+RunScript *new_runscript()
 {
-   Dmsg0(500, "runscript: creating new RUNSCRIPT object\n");
-   RUNSCRIPT *cmd = (RUNSCRIPT *)malloc(sizeof(RUNSCRIPT));
-   memset(cmd, 0, sizeof(RUNSCRIPT));
+   Dmsg0(500, "runscript: creating new RunScript object\n");
+   RunScript *cmd = (RunScript *)malloc(sizeof(RunScript));
+   memset(cmd, 0, sizeof(RunScript));
    cmd->reset_default();
 
    return cmd;
 }
 
-void RUNSCRIPT::reset_default(bool free_strings)
+void RunScript::reset_default(bool free_strings)
 {
    if (free_strings && command) {
      free_pool_memory(command);
@@ -64,12 +64,12 @@ void RUNSCRIPT::reset_default(bool free_strings)
    job_code_callback = NULL;
 }
 
-RUNSCRIPT *copy_runscript(RUNSCRIPT *src)
+RunScript *copy_runscript(RunScript *src)
 {
-   Dmsg0(500, "runscript: creating new RUNSCRIPT object from other\n");
+   Dmsg0(500, "runscript: creating new RunScript object from other\n");
 
-   RUNSCRIPT *dst = (RUNSCRIPT *)malloc(sizeof(RUNSCRIPT));
-   memcpy(dst, src, sizeof(RUNSCRIPT));
+   RunScript *dst = (RunScript *)malloc(sizeof(RunScript));
+   memcpy(dst, src, sizeof(RunScript));
 
    dst->command = NULL;
    dst->target = NULL;
@@ -80,9 +80,9 @@ RUNSCRIPT *copy_runscript(RUNSCRIPT *src)
    return dst;
 }
 
-void free_runscript(RUNSCRIPT *script)
+void free_runscript(RunScript *script)
 {
-   Dmsg0(500, "runscript: freeing RUNSCRIPT object\n");
+   Dmsg0(500, "runscript: freeing RunScript object\n");
 
    if (script->command) {
       free_pool_memory(script->command);
@@ -93,7 +93,7 @@ void free_runscript(RUNSCRIPT *script)
    free(script);
 }
 
-static inline bool script_dir_allowed(JobControlRecord *jcr, RUNSCRIPT *script, alist *allowed_script_dirs)
+static inline bool script_dir_allowed(JobControlRecord *jcr, RunScript *script, alist *allowed_script_dirs)
 {
    char *bp, *allowed_script_dir;
    bool allowed = false;
@@ -142,11 +142,11 @@ static inline bool script_dir_allowed(JobControlRecord *jcr, RUNSCRIPT *script, 
 
 int run_scripts(JobControlRecord *jcr, alist *runscripts, const char *label, alist *allowed_script_dirs)
 {
-   RUNSCRIPT *script;
+   RunScript *script;
    bool runit;
    int when;
 
-   Dmsg2(200, "runscript: running all RUNSCRIPT object (%s) JobStatus=%c\n", label, jcr->JobStatus);
+   Dmsg2(200, "runscript: running all RunScript object (%s) JobStatus=%c\n", label, jcr->JobStatus);
 
    if (strstr(label, NT_("Before"))) {
       when = SCRIPT_Before;
@@ -217,7 +217,7 @@ bail_out:
    return 1;
 }
 
-bool RUNSCRIPT::is_local()
+bool RunScript::is_local()
 {
    if (!target || bstrcmp(target, "")) {
       return true;
@@ -227,7 +227,7 @@ bool RUNSCRIPT::is_local()
 }
 
 /* set this->command to cmd */
-void RUNSCRIPT::set_command(const char *cmd, int acmd_type)
+void RunScript::set_command(const char *cmd, int acmd_type)
 {
    Dmsg1(500, "runscript: setting command = %s\n", NPRT(cmd));
 
@@ -244,7 +244,7 @@ void RUNSCRIPT::set_command(const char *cmd, int acmd_type)
 }
 
 /* set this->target to client_name */
-void RUNSCRIPT::set_target(const char *client_name)
+void RunScript::set_target(const char *client_name)
 {
    Dmsg1(500, "runscript: setting target = %s\n", NPRT(client_name));
 
@@ -259,9 +259,9 @@ void RUNSCRIPT::set_target(const char *client_name)
    pm_strcpy(target, client_name);
 }
 
-bool RUNSCRIPT::run(JobControlRecord *jcr, const char *name)
+bool RunScript::run(JobControlRecord *jcr, const char *name)
 {
-   Dmsg1(100, "runscript: running a RUNSCRIPT object type=%d\n", cmd_type);
+   Dmsg1(100, "runscript: running a RunScript object type=%d\n", cmd_type);
    POOLMEM *ecmd = get_pool_memory(PM_FNAME);
    int status;
    Bpipe *bpipe;
@@ -323,13 +323,13 @@ void free_runscripts(alist *runscripts)
 {
    Dmsg0(500, "runscript: freeing all RUNSCRIPTS object\n");
 
-   RUNSCRIPT *elt;
+   RunScript *elt;
    foreach_alist(elt, runscripts) {
       free_runscript(elt);
    }
 }
 
-void RUNSCRIPT::debug()
+void RunScript::debug()
 {
    Dmsg0(200, "runscript: debug\n");
    Dmsg0(200,  _(" --> RunScript\n"));
@@ -341,7 +341,7 @@ void RUNSCRIPT::debug()
    Dmsg1(200,  _("  --> RunWhen=%u\n"),  when);
 }
 
-void RUNSCRIPT::set_job_code_callback(job_code_callback_t arg_job_code_callback)
+void RunScript::set_job_code_callback(job_code_callback_t arg_job_code_callback)
 {
    this->job_code_callback = arg_job_code_callback;
 }
