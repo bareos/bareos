@@ -115,7 +115,7 @@ static inline int native_to_ndmp_loglevel(int debuglevel, NIS *nis)
    memset(nis, 0, sizeof(NIS));
 
    /*
-    * Lookup the initial default log_level from the default STORES.
+    * Lookup the initial default log_level from the default StorageResource.
     */
    nis->LogLevel = me->ndmploglevel;
 

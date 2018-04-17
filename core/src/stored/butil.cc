@@ -44,7 +44,7 @@ static void my_free_jcr(JobControlRecord *jcr);
 
 /* Global variables */
 char SD_IMP_EXP *configfile;
-STORES SD_IMP_EXP *me = NULL;         /* Our Global resource */
+StorageResource SD_IMP_EXP *me = NULL;         /* Our Global resource */
 ConfigurationParser SD_IMP_EXP *my_config = NULL;  /* Our Global config */
 
 /**

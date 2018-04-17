@@ -237,7 +237,7 @@ static ResourceItem changer_items[] = {
 static ResourceTable resources[] = {
    { "Director", dir_items, R_DIRECTOR, sizeof(DirectorResource), [] (void *res){ return new((DirectorResource *) res) DirectorResource(); } },
    { "Ndmp", ndmp_items, R_NDMP, sizeof(NdmpResource) },
-   { "Storage", store_items, R_STORAGE, sizeof(STORES), [] (void *res){ return new((STORES *) res) STORES(); } },
+   { "Storage", store_items, R_STORAGE, sizeof(StorageResource), [] (void *res){ return new((StorageResource *) res) StorageResource(); } },
    { "Device", dev_items, R_DEVICE, sizeof(DeviceResource) },
    { "Messages", msgs_items, R_MSGS, sizeof(MessagesResource) },
    { "Autochanger", changer_items, R_AUTOCHANGER, sizeof(AutochangerResource)  },
@@ -931,7 +931,7 @@ bool parse_sd_config(ConfigurationParser *config, const char *configfile, int ex
    retval = config->parse_config();
 
    if (retval) {
-      me = (STORES *)GetNextRes(R_STORAGE, NULL);
+      me = (StorageResource *)GetNextRes(R_STORAGE, NULL);
       if (!me) {
          Emsg1(exit_code, 0, _("No Storage resource defined in %s. Cannot continue.\n"), configfile);
          return retval;

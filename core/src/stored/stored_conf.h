@@ -70,7 +70,7 @@ public:
 };
 
 /* Storage daemon "global" definitions */
-class STORES : public TlsResource {
+class StorageResource : public TlsResource {
 public:
    dlist *SDaddrs;
    dlist *SDsrc_addr;                 /**< Address to source connections from */
@@ -108,7 +108,7 @@ public:
    char *log_timestamp_format;        /**< Timestamp format to use in generic logging messages */
    uint64_t max_bandwidth_per_job;    /**< Bandwidth limitation (global) */
 
-   STORES() : TlsResource() {}
+   StorageResource() : TlsResource() {}
 };
 
 class AutochangerResource : public BareosResource {
@@ -184,7 +184,7 @@ public:
 union UnionOfResources {
    DirectorResource res_dir;
    NdmpResource res_ndmp;
-   STORES res_store;
+   StorageResource res_store;
    DeviceResource res_dev;
    MessagesResource res_msgs;
    AutochangerResource res_changer;

@@ -387,7 +387,7 @@ static int check_resources()
       OK = false;
    }
 
-   STORES *store = me;
+   StorageResource *store = me;
    /* tls_require implies tls_enable */
    if (store->tls_cert.require) {
       if (have_tls) {
