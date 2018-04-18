@@ -37,6 +37,8 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/verify.h"
+#include "findlib/enable_priv.h"
+#include "findlib/shadowing.h"
 
 #if defined(WIN32_VSS)
 #include "vss.h"

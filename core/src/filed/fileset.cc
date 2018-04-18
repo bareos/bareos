@@ -31,6 +31,7 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "findlib/match.h"
 #include "ch.h"
 
 /* Forward referenced functions */

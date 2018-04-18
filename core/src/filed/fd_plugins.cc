@@ -33,6 +33,10 @@
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
 #include "filed/heartbeat.h"
+#include "findlib/attribs.h"
+#include "findlib/find.h"
+#include "findlib/find_one.h"
+#include "findlib/hardlink.h"
 
 extern ClientResource *me;
 extern DLL_IMP_EXP char *exepath;

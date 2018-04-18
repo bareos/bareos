@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2010 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -271,8 +271,25 @@ struct FindFilesPacket {
    struct HfsPlusInfo hfsinfo;       /**< Finder Info and resource fork size */
 };
 
+DLL_IMP_EXP FindFilesPacket *init_find_files();
+DLL_IMP_EXP void set_find_options(FindFilesPacket *ff, bool incremental, time_t mtime);
+DLL_IMP_EXP void set_find_changed_function(FindFilesPacket *ff, bool check_fct(JobControlRecord *jcr, FindFilesPacket *ff));
+DLL_IMP_EXP int find_files(JobControlRecord *jcr, FindFilesPacket *ff, int file_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool),
+               int plugin_sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
+DLL_IMP_EXP bool match_files(JobControlRecord *jcr, FindFilesPacket *ff, int sub(JobControlRecord *, FindFilesPacket *ff_pkt, bool));
+DLL_IMP_EXP int term_find_files(FindFilesPacket *ff);
+DLL_IMP_EXP bool is_in_fileset(FindFilesPacket *ff);
+DLL_IMP_EXP bool accept_file(FindFilesPacket *ff);
+DLL_IMP_EXP findIncludeExcludeItem *allocate_new_incexe(void);
+DLL_IMP_EXP findIncludeExcludeItem *new_exclude(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_include(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_preinclude(findFILESET *fileset);
+DLL_IMP_EXP findIncludeExcludeItem *new_preexclude(findFILESET *fileset);
+DLL_IMP_EXP findFOPTS *start_options(FindFilesPacket *ff);
+DLL_IMP_EXP void new_options(FindFilesPacket *ff, findIncludeExcludeItem *incexe);
+
+
 #include "acl.h"
 #include "xattr.h"
-#include "protos.h"
 
 #endif /* __FILES_H */

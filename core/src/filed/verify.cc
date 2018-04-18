@@ -29,6 +29,8 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "findlib/find.h"
+#include "findlib/attribs.h"
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;

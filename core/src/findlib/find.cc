@@ -35,6 +35,7 @@
 #include "bareos.h"
 #include "jcr.h"
 #include "find.h"
+#include "findlib/find_one.h"
 
 static const int debuglevel = 450;
 

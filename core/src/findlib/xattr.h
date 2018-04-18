@@ -109,4 +109,15 @@ struct xattr_data_t {
  */
 #define XATTR_BUFSIZ	1024
 
+DLL_IMP_EXP bxattr_exit_code send_xattr_stream(JobControlRecord *jcr, xattr_data_t *xattr_data, int stream);
+DLL_IMP_EXP void xattr_drop_internal_table(alist *xattr_value_list);
+DLL_IMP_EXP uint32_t serialize_xattr_stream(JobControlRecord *jcr, xattr_data_t *xattr_data,
+                                uint32_t expected_serialize_len, alist *xattr_value_list);
+DLL_IMP_EXP bxattr_exit_code unserialize_xattr_stream(JobControlRecord *jcr, xattr_data_t *xattr_data, char *content,
+                                          uint32_t content_length, alist *xattr_value_list);
+DLL_IMP_EXP bxattr_exit_code build_xattr_streams(JobControlRecord *jcr, struct xattr_data_t *xattr_data, FindFilesPacket *ff_pkt);
+DLL_IMP_EXP bxattr_exit_code parse_xattr_streams(JobControlRecord *jcr, struct xattr_data_t *xattr_data,
+                                     int stream, char *content, uint32_t content_length);
+
+
 #endif

@@ -3,7 +3,7 @@
 
    Copyright (C) 2004-2008 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -105,5 +105,10 @@ struct acl_data_t {
       struct acl_parse_data_t *parse;
    } u;
 };
+
+DLL_IMP_EXP bacl_exit_code send_acl_stream(JobControlRecord *jcr, acl_data_t *acl_data, int stream);
+DLL_IMP_EXP bacl_exit_code build_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data, FindFilesPacket *ff_pkt);
+DLL_IMP_EXP bacl_exit_code parse_acl_streams(JobControlRecord *jcr, acl_data_t *acl_data,
+                                 int stream, char *content, uint32_t content_length);
 
 #endif

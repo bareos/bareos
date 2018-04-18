@@ -34,7 +34,11 @@
 #include "filed/compression.h"
 #include "filed/crypto.h"
 #include "filed/heartbeat.h"
+#include "filed/backup.h"
 #include "ch.h"
+#include "findlib/attribs.h"
+#include "findlib/hardlink.h"
+#include "findlib/find_one.h"
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;

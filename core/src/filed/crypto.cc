@@ -31,6 +31,7 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "findlib/find_one.h"
 
 #ifdef HAVE_SHA2
 const bool have_sha2 = true;

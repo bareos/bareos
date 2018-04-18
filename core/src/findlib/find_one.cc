@@ -34,6 +34,12 @@
 #include "bareos.h"
 #include "jcr.h"
 #include "find.h"
+#include "findlib/match.h"
+#include "findlib/find_one.h"
+#include "findlib/hardlink.h"
+#include "findlib/fstype.h"
+#include "findlib/drivetype.h"
+
 #ifdef HAVE_DARWIN_OS
 #include <sys/param.h>
 #include <sys/mount.h>

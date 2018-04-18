@@ -29,6 +29,7 @@
 
 #include "bareos.h"
 #include "findlib/find.h"
+#include "findlib/drivetype.h"
 
 static void usage()
 {

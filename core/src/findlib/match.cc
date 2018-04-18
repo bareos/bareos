@@ -43,6 +43,8 @@
 #include "ch.h"
 
 #include <sys/types.h>
+#include "findlib/match.h"
+#include "findlib/find_one.h"
 
 #ifndef FNM_LEADING_DIR
 #define FNM_LEADING_DIR 0

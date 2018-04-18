@@ -31,11 +31,15 @@
 #include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
-#include "findlib/find.h"
 #include "stored/acquire.h"
 #include "stored/butil.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
+#include "findlib/find.h"
+#include "findlib/attribs.h"
+#include "findlib/create_file.h"
+#include "findlib/match.h"
+#include "findlib//get_priv.h"
 
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 

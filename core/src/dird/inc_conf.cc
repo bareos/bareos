@@ -31,6 +31,8 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "findlib/match.h"
+
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else

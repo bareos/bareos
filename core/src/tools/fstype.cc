@@ -30,6 +30,7 @@
 #include "bareos.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
+#include "findlib/fstype.h"
 
 static void usage()
 {

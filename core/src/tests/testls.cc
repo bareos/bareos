@@ -30,6 +30,7 @@
 #include "jcr.h"
 #include "findlib/find.h"
 #include "filed/fd_plugins.h"
+#include "findlib/match.h"
 
 /* Dummy functions */
 int generate_job_event(JobControlRecord *jcr, const char *event) { return 1; }

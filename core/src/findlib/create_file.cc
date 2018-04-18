@@ -31,6 +31,7 @@
 #include "bareos.h"
 #include "jcr.h"
 #include "find.h"
+#include "findlib/makepath.h"
 
 #ifndef S_IRWXUGO
 #define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)
