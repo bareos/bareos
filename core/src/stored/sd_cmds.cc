@@ -39,6 +39,7 @@
 #include "stored/authenticate.h"
 #include "stored/sd_stats.h"
 #include "stored/sd_stats.h"
+#include "lib/bnet.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -32,6 +32,7 @@
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"
 #include "dird/ua_server.h"
+#include "lib/bnet.h"
 
 /*
  * Commands received from storage daemon that need scanning

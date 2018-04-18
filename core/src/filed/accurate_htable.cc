@@ -31,6 +31,7 @@
 #include "bareos.h"
 #include "filed.h"
 #include "accurate.h"
+#include "lib/attribs.h"
 
 static int debuglevel = 100;
 

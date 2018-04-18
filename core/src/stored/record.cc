@@ -30,6 +30,7 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "lib/attribs.h"
 
 /**
  * Convert a FileIndex into a printable

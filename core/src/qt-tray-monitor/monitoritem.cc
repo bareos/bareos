@@ -24,6 +24,7 @@
 #include "monitoritem.h"
 #include "authenticate.h"
 #include "monitoritemthread.h"
+#include "lib/bnet.h"
 
 MonitorItem::MonitorItem(QObject* parent)
    : QObject(parent)

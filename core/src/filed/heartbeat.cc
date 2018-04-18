@@ -32,6 +32,7 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "lib/bnet.h"
 
 #define WAIT_INTERVAL 5
 

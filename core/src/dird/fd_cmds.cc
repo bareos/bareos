@@ -41,6 +41,7 @@
 #include "dird/fd_cmds.h"
 #include "dird/getmsg.h"
 #include "dird/msgchan.h"
+#include "lib/bnet.h"
 
 
 const int debuglevel = 400;

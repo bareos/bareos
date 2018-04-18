@@ -39,6 +39,8 @@
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"
+#include "lib/bget_msg.h"
+#include "lib/bnet.h"
 
 #if defined(WIN32_VSS)
 #include "vss.h"

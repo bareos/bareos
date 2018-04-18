@@ -31,6 +31,7 @@
 #include "jcr.h"
 #include <netdb.h>
 #include <netinet/tcp.h>
+#include "lib/bnet.h"
 
 #ifndef ENODATA                    /* not defined on BSD systems */
 #define ENODATA EPIPE

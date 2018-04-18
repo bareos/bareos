@@ -30,6 +30,8 @@
 
 #include "bareos.h"
 #include "filed.h"
+#include "lib/bget_msg.h"
+#include "lib/bnet.h"
 
 /* Data received from Storage Daemon */
 static char rec_header[] =

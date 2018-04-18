@@ -29,6 +29,7 @@
  */
 
 #include "bareos.h"                   /* pull in global headers */
+#include "lib/bnet.h"
 
 static char OK_msg[]   = "2000 OK\n";
 static char TERM_msg[] = "2999 Terminate\n";

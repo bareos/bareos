@@ -39,6 +39,8 @@
 #include "stored/read_record.h"
 #include "stored/sd_stats.h"
 #include "stored/spool.h"
+#include "lib/bget_msg.h"
+#include "lib/bnet.h"
 
 /* Import functions */
 

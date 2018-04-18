@@ -32,6 +32,7 @@
 #include "dird.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"
+#include "lib/bnet_sever_tcp.h"
 
 static char hello_client_with_version[] =
    "Hello Client %127s FdProtocolVersion=%d calling";

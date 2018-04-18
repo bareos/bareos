@@ -34,6 +34,7 @@
 #include "stored/fd_cmds.h"
 #include "stored/label.h"
 #include "stored/spool.h"
+#include "lib/bget_msg.h"
 
 /* Responses sent to the daemon */
 static char OK_data[] =

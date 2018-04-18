@@ -33,6 +33,7 @@
 #include "stored/dir_cmd.h"
 #include "stored/fd_cmds.h"
 #include "stored/sd_cmds.h"
+#include "lib/bnet_sever_tcp.h"
 
 /* Global variables */
 static workq_t socket_workq;

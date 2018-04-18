@@ -31,6 +31,7 @@
 #include "bareos.h"
 #include "console_conf.h"
 #include "jcr.h"
+#include "lib/bnet.h"
 
 #ifdef HAVE_CONIO
 #include "conio.h"

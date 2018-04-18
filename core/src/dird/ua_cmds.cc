@@ -45,6 +45,7 @@
 #include "dird/ua_status.h"
 #include "dird/ua_purge.h"
 #include "dird/ua_run.h"
+#include "lib/bnet.h"
 
 /* Imported subroutines */
 

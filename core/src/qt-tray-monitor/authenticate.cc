@@ -32,6 +32,7 @@
 #include "monitoritemthread.h"
 
 #include "tls_conf.h"
+#include "lib/bnet.h"
 
 const int debuglevel = 50;
 

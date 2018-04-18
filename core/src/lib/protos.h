@@ -31,70 +31,16 @@
 class JobControlRecord;
 
 /* attr.cc */
-DLL_IMP_EXP Attributes *new_attr(JobControlRecord *jcr);
-DLL_IMP_EXP void free_attr(Attributes *attr);
-DLL_IMP_EXP int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
-DLL_IMP_EXP void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr);
-DLL_IMP_EXP const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
-DLL_IMP_EXP void print_ls_output(JobControlRecord *jcr, Attributes *attr);
 
 /* attribs.cc */
-DLL_IMP_EXP void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
-DLL_IMP_EXP int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
-DLL_IMP_EXP int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size);
 
 /* base64.cc */
-DLL_IMP_EXP void base64_init(void);
-DLL_IMP_EXP int to_base64(int64_t value, char *where);
-DLL_IMP_EXP int from_base64(int64_t *value, char *where);
-DLL_IMP_EXP int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible);
-DLL_IMP_EXP int base64_to_bin(char *dest, int destlen, char *src, int srclen);
-
 /* bget_msg.cc */
-DLL_IMP_EXP int bget_msg(BareosSocket *sock);
 
 /* bnet.cc */
-DLL_IMP_EXP int32_t bnet_recv(BareosSocket *bsock);
-DLL_IMP_EXP bool bnet_send(BareosSocket *bsock);
-DLL_IMP_EXP bool bnet_fsend(BareosSocket *bs, const char *fmt, ...);
-DLL_IMP_EXP bool bnet_set_buffer_size(BareosSocket *bs, uint32_t size, int rw);
-DLL_IMP_EXP bool bnet_sig(BareosSocket *bs, int sig);
-DLL_IMP_EXP bool bnet_tls_server(std::shared_ptr<TlsContext> tls_ctx, BareosSocket *bsock,
-                     alist *verify_list);
-DLL_IMP_EXP bool bnet_tls_client(std::shared_ptr<TLS_CONTEXT> tls_ctx, BareosSocket *bsock,
-                     bool verify_peer, alist *verify_list);
-DLL_IMP_EXP int bnet_get_peer(BareosSocket *bs, char *buf, socklen_t buflen);
-DLL_IMP_EXP BareosSocket *dup_bsock(BareosSocket *bsock);
-DLL_IMP_EXP const char *bnet_strerror(BareosSocket *bsock);
-DLL_IMP_EXP const char *bnet_sig_to_ascii(BareosSocket *bsock);
-DLL_IMP_EXP int bnet_wait_data(BareosSocket *bsock, int sec);
-DLL_IMP_EXP int bnet_wait_data_intr(BareosSocket *bsock, int sec);
-DLL_IMP_EXP bool is_bnet_stop(BareosSocket *bsock);
-DLL_IMP_EXP int is_bnet_error(BareosSocket *bsock);
-DLL_IMP_EXP void bnet_suppress_error_messages(BareosSocket *bsock, bool flag);
-DLL_IMP_EXP dlist *bnet_host2ipaddrs(const char *host, int family, const char **errstr);
-DLL_IMP_EXP int bnet_set_blocking(BareosSocket *sock);
-DLL_IMP_EXP int bnet_set_nonblocking(BareosSocket *sock);
-DLL_IMP_EXP void bnet_restore_blocking(BareosSocket *sock, int flags);
-DLL_IMP_EXP int net_connect(int port);
-DLL_IMP_EXP BareosSocket *bnet_bind(int port);
-DLL_IMP_EXP BareosSocket *bnet_accept(BareosSocket *bsock, char *who);
-
 /* bnet_server_tcp.cc */
-DLL_IMP_EXP void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
-DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
-                            int max_clients,
-                            alist *sockfds,
-                            workq_t *client_wq,
-                            bool nokeepalive,
-                            void *handle_client_request(void *bsock));
-DLL_IMP_EXP void bnet_stop_thread_server_tcp(pthread_t tid);
 
 /* bpipe.cc */
-DLL_IMP_EXP Bpipe *open_bpipe(char *prog, int wait, const char *mode,
-                  bool dup_stderr = true);
-DLL_IMP_EXP int close_wpipe(Bpipe *bpipe);
-DLL_IMP_EXP int close_bpipe(Bpipe *bpipe);
 
 /* bsys.cc */
 DLL_IMP_EXP char *bstrinlinecpy(char *dest, const char *src);

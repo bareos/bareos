@@ -28,6 +28,7 @@
 
 #include "bareos.h"
 #include "jcr.h"
+#include "lib/bnet.h"
 
 DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration) {
    uint32_t merged_policy = 0;

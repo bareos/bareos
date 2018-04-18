@@ -33,6 +33,7 @@
 #include "bareos.h"
 #include "dird.h"
 #include "dird/fd_cmds.h"
+#include "lib/bnet.h"
 
 static const int debuglevel = 50;
 

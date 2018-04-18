@@ -32,6 +32,7 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 #include "stored/autochanger.h"
 #include "stored/wait.h"
+#include "lib/bnet.h"
 
 /* Forward referenced functions */
 static bool lock_changer(DeviceControlRecord *dcr);

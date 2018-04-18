@@ -42,6 +42,7 @@
 #include "stored/label.h"
 #include "stored/mount.h"
 #include "stored/read_record.h"
+#include "lib/attribs.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

@@ -197,6 +197,7 @@ extern "C" {
 #include <map>
 #include <string>
 #include <memory>
+#include "lib/attribs.h"
 
 
 #include "streams.h"

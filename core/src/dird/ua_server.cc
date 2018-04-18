@@ -37,6 +37,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_output.h"
 #include "dird/ua_server.h"
+#include "lib/bnet.h"
 
 /* Imported variables */
 

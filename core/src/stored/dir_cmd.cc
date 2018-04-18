@@ -54,6 +54,7 @@
 #include "stored/sd_cmds.h"
 #include "stored/sd_stats.h"
 #include "stored/wait.h"
+#include "lib/bnet.h"
 
 /* Exported variables */
 

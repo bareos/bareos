@@ -32,6 +32,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_cmds.h"
 #include "dird/ua_select.h"
+#include "lib/bnet.h"
 
 /* Imported variables */
 

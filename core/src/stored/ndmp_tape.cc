@@ -66,6 +66,7 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "stored/spool.h"
+#include "lib/attribs.h"
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread

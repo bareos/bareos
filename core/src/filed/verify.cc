@@ -31,6 +31,8 @@
 #include "filed.h"
 #include "findlib/find.h"
 #include "findlib/attribs.h"
+#include "lib/attribs.h"
+#include "lib/bnet.h"
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;

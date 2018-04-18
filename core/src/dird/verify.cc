@@ -44,6 +44,7 @@
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
 #include "dird/verify.h"
+#include "lib/bnet.h"
 
 /* Commands sent to File daemon */
 static char verifycmd[] =

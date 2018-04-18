@@ -54,4 +54,11 @@ struct Attributes {
    JobControlRecord *jcr;                          /**< jcr pointer */
 };
 
+DLL_IMP_EXP Attributes *new_attr(JobControlRecord *jcr);
+DLL_IMP_EXP void free_attr(Attributes *attr);
+DLL_IMP_EXP int unpack_attributes_record(JobControlRecord *jcr, int32_t stream, char *rec, int32_t reclen, Attributes *attr);
+DLL_IMP_EXP void build_attr_output_fnames(JobControlRecord *jcr, Attributes *attr);
+DLL_IMP_EXP const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
+DLL_IMP_EXP void print_ls_output(JobControlRecord *jcr, Attributes *attr);
+
 #endif /* __ATTR_H_ */

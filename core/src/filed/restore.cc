@@ -36,10 +36,12 @@
 #include "ch.h"
 #include "findlib/create_file.h"
 #include "findlib/attribs.h"
+#include "findlib/find.h"
+#include "lib/bget_msg.h"
+#include "lib/bnet.h"
 
 #if defined(HAVE_DARWIN_OS)
 #include <sys/attr.h>
-#include "findlib/find.h"
 const bool have_darwin_os = true;
 #else
 const bool have_darwin_os = false;

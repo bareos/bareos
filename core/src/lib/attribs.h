@@ -1,8 +1,7 @@
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
-   Copyright (C) 2000-2006 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2018-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -19,21 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-/*
- * Written by Kern E. Sibbald, March MM.
- */
-/**
- * @file
- * Generic base 64 input and output routines
- */
+#ifndef LIB_ATTRIBS_H_
+#define LIB_ATTRIBS_H_
+#include "include/baconfig.h"
 
-/* Maximum size of len bytes after base64 encoding */
-#define BASE64_SIZE(len) ((4 * len + 2) / 3 + 1)
+DLL_IMP_EXP void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
+DLL_IMP_EXP int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
+DLL_IMP_EXP int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size);
 
-// #define BASE64_SIZE(len) (((len + 3 - (len % 3)) / 3) * 4)
-DLL_IMP_EXP void base64_init(void);
-DLL_IMP_EXP int to_base64(int64_t value, char *where);
-DLL_IMP_EXP int from_base64(int64_t *value, char *where);
-DLL_IMP_EXP int bin_to_base64(char *buf, int buflen, char *bin, int binlen, bool compatible);
-DLL_IMP_EXP int base64_to_bin(char *dest, int destlen, char *src, int srclen);
-
+#endif // LIB_ATTRIBS_H_

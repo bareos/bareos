@@ -41,6 +41,7 @@
 #include "stored/fd_cmds.h"
 #include "stored/read.h"
 #include "stored/sd_stats.h"
+#include "lib/bnet.h"
 
 /* Imported variables */
 

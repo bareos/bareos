@@ -40,6 +40,7 @@
 #include "findlib/create_file.h"
 #include "findlib/match.h"
 #include "findlib//get_priv.h"
+#include "lib/attribs.h"
 
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 
