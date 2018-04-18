@@ -29,6 +29,7 @@
 
 #include "bareos.h"
 #include "find.h"
+#include "findlib/fstype.h"
 
 /**
  * These functions should be implemented for each OS

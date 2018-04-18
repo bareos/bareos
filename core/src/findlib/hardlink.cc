@@ -29,6 +29,7 @@
 
 #include "bareos.h"
 #include "find.h"
+#include "findlib/hardlink.h"
 
 /**
  * Lookup a inode/dev in the list of hardlinked files.

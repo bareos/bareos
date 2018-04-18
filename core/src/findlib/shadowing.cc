@@ -34,6 +34,7 @@
 
 #include "bareos.h"
 #include "find.h"
+#include "findlib/shadowing.h"
 
 /**
  * Check if a certain fileset include pattern shadows another pattern.

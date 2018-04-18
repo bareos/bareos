@@ -35,6 +35,8 @@
 
 #include "bareos.h"
 #include "jcr.h"
+#include "lib/bnet.h"
+
 #include <netdb.h>
 
 #ifndef INADDR_NONE

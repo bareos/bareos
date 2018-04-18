@@ -40,6 +40,10 @@
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
 
+#ifdef HAVE_WIN32
+#include "win32/findlib/win32.h"
+#endif
+
 #if defined(HAVE_DARWIN_OS)
 #include <sys/attr.h>
 const bool have_darwin_os = true;

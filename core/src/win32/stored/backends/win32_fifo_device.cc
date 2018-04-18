@@ -33,6 +33,8 @@
 #include "bareos.h"
 #include "stored.h"
 #include "win32_fifo_device.h"
+#include "stored/autochanger.h"
+
 
 /**
  * Open a fifo device

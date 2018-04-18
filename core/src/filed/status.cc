@@ -31,6 +31,7 @@
 #include "bareos.h"
 #include "filed.h"
 #include "lib/status.h"
+#include "findlib/enable_priv.h"
 
 extern void *start_heap;
 extern bool GetWindowsVersionString(char *buf, int maxsiz);

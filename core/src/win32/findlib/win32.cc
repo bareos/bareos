@@ -30,6 +30,9 @@
 #include "jcr.h"
 #include "find.h"
 #include "lib/cbuf.h"
+#include "findlib/drivetype.h"
+#include "findlib/fstype.h"
+#include "win32/findlib/win32.h"
 
 /**
  * We need to analyze if a fileset contains onefs=no as option, because only then

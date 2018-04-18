@@ -43,6 +43,7 @@
 #include "lib/bnet.h"
 
 #if defined(WIN32_VSS)
+#include "win32/findlib/win32.h"
 #include "vss.h"
 #endif
 

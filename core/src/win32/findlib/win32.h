@@ -1,3 +1,4 @@
+
 /*
    BAREOS® - Backup Archiving REcovery Open Sourced
 
@@ -18,9 +19,16 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_ENABLE_PRIV_H_
-#define FINDLIB_ENABLE_PRIV_H_
+#ifndef FINDLIB_WIN32_H_
+#define FINDLIB_WIN32_H_
 
-DLL_IMP_EXP int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors);
 
-#endif // FINDLIB_ENABLE_PRIV_H_
+DLL_IMP_EXP bool expand_win32_fileset(findFILESET *fileset);
+DLL_IMP_EXP bool exclude_win32_not_to_backup_registry_entries(JobControlRecord *jcr, FindFilesPacket *ff);
+DLL_IMP_EXP int get_win32_driveletters(findFILESET *fileset, char *szDrives);
+DLL_IMP_EXP bool win32_onefs_is_disabled(findFILESET *fileset);
+DLL_IMP_EXP void win32_cleanup_copy_thread(JobControlRecord *jcr);
+DLL_IMP_EXP void win32_flush_copy_thread(JobControlRecord *jcr);
+DLL_IMP_EXP int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length);
+
+#endif // FINDLIB_WIN32_H_

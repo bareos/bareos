@@ -34,6 +34,10 @@
 #include "findlib/match.h"
 #include "ch.h"
 
+#ifdef HAVE_WIN32
+#include "win32/findlib/win32.h"
+#endif
+
 /* Forward referenced functions */
 static int set_options(findFOPTS *fo, const char *opts);
 
