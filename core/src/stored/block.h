@@ -113,4 +113,14 @@ struct DeviceBlock {
 #define block_write_navail(block) ((block)->buf_len - (block)->binbuf)
 #define block_is_empty(block) ((block)->read_len == 0)
 
+void dump_block(DeviceBlock *b, const char *msg);
+DeviceBlock *new_block(Device *dev);
+DeviceBlock *dup_block(DeviceBlock *eblock);
+void init_block_write(DeviceBlock *block);
+void empty_block(DeviceBlock *block);
+void free_block(DeviceBlock *block);
+void print_block_read_errors(JobControlRecord *jcr, DeviceBlock *block);
+void ser_block_header(DeviceBlock *block);
+
+
 #endif

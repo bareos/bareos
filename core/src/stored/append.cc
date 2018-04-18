@@ -29,6 +29,11 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/acquire.h"
+#include "stored/append.h"
+#include "stored/fd_cmds.h"
+#include "stored/label.h"
+#include "stored/spool.h"
 
 /* Responses sent to the daemon */
 static char OK_data[] =

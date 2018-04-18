@@ -32,6 +32,10 @@
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
+#include "stored/acquire.h"
+#include "stored/butil.h"
+#include "stored/mount.h"
+#include "stored/read_record.h"
 
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 

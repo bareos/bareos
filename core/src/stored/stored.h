@@ -64,7 +64,6 @@ const int sd_debuglevel = 300;
 #include "vol_mgr.h"
 #include "reserve.h"
 
-#include "protos.h"
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>
 #else
@@ -84,5 +83,6 @@ extern char SD_IMP_EXP *configfile;
 extern bool SD_IMP_EXP forge_on;      /* Proceed inspite of I/O errors */
 extern StorageResource SD_IMP_EXP *me;         /* "Global" daemon resource */
 extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
+uint32_t new_VolSessionId();
 
 #endif /* __STORED_H_ */

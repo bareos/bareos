@@ -30,6 +30,7 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "stored/label.h"
 
 /* Imported functions */
 void ascii_to_ebcdic(char *dst, char *src, int count);

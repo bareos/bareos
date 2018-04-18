@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2007 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -29,6 +29,7 @@
 
 #ifndef __LOCK_H
 #define __LOCK_H 1
+
 
 #ifdef SD_DEBUG_LOCK
 #define r_dlock()   _r_dlock(__FILE__, __LINE__);    /* in lock.c */
@@ -70,5 +71,14 @@ enum {
    DEV_LOCKED = true,
    DEV_UNLOCKED = false
 };
+
+#include "stored/dev.h"
+
+void _lock_device(const char *file, int line, Device *dev);
+void _unlock_device(const char *file, int line, Device *dev);
+void _block_device(const char *file, int line, Device *dev, int state);
+void _unblock_device(const char *file, int line, Device *dev);
+void _steal_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold, int state);
+void _give_back_device_lock(const char *file, int line, Device *dev, bsteal_lock_t *hold);
 
 #endif

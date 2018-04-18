@@ -74,6 +74,8 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/autochanger.h"
+#include "stored/sd_backends.h"
 
 #ifndef HAVE_DYNAMIC_SD_BACKENDS
 #ifdef HAVE_GFAPI

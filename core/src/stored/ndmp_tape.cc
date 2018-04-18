@@ -60,6 +60,12 @@
 #endif
 
 #include "ndmp/ndmagents.h"
+#include "stored/acquire.h"
+#include "stored/device.h"
+#include "stored/label.h"
+#include "stored/mount.h"
+#include "stored/read_record.h"
+#include "stored/spool.h"
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread

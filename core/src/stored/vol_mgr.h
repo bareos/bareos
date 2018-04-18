@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2013 Free Software Foundation Europe e.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -103,5 +103,19 @@ public:
    for (vol=read_vol_walk_start(); vol; (vol = read_vol_walk_next(vol)) )
 
 #define endeach_read_vol(vol) read_vol_walk_end(vol)
+
+void init_vol_list_lock();
+void term_vol_list_lock();
+VolumeReservationItem *reserve_volume(DeviceControlRecord *dcr, const char *VolumeName);
+bool free_volume(Device *dev);
+bool is_vol_list_empty();
+dlist *dup_vol_list(JobControlRecord *jcr);
+void free_temp_vol_list(dlist *temp_vol_list);
+bool volume_unused(DeviceControlRecord *dcr);
+void create_volume_lists();
+void free_volume_lists();
+bool is_volume_in_use(DeviceControlRecord *dcr);
+void add_read_volume(JobControlRecord *jcr, const char *VolumeName);
+void remove_read_volume(JobControlRecord *jcr, const char *VolumeName);
 
 #endif

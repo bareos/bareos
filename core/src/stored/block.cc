@@ -31,6 +31,11 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/crc32.h"
+#include "stored/device.h"
+#include "stored/label.h"
+#include "stored/socket_server.h"
+#include "stored/spool.h"
 
 #ifdef DEBUG_BLOCK_CHECKSUM
 static const bool debug_block_checksum = true;

@@ -30,6 +30,7 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/autochanger.h"
 
 const int debuglevel = 150;
 

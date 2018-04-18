@@ -43,6 +43,17 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/acquire.h"
+#include "stored/authenticate.h"
+#include "stored/autochanger.h"
+#include "stored/fd_cmds.h"
+#include "stored/job.h"
+#include "stored/label.h"
+#include "stored/ndmp_tape.h"
+#include "stored/parse_bsr.h"
+#include "stored/sd_cmds.h"
+#include "stored/sd_stats.h"
+#include "stored/wait.h"
 
 /* Exported variables */
 

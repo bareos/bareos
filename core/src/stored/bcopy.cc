@@ -31,6 +31,11 @@
 #include "bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
+#include "stored/acquire.h"
+#include "stored/butil.h"
+#include "stored/label.h"
+#include "stored/mount.h"
+#include "stored/read_record.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

@@ -31,6 +31,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "stored.h"
+#include "stored/sd_backends.h"
 
 /**
  * First and last resource ids

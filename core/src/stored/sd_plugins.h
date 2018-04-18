@@ -204,4 +204,6 @@ typedef struct s_sdpluginFuncs {
 }
 #endif
 
+char *edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd);
+
 #endif /* __SD_PLUGINS_H */

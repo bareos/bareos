@@ -31,6 +31,7 @@
 #include "bareos.h"
 #include "stored.h"
 #include "lib/status.h"
+#include "stored/spool.h"
 
 /* Imported functions */
 extern bool GetWindowsVersionString(char *buf, int maxsiz);

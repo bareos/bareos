@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2017 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -60,6 +60,11 @@
 
 #ifndef __DEV_H
 #define __DEV_H 1
+
+
+#include "stored/record.h"
+#include "stored/lock.h"
+#include "stored/block.h"
 
 #undef DeviceControlRecord                            /* used by Bareos */
 
@@ -796,6 +801,17 @@ public:
    bool dir_ask_sysop_to_create_appendable_volume();
    DeviceControlRecord *get_new_spooling_dcr();
 };
+
+Device *init_dev(JobControlRecord *jcr, DeviceResource *device);
+bool can_open_mounted_dev(Device *dev);
+bool load_dev(Device *dev);
+int write_block(Device *dev);
+void attach_jcr_to_device(Device *dev, JobControlRecord *jcr);
+void detach_jcr_from_device(Device *dev, JobControlRecord *jcr);
+JobControlRecord *next_attached_jcr(Device *dev, JobControlRecord *jcr);
+void init_device_wait_timers(DeviceControlRecord *dcr);
+void init_jcr_device_wait_timers(JobControlRecord *jcr);
+bool double_dev_wait_time(Device *dev);
 
 /*
  * Get some definition of function to position to the end of the medium in MTEOM. System dependent.

@@ -30,6 +30,9 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/acquire.h"
+#include "stored/mount.h"
+#include "stored/read_record.h"
 
 /* Forward referenced subroutines */
 static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);

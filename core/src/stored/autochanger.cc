@@ -30,6 +30,8 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "stored/autochanger.h"
+#include "stored/wait.h"
 
 /* Forward referenced functions */
 static bool lock_changer(DeviceControlRecord *dcr);

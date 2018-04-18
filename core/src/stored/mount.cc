@@ -30,6 +30,9 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "stored/acquire.h"
+#include "stored/autochanger.h"
+#include "stored/label.h"
 
 static pthread_mutex_t mount_mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -37,6 +37,10 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/butil.h"
+#include "stored/device.h"
+#include "stored/label.h"
+#include "stored/match_bsr.h"
 
 /* Forward referenced functions */
 

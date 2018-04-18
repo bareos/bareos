@@ -30,6 +30,11 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/acquire.h"
+#include "stored/fd_cmds.h"
+#include "stored/ndmp_tape.h"
+#include "stored/parse_bsr.h"
+#include "stored/read_record.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

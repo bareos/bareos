@@ -32,6 +32,7 @@
 #include "stored.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
+#include "stored/sd_stats.h"
 
 const int debuglevel = 250;
 #ifdef HAVE_WIN32

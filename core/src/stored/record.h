@@ -31,6 +31,7 @@
 #ifndef __RECORD_H
 #define __RECORD_H 1
 
+
 /**
  * Return codes from read_device_volume_label()
  */
@@ -260,5 +261,24 @@ struct DelayedDataStream {
 };
 
 #define READ_NO_FILEINDEX -999999
+
+#include "lib/mem_pool.h"
+
+
+class DeviceControlRecord; /* Forward Reference */
+class DeviceBlock;         /* Forward Reference */
+
+DLL_IMP_EXP const char *FI_to_ascii(char *buf, int fi);
+DLL_IMP_EXP const char *stream_to_ascii(char *buf, int stream, int fi);
+DLL_IMP_EXP const char *record_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, const DeviceRecord *rec);
+DLL_IMP_EXP void dump_record(const char *tag, const DeviceRecord *rec);
+DLL_IMP_EXP bool write_record_to_block(DeviceControlRecord *dcr, DeviceRecord *rec);
+DLL_IMP_EXP bool can_write_record_to_block(DeviceBlock *block, const DeviceRecord *rec);
+DLL_IMP_EXP bool read_record_from_block(DeviceControlRecord *dcr, DeviceRecord *rec);
+DLL_IMP_EXP DeviceRecord *new_record(bool with_data = true);
+DLL_IMP_EXP void empty_record(DeviceRecord *rec);
+DLL_IMP_EXP void copy_record_state(DeviceRecord *dst, DeviceRecord *src);
+DLL_IMP_EXP void free_record(DeviceRecord *rec);
+DLL_IMP_EXP uint64_t get_record_address(const DeviceRecord *rec);
 
 #endif

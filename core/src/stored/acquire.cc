@@ -30,6 +30,14 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "stored/acquire.h"
+#include "stored/autochanger.h"
+#include "stored/job.h"
+#include "stored/label.h"
+#include "stored/sd_plugins.h"
+#include "stored/sd_stats.h"
+#include "stored/wait.h"
+
 
 static int const rdebuglevel = 100;
 

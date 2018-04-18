@@ -29,6 +29,8 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "stored/acquire.h"
+#include "stored/device.h"
 
 /* Forward referenced subroutines */
 static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name);

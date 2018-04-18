@@ -33,6 +33,7 @@
 #include "bareos.h"
 #include "stored.h"
 #include "generic_tape_device.h"
+#include "stored/autochanger.h"
 
 /**
  * Open a tape device
