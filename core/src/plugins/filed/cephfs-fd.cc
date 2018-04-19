@@ -27,6 +27,7 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 #include "fileopts.h"
+#include "lib/path_list.h"
 
 #include <dirent.h>
 #include <cephfs/libcephfs.h>

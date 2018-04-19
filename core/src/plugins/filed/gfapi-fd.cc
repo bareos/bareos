@@ -27,6 +27,8 @@
 #include "fd_plugins.h"
 #include "fd_common.h"
 #include "fileopts.h"
+#include "lib/path_list.h"
+#include "lib/edit.h"
 
 #include <api/glfs.h>
 
