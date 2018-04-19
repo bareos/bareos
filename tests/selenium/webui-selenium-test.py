@@ -158,12 +158,12 @@ class WebuiSeleniumTest(unittest.TestCase):
 
         self.logout()
 
-    def test_job_canceling(self):
-        driver = self.driver
-        self.login()
-        job_id = self.job_start_configured()
-        self.job_cancel(job_id)
-        self.logout()
+    #def test_job_canceling(self):
+    #    driver = self.driver
+    #    self.login()
+    #    job_id = self.job_start_configured()
+    #    self.job_cancel(job_id)
+    #    self.logout()
 
     def test_login(self):
         self.login()
