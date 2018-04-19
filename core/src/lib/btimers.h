@@ -41,4 +41,11 @@ struct btimer_t {
    JobControlRecord *jcr;                          /**< Pointer to job control record */
 };
 
+DLL_IMP_EXP btimer_t *start_child_timer(JobControlRecord *jcr, pid_t pid, uint32_t wait);
+DLL_IMP_EXP void stop_child_timer(btimer_t *wid);
+DLL_IMP_EXP btimer_t *start_thread_timer(JobControlRecord *jcr, pthread_t tid, uint32_t wait);
+DLL_IMP_EXP void stop_thread_timer(btimer_t *wid);
+DLL_IMP_EXP btimer_t *start_bsock_timer(BareosSocket *bs, uint32_t wait);
+DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
+
 #endif /* __BTIMERS_H_ */

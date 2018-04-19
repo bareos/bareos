@@ -76,7 +76,7 @@
 #include "stored/stored.h"
 #include "stored/autochanger.h"
 #include "stored/sd_backends.h"
-#include "lib/timers.h"
+#include "lib/btimers.h"
 #include "include/jcr.h"
 
 #ifndef HAVE_DYNAMIC_SD_BACKENDS

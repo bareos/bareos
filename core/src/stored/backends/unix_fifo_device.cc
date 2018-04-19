@@ -34,7 +34,7 @@
 #include "stored/autochanger.h"
 #include "unix_fifo_device.h"
 #include "lib/util.h"
-#include "lib/timers.h"
+#include "lib/btimers.h"
 
 /**
  * Open a fifo device

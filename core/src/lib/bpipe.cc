@@ -28,7 +28,7 @@
 #include "include/bareos.h"
 #include "jcr.h"
 #include "lib/bsys.h"
-#include "lib/timers.h"
+#include "lib/btimers.h"
 
 int execvp_errors[] = {
         EACCES,

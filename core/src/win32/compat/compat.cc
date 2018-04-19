@@ -35,6 +35,7 @@
 #include "jcr.h"
 #include "dlfcn.h"
 #include "findlib/find.h"
+#include "lib/btimers.h"
 
 /**
  * Sanity check to make sure FILE_ATTRIBUTE_VALID_FLAGS is always smaller

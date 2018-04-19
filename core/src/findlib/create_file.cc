@@ -34,7 +34,7 @@
 #include "findlib/makepath.h"
 #include "findlib/create_file.h"
 #include "lib/path_list.h"
-#include "lib/timers.h"
+#include "lib/btimers.h"
 
 #ifndef S_IRWXUGO
 #define S_IRWXUGO (S_IRWXU | S_IRWXG | S_IRWXO)

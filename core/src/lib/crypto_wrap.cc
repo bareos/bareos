@@ -40,6 +40,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/crypto_wrap.h"
 
 #if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
 

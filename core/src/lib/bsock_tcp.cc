@@ -33,7 +33,7 @@
 #include <netinet/tcp.h>
 #include "lib/bnet.h"
 #include "lib/bpoll.h"
-#include "lib/timers.h"
+#include "lib/btimers.h"
 #include "lib/tls_openssl.h"
 
 #ifndef ENODATA                    /* not defined on BSD systems */

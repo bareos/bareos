@@ -32,9 +32,9 @@
 
 static void indent_status_msg(POOLMEM *&status, const char *msg, int indent);
 
-#ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
+#include "lib/scsi_crypto.h"
 
-#include "scsi_crypto.h"
+#ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
 
 /*
  * Store a value as 2 bytes MSB/LSB

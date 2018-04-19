@@ -28,6 +28,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/edit.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 

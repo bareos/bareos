@@ -26,6 +26,7 @@
  */
 
 #include "include/bareos.h"
+#include "lib/passphrase.h"
 
 #if defined(HAVE_OPENSSL) || defined(HAVE_GNUTLS)
 

@@ -39,7 +39,7 @@
 #include <mysql.h>
 #include <errmsg.h>
 #include "bdb_mysql.h"
-
+#include "lib/edit.h"
 /* pull in the generated queries definitions */
 #include "mysql_queries.inc"
 
