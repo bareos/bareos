@@ -31,6 +31,8 @@
  */
 
 #include "include/bareos.h"
+#include "lib/daemon.h"
+
 extern int debug_level;
 
 void

@@ -39,6 +39,7 @@
 #include "lib/edit.h"
 #include "lib/tls_openssl.h"
 #include "lib/bsignal.h"
+#include "lib/daemon.h"
 
 #include "cats/cats_backends.h"
 #include "cats/sql.h"

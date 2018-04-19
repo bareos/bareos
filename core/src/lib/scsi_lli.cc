@@ -27,12 +27,12 @@
  */
 
 #include "include/bareos.h"
+#include "scsi_lli.h"
 
 /* Forward referenced functions */
 
 #ifdef HAVE_LOWLEVEL_SCSI_INTERFACE
 
-#include "scsi_lli.h"
 
 #if defined(HAVE_LINUX_OS)
 
