@@ -37,7 +37,7 @@ set(INCLUDE_FILES ../include/baconfig.h ../include/bareos.h
 		crypto.h crypto_cache.h devlock.h dlist.h fnmatch.h
 		guid_to_name.h htable.h ini.h lex.h lib.h lockmgr.h
 		md5.h mem_pool.h message.h mntent_cache.h ordered_cbuf.h parse_conf.h
-		plugins.h protos.h queue.h rblist.h runscript.h rwlock.h
+		plugins.h queue.h rblist.h runscript.h rwlock.h
 		scsi_crypto.h scsi_lli.h scsi_tapealert.h sellist.h
 		serial.h sha1.h smartall.h status.h tls.h tls_conf.h tree.h var.h
 		watchdog.h workq.h)
