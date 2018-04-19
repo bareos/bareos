@@ -32,6 +32,7 @@
 #ifdef HAVE_RADOS
 #include "stored/stored.h"
 #include "rados_device.h"
+#include "lib/edit.h"
 
 /**
  * Options that can be specified for this device type.

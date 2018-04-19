@@ -32,6 +32,7 @@
 #ifdef HAVE_GFAPI
 #include "stored/stored.h"
 #include "backends/gfapi_device.h"
+#include "lib/edit.h"
 
 /**
  * Options that can be specified for this device type.
