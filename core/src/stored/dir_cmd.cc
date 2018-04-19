@@ -42,7 +42,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/authenticate.h"
 #include "stored/autochanger.h"

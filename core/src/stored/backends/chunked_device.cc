@@ -28,7 +28,7 @@
 #include "lib/edit.h"
 
 #if defined(HAVE_DROPLET)
-#include "stored.h"
+#include "stored/stored.h"
 #include "chunked_device.h"
 
 #ifdef HAVE_MMAP

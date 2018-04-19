@@ -27,7 +27,7 @@
  * Storage Daemon plugin that handles automatic deflation/inflation of data.
  */
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 
 #if defined(HAVE_LIBZ)
 #include <zlib.h>

@@ -27,7 +27,7 @@
  * Sample Storage daemon Plugin program
  */
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Kern Sibbald"

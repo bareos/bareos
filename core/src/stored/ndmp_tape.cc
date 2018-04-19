@@ -39,7 +39,7 @@
 
 #if HAVE_NDMP
 
-#include "stored.h"
+#include "stored/stored.h"
 
 #include "ndmp/ndmagents.h"
 #include "stored/acquire.h"

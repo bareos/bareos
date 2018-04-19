@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "win32_file_device.h"
 
 /**

@@ -29,7 +29,7 @@
 
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 
 #if defined(HAVE_DYNAMIC_SD_BACKENDS)
 

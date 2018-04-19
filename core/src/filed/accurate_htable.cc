@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "accurate.h"
 #include "lib/attribs.h"
 

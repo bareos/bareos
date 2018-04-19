@@ -30,7 +30,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "unix_file_device.h"
 #include "lib/util.h"
 

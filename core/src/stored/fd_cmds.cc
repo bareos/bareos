@@ -35,7 +35,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "stored/append.h"
 #include "stored/authenticate.h"
 #include "stored/fd_cmds.h"

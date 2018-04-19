@@ -43,7 +43,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_DROPLET
-#include "stored.h"
+#include "stored/stored.h"
 #include "chunked_device.h"
 #include "droplet_device.h"
 #include "lib/edit.h"

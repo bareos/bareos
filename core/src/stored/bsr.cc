@@ -39,7 +39,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "include/jcr.h"
 
 const int dbglevel = 500;

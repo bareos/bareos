@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_GFAPI
-#include "stored.h"
+#include "stored/stored.h"
 #include "backends/gfapi_device.h"
 
 /**

@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"
 #include "stored/ndmp_tape.h"

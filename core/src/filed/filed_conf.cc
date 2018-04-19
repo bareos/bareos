@@ -45,7 +45,7 @@
 
 #define NEED_JANSSON_NAMESPACE 1
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 
 /**
  * Define the first and last resource ID record

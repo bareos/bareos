@@ -30,7 +30,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "findlib/find_one.h"
 #include "lib/edit.h"
 

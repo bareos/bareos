@@ -32,7 +32,7 @@
 #ifdef WIN32_VSS
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 
 #include "ms_atl.h"
 #include <objbase.h>

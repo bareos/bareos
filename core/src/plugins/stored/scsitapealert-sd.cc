@@ -27,7 +27,7 @@
  * SCSI Tape Alert Storage daemon Plugin
  */
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "lib/scsi_tapealert.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"

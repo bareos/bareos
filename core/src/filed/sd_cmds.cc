@@ -27,7 +27,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"
 

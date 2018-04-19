@@ -26,7 +26,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "lib/util.h"
 #include "include/jcr.h"
 

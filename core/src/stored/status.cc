@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "lib/status.h"
 #include "stored/spool.h"
 #include "lib/edit.h"

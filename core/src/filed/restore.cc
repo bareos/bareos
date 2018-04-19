@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"
 #include "filed/verify.h"

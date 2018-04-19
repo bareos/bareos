@@ -28,7 +28,7 @@
  */
 
 #include "include/bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Daemon headers */
+#include "stored/stored.h"                   /* pull in Storage Daemon headers */
 #include "lib/edit.h"
 
 #ifdef SD_DEBUG_LOCK

@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_ELASTO
-#include "stored.h"
+#include "stored/stored.h"
 #include "elasto_device.h"
 
 #define ELASTO_GRANULARITY 512

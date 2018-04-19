@@ -60,7 +60,7 @@
  * libbareos shared library.
  */
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "lib/status.h"
 #include "lib/crypto_wrap.h"
 #include "lib/scsi_crypto.h"

@@ -73,7 +73,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "stored/autochanger.h"
 #include "stored/sd_backends.h"
 #include "lib/timers.h"

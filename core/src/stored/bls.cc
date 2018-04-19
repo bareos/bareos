@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"
 #include "stored/acquire.h"

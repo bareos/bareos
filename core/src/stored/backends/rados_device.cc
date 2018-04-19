@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_RADOS
-#include "stored.h"
+#include "stored/stored.h"
 #include "rados_device.h"
 
 /**

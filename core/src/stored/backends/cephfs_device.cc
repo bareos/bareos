@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_CEPHFS
-#include "stored.h"
+#include "stored/stored.h"
 #include "backends/cephfs_device.h"
 
 /**

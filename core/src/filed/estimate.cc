@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "filed/accurate.h"
 
 static int tally_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool);

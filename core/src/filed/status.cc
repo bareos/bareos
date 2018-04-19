@@ -29,7 +29,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "lib/status.h"
 #include "lib/edit.h"
 #include "findlib/enable_priv.h"

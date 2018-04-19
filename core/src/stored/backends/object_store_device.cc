@@ -30,7 +30,7 @@
 #include "include/bareos.h"
 
 #ifdef HAVE_DROPLET
-#include "stored.h"
+#include "stored/stored.h"
 #include "object_store_device.h"
 
 /**

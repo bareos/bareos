@@ -31,7 +31,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 #include "generic_tape_device.h"
 #include "stored/autochanger.h"
 #include "lib/scsi_lli.h"

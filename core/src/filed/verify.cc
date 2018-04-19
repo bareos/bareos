@@ -28,7 +28,7 @@
  */
 
 #include "include/bareos.h"
-#include "filed.h"
+#include "filed/filed.h"
 #include "findlib/find.h"
 #include "findlib/attribs.h"
 #include "lib/attribs.h"

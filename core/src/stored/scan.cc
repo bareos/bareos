@@ -28,7 +28,7 @@
  */
 
 #include "include/bareos.h"
-#include "stored.h"
+#include "stored/stored.h"
 
 /* Forward referenced functions */
 static bool is_volume_name_legal(char *name);
