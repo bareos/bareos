@@ -1196,11 +1196,11 @@ void do_client_resolve(UaContext *ua, ClientResource *client)
  * After receiving a connection (in socket_server.c) if it is
  * from the File daemon, this routine is called.
  */
-void *handle_filed_connection(CONNECTION_POOL *connections, BareosSocket *fd,
+void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version)
 {
    ClientResource *client_resource;
-   CONNECTION *connection = NULL;
+   Connection *connection = NULL;
 
    client_resource = (ClientResource *)GetResWithName(R_CLIENT, client_name);
    if (!client_resource) {

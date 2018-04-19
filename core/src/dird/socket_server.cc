@@ -44,7 +44,7 @@ static char hello_client[] =
 static workq_t socket_workq;
 static alist *sock_fds = NULL;
 static pthread_t tcp_server_tid;
-static CONNECTION_POOL *client_connections = NULL;
+static ConnectionPool *client_connections = NULL;
 
 struct s_addr_port {
    char *addr;
@@ -57,7 +57,7 @@ struct s_addr_port {
 #define MIN_MSG_LEN 15
 #define MAX_MSG_LEN (int)sizeof(name) + 25
 
-CONNECTION_POOL *get_client_connections()
+ConnectionPool *get_client_connections()
 {
    return client_connections;
 }
@@ -131,7 +131,7 @@ void start_socket_server(dlist *addrs)
    static dlist *myaddrs = addrs;
 
    if (client_connections == NULL) {
-      client_connections = New(CONNECTION_POOL());
+      client_connections = New(ConnectionPool());
    }
    if ((status = pthread_create(&tcp_server_tid, NULL, connect_thread, (void *)myaddrs)) != 0) {
       berrno be;

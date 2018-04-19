@@ -415,8 +415,8 @@ bool is_connect_from_client_allowed(JobControlRecord *jcr)
 bool use_waiting_client(JobControlRecord *jcr, int timeout)
 {
    bool result = false;
-   CONNECTION *connection = NULL;
-   CONNECTION_POOL *connections = get_client_connections();
+   Connection *connection = NULL;
+   ConnectionPool *connections = get_client_connections();
 
    if (!is_connect_from_client_allowed(jcr)) {
       Dmsg1(120, "Client Initiated Connection from \"%s\" is not allowed.\n", jcr->res.client->name());

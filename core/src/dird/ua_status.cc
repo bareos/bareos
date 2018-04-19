@@ -1289,7 +1289,7 @@ static void list_terminated_jobs(UaContext *ua)
 
 static void list_connected_clients(UaContext *ua)
 {
-   CONNECTION *connection = NULL;
+   Connection *connection = NULL;
    alist *connections = NULL;
    const char *separator = "====================";
    char dt[MAX_TIME_LENGTH];

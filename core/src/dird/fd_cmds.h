@@ -40,10 +40,10 @@ bool send_restore_objects(JobControlRecord *jcr, JobId_t JobId, bool send_global
 bool cancel_file_daemon_job(UaContext *ua, JobControlRecord *jcr);
 void do_native_client_status(UaContext *ua, ClientResource *client, char *cmd);
 void do_client_resolve(UaContext *ua, ClientResource *client);
-void *handle_filed_connection(CONNECTION_POOL *connections, BareosSocket *fd,
+void *handle_filed_connection(ConnectionPool *connections, BareosSocket *fd,
                               char *client_name, int fd_protocol_version);
 
-CONNECTION_POOL *get_client_connections();
+ConnectionPool *get_client_connections();
 bool is_connecting_to_client_allowed(ClientResource *res);
 bool is_connecting_to_client_allowed(JobControlRecord *jcr);
 bool is_connect_from_client_allowed(ClientResource *res);

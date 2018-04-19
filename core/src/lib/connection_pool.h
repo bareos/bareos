@@ -28,10 +28,10 @@
 #ifndef __CONNECTION_POOL_H_
 #define __CONNECTION_POOL_H_
 
-class DLL_IMP_EXP CONNECTION : public SmartAlloc {
+class DLL_IMP_EXP Connection : public SmartAlloc {
 public:
-   CONNECTION(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
-   ~CONNECTION();
+   Connection(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
+   ~Connection();
 
    const char *name() { return name_; }
    int protocol_version() { return protocol_version_; }
@@ -57,28 +57,28 @@ private:
    pthread_mutex_t mutex_;
 };
 
-class DLL_IMP_EXP CONNECTION_POOL : public SmartAlloc {
+class DLL_IMP_EXP ConnectionPool : public SmartAlloc {
 public:
-   CONNECTION_POOL();
-   ~CONNECTION_POOL();
+   ConnectionPool();
+   ~ConnectionPool();
 
    void cleanup();
    alist *get_as_alist();
-   bool add(CONNECTION *connection);
-   CONNECTION *add_connection(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
+   bool add(Connection *connection);
+   Connection *add_connection(const char* name, int protocol_version, BareosSocket* socket, bool authenticated = true);
    bool exists(const char *name);
-   CONNECTION *get_connection(const char *name);
-   CONNECTION *get_connection(const char *name, int timeout_seconds);
-   CONNECTION *get_connection(const char *name, timespec &timeout);
+   Connection *get_connection(const char *name);
+   Connection *get_connection(const char *name, int timeout_seconds);
+   Connection *get_connection(const char *name, timespec &timeout);
    int wait_for_new_connection(timespec &timeout);
    /*
     * remove specific connection.
     */
-   bool remove(CONNECTION *connection);
+   bool remove(Connection *connection);
    /*
     * remove connection from pool to be used by some other component.
     */
-   CONNECTION *remove(const char* name, int timeout_in_seconds = 0);
+   Connection *remove(const char* name, int timeout_in_seconds = 0);
 
 private:
    alist *connections_;
