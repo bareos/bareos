@@ -35,41 +35,41 @@
 #define L_EOL                         (-2)
 
 /* Internal tokens */
-#define T_NONE                        100
+#define BCT_NONE                        100
 
 /* Tokens returned by get_token() */
-#define T_EOF                         101
-#define T_NUMBER                      102
-#define T_IPADDR                      103
-#define T_IDENTIFIER                  104
-#define T_UNQUOTED_STRING             105
-#define T_QUOTED_STRING               106
-#define T_BOB                         108  /* begin block */
-#define T_EOB                         109  /* end of block */
-#define T_EQUALS                      110
-#define T_COMMA                       111
-#define T_EOL                         112
-#define T_ERROR                       200
-#define T_UTF8_BOM                    201 /* File starts with a UTF-8 BOM*/
-#define T_UTF16_BOM                   202 /* File starts with a UTF-16LE BOM*/
+#define BCT_EOF                         101
+#define BCT_NUMBER                      102
+#define BCT_IPADDR                      103
+#define BCT_IDENTIFIER                  104
+#define BCT_UNQUOTED_STRING             105
+#define BCT_QUOTED_STRING               106
+#define BCT_BOB                         108  /* begin block */
+#define BCT_EOB                         109  /* end of block */
+#define BCT_EQUALS                      110
+#define BCT_COMMA                       111
+#define BCT_EOL                         112
+#define BCT_ERROR                       200
+#define BCT_UTF8_BOM                    201 /* File starts with a UTF-8 BOM*/
+#define BCT_UTF16_BOM                   202 /* File starts with a UTF-16LE BOM*/
 
 /**
  * The following will be returned only if
  * the appropriate expect flag has been set
  */
-#define T_SKIP_EOL                    113  /* scan through EOLs */
-#define T_PINT16                      114  /* 16 bit positive integer */
-#define T_PINT32                      115  /* 32 bit positive integer */
-#define T_PINT32_RANGE                116  /* 32 bit positive integer range */
-#define T_INT16                       117  /* 16 bit integer */
-#define T_INT32                       118  /* 32 bit integer */
-#define T_INT64                       119  /* 64 bit integer */
-#define T_NAME                        120  /* name max 128 chars */
-#define T_STRING                      121  /* string */
-#define T_PINT64_RANGE                122  /* positive integer range */
-#define T_PINT64                      123  /* positive integer range */
+#define BCT_SKIP_EOL                    113  /* scan through EOLs */
+#define BCT_PINT16                      114  /* 16 bit positive integer */
+#define BCT_PINT32                      115  /* 32 bit positive integer */
+#define BCT_PINT32_RANGE                116  /* 32 bit positive integer range */
+#define BCT_INT16                       117  /* 16 bit integer */
+#define BCT_INT32                       118  /* 32 bit integer */
+#define BCT_INT64                       119  /* 64 bit integer */
+#define BCT_NAME                        120  /* name max 128 chars */
+#define BCT_STRING                      121  /* string */
+#define BCT_PINT64_RANGE                122  /* positive integer range */
+#define BCT_PINT64                      123  /* positive integer range */
 
-#define T_ALL                           0  /* no expectations */
+#define BCT_ALL                           0  /* no expectations */
 
 /* Lexical state */
 enum lex_state {

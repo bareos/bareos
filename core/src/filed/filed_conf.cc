@@ -543,7 +543,7 @@ static struct s_kw CryptoCiphers[] = {
 static void store_cipher(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
 
    /*
     * Scan Crypto Ciphers name.

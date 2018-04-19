@@ -204,23 +204,23 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
       lc->error_counter = 0;
       lc->caller_ctx = caller_ctx;
 
-      while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
+      while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
          Dmsg3(900, "parse state=%d pass=%d got token=%s\n", state, pass,
                lex_tok_to_str(token));
          switch (state) {
          case p_none:
-            if (token == T_EOL) {
+            if (token == BCT_EOL) {
                break;
-            } else if (token == T_UTF8_BOM) {
+            } else if (token == BCT_UTF8_BOM) {
                /*
                 * We can assume the file is UTF-8 as we have seen a UTF-8 BOM
                 */
                break;
-            } else if (token == T_UTF16_BOM) {
+            } else if (token == BCT_UTF16_BOM) {
                scan_err0(lc, _("Currently we cannot handle UTF-16 source files. "
                                "Please convert the conf file to UTF-8\n"));
                goto bail_out;
-            } else if (token != T_IDENTIFIER) {
+            } else if (token != BCT_IDENTIFIER) {
                scan_err1(lc, _("Expected a Resource name identifier, got: %s"), lc->str);
                goto bail_out;
             }
@@ -238,10 +238,10 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
             break;
          case p_resource:
             switch (token) {
-            case T_BOB:
+            case BCT_BOB:
                level++;
                break;
-            case T_IDENTIFIER:
+            case BCT_IDENTIFIER:
                if (level != 1) {
                   scan_err1(lc, _("not in resource definition: %s"), lc->str);
                   goto bail_out;
@@ -254,9 +254,9 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                    *   scan for = after the keyword
                    */
                   if (!(item->flags & CFG_ITEM_NO_EQUALS)) {
-                     token = lex_get_token(lc, T_SKIP_EOL);
-                     Dmsg1 (900, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
-                     if (token != T_EQUALS) {
+                     token = lex_get_token(lc, BCT_SKIP_EOL);
+                     Dmsg1 (900, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
+                     if (token != BCT_EQUALS) {
                         scan_err1(lc, _("expected an equals, got: %s"), lc->str);
                         goto bail_out;
                      }
@@ -294,10 +294,10 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                }
                break;
 
-            case T_EOB:
+            case BCT_EOB:
                level--;
                state = p_none;
-               Dmsg0(900, "T_EOB => define new resource\n");
+               Dmsg0(900, "BCT_EOB => define new resource\n");
                if (((UnionOfResources *)res_all_)->hdr.name == NULL) {
                   scan_err0(lc, _("Name not specified for resource"));
                   goto bail_out;
@@ -309,7 +309,7 @@ bool ConfigurationParser::parse_config_file(const char *cf, void *caller_ctx, LE
                }
                break;
 
-            case T_EOL:
+            case BCT_EOL:
                break;
 
             default:

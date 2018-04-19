@@ -39,7 +39,7 @@ static const int debuglevel = 5000;
 
 /*
  * Scan to "logical" end of line. I.e. end of line,
- *   or semicolon, but stop on T_EOB (same as end of
+ *   or semicolon, but stop on BCT_EOB (same as end of
  *   line except it is not eaten).
  */
 void scan_to_eol(LEX *lc)
@@ -47,8 +47,8 @@ void scan_to_eol(LEX *lc)
    int token;
 
    Dmsg0(debuglevel, "start scan to eof\n");
-   while ((token = lex_get_token(lc, T_ALL)) != T_EOL) {
-      if (token == T_EOB) {
+   while ((token = lex_get_token(lc, BCT_ALL)) != BCT_EOL) {
+      if (token == BCT_EOB) {
          lex_unget_char(lc);
          return;
       }
@@ -63,8 +63,8 @@ int scan_to_next_not_eol(LEX *lc)
    int token;
 
    do {
-      token = lex_get_token(lc, T_ALL);
-   } while (token == T_EOL);
+      token = lex_get_token(lc, BCT_ALL);
+   } while (token == BCT_EOL);
 
    return token;
 }
@@ -471,21 +471,21 @@ const char *lex_tok_to_str(int token)
    switch(token) {
    case L_EOF:             return "L_EOF";
    case L_EOL:             return "L_EOL";
-   case T_NONE:            return "T_NONE";
-   case T_NUMBER:          return "T_NUMBER";
-   case T_IPADDR:          return "T_IPADDR";
-   case T_IDENTIFIER:      return "T_IDENTIFIER";
-   case T_UNQUOTED_STRING: return "T_UNQUOTED_STRING";
-   case T_QUOTED_STRING:   return "T_QUOTED_STRING";
-   case T_BOB:             return "T_BOB";
-   case T_EOB:             return "T_EOB";
-   case T_EQUALS:          return "T_EQUALS";
-   case T_ERROR:           return "T_ERROR";
-   case T_EOF:             return "T_EOF";
-   case T_COMMA:           return "T_COMMA";
-   case T_EOL:             return "T_EOL";
-   case T_UTF8_BOM:        return "T_UTF8_BOM";
-   case T_UTF16_BOM:       return "T_UTF16_BOM";
+   case BCT_NONE:            return "BCT_NONE";
+   case BCT_NUMBER:          return "BCT_NUMBER";
+   case BCT_IPADDR:          return "BCT_IPADDR";
+   case BCT_IDENTIFIER:      return "BCT_IDENTIFIER";
+   case BCT_UNQUOTED_STRING: return "BCT_UNQUOTED_STRING";
+   case BCT_QUOTED_STRING:   return "BCT_QUOTED_STRING";
+   case BCT_BOB:             return "BCT_BOB";
+   case BCT_EOB:             return "BCT_EOB";
+   case BCT_EQUALS:          return "BCT_EQUALS";
+   case BCT_ERROR:           return "BCT_ERROR";
+   case BCT_EOF:             return "BCT_EOF";
+   case BCT_COMMA:           return "BCT_COMMA";
+   case BCT_EOL:             return "BCT_EOL";
+   case BCT_UTF8_BOM:        return "BCT_UTF8_BOM";
+   case BCT_UTF16_BOM:       return "BCT_UTF16_BOM";
    default:                return "??????";
    }
 }
@@ -536,7 +536,7 @@ static uint64_t scan_pint64(LEX *lf, char *str)
 int lex_get_token(LEX *lf, int expect)
 {
    int ch;
-   int token = T_NONE;
+   int token = BCT_NONE;
    bool esc_next = false;
    /* Unicode files, especially on Win32, may begin with a "Byte Order Mark"
       to indicate which transmission format the file is in. The codepoint for
@@ -547,7 +547,7 @@ int lex_get_token(LEX *lf, int expect)
    int bom_bytes_seen = 0;
 
    Dmsg0(debuglevel, "enter lex_get_token\n");
-   while (token == T_NONE) {
+   while (token == BCT_NONE) {
       ch = lex_get_char(lf);
       switch (lf->state) {
       case lex_none:
@@ -575,18 +575,18 @@ int lex_get_token(LEX *lf, int expect)
          Dmsg0(debuglevel, "Enter lex_none switch\n");
          switch (ch) {
          case L_EOF:
-            token = T_EOF;
+            token = BCT_EOF;
             Dmsg0(debuglevel, "got L_EOF set token=T_EOF\n");
             break;
          case '#':
             lf->state = lex_comment;
             break;
          case '{':
-            token = T_BOB;
+            token = BCT_BOB;
             begin_str(lf, ch);
             break;
          case '}':
-            token = T_EOB;
+            token = BCT_EOB;
             begin_str(lf, ch);
             break;
          case '"':
@@ -594,22 +594,22 @@ int lex_get_token(LEX *lf, int expect)
             begin_str(lf, 0);
             break;
          case '=':
-            token = T_EQUALS;
+            token = BCT_EQUALS;
             begin_str(lf, ch);
             break;
          case ',':
-            token = T_COMMA;
+            token = BCT_COMMA;
             begin_str(lf, ch);
             break;
          case ';':
-            if (expect != T_SKIP_EOL) {
-               token = T_EOL;      /* treat ; like EOL */
+            if (expect != BCT_SKIP_EOL) {
+               token = BCT_EOL;      /* treat ; like EOL */
             }
             break;
          case L_EOL:
-            Dmsg0(debuglevel, "got L_EOL set token=T_EOL\n");
-            if (expect != T_SKIP_EOL) {
-               token = T_EOL;
+            Dmsg0(debuglevel, "got L_EOL set token=BCT_EOL\n");
+            if (expect != BCT_SKIP_EOL) {
+               token = BCT_EOL;
             }
             break;
          case '@':
@@ -638,7 +638,7 @@ int lex_get_token(LEX *lf, int expect)
                } else {
                   scan_err0(lf, _("This config file appears to be in an "
                      "unsupported Unicode format (UTF-16be). Please resave as UTF-8\n"));
-                  return T_ERROR;
+                  return BCT_ERROR;
                }
             }
             break;
@@ -652,17 +652,17 @@ int lex_get_token(LEX *lf, int expect)
          Dmsg1(debuglevel, "Lex state lex_comment ch=%x\n", ch);
          if (ch == L_EOL) {
             lf->state = lex_none;
-            if (expect != T_SKIP_EOL) {
-               token = T_EOL;
+            if (expect != BCT_SKIP_EOL) {
+               token = BCT_EOL;
             }
          } else if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
          }
          break;
       case lex_number:
          Dmsg2(debuglevel, "Lex state lex_number ch=%x %c\n", ch, ch);
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          /* Might want to allow trailing specifications here */
@@ -673,7 +673,7 @@ int lex_get_token(LEX *lf, int expect)
 
          /* A valid number can be terminated by the following */
          if (B_ISSPACE(ch) || ch == L_EOL || ch == ',' || ch == ';') {
-            token = T_NUMBER;
+            token = BCT_NUMBER;
             lf->state = lex_none;
          } else {
             lf->state = lex_string;
@@ -682,7 +682,7 @@ int lex_get_token(LEX *lf, int expect)
          break;
       case lex_ip_addr:
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          Dmsg1(debuglevel, "Lex state lex_ip_addr ch=%x\n", ch);
@@ -690,13 +690,13 @@ int lex_get_token(LEX *lf, int expect)
       case lex_string:
          Dmsg1(debuglevel, "Lex state lex_string ch=%x\n", ch);
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' || ch == '{' ||
              ch == '\r' || ch == ';' || ch == ',' || ch == '#' || (B_ISSPACE(ch)) ) {
             lex_unget_char(lf);
-            token = T_UNQUOTED_STRING;
+            token = BCT_UNQUOTED_STRING;
             lf->state = lex_none;
             break;
          }
@@ -712,11 +712,11 @@ int lex_get_token(LEX *lf, int expect)
          } else if (ch == '\n' || ch == L_EOL || ch == '=' || ch == '}' || ch == '{' ||
                     ch == '\r' || ch == ';' || ch == ','   || ch == '"' || ch == '#') {
             lex_unget_char(lf);
-            token = T_IDENTIFIER;
+            token = BCT_IDENTIFIER;
             lf->state = lex_none;
             break;
          } else if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             lf->state = lex_none;
             begin_str(lf, ch);
             break;
@@ -728,7 +728,7 @@ int lex_get_token(LEX *lf, int expect)
       case lex_quoted_string:
          Dmsg2(debuglevel, "Lex state lex_quoted_string ch=%x %c\n", ch, ch);
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          if (ch == L_EOL) {
@@ -745,7 +745,7 @@ int lex_get_token(LEX *lf, int expect)
             break;
          }
          if (ch == '"') {
-            token = T_QUOTED_STRING;
+            token = BCT_QUOTED_STRING;
             /*
              * Since we may be scanning a quoted list of names,
              *  we get the next character (a comma indicates another
@@ -760,7 +760,7 @@ int lex_get_token(LEX *lf, int expect)
          break;
       case lex_include_quoted_string:
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          if (esc_next) {
@@ -784,7 +784,7 @@ int lex_get_token(LEX *lf, int expect)
                berrno be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
                   lfori->str, be.bstrerror());
-               return T_ERROR;
+               return BCT_ERROR;
             }
             break;
          }
@@ -792,7 +792,7 @@ int lex_get_token(LEX *lf, int expect)
          break;
       case lex_include:            /* scanning a filename */
          if (ch == L_EOF) {
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          if (ch == '"') {
@@ -812,7 +812,7 @@ int lex_get_token(LEX *lf, int expect)
                berrno be;
                scan_err2(lfori, _("Cannot open included config file %s: %s\n"),
                   lfori->str, be.bstrerror());
-               return T_ERROR;
+               return BCT_ERROR;
             }
             break;
          }
@@ -825,10 +825,10 @@ int lex_get_token(LEX *lf, int expect)
          if (ch == 0xBB && bom_bytes_seen == 1) {
             bom_bytes_seen++;
          } else if (ch == 0xBF && bom_bytes_seen == 2) {
-            token = T_UTF8_BOM;
+            token = BCT_UTF8_BOM;
             lf->state = lex_none;
          } else {
-            token = T_ERROR;
+            token = BCT_ERROR;
          }
          break;
       case lex_utf16_le_bom:
@@ -836,10 +836,10 @@ int lex_get_token(LEX *lf, int expect)
             as the first byte of the file -- indicating that we are
             probably dealing with an Intel based (little endian) UTF-16 file*/
          if (ch == 0xFE) {
-            token = T_UTF16_BOM;
+            token = BCT_UTF16_BOM;
             lf->state = lex_none;
          } else {
-            token = T_ERROR;
+            token = BCT_ERROR;
          }
          break;
       }
@@ -855,43 +855,43 @@ int lex_get_token(LEX *lf, int expect)
     *  and possible additional scanning (e.g. for range).
     */
    switch (expect) {
-   case T_PINT16:
+   case BCT_PINT16:
       lf->u.pint16_val = (scan_pint(lf, lf->str) & 0xffff);
       lf->u2.pint16_val = lf->u.pint16_val;
-      token = T_PINT16;
+      token = BCT_PINT16;
       break;
 
-   case T_PINT32:
+   case BCT_PINT32:
       lf->u.pint32_val = scan_pint(lf, lf->str);
       lf->u2.pint32_val = lf->u.pint32_val;
-      token = T_PINT32;
+      token = BCT_PINT32;
       break;
 
-   case T_PINT32_RANGE:
-      if (token == T_NUMBER) {
+   case BCT_PINT32_RANGE:
+      if (token == BCT_NUMBER) {
          lf->u.pint32_val = scan_pint(lf, lf->str);
          lf->u2.pint32_val = lf->u.pint32_val;
-         token = T_PINT32;
+         token = BCT_PINT32;
       } else {
          char *p = strchr(lf->str, '-');
          if (!p) {
             scan_err2(lf, _("expected an integer or a range, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          *p++ = 0;                       /* terminate first half of range */
          lf->u.pint32_val  = scan_pint(lf, lf->str);
          lf->u2.pint32_val = scan_pint(lf, p);
-         token = T_PINT32_RANGE;
+         token = BCT_PINT32_RANGE;
       }
       break;
 
-   case T_INT16:
-      if (token != T_NUMBER || !is_a_number(lf->str)) {
+   case BCT_INT16:
+      if (token != BCT_NUMBER || !is_a_number(lf->str)) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
          break;
       }
       errno = 0;
@@ -899,17 +899,17 @@ int lex_get_token(LEX *lf, int expect)
       if (errno != 0) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
       } else {
-         token = T_INT16;
+         token = BCT_INT16;
       }
       break;
 
-   case T_INT32:
-      if (token != T_NUMBER || !is_a_number(lf->str)) {
+   case BCT_INT32:
+      if (token != BCT_NUMBER || !is_a_number(lf->str)) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
          break;
       }
       errno = 0;
@@ -917,18 +917,18 @@ int lex_get_token(LEX *lf, int expect)
       if (errno != 0) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
       } else {
-         token = T_INT32;
+         token = BCT_INT32;
       }
       break;
 
-   case T_INT64:
+   case BCT_INT64:
       Dmsg2(debuglevel, "int64=:%s: %f\n", lf->str, strtod(lf->str, NULL));
-      if (token != T_NUMBER || !is_a_number(lf->str)) {
+      if (token != BCT_NUMBER || !is_a_number(lf->str)) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
          break;
       }
       errno = 0;
@@ -936,51 +936,51 @@ int lex_get_token(LEX *lf, int expect)
       if (errno != 0) {
          scan_err2(lf, _("expected an integer number, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
       } else {
-         token = T_INT64;
+         token = BCT_INT64;
       }
       break;
 
-   case T_PINT64_RANGE:
-      if (token == T_NUMBER) {
+   case BCT_PINT64_RANGE:
+      if (token == BCT_NUMBER) {
          lf->u.pint64_val = scan_pint64(lf, lf->str);
          lf->u2.pint64_val = lf->u.pint64_val;
-         token = T_PINT64;
+         token = BCT_PINT64;
       } else {
          char *p = strchr(lf->str, '-');
          if (!p) {
             scan_err2(lf, _("expected an integer or a range, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-            token = T_ERROR;
+            token = BCT_ERROR;
             break;
          }
          *p++ = 0;                       /* terminate first half of range */
          lf->u.pint64_val  = scan_pint64(lf, lf->str);
          lf->u2.pint64_val = scan_pint64(lf, p);
-         token = T_PINT64_RANGE;
+         token = BCT_PINT64_RANGE;
       }
       break;
 
-   case T_NAME:
-      if (token != T_IDENTIFIER && token != T_UNQUOTED_STRING && token != T_QUOTED_STRING) {
+   case BCT_NAME:
+      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING && token != BCT_QUOTED_STRING) {
          scan_err2(lf, _("expected a name, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
       } else if (lf->str_len > MAX_RES_NAME_LENGTH) {
          scan_err3(lf, _("name %s length %d too long, max is %d\n"), lf->str,
             lf->str_len, MAX_RES_NAME_LENGTH);
-         token = T_ERROR;
+         token = BCT_ERROR;
       }
       break;
 
-   case T_STRING:
-      if (token != T_IDENTIFIER && token != T_UNQUOTED_STRING && token != T_QUOTED_STRING) {
+   case BCT_STRING:
+      if (token != BCT_IDENTIFIER && token != BCT_UNQUOTED_STRING && token != BCT_QUOTED_STRING) {
          scan_err2(lf, _("expected a string, got %s: %s"),
                lex_tok_to_str(token), lf->str);
-         token = T_ERROR;
+         token = BCT_ERROR;
       } else {
-         token = T_STRING;
+         token = BCT_STRING;
       }
       break;
 

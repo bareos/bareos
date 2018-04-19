@@ -194,17 +194,17 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
     */
    for (found = true; found; ) {
       found = false;
-      token = lex_get_token(lc, T_NAME);
+      token = lex_get_token(lc, BCT_NAME);
       for (i = 0; !found && RunFields[i].name; i++) {
          if (bstrcasecmp(lc->str, RunFields[i].name)) {
             found = true;
-            if (lex_get_token(lc, T_ALL) != T_EQUALS) {
+            if (lex_get_token(lc, BCT_ALL) != BCT_EQUALS) {
                scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
                /* NOT REACHED */
             }
             switch (RunFields[i].token) {
             case 's':                 /* Data spooling */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
                   lrun.spool_data = true;
                   lrun.spool_data_set = true;
@@ -216,7 +216,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'L':                 /* Level */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                for (j = 0; joblevels[j].level_name; j++) {
                   if (bstrcasecmp(lc->str, joblevels[j].level_name)) {
                      lrun.level = joblevels[j].level;
@@ -231,7 +231,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'p':                 /* Priority */
-               token = lex_get_token(lc, T_PINT32);
+               token = lex_get_token(lc, BCT_PINT32);
                if (pass == 2) {
                   lrun.Priority = lc->u.pint32_val;
                }
@@ -242,7 +242,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             case 'i':                 /* IncPool */
             case 'd':                 /* DiffPool */
             case 'n':                 /* NextPool */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_POOL, lc->str);
                   if (res == NULL) {
@@ -273,7 +273,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'S':                 /* Storage */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_STORAGE, lc->str);
                   if (res == NULL) {
@@ -285,7 +285,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'M':                 /* Messages */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                if (pass == 2) {
                   res = GetResWithName(R_MSGS, lc->str);
                   if (res == NULL) {
@@ -297,7 +297,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                }
                break;
             case 'm':                 /* Max run sched time */
-               token = lex_get_token(lc, T_QUOTED_STRING);
+               token = lex_get_token(lc, BCT_QUOTED_STRING);
                if (!duration_to_utime(lc->str, &utime)) {
                   scan_err1(lc, _("expected a time period, got: %s"), lc->str);
                   return;
@@ -306,7 +306,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
                lrun.MaxRunSchedTime_set = true;
                break;
             case 'a':                 /* Accurate */
-               token = lex_get_token(lc, T_NAME);
+               token = lex_get_token(lc, BCT_NAME);
                if (strcasecmp(lc->str, "yes") == 0 || strcasecmp(lc->str, "true") == 0) {
                   lrun.accurate = true;
                   lrun.accurate_set = true;
@@ -348,20 +348,20 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
    state = s_none;
    set_defaults();
 
-   for (; token != T_EOL; (token = lex_get_token(lc, T_ALL))) {
+   for (; token != BCT_EOL; (token = lex_get_token(lc, BCT_ALL))) {
       int len;
       bool pm = false;
       bool am = false;
       switch (token) {
-      case T_NUMBER:
+      case BCT_NUMBER:
          state = s_mday;
          code = atoi(lc->str) - 1;
          if (code < 0 || code > 30) {
             scan_err0(lc, _("Day number out of range (1-31)"));
          }
          break;
-      case T_NAME:                    /* This handles drop through from keyword */
-      case T_UNQUOTED_STRING:
+      case BCT_NAME:                    /* This handles drop through from keyword */
+      case BCT_UNQUOTED_STRING:
          if (strchr(lc->str, (int)'-')) {
             state = s_range;
             break;
@@ -400,7 +400,7 @@ void store_run(LEX *lc, ResourceItem *item, int index, int pass)
             /* NOT REACHED */
          }
          break;
-      case T_COMMA:
+      case BCT_COMMA:
          continue;
       default:
          scan_err2(lc, _("Unexpected token: %d:%s"), token, lc->str);
