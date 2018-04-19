@@ -206,7 +206,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
 
    memset(option, 0, sizeof(option));
    lc->options |= LOPT_STRING;             /* force string */
-   lex_get_token(lc, T_STRING);            /* expect at least one option */
+   lex_get_token(lc, BCT_STRING);            /* expect at least one option */
    if (keyword == INC_KW_VERIFY) {         /* special case */
       is_in_permitted_set(lc, _("verify"), PERMITTED_VERIFY_OPTIONS);
       bstrncat(opts, "V", optlen);         /* indicate Verify */
@@ -265,7 +265,7 @@ static void scan_include_options(LEX *lc, int keyword, char *opts, int optlen)
     * If option terminated by comma, eat it
     */
    if (lc->ch == ',') {
-      lex_get_token(lc, T_ALL);      /* yes, eat comma */
+      lex_get_token(lc, BCT_ALL);      /* yes, eat comma */
    }
 }
 
@@ -280,14 +280,14 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
    const char *type;
    int newsize;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup regex string
        */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING:
          rc = regcomp(&preg, lc->str, REG_EXTENDED);
          if (rc != 0) {
             regerror(rc, &preg, prbuf, sizeof(prbuf));
@@ -325,7 +325,7 @@ static void store_regex(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 1) {
       /*
        * Pickup Base Job Name
@@ -341,7 +341,7 @@ static void store_base(LEX *lc, ResourceItem *item, int index, int pass)
 static void store_plugin(LEX *lc, ResourceItem *item, int index, int pass)
 {
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 1) {
       /*
        * Pickup plugin command
@@ -360,15 +360,15 @@ static void store_wild(LEX *lc, ResourceItem *item, int index, int pass)
    const char *type;
    int newsize;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /*
        * Pickup Wild-card string
        */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING:
          if (item->code == 1) {
             type = "wilddir";
             res_incexe.current_opts->wilddir.append(bstrdup(lc->str));
@@ -405,13 +405,13 @@ static void store_fstype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup fstype string */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING:
          res_incexe.current_opts->fstype.append(bstrdup(lc->str));
          Dmsg3(900, "set fstype %p size=%d %s\n",
             res_incexe.current_opts, res_incexe.current_opts->fstype.size(), lc->str);
@@ -430,13 +430,13 @@ static void store_drivetype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup drivetype string */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING:
          res_incexe.current_opts->drivetype.append(bstrdup(lc->str));
          Dmsg3(900, "set drivetype %p size=%d %s\n",
             res_incexe.current_opts, res_incexe.current_opts->drivetype.size(), lc->str);
@@ -452,13 +452,13 @@ static void store_meta(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int token;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup fstype string */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
-      case T_QUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
+      case BCT_QUOTED_STRING:
          res_incexe.current_opts->meta.append(bstrdup(lc->str));
          Dmsg3(900, "set meta %p size=%d %s\n",
             res_incexe.current_opts, res_incexe.current_opts->meta.size(), lc->str);
@@ -547,8 +547,8 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
       scan_err0(lc, _("Options section not permitted in Exclude\n"));
       /* NOT REACHED */
    }
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token != T_BOB) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (token != BCT_BOB) {
       scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
    }
 
@@ -556,20 +556,20 @@ static void store_options_res(LEX *lc, ResourceItem *item, int index, int pass, 
       setup_current_opts();
    }
 
-   while ((token = lex_get_token(lc, T_ALL)) != T_EOF) {
-      if (token == T_EOL) {
+   while ((token = lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
+      if (token == BCT_EOL) {
          continue;
       }
-      if (token == T_EOB) {
+      if (token == BCT_EOB) {
          break;
       }
-      if (token != T_IDENTIFIER) {
+      if (token != BCT_IDENTIFIER) {
          scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
       for (i=0; options_items[i].name; i++) {
          if (bstrcasecmp(options_items[i].name, lc->str)) {
-            token = lex_get_token(lc, T_SKIP_EOL);
-            if (token != T_EQUALS) {
+            token = lex_get_token(lc, BCT_SKIP_EOL);
+            if (token != BCT_EQUALS) {
                scan_err1(lc, _("expected an equals, got: %s"), lc->str);
             }
             /* Call item handler */
@@ -622,18 +622,18 @@ static void store_fname(LEX *lc, ResourceItem *item, int index, int pass, bool e
    IncludeExcludeItem *incexe;
    UnionOfResources *res_all = (UnionOfResources *)my_config->res_all_;
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup Filename string
        */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
          if (strchr(lc->str, '\\')) {
             scan_err1(lc, _("Backslash found. Use forward slashes or quote the string.: %s\n"), lc->str);
             /* NOT REACHED */
          }
-      case T_QUOTED_STRING:
+      case BCT_QUOTED_STRING:
          if (res_all->res_fs.have_MD5) {
             MD5_Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
@@ -666,18 +666,18 @@ static void store_plugin_name(LEX *lc, ResourceItem *item, int index, int pass, 
       scan_err0(lc, _("Plugin directive not permitted in Exclude\n"));
       /* NOT REACHED */
    }
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
    if (pass == 1) {
       /* Pickup Filename string
        */
       switch (token) {
-      case T_IDENTIFIER:
-      case T_UNQUOTED_STRING:
+      case BCT_IDENTIFIER:
+      case BCT_UNQUOTED_STRING:
          if (strchr(lc->str, '\\')) {
             scan_err1(lc, _("Backslash found. Use forward slashes or quote the string.: %s\n"), lc->str);
             /* NOT REACHED */
          }
-      case T_QUOTED_STRING:
+      case BCT_QUOTED_STRING:
          if (res_all->res_fs.have_MD5) {
             MD5_Update(&res_all->res_fs.md5c, (unsigned char *)lc->str, lc->str_len);
          }
@@ -709,7 +709,7 @@ static void store_excludedir(LEX *lc, ResourceItem *item, int index, int pass, b
       return;
    }
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 1) {
       incexe = &res_incexe;
       if (incexe->ignoredir.size() == 0) {
@@ -741,19 +741,19 @@ static void store_newinc(LEX *lc, ResourceItem *item, int index, int pass)
    }
    memset(&res_incexe, 0, sizeof(res_incexe));
    res_all->res_fs.new_include = true;
-   while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
-      if (token == T_EOB) {
+   while ((token = lex_get_token(lc, BCT_SKIP_EOL)) != BCT_EOF) {
+      if (token == BCT_EOB) {
          break;
       }
-      if (token != T_IDENTIFIER) {
+      if (token != BCT_IDENTIFIER) {
          scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
       for (i=0; newinc_items[i].name; i++) {
          options = bstrcasecmp(lc->str, "options");
          if (bstrcasecmp(newinc_items[i].name, lc->str)) {
             if (!options) {
-               token = lex_get_token(lc, T_SKIP_EOL);
-               if (token != T_EQUALS) {
+               token = lex_get_token(lc, BCT_SKIP_EOL);
+               if (token != BCT_EQUALS) {
                   scan_err1(lc, _("expected an equals, got: %s"), lc->str);
                }
             }
@@ -825,8 +825,8 @@ void store_inc(LEX *lc, ResourceItem *item, int index, int pass)
     *  new Include is followed immediately by open brace, whereas the
     *  old include has options following the Include.
     */
-   token = lex_get_token(lc, T_SKIP_EOL);
-   if (token == T_BOB) {
+   token = lex_get_token(lc, BCT_SKIP_EOL);
+   if (token == BCT_BOB) {
       store_newinc(lc, item, index, pass);
       return;
    }

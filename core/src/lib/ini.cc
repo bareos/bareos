@@ -91,7 +91,7 @@ static bool ini_store_str(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.strval);
       return true;
    }
-   if (lex_get_token(lc, T_STRING) == T_ERROR) {
+   if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
       return false;
    }
    /*
@@ -111,7 +111,7 @@ static bool ini_store_name(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.nameval);
       return true;
    }
-   if (lex_get_token(lc, T_NAME) == T_ERROR) {
+   if (lex_get_token(lc, BCT_NAME) == BCT_ERROR) {
       return false;
    }
    bstrncpy(item->val.nameval, lc->str, sizeof(item->val.nameval));
@@ -128,7 +128,7 @@ static bool ini_store_alist_str(LEX *lc, ConfigFile *inifile, ini_items *item)
        */
       return true;
    }
-   if (lex_get_token(lc, T_STRING) == T_ERROR) {
+   if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
       return false;
    }
 
@@ -153,7 +153,7 @@ static bool ini_store_int64(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%lld", item->val.int64val);
       return true;
    }
-   if (lex_get_token(lc, T_INT64) == T_ERROR) {
+   if (lex_get_token(lc, BCT_INT64) == BCT_ERROR) {
       return false;
    }
    item->val.int64val = lc->u.int64_val;
@@ -167,7 +167,7 @@ static bool ini_store_pint64(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%lld", item->val.int64val);
       return true;
    }
-   if (lex_get_token(lc, T_PINT64) == T_ERROR) {
+   if (lex_get_token(lc, BCT_PINT64) == BCT_ERROR) {
       return false;
    }
    item->val.int64val = lc->u.pint64_val;
@@ -181,7 +181,7 @@ static bool ini_store_pint32(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%d", item->val.int32val);
       return true;
    }
-   if (lex_get_token(lc, T_PINT32) == T_ERROR) {
+   if (lex_get_token(lc, BCT_PINT32) == BCT_ERROR) {
       return false;
    }
    item->val.int32val = lc->u.pint32_val;
@@ -195,7 +195,7 @@ static bool ini_store_int32(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%d", item->val.int32val);
       return true;
    }
-   if (lex_get_token(lc, T_INT32) == T_ERROR) {
+   if (lex_get_token(lc, BCT_INT32) == BCT_ERROR) {
       return false;
    }
    item->val.int32val = lc->u.int32_val;
@@ -209,7 +209,7 @@ static bool ini_store_bool(LEX *lc, ConfigFile *inifile, ini_items *item)
       Mmsg(inifile->edit, "%s", item->val.boolval?"yes":"no");
       return true;
    }
-   if (lex_get_token(lc, T_NAME) == T_ERROR) {
+   if (lex_get_token(lc, BCT_NAME) == BCT_ERROR) {
       return false;
    }
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
@@ -551,15 +551,15 @@ bool ConfigFile::parse(const char *fname)
    lc->options |= LOPT_NO_EXTERN;
    lc->caller_ctx = (void *)this;
 
-   while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
+   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(dbglevel, "parse got token=%s\n", lex_tok_to_str(token));
-      if (token == T_EOL) {
+      if (token == BCT_EOL) {
          continue;
       }
       for (i = 0; items[i].name; i++) {
          if (bstrcasecmp(items[i].name, lc->str)) {
-            if ((token = lex_get_token(lc, T_EQUALS)) == T_ERROR) {
-               Dmsg1(dbglevel, "in T_IDENT got token=%s\n",
+            if ((token = lex_get_token(lc, BCT_EQUALS)) == BCT_ERROR) {
+               Dmsg1(dbglevel, "in BCT_IDENT got token=%s\n",
                      lex_tok_to_str(token));
                break;
             }
@@ -663,10 +663,10 @@ bool ConfigFile::unserialize(const char *fname)
    lc->options |= LOPT_NO_EXTERN;
    lc->caller_ctx = (void *)this;
 
-   while ((token=lex_get_token(lc, T_ALL)) != T_EOF) {
+   while ((token=lex_get_token(lc, BCT_ALL)) != BCT_EOF) {
       Dmsg1(dbglevel, "parse got token=%s\n", lex_tok_to_str(token));
 
-      if (token == T_EOL) {
+      if (token == BCT_EOL) {
          continue;
       }
 
@@ -689,10 +689,10 @@ bool ConfigFile::unserialize(const char *fname)
          items[nb].name = bstrdup(lc->str);
       }
 
-      token = lex_get_token(lc, T_ALL);
-      Dmsg1(dbglevel, "in T_IDENT got token=%s\n", lex_tok_to_str(token));
+      token = lex_get_token(lc, BCT_ALL);
+      Dmsg1(dbglevel, "in BCT_IDENT got token=%s\n", lex_tok_to_str(token));
 
-      if (token != T_EQUALS) {
+      if (token != BCT_EQUALS) {
          scan_err1(lc, "expected an equals, got: %s", lc->str);
          break;
       }
@@ -700,7 +700,7 @@ bool ConfigFile::unserialize(const char *fname)
       /*
        * We may allow blank variable
        */
-      if (lex_get_token(lc, T_STRING) == T_ERROR) {
+      if (lex_get_token(lc, BCT_STRING) == BCT_ERROR) {
          break;
       }
 

@@ -3305,7 +3305,7 @@ static void store_pooltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (pass == 1) {
       for (i = 0; PoolTypes[i].name; i++) {
          if (bstrcasecmp(lc->str, PoolTypes[i].name)) {
@@ -3336,7 +3336,7 @@ static void store_actiononpurge(LEX *lc, ResourceItem *item, int index, int pass
    int i;
    uint32_t *destination = item->ui32value;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     * Scan ActionOnPurge options
@@ -3370,7 +3370,7 @@ static void store_device(LEX *lc, ResourceItem *item, int index, int pass)
    bool found = false;
 
    if (pass == 1) {
-      lex_get_token(lc, T_NAME);
+      lex_get_token(lc, BCT_NAME);
       if (!res_head[rindex]) {
          res = (UnionOfResources *)malloc(resources[rindex].size);
          memset(res, 0, resources[rindex].size);
@@ -3414,7 +3414,7 @@ static void store_migtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3442,7 +3442,7 @@ static void store_jobtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3470,7 +3470,7 @@ static void store_protocoltype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3495,7 +3495,7 @@ static void store_replace(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Scan Replacement options
     */
@@ -3523,7 +3523,7 @@ static void store_authprotocoltype(LEX *lc, ResourceItem *item, int index, int p
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3550,7 +3550,7 @@ static void store_authtype(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the type both in pass 1 and pass 2
     */
@@ -3578,7 +3578,7 @@ static void store_level(LEX *lc, ResourceItem *item, int index, int pass)
 {
    int i;
 
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    /*
     * Store the level pass 2 so that type is defined
     */
@@ -3670,13 +3670,13 @@ static void store_acl(LEX *lc, ResourceItem *item, int index, int pass)
    list = item->alistvalue[item->code];
 
    for (;;) {
-      lex_get_token(lc, T_STRING);
+      lex_get_token(lc, BCT_STRING);
       if (pass == 1) {
          list->append(bstrdup(lc->str));
          Dmsg2(900, "Appended to %d %s\n", item->code, lc->str);
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token == T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token == BCT_COMMA) {
          continue; /* get another ACL */
       }
       break;
@@ -3701,12 +3701,12 @@ static void store_audit(LEX *lc, ResourceItem *item, int index, int pass)
    list = *item->alistvalue;
 
    for (;;) {
-      lex_get_token(lc, T_STRING);
+      lex_get_token(lc, BCT_STRING);
       if (pass == 1) {
          list->append(bstrdup(lc->str));
       }
-      token = lex_get_token(lc, T_ALL);
-      if (token == T_COMMA) {
+      token = lex_get_token(lc, BCT_ALL);
+      if (token == BCT_COMMA) {
          continue;
       }
       break;
@@ -3719,7 +3719,7 @@ static void store_audit(LEX *lc, ResourceItem *item, int index, int pass)
  */
 static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
 
    if (bstrcasecmp(lc->str, "before")) {
       *(item->ui32value) = SCRIPT_Before;
@@ -3740,7 +3740,7 @@ static void store_runscript_when(LEX *lc, ResourceItem *item, int index, int pas
  */
 static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
 
    if (pass == 2) {
       if (bstrcmp(lc->str, "%c")) {
@@ -3768,7 +3768,7 @@ static void store_runscript_target(LEX *lc, ResourceItem *item, int index, int p
  */
 static void store_runscript_cmd(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
 
    if (pass == 2) {
       Dmsg2(1, "runscript cmd=%s type=%c\n", lc->str, item->code);
@@ -3785,7 +3785,7 @@ static void store_runscript_cmd(LEX *lc, ResourceItem *item, int index, int pass
 
 static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, T_STRING);
+   lex_get_token(lc, BCT_STRING);
    alist **runscripts = item->alistvalue;
 
    if (pass == 2) {
@@ -3841,7 +3841,7 @@ static void store_short_runscript(LEX *lc, ResourceItem *item, int index, int pa
  */
 static void store_runscript_bool(LEX *lc, ResourceItem *item, int index, int pass)
 {
-   lex_get_token(lc, T_NAME);
+   lex_get_token(lc, BCT_NAME);
    if (bstrcasecmp(lc->str, "yes") || bstrcasecmp(lc->str, "true")) {
       *(item->boolvalue) = true;
    } else if (bstrcasecmp(lc->str, "no") || bstrcasecmp(lc->str, "false")) {
@@ -3867,9 +3867,9 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
 
    Dmsg1(200, "store_runscript: begin store_runscript pass=%i\n", pass);
 
-   token = lex_get_token(lc, T_SKIP_EOL);
+   token = lex_get_token(lc, BCT_SKIP_EOL);
 
-   if (token != T_BOB) {
+   if (token != BCT_BOB) {
       scan_err1(lc, _("Expecting open brace. Got %s"), lc->str);
    }
    /*
@@ -3881,19 +3881,19 @@ static void store_runscript(LEX *lc, ResourceItem *item, int index, int pass)
       res_runscript.commands = New(alist(10, not_owned_by_alist));
    }
 
-   while ((token = lex_get_token(lc, T_SKIP_EOL)) != T_EOF) {
-      if (token == T_EOB) {
+   while ((token = lex_get_token(lc, BCT_SKIP_EOL)) != BCT_EOF) {
+      if (token == BCT_EOB) {
         break;
       }
 
-      if (token != T_IDENTIFIER) {
+      if (token != BCT_IDENTIFIER) {
         scan_err1(lc, _("Expecting keyword, got: %s\n"), lc->str);
       }
 
       for (i = 0; runscript_items[i].name; i++) {
         if (bstrcasecmp(runscript_items[i].name, lc->str)) {
-           token = lex_get_token(lc, T_SKIP_EOL);
-           if (token != T_EQUALS) {
+           token = lex_get_token(lc, BCT_SKIP_EOL);
+           if (token != BCT_EQUALS) {
               scan_err1(lc, _("Expected an equals, got: %s"), lc->str);
            }
 
