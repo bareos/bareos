@@ -161,4 +161,8 @@ static tapealert_mapping tapealert_mappings[] = {
    { 0, NULL }
 };
 
+
+DLL_IMP_EXP bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags);
+
+
 #endif /* SCSI_TAPEALERT_H */

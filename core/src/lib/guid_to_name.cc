@@ -26,6 +26,7 @@
  */
 
 #include "bareos.h"
+#include "lib/edit.h"
 
 #ifndef WIN32
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;

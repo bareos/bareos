@@ -41,6 +41,7 @@
 #include "stored/device.h"
 #include "stored/label.h"
 #include "stored/match_bsr.h"
+#include "include/jcr.h"
 
 /* Forward referenced functions */
 

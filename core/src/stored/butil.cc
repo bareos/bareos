@@ -39,6 +39,7 @@
 #include "stored/autochanger.h"
 #include "stored/device.h"
 #include "stored/parse_bsr.h"
+#include "include/jcr.h"
 
 /* Forward referenced functions */
 static bool setup_to_access_device(DeviceControlRecord *dcr, JobControlRecord *jcr, char *dev_name,

@@ -50,7 +50,8 @@ set (BAREOS_SRCS  address_conf.cc alist.cc attr.cc attribs.cc base64.cc
    crypto_none.cc crypto_nss.cc  crypto_openssl.cc crypto_wrap.cc daemon.cc
    devlock.cc dlist.cc  edit.cc fnmatch.cc guid_to_name.cc hmac.cc htable.cc
    jcr.cc json.cc  lockmgr.cc md5.cc mem_pool.cc message.cc mntent_cache.cc
-   output_formatter.cc ordered_cbuf.cc passphrase.cc path_list.cc plugins.cc poll.cc  priv.cc
+   output_formatter.cc ordered_cbuf.cc passphrase.cc path_list.cc plugins.cc
+   bpoll.cc  priv.cc
    queue.cc rblist.cc runscript.cc rwlock.cc scan.cc scsi_crypto.cc  scsi_lli.cc
    sellist.cc serial.cc sha1.cc signal.cc  smartall.cc
    tls_gnutls.cc tls_none.cc tls_nss.cc tls_conf.cc tls_openssl.cc tree.cc util.cc var.cc

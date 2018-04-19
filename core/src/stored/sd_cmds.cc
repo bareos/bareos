@@ -40,6 +40,8 @@
 #include "stored/sd_stats.h"
 #include "stored/sd_stats.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

@@ -42,6 +42,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "lib/edit.h"
 
 /* Forward referenced functions */
 static bool purge_files_from_client(UaContext *ua, ClientResource *client);

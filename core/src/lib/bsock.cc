@@ -27,8 +27,11 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "lib/bnet.h"
+#include "lib/cram_md5.h"
+#include "lib/util.h"
+#include "lib/tls_openssl.h"
 
 DLL_IMP_EXP uint32_t GetNeedFromConfiguration(TlsResource *tls_configuration) {
    uint32_t merged_policy = 0;

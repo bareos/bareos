@@ -31,6 +31,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "lib/edit.h"
 
 extern struct s_jl joblevels[];
 

@@ -33,6 +33,8 @@
 #include "filed/dir_cmd.h"
 #include "filed/socket_server.h"
 #include "lib/mntent_cache.h"
+#include "lib/daemon.h"
+#include "lib/bsignal.h"
 
 /* Imported Functions */
 extern void *handle_connection_request(void *dir_sock);

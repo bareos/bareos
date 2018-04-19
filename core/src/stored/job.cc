@@ -35,6 +35,8 @@
 #include "stored/ndmp_tape.h"
 #include "stored/parse_bsr.h"
 #include "stored/read_record.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

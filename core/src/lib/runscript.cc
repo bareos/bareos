@@ -25,8 +25,9 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "runscript.h"
+#include "lib/util.h"
 
 /*
  * This function pointer is set only by the Director (dird.c),

@@ -40,6 +40,7 @@
 #include "findlib/find.h"
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 /* Imported variables */
 extern struct s_jl joblevels[];

@@ -25,6 +25,7 @@
  */
 
 #include "bareos.h"
+#include "lib/util.h"
 
 #define B_PAGE_SIZE 4096
 #define MAX_PAGES 2400

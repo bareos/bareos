@@ -33,6 +33,7 @@
 #include "find.h"
 #include "ch.h"
 #include "findlib/attribs.h"
+#include "lib/edit.h"
 
 static uid_t my_uid = 1;
 static gid_t my_gid = 1;

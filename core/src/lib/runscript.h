@@ -30,7 +30,7 @@
 #ifndef __RUNSCRIPT_H_
 #define __RUNSCRIPT_H_ 1
 
-#include "protos.h"
+#include "jcr.h"
 
 /* Usage:
  *

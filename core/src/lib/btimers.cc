@@ -26,7 +26,8 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
+#include "lib/edit.h"
 
 const int debuglevel = 900;
 

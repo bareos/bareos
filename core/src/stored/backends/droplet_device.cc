@@ -46,6 +46,7 @@
 #include "stored.h"
 #include "chunked_device.h"
 #include "droplet_device.h"
+#include "lib/edit.h"
 
 /**
  * Options that can be specified for this device type.

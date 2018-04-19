@@ -41,6 +41,7 @@
 #include "findlib/find.h"
 #include "dird/ua_input.h"
 #include "dird/ua_server.h"
+#include "lib/edit.h"
 
 /* Forward referenced commands */
 static int markcmd(UaContext *ua, TreeContext *tree);

@@ -41,6 +41,9 @@
 #include "findlib/match.h"
 #include "findlib//get_priv.h"
 #include "lib/attribs.h"
+#include "lib/edit.h"
+#include "lib/bsignal.h"
+#include "include/jcr.h"
 
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);
 

@@ -35,6 +35,10 @@
 #include "dird/socket_server.h"
 #include "dird/stats.h"
 #include "dird/ua_db.h"
+#include "lib/daemon.h"
+#include "lib/edit.h"
+#include "lib/tls_openssl.h"
+#include "lib/bsignal.h"
 
 #include "cats/cats_backends.h"
 #include "cats/sql.h"

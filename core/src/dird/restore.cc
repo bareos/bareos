@@ -48,6 +48,7 @@
 #include "dird/restore.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"
+#include "lib/edit.h"
 
 /* Commands sent to File daemon */
 static char restorecmd[] =

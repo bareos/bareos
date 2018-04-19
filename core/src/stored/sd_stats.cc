@@ -27,6 +27,8 @@
 
 #include "bareos.h"
 #include "stored.h"
+#include "lib/util.h"
+#include "include/jcr.h"
 
 static char OKstats[] =
    "2000 OK statistics\n";

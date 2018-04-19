@@ -32,6 +32,7 @@
 #endif
 
 #include "bareos.h"
+#include "lib/edit.h"
 
 int main(int argc, char *argv[])
 {

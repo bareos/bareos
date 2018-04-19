@@ -30,6 +30,7 @@
 #include "dird/backup.h"
 #include "dird/job.h"
 #include "dird/ndmp_dma_backup_common.h"
+#include "lib/edit.h"
 
 #if HAVE_NDMP
 

@@ -27,6 +27,7 @@
  */
 
 #include "bareos.h"
+#include "lib/cram_md5.h"
 
 const int debuglevel = 50;
 

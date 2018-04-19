@@ -47,6 +47,8 @@
 #include "cats/cats.h"
 #include "cats/cats_backends.h"
 #include "cats/sql.h"
+#include "lib/edit.h"
+#include "lib/bsignal.h"
 
 /* Forward referenced functions */
 static void *do_batch(void *);

@@ -33,6 +33,8 @@
 #include "dird/quota.h"
 #include "dird/storage.h"
 
+#include "lib/edit.h"
+
 #if HAVE_NDMP
 #include "dird/ndmp_dma_backup_common.h"
 #include "dird/ndmp_dma_generic.h"

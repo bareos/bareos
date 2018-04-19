@@ -33,6 +33,7 @@
  */
 
 #include "bareos.h"
+#include "lib/bsys.h"
 
 #ifndef HAVE_WIN32
 extern const char *get_signal_name(int sig);

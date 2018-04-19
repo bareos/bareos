@@ -38,6 +38,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "lib/edit.h"
 
 /* Imported variables */
 

@@ -30,6 +30,10 @@
 
 #include "bareos.h"
 #include "lib/bnet.h"
+#include "lib/bsys.h"
+#include "lib/edit.h"
+
+
 
 #ifdef HAVE_ARPA_NAMESER_H
 #include <arpa/nameser.h>

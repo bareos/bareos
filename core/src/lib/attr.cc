@@ -28,8 +28,10 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include "lib/breg.h"
+#include "lib/edit.h"
+#include "lib/util.h"
 
 static const int debuglevel = 150;
 

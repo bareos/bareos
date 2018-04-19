@@ -32,7 +32,8 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
+#include "lib/util.h"
 
 db_log_insert_func p_db_log_insert = NULL;
 

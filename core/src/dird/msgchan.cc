@@ -43,6 +43,7 @@
 #include "dird/quota.h"
 #include "dird/sd_cmds.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 static pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 

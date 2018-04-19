@@ -3,7 +3,7 @@
 
    Copyright (C) 2000-2011 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -173,6 +173,9 @@ DLL_IMP_EXP void set_log_timestamp_format(const char *format);
 typedef bool (*db_log_insert_func)(JobControlRecord *jcr, utime_t mtime, char *msg);
 extern DLL_IMP_EXP db_log_insert_func p_db_log_insert;
 
+
+class MessagesResource;
+
 extern DLL_IMP_EXP int debug_level;
 extern DLL_IMP_EXP bool dbg_timestamp; /* print timestamp in debug output */
 extern DLL_IMP_EXP bool prt_kaboom;    /* Print kaboom output */
@@ -185,3 +188,24 @@ extern DLL_IMP_EXP utime_t daemon_start_time;
 extern DLL_IMP_EXP int console_msg_pending;
 extern DLL_IMP_EXP FILE *con_fd;       /* Console file descriptor */
 extern DLL_IMP_EXP brwlock_t con_lock; /* Console lock structure */
+
+DLL_IMP_EXP void my_name_is(int argc, char *argv[], const char *name);
+DLL_IMP_EXP void init_msg(JobControlRecord *jcr, MessagesResource *msg, job_code_callback_t job_code_callback = NULL);
+DLL_IMP_EXP void term_msg(void);
+DLL_IMP_EXP void close_msg(JobControlRecord *jcr);
+DLL_IMP_EXP void add_msg_dest(MessagesResource *msg, int dest, int type,
+                  char *where, char *mail_cmd, char *timestamp_format);
+DLL_IMP_EXP void rem_msg_dest(MessagesResource *msg, int dest, int type, char *where);
+DLL_IMP_EXP void Jmsg(JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
+DLL_IMP_EXP void dispatch_message(JobControlRecord *jcr, int type, utime_t mtime, char *buf);
+DLL_IMP_EXP void init_console_msg(const char *wd);
+DLL_IMP_EXP void free_msgs_res(MessagesResource *msgs);
+DLL_IMP_EXP void dequeue_messages(JobControlRecord *jcr);
+DLL_IMP_EXP void set_trace(int trace_flag);
+DLL_IMP_EXP bool get_trace(void);
+DLL_IMP_EXP void set_hangup(int hangup_value);
+DLL_IMP_EXP bool get_hangup(void);
+DLL_IMP_EXP void set_timestamp(int timestamp_flag);
+DLL_IMP_EXP bool get_timestamp(void);
+DLL_IMP_EXP void set_db_type(const char *name);
+DLL_IMP_EXP void register_message_callback(void msg_callback(int type, char *msg));

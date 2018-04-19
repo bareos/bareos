@@ -110,6 +110,7 @@ ResourceItem options_items[] = {
 };
 
 #include "inc_conf.h"
+#include "lib/edit.h"
 
 /**
  * determine used compression algorithms

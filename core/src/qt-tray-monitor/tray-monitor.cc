@@ -32,6 +32,7 @@
 #include "authenticate.h"
 #include "monitoritem.h"
 #include "monitoritemthread.h"
+#include "lib/bsignal.h"
 
 ConfigurationParser *my_config = NULL;             /* Our Global config */
 

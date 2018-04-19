@@ -27,6 +27,7 @@
  */
 
 #include "bareos.h"
+#include "lib/edit.h"
 
 /*
  * Returns next item

@@ -108,6 +108,7 @@ struct plugin_ctx {
 };
 
 #include "python-dir.h"
+#include "lib/edit.h"
 
 /**
  * We don't actually use this but we need it to tear down the

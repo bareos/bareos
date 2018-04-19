@@ -39,6 +39,7 @@
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"
 #include "findlib/find.h"
+#include "lib/edit.h"
 
 /*
  * Handle catalog request

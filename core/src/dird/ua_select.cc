@@ -34,6 +34,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 /* Imported variables */
 extern struct s_jt jobtypes[];

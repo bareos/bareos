@@ -36,6 +36,8 @@
 #include "stored/label.h"
 #include "stored/socket_server.h"
 #include "stored/spool.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 #ifdef DEBUG_BLOCK_CHECKSUM
 static const bool debug_block_checksum = true;

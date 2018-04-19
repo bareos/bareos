@@ -32,6 +32,8 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 #include "stored/device.h"
 #include "stored/label.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 /* Forward referenced functions */
 static void create_volume_label_record(DeviceControlRecord *dcr, Device *dev, DeviceRecord *rec);

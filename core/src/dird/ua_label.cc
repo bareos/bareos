@@ -39,6 +39,8 @@
 #include "dird/ua_input.h"
 #include "dird/ua_label.h"
 #include "dird/ua_select.h"
+#include "lib/crypto_wrap.h"
+#include "lib/passphrase.h"
 
 /* Forward referenced functions */
 

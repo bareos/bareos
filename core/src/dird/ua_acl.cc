@@ -30,6 +30,7 @@
 
 #include "bareos.h"
 #include "dird.h"
+#include "lib/edit.h"
 
 /**
  * Check if access is permitted to item in acl

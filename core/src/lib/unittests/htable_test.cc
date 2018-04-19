@@ -28,8 +28,6 @@
  */
 #include "gtest/gtest.h"
 #include "bareos.h"
-#include "../lib/protos.h"
-#include "protos.h"
 
 
 struct HTABLEJCR {

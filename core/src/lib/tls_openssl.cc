@@ -26,6 +26,8 @@
  */
 
 #include "bareos.h"
+#include "lib/crypto_openssl.h"
+#include "lib/bpoll.h"
 #include <assert.h>
 
 static inline int cval(char c) {
@@ -57,6 +59,8 @@ int hex2bin(char *str, unsigned char *out, unsigned int max_out_len) {
 #include <openssl/err.h>
 #include <openssl/asn1.h>
 #include <openssl/asn1t.h>
+
+#include "lib/tls_openssl.h"
 
 /* tls_t */
 #include "parse_conf.h"

@@ -34,6 +34,7 @@
 #include "stored/mount.h"
 #include "stored/read_record.h"
 #include "lib/bnet.h"
+#include "include/jcr.h"
 
 /* Forward referenced subroutines */
 static bool record_cb(DeviceControlRecord *dcr, DeviceRecord *rec);

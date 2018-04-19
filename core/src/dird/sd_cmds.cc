@@ -39,6 +39,7 @@
 #include "dird/ua_label.h"
 #include "dird/ua_server.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 /* Commands sent to Storage daemon */
 static char readlabelcmd[] =

@@ -48,6 +48,7 @@
 #include "dird/mountreq.h"
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 /* Forward referenced functions */
 static char *find_msg_start(char *msg);

@@ -27,6 +27,7 @@
  */
 
 #include "bareos.h"
+#include "lib/edit.h"
 #include <math.h>
 
 #define DEFAULT_FORMAT_LENGTH 27

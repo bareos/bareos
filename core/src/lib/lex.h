@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2000-2012 Free Software Foundation Europe e.V.
-   Copyright (C) 2016-2016 Bareos GmbH & Co. KG
+   Copyright (C) 2016-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -171,5 +171,21 @@ lc->scan_warning(__FILE__, __LINE__, lc, msg, a1, a2, a3, a4, a5, a6)
 
 DLL_IMP_EXP void scan_to_eol(LEX *lc);
 DLL_IMP_EXP int scan_to_next_not_eol(LEX * lc);
+
+DLL_IMP_EXP LEX *lex_close_file(LEX *lf);
+DLL_IMP_EXP LEX *lex_open_file(LEX *lf,
+                   const char *fname,
+                   LEX_ERROR_HANDLER *scan_error,
+                   LEX_WARNING_HANDLER *scan_warning);
+DLL_IMP_EXP LEX *lex_new_buffer(LEX *lf,
+                    LEX_ERROR_HANDLER *scan_error,
+                    LEX_WARNING_HANDLER *scan_warning);
+DLL_IMP_EXP int lex_get_char(LEX *lf);
+DLL_IMP_EXP void lex_unget_char(LEX *lf);
+DLL_IMP_EXP const char *lex_tok_to_str(int token);
+DLL_IMP_EXP int lex_get_token(LEX *lf, int expect);
+DLL_IMP_EXP void lex_set_default_error_handler(LEX *lf);
+DLL_IMP_EXP void lex_set_default_warning_handler(LEX *lf);
+DLL_IMP_EXP void lex_set_error_handler_error_type(LEX *lf, int err_type);
 
 #endif /* _LEX_H */

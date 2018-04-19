@@ -47,7 +47,7 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 
 /* Forward referenced functions */
 extern "C" void *workq_server(void *arg);

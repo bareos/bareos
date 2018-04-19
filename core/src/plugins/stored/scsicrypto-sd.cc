@@ -62,6 +62,8 @@
 #include "bareos.h"
 #include "stored.h"
 #include "lib/status.h"
+#include "lib/crypto_wrap.h"
+#include "lib/scsi_crypto.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"

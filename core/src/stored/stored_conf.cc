@@ -231,6 +231,8 @@ static ResourceItem changer_items[] = {
  * Message resource
  */
 #include "lib/msg_res.h"
+#include "lib/json.h"
+#include "include/jcr.h"
 
 /**
  * This is the master resource definition

@@ -187,6 +187,7 @@ extern "C" {
  */
 #include "version.h"
 #include "bc_types.h"
+
 #if defined(HAVE_WIN32)
 #include "compat.h"
 #endif
@@ -204,7 +205,9 @@ extern "C" {
 #include "filetypes.h"
 #include "baconfig.h"
 #include "lib/lib.h"
-
+#include "lib/compression.h"
+#include "lib/json.h"
+#include "lib/util.h"
 
 /**
  * For wx-console compiles, we undo some Bareos defines.

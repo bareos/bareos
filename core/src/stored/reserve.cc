@@ -33,6 +33,8 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/wait.h"
+#include "lib/util.h"
+#include "include/jcr.h"
 
 const int debuglevel = 150;
 

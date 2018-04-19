@@ -40,6 +40,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "lib/edit.h"
 
 static int const debuglevel = 50;   /* debug level */
 

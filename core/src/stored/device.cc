@@ -53,6 +53,8 @@
 #include "stored.h"                   /* pull in Storage Deamon headers */
 #include "stored/device.h"
 #include "stored/match_bsr.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 /* Forward referenced functions */
 

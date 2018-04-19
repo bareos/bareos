@@ -32,6 +32,7 @@
 #include "cats/cats_backends.h"
 #include "lib/runscript.h"
 #include "dird/dird_conf.h"
+#include "lib/edit.h"
 
 extern bool parse_dir_config(ConfigurationParser *config, const char *configfile, int exit_code);
 

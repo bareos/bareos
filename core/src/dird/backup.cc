@@ -48,6 +48,7 @@
 
 #include "cats/sql.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 /* Commands sent to File daemon */
 static char backupcmd[] =

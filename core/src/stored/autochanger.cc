@@ -33,6 +33,8 @@
 #include "stored/autochanger.h"
 #include "stored/wait.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
+#include "lib/util.h"
 
 /* Forward referenced functions */
 static bool lock_changer(DeviceControlRecord *dcr);

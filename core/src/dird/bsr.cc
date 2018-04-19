@@ -34,6 +34,7 @@
 #include "dird/ua_restore.h"
 #include "dird/ua_server.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 #define UA_CMD_SIZE 1000
 

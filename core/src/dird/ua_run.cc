@@ -35,6 +35,7 @@
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
 #include "dird/ua_run.h"
+#include "lib/edit.h"
 
 /* Forward referenced subroutines */
 static void select_job_level(UaContext *ua, JobControlRecord *jcr);

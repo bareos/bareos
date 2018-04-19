@@ -33,6 +33,8 @@
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"
 #include "stored/sd_stats.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 const int debuglevel = 250;
 #ifdef HAVE_WIN32

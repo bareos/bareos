@@ -2,7 +2,7 @@
    BAREOS® - Backup Archiving REcovery Open Sourced
 
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -166,4 +166,11 @@ typedef struct {
    uint8_t addSenseData[109];
 } SCSI_PAGE_SENSE;
 
+DLL_IMP_EXP bool recv_scsi_cmd_page(int fd, const char *device_name,
+                        void *cdb, unsigned int cdb_len,
+                        void *cmd_page, unsigned int cmd_page_len);
+DLL_IMP_EXP bool send_scsi_cmd_page(int fd, const char *device_name,
+                        void *cdb, unsigned int cdb_len,
+                        void *cmd_page, unsigned int cmd_page_len);
+DLL_IMP_EXP bool check_scsi_at_eod(int fd);
 #endif /* _SCSI_LLI_H */

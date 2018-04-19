@@ -28,10 +28,13 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include "lib/bnet.h"
+#include "lib/bpoll.h"
+#include "lib/timers.h"
+#include "lib/tls_openssl.h"
 
 #ifndef ENODATA                    /* not defined on BSD systems */
 #define ENODATA EPIPE

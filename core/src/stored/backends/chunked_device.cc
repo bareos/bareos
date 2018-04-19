@@ -25,6 +25,7 @@
  */
 
 #include "bareos.h"
+#include "lib/edit.h"
 
 #if defined(HAVE_DROPLET)
 #include "stored.h"

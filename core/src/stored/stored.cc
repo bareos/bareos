@@ -46,6 +46,9 @@
 #include "stored/sd_stats.h"
 #include "stored/socket_server.h"
 #include "stored/wait.h"
+#include "lib/daemon.h"
+#include "lib/bsignal.h"
+#include "include/jcr.h"
 
 /* Imported functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

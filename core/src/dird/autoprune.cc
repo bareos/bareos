@@ -34,6 +34,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_prune.h"
 #include "dird/ua_purge.h"
+#include "lib/edit.h"
 
 /* Forward referenced functions */
 

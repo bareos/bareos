@@ -26,6 +26,7 @@
  */
 
 #include "bareos.h"
+#include "lib/crypto_openssl.h"
 
 #if defined(HAVE_OPENSSL)
 

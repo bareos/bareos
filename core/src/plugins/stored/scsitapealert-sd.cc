@@ -28,6 +28,7 @@
  */
 #include "bareos.h"
 #include "stored.h"
+#include "lib/scsi_tapealert.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"
 #define PLUGIN_AUTHOR       "Marco van Wieringen"

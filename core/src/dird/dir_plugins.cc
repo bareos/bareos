@@ -29,6 +29,7 @@
 #include "bareos.h"
 #include "dird.h"
 #include "dir_plugins.h"
+#include "lib/edit.h"
 
 const int debuglevel = 150;
 #ifdef HAVE_WIN32

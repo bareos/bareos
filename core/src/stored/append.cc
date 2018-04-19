@@ -35,6 +35,8 @@
 #include "stored/label.h"
 #include "stored/spool.h"
 #include "lib/bget_msg.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 /* Responses sent to the daemon */
 static char OK_data[] =

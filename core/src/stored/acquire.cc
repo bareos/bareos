@@ -37,6 +37,8 @@
 #include "stored/sd_plugins.h"
 #include "stored/sd_stats.h"
 #include "stored/wait.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 
 static int const rdebuglevel = 100;

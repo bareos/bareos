@@ -30,6 +30,7 @@
 #include "bareos.h"
 #include "dird.h"
 #include "dird/storage.h"
+#include "lib/edit.h"
 
 #if HAVE_NDMP
 #include "dird/ndmp_dma_storage.h"

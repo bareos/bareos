@@ -45,6 +45,9 @@
 #include "stored/parse_bsr.h"
 #include "stored/read_record.h"
 #include "stored/sd_backends.h"
+#include "lib/edit.h"
+#include "lib/bsignal.h"
+#include "include/jcr.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

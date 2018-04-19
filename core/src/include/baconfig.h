@@ -31,6 +31,7 @@
 #ifndef _BACONFIG_H
 #define _BACONFIG_H 1
 
+
 /* Bareos common configuration defines */
 
 #undef  TRUE
@@ -296,10 +297,11 @@ typedef int (INTHANDLER)();
 #define MODE_RW 0666
 #endif
 
+
 enum {
-   API_MODE_OFF = 0,
-   API_MODE_ON = 1,
-   API_MODE_JSON = 2
+API_MODE_OFF = 0,
+API_MODE_ON = 1,
+API_MODE_JSON = 2
 };
 
 #if defined(HAVE_WIN32)
@@ -310,24 +312,24 @@ typedef off_t     boffset_t;
 #endif
 
 /**
- * Create some simple types for now int16_t e.g. 65 K should be enough.
- */
+* Create some simple types for now int16_t e.g. 65 K should be enough.
+*/
 typedef int16_t slot_number_t;
 typedef int16_t drive_number_t;
 typedef int16_t slot_flags_t;
 
 /* These probably should be subroutines */
 #define Pw(x) \
-   do { int errstat; if ((errstat=rwl_writelock(&(x)))) \
-      e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock lock failure. ERR=%s\n",\
-           strerror(errstat)); \
-   } while(0)
+do { int errstat; if ((errstat=rwl_writelock(&(x)))) \
+   e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock lock failure. ERR=%s\n",\
+        strerror(errstat)); \
+} while(0)
 
 #define Vw(x) \
-   do { int errstat; if ((errstat=rwl_writeunlock(&(x)))) \
-         e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock unlock failure. ERR=%s\n",\
-           strerror(errstat)); \
-   } while(0)
+do { int errstat; if ((errstat=rwl_writeunlock(&(x)))) \
+      e_msg(__FILE__, __LINE__, M_ABORT, 0, "Write lock unlock failure. ERR=%s\n",\
+        strerror(errstat)); \
+} while(0)
 
 #define LockRes()   b_LockRes(__FILE__, __LINE__)
 #define UnlockRes() b_UnlockRes(__FILE__, __LINE__)
@@ -338,10 +340,10 @@ void b_memset(const char *file, int line, void *mem, int val, size_t num);
 #endif
 
 /**
- * The digit following Dmsg and Emsg indicates the number of substitutions in
- * the message string. We need to do this kludge because non-GNU compilers
- * do not handle varargs #defines.
- */
+* The digit following Dmsg and Emsg indicates the number of substitutions in
+* the message string. We need to do this kludge because non-GNU compilers
+* do not handle varargs #defines.
+*/
 /** Debug Messages that are printed */
 #ifdef DEBUG
 #define Dmsg0(lvl, msg) \
@@ -558,6 +560,7 @@ msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11)
 msg_(__FILE__, __LINE__, buf, msg, a1, a2, a3, a4, a5, a6, a7, a8, a9, a10, a11, a12, a13, a14, a15)
 
 class PoolMem;
+
 /* Edit message into Pool Memory buffer -- no __FILE__ and __LINE__ */
 DLL_IMP_EXP int Mmsg(POOLMEM *&msgbuf, const char *fmt, ...);
 DLL_IMP_EXP int Mmsg(PoolMem &msgbuf, const char *fmt, ...);
@@ -571,6 +574,9 @@ DLL_IMP_EXP void e_msg(const char *file, int line, int type, int level, const ch
 DLL_IMP_EXP void j_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
 DLL_IMP_EXP void q_msg(const char *file, int line, JobControlRecord *jcr, int type, utime_t mtime, const char *fmt, ...);
 DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char *fmt, ...);
+
+#include "lib/bsys.h"
+#include "lib/scan.h"
 
 /** Use our strdup with smartalloc */
 #undef strdup
@@ -597,9 +603,9 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 #define bfree_and_null(a) do{if(a){free(a); (a)=NULL;}} while(0)
 
 /**
- * Replace codes needed in both file routines and non-file routines
- * Job replace codes -- in "replace"
- */
+* Replace codes needed in both file routines and non-file routines
+* Job replace codes -- in "replace"
+*/
 #define REPLACE_ALWAYS   'a'
 #define REPLACE_IFNEWER  'w'
 #define REPLACE_NEVER    'n'
@@ -612,9 +618,9 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 
 
 /* =============================================================
- *               OS Dependent defines
- * =============================================================
- */
+*               OS Dependent defines
+* =============================================================
+*/
 #ifndef HAVE_WIN32
 #if defined (__digital__) && defined (__unix__)
 /* Tru64 - it does have fseeko and ftello , but since ftell/fseek are also 64 bit */
@@ -632,9 +638,9 @@ DLL_IMP_EXP int msg_(const char *file, int line, POOLMEM *&pool_buf, const char 
 
 #ifdef HAVE_SUN_OS
 /**
- * On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
- * so we need to explictly increase the concurrency level.
- */
+* On Solaris 2.5/2.6/7 and 8, threads are not timesliced by default,
+* so we need to explictly increase the concurrency level.
+*/
 #ifdef USE_THR_SETCONCURRENCY
 #include <thread.h>
 #define set_thread_concurrency(x)  thr_setconcurrency(x)

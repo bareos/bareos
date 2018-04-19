@@ -51,6 +51,7 @@
 
 #define _LOCKMGR_COMPLIANT
 #include "bareos.h"
+#include "lib/edit.h"
 
 #undef ASSERT
 #define ASSERT(x) if (!(x)) { \

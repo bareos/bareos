@@ -31,6 +31,7 @@
 
 #include "bareos.h"
 #include "lib/bnet_sever_tcp.h"
+#include "lib/bsys.h"
 
 #include <netinet/in.h>
 #include <sys/socket.h>

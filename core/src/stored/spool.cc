@@ -31,6 +31,9 @@
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/device.h"
+#include "lib/edit.h"
+#include "lib/util.h"
+#include "include/jcr.h"
 
 /* Forward referenced subroutines */
 static void make_unique_data_spool_filename(DeviceControlRecord *dcr, POOLMEM *&name);

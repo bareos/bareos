@@ -26,6 +26,7 @@
 #include "filed/accurate.h"
 #include "filed/verify.h"
 #include "lib/attribs.h"
+#include "lib/edit.h"
 
 static int debuglevel = 100;
 

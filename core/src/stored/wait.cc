@@ -32,6 +32,8 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 const int debuglevel = 400;
 

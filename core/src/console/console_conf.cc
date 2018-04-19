@@ -46,6 +46,7 @@
 #define NEED_JANSSON_NAMESPACE 1
 #include "bareos.h"
 #include "console_conf.h"
+#include "lib/json.h"
 
 /**
  * Define the first and last resource ID record

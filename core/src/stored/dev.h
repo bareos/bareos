@@ -65,6 +65,7 @@
 #include "stored/record.h"
 #include "stored/lock.h"
 #include "stored/block.h"
+#include "lib/bsys.h"
 
 #undef DeviceControlRecord                            /* used by Bareos */
 

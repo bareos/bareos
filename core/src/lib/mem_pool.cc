@@ -36,6 +36,7 @@
  */
 
 #include "bareos.h"
+#include "lib/util.h"
 
 #define HEAD_SIZE BALIGN(sizeof(struct abufhead))
 

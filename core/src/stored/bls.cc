@@ -40,6 +40,8 @@
 #include "stored/read_record.h"
 #include "findlib/match.h"
 #include "lib/attribs.h"
+#include "lib/bsignal.h"
+#include "include/jcr.h"
 
 /* Dummy functions */
 extern bool parse_sd_config(ConfigurationParser *config, const char *configfile, int exit_code);

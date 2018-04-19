@@ -32,6 +32,7 @@
 #include "bareos.h"
 #include "stored.h"
 #include "unix_file_device.h"
+#include "lib/util.h"
 
 /**
  * (Un)mount the device (For a FILE device)

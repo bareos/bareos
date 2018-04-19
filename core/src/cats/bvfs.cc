@@ -32,6 +32,7 @@
 #include "sql.h"
 #include "lib/htable.h"
 #include "bvfs.h"
+#include "lib/edit.h"
 
 #define dbglevel 10
 #define dbglevel_sql 15

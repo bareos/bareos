@@ -29,6 +29,7 @@
 
 #include "bareos.h"                   /* pull in global headers */
 #include "stored.h"                   /* pull in Storage Deamon headers */
+#include "lib/edit.h"
 
 #ifdef SD_DEBUG_LOCK
 const int debuglevel = 0;

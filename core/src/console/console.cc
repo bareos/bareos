@@ -385,6 +385,9 @@ static int tls_pem_callback(char *buf, int size, const void *userdata)
 #define READLINE_LIBRARY 1
 #include "readline/readline.h"
 #include "readline/history.h"
+#include "lib/edit.h"
+#include "lib/tls_openssl.h"
+#include "lib/bsignal.h"
 
 /**
  * Get the first keyword of the line

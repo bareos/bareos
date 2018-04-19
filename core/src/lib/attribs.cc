@@ -28,6 +28,7 @@
  */
 
 #include "bareos.h"
+#include "lib/scan.h"
 
 /**
  * Encode a stat structure into a base64 character string

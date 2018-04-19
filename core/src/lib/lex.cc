@@ -28,6 +28,8 @@
 
 #include "bareos.h"
 #include "lex.h"
+#include "lib/edit.h"
+
 #ifdef HAVE_GLOB_H
 #include <glob.h>
 #endif

@@ -377,4 +377,14 @@ typedef struct {
    uint8_t descriptorLength[2];                /* Key Descriptor Length MSB/LSB */
    uint8_t descriptor[SPP_DESCRIPTOR_LENGTH];
 } SPP_KAD;
+
+DLL_IMP_EXP bool clear_scsi_encryption_key(int fd, const char *device);
+DLL_IMP_EXP bool set_scsi_encryption_key(int fd, const char *device, char *encryption_key);
+DLL_IMP_EXP int get_scsi_drive_encryption_status(int fd, const char *device_name,
+                                     POOLMEM *&status, int indent);
+DLL_IMP_EXP int get_scsi_volume_encryption_status(int fd, const char *device_name,
+                                      POOLMEM *&status, int indent);
+DLL_IMP_EXP bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status);
+DLL_IMP_EXP bool is_scsi_encryption_enabled(int fd, const char *device_name);
+
 #endif /* _SCSI_CRYPTO_H */

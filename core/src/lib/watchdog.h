@@ -50,3 +50,9 @@ typedef struct s_watchdog_t watchdog_t;
 /* Exported globals */
 extern utime_t DLL_IMP_EXP watchdog_time;             /* this has granularity of SLEEP_TIME */
 extern utime_t DLL_IMP_EXP watchdog_sleep_time;      /* examine things every 60 seconds */
+DLL_IMP_EXP int start_watchdog(void);
+DLL_IMP_EXP int stop_watchdog(void);
+DLL_IMP_EXP watchdog_t *new_watchdog(void);
+DLL_IMP_EXP bool register_watchdog(watchdog_t *wd);
+DLL_IMP_EXP bool unregister_watchdog(watchdog_t *wd);
+DLL_IMP_EXP bool is_watchdog();

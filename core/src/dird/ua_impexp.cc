@@ -35,6 +35,7 @@
 #include "dird/ua_impexp.h"
 #include "dird/ua_update.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 /* Forward referenced functions */
 

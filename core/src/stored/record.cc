@@ -31,6 +31,8 @@
 #include "bareos.h"
 #include "stored.h"
 #include "lib/attribs.h"
+#include "lib/util.h"
+#include "include/jcr.h"
 
 /**
  * Convert a FileIndex into a printable

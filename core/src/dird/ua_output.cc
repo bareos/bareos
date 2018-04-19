@@ -38,6 +38,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_output.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 /* Imported subroutines */
 

@@ -39,6 +39,7 @@
 #include "findlib/attribs.h"
 #include "findlib/hardlink.h"
 #include "findlib/find_one.h"
+#include "lib/timers.h"
 
 #ifdef HAVE_DARWIN_OS
 const bool have_darwin_os = true;

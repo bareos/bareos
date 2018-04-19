@@ -40,6 +40,7 @@
 #include "dird/ua_select.h"
 #include "dird/ua_tree.h"
 #include "dird/ua_run.h"
+#include "lib/edit.h"
 
 /* Imported functions */
 extern void print_bsr(UaContext *ua, RestoreBootstrapRecord *bsr);

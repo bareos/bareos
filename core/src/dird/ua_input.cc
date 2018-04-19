@@ -33,6 +33,7 @@
 #include "dird/ua_cmds.h"
 #include "dird/ua_select.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 /* Imported variables */
 

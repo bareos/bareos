@@ -41,6 +41,8 @@
 #include "findlib/shadowing.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
+#include "lib/path_list.h"
 
 #if defined(WIN32_VSS)
 #include "win32/findlib/win32.h"

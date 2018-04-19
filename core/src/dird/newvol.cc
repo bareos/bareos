@@ -42,6 +42,7 @@
 #include "cats/sql.h"
 #include "dird/ua_db.h"
 #include "dird/ua_label.h"
+#include "lib/edit.h"
 
 /*
  * Forward referenced functions

@@ -51,6 +51,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_purge.h"
 #include "dird/ua_run.h"
+#include "lib/edit.h"
 
 #include "cats/sql.h"
 

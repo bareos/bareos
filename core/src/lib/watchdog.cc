@@ -27,7 +27,7 @@
  */
 
 #include "bareos.h"
-#include "jcr.h"
+#include "include/jcr.h"
 
 /* Exported globals */
 utime_t watchdog_time = 0;            /* this has granularity of SLEEP_TIME */

@@ -32,6 +32,7 @@
 #include "bareos.h"
 #include "filed.h"
 #include "findlib/match.h"
+#include "lib/edit.h"
 #include "ch.h"
 
 #ifdef HAVE_WIN32

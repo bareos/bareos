@@ -59,6 +59,7 @@
 
 #include "cats/cats_backends.h"
 #include "cats/sql_pooling.h"
+#include "lib/edit.h"
 
 
 

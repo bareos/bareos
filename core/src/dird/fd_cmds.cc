@@ -42,6 +42,7 @@
 #include "dird/getmsg.h"
 #include "dird/msgchan.h"
 #include "lib/bnet.h"
+#include "lib/edit.h"
 
 
 const int debuglevel = 400;

@@ -46,6 +46,7 @@
 #include "dird/ua_server.h"
 #include "dird/ua_purge.h"
 #include "dird/vbackup.h"
+#include "lib/edit.h"
 
 static const int dbglevel = 10;
 

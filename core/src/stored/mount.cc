@@ -33,6 +33,8 @@
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/label.h"
+#include "lib/edit.h"
+#include "include/jcr.h"
 
 static pthread_mutex_t mount_mutex = PTHREAD_MUTEX_INITIALIZER;
 

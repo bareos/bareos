@@ -36,8 +36,10 @@
 #include "bareos.h"
 #include "jcr.h"
 #include "lib/bnet.h"
+#include "lib/bsys.h"
 
 #include <netdb.h>
+#include "lib/tls_openssl.h"
 
 #ifndef INADDR_NONE
 #define INADDR_NONE    -1

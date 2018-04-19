@@ -41,6 +41,18 @@
 
 #include "stored.h"
 
+#include "ndmp/ndmagents.h"
+#include "stored/acquire.h"
+#include "stored/device.h"
+#include "stored/label.h"
+#include "stored/mount.h"
+#include "stored/read_record.h"
+#include "stored/spool.h"
+#include "lib/attribs.h"
+#include "lib/edit.h"
+#include "lib/bpoll.h"
+#include "include/jcr.h"
+
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -59,14 +71,6 @@
 #include <sys/poll.h>
 #endif
 
-#include "ndmp/ndmagents.h"
-#include "stored/acquire.h"
-#include "stored/device.h"
-#include "stored/label.h"
-#include "stored/mount.h"
-#include "stored/read_record.h"
-#include "stored/spool.h"
-#include "lib/attribs.h"
 
 /**
  * Structure used to pass arguments to the ndmp_thread_server thread

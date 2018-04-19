@@ -37,6 +37,7 @@
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"
 #include "dird/ua_select.h"
+#include "lib/edit.h"
 
 /* Forward referenced functions */
 static bool update_volume(UaContext *ua);
