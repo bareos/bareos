@@ -26,7 +26,7 @@
  * Marco van Wieringen, March 2012
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /* Forward referenced functions */
 

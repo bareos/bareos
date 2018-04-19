@@ -29,7 +29,7 @@
  * Bareos File Daemon Include Exclude pattern handling.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "findlib/match.h"
 #include "lib/edit.h"

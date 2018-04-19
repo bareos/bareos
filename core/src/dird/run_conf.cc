@@ -29,7 +29,7 @@
  * directives, which are part of the Schedule Resource
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "lib/edit.h"
 

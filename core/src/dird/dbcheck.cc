@@ -27,7 +27,7 @@
  * Program to check a BAREOS database for consistency and to make repairs
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "cats/cats.h"
 #include "cats/cats_backends.h"
 #include "lib/runscript.h"

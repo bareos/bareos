@@ -33,7 +33,7 @@
 extern "C" {
 #include <cmocka.h>
 }
-#include "bareos.h"
+#include "include/bareos.h"
 
 //#define TEST_RW_TRY_LOCK
 //#define TEST_RWLOCK

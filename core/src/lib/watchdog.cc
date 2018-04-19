@@ -26,7 +26,7 @@
  * Kern Sibbald, January MMII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 
 /* Exported globals */

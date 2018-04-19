@@ -24,7 +24,7 @@
  * @file
  * MSSQL backup restore plugin using VDI.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "fd_plugins.h"
 #include "fd_common.h"
 

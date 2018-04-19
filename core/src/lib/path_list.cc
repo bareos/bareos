@@ -23,7 +23,7 @@
  * Kern Sibbald, September MMVII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #define debuglevel 50
 

@@ -30,7 +30,7 @@
  *
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/consolidate.h"
 #include "dird/job.h"

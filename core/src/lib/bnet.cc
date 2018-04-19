@@ -33,7 +33,7 @@
  * Network Utility Routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "lib/bnet.h"
 #include "lib/bsys.h"

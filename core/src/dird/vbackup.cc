@@ -35,7 +35,7 @@
  *   * When the File daemon finishes the job, update the DB.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/backup.h"
 #include "dird/job.h"

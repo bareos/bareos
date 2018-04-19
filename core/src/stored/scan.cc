@@ -27,7 +27,7 @@
  * Volume name. If found, open the file for append.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 
 /* Forward referenced functions */

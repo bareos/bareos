@@ -27,7 +27,7 @@
  * Spooling code
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/device.h"

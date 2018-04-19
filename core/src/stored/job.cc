@@ -28,7 +28,7 @@
  * Job control and execution for Storage Daemon
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/fd_cmds.h"

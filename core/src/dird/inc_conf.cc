@@ -29,7 +29,7 @@
  * Exclude records
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "findlib/match.h"
 

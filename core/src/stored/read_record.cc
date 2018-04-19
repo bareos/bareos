@@ -35,7 +35,7 @@
  * any modifications.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/butil.h"
 #include "stored/device.h"

@@ -27,7 +27,7 @@
  * ELASTO API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_ELASTO
 #include "stored.h"

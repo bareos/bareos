@@ -50,7 +50,7 @@
  */
 
 #define _LOCKMGR_COMPLIANT
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 
 #undef ASSERT
@@ -73,7 +73,7 @@
 
   Some part of the code can't use this manager, for example the
   rwlock object or the smartalloc lib. To disable LMGR, just add
-  _LOCKMGR_COMPLIANT before the inclusion of "bareos.h"
+  _LOCKMGR_COMPLIANT before the inclusion of "include/bareos.h"
 
   cd build/src/tools
   g++ -g -c lockmgr.c -I.. -I../lib -D_USE_LOCKMGR -D_TEST_IT

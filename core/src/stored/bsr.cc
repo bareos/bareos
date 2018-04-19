@@ -38,7 +38,7 @@
  *   To be done ...
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "include/jcr.h"
 

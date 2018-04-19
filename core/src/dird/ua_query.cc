@@ -28,7 +28,7 @@
  * BAREOS Director -- User Agent Database Query Commands
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"

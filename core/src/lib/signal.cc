@@ -32,7 +32,7 @@
  */
 
 #ifndef HAVE_WIN32
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifndef _NSIG
 #define BA_NSIG 100

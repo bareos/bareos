@@ -28,7 +28,7 @@
  * This file handles external connections made to the storage daemon.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/dir_cmd.h"
 #include "stored/fd_cmds.h"

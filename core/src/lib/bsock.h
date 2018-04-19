@@ -38,7 +38,7 @@
 #ifndef BRS_BSOCK_H
 #define BRS_BSOCK_H
 
-#include <bareos.h>
+#include <include/bareos.h>
 
 struct btimer_t;                      /* forward reference */
 class BareosSocket;

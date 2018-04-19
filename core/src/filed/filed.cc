@@ -28,7 +28,7 @@
  * Bareos File Daemon
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/dir_cmd.h"
 #include "filed/socket_server.h"

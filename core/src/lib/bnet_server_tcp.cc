@@ -29,7 +29,7 @@
   * tcp server code
   */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/bnet_sever_tcp.h"
 #include "lib/bsys.h"
 

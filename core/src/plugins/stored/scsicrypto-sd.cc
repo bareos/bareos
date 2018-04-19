@@ -59,7 +59,7 @@
  * This plugin uses the lowlevel SCSI key loading implemented in the
  * libbareos shared library.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/status.h"
 #include "lib/crypto_wrap.h"

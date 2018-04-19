@@ -27,7 +27,7 @@
  * Test program for testing wild card expressions
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/fnmatch.h"
 
 static void usage()

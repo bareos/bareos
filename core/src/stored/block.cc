@@ -29,7 +29,7 @@
  * tape block handling functions
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/crc32.h"
 #include "stored/device.h"

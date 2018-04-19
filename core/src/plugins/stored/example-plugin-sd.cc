@@ -26,7 +26,7 @@
  * @file
  * Sample Storage daemon Plugin program
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"

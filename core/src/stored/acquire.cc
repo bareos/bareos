@@ -28,8 +28,8 @@
  * Routines to acquire and release a device for read/write
  */
 
-#include "bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Deamon headers */
+#include "include/bareos.h"                   /* pull in global headers */
+#include "stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/acquire.h"
 #include "stored/autochanger.h"
 #include "stored/job.h"

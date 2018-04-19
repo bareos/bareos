@@ -49,8 +49,8 @@
  * device.
  */
 
-#include "bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Deamon headers */
+#include "include/bareos.h"                   /* pull in global headers */
+#include "stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/device.h"
 #include "stored/match_bsr.h"
 #include "lib/edit.h"

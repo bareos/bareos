@@ -18,7 +18,7 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "tls_conf.h"
 
 tls_cert_t::~tls_cert_t() {

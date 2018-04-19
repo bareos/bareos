@@ -41,7 +41,7 @@
  * Emulate the Linux st (scsi tape) driver on Microsoft Windows.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "generic_tape_device.h"
 #include "win32_tape_device.h"

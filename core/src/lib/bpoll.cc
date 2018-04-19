@@ -24,7 +24,7 @@
  *  Marco van Wieringen, May 2012
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_POLL_H
 #include <poll.h>

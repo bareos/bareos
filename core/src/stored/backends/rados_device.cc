@@ -27,7 +27,7 @@
  * CEPH (librados) API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_RADOS
 #include "stored.h"

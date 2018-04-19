@@ -72,7 +72,7 @@
  * business with no lost data.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/autochanger.h"
 #include "stored/sd_backends.h"

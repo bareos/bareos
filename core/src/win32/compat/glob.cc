@@ -30,7 +30,7 @@
  * Copyright (C) 2011-2013, MinGW.org Project.
  * ---------------------------------------------------------------------------
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include <glob.h>
 #include <ctype.h>
 #include <stdlib.h>

@@ -27,7 +27,7 @@
  * Philipp Storz, November 2017
  */
 #include "gtest/gtest.h"
-#include "bareos.h"
+#include "include/bareos.h"
 
 
 struct HTABLEJCR {

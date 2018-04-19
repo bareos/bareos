@@ -35,7 +35,7 @@
 
 #define _LOCKMGR_COMPLIANT
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*
  * Use the real routines here

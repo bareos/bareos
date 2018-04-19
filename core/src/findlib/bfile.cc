@@ -30,7 +30,7 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 
 const int debuglevel = 200;

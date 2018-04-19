@@ -26,7 +26,7 @@
  * Kern Sibbald, 2000
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lex.h"
 #include "lib/edit.h"
 

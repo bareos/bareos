@@ -41,7 +41,7 @@
  */
 
 #define NEED_JANSSON_NAMESPACE 1
-#include "bareos.h"
+#include "include/bareos.h"
 #include "tray_conf.h"
 
 #define CONFIG_FILE "tray-monitor.conf"   /* default configuration file */

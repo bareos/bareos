@@ -27,7 +27,7 @@
  * Statistics collector thread.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "cats/sql_pooling.h"
 #include "dird/sd_cmds.h"

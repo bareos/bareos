@@ -28,7 +28,7 @@
  * Bareos File Daemon restore.c Restorefiles.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/compression.h"
 #include "filed/crypto.h"

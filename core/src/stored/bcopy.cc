@@ -28,7 +28,7 @@
  * Program to copy a Bareos from one volume to another.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"

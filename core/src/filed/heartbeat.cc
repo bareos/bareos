@@ -30,7 +30,7 @@
  * If configured, sends heartbeats to Dir
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "lib/bnet.h"
 

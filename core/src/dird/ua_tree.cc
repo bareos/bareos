@@ -31,7 +31,7 @@
  *
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #ifdef HAVE_FNMATCH
 #include <fnmatch.h>

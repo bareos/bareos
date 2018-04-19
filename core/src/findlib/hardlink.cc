@@ -27,7 +27,7 @@
  * Hardlinked files handling. The hardlinks are tracked using a htable.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "findlib/hardlink.h"
 

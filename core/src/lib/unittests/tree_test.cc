@@ -26,7 +26,7 @@
  *
  * Philipp Storz, November 2017
  */
-#include "bareos.h"
+#include "include/bareos.h"
 
 #define B_PAGE_SIZE 4096
 #define MAX_PAGES 2400

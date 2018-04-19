@@ -28,7 +28,7 @@
  * This file handles external connections made to the director.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/fd_cmds.h"
 #include "dird/ua_server.h"

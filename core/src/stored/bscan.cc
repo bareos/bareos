@@ -30,7 +30,7 @@
  * with the tape.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"

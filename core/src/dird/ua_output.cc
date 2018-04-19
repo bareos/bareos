@@ -30,7 +30,7 @@
  * I.e. messages, listing database, showing resources, ...
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
 #include "cats/sql_pooling.h"

@@ -31,7 +31,7 @@
  * Thanks to the TAR programmers.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 #include "findlib/match.h"

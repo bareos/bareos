@@ -27,7 +27,7 @@
  * BAREOS Director -- Import/Export and Move functions.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"

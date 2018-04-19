@@ -53,7 +53,7 @@
  *    Eric Bollengier April 2007
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "bregex.h"
 
 #define set_error(x) bufp->errmsg=((char *)(x))

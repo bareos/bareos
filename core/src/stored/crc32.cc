@@ -60,7 +60,7 @@ main()
 }
 #endif
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if defined(AC_APPLE_UNIVERSAL_BUILD)
 #error This code only supports compile time endianess selection not during runtime.

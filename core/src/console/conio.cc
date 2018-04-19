@@ -50,7 +50,7 @@
 #else
 
 /* We are in Bareos */
-#include "bareos.h"
+#include "include/bareos.h"
 
 #endif
 

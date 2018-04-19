@@ -29,7 +29,7 @@
  * Update command processing
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/next_vol.h"
 #include "dird/sd_cmds.h"

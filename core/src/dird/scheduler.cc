@@ -32,7 +32,7 @@
  * fire them up.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
 #include "dird/storage.h"

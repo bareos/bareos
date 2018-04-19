@@ -35,7 +35,7 @@
  * compile-time configuration.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if !defined(HAVE_OPENSSL) || defined(HAVE_WIN32)
 

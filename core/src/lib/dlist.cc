@@ -26,7 +26,7 @@
  * Kern Sibbald, July MMIII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*
  * Append an item to the list

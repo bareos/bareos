@@ -26,7 +26,7 @@
  * @file
  * Sample Plugin program
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dir_plugins.h"
 
 #define PLUGIN_LICENSE      "Bareos AGPLv3"

@@ -28,7 +28,7 @@
  * User Agent Access Control List (ACL) handling
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "lib/edit.h"
 

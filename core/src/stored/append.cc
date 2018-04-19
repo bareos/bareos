@@ -27,7 +27,7 @@
  * Append code for Storage daemon
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/append.h"

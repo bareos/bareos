@@ -27,7 +27,7 @@
  * Gluster Filesystem API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_GFAPI
 #include "stored.h"

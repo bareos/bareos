@@ -29,7 +29,7 @@
  * UNIX FILE API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "unix_file_device.h"
 #include "lib/util.h"

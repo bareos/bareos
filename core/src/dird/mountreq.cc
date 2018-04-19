@@ -31,7 +31,7 @@
  * Basic tasks done here:
  *    Handle Mount services.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 /*

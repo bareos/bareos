@@ -28,7 +28,7 @@
  * This file handles external connections made to the File daemon.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/dir_cmd.h"
 #include "filed/sd_cmds.h"

@@ -28,7 +28,7 @@
  * This file handles the status command
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/status.h"
 #include "stored/spool.h"

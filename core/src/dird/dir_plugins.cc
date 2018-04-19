@@ -26,7 +26,7 @@
 /** @file
  * BAREOS pluginloader
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dir_plugins.h"
 #include "lib/edit.h"

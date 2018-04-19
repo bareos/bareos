@@ -31,7 +31,7 @@
 
 */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*  General purpose queue  */
 

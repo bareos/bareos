@@ -28,7 +28,7 @@
  * Dumb program to do an "ls" of a Bareos 2.0 mortal file.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "findlib/find.h"

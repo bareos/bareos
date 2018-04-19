@@ -23,7 +23,7 @@
  * Windows specific functions.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if defined(HAVE_WIN32)
 

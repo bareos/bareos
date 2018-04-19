@@ -29,7 +29,7 @@
  * UNIX FIFO API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/autochanger.h"
 #include "unix_fifo_device.h"

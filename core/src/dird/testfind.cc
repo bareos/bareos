@@ -27,7 +27,7 @@
  * Test program for find files
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird/dird.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"

@@ -28,7 +28,7 @@
  * Quota processing routines.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #define debuglevel 100

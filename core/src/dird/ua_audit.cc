@@ -26,7 +26,7 @@
  * BAREOS Director -- User agent auditing.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 /* Forward referenced functions */

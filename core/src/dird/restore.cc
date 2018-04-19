@@ -38,7 +38,7 @@
  */
 
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/backup.h"
 #include "dird/fd_cmds.h"

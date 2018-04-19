@@ -24,7 +24,7 @@
  * Author: Marco van Wieringen <marco.van.wieringen@bareos.com>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if defined(HAVE_GNUTLS)
 

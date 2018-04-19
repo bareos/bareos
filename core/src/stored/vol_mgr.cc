@@ -28,7 +28,7 @@
  * Volume management functions for Storage Daemon
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/autochanger.h"
 #include "include/jcr.h"

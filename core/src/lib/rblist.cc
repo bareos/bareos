@@ -28,7 +28,7 @@
  * Kern Sibbald, November MMV
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*
  *  Insert an item in the tree, but only if it is unique

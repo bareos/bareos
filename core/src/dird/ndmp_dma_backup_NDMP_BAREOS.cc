@@ -27,7 +27,7 @@
  * Backup specific NDMP Data Management Application (DMA) routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
 #include "dird/msgchan.h"

@@ -30,7 +30,7 @@
  */
 
 #define NEED_JANSSON_NAMESPACE 1
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/json.h"
 
 const char *json_error_message_template = "{ "

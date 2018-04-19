@@ -31,7 +31,7 @@
  * These are PostgreSQL specific routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_POSTGRESQL
 

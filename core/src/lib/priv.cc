@@ -19,7 +19,7 @@
    02110-1301, USA.
 */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #undef ENABLE_KEEP_READALL_CAPS_SUPPORT
 #if defined(HAVE_SYS_PRCTL_H) && defined(HAVE_SYS_CAPABILITY_H) && \

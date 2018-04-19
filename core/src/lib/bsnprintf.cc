@@ -32,7 +32,7 @@
  * Kern Sibbald, November MMV
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include <wchar.h>
 
 #define FP_OUTPUT 1 /* BAREOS uses floating point */

@@ -27,7 +27,7 @@
  * Generic base 64 input and output routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 static uint8_t const base64_digits[64] =
 {

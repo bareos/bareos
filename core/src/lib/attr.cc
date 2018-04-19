@@ -27,7 +27,7 @@
  * attr.c  Unpack an Attribute record returned from the tape
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/breg.h"
 #include "lib/edit.h"

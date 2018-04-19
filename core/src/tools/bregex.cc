@@ -27,7 +27,7 @@
  * Test program for testing regular expressions.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /**
  *  If you define BAREOS_REGEX, bregex will be built with the

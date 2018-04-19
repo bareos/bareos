@@ -61,7 +61,7 @@
  * different platform streams to be decoded on another similar platform.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 

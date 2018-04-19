@@ -36,7 +36,7 @@ extern "C" {
 }
 
 #include <stdio.h>
-#include "bareos.h"
+#include "include/bareos.h"
 #include "findlib/find.h"
 
 void test_drivetype(void **state) {

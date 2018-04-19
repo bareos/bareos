@@ -27,7 +27,7 @@
  * Verify files.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "findlib/find.h"
 #include "findlib/attribs.h"

@@ -27,7 +27,7 @@
  * A simple test plugin for the Bareos File Daemon derived from
  * the bpipe plugin, but used for testing new features.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "fd_plugins.h"
 #include "fd_common.h"
 #include "lib/ini.h"

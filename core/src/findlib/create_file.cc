@@ -28,7 +28,7 @@
  * Create a file, and reset the modes
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 #include "findlib/makepath.h"

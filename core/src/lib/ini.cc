@@ -24,7 +24,7 @@
  * key2 = val     # <type>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "ini.h"
 
 #define bfree_and_null_const(a) do{if(a){free((void *)a); (a)=NULL;}} while(0)

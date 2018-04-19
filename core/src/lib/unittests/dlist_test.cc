@@ -28,7 +28,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "bareos.h"
+#include "include/bareos.h"
 //#include "../lib/protos.h"
 //#include "protos.h"
 

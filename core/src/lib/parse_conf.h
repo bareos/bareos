@@ -25,7 +25,7 @@
  */
 #pragma once
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "bc_types.h"
 
 #include <functional>

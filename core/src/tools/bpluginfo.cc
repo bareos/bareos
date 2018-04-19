@@ -35,7 +35,7 @@
  * - Enabled functions, etc.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "fd_plugins.h"
 #include "dir_plugins.h"
 #include "sd_plugins.h"

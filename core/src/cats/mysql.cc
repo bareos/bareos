@@ -31,7 +31,7 @@
  * other files are generic.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_MYSQL
 

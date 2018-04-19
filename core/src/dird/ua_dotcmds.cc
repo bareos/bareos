@@ -33,7 +33,7 @@
  * returned results are (supposed to be) predictable.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
 #include "cats/bvfs.h"

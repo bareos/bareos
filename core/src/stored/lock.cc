@@ -27,8 +27,8 @@
  * Collection of Bacula Storage daemon locking software
  */
 
-#include "bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Deamon headers */
+#include "include/bareos.h"                   /* pull in global headers */
+#include "stored.h"                   /* pull in Storage Daemon headers */
 #include "lib/edit.h"
 
 #ifdef SD_DEBUG_LOCK

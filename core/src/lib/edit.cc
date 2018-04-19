@@ -26,7 +26,7 @@
  * Kern Sibbald, December MMII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 #include <math.h>
 

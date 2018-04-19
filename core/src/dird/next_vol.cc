@@ -30,7 +30,7 @@
  * Split out of catreq.c August MMIII catalog request from the Storage daemon.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/autoprune.h"
 #include "dird/autorecycle.h"

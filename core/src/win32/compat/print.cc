@@ -49,7 +49,7 @@
  *    acceptable.  Consider stealing from mutt or enlightenment.
  **************************************************************/
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 typedef void (prfun)(char *, size_t *, size_t, int);
 

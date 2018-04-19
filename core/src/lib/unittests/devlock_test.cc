@@ -27,7 +27,7 @@
  * Philipp Storz, November 2017
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 //#define TEST_RW_TRY_LOCK
 //#define TEST_RWLOCK

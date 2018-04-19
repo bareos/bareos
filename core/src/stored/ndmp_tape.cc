@@ -35,7 +35,7 @@
  * tape records.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if HAVE_NDMP
 

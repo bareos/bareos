@@ -28,7 +28,7 @@
  * versus attributes in Catalog
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "lib/bget_msg.h"
 #include "lib/bnet.h"

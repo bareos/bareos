@@ -24,7 +24,7 @@
  * Kern Sibbald, June MMII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/util.h"
 
 #define B_PAGE_SIZE 4096

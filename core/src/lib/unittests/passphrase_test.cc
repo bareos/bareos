@@ -24,7 +24,7 @@
  *
  * Philipp Storz, November 2017
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "gtest/gtest.h"
 #define PASSWORDLEN 10
 

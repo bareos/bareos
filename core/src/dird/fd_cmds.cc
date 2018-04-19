@@ -34,7 +34,7 @@
  */
 
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "findlib/find.h"
 #include "dird/authenticate.h"

@@ -26,7 +26,7 @@
  * This file handles accepting Storage Daemon Commands
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/authenticate.h"
 #include "lib/bnet.h"

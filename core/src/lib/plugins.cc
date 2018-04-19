@@ -26,7 +26,7 @@
  * Kern Sibbald, October 2007
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if defined(HAVE_DLFCN_H)
 #include <dlfcn.h>

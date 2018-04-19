@@ -22,7 +22,7 @@
  * Library includes for BAREOS lib directory
  *
  * This file contains an include for each library file
- * that we use within Bareos. bareos.h includes this
+ * that we use within Bareos. include/bareos.h includes this
  * file and thus picks up everything we need in lib.
  */
 

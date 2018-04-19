@@ -28,7 +28,7 @@
  * Automatic Pruning Applies retention periods
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/next_vol.h"
 #include "dird/ua_server.h"

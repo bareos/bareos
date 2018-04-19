@@ -28,7 +28,7 @@
  * This file contains the HTABLE abstraction of the accurate payload storage.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "accurate.h"
 #include "lib/attribs.h"

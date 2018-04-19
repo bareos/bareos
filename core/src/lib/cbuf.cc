@@ -25,7 +25,7 @@
 /*
  * Circular buffer used for producer/consumer problem with pthreads.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "cbuf.h"
 
 /*

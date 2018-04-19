@@ -33,7 +33,7 @@
  *                    starts the restore job.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/ua_db.h"
 #include "dird/ua_input.h"

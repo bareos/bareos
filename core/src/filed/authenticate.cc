@@ -28,7 +28,7 @@
  * Authenticate Director who is attempting to connect.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "lib/bnet.h"
 

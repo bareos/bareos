@@ -27,7 +27,7 @@
  * In memory FHDB for NDMP Data Management Application (DMA)
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #if HAVE_NDMP

@@ -26,7 +26,7 @@
  * @file
  * Python Storage daemon Plugin program
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 
 #undef _POSIX_C_SOURCE

@@ -29,7 +29,7 @@
  * Functions to handle compression/decompression of data.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 
 #if defined(HAVE_LZO) || defined(HAVE_LIBZ) || defined(HAVE_FASTLZ)

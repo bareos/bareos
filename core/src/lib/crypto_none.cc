@@ -24,7 +24,7 @@
  * Author: Landon Fuller <landonf@opendarwin.org>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if !defined(HAVE_OPENSSL)
 

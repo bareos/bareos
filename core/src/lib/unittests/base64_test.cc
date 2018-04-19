@@ -30,7 +30,7 @@
 
 
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "gtest/gtest.h"
 
 #ifdef HAVE_WIN32

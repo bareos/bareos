@@ -28,7 +28,7 @@
  * BAREOS Director -- User Agent database handling.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/ua_db.h"
 #include "cats/sql_pooling.h"

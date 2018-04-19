@@ -28,7 +28,7 @@
  *
  * based on admin.c
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/archive.h"
 #include "dird/job.h"

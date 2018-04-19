@@ -32,7 +32,7 @@
  * between multiple include blocks.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "findlib/shadowing.h"
 

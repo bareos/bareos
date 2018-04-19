@@ -31,7 +31,7 @@
  * Default is to realloc the pointer array for each new member.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /**
  * Private grow list function. Used to insure that

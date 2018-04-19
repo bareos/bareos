@@ -25,7 +25,7 @@
  * Written by Marco van Wieringen and Philipp Storz, November 2013
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/util.h"
 #include "include/jcr.h"

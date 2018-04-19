@@ -26,7 +26,7 @@
  * Author: Landon Fuller <landonf@opendarwin.org>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*
  * BAREOS ASN.1 Syntax

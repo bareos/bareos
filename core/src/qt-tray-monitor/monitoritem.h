@@ -26,7 +26,7 @@
 #include <QStringList>
 #include <QObject>
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "tray_conf.h"
 #include "jcr.h"
 #include "tray-monitor.h"

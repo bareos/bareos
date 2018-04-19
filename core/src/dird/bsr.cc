@@ -28,7 +28,7 @@
  * Bootstrap routines.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/ua_input.h"
 #include "dird/ua_restore.h"

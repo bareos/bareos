@@ -28,7 +28,7 @@
  * BAREOS Director -- Automatic Recycling of Volumes
  *                    Recycles Volumes that have been purged
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/autorecycle.h"
 #include "dird/next_vol.h"

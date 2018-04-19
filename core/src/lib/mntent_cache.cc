@@ -54,7 +54,7 @@
  *  Marco van Wieringen, August 2009
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "mntent_cache.h"
 
 #include <errno.h>

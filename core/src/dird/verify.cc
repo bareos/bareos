@@ -33,7 +33,7 @@
  *    * When the File daemon sends the attributes, compare them to what is in the DB.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "findlib/find.h"
 #include "dird/backup.h"

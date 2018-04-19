@@ -25,7 +25,7 @@
  * Marco van Wieringen, April 2012
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "crypto_cache.h"
 
 static pthread_mutex_t crypto_cache_lock = PTHREAD_MUTEX_INITIALIZER;

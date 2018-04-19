@@ -28,7 +28,7 @@
  * Windows File API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "win32_file_device.h"
 

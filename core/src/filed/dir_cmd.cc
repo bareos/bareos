@@ -28,7 +28,7 @@
  * This file handles accepting Director Commands
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "ch.h"
 #include "filed/authenticate.h"

@@ -28,7 +28,7 @@
  * Configuration file parser for IP-Addresse ipv4 and ipv6
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/bnet.h"
 #include "lib/bsys.h"
 #include "lib/edit.h"

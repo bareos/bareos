@@ -40,7 +40,7 @@
 /* Define SYS to use the system fnmatch() rather than ours */
 /* #define SYS 1 */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #ifdef SYS
 #include <fnmatch.h>
 #else

@@ -28,7 +28,7 @@
  * User Agent Server
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/authenticate.h"
 #include "dird/job.h"

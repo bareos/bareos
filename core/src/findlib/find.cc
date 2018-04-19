@@ -32,7 +32,7 @@
  * routines for the new syntax Options resource.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 #include "findlib/find_one.h"

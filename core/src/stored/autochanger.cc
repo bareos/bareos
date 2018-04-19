@@ -28,8 +28,8 @@
  * Routines for handling the autochanger.
  */
 
-#include "bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Deamon headers */
+#include "include/bareos.h"                   /* pull in global headers */
+#include "stored.h"                   /* pull in Storage Daemon headers */
 #include "stored/autochanger.h"
 #include "stored/wait.h"
 #include "lib/bnet.h"

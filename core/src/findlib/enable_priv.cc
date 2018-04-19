@@ -27,7 +27,7 @@
  * Enable backup privileges for Win32 systems.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "jcr.h"
 #include "findlib/enable_priv.h"

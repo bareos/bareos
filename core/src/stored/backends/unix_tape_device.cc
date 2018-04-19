@@ -41,7 +41,7 @@
  * UNIX Tape API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "generic_tape_device.h"
 #include "unix_tape_device.h"

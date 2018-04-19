@@ -27,7 +27,7 @@
  * Storage specific NDMP Data Management Application (DMA) routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/sd_cmds.h"
 #include "dird/storage.h"

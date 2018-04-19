@@ -28,7 +28,7 @@
  * BAREOS sql pooling code that manages the database connection pools.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if HAVE_SQLITE3 || HAVE_MYSQL || HAVE_POSTGRESQL || HAVE_INGRES || HAVE_DBI
 

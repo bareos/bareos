@@ -30,8 +30,8 @@
  * Code for wait_for_sysop() pulled from askdir.c
  */
 
-#include "bareos.h"                   /* pull in global headers */
-#include "stored.h"                   /* pull in Storage Deamon headers */
+#include "include/bareos.h"                   /* pull in global headers */
+#include "stored.h"                   /* pull in Storage Daemon headers */
 #include "lib/edit.h"
 #include "include/jcr.h"
 

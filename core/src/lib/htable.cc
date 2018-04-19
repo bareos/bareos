@@ -46,7 +46,7 @@
 #pragma pack(4)
 #endif
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #define B_PAGE_SIZE 4096
 #define MIN_PAGES 32

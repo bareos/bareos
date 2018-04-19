@@ -42,7 +42,7 @@
  *       In affect, they are commands.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/catreq.h"
 #include "dird/mountreq.h"

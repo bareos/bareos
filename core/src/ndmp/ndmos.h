@@ -133,7 +133,7 @@
  * Only explicitly include config.h when we are doing standalone
  * compiling of the lib when included from Bareos there is no need
  * to re-include config.h as that config file is not protected against
- * multiple including. So we just test to see if bareos.h is not
+ * multiple including. So we just test to see if include/bareos.h is not
  * already included as that leaves a nice fingerprint.
  */
 #ifndef _BAREOS_H

@@ -47,7 +47,7 @@
  * cvs co :pserver:anonymous@libdbi-drivers.cvs.sourceforge.net:/cvsroot/libdbi-drivers
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_DBI
 

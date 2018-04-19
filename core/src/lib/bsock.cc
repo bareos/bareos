@@ -26,7 +26,7 @@
  * Kern Sibbald
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 #include "lib/bnet.h"
 #include "lib/cram_md5.h"

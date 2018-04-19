@@ -33,7 +33,7 @@
  */
 //#define BAREOS_REGEX
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include <stdio.h>
 #include "lib/breg.h"
 

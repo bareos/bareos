@@ -35,7 +35,7 @@
  *    * Create a thread to interact with the Storage daemon
  *      who returns a job status and requests Catalog services, etc.
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/getmsg.h"
 #include "dird/job.h"

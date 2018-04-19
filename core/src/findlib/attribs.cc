@@ -28,7 +28,7 @@
  * other non-Unix systems, or Unix systems with ACLs, ...
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 #include "ch.h"

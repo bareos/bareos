@@ -29,7 +29,7 @@
  * Storage specific routines.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/sd_cmds.h"
 #include "dird/ndmp_dma_storage.h"

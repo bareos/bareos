@@ -28,7 +28,7 @@
  */
 
 #include "gtest/gtest.h"
-#include "bareos.h"
+#include "include/bareos.h"
 //#include "windows.h"
 
 struct FileSet {

@@ -28,7 +28,7 @@
  * @file
  * Bareos pluginloader
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "sd_plugins.h"
 #include "lib/crypto_cache.h"

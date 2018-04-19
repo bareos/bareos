@@ -57,7 +57,7 @@
         http://archives.neohapsis.com/archives/postfix/2000-05/1520.html
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #define MY_NAME "bsmtp"
 

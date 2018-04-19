@@ -41,7 +41,7 @@
   done > dat1
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored/stored.h"
 #include "findlib/find.h"
 #include "cats/cats.h"

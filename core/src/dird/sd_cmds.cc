@@ -29,7 +29,7 @@
  * send commands to Storage daemon
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/authenticate.h"
 #include "dird/getmsg.h"

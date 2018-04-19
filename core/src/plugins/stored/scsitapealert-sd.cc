@@ -26,7 +26,7 @@
  * @file
  * SCSI Tape Alert Storage daemon Plugin
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/scsi_tapealert.h"
 

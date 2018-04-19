@@ -26,7 +26,7 @@
  * are also permitted.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 
 /*

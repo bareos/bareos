@@ -46,7 +46,7 @@
  *  workq_destroy(workq_t *wq);
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 
 /* Forward referenced functions */

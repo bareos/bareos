@@ -24,7 +24,7 @@
  * Marco van Wieringen, February 2015
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 
 #if defined(HAVE_DROPLET)

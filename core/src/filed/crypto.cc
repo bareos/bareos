@@ -29,7 +29,7 @@
  * Functions to handle cryptology
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "findlib/find_one.h"
 #include "lib/edit.h"

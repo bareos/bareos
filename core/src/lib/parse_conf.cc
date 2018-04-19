@@ -50,7 +50,7 @@
  * Kern Sibbald, January MM
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 
 #if defined(HAVE_WIN32)

@@ -27,7 +27,7 @@
  * Object Storage API device abstraction.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #ifdef HAVE_DROPLET
 #include "stored.h"

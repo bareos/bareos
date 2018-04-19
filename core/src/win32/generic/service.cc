@@ -26,7 +26,7 @@
  * #defines.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "win32.h"
 #include "who.h"
 

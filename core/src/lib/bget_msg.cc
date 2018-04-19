@@ -28,7 +28,7 @@
  * network signals for the FD and the SD.
  */
 
-#include "bareos.h"                   /* pull in global headers */
+#include "include/bareos.h"                   /* pull in global headers */
 #include "lib/bnet.h"
 #include "lib/bget_msg.h"
 

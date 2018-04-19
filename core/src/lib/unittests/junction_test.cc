@@ -24,7 +24,7 @@
  */
 
 #ifdef HAVE_WIN32
-#include "bareos.h"
+#include "include/bareos.h"
 #include "gtest/gtest.h"
 #include "winapi.h"
 

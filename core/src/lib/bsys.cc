@@ -28,7 +28,7 @@
  * BAREOS utility functions are in util.c
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"
 #else

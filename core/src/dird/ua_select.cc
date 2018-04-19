@@ -28,7 +28,7 @@
  * User Agent Prompt and Selection code
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/storage.h"
 #include "dird/ua_input.h"

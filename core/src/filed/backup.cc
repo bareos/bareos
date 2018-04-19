@@ -28,7 +28,7 @@
  * Bareos File Daemon  backup.c  send file attributes and data to the Storage daemon.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/accurate.h"
 #include "filed/compression.h"

@@ -29,7 +29,7 @@
  * Functions to handle compression/decompression of data.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 #include "ch.h"
 #include "streams.h"

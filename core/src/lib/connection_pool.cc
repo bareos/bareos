@@ -23,7 +23,7 @@
  * Connection and Connection Pool
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "connection_pool.h"
 #include "lib/util.h"
 

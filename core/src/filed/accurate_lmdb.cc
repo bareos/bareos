@@ -26,7 +26,7 @@
  * This file contains the LMDB abstraction of the accurate payload storage.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 
 #ifdef HAVE_LMDB

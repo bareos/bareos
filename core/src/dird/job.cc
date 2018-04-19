@@ -28,7 +28,7 @@
  * BAREOS Director Job processing routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/admin.h"
 #include "dird/archive.h"

@@ -26,7 +26,7 @@
  * Kern Sibbald, MM  separated from util.c MMIII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 
 /*

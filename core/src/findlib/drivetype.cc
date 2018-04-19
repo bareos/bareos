@@ -27,7 +27,7 @@
  * Implement routines to determine drive type (Windows specific).
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "findlib/drivetype.h"
 

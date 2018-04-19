@@ -40,7 +40,7 @@
  *    utime_t  (64 bit integer in seconds base Epoch)
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include <math.h>
 
 void blocaltime(const time_t *time, struct tm *tm)

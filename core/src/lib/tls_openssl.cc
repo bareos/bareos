@@ -25,7 +25,7 @@
  * Author: Landon Fuller <landonf@threerings.net>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/crypto_openssl.h"
 #include "lib/bpoll.h"
 #include <assert.h>

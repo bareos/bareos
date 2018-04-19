@@ -26,7 +26,7 @@
  * Interactive configuration engine for director.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/ua_select.h"
 

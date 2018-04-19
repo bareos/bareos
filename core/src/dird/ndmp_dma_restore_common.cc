@@ -28,7 +28,7 @@
  * Philipp Storz, April 2017
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
 #include "dird/restore.h"

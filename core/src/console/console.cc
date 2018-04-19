@@ -28,7 +28,7 @@
  * Bareos Console interface to the Director
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "console_conf.h"
 #include "jcr.h"
 #include "lib/bnet.h"

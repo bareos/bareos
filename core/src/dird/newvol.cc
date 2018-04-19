@@ -35,7 +35,7 @@
  *    If possible create a new Media entry
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/expand.h"
 #include "dird/next_vol.h"

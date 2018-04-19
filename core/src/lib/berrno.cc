@@ -32,7 +32,7 @@
  * See berrno.h for how to use berrno.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/bsys.h"
 
 #ifndef HAVE_WIN32

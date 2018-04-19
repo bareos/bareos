@@ -27,7 +27,7 @@
  * Extracted from other source files by Marco van Wieringen, September 2013.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 #include <netdb.h>
 #include <netinet/tcp.h>

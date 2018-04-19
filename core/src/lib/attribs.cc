@@ -27,7 +27,7 @@
  * Encode and decode standard Unix attributes
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/scan.h"
 
 /**

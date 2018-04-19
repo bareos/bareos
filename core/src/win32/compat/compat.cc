@@ -31,7 +31,7 @@
  * @file
  * compatibilty layer to make bareos-fd run natively under windows
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "dlfcn.h"
 #include "findlib/find.h"
@@ -46,7 +46,7 @@
 
 /**
  * Note, if you want to see what Windows variables and structures
- * are defined, bareos.h includes <windows.h>, which is found in:
+ * are defined, include/bareos.h includes <windows.h>, which is found in:
  *
  *   cross-tools/mingw32/mingw32/include
  * or

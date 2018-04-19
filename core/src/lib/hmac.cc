@@ -26,7 +26,7 @@
  * Adapted to BACULA by Kern E. Sibbald, February MMI.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #define PAD_LEN 64           /* PAD length */
 #define SIG_LEN MD5HashSize  /* MD5 digest length */

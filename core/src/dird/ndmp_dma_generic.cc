@@ -27,7 +27,7 @@
  * Generic NDMP Data Management Application (DMA) routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #if HAVE_NDMP

@@ -26,7 +26,7 @@
  * Philipp Storz, November 2016
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #if HAVE_NDMP

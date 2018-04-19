@@ -38,7 +38,7 @@
  * Adapted by Kern Sibbald to BACULA June 2003
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #if defined(HAVE_PCREPOSIX)
 #  include <pcreposix.h>
 #elif defined(HAVE_WIN32)

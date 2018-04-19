@@ -28,7 +28,7 @@
  * Bareos File Daemon Status routines
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "lib/status.h"
 #include "lib/edit.h"

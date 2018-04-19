@@ -29,7 +29,7 @@
  * responsible for doing admin jobs
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 #include "dird/admin.h"
 #include "dird/job.h"

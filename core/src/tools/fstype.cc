@@ -27,7 +27,7 @@
  * Program for determining file system type
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "findlib/find.h"
 #include "lib/mntent_cache.h"
 #include "findlib/fstype.h"

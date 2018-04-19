@@ -30,7 +30,7 @@
  * any terminal processes.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 extern int debug_level;
 
 void

@@ -26,7 +26,7 @@
  * Kern Sibbald, June MMII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "bsr.h"
 

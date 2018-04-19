@@ -31,7 +31,7 @@
  */
 
 #define _LOCKMGR_COMPLIANT
-#include "bareos.h"
+#include "include/bareos.h"
 #include "devlock.h"
 
 /*

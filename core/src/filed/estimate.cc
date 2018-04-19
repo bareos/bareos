@@ -28,7 +28,7 @@
  * Make and estimate of the number of files and size to be saved.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/accurate.h"
 

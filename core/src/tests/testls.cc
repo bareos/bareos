@@ -26,7 +26,7 @@
  * Kern Sibbald, MM
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "findlib/find.h"
 #include "filed/fd_plugins.h"

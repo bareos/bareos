@@ -24,7 +24,7 @@
  * Eric Bollengier, March 2007
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #include "breg.h"
 #include "mem_pool.h"

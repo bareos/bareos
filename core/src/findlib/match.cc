@@ -37,7 +37,7 @@
  * This code is still used for lists in testls and bextract.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "find.h"
 #include "ch.h"

@@ -26,7 +26,7 @@
  * @file
  * Python Director Plugin program
  */
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #undef _POSIX_C_SOURCE

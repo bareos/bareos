@@ -29,7 +29,7 @@
  * migration, archive, copy, and virtual backup jobs.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/append.h"

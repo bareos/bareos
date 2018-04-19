@@ -29,7 +29,7 @@
  * in particular for the LabelFormat specification.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 static int date_item(JobControlRecord *jcr,

@@ -24,7 +24,7 @@
  * Author: Landon Fuller <landonf@threerings.net>
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include <assert.h>
 
 #ifndef HAVE_TLS

@@ -34,7 +34,7 @@
 #ifndef __JCR_H_
 #define __JCR_H_ 1
 
-#include <bareos.h>
+#include <include/bareos.h>
 
 /**
  * Backup/Verify level code. These are stored in the DB

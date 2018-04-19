@@ -29,7 +29,7 @@
  * BAREOS Catalog Database routines specific to SQLite
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 #if HAVE_SQLITE3
 

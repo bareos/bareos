@@ -56,7 +56,7 @@
  *   - Tru64 (Extended Attributes)
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "jcr.h"
 

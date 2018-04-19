@@ -33,7 +33,7 @@
  * i.e. printf, ...
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/autochanger.h"

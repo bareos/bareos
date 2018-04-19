@@ -31,7 +31,7 @@
 
 #ifdef WIN32_VSS
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "findlib/find.h"
 #define FILE_DAEMON 1

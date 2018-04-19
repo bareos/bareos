@@ -33,7 +33,7 @@
  * File daemon.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/crypto_cache.h"
 #include "stored/acquire.h"

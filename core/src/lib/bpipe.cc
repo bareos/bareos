@@ -25,7 +25,7 @@
  * Kern Sibbald, November MMII
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "jcr.h"
 #include "lib/bsys.h"
 #include "lib/timers.h"

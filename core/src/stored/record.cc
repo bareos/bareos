@@ -28,7 +28,7 @@
  * Volume (tape/disk) record handling functions
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "lib/attribs.h"
 #include "lib/util.h"

@@ -27,7 +27,7 @@
  * Implement routines to determine file system types.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "find.h"
 #include "findlib/fstype.h"
 

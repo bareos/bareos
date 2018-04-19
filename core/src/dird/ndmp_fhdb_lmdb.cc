@@ -27,7 +27,7 @@
  * FHDB using LMDB for NDMP Data Management Application (DMA)
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "dird.h"
 
 #if defined(HAVE_NDMP) && defined(HAVE_LMDB)

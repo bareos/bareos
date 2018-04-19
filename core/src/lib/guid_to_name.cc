@@ -25,7 +25,7 @@
  * for preformance reasons.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "lib/edit.h"
 
 #ifndef WIN32

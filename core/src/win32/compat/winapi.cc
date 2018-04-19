@@ -31,7 +31,7 @@
  * single binary will run on all Windows systems.
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 /*
  * Init with win9x, but maybe set to NT in InitWinAPI

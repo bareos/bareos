@@ -21,7 +21,7 @@
    02110-1301, USA.
 */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 #include "filed/accurate.h"
 #include "filed/verify.h"

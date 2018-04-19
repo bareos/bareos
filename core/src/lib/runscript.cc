@@ -24,7 +24,7 @@
  * Eric Bollengier, May 2006
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "include/jcr.h"
 #include "runscript.h"
 #include "lib/util.h"

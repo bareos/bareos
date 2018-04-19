@@ -34,7 +34,7 @@ extern "C" {
 #include <cmocka.h>
 }
 
-#include "bareos.h"
+#include "include/bareos.h"
 
 
 void test_sellist(void **state) {

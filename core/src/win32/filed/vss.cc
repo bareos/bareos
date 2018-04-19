@@ -31,7 +31,7 @@
 
 #ifdef WIN32_VSS
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "filed.h"
 
 #include "ms_atl.h"

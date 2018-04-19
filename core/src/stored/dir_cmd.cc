@@ -41,7 +41,7 @@
  * File daemon commands are handled in fd_cmds.c
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #include "stored.h"
 #include "stored/acquire.h"
 #include "stored/authenticate.h"

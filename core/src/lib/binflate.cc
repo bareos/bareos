@@ -24,7 +24,7 @@
  * BAREOS zlib compression wrappers
  */
 
-#include "bareos.h"
+#include "include/bareos.h"
 #ifdef HAVE_LIBZ
 #include <zlib.h>
 #endif
