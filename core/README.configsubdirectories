@@ -1,0 +1,81 @@
+Configuration API
+=================
+
+Naming
+------
+
+    * Components:
+        * bareos-dir
+        * bareos-sd
+        * bareos-fd
+        * bareos-traymonitor
+        * bconsole
+        * bat (only legacy config file: bat.conf)
+
+    * $COMPONENT refers to one of the listed Components.
+
+    * Legacy config file (still valid and supported, with some limitation when using the configuration API):
+        * $CONFIGDIR/$COMPONENT.conf
+
+    * $CONFIGDIR refers to the configuration directory. Bareos Linux packages use "/etc/bareos/".
+
+
+
+Changes
+-------
+
+When updating from bareos < 16.2, most of these changes are not relevant, as the legacy configuration will still be used.
+
+    * configsubdirectories
+        * if legacy config file ($CONFIGDIR/$COMPONENT.conf) not found, following wildcard path will be used to load the configuration:
+            * $CONFIGDIR/$COMPONENT.d/*/*.conf
+        * one config file per resource. Name of the config file is identical with the resource name.
+            * e.g.
+                * bareos-dir.d/director/bareos-dir.conf
+                * bareos-dir.d/pool/Full.conf
+            * There is one exception: the resource bareos-fd.d/client/myself.conf always has the file name myself.conf, while the name is normally set to the hostname of the system.
+        * the -c command line switch takes file and directories as arguments. When the argument is a directory, $COMPONENT.d/*/*.conf is added to load the configuration.
+    * additional package can contain configuration files that are automatically included
+        * However, most additional configuration resources require configuration. These configuration come as example files:
+            * $CONFIGDIR/$COMPONENT.d/$RESOURCE/$NAME.conf.example
+            * For example, the bareos-webui comes with two config resources for the bareos-director:
+                * $CONFIGDIR/bareos-director.d/profile/webui.conf
+                * $CONFIGDIR/bareos-director.d/console/user1.conf.example            
+    * modified resource names:
+        * $HOSTNAME-dir => bareos-dir
+        * $HOSTNAME-sd => bareos-sd
+            * make more sense when installing just the fd. Then probaly only the Address must be changed.
+            * fits better into configsubdirectory structure and packaging,
+                because otherwise the filename is only known at install time /and might change)
+        * "Linux All" => "LinuxAll"
+            * Spaces are still valid in resource names. However, the build configuration script wasn't able to cope the file names containing spaces.
+    * bareos-traymonitor
+        * also single file per resource.
+        * bareos-traymonitor package only contains $CONFIGDIR/tray-monitor.d/monitor/bareos-mon.conf.
+            * The other resoures are part of the related packages:
+                * $CONFIGDIR/tray-monitor.d/client/FileDaemon-local.conf is part of bareos-filedaemon
+                * $CONFIGDIR/tray-monitor.d/storage/StorageDaemon-local.conf is part of bareos-storage
+                * $CONFIGDIR/tray-monitor.d/director/Director-local.conf is part of bareos-director
+            * This way, the bareos-traymonitor will be configured automatically for the installed components.
+
+How to use configsubdirectories
+-------------------------------
+
+    * Fresh installation
+        * We easiest way to start with configsubdirectories and configuration API is to start with a fresh installation.
+            * It will be useable immediatly after installation of the bareos-director.
+            * When additional packages come with example configuration files, copy them to $NAME.conf, modify it to your needs and reload the director.
+            * Attention:
+                * when you want to remove a configuration resource that has been deployed with the bareos packages, it is adviced to replace the resource config file by an empty file. This prevents that the resource reappears with a package update.
+                    * This is mainly true for RPM Bareos packages. Debian store the deployed configuration in /usr/lib/bareos/defaultconfigs/ and copies them to /etc/bareos/ only if there is no configuration. Similar for Windows.
+    * Update
+        * When update to a Bareos version containing configsubdirectories (Bareos >= 16.2), the existing configuration will not be touched and is still the default configuration.
+        * Attention: Problems can occur, if you have already splitted your configuration to the same subdirectories as used by the new packages ($CONFIGDIR/$COMPONENT.d/*/) and have implemented an own wildcard mechanism to load them. In this case, newly installed configuration resource files can alter your current configuration in adding additional resources.
+        * As long as the old configuration file ($CONFIGDIR/$COMPONENT.conf) exists, it will be used.
+        * The correct way to migrate to the new configuration scheme would be to split the configuration file into resources, store them in the reosurce directories and then remove the original configuration file.
+            * This requires efford. It is planed to create a program that helps to migrate the settings, however, until now, it is not available.
+            * The easy way is:
+                * mkdir $CONFIGDIR/$COMPONENT.d/migrate && mv $CONFIGDIR/$COMPONENT.conf $CONFIGDIR/$COMPONENT.d/migrate
+                * Resources defined in both, the new configuration directory scheme and the old configuration file must be removed from one of the places, best from the old configuration file, after verifying that the settings are identical with the new settings.
+
+            
