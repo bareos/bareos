@@ -169,7 +169,7 @@ $this->headTitle($title);
                field: 'jobid',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'" title="<?php echo $this->translate("View Job Details"); ?>">'+value+'</a>';
                }
             },
             {
@@ -218,7 +218,7 @@ $this->headTitle($title);
             {
                field: 'action',
                formatter: function(value, row, index) {
-                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>'; 
+                  return '<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath();?>/job/details/'+row.jobid+'" title="<?php echo $this->translate("View Job Details"); ?>" id="btn-0"><span class="glyphicon glyphicon-search"></span></a>&nbsp;<a class="btn btn-default btn-xs" data-toggle="tooltip" data-placement="top" href="<?php echo $this->basePath(); ?>/restore/?type=client&mergefilesets=1&mergejobs=1&client='+row.client+'&jobid='+row.jobid+'" title="<?php echo $this->translate("Show Files"); ?>" id="btn-1"><span class="glyphicon glyphicon-folder-open"></span></a>';
                }
             }
          ]

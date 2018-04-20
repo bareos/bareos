@@ -181,7 +181,7 @@ $this->headTitle($title);
                field: 'jobid',
                sortable: true,
                formatter: function(value) {
-                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'">'+value+'</a>';
+                  return '<a href="<?php echo $this->basePath() . '/job/details/'; ?>'+value+'" title="<?php echo $this->translate("View Job Details"); ?>">'+value+'</a>';
                }
             },
             {
