@@ -105,6 +105,7 @@ class DashboardController extends AbstractActionController
          $waiting = null;
          $running = null;
          $successful = null;
+         $warning = null;
          $failed = null;
          $result = null;
 
@@ -138,20 +139,24 @@ class DashboardController extends AbstractActionController
 
             // successful
             $jobs_T = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'T', $days, $hours);
+            $successful = count($jobs_T);
+
+            // warning
+            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'A', $days, $hours);
             $jobs_W = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'W', $days, $hours);
-            $successful = count($jobs_T) + count($jobs_W);
+            $warning = count($jobs_A) + count($jobs_W);
 
             // failed
-            $jobs_A = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'A', $days, $hours);
             $jobs_E = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'E', $days, $hours);
             $jobs_e = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'e', $days, $hours);
             $jobs_f = $this->getJobModel()->getJobsByStatus($this->bsock, null, 'f', $days, $hours);
-            $failed = count($jobs_A) + count($jobs_E) + count($jobs_e) + count($jobs_f);
+            $failed = count($jobs_E) + count($jobs_e) + count($jobs_f);
 
             // json result
             $result['waiting'] = $waiting;
             $result['running'] = $running;
             $result['successful'] = $successful;
+            $result['warning'] = $warning;
             $result['failed'] = $failed;
          }
          catch(Exception $e) {

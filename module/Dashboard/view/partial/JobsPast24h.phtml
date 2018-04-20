@@ -37,9 +37,11 @@
 
    <div class="container-fluid block">
 
+      <div class="center-block">
+
       <div class="row">
 
-         <div class="col-md-3 text-center">
+         <div class="col-md-2 text-center">
             <h4>
                <span class="label label-info"><?php echo $this->translate('Running'); ?></span>
             </h4>
@@ -50,7 +52,7 @@
             </h3>
          </div>
 
-         <div class="col-md-3 text-center">
+         <div class="col-md-2 text-center">
             <h4>
                <span class="label label-default"><?php echo $this->translate('Waiting'); ?></span>
             </h4>
@@ -61,7 +63,7 @@
             </h3>
          </div>
 
-         <div class="col-md-3 text-center">
+         <div class="col-md-2 text-center">
             <h4>
                <span class="label label-success"><?php echo $this->translate('Successful'); ?></span>
             </h4>
@@ -72,7 +74,18 @@
             </h3>
          </div>
 
-         <div class="col-md-3 text-center">
+         <div class="col-md-2 text-center">
+            <h4>
+               <span class="label label-warning"><?php echo $this->translate('Warning'); ?></span>
+            </h4>
+            <h3>
+               <a href="<?php echo $this->url('job', array('action' => 'index'), array('query' => array('period' => '1', 'status' => 'warning'))); ?>">
+                  <span class="warning-jobs-field"></span>
+               </a>
+            </h3>
+         </div>
+
+         <div class="col-md-2 text-center">
             <h4>
                <span class="label label-danger"><?php echo $this->translate('Failed'); ?></span>
             </h4>
@@ -82,6 +95,8 @@
                </a>
             </h3>
          </div>
+
+      </div>
 
       </div>
 

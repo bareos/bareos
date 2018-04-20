@@ -98,12 +98,13 @@ class JobForm extends Form
                   'running' => _('running'),
                   'waiting' => _('waiting'),
                   'unsuccessful' => _('terminated unsuccessfully'),
-                  'successful' => _('terminated successfully')
+                  'successful' => _('terminated successfully'),
+                  'warning' => _('warning')
                )
             ),
             'attributes' => array(
                'class' => 'form-control selectpicker show-tick',
-               'data-size' => '5',
+               'data-size' => '6',
                'id' => 'status',
                'value' => $status
             )

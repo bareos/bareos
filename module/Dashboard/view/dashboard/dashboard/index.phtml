@@ -65,6 +65,8 @@ $this->headTitle($title);
          $('.running-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
          $('.successful-jobs-field').empty();
          $('.successful-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
+         $('.warning-jobs-field').empty();
+         $('.warning-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
          $('.failed-jobs-field').empty();
          $('.failed-jobs-field').append("<img src='<?php echo $this->basePath() ?>/css/throbber.gif'>");
    });
@@ -88,6 +90,10 @@ $this->headTitle($title);
             $('.successful-jobs-field').empty();
             $('.successful-jobs-field').append(
                data.successful
+            );
+            $('.warning-jobs-field').empty();
+            $('.warning-jobs-field').append(
+               data.warning
             );
             $('.failed-jobs-field').empty();
             $('.failed-jobs-field').append(
