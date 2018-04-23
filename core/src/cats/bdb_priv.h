@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef __BDB_PRIV_H_
-#define __BDB_PRIV_H_ 1
+#ifndef BAREOS_CATS_BDB_PRIV_H_
+#define BAREOS_CATS_BDB_PRIV_H_ 1
 
 #ifndef _BDB_PRIV_INTERFACE_
 #error "Illegal inclusion of catalog private interface"
@@ -75,4 +75,4 @@ public:
    }
    virtual ~BareosDbPrivateInterface() {}
 };
-#endif /* __BDB_PRIV_H_ */
+#endif /* BAREOS_CATS_BDB_PRIV_H_ */

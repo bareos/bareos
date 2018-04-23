@@ -29,8 +29,8 @@
  * multiple readers but only one writer.
  */
 
-#ifndef __RWLOCK_H
-#define __RWLOCK_H 1
+#ifndef BAREOS_LIB_RWLOCK_H_
+#define BAREOS_LIB_RWLOCK_H_ 1
 
 typedef struct s_rwlock_tag {
    pthread_mutex_t   mutex;
@@ -74,4 +74,4 @@ DLL_IMP_EXP extern int rwl_writelock_p(brwlock_t *rwl,
 DLL_IMP_EXP extern int rwl_writetrylock(brwlock_t *rwl);
 DLL_IMP_EXP extern int rwl_writeunlock(brwlock_t *rwl);
 
-#endif /* __RWLOCK_H */
+#endif /* BAREOS_LIB_RWLOCK_H_ */

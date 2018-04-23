@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NDMP_DMA_BACKUP_COMMON_H_
-#define DIRD_NDMP_DMA_BACKUP_COMMON_H_
+#ifndef BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
+#define BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_
 
 bool fill_backup_environment(JobControlRecord *jcr,
                              IncludeExcludeItem *ie,
@@ -32,4 +32,4 @@ void unregister_callback_hooks(struct ndmlog *ixlog);
 void process_fhdb(struct ndmlog *ixlog);
 void ndmp_backup_cleanup(JobControlRecord *jcr, int TermCode);
 
-#endif // DIRD_NDMP_DMA_BACKUP_COMMON_H_
+#endif // BAREOS_DIRD_NDMP_DMA_BACKUP_COMMON_H_

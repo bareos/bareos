@@ -18,8 +18,8 @@
    02110-1301, USA.
 */
 
-#ifndef INI_H
-#define INI_H
+#ifndef BAREOS_LIB_INI_H_
+#define BAREOS_LIB_INI_H_
 
 /*
  * Standard global types with handlers defined in ini.c

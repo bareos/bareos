@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef CATS_SQL_POOLING_H_
-#define CATS_SQL_POOLING_H_
+#ifndef BAREOS_CATS_SQL_POOLING_H_
+#define BAREOS_CATS_SQL_POOLING_H_
 DLL_IMP_EXP bool db_sql_pool_initialize(const char *db_drivername,
                             const char *db_name,
                             const char *db_user,
@@ -65,4 +65,4 @@ DLL_IMP_EXP BareosDb *db_sql_get_pooled_connection(JobControlRecord *jcr,
                                    bool need_private = false);
 DLL_IMP_EXP void db_sql_close_pooled_connection(JobControlRecord *jcr, BareosDb *mdb, bool abort = false);
 
-#endif // CATS_SQL_POOLING_H_
+#endif // BAREOS_CATS_SQL_POOLING_H_

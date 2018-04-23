@@ -18,10 +18,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_APPEND_H_
-#define STORED_APPEND_H_
+#ifndef BAREOS_STORED_APPEND_H_
+#define BAREOS_STORED_APPEND_H_
 
 bool do_append_data(JobControlRecord *jcr, BareosSocket *bs, const char *what);
 bool send_attrs_to_dir(JobControlRecord *jcr, DeviceRecord *rec);
 
-#endif // STORED_APPEND_H_
+#endif // BAREOS_STORED_APPEND_H_

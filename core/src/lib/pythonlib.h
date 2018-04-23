@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_PYTHONLIB_H_
-#define LIB_PYTHONLIB_H_
+#ifndef BAREOS_LIB_PYTHONLIB_H_
+#define BAREOS_LIB_PYTHONLIB_H_
 
 DLL_IMP_EXP int generate_daemon_event(JobControlRecord *jcr, const char *event);
 
-#endif // LIB_PYTHONLIB_H_
+#endif // BAREOS_LIB_PYTHONLIB_H_

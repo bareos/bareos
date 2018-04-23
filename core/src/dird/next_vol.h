@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NEXT_VOL_H_
-#define DIRD_NEXT_VOL_H_
+#ifndef BAREOS_DIRD_NEXT_VOL_H_
+#define BAREOS_DIRD_NEXT_VOL_H_
 
 void set_storageid_in_mr(StoreResource *store, MediaDbRecord *mr);
 int find_next_volume_for_append(JobControlRecord *jcr, MediaDbRecord *mr, int index,
@@ -29,4 +29,4 @@ bool has_volume_expired(JobControlRecord *jcr, MediaDbRecord *mr);
 void check_if_volume_valid_or_recyclable(JobControlRecord *jcr, MediaDbRecord *mr, const char **reason);
 bool get_scratch_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr, StoreResource *store);
 
-#endif // DIRD_NEXT_VOL_H_
+#endif // BAREOS_DIRD_NEXT_VOL_H_

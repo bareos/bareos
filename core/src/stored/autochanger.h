@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_AUTOCHANGER_H_
-#define STORED_AUTOCHANGER_H_
+#ifndef BAREOS_STORED_AUTOCHANGER_H_
+#define BAREOS_STORED_AUTOCHANGER_H_
 
 bool init_autochangers();
 int autoload_device(DeviceControlRecord *dcr, int writing, BareosSocket *dir);
@@ -30,4 +30,4 @@ bool unload_autochanger(DeviceControlRecord *dcr, slot_number_t loaded, bool loc
 bool unload_dev(DeviceControlRecord *dcr, Device *dev, bool lock_set = false);
 slot_number_t get_autochanger_loaded_slot(DeviceControlRecord *dcr, bool lock_set = false);
 
-#endif // STORED_AUTOCHANGER_H_
+#endif // BAREOS_STORED_AUTOCHANGER_H_

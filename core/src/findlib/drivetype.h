@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_DRIVETYPE_H_
-#define FINDLIB_DRIVETYPE_H_
+#ifndef BAREOS_FINDLIB_DRIVETYPE_H_
+#define BAREOS_FINDLIB_DRIVETYPE_H_
 
 DLL_IMP_EXP bool drivetype(const char *fname, char *fs, int fslen);
 
-#endif // FINDLIB_DRIVETYPE_H_
+#endif // BAREOS_FINDLIB_DRIVETYPE_H_

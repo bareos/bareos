@@ -30,8 +30,8 @@
  * the output can be sent directly to a BareosSocket.
  */
 
-#ifndef __STATUS_H_
-#define __STATUS_H_
+#ifndef BAREOS_LIB_STATUS_H_
+#define BAREOS_LIB_STATUS_H_
 
 /**
  * Packet to send to output_status()

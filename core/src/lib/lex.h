@@ -27,8 +27,8 @@
  * Lexical scanning of configuration files, used by parsers.
  */
 
-#ifndef _LEX_H
-#define _LEX_H
+#ifndef BAREOS_LIB_LEX_H_
+#define BAREOS_LIB_LEX_H_
 
 /* Lex get_char() return values */
 #define L_EOF                         (-1)
@@ -188,4 +188,4 @@ DLL_IMP_EXP void lex_set_default_error_handler(LEX *lf);
 DLL_IMP_EXP void lex_set_default_warning_handler(LEX *lf);
 DLL_IMP_EXP void lex_set_error_handler_error_type(LEX *lf, int err_type);
 
-#endif /* _LEX_H */
+#endif /* BAREOS_LIB_LEX_H_ */

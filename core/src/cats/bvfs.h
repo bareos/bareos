@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef __BVFS_H_
-#define __BVFS_H_ 1
+#ifndef BAREOS_CATS_BVFS_H_
+#define BAREOS_CATS_BVFS_H_ 1
 
 /*
  * This object can be use to browse the catalog
@@ -185,4 +185,4 @@ char *bvfs_parent_dir(char *path);
  */
 char *bvfs_basename_dir(char *path);
 
-#endif /* __BVFS_H_ */
+#endif /* BAREOS_CATS_BVFS_H_ */

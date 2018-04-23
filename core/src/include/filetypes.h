@@ -27,8 +27,8 @@
  * Stream definitions.  Split from baconfig.h Nov 2010
  */
 
-#ifndef __BFILETYPES_H
-#define __BFILETYPES_H 1
+#ifndef BAREOS_INCLUDE_FILETYPES_H_
+#define BAREOS_INCLUDE_FILETYPES_H_ 1
 
 
 /**
@@ -81,4 +81,4 @@
 /* Quick way to know if a Filetype is about a plugin "Object" */
 #define IS_FT_OBJECT(x) (((x) == FT_RESTORE_FIRST) || ((x) == FT_PLUGIN_CONFIG_FILLED) || ((x) == FT_PLUGIN_CONFIG))
 
-#endif /* __BFILETYPES_H */
+#endif /* BAREOS_INCLUDE_FILETYPES_H_ */

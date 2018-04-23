@@ -30,8 +30,8 @@
  * $FreeBSD: stable/7/sys/sys/mtio.h 139825 2005-01-07 02:29:27Z imp $
  */
 
-#ifndef	_SYS_MTIO_H_
-#define	_SYS_MTIO_H_
+#ifndef	BAREOS_LIB_BMTIO_H
+#define	BAREOS_LIB_BMTIO_H
 
 #ifndef _KERNEL
 #include <sys/types.h>
@@ -230,4 +230,4 @@ union mterrstat {
 #define	DEFTAPE	"/dev/nsa0"
 #endif
 
-#endif /* !_SYS_MTIO_H_ */
+#endif /* !BAREOS_LIB_BMTIO_H */

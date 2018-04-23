@@ -43,8 +43,8 @@
  *
  */
 
-#ifndef __VOL_MGR_H
-#define __VOL_MGR_H 1
+#ifndef BAREOS_STORED_VOL_MGR_H_
+#define BAREOS_STORED_VOL_MGR_H_ 1
 
 class VolumeReservationItem;
 VolumeReservationItem *vol_walk_start();

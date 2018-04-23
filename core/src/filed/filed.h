@@ -26,8 +26,8 @@
  * Kern Sibbald, Jan MMI
  */
 
-#ifndef __FILED_H_
-#define __FILED_H_
+#ifndef BAREOS_FILED_FILED_H_
+#define BAREOS_FILED_FILED_H_
 
 #define FILE_DAEMON 1
 #include "filed_conf.h"
@@ -54,4 +54,4 @@ void terminate_filed(int sig);
  */
 const int FD_PROTOCOL_VERSION = 54;
 
-#endif /* __FILED_H_ */
+#endif /* BAREOS_FILED_FILED_H_ */

@@ -23,8 +23,8 @@
  * This defines the Python types in C++ and the callbacks from Python we support.
  */
 
-#ifndef BPYTHONSD_H
-#define BPYTHONSD_H 1
+#ifndef BAREOS_PLUGINS_STORED_PYTHON_SD_H_
+#define BAREOS_PLUGINS_STORED_PYTHON_SD_H_ 1
 
 /**
  * This defines the arguments that the plugin parser understands.
@@ -69,4 +69,4 @@ static PyMethodDef BareosSDMethods[] = {
    { NULL, NULL, 0, NULL }
 };
 
-#endif /* BPYTHONSD_H */
+#endif /* BAREOS_PLUGINS_STORED_PYTHON_SD_H_ */

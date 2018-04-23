@@ -18,11 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_MAKEPATH_H_
-#define FINDLIB_MAKEPATH_H_
+#ifndef BAREOS_FINDLIB_MAKEPATH_H_
+#define BAREOS_FINDLIB_MAKEPATH_H_
 
 DLL_IMP_EXP bool makepath(Attributes *attr, const char *path, mode_t mode,
               mode_t parent_mode, uid_t owner, gid_t group,
               bool keep_dir_modes);
 
-#endif // FINDLIB_MAKEPATH_H_
+#endif // BAREOS_FINDLIB_MAKEPATH_H_

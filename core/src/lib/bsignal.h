@@ -18,10 +18,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BSIGNAL_H_
-#define LIB_BSIGNAL_H_
+#ifndef BAREOS_LIB_BSIGNAL_H_
+#define BAREOS_LIB_BSIGNAL_H_
 
 DLL_IMP_EXP void init_signals(void terminate(int sig));
 DLL_IMP_EXP void init_stack_dump(void);
 
-#endif // LIB_BSIGNAL_H_
+#endif // BAREOS_LIB_BSIGNAL_H_

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_PRUNE_H
-#define DIRD_UA_PRUNE_H
+#ifndef BAREOS_DIRD_UA_PRUNE_H_
+#define BAREOS_DIRD_UA_PRUNE_H_
 
 #include "dird/ua.h"
 
@@ -33,4 +33,4 @@ int file_delete_handler(void *ctx, int num_fields, char **row);
 int get_prune_list_for_volume(UaContext *ua, MediaDbRecord *mr, del_ctx *del);
 int exclude_running_jobs_from_list(del_ctx *prune_list);
 
-#endif // DIRD_UA_PRUNE_H
+#endif // BAREOS_DIRD_UA_PRUNE_H_

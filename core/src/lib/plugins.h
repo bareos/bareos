@@ -27,8 +27,8 @@
  * @file
  * Common plugin definitions
  */
-#ifndef __PLUGINS_H
-#define __PLUGINS_H
+#ifndef BAREOS_LIB_PLUGINS_H_
+#define BAREOS_LIB_PLUGINS_H_
 
 /****************************************************************************
  *                                                                          *
@@ -110,4 +110,4 @@ typedef void(dbg_print_plugin_hook_t)(FILE *fp);
 DLL_IMP_EXP void dbg_print_plugin_add_hook(dbg_print_plugin_hook_t *fct);
 DLL_IMP_EXP void dump_plugins(alist *plugin_list, FILE *fp);
 
-#endif /* __PLUGINS_H */
+#endif /* BAREOS_LIB_PLUGINS_H_ */

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_DB_H_
-#define DIRD_UA_DB_H_
+#ifndef BAREOS_DIRD_UA_DB_H_
+#define BAREOS_DIRD_UA_DB_H_
 
 bool open_client_db(UaContext *ua, bool use_private = false);
 bool open_db(UaContext *ua, bool use_private = false);
@@ -31,4 +31,4 @@ bool set_pooldbr_references(JobControlRecord *jcr, BareosDb *db, PoolDbRecord *p
 void set_pooldbr_from_poolres(PoolDbRecord *pr, PoolResource *pool, e_pool_op op);
 int update_pool_references(JobControlRecord *jcr, BareosDb *db, PoolResource *pool);
 
-#endif // DIRD_UA_DB_H_
+#endif // BAREOS_DIRD_UA_DB_H_

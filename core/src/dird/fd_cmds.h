@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_FD_CMDS_H_
-#define DIRD_FD_CMDS_H_
+#ifndef BAREOS_DIRD_FD_CMDS_H_
+#define BAREOS_DIRD_FD_CMDS_H_
 
 bool connect_to_file_daemon(JobControlRecord *jcr, int retry_interval, int max_retry_time, bool verbose);
 int  send_job_info(JobControlRecord *jcr);
@@ -50,4 +50,4 @@ bool is_connect_from_client_allowed(ClientResource *res);
 bool is_connect_from_client_allowed(JobControlRecord *jcr);
 bool use_waiting_client(JobControlRecord *jcr_job, int timeout);
 
-#endif // DIRD_FD_CMDS_H_
+#endif // BAREOS_DIRD_FD_CMDS_H_

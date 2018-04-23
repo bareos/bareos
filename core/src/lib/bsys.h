@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BSYS_H_
-#define LIB_BSYS_H_
+#ifndef BAREOS_LIB_BSYS_H_
+#define BAREOS_LIB_BSYS_H_
 
 DLL_IMP_EXP char *bstrinlinecpy(char *dest, const char *src);
 DLL_IMP_EXP char *bstrncpy(char *dest, const char *src, int maxlen);
@@ -75,4 +75,4 @@ DLL_IMP_EXP bool path_append(PoolMem &path, PoolMem &extra);
 DLL_IMP_EXP bool path_create(const char *path, mode_t mode = 0750);
 DLL_IMP_EXP bool path_create(PoolMem &path, mode_t mode = 0750);
 
-#endif // LIB_BSYS_H_
+#endif // BAREOS_LIB_BSYS_H_

@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BNET_SEVER_TCP_H_
-#define LIB_BNET_SEVER_TCP_H_
+#ifndef BAREOS_LIB_BNET_SEVER_TCP_H_
+#define BAREOS_LIB_BNET_SEVER_TCP_H_
 
 DLL_IMP_EXP void cleanup_bnet_thread_server_tcp(alist *sockfds, workq_t *client_wq);
 DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
@@ -30,4 +30,4 @@ DLL_IMP_EXP void bnet_thread_server_tcp(dlist *addr_list,
                             void *handle_client_request(void *bsock));
 DLL_IMP_EXP void bnet_stop_thread_server_tcp(pthread_t tid);
 
-#endif // LIB_BNET_SEVER_TCP_H_
+#endif // BAREOS_LIB_BNET_SEVER_TCP_H_

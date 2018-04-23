@@ -30,8 +30,8 @@
  * multiple readers but only one writer.
  */
 
-#ifndef __DEVLOCK_H
-#define __DEVLOCK_H 1
+#ifndef BAREOS_LIB_DEVLOCK_H_
+#define BAREOS_LIB_DEVLOCK_H_ 1
 
 struct take_lock_t {
    pthread_t  writer_id;              /* id of writer */
@@ -86,4 +86,4 @@ public:
    {PTHREAD_MUTEX_INITIALIZER, PTHREAD_COND_INITIALIZER, \
     PTHREAD_COND_INITIALIZER, DEVOCK_VALID, 0, 0, 0, 0}
 
-#endif /* __DEVLOCK_H */
+#endif /* BAREOS_LIB_DEVLOCK_H_ */

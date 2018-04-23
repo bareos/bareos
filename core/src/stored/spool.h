@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_SOCKET_H_
-#define STORED_SOCKET_H_
+#ifndef BAREOS_STORED_SPOOL_H_
+#define BAREOS_STORED_SPOOL_H_
 
 bool begin_data_spool (DeviceControlRecord *dcr);
 bool discard_data_spool (DeviceControlRecord *dcr);
@@ -31,4 +31,4 @@ bool commit_attribute_spool (JobControlRecord *jcr);
 bool write_block_to_spool_file (DeviceControlRecord *dcr);
 void list_spool_stats (void sendit(const char *msg, int len, void *sarg), void *arg);
 
-#endif // STORED_SOCKET_H_
+#endif // BAREOS_STORED_SPOOL_H_

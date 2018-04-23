@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_VERIFY_H
-#define DIRD_VERIFY_H
+#ifndef BAREOS_DIRD_VERIFY_H_
+#define BAREOS_DIRD_VERIFY_H_
 
 #include "include/jcr.h"
 
@@ -28,4 +28,4 @@ bool do_verify(JobControlRecord *jcr);
 bool do_verify_init(JobControlRecord *jcr);
 void verify_cleanup(JobControlRecord *jcr, int TermCode);
 
-#endif // DIRD_VERIFY_H
+#endif // BAREOS_DIRD_VERIFY_H_

@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_READ_H_
-#define STORED_READ_H_
+#ifndef BAREOS_STORED_READ_H_
+#define BAREOS_STORED_READ_H_
 
 DLL_IMP_EXP bool do_read_data(JobControlRecord *jcr);
 
-#endif // STORED_READ_H_
+#endif // BAREOS_STORED_READ_H_

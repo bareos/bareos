@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_UTIL_H_
-#define LIB_UTIL_H_
+#ifndef BAREOS_LIB_UTIL_H_
+#define BAREOS_LIB_UTIL_H_
 
 DLL_IMP_EXP void escape_string(PoolMem &snew, char *old, int len);
 DLL_IMP_EXP bool is_buf_zero(char *buf, int len);
@@ -49,4 +49,4 @@ DLL_IMP_EXP POOLMEM *edit_job_codes(JobControlRecord *jcr, char *omsg, char *ims
 DLL_IMP_EXP void set_working_directory(char *wd);
 DLL_IMP_EXP const char *last_path_separator(const char *str);
 
-#endif // LIB_UTIL_H_
+#endif // BAREOS_LIB_UTIL_H_

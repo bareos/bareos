@@ -49,7 +49,7 @@
 #include "bsock.h"
 #include "bsock_tcp.h"
 #include "workq.h"
-#ifndef HAVE_FNMATCH
+#ifndef BAREOS_LIB_LIB_H_
 #include "fnmatch.h"
 #endif
 #include "md5.h"

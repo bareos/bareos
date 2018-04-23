@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_STORAGE_H_
-#define DIRD_STORAGE_H_
+#ifndef BAREOS_DIRD_STORAGE_H_
+#define BAREOS_DIRD_STORAGE_H_
 
 void copy_rwstorage(JobControlRecord *jcr, alist *storage, const char *where);
 void set_rwstorage(JobControlRecord *jcr, UnifiedStoreResource *store);
@@ -53,4 +53,4 @@ void invalidate_vol_list(StoreResource *store);
 int compare_storage_mapping(void *e1, void *e2);
 slot_number_t lookup_storage_mapping(StoreResource *store, slot_type slot_type,
                                      s_mapping_type map_type, slot_number_t slot);
-#endif // DIRD_STORAGE_H_
+#endif // BAREOS_DIRD_STORAGE_H_

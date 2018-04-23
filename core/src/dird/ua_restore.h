@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_RESTORE_H
-#define DIRD_UA_RESTORE_H
+#ifndef BAREOS_DIRD_UA_RESTORE_H_
+#define BAREOS_DIRD_UA_RESTORE_H_
 
 void find_storage_resource(UaContext *ua, RestoreContext &rx, char *Storage, char *MediaType);
 
-#endif // DIRD_UA_RESTORE_H
+#endif // BAREOS_DIRD_UA_RESTORE_H_

@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_GETMSG_H_
-#define DIRD_GETMSG_H_
+#ifndef BAREOS_DIRD_GETMSG_H_
+#define BAREOS_DIRD_GETMSG_H_
 
 bool response(JobControlRecord *jcr, BareosSocket *fd, char *resp, const char *cmd, e_prtmsg prtmsg);
 
-#endif // DIRD_GETMSG_H_
+#endif // BAREOS_DIRD_GETMSG_H_

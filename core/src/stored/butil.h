@@ -19,8 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_BUTIL_H_
-#define STORED_BUTIL_H_
+#ifndef BAREOS_STORED_BUTIL_H_
+#define BAREOS_STORED_BUTIL_H_
 
 void print_ls_output(const char *fname, const char *link, int type, struct stat *statp);
 JobControlRecord *setup_jcr(const char *name, char *dev_name,
@@ -28,4 +28,4 @@ JobControlRecord *setup_jcr(const char *name, char *dev_name,
                const char *VolumeName, bool readonly);
 void display_tape_error_status(JobControlRecord *jcr, Device *dev);
 
-#endif // STORED_BUTIL_H_
+#endif // BAREOS_STORED_BUTIL_H_

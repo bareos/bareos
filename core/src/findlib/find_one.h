@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_FIND_ONE_H_
-#define FINDLIB_FIND_ONE_H_
+#ifndef BAREOS_FINDLIB_FIND_ONE_H_
+#define BAREOS_FINDLIB_FIND_ONE_H_
 
 DLL_IMP_EXP int find_one_file(JobControlRecord *jcr, FindFilesPacket *ff,
                   int handle_file(JobControlRecord *jcr, FindFilesPacket *ff_pkt, bool top_level),
@@ -28,4 +28,4 @@ DLL_IMP_EXP int term_find_one(FindFilesPacket *ff);
 DLL_IMP_EXP bool has_file_changed(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
 DLL_IMP_EXP bool check_changes(JobControlRecord *jcr, FindFilesPacket *ff_pkt);
 
-#endif // FINDLIB_FIND_ONE_H_
+#endif // BAREOS_FINDLIB_FIND_ONE_H_

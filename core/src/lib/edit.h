@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_EDIT_H_
-#define LIB_EDIT_H_
+#ifndef BAREOS_LIB_EDIT_H_
+#define BAREOS_LIB_EDIT_H_
 
 DLL_IMP_EXP uint64_t str_to_uint64(const char *str);
 DLL_IMP_EXP int64_t str_to_int64(const char *str);
@@ -42,4 +42,4 @@ DLL_IMP_EXP bool is_an_integer(const char *n);
 DLL_IMP_EXP bool is_name_valid(const char *name, POOLMEM *&msg);
 DLL_IMP_EXP bool is_name_valid(const char *name);
 
-#endif // LIB_EDIT_H_
+#endif // BAREOS_LIB_EDIT_H_

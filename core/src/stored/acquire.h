@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_ACQUIRE_H_
-#define STORED_ACQUIRE_H_
+#ifndef BAREOS_STORED_ACQUIRE_H_
+#define BAREOS_STORED_ACQUIRE_H_
 
 DeviceControlRecord *acquire_device_for_append(DeviceControlRecord *dcr);
 bool acquire_device_for_read(DeviceControlRecord *dcr);
@@ -28,4 +28,4 @@ bool clean_device(DeviceControlRecord *dcr);
 void setup_new_dcr_device(JobControlRecord *jcr, DeviceControlRecord *dcr, Device *dev, BlockSizes *blocksizes);
 void free_dcr(DeviceControlRecord *dcr);
 
-#endif // STORED_ACQUIRE_H_
+#endif // BAREOS_STORED_ACQUIRE_H_

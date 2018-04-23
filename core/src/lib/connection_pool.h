@@ -25,8 +25,8 @@
  * handle/store multiple connections
  */
 
-#ifndef __CONNECTION_POOL_H_
-#define __CONNECTION_POOL_H_
+#ifndef BAREOS_LIB_CONNECTION_POOL_H_
+#define BAREOS_LIB_CONNECTION_POOL_H_
 
 class DLL_IMP_EXP Connection : public SmartAlloc {
 public:

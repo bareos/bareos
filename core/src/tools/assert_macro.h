@@ -23,8 +23,8 @@
  * Assertion definitions
  */
 
-#ifndef _ASSERT_MACRO_H
-#define _ASSERT_MACRO_H 1
+#ifndef BAREOS_TOOLS_ASSERT_MACRO_H_
+#define BAREOS_TOOLS_ASSERT_MACRO_H_ 1
 
 /* Assertions definitions */
 
@@ -155,4 +155,4 @@
    }
 #endif
 
-#endif /* _ASSERT_MACRO_H */
+#endif /* BAREOS_TOOLS_ASSERT_MACRO_H_ */

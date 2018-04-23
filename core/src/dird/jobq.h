@@ -30,8 +30,8 @@
  * Bareos job queue routines.
  */
 
-#ifndef __JOBQ_H
-#define __JOBQ_H 1
+#ifndef BAREOS_DIRD_JOBQ_H_
+#define BAREOS_DIRD_JOBQ_H_ 1
 
 /**
  * Structure to keep track of job queue request
@@ -72,4 +72,4 @@ extern int jobq_remove(jobq_t *wq, JobControlRecord *jcr);
 
 bool inc_read_store(JobControlRecord *jcr);
 void dec_read_store(JobControlRecord *jcr);
-#endif /* __JOBQ_H */
+#endif /* BAREOS_DIRD_JOBQ_H_ */

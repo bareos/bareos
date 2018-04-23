@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_SELECT_H
-#define DIRD_UA_SELECT_H
+#ifndef BAREOS_DIRD_UA_SELECT_H_
+#define BAREOS_DIRD_UA_SELECT_H_
 
 #include "dird/ua.h"
 
@@ -69,4 +69,4 @@ bool confirm_retention(UaContext *ua, utime_t *ret, const char *msg);
 bool get_level_from_name(JobControlRecord *jcr, const char *level_name);
 
 
-#endif // DIRD_UA_SELECT_H
+#endif // BAREOS_DIRD_UA_SELECT_H_

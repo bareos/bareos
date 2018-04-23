@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_JSON_H_
-#define LIB_JSON_H_
+#ifndef BAREOS_LIB_JSON_H_
+#define BAREOS_LIB_JSON_H_
 
 DLL_IMP_EXP void initialize_json();
 
-#endif // LIB_JSON_H_
+#endif // BAREOS_LIB_JSON_H_

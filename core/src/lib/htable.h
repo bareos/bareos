@@ -27,8 +27,8 @@
  * Hash table class -- htable
  */
 
-#ifndef HTABLE_H
-#define HTABLE_H
+#ifndef BAREOS_LIB_HTABLE_H_
+#define BAREOS_LIB_HTABLE_H_
 
 /**
  * Loop var through each member of table
@@ -130,4 +130,4 @@ public:
    char *hash_malloc(int size);       /* Malloc bytes for a hash entry */
    void hash_big_free();              /* Free all hash allocated big buffers */
 };
-#endif  /* HTABLE_H */
+#endif  /* BAREOS_LIB_HTABLE_H_ */

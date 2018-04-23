@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_JCR_H_
-#define LIB_JCR_H_
+#ifndef BAREOS_LIB_JCR_H_
+#define BAREOS_LIB_JCR_H_
 class JobControlRecord;
 
 DLL_IMP_EXP void init_last_jobs_list();
@@ -42,4 +42,4 @@ DLL_IMP_EXP void remove_jcr_from_tsd(JobControlRecord *jcr);
 DLL_IMP_EXP uint32_t get_jobid_from_tsd();
 DLL_IMP_EXP uint32_t get_jobid_from_tid(pthread_t tid);
 
-#endif // LIB_JCR_H_
+#endif // BAREOS_LIB_JCR_H_

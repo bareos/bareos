@@ -28,8 +28,8 @@
  * File types as returned by find_files()
  */
 
-#ifndef __FIND_H
-#define __FIND_H
+#ifndef BAREOS_FINDLIB_FIND_H_
+#define BAREOS_FINDLIB_FIND_H_
 
 #include "fileopts.h"
 #include "bfile.h"

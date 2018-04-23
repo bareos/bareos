@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
-#define DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
+#ifndef BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
+#define BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
 
 bool do_ndmp_restore_init(JobControlRecord *jcr);
 bool do_ndmp_restore(JobControlRecord *jcr);
 
-#endif // DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_
+#endif // BAREOS_DIRD_NDMP_DMA_RESTORE_NDMP_BAREOS_H_

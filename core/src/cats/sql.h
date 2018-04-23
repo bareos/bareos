@@ -18,12 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef CATS_SQL_H_
-#define CATS_SQL_H_
+#ifndef BAREOS_CATS_SQL_H_
+#define BAREOS_CATS_SQL_H_
 DLL_IMP_EXP int db_int64_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_strtime_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP int db_list_handler(void *ctx, int num_fields, char **row);
 DLL_IMP_EXP void db_debug_print(JobControlRecord *jcr, FILE *fp);
 DLL_IMP_EXP int db_int_handler(void *ctx, int num_fields, char **row);
 
-#endif // CATS_SQL_H_
+#endif // BAREOS_CATS_SQL_H_

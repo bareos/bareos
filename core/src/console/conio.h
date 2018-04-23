@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef __CONIO_H
-#define __CONIO_H
+#ifndef BAREOS_CONSOLE_CONIO_H_
+#define BAREOS_CONSOLE_CONIO_H_
 extern int  input_line(char *line, int len);
 extern void con_init(FILE *input);
 

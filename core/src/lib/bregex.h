@@ -44,8 +44,8 @@
  *
  */
 
-#ifndef b_REGEXPR_H
-#define b_REGEXPR_H
+#ifndef BAREOS_LIB_BREGEX_H_
+#define BAREOS_LIB_BREGEX_H_
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -200,4 +200,4 @@ DLL_IMP_EXP void regfree(regex_t *preg);
 #ifdef __cplusplus
 }
 #endif
-#endif /* !b_REGEXPR_H */
+#endif /* !BAREOS_LIB_BREGEX_H_ */

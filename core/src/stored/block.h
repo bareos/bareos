@@ -26,8 +26,8 @@
  * @file
  * Block definitions for Bareos media data format.
  */
-#ifndef __BLOCK_H
-#define __BLOCK_H 1
+#ifndef BAREOS_STORED_BLOCK_H_
+#define BAREOS_STORED_BLOCK_H_ 1
 
 #define MAX_BLOCK_LENGTH  20000000      /**< this is a sort of sanity check */
 #define DEFAULT_BLOCK_SIZE (512 * 126)  /**< 64,512 N.B. do not use 65,536 here

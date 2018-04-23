@@ -18,10 +18,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_SOCKET_SERVER_H_
-#define STORED_SOCKET_SERVER_H_
+#ifndef BAREOS_STORED_SOCKET_SERVER_H_
+#define BAREOS_STORED_SOCKET_SERVER_H_
 
 void start_socket_server(dlist *addrs);
 void stop_socket_server();
 
-#endif // STORED_SOCKET_SERVER_H_
+#endif // BAREOS_STORED_SOCKET_SERVER_H_

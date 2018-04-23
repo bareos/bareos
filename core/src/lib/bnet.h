@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BNET_H_
-#define LIB_BNET_H_
+#ifndef BAREOS_LIB_BNET_H_
+#define BAREOS_LIB_BNET_H_
 
 DLL_IMP_EXP int32_t bnet_recv(BareosSocket *bsock);
 DLL_IMP_EXP bool bnet_send(BareosSocket *bsock);
@@ -47,4 +47,4 @@ DLL_IMP_EXP int net_connect(int port);
 DLL_IMP_EXP BareosSocket *bnet_bind(int port);
 DLL_IMP_EXP BareosSocket *bnet_accept(BareosSocket *bsock, char *who);
 
-#endif // LIB_BNET_H_
+#endif // BAREOS_LIB_BNET_H_

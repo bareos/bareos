@@ -31,8 +31,8 @@
  *
  */
 
-#ifndef __WORKQ_H
-#define __WORKQ_H 1
+#ifndef BAREOS_LIB_WORKQ_H_
+#define BAREOS_LIB_WORKQ_H_ 1
 
 /**
  * Structure to keep track of work queue request
@@ -69,4 +69,4 @@ extern int workq_destroy(workq_t *wq);
 extern int workq_add(workq_t *wq, void *element, workq_ele_t **work_item, int priority);
 extern int workq_remove(workq_t *wq, workq_ele_t *work_item);
 
-#endif /* __WORKQ_H */
+#endif /* BAREOS_LIB_WORKQ_H_ */

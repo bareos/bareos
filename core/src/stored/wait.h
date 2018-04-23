@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef STORED_WAIT_H_
-#define STORED_WAIT_H_
+#ifndef BAREOS_STORED_WAIT_H_
+#define BAREOS_STORED_WAIT_H_
 
 int wait_for_sysop(DeviceControlRecord *dcr);
 bool wait_for_device(JobControlRecord *jcr, int &retries);
 void release_device_cond();
 
-#endif // STORED_WAIT_H_
+#endif // BAREOS_STORED_WAIT_H_

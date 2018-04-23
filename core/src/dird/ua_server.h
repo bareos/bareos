@@ -19,12 +19,12 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_SERVER_H
-#define DIRD_UA_SERVER_H
+#ifndef BAREOS_DIRD_UA_SERVER_H_
+#define BAREOS_DIRD_UA_SERVER_H_
 
 void *handle_UA_client_request(BareosSocket *user);
 UaContext *new_ua_context(JobControlRecord *jcr);
 JobControlRecord *new_control_jcr(const char *base_name, int job_type);
 void free_ua_context(UaContext *ua);
 
-#endif // DIRD_UA_SERVER_H
+#endif // BAREOS_DIRD_UA_SERVER_H_

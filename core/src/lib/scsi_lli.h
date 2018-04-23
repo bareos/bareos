@@ -24,8 +24,8 @@
  * Marco van Wieringen, March 2012
  */
 
-#ifndef _SCSI_LLI_H
-#define _SCSI_LLI_H 1
+#ifndef BAREOS_LIB_SCSI_LLI_H_
+#define BAREOS_LIB_SCSI_LLI_H_ 1
 
 /*
  * Device Inquiry Response
@@ -173,4 +173,4 @@ DLL_IMP_EXP bool send_scsi_cmd_page(int fd, const char *device_name,
                         void *cdb, unsigned int cdb_len,
                         void *cmd_page, unsigned int cmd_page_len);
 DLL_IMP_EXP bool check_scsi_at_eod(int fd);
-#endif /* _SCSI_LLI_H */
+#endif /* BAREOS_LIB_SCSI_LLI_H_ */

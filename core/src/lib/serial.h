@@ -57,8 +57,8 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 
 */
 
-#ifndef __SERIAL_H_
-#define __SERIAL_H_ 1
+#ifndef BAREOS_LIB_SERIAL_H_
+#define BAREOS_LIB_SERIAL_H_ 1
 
 /*  ser_declare  --  Declare ser_ptr locally within a function.  */
 #define ser_declare     uint8_t *ser_ptr
@@ -165,4 +165,4 @@ DLL_IMP_EXP extern void unserial_string(uint8_t * * const ptr, char * const str,
 /*  Binary string not requiring serialisation (length obtained by sizeof)  */
 #define unser_string(x) unserial_string(&ser_ptr, (x), sizeof(x))
 
-#endif /* __SERIAL_H_ */
+#endif /* BAREOS_LIB_SERIAL_H_ */

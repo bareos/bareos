@@ -32,8 +32,8 @@
  * this file.
  */
 
-#ifndef __CATS_H_
-#define __CATS_H_ 1
+#ifndef BAREOS_CATS_CATS_H_
+#define BAREOS_CATS_CATS_H_ 1
 
 /* import automatically generated SQL_QUERY_ENUM */
 #include "bdb_query_enum_class.h"
@@ -922,4 +922,4 @@ public:
  */
 int list_result(void *vctx, int cols, char **row);
 int list_result(JobControlRecord *jcr, BareosDb *mdb, OutputFormatter *send, e_list_type type);
-#endif /* __CATS_H_ */
+#endif /* BAREOS_CATS_CATS_H_ */

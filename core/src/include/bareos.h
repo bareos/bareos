@@ -61,8 +61,8 @@
  *
  */
 
-#ifndef _BAREOS_H
-#define _BAREOS_H 1
+#ifndef BAREOS_INCLUDE_BAREOS_H_
+#define BAREOS_INCLUDE_BAREOS_H_ 1
 
 /* Disable FORTIFY_SOURCE, because bareos uses is own memory
  * manager

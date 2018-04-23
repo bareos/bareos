@@ -25,8 +25,8 @@
  * Marco van Wieringen, February 2014
  */
 
-#ifndef OBJECTSTORAGE_DEVICE_H
-#define OBJECTSTORAGE_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_DROPLET_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_DROPLET_DEVICE_H_
 
 #include <droplet.h>
 #include <droplet/vfs.h>

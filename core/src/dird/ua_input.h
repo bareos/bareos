@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_INPUT_H
-#define DIRD_UA_INPUT_H
+#ifndef BAREOS_DIRD_UA_INPUT_H_
+#define BAREOS_DIRD_UA_INPUT_H_
 
 bool get_cmd(UaContext *ua, const char *prompt, bool subprompt = false);
 bool get_pint(UaContext *ua, const char *prompt);
@@ -31,4 +31,4 @@ int get_enabled(UaContext *ua, const char *val);
 void parse_ua_args(UaContext *ua);
 bool is_comment_legal(UaContext *ua, const char *name);
 
-#endif // DIRD_UA_INPUT_H
+#endif // BAREOS_DIRD_UA_INPUT_H_

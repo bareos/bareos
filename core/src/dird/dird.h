@@ -27,8 +27,8 @@
  * @file
  * Includes specific to the Director
  */
-#ifndef DIRD_DIRD_H_
-#define DIRD_DIRD_H_
+#ifndef BAREOS_DIRD_DIRD_H_
+#define BAREOS_DIRD_DIRD_H_
 #include "lib/connection_pool.h"
 #include "lib/runscript.h"
 #include "lib/breg.h"
@@ -191,4 +191,4 @@ struct runtime_job_status_t {
 #define FD_VERSION_54 54
 
 
-#endif // DIRD_DIRD_H_
+#endif // BAREOS_DIRD_DIRD_H_

@@ -18,11 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_ATTRIBS_H_
-#define FINDLIB_ATTRIBS_H_
+#ifndef BAREOS_FINDLIB_ATTRIBS_H_
+#define BAREOS_FINDLIB_ATTRIBS_H_
 
 DLL_IMP_EXP int encode_attribsEx(JobControlRecord *jcr, char *attribsEx, FindFilesPacket *ff_pkt);
 DLL_IMP_EXP bool set_attributes(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd);
 DLL_IMP_EXP int select_data_stream(FindFilesPacket *ff_pkt, bool compatible);
 
-#endif // FINDLIB_ATTRIBS_H_
+#endif // BAREOS_FINDLIB_ATTRIBS_H_

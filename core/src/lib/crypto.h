@@ -27,8 +27,8 @@
  * crypto.h Encryption support functions
  */
 
-#ifndef __CRYPTO_H_
-#define __CRYPTO_H_
+#ifndef BAREOS_LIB_CRYPTO_H_
+#define BAREOS_LIB_CRYPTO_H_
 
 /* Opaque X509 Public/Private Key Pair Structure */
 typedef struct X509_Keypair X509_KEYPAIR;
@@ -165,4 +165,4 @@ DLL_IMP_EXP const char *crypto_digest_name(DIGEST *digest);
 DLL_IMP_EXP crypto_digest_t crypto_digest_stream_type(int stream);
 DLL_IMP_EXP const char *crypto_strerror(crypto_error_t error);
 
-#endif /* __CRYPTO_H_ */
+#endif /* BAREOS_LIB_CRYPTO_H_ */

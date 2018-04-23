@@ -28,10 +28,10 @@
  * Interface definition for Bareos DIR Plugins
  */
 
-#ifndef __DIR_PLUGINS_H
-#define __DIR_PLUGINS_H
+#ifndef BAREOS_DIRD_DIR_PLUGINS_H_
+#define BAREOS_DIRD_DIR_PLUGINS_H_
 
-#ifndef _BAREOS_H
+#ifndef BAREOS_INCLUDE_BAREOS_H_
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
@@ -187,4 +187,4 @@ typedef struct s_dirpluginFuncs {
 }
 #endif
 
-#endif /* __FD_PLUGINS_H */
+#endif /* BAREOS_FILED_FD_PLUGINS_H_ */

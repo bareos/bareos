@@ -42,8 +42,8 @@
  * OSSP var - Variable Expansion
  */
 
-#ifndef __VAR_H__
-#define __VAR_H__
+#ifndef BAREOS_LIB_VAR_H_
+#define BAREOS_LIB_VAR_H_
 
 /* Error codes */
 typedef enum {
@@ -140,4 +140,4 @@ DLL_IMP_EXP var_rc_t  var_formatv   (var_t  *var, char **dst_ptr, int force_expa
 DLL_IMP_EXP var_rc_t  var_format    (var_t  *var, char **dst_ptr, int force_expand, const char *fmt, ...);
 DLL_IMP_EXP const char *var_strerror  (var_t  *var, var_rc_t rc);
 
-#endif /* __VAR_H__ */
+#endif /* BAREOS_LIB_VAR_H_ */

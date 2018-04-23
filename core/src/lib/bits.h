@@ -27,8 +27,8 @@
  * NOTE:  base 0
  */
 
-#ifndef __BITS_H_
-#define __BITS_H_
+#ifndef BAREOS_LIB_BITS_H_
+#define BAREOS_LIB_BITS_H_
 
 /*
  * Number of bytes to hold n bits
@@ -88,4 +88,4 @@
  */
 #define copy_bits(b, var1, var2) memcpy((var2), (var1), nbytes_for_bits((b)))
 
-#endif /* __BITS_H_ */
+#endif /* BAREOS_LIB_BITS_H_ */

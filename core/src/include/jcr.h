@@ -31,8 +31,8 @@
  *  to all daemons and used by the library routines, and a
  *  daemon specific part that is enabled with #defines.
  */
-#ifndef __JCR_H_
-#define __JCR_H_ 1
+#ifndef BAREOS_INCLUDE_JCR_H_
+#define BAREOS_INCLUDE_JCR_H_ 1
 
 #include <include/bareos.h>
 
@@ -675,4 +675,4 @@ extern void free_jcr(JobControlRecord *jcr);
 typedef void (dbg_jcr_hook_t)(JobControlRecord *jcr, FILE *fp);
 DLL_IMP_EXP extern void dbg_jcr_add_hook(dbg_jcr_hook_t *fct);
 
-#endif /** __JCR_H_ */
+#endif /** BAREOS_INCLUDE_JCR_H_ */

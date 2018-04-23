@@ -27,8 +27,8 @@
  * Definition of attributes packet for unpacking from tape
  */
 
-#ifndef __ATTR_H_
-#define __ATTR_H_ 1
+#ifndef BAREOS_LIB_ATTR_H_
+#define BAREOS_LIB_ATTR_H_ 1
 
 
 struct Attributes {
@@ -61,4 +61,4 @@ DLL_IMP_EXP void build_attr_output_fnames(JobControlRecord *jcr, Attributes *att
 DLL_IMP_EXP const char *attr_to_str(PoolMem &resultbuffer, JobControlRecord *jcr, Attributes *attr);
 DLL_IMP_EXP void print_ls_output(JobControlRecord *jcr, Attributes *attr);
 
-#endif /* __ATTR_H_ */
+#endif /* BAREOS_LIB_ATTR_H_ */

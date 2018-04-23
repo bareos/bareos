@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef __BACKUP_H
-#define __BACKUP_H
+#ifndef BAREOS_FILED_BACKUP_H_
+#define BAREOS_FILED_BACKUP_H_
 
 struct b_save_ctx {
    JobControlRecord *jcr;                    /* Current Job Control Record */

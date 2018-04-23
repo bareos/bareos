@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_HARDLINK_H_
-#define FINDLIB_HARDLINK_H_
+#ifndef BAREOS_FINDLIB_HARDLINK_H_
+#define BAREOS_FINDLIB_HARDLINK_H_
 
 DLL_IMP_EXP CurLink *lookup_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, ino_t ino, dev_t dev);
 DLL_IMP_EXP CurLink *new_hardlink(JobControlRecord *jcr, FindFilesPacket *ff_pkt, char *fname, ino_t ino, dev_t dev);
@@ -28,4 +28,4 @@ DLL_IMP_EXP void ff_pkt_set_link_digest(FindFilesPacket *ff_pkt,
                             const char *digest,
                             uint32_t len);
 
-#endif // FINDLIB_HARDLINK_H_
+#endif // BAREOS_FINDLIB_HARDLINK_H_

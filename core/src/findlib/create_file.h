@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_CREATE_FILE_H_
-#define FINDLIB_CREATE_FILE_H_
+#ifndef BAREOS_FINDLIB_CREATE_FILE_H_
+#define BAREOS_FINDLIB_CREATE_FILE_H_
 
 DLL_IMP_EXP int create_file(JobControlRecord *jcr, Attributes *attr, BareosWinFilePacket *ofd, int replace);
 
-#endif // FINDLIB_CREATE_FILE_H_
+#endif // BAREOS_FINDLIB_CREATE_FILE_H_

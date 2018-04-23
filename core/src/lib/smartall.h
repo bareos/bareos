@@ -25,8 +25,8 @@
 
 */
 
-#ifndef SMARTALLOC_H
-#define SMARTALLOC_H
+#ifndef BAREOS_LIB_SMARTALL_H_
+#define BAREOS_LIB_SMARTALL_H_
 
 extern uint64_t DLL_IMP_EXP sm_max_bytes;
 extern uint64_t DLL_IMP_EXP sm_bytes;
@@ -171,4 +171,4 @@ class SmartAlloc
 };
 #endif  /* SMARTALLOC */
 
-#endif  /* !SMARTALLOC_H */
+#endif  /* !BAREOS_LIB_SMARTALL_H_ */

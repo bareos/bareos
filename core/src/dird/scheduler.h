@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_SCHEDULER_H_
-#define DIRD_SCHEDULER_H_
+#ifndef BAREOS_DIRD_SCHEDULER_H_
+#define BAREOS_DIRD_SCHEDULER_H_
 
 JobControlRecord *wait_for_next_job(char *one_shot_job_to_run);
 bool is_doy_in_last_week(int year, int doy);
 void term_scheduler();
 
-#endif // DIRD_SCHEDULER_H_
+#endif // BAREOS_DIRD_SCHEDULER_H_

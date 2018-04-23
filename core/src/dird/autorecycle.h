@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_AUTORECYCLE_H_
-#define DIRD_AUTORECYCLE_H_
+#ifndef BAREOS_DIRD_AUTORECYCLE_H_
+#define BAREOS_DIRD_AUTORECYCLE_H_
 
 bool find_recycled_volume(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
                           StoreResource *store, const char *unwanted_volumes);
@@ -28,4 +28,4 @@ bool recycle_oldest_purged_volume(JobControlRecord *jcr, bool InChanger, MediaDb
                                   StoreResource *store, const char *unwanted_volumes);
 bool recycle_volume(JobControlRecord *jcr, MediaDbRecord *mr);
 
-#endif // DIRD_AUTORECYCLE_H_
+#endif // BAREOS_DIRD_AUTORECYCLE_H_

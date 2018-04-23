@@ -18,11 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef DIRD_STATS_H_
-#define DIRD_STATS_H_
+#ifndef BAREOS_DIRD_STATS_H_
+#define BAREOS_DIRD_STATS_H_
 
 int start_statistics_thread(void);
 void stop_statistics_thread();
 void stats_job_started();
 
-#endif // DIRD_STATS_H_
+#endif // BAREOS_DIRD_STATS_H_

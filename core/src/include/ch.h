@@ -27,8 +27,8 @@
  * Compressed stream header struct
  */
 
-#ifndef __CH_H
-#define __CH_H 1
+#ifndef BAREOS_INCLUDE_CH_H_
+#define BAREOS_INCLUDE_CH_H_ 1
 
 /**
  * Compression algorithm signature. 4 letters as a 32bits integer
@@ -53,4 +53,4 @@ typedef struct {
    uint32_t size;       /* compressed size of the original data */
 } comp_stream_header;
 
-#endif /* __CH_H */
+#endif /* BAREOS_INCLUDE_CH_H_ */

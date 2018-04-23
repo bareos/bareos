@@ -27,8 +27,8 @@
  * @file
  * BootStrap record definition -- for restoring files.
  */
-#ifndef __BSR_H
-#define __BSR_H 1
+#ifndef BAREOS_LIB_BSR_H_
+#define BAREOS_LIB_BSR_H_ 1
 
 #ifndef HAVE_REGEX_H
 #include "lib/bregex.h"

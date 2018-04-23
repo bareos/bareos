@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BRS_BSOCK_TCP_H
-#define BRS_BSOCK_TCP_H
+#ifndef BAREOS_LIB_BSOCK_TCP_H_
+#define BAREOS_LIB_BSOCK_TCP_H_
 
 class DLL_IMP_EXP BareosSocketTCP : public BareosSocket {
 private:
@@ -74,4 +74,4 @@ public:
    int wait_data_intr(int sec, int usec = 0);
 };
 
-#endif /* BRS_BSOCK_TCP_H */
+#endif /* BAREOS_LIB_BSOCK_TCP_H_ */

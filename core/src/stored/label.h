@@ -19,8 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_LABEL_H_
-#define STORED_LABEL_H_
+#ifndef BAREOS_STORED_LABEL_H_
+#define BAREOS_STORED_LABEL_H_
 
 int read_dev_volume_label(DeviceControlRecord *dcr);
 void create_volume_label(Device *dev, const char *VolName, const char *PoolName);
@@ -39,4 +39,4 @@ bool unser_session_label(SESSION_LABEL *label, DeviceRecord *rec);
 bool write_new_volume_label_to_dev(DeviceControlRecord *dcr, const char *VolName,
                                    const char *PoolName, bool relabel);
 
-#endif // STORED_LABEL_H_
+#endif // BAREOS_STORED_LABEL_H_

@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_CMDS_H_
-#define DIRD_UA_CMDS_H_
+#ifndef BAREOS_DIRD_UA_CMDS_H_
+#define BAREOS_DIRD_UA_CMDS_H_
 
 bool do_a_command(UaContext *ua);
 bool dot_messages_cmd(UaContext *ua, const char *cmd);
 
-#endif // DIRD_UA_CMDS_H_
+#endif // BAREOS_DIRD_UA_CMDS_H_

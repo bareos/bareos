@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef STORED_DEVICE_H_
-#define STORED_DEVICE_H_
+#ifndef BAREOS_STORED_DEVICE_H_
+#define BAREOS_STORED_DEVICE_H_
 
 bool open_device(DeviceControlRecord *dcr);
 bool first_open_device(DeviceControlRecord *dcr);
@@ -31,4 +31,4 @@ void set_new_file_parameters(DeviceControlRecord *dcr);
 BootStrapRecord *position_device_to_first_file(JobControlRecord *jcr, DeviceControlRecord *dcr);
 bool try_device_repositioning(JobControlRecord *jcr, DeviceRecord *rec, DeviceControlRecord *dcr);
 
-#endif // STORED_DEVICE_H_
+#endif // BAREOS_STORED_DEVICE_H_

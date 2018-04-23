@@ -30,8 +30,8 @@
  * I.e. on Windows, we use Windows APIs.
  */
 
-#ifndef __BFILE_H
-#define __BFILE_H
+#ifndef BAREOS_FINDLIB_BFILE_H_
+#define BAREOS_FINDLIB_BFILE_H_
 
 /* this should physically correspond to WIN32_STREAM_ID
  * from winbase.h on Win32. We didn't inlcude cStreamName
@@ -137,4 +137,4 @@ DLL_IMP_EXP const char *stream_to_ascii(int stream);
 
 DLL_IMP_EXP bool processWin32BackupAPIBlock (BareosWinFilePacket *bfd, void *pBuffer, ssize_t dwSize);
 
-#endif /* __BFILE_H */
+#endif /* BAREOS_FINDLIB_BFILE_H_ */

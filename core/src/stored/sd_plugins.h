@@ -27,10 +27,10 @@
  * Interface definition for Bareos SD Plugins
  */
 
-#ifndef __SD_PLUGINS_H
-#define __SD_PLUGINS_H
+#ifndef BAREOS_STORED_SD_PLUGINS_H_
+#define BAREOS_STORED_SD_PLUGINS_H_
 
-#ifndef _BAREOS_H
+#ifndef BAREOS_INCLUDE_BAREOS_H_
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
@@ -206,4 +206,4 @@ typedef struct s_sdpluginFuncs {
 
 char *edit_device_codes(DeviceControlRecord *dcr, POOLMEM *&omsg, const char *imsg, const char *cmd);
 
-#endif /* __SD_PLUGINS_H */
+#endif /* BAREOS_STORED_SD_PLUGINS_H_ */

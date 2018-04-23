@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_LABEL_H
-#define DIRD_UA_LABEL_H
+#ifndef BAREOS_DIRD_UA_LABEL_H_
+#define BAREOS_DIRD_UA_LABEL_H_
 
 bool is_volume_name_legal(UaContext *ua, const char *name);
 bool send_label_request(UaContext *ua,
@@ -28,4 +28,4 @@ bool send_label_request(UaContext *ua,
                         bool media_record_exists, bool relabel,
                         drive_number_t drive, slot_number_t slot);
 
-#endif // DIRD_UA_LABEL_H
+#endif // BAREOS_DIRD_UA_LABEL_H_

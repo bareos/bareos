@@ -19,10 +19,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_CRYPTO_WRAP_H_
-#define LIB_CRYPTO_WRAP_H_
+#ifndef BAREOS_LIB_CRYPTO_WRAP_H_
+#define BAREOS_LIB_CRYPTO_WRAP_H_
 
 DLL_IMP_EXP void aes_wrap(uint8_t *kek, int n, uint8_t *plain, uint8_t *cipher);
 DLL_IMP_EXP int aes_unwrap(uint8_t *kek, int n, uint8_t *cipher, uint8_t *plain);
 
-#endif // LIB_CRYPTO_WRAP_H_
+#endif // BAREOS_LIB_CRYPTO_WRAP_H_

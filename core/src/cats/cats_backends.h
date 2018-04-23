@@ -27,8 +27,8 @@
  * Dynamic loading of catalog plugins.
  */
 
-#ifndef __CATS_BACKENDS_H_
-#define __CATS_BACKENDS_H_ 1
+#ifndef BAREOS_CATS_CATS_BACKENDS_H_
+#define BAREOS_CATS_CATS_BACKENDS_H_ 1
 
 extern "C" {
 typedef BareosDb *(*t_backend_instantiate)(JobControlRecord *jcr,
@@ -106,4 +106,4 @@ DLL_IMP_EXP BareosDb *db_init_database(JobControlRecord *jcr,
 
 
 
-#endif /* __CATS_BACKENDS_H_ */
+#endif /* BAREOS_CATS_CATS_BACKENDS_H_ */

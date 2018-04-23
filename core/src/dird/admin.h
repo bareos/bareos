@@ -19,12 +19,12 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_ADMIN_H_
-#define DIRD_ADMIN_H_
+#ifndef BAREOS_DIRD_ADMIN_H_
+#define BAREOS_DIRD_ADMIN_H_
 
 #include "include/jcr.h"
 bool do_admin_init(JobControlRecord *jcr);
 bool do_admin(JobControlRecord *jcr);
 void admin_cleanup(JobControlRecord *jcr, int TermCode);
 
-#endif // DIRD_ADMIN_H_
+#endif // BAREOS_DIRD_ADMIN_H_

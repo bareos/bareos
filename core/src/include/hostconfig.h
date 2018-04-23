@@ -26,8 +26,8 @@
  *                 config headers so its never included more then once.
  */
 
-#ifndef _HOSTCONFIG_H
-#define _HOSTCONFIG_H 1
+#ifndef BAREOS_INCLUDE_HOSTCONFIG_H_
+#define BAREOS_INCLUDE_HOSTCONFIG_H_ 1
 
 #if defined(HAVE_WIN32)
 #if defined(HAVE_MINGW)

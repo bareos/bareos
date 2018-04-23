@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_STATUS_H
-#define DIRD_UA_STATUS_H
+#ifndef BAREOS_DIRD_UA_STATUS_H_
+#define BAREOS_DIRD_UA_STATUS_H_
 
 void list_dir_status_header(UaContext *ua);
 
-#endif // DIRD_UA_STATUS_H
+#endif // BAREOS_DIRD_UA_STATUS_H_

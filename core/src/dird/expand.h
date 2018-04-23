@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_EXPAND_H_
-#define DIRD_EXPAND_H_
+#ifndef BAREOS_DIRD_EXPAND_H_
+#define BAREOS_DIRD_EXPAND_H_
 
 int variable_expansion(JobControlRecord *jcr, char *inp, POOLMEM *&exp);
 
-#endif // DIRD_EXPAND_H_
+#endif // BAREOS_DIRD_EXPAND_H_

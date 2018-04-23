@@ -30,8 +30,8 @@
  * Bootstrap send handling routines split from restore.c July 2012
  */
 
-#ifndef DIRD_BSR_H_
-#define DIRD_BSR_H_
+#ifndef BAREOS_DIRD_BSR_H_
+#define BAREOS_DIRD_BSR_H_
 
 /**
  * FileIndex entry in restore bootstrap record
@@ -90,4 +90,4 @@ bool open_bootstrap_file(JobControlRecord *jcr, bootstrap_info &info);
 bool send_bootstrap_file(JobControlRecord *jcr, BareosSocket *sock, bootstrap_info &info);
 void close_bootstrap_file(bootstrap_info &info);
 
-#endif // DIRD_BSR_H_
+#endif // BAREOS_DIRD_BSR_H_

@@ -136,7 +136,7 @@
  * multiple including. So we just test to see if include/bareos.h is not
  * already included as that leaves a nice fingerprint.
  */
-#ifndef _BAREOS_H
+#ifndef BAREOS_INCLUDE_BAREOS_H_
 #include "config.h"
 #endif
 

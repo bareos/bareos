@@ -30,8 +30,8 @@
  * File types
  */
 
-#ifndef __BFILEOPTS_H
-#define __BFILEOPTS_H
+#ifndef BAREOS_INCLUDE_FILEOPTS_H_
+#define BAREOS_INCLUDE_FILEOPTS_H_
 
 /**
  * Options saved in "options" of the include/exclude lists.

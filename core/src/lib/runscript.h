@@ -27,8 +27,8 @@
  * BAREOS RunScript Structure definition for FileDaemon and Director
  */
 
-#ifndef __RUNSCRIPT_H_
-#define __RUNSCRIPT_H_ 1
+#ifndef BAREOS_LIB_RUNSCRIPT_H_
+#define BAREOS_LIB_RUNSCRIPT_H_ 1
 
 #include "jcr.h"
 
@@ -109,4 +109,4 @@ DLL_IMP_EXP void free_runscripts(alist *runscripts); /* you have to free alist *
 
 extern DLL_IMP_EXP bool (*console_command)(JobControlRecord *jcr, const char *cmd);
 
-#endif /* __RUNSCRIPT_H_ */
+#endif /* BAREOS_LIB_RUNSCRIPT_H_ */

@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_AUTOPRUNE_H_
-#define DIRD_AUTOPRUNE_H_
+#ifndef BAREOS_DIRD_AUTOPRUNE_H_
+#define BAREOS_DIRD_AUTOPRUNE_H_
 
 void do_autoprune(JobControlRecord *jcr);
 void prune_volumes(JobControlRecord *jcr, bool InChanger, MediaDbRecord *mr,
                    StoreResource *store);
 
-#endif // DIRD_AUTOPRUNE_H_
+#endif // BAREOS_DIRD_AUTOPRUNE_H_

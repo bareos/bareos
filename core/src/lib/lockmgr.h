@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef _LOCKMGR_H
-#define _LOCKMGR_H 1
+#ifndef BAREOS_LIB_LOCKMGR_H_
+#define BAREOS_LIB_LOCKMGR_H_ 1
 
 #include "mutex_list.h"     /* Manage mutex with priority in a central place */
 
@@ -30,7 +30,7 @@
 DLL_IMP_EXP void lmgr_p(pthread_mutex_t *m);
 DLL_IMP_EXP void lmgr_v(pthread_mutex_t *m);
 
-#ifdef _USE_LOCKMGR
+#ifdef BAREOS_INCLUDE_VERSION_H_
 
 typedef struct bthread_mutex_t
 {
@@ -209,7 +209,7 @@ int bthread_kill(pthread_t thread, int sig,
 #define pthread_kill(a,b) bthread_kill((a),(b), __FILE__, __LINE__)
 #endif
 #endif
-#else /* _USE_LOCKMGR */
+#else /* BAREOS_INCLUDE_VERSION_H_ */
 #define lmgr_detect_deadloc()
 #define lmgr_dump()
 #define lmgr_init_thread()
@@ -234,5 +234,5 @@ int bthread_kill(pthread_t thread, int sig,
 #define BTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_INITIALIZER
 #define lmgr_mutex_is_locked(m) (1)
 #define bthread_cond_wait_p(w,x,y,z) pthread_cond_wait(w,x)
-#endif /* _USE_LOCKMGR */
-#endif /* _LOCKMGR_H */
+#endif /* BAREOS_INCLUDE_VERSION_H_ */
+#endif /* BAREOS_LIB_LOCKMGR_H_ */

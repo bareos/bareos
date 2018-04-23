@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_MATCH_BSR_H_
-#define STORED_MATCH_BSR_H_
+#ifndef BAREOS_STORED_MATCH_BSR_H_
+#define BAREOS_STORED_MATCH_BSR_H_
 
 int match_bsr(BootStrapRecord *bsr, DeviceRecord *rec, VOLUME_LABEL *volrec,
               SESSION_LABEL *sesrec, JobControlRecord *jcr);
@@ -31,4 +31,4 @@ uint64_t get_bsr_start_addr(BootStrapRecord *bsr,
                             uint32_t *file = NULL,
                             uint32_t *block = NULL);
 
-#endif // STORED_MATCH_BSR_H_
+#endif // BAREOS_STORED_MATCH_BSR_H_

@@ -20,8 +20,8 @@
    02110-1301, USA.
 */
 
-#ifndef __RESTORE_H
-#define __RESTORE_H
+#ifndef BAREOS_FILED_RESTORE_H_
+#define BAREOS_FILED_RESTORE_H_
 
 struct DelayedDataStream {
    int32_t stream;                     /* stream less new bits */

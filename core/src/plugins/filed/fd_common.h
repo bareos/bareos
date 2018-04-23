@@ -24,8 +24,8 @@
  * access to some common tools and utilities provided by Bareos
  */
 
-#ifndef PCOMMON_H
-#define PCOMMON_H
+#ifndef BAREOS_PLUGINS_FILED_FD_COMMON_H_
+#define BAREOS_PLUGINS_FILED_FD_COMMON_H_
 
 #define JT_BACKUP                'B'  /* Backup Job */
 #define JT_RESTORE               'R'  /* Restore Job */

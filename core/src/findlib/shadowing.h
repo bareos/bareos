@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_SHADOWING_H_
-#define FINDLIB_SHADOWING_H_
+#ifndef BAREOS_FINDLIB_SHADOWING_H_
+#define BAREOS_FINDLIB_SHADOWING_H_
 
 DLL_IMP_EXP void check_include_list_shadowing(JobControlRecord *jcr, findFILESET *fileset);
 
-#endif // FINDLIB_SHADOWING_H_
+#endif // BAREOS_FINDLIB_SHADOWING_H_

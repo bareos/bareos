@@ -24,8 +24,8 @@
  * Marco van Wieringen, March 2012
  */
 
-#ifndef _SCSI_CRYPTO_H
-#define _SCSI_CRYPTO_H 1
+#ifndef BAREOS_LIB_SCSI_CRYPTO_H_
+#define BAREOS_LIB_SCSI_CRYPTO_H_ 1
 
 /*
  * Include the SCSI Low Level Interface functions and definitions.
@@ -387,4 +387,4 @@ DLL_IMP_EXP int get_scsi_volume_encryption_status(int fd, const char *device_nam
 DLL_IMP_EXP bool need_scsi_crypto_key(int fd, const char *device_name, bool use_drive_status);
 DLL_IMP_EXP bool is_scsi_encryption_enabled(int fd, const char *device_name);
 
-#endif /* _SCSI_CRYPTO_H */
+#endif /* BAREOS_LIB_SCSI_CRYPTO_H_ */

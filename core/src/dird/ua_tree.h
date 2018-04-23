@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_TREE_H
-#define DIRD_UA_TREE_H
+#ifndef BAREOS_DIRD_UA_TREE_H_
+#define BAREOS_DIRD_UA_TREE_H_
 
 bool user_select_files_from_tree(TreeContext *tree);
 int insert_tree_handler(void *ctx, int num_fields, char **row);
 
-#endif // DIRD_UA_TREE_H
+#endif // BAREOS_DIRD_UA_TREE_H_

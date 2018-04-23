@@ -24,8 +24,8 @@
  * Author: Landon Fuller <landonf@threerings.net>
  */
 
-#ifndef __TLS_H_
-#define __TLS_H_
+#ifndef BAREOS_LIB_TLS_H_
+#define BAREOS_LIB_TLS_H_
 
 /*
  * Opaque TLS Context Structure.
@@ -36,4 +36,4 @@ typedef struct TlsContext TLS_CONTEXT;
 /* Opaque TLS Connection Structure */
 typedef struct TlsConnection TLS_CONNECTION;
 
-#endif /* __TLS_H_ */
+#endif /* BAREOS_LIB_TLS_H_ */

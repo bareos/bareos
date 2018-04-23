@@ -27,8 +27,8 @@
  * crypto cache definition
  */
 
-#ifndef _CRYPTO_CACHE_H
-#define _CRYPTO_CACHE_H 1
+#ifndef BAREOS_LIB_CRYPTO_CACHE_H_
+#define BAREOS_LIB_CRYPTO_CACHE_H_ 1
 
 #define CRYPTO_CACHE_MAX_AGE	60 * 60 * 24 * 60 /* 60 Days */
 
@@ -55,4 +55,4 @@ DLL_IMP_EXP void dump_crypto_cache(int fd);
 DLL_IMP_EXP void reset_crypto_cache(void);
 DLL_IMP_EXP void flush_crypto_cache(void);
 
-#endif /* _CRYPTO_CACHE_H */
+#endif /* BAREOS_LIB_CRYPTO_CACHE_H_ */

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_BACKUP_H_
-#define DIRD_BACKUP_H_
+#ifndef BAREOS_DIRD_BACKUP_H_
+#define BAREOS_DIRD_BACKUP_H_
 
 int wait_for_job_termination(JobControlRecord *jcr, int timeout = 0);
 bool do_native_backup_init(JobControlRecord *jcr);
@@ -35,4 +35,4 @@ char* storage_address_to_contact(ClientResource *client, StoreResource *store);
 char* client_address_to_contact(ClientResource *client, StoreResource *store);
 char* storage_address_to_contact(StoreResource *rstore, StoreResource *wstore);
 
-#endif // DIRD_BACKUP_H_
+#endif // BAREOS_DIRD_BACKUP_H_

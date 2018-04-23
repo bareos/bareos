@@ -25,8 +25,8 @@
  * Marco van Wieringen, November 2014
  */
 
-#ifndef ELASTO_DEVICE_H
-#define ELASTO_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_ELASTO_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_ELASTO_DEVICE_H_
 
 #include <elasto/data.h>
 #include <elasto/file.h>
@@ -56,4 +56,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
-#endif /* ELASTO_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_ELASTO_DEVICE_H_ */

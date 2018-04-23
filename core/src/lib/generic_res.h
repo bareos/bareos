@@ -26,8 +26,8 @@
  * Extracted from other source files by Marco van Wieringen, June 2013
  */
 
-#ifndef _GENERIC_RES_H
-#define _GENERIC_RES_H 1
+#ifndef BAREOS_LIB_GENERIC_RES_H_
+#define BAREOS_LIB_GENERIC_RES_H_ 1
 
 #ifndef DIRECTOR_DAEMON
 /*
@@ -86,4 +86,4 @@ static s_kw tapelabels[] = {
    { NULL, 0 }
 };
 
-#endif /* _GENERIC_RES_H */
+#endif /* BAREOS_LIB_GENERIC_RES_H_ */

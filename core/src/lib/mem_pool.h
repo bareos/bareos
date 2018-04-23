@@ -27,8 +27,8 @@
  * Memory Pool prototypes
  */
 
-#ifndef __MEM_POOL_H_
-#define __MEM_POOL_H_
+#ifndef BAREOS_LIB_MEM_POOL_H_
+#define BAREOS_LIB_MEM_POOL_H_
 
 #ifdef SMARTALLOC
 

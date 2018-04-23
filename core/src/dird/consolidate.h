@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_CONSOLIDATE_H_
-#define DIRD_CONSOLIDATE_H_
+#ifndef BAREOS_DIRD_CONSOLIDATE_H_
+#define BAREOS_DIRD_CONSOLIDATE_H_
 
 bool do_consolidate_init(JobControlRecord *jcr);
 bool do_consolidate(JobControlRecord *jcr);
 void consolidate_cleanup(JobControlRecord *jcr, int TermCode);
 
-#endif // DIRD_CONSOLIDATE_H_
+#endif // BAREOS_DIRD_CONSOLIDATE_H_

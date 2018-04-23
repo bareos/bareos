@@ -27,8 +27,8 @@
  * Output Formatter prototypes
  */
 
-#ifndef __OUTPUT_FORMATTER_H_
-#define __OUTPUT_FORMATTER_H_
+#ifndef BAREOS_LIB_OUTPUT_FORMATTER_H_
+#define BAREOS_LIB_OUTPUT_FORMATTER_H_
 
 #define MSG_TYPE_INFO    "info"
 #define MSG_TYPE_WARNING "warning"

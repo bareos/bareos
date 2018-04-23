@@ -25,8 +25,8 @@
  * Marco van Wieringen, June 2014
  */
 
-#ifndef GENERIC_TAPE_DEVICE_H
-#define GENERIC_TAPE_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_
 
 class generic_tape_device: public Device {
 public:
@@ -66,4 +66,4 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count);
    virtual bool d_truncate(DeviceControlRecord *dcr);
 };
-#endif /* GENERIC_TAPE_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_GENERIC_TAPE_DEVICE_H_ */

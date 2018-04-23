@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_RUN_H
-#define DIRD_UA_RUN_H
+#ifndef BAREOS_DIRD_UA_RUN_H_
+#define BAREOS_DIRD_UA_RUN_H_
 
 #include "dird/ua.h"
 
@@ -28,4 +28,4 @@ bool rerun_cmd(UaContext *ua, const char *cmd);
 bool run_cmd(UaContext *ua, const char *cmd);
 int do_run_cmd(UaContext *ua, const char *cmd);
 
-#endif // DIRD_UA_RUN_H
+#endif // BAREOS_DIRD_UA_RUN_H_

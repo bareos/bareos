@@ -19,10 +19,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BPOLL_H_
-#define LIB_BPOLL_H_
+#ifndef BAREOS_LIB_BPOLL_H_
+#define BAREOS_LIB_BPOLL_H_
 
 DLL_IMP_EXP int wait_for_readable_fd(int fd, int sec, bool ignore_interupts);
 DLL_IMP_EXP int wait_for_writable_fd(int fd, int sec, bool ignore_interupts);
 
-#endif // LIB_BPOLL_H_
+#endif // BAREOS_LIB_BPOLL_H_

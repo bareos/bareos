@@ -25,8 +25,8 @@
  * Marco van Wieringen, December 2013
  */
 
-#ifndef WIN32_TAPE_DEVICE_H
-#define WIN32_TAPE_DEVICE_H
+#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
+#define BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_
 
 class win32_tape_device: public generic_tape_device {
 public:
@@ -42,4 +42,4 @@ public:
    int tape_get(struct mtget *mt_com);
    int tape_pos(struct mtpos *mt_com);
 };
-#endif /* WIN32_TAPE_DEVICE_H */
+#endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_TAPE_DEVICE_H_ */

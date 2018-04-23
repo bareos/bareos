@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_STATUS_H_
-#define STORED_STATUS_H_
+#ifndef BAREOS_STORED_STATUS_H_
+#define BAREOS_STORED_STATUS_H_
 
 bool status_cmd(JobControlRecord *jcr);
 bool dotstatus_cmd(JobControlRecord *jcr);
@@ -27,4 +27,4 @@ bool dotstatus_cmd(JobControlRecord *jcr);
 char *bareos_status(char *buf, int buf_len);
 #endif
 
-#endif // STORED_STATUS_H_
+#endif // BAREOS_STORED_STATUS_H_

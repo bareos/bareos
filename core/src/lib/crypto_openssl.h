@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_CRYPTO_OPENSSL_H_
-#define LIB_CRYPTO_OPENSSL_H_
+#ifndef BAREOS_LIB_CRYPTO_OPENSSL_H_
+#define BAREOS_LIB_CRYPTO_OPENSSL_H_
 
 #ifdef HAVE_OPENSSL
 DLL_IMP_EXP void openssl_post_errors(int code, const char *errstring);
@@ -30,4 +30,4 @@ DLL_IMP_EXP int openssl_seed_prng(void);
 DLL_IMP_EXP int openssl_save_prng(void);
 #endif /* HAVE_OPENSSL */
 
-#endif // LIB_CRYPTO_OPENSSL_H_
+#endif // BAREOS_LIB_CRYPTO_OPENSSL_H_

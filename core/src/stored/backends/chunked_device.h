@@ -24,8 +24,8 @@
  * Marco van Wieringen, February 2015
  */
 
-#ifndef CHUNKED_DEVICE_H
-#define CHUNKED_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_
 
 /*
  * Let io-threads check for work every 300 seconds.
@@ -168,4 +168,4 @@ public:
    virtual ssize_t d_write(int fd, const void *buffer, size_t count) = 0;
    virtual bool d_truncate(DeviceControlRecord *dcr) = 0;
 };
-#endif /* CHUNKED_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_CHUNKED_DEVICE_H_ */

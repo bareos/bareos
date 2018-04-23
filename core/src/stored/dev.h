@@ -58,8 +58,8 @@
  *   unreserve_device()  much more complete unreservation
  */
 
-#ifndef __DEV_H
-#define __DEV_H 1
+#ifndef BAREOS_STORED_DEV_H_
+#define BAREOS_STORED_DEV_H_ 1
 
 
 #include "stored/record.h"

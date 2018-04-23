@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_PARSE_BSR_H_
-#define STORED_PARSE_BSR_H_
+#ifndef BAREOS_STORED_PARSE_BSR_H_
+#define BAREOS_STORED_PARSE_BSR_H_
 
 BootStrapRecord *parse_bsr(JobControlRecord *jcr, char *lf);
 void dump_bsr(BootStrapRecord *bsr, bool recurse);
@@ -27,4 +27,4 @@ DLL_IMP_EXP void free_bsr(BootStrapRecord *bsr);
 void free_restore_volume_list(JobControlRecord *jcr);
 void create_restore_volume_list(JobControlRecord *jcr);
 
-#endif // STORED_PARSE_BSR_H_
+#endif // BAREOS_STORED_PARSE_BSR_H_

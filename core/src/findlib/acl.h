@@ -25,8 +25,8 @@
  * Properties we use for getting and setting ACLs.
  */
 
-#ifndef __ACL_H
-#define __ACL_H
+#ifndef BAREOS_FINDLIB_ACL_H_
+#define BAREOS_FINDLIB_ACL_H_
 
 /**
  * Number of acl errors to report per job.

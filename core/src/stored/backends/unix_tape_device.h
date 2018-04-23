@@ -25,8 +25,8 @@
  * Marco van Wieringen, December 2013
  */
 
-#ifndef UNIX_TAPE_DEVICE_H
-#define UNIX_TAPE_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_
 
 class unix_tape_device: public generic_tape_device {
 public:
@@ -35,4 +35,4 @@ public:
 
    int d_ioctl(int fd, ioctl_req_t request, char *op);
 };
-#endif /* UNIX_TAPE_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_UNIX_TAPE_DEVICE_H_ */

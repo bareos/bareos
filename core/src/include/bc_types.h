@@ -39,8 +39,8 @@
  * Also, we define types such as file address lengths.
  */
 
-#ifndef __bc_types_INCLUDED
-#define __bc_types_INCLUDED
+#ifndef BAREOS_INCLUDE_BC_TYPES_H_
+#define BAREOS_INCLUDE_BC_TYPES_H_
 
 #ifdef HAVE_WIN32
 typedef UINT64 u_int64_t;
@@ -294,4 +294,4 @@ enum {
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #endif
 
-#endif /* __bc_types_INCLUDED */
+#endif /* BAREOS_INCLUDE_BC_TYPES_H_ */

@@ -19,12 +19,12 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_RESTORE_H_
-#define DIRD_RESTORE_H_
+#ifndef BAREOS_DIRD_RESTORE_H_
+#define BAREOS_DIRD_RESTORE_H_
 
 bool do_native_restore(JobControlRecord *jcr);
 bool do_native_restore_init(JobControlRecord *jcr);
 void native_restore_cleanup(JobControlRecord *jcr, int TermCode);
 void generate_restore_summary(JobControlRecord *jcr, int msg_type, const char *term_msg);
 
-#endif // DIRD_RESTORE_H_
+#endif // BAREOS_DIRD_RESTORE_H_

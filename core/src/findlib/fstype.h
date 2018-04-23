@@ -18,10 +18,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_FSTYPE_H_
-#define FINDLIB_FSTYPE_H_
+#ifndef BAREOS_FINDLIB_FSTYPE_H_
+#define BAREOS_FINDLIB_FSTYPE_H_
 
 DLL_IMP_EXP bool fstype(const char *fname, char *fs, int fslen);
 DLL_IMP_EXP bool fstype_equals(const char *fname, const char *fstypename);
 
-#endif // FINDLIB_FSTYPE_H_
+#endif // BAREOS_FINDLIB_FSTYPE_H_

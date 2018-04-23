@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef BAREOS_TLS_CONF_H
-#define BAREOS_TLS_CONF_H
+#ifndef BAREOS_LIB_TLS_CONF_H_
+#define BAREOS_LIB_TLS_CONF_H_
 
 /*
  * TLS enabling values. Value is important for comparison, ie:
@@ -206,4 +206,4 @@ class DLL_IMP_EXP tls_psk_t : public TlsBase {
    static bool required(u_int32_t policy);
 };
 
-#endif //BAREOS_TLS_CONF_H
+#endif //BAREOS_LIB_TLS_CONF_H_

@@ -18,12 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_ATTRIBS_H_
-#define LIB_ATTRIBS_H_
+#ifndef BAREOS_LIB_ATTRIBS_H_
+#define BAREOS_LIB_ATTRIBS_H_
 #include "include/baconfig.h"
 
 DLL_IMP_EXP void encode_stat(char *buf, struct stat *statp, int stat_size, int32_t LinkFI, int data_stream);
 DLL_IMP_EXP int decode_stat(char *buf, struct stat *statp, int stat_size, int32_t *LinkFI);
 DLL_IMP_EXP int32_t decode_LinkFI(char *buf, struct stat *statp, int stat_size);
 
-#endif // LIB_ATTRIBS_H_
+#endif // BAREOS_LIB_ATTRIBS_H_

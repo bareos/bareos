@@ -19,8 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_AUTHENTICATE_H_
-#define STORED_AUTHENTICATE_H_
+#ifndef BAREOS_STORED_AUTHENTICATE_H_
+#define BAREOS_STORED_AUTHENTICATE_H_
 
 bool authenticate_director(JobControlRecord *jcr);
 bool authenticate_storagedaemon(JobControlRecord *jcr);
@@ -28,4 +28,4 @@ bool authenticate_with_storagedaemon(JobControlRecord *jcr);
 bool authenticate_filedaemon(JobControlRecord *jcr);
 bool authenticate_with_filedaemon(JobControlRecord *jcr);
 
-#endif // STORED_AUTHENTICATE_H_
+#endif // BAREOS_STORED_AUTHENTICATE_H_

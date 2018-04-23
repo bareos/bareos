@@ -19,8 +19,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_WIN32_H_
-#define FINDLIB_WIN32_H_
+#ifndef BAREOS_WIN32_FINDLIB_WIN32_H_
+#define BAREOS_WIN32_FINDLIB_WIN32_H_
 
 
 DLL_IMP_EXP bool expand_win32_fileset(findFILESET *fileset);
@@ -31,4 +31,4 @@ DLL_IMP_EXP void win32_cleanup_copy_thread(JobControlRecord *jcr);
 DLL_IMP_EXP void win32_flush_copy_thread(JobControlRecord *jcr);
 DLL_IMP_EXP int win32_send_to_copy_thread(JobControlRecord *jcr, BareosWinFilePacket *bfd, char *data, const int32_t length);
 
-#endif // FINDLIB_WIN32_H_
+#endif // BAREOS_WIN32_FINDLIB_WIN32_H_

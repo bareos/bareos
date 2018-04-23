@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_MATCH_H_
-#define FINDLIB_MATCH_H_
+#ifndef BAREOS_FINDLIB_MATCH_H_
+#define BAREOS_FINDLIB_MATCH_H_
 
 DLL_IMP_EXP void init_include_exclude_files(FindFilesPacket *ff);
 DLL_IMP_EXP void term_include_exclude_files(FindFilesPacket *ff);
@@ -32,4 +32,4 @@ DLL_IMP_EXP struct s_included_file *get_next_included_file(FindFilesPacket *ff,
 DLL_IMP_EXP bool parse_size_match(const char *size_match_pattern,
                       struct s_sz_matching *size_matching);
 
-#endif // FINDLIB_MATCH_H_
+#endif // BAREOS_FINDLIB_MATCH_H_

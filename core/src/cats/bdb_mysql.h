@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef __BDB_MYSQL_H_
-#define __BDB_MYSQL_H_ 1
+#ifndef BAREOS_CATS_BDB_MYSQL_H_
+#define BAREOS_CATS_BDB_MYSQL_H_ 1
 
 /*
  * Number of insert statements to batch-up in batch insert
@@ -90,4 +90,4 @@ public:
    ~BareosDbMysql();
 };
 
-#endif /* __BDB_MYSQL_H_ */
+#endif /* BAREOS_CATS_BDB_MYSQL_H_ */

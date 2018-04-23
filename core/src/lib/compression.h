@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_COMPRESSION_H_
-#define LIB_COMPRESSION_H_
+#ifndef BAREOS_LIB_COMPRESSION_H_
+#define BAREOS_LIB_COMPRESSION_H_
 
 DLL_IMP_EXP const char *cmprs_algo_to_text(uint32_t compression_algorithm);
 DLL_IMP_EXP bool setup_compression_buffers(JobControlRecord *jcr, bool compatible,
@@ -33,4 +33,4 @@ DLL_IMP_EXP bool decompress_data(JobControlRecord *jcr, const char *last_fname, 
                      char **data, uint32_t *length, bool want_data_stream);
 DLL_IMP_EXP void cleanup_compression(JobControlRecord *jcr);
 
-#endif // LIB_COMPRESSION_H_
+#endif // BAREOS_LIB_COMPRESSION_H_

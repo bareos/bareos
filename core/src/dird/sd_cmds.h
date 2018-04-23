@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_SD_CMDS_H_
-#define DIRD_SD_CMDS_H_
+#ifndef BAREOS_DIRD_SD_CMDS_H_
+#define BAREOS_DIRD_SD_CMDS_H_
 
 bool connect_to_storage_daemon(JobControlRecord *jcr, int retry_interval,
                                int max_retry_time, bool verbose);
@@ -43,4 +43,4 @@ bool send_secure_erase_req_to_sd(JobControlRecord *jcr);
 bool do_storage_resolve(UaContext *ua, StoreResource *store);
 bool do_storage_plugin_options(JobControlRecord *jcr);
 
-#endif // DIRD_SD_CMDS_H_
+#endif // BAREOS_DIRD_SD_CMDS_H_

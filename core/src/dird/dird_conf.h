@@ -27,8 +27,8 @@
  * @file
  * Director specific configuration and defines
  */
-#ifndef DIRD_DIRD_CONF_H_
-#define DIRD_DIRD_CONF_H_
+#ifndef BAREOS_DIRD_DIRD_CONF_H_
+#define BAREOS_DIRD_DIRD_CONF_H_
 /* NOTE:  #includes at the end of this file */
 
 #define CONFIG_FILE "bareos-dir.conf" /* default configuration file */
@@ -662,4 +662,4 @@ const char *get_configure_usage_string();
 void destroy_configure_usage_string();
 bool populate_defs();
 
-#endif // DIRD_DIRD_CONF_H_
+#endif // BAREOS_DIRD_DIRD_CONF_H_

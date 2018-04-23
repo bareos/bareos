@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_READ_RECORD_H_
-#define STORED_READ_RECORD_H_
+#ifndef BAREOS_STORED_READ_RECORD_H_
+#define BAREOS_STORED_READ_RECORD_H_
 
 DLL_IMP_EXP READ_CTX *new_read_context(void);
 DLL_IMP_EXP void free_read_context(READ_CTX *rctx);
@@ -37,4 +37,4 @@ DLL_IMP_EXP bool read_records(DeviceControlRecord *dcr,
                   bool mount_cb(DeviceControlRecord *dcr));
 
 
-#endif // STORED_READ_RECORD_H_
+#endif // BAREOS_STORED_READ_RECORD_H_

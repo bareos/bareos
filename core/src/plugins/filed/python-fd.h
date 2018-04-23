@@ -23,8 +23,8 @@
  * This defines the Python types in C++ and the callbacks from Python we support.
  */
 
-#ifndef BPYTHONFD_H
-#define BPYTHONFD_H 1
+#ifndef BAREOS_PLUGINS_FILED_PYTHON_FD_H_
+#define BAREOS_PLUGINS_FILED_PYTHON_FD_H_ 1
 
 #include "structmember.h"
 
@@ -677,4 +677,4 @@ static PyMethodDef BareosFDMethods[] = {
    { "ClearSeenBitmap", PyBareosClearSeenBitmap, METH_VARARGS, "Clear bit in the Accurate Seen bitmap" },
    { NULL, NULL, 0, NULL }
 };
-#endif /* BPYTHONFD_H */
+#endif /* BAREOS_PLUGINS_FILED_PYTHON_FD_H_ */

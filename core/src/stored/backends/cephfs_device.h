@@ -25,8 +25,8 @@
  * Marco van Wieringen, May 2014
  */
 
-#ifndef CEPHFS_DEVICE_H
-#define CEPHFS_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_CEPHFS_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_CEPHFS_DEVICE_H_
 
 #include <cephfs/libcephfs.h>
 
@@ -53,4 +53,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
-#endif /* CEPHFS_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_CEPHFS_DEVICE_H_ */

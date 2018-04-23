@@ -27,8 +27,8 @@
  * BAREOS BareosRegex Structure definition for FileDaemon
  */
 
-#ifndef __BREG_H_
-#define __BREG_H_ 1
+#ifndef BAREOS_LIB_BREG_H_
+#define BAREOS_LIB_BREG_H_ 1
 
 //#undef HAVE_REGEX_H
 
@@ -111,4 +111,4 @@ DLL_IMP_EXP char *bregexp_build_where(char *dest, int str_size,
  */
 DLL_IMP_EXP char *bregexp_escape_string(char *dest, const char *src, const char sep);
 
-#endif /* __BREG_H_ */
+#endif /* BAREOS_LIB_BREG_H_ */

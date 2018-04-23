@@ -27,8 +27,8 @@
  * NDMP internal routines used by the different NDMP components.
  */
 
-#ifndef BNDMP_DMA_PRIV_H
-#define BNDMP_DMA_PRIV_H 1
+#ifndef BAREOS_DIRD_NDMP_DMA_PRIV_H_
+#define BAREOS_DIRD_NDMP_DMA_PRIV_H_ 1
 
 #ifdef NDMP_NEED_ENV_KEYWORDS
 /**

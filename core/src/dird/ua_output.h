@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_OUTPUT_H
-#define DIRD_UA_OUTPUT_H
+#ifndef BAREOS_DIRD_UA_OUTPUT_H_
+#define BAREOS_DIRD_UA_OUTPUT_H_
 
 void bsendmsg(void *ua_ctx, const char *fmt, ...);
 of_filter_state filterit(void *ctx, void *data, of_filter_tuple *tuple);
@@ -28,4 +28,4 @@ bool printit(void *ctx, const char *msg);
 bool complete_jcr_for_job(JobControlRecord *jcr, JobResource *job, PoolResource *pool);
 RunResource *find_next_run(RunResource *run, JobResource *job, utime_t &runtime, int ndays);
 
-#endif // DIRD_UA_OUTPUT_H
+#endif // BAREOS_DIRD_UA_OUTPUT_H_

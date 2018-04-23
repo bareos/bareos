@@ -18,8 +18,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_TLS_OPENSSL_H_
-#define LIB_TLS_OPENSSL_H_
+#ifndef BAREOS_LIB_TLS_OPENSSL_H_
+#define BAREOS_LIB_TLS_OPENSSL_H_
 
 typedef std::shared_ptr<PskCredentials> sharedPskCredentials;
 
@@ -47,4 +47,4 @@ DLL_IMP_EXP void set_tls_enable(TLS_CONTEXT *ctx, bool value);
 DLL_IMP_EXP bool get_tls_verify_peer(TLS_CONTEXT *ctx);
 
 
-#endif // LIB_TLS_OPENSSL_H_
+#endif // BAREOS_LIB_TLS_OPENSSL_H_

@@ -27,8 +27,8 @@
  * Definitions for locking and blocking functions in the SD
  */
 
-#ifndef __LOCK_H
-#define __LOCK_H 1
+#ifndef BAREOS_STORED_LOCK_H_
+#define BAREOS_STORED_LOCK_H_ 1
 
 
 #ifdef SD_DEBUG_LOCK

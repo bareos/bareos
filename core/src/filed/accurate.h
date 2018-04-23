@@ -20,8 +20,8 @@
    02110-1301, USA.
 */
 
-#ifndef ACCURATE_H
-#define ACCURATE_H
+#ifndef BAREOS_FILED_ACCURATE_H_
+#define BAREOS_FILED_ACCURATE_H_
 
 /*
  * Generic accurate payload is the same for any storage class.
@@ -202,4 +202,4 @@ bool accurate_unmark_all_files_as_seen(JobControlRecord *jcr);
 void accurate_free(JobControlRecord *jcr);
 
 
-#endif /* ACCURATE_H */
+#endif /* BAREOS_FILED_ACCURATE_H_ */

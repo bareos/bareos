@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_PASSPHRASE_H_
-#define LIB_PASSPHRASE_H_
+#ifndef BAREOS_LIB_PASSPHRASE_H_
+#define BAREOS_LIB_PASSPHRASE_H_
 
 DLL_IMP_EXP char *generate_crypto_passphrase(uint16_t length);
 
-#endif // LIB_PASSPHRASE_H_
+#endif // BAREOS_LIB_PASSPHRASE_H_

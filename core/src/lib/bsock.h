@@ -35,8 +35,8 @@
  * See below for SIGNAL codes.
  */
 
-#ifndef BRS_BSOCK_H
-#define BRS_BSOCK_H
+#ifndef BAREOS_LIB_BSOCK_H_
+#define BAREOS_LIB_BSOCK_H_
 
 #include <include/bareos.h>
 
@@ -263,4 +263,4 @@ enum {
    BNET_ERROR          = -3
 };
 
-#endif /* BRS_BSOCK_H */
+#endif /* BAREOS_LIB_BSOCK_H_ */

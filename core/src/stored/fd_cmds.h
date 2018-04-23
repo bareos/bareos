@@ -18,11 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_FD_CMDS_H_
-#define STORED_FD_CMDS_H_
+#ifndef BAREOS_STORED_FD_CMDS_H_
+#define BAREOS_STORED_FD_CMDS_H_
 
 void *handle_filed_connection(BareosSocket *fd, char *job_name);
 void run_job(JobControlRecord *jcr);
 void do_fd_commands(JobControlRecord *jcr);
 
-#endif // STORED_FD_CMDS_H_
+#endif // BAREOS_STORED_FD_CMDS_H_

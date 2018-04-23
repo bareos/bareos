@@ -25,8 +25,8 @@
  * Marco van Wieringen, June 2014
  */
 
-#ifndef UNIX_FIFO_DEVICE_H
-#define UNIX_FIFO_DEVICE_H
+#ifndef BAREOS_STORED_BACKENDS_UNIX_FIFO_DEVICE_H_
+#define BAREOS_STORED_BACKENDS_UNIX_FIFO_DEVICE_H_
 
 class unix_fifo_device: public Device {
 public:
@@ -48,4 +48,4 @@ public:
    ssize_t d_write(int fd, const void *buffer, size_t count);
    bool d_truncate(DeviceControlRecord *dcr);
 };
-#endif /* UNIX_FIFO_DEVICE_H */
+#endif /* BAREOS_STORED_BACKENDS_UNIX_FIFO_DEVICE_H_ */

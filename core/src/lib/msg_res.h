@@ -26,8 +26,8 @@
  * Extracted from other source files by Marco van Wieringen, April 2014
  */
 
-#ifndef _MSGS_RES_H
-#define _MSGS_RES_H 1
+#ifndef BAREOS_LIB_MSG_RES_H_
+#define BAREOS_LIB_MSG_RES_H_ 1
 
 /*
  * Message resource directives
@@ -54,4 +54,4 @@ static ResourceItem msgs_items[] = {
    { NULL, 0, { 0 }, 0, 0, NULL, NULL, NULL }
 };
 
-#endif /* _MSGS_RES_H */
+#endif /* BAREOS_LIB_MSG_RES_H_ */

@@ -20,8 +20,8 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef __BDB_DBI_H_
-#define __BDB_DBI_H_ 1
+#ifndef BAREOS_CATS_BDB_DBI_H_
+#define BAREOS_CATS_BDB_DBI_H_ 1
 
 struct DbiFieldGet {
    dlink link;
@@ -85,4 +85,4 @@ public:
             bool need_private);
    ~BareosDbDBI();
 };
-#endif /* __BDB_DBI_H_ */
+#endif /* BAREOS_CATS_BDB_DBI_H_ */

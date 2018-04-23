@@ -28,8 +28,8 @@
  * Record, and label definitions for Bareos media data format.
  */
 
-#ifndef __RECORD_H
-#define __RECORD_H 1
+#ifndef BAREOS_STORED_RECORD_H_
+#define BAREOS_STORED_RECORD_H_ 1
 
 
 /**

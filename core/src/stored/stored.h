@@ -23,8 +23,8 @@
  * Storage daemon specific defines and includes
  */
 
-#ifndef __STORED_H_
-#define __STORED_H_
+#ifndef BAREOS_STORED_STORED_H_
+#define BAREOS_STORED_STORED_H_
 
 #define STORAGE_DAEMON 1
 
@@ -64,7 +64,7 @@ const int sd_debuglevel = 300;
 #include "vol_mgr.h"
 #include "reserve.h"
 
-#ifdef HAVE_FNMATCH
+#ifdef BAREOS_LIB_LIB_H_
 #include <fnmatch.h>
 #else
 #include "lib/fnmatch.h"
@@ -85,4 +85,4 @@ extern StorageResource SD_IMP_EXP *me;         /* "Global" daemon resource */
 extern ConfigurationParser SD_IMP_EXP *my_config;  /* Our Global config */
 uint32_t new_VolSessionId();
 
-#endif /* __STORED_H_ */
+#endif /* BAREOS_STORED_STORED_H_ */

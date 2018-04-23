@@ -18,11 +18,11 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef DIRD_VBACKUP_H
-#define DIRD_VBACKUP_H
+#ifndef BAREOS_DIRD_VBACKUP_H_
+#define BAREOS_DIRD_VBACKUP_H_
 
 bool do_native_vbackup_init(JobControlRecord *jcr);
 bool do_native_vbackup(JobControlRecord *jcr);
 void native_vbackup_cleanup(JobControlRecord *jcr, int TermCode, int JobLevel = L_FULL);
 
-#endif // DIRD_VBACKUP_H
+#endif // BAREOS_DIRD_VBACKUP_H_

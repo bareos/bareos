@@ -27,8 +27,8 @@
  * Stream definitions.  Split from baconfig.h Nov 2010
  */
 
-#ifndef __BSTREAMS_H
-#define __BSTREAMS_H 1
+#ifndef BAREOS_INCLUDE_STREAMS_H_
+#define BAREOS_INCLUDE_STREAMS_H_ 1
 
 /**
  * Stream bits  -- these bits are new as of 24Nov10
@@ -195,4 +195,4 @@
  * WARNING!!! do not define more than 2047 of these old types
  */
 
-#endif /* __BSTREAMS_H */
+#endif /* BAREOS_INCLUDE_STREAMS_H_ */

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_PURGE_H
-#define DIRD_UA_PURGE_H
+#ifndef BAREOS_DIRD_UA_PURGE_H_
+#define BAREOS_DIRD_UA_PURGE_H_
 
 #include "dird/ua.h"
 
@@ -33,4 +33,4 @@ void purge_jobs_from_catalog(UaContext *ua, char *jobs);
 void purge_job_list_from_catalog(UaContext *ua, del_ctx &del);
 void purge_files_from_job_list(UaContext *ua, del_ctx &del);
 
-#endif // DIRD_UA_PURGE_H
+#endif // BAREOS_DIRD_UA_PURGE_H_

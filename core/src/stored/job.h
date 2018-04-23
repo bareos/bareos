@@ -19,9 +19,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_JOB_H_
-#define STORED_JOB_H_
+#ifndef BAREOS_STORED_JOB_H_
+#define BAREOS_STORED_JOB_H_
 
 void stored_free_jcr(JobControlRecord *jcr);
 
-#endif // STORED_JOB_H_
+#endif // BAREOS_STORED_JOB_H_

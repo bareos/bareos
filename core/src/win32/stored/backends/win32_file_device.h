@@ -25,8 +25,8 @@
  * Marco van Wieringen, December 2013
  */
 
-#ifndef WIN32_FILE_DEVICE_H
-#define WIN32_FILE_DEVICE_H
+#ifndef BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
+#define BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_
 
 class win32_file_device: public Device {
 public:
@@ -46,4 +46,4 @@ public:
    boffset_t d_lseek(DeviceControlRecord *dcr, boffset_t offset, int whence);
    bool d_truncate(DeviceControlRecord *dcr);
 };
-#endif /* WIN32_FILE_DEVICE_H */
+#endif /* BAREOS_WIN32_STORED_BACKENDS_WIN32_FILE_DEVICE_H_ */

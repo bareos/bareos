@@ -21,8 +21,8 @@
    02110-1301, USA.
 */
 
-#ifndef __XATTR_H
-#define __XATTR_H
+#ifndef BAREOS_FINDLIB_XATTR_H_
+#define BAREOS_FINDLIB_XATTR_H_
 
 /*
  * Number of xattr errors to report per job.

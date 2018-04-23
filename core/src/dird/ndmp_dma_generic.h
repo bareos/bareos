@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NDMP_DMA_GENERIC_H_
-#define DIRD_NDMP_DMA_GENERIC_H_
+#ifndef BAREOS_DIRD_NDMP_DMA_GENERIC_H_
+#define BAREOS_DIRD_NDMP_DMA_GENERIC_H_
 
 bool ndmp_validate_client(JobControlRecord *jcr);
 bool ndmp_validate_storage(JobControlRecord *jcr);
 void do_ndmp_client_status(UaContext *ua, ClientResource *client, char *cmd);
 
-#endif // DIRD_NDMP_DMA_GENERIC_H_
+#endif // BAREOS_DIRD_NDMP_DMA_GENERIC_H_

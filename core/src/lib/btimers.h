@@ -28,8 +28,8 @@
  * Process and thread timer routines, built on top of watchdogs.
 */
 
-#ifndef __BTIMERS_H_
-#define __BTIMERS_H_
+#ifndef BAREOS_LIB_BTIMERS_H_
+#define BAREOS_LIB_BTIMERS_H_
 
 struct btimer_t {
    watchdog_t *wd;                    /**< Parent watchdog */
@@ -48,4 +48,4 @@ DLL_IMP_EXP void stop_thread_timer(btimer_t *wid);
 DLL_IMP_EXP btimer_t *start_bsock_timer(BareosSocket *bs, uint32_t wait);
 DLL_IMP_EXP void stop_bsock_timer(btimer_t *wid);
 
-#endif /* __BTIMERS_H_ */
+#endif /* BAREOS_LIB_BTIMERS_H_ */

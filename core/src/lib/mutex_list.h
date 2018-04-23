@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef MUTEX_LIST_H
-#define MUTEX_LIST_H 1
+#ifndef BAREOS_LIB_MUTEX_LIST_H_
+#define BAREOS_LIB_MUTEX_LIST_H_ 1
 
 /*
  * Use this list to manage lock order and protect the BAREOS from

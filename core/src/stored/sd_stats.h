@@ -18,12 +18,12 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_SD_STATS_H_
-#define STORED_SD_STATS_H_
+#ifndef BAREOS_STORED_SD_STATS_H_
+#define BAREOS_STORED_SD_STATS_H_
 
 int start_statistics_thread(void);
 void stop_statistics_thread();
 void update_device_tapealert(const char *devname, uint64_t flags, utime_t now);
 void update_job_statistics(JobControlRecord *jcr, utime_t now);
 
-#endif // STORED_SD_STATS_H_
+#endif // BAREOS_STORED_SD_STATS_H_

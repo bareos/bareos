@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_JOB_H_
-#define DIRD_JOB_H_
+#ifndef BAREOS_DIRD_JOB_H_
+#define BAREOS_DIRD_JOB_H_
 
 bool allow_duplicate_job(JobControlRecord *jcr);
 void set_jcr_defaults(JobControlRecord *jcr, JobResource *job);
@@ -45,4 +45,4 @@ void cancel_storage_daemon_job(JobControlRecord *jcr);
 bool run_console_command(JobControlRecord *jcr, const char *cmd);
 void sd_msg_thread_send_signal(JobControlRecord *jcr, int sig);
 
-#endif // DIRD_JOB_H_
+#endif // BAREOS_DIRD_JOB_H_

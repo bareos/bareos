@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_DAEMON_H_
-#define LIB_DAEMON_H_
+#ifndef BAREOS_LIB_DAEMON_H_
+#define BAREOS_LIB_DAEMON_H_
 
 DLL_IMP_EXP void daemon_start();
 
-#endif // LIB_DAEMON_H_
+#endif // BAREOS_LIB_DAEMON_H_

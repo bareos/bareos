@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef LIB_BGET_MSG_H_
-#define LIB_BGET_MSG_H_
+#ifndef BAREOS_LIB_BGET_MSG_H_
+#define BAREOS_LIB_BGET_MSG_H_
 
 DLL_IMP_EXP int bget_msg(BareosSocket *sock);
 
-#endif // LIB_BGET_MSG_H_
+#endif // BAREOS_LIB_BGET_MSG_H_

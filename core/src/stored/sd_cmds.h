@@ -18,10 +18,10 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_SD_CMDS_H_
-#define STORED_SD_CMDS_H_
+#ifndef BAREOS_STORED_SD_CMDS_H_
+#define BAREOS_STORED_SD_CMDS_H_
 
 void *handle_stored_connection(BareosSocket *sd, char *job_name);
 bool do_listen_run(JobControlRecord *jcr);
 
-#endif // STORED_SD_CMDS_H_
+#endif // BAREOS_STORED_SD_CMDS_H_

@@ -19,10 +19,10 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_SOCKET_SERVER_H_
-#define DIRD_SOCKET_SERVER_H_
+#ifndef BAREOS_DIRD_SOCKET_SERVER_H_
+#define BAREOS_DIRD_SOCKET_SERVER_H_
 
 void start_socket_server(dlist *addrs);
 void stop_socket_server();
 
-#endif // DIRD_SOCKET_SERVER_H_
+#endif // BAREOS_DIRD_SOCKET_SERVER_H_

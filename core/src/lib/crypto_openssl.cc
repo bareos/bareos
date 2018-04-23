@@ -880,7 +880,7 @@ int crypto_sign_add_signer(SIGNATURE *sig, DIGEST *digest, X509_KEYPAIR *keypair
 
    /* Set our signature algorithm. We currently require RSA */
    assert(EVP_PKEY_type(EVP_PKEY_id(keypair->pubkey)) == EVP_PKEY_RSA);
-   /* This is slightly evil. Reach into the MD structure and grab the key type */
+   /* This is slightly evil. Reach into the BAREOS_LIB_MD_H_ structure and grab the key type */
    si->signatureAlgorithm = OBJ_nid2obj(EVP_MD_CTX_type(&digest->get_ctx()));
 
    /* Finalize/Sign our Digest */

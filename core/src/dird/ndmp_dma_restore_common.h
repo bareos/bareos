@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NDMP_DMA_RESTORE_COMMON_H_
-#define DIRD_NDMP_DMA_RESTORE_COMMON_H_
+#ifndef BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_
+#define BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_
 
 void add_to_namelist(struct ndm_job_param *job,
                                    char *filename,
@@ -39,4 +39,4 @@ bool extract_post_restore_stats(JobControlRecord *jcr,
                                 struct ndm_session *sess);
 void ndmp_restore_cleanup(JobControlRecord *jcr, int TermCode);
 
-#endif // DIRD_NDMP_DMA_RESTORE_COMMON_H_
+#endif // BAREOS_DIRD_NDMP_DMA_RESTORE_COMMON_H_

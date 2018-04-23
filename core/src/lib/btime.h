@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef __btime_INCLUDED
-#define __btime_INCLUDED
+#ifndef BAREOS_LIB_BTIME_H_
+#define BAREOS_LIB_BTIME_H_
 
 /* New btime definition -- use this */
 DLL_IMP_EXP btime_t get_current_btime(void);
@@ -90,4 +90,4 @@ DLL_IMP_EXP extern void tm_decode(struct date_time *dt, struct tm *tm);
 DLL_IMP_EXP extern void get_current_time(struct date_time *dt);
 
 
-#endif /* __btime_INCLUDED */
+#endif /* BAREOS_LIB_BTIME_H_ */

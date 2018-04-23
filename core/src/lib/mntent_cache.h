@@ -25,8 +25,8 @@
  *  Marco van Wieringen, August 2009
  */
 
-#ifndef _MNTENT_CACHE_H
-#define _MNTENT_CACHE_H 1
+#ifndef BAREOS_LIB_MNTENT_CACHE_H_
+#define BAREOS_LIB_MNTENT_CACHE_H_ 1
 
 /*
  * Don't use the mountlist data when its older than this amount
@@ -61,4 +61,4 @@ mntent_cache_entry_t *find_mntent_mapping(uint32_t dev);
 void release_mntent_mapping(mntent_cache_entry_t *mce);
 DLL_IMP_EXP void flush_mntent_cache(void);
 
-#endif /* _MNTENT_CACHE_H */
+#endif /* BAREOS_LIB_MNTENT_CACHE_H_ */

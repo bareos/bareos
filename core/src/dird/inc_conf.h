@@ -25,8 +25,8 @@
  * @file
  * FileSet include handling
  */
-#ifndef _INC_CONF_H
-#define _INC_CONF_H 1
+#ifndef BAREOS_DIRD_INC_CONF_H_
+#define BAREOS_DIRD_INC_CONF_H_ 1
 
 /*
  * Define FileSet KeyWord values
@@ -211,4 +211,4 @@ json_t *json_options(const int type);
 #endif
 
 
-#endif /* _INC_CONF_H */
+#endif /* BAREOS_DIRD_INC_CONF_H_ */

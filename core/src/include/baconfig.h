@@ -28,8 +28,8 @@
  */
 
 
-#ifndef _BACONFIG_H
-#define _BACONFIG_H 1
+#ifndef BAREOS_INCLUDE_BACONFIG_H_
+#define BAREOS_INCLUDE_BACONFIG_H_ 1
 
 
 /* Bareos common configuration defines */
@@ -764,4 +764,4 @@ static inline bool bigendian() { return htonl(1) == 1L; }
 #define Leave(lvl)
 #endif
 
-#endif /* _BACONFIG_H */
+#endif /* BAREOS_INCLUDE_BACONFIG_H_ */

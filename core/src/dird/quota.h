@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_QUOTA_H_
-#define DIRD_QUOTA_H_
+#ifndef BAREOS_DIRD_QUOTA_H_
+#define BAREOS_DIRD_QUOTA_H_
 
 uint64_t fetch_remaining_quotas(JobControlRecord *jcr);
 bool check_hardquotas(JobControlRecord *jcr);
 bool check_softquotas(JobControlRecord *jcr);
 
-#endif // DIRD_QUOTA_H_
+#endif // BAREOS_DIRD_QUOTA_H_

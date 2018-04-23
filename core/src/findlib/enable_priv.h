@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef FINDLIB_ENABLE_PRIV_H_
-#define FINDLIB_ENABLE_PRIV_H_
+#ifndef BAREOS_FINDLIB_ENABLE_PRIV_H_
+#define BAREOS_FINDLIB_ENABLE_PRIV_H_
 
 DLL_IMP_EXP int enable_backup_privileges(JobControlRecord *jcr, int ignore_errors);
 
-#endif // FINDLIB_ENABLE_PRIV_H_
+#endif // BAREOS_FINDLIB_ENABLE_PRIV_H_

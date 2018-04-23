@@ -26,10 +26,10 @@
  * Kern Sibbald, October 2007
  */
 
-#ifndef __FD_PLUGINS_H
-#define __FD_PLUGINS_H
+#ifndef BAREOS_FILED_FD_PLUGINS_H_
+#define BAREOS_FILED_FD_PLUGINS_H_
 
-#ifndef _BAREOS_H
+#ifndef BAREOS_INCLUDE_BAREOS_H_
 #ifdef __cplusplus
 /* Workaround for SGI IRIX 6.5 */
 #define _LANGUAGE_C_PLUS_PLUS 1
@@ -40,7 +40,7 @@
 #define _FILE_OFFSET_BITS 64
 #define _LARGEFILE_SOURCE 1
 #define _LARGE_FILES 1
-#endif  /* ! _BAREOS_H */
+#endif  /* ! BAREOS_INCLUDE_BAREOS_H_ */
 
 #include <sys/types.h>
 
@@ -357,4 +357,4 @@ typedef struct s_pluginFuncs {
 }
 #endif
 
-#endif /* __FD_PLUGINS_H */
+#endif /* BAREOS_FILED_FD_PLUGINS_H_ */

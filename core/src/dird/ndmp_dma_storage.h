@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NDMP_DMA_STORAGE_H_
-#define DIRD_NDMP_DMA_STORAGE_H_
+#ifndef BAREOS_DIRD_NDMP_DMA_STORAGE_H_
+#define BAREOS_DIRD_NDMP_DMA_STORAGE_H_
 
 void do_ndmp_storage_status(UaContext *ua, StoreResource *store, char *cmd);
 dlist *ndmp_get_vol_list(UaContext *ua, StoreResource *store, bool listall, bool scan);
@@ -36,4 +36,4 @@ bool ndmp_send_label_request(UaContext *ua, StoreResource *store, MediaDbRecord 
 char *lookup_ndmp_drive(StoreResource *store, drive_number_t drive);
 bool ndmp_update_storage_mappings(JobControlRecord* jcr, StoreResource *store);
 
-#endif // DIRD_NDMP_DMA_STORAGE_H_
+#endif // BAREOS_DIRD_NDMP_DMA_STORAGE_H_

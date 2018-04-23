@@ -19,11 +19,11 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_UA_IMPEXP_H
-#define DIRD_UA_IMPEXP_H
+#ifndef BAREOS_DIRD_UA_IMPEXP_H_
+#define BAREOS_DIRD_UA_IMPEXP_H_
 
 bool import_cmd(UaContext *ua, const char *cmd);
 bool export_cmd(UaContext *ua, const char *cmd);
 bool move_cmd(UaContext *ua, const char *cmd);
 
-#endif // DIRD_UA_IMPEXP_H
+#endif // BAREOS_DIRD_UA_IMPEXP_H_

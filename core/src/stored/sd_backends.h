@@ -27,8 +27,8 @@
  * Dynamic loading of SD backend plugins.
  */
 
-#ifndef __SD_BACKENDS_H_
-#define __SD_BACKENDS_H_ 1
+#ifndef BAREOS_STORED_SD_BACKENDS_H_
+#define BAREOS_STORED_SD_BACKENDS_H_ 1
 
 extern "C" {
 typedef Device *(*t_backend_instantiate)(JobControlRecord *jcr, int device_type);

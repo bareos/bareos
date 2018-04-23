@@ -28,8 +28,8 @@
  * Includes specific to the Director User Agent Server
  */
 
-#ifndef __UA_H_
-#define __UA_H_ 1
+#ifndef BAREOS_DIRD_UA_H_
+#define BAREOS_DIRD_UA_H_ 1
 
 #define MAX_ID_LIST_LEN 2000000
 

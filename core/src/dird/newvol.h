@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_NEWVOL_H_
-#define DIRD_NEWVOL_H_
+#ifndef BAREOS_DIRD_NEWVOL_H_
+#define BAREOS_DIRD_NEWVOL_H_
 
 bool newVolume(JobControlRecord *jcr, MediaDbRecord *mr, StoreResource *store);
 
-#endif // DIRD_NEWVOL_H_
+#endif // BAREOS_DIRD_NEWVOL_H_

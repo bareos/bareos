@@ -18,9 +18,9 @@
    Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA
    02110-1301, USA.
 */
-#ifndef STORED_MOUNT_H_
-#define STORED_MOUNT_H_
+#ifndef BAREOS_STORED_MOUNT_H_
+#define BAREOS_STORED_MOUNT_H_
 
 bool mount_next_read_volume(DeviceControlRecord *dcr);
 
-#endif // STORED_MOUNT_H_
+#endif // BAREOS_STORED_MOUNT_H_

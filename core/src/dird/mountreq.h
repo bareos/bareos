@@ -19,9 +19,9 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_MOUNTREQ_H_
-#define DIRD_MOUNTREQ_H_
+#ifndef BAREOS_DIRD_MOUNTREQ_H_
+#define BAREOS_DIRD_MOUNTREQ_H_
 
 void mount_request(JobControlRecord *jcr, BareosSocket *bs, char *buf);
 
-#endif // DIRD_MOUNTREQ_H_
+#endif // BAREOS_DIRD_MOUNTREQ_H_

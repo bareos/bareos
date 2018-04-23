@@ -33,7 +33,7 @@
 
 #include "include/bareos.h"
 #include "dird.h"
-#ifdef HAVE_FNMATCH
+#ifdef BAREOS_LIB_LIB_H_
 #include <fnmatch.h>
 #else
 #include "lib/fnmatch.h"

@@ -19,8 +19,8 @@
    02110-1301, USA.
 */
 
-#ifndef DIRD_MSGCHAN_H_
-#define DIRD_MSGCHAN_H_
+#ifndef BAREOS_DIRD_MSGCHAN_H_
+#define BAREOS_DIRD_MSGCHAN_H_
 
 bool start_storage_daemon_job(JobControlRecord *jcr, alist *rstore, alist *wstore,
                               bool send_bsr = false);
@@ -28,4 +28,4 @@ bool start_storage_daemon_message_thread(JobControlRecord *jcr);
 int bget_dirmsg(BareosSocket *bs, bool allow_any_msg = false);
 void wait_for_storage_daemon_termination(JobControlRecord *jcr);
 
-#endif // DIRD_MSGCHAN_H_
+#endif // BAREOS_DIRD_MSGCHAN_H_

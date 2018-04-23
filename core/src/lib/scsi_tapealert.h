@@ -24,8 +24,8 @@
  * Marco van Wieringen, November 2013
  */
 
-#ifndef SCSI_TAPEALERT_H
-#define SCSI_TAPEALERT_H 1
+#ifndef BAREOS_LIB_SCSI_TAPEALERT_H_
+#define BAREOS_LIB_SCSI_TAPEALERT_H_ 1
 
 /*
  * Include the SCSI Low Level Interface functions and definitions.
@@ -165,4 +165,4 @@ static tapealert_mapping tapealert_mappings[] = {
 DLL_IMP_EXP bool get_tapealert_flags(int fd, const char *device_name, uint64_t *flags);
 
 
-#endif /* SCSI_TAPEALERT_H */
+#endif /* BAREOS_LIB_SCSI_TAPEALERT_H_ */

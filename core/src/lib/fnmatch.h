@@ -31,8 +31,8 @@
  *      @(#)fnmatch.h   8.1 (Berkeley) 6/2/93
  */
 
-#ifndef _FNMATCH_H_
-#define _FNMATCH_H_
+#ifndef BAREOS_LIB_FNMATCH_H_
+#define BAREOS_LIB_FNMATCH_H_
 
 #undef  FNM_PATHNAME
 #undef  FNM_NOESCAPE
@@ -52,4 +52,4 @@
 
 extern "C" DLL_IMP_EXP int fnmatch(const char *, const char *, int);
 
-#endif                          /* !_FNMATCH_H_ */
+#endif                          /* !BAREOS_LIB_FNMATCH_H_ */
