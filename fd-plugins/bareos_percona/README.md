@@ -121,6 +121,8 @@ By default, no extra logfile is written on the FD running the plugin. If you wan
 logfile here. If you set a filename with path, this will be used. If you specify just a filename without path, the default path for logs
 */var/log/bareos/* will be prepended.
 
+If you use a logfilename that matches */var/log/bareos/bareos\*.log*, it will be handled by logrotate.
+
 ## Backup ##
 
 When running full backups, the plugin will call the _xtrabackup_ command with the according options. Format is _xbstream_. LSN information
