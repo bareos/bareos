@@ -114,6 +114,13 @@ MYISAM tables get into the backup. MYISAM does not support incremental backups, 
 
 If set to true, no data will be written into backup, if the LSN wasn't changed.
 
+##### log #####
+Default: false
+
+By default, no extra logfile is written on the FD running the plugin. If you want to have some additional debug information, you might specify a
+logfile here. If you set a filename with path, this will be used. If you specify just a filename without path, the default path for logs
+*/var/log/bareos/* will be prepended.
+
 ## Backup ##
 
 When running full backups, the plugin will call the _xtrabackup_ command with the according options. Format is _xbstream_. LSN information

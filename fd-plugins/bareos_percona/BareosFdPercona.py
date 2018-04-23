@@ -47,9 +47,12 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         # the lsn file as restore-object
         self.files_to_backup = ['lsnfile', 'stream']
         self.tempdir = tempfile.mkdtemp()
-        self.log = 'plugin-percona.log'
+        #self.logdir = GetValue(context, bVariable['bVarWorkingDir'])
+        self.logdir = '/var/log/bareos/'
+        self.log = 'bareos-plugin-percona.log'
         self.rop_data = {}
         self.max_to_lsn = 0
+        self.err_fd = None
 
     def parse_plugin_definition(self, context, plugindef):
         '''
@@ -69,14 +72,15 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         else:
             self.restorecommand = self.options['restorecommand']
 
+        # Default is not to write an extra logfile
         if 'log' not in self.options:
-            self.log = os.path.join(GetValue(context, bVariable['bVarWorkingDir']), self.log)
+            self.log = False
         elif self.options['log'] == 'false':
             self.log = False
-        elif os.path(isabs(self.options['log'])):
+        elif os.path.isabs(self.options['log']):
             self.log = self.options['log']
         else:
-            self.log = os.path.join(GetValue(context, bVariable['bVarWorkingDir']), self.options['log'])
+            self.log = os.path.join(self.logdir, self.options['log'])
 
         # By default, standard mysql-config files will be used, set
         # this option to use extra files
@@ -291,21 +295,24 @@ class BareosFdPercona (BareosFdPluginBaseclass):
         Called for io operations. We read from pipe into buffers or on restore
         send to xbstream
         '''
-        DebugMessage(context, 100, "plugin_io called with " + str(IOP.func) + "\n")
+        DebugMessage(context, 200, "plugin_io called with " + str(IOP.func) + "\n")
 
         if IOP.func == bIOPS['IO_OPEN']:
             DebugMessage(context, 100, "plugin_io called with IO_OPEN\n")
-            err_fd = None
             if self.log:
                 try:
-                    err_fd = open(self.log, "w")
+                    self.err_fd = open(self.log, "a")
                 except IOError, msg:
                     DebugMessage(context, 100, "Could not open log file (%s): %s\n"
                                  % (self.log, format(str(msg))))
             if IOP.flags & (os.O_CREAT | os.O_WRONLY):
-                self.stream = Popen(self.restorecommand, shell=True, stdin=PIPE, stderr=err_fd)
+                if self.log:
+                    self.err_fd.write("%s Restore Job %s opens stream with \"%s\"\n" %(datetime.datetime.now(),self.jobId,self.restorecommand))
+                self.stream = Popen(self.restorecommand, shell=True, stdin=PIPE, stderr=self.err_fd)
             else:
-                self.stream = Popen(self.dumpcommand, shell=True, stdout=PIPE, stderr=err_fd)
+                if self.log:
+                    self.err_fd.write("%s Backup Job %s opens stream with \"%s\"\n" %(datetime.datetime.now(),self.jobId,self.dumpcommand))
+                self.stream = Popen(self.dumpcommand, shell=True, stdout=PIPE, stderr=self.err_fd)
             return bRCs['bRC_OK']
 
         elif IOP.func == bIOPS['IO_READ']:
@@ -372,6 +379,10 @@ class BareosFdPercona (BareosFdPluginBaseclass):
             if returnCode != 0:
                 return bRCs['bRC_Error']
 
+            if self.log:
+                self.err_fd.write("%s Backup Job %s closes stream\n" %(datetime.datetime.now(),self.jobId))
+                self.err_fd.close()
+ 
         if self.files_to_backup:
             return bRCs['bRC_More']
         else:
@@ -394,6 +405,9 @@ class BareosFdPercona (BareosFdPluginBaseclass):
                 if self.log:
                     msg += [ "log file: \"%s\"" % self.log ]
                 JobMessage(context, bJobMessageType['M_ERROR'], ", ".join(msg) + "\n")
+        if self.log:
+            self.err_fd.write("%s Restore Job %s closes stream\n" %(datetime.datetime.now(),self.jobId))
+            self.err_fd.close()
 
         if returnCode == 0:
             return bRCs['bRC_OK']
