@@ -480,9 +480,9 @@ The director plugins are configured in the Job-Resource (or JobDefs resource). T
 \end{itemize}
 
 
-Example:
+Single Python Plugin Loading Example:
 
-\begin{bconfig}{bareos-dir.conf: Python Plugins}
+\begin{bconfig}{bareos-dir.conf: Single Python Plugin Loading Example}
 Director {
   # ...
   # Plugin directory
@@ -500,6 +500,30 @@ JobDefs {
   # ...
 }
 \end{bconfig}
+
+
+Multiple Python Plugin Loading Example:
+
+\begin{bconfig}{bareos-dir.conf: Multiple Python Plugin Loading Example}
+Director {
+  # ...
+  # Plugin directory
+  Plugin Directory = /usr/lib64/bareos/plugins
+  # Load the python plugin
+  Plugin Names = "python"
+}
+
+JobDefs {
+  Name = "DefaultJob"
+  Type = Backup
+  # ...
+  # Load the class based plugin with testoption=testparam
+  Dir Plugin Options = "python:instance=0:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam1
+  Dir Plugin Options = "python:instance=1:module_path=/usr/lib64/bareos/plugins:module_name=bareos-dir-class-plugins:testoption=testparam2
+  # ...
+}
+\end{bconfig}
+
 
 \subsubsection{Write your own Python Plugin}
 
