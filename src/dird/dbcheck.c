@@ -714,17 +714,6 @@ static void eliminate_orphaned_path_records()
 
    lctx.count = 0;
    idx_tmp_name = NULL;
-   /*
-    * Check the existence of the required "one column" index
-    */
-   if (!check_idx("PathId"))  {
-      if (yes_no(_("Create temporary index? (yes/no): "), true)) {
-         /*
-          * create temporary index PathId
-          */
-         create_tmp_idx("idxPIchk", "File", "PathId");
-      }
-   }
 
    db->fill_query(query, B_DB::SQL_QUERY_get_orphaned_paths_0);
 
@@ -765,10 +754,6 @@ static void eliminate_orphaned_path_records()
          exit(1);
       }
    }
-   /*
-    * Drop temporary index idx_tmp_name
-    */
-   drop_tmp_idx("idxPIchk", "File");
 }
 
 static void eliminate_orphaned_fileset_records()
