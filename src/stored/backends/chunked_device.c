@@ -301,7 +301,7 @@ void chunked_device::clear_inflight_chunk(chunk_io_request *request)
    }
 
    P(mutex);
-   m_inflight_chunks++;
+   m_inflight_chunks--;
    V(mutex);
 }
 
