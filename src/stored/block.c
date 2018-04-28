@@ -3,7 +3,7 @@
 
    Copyright (C) 2001-2012 Free Software Foundation Europe e.V.
    Copyright (C) 2011-2012 Planets Communications B.V.
-   Copyright (C) 2013-2013 Bareos GmbH & Co. KG
+   Copyright (C) 2013-2018 Bareos GmbH & Co. KG
 
    This program is Free Software; you can redistribute it and/or
    modify it under the terms of version three of the GNU Affero General Public
@@ -593,7 +593,8 @@ bool DCR::write_block_to_dev()
       }
       status = dev->write(block->buf, (size_t)wlen);
 
-   } while (status == -1 && (errno == EBUSY || errno == EIO) && retry++ < 3);
+   //} while (status == -1 && (errno == EBUSY || errno == EIO) && retry++ < 3);
+   } while (status == -1 && (errno == EBUSY) && retry++ < 3);
 
    if (debug_block_checksum) {
       uint32_t achecksum = ser_block_header(block, dev->do_checksum());
