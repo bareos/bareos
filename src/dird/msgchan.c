@@ -471,7 +471,8 @@ extern "C" void *msg_thread(void *arg)
        * This probably should be M_FATAL, but I am not 100% sure
        *  that this return *always* corresponds to a dropped line.
        */
-      Qmsg(jcr, M_ERROR, 0, _("Director's comm line to SD dropped.\n"));
+      //Qmsg(jcr, M_ERROR, 0, _("Director's comm line to SD dropped.\n"));
+      Qmsg(jcr, M_FATAL, 0, _("Director's comm line to SD dropped.\n"));
    }
    if (is_bnet_error(sd)) {
       jcr->SDJobStatus = JS_ErrorTerminated;
