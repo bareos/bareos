@@ -25,11 +25,12 @@ Device {
   #    profile= - Droplet profile to use either absolute PATH or logical name (e.g. ~/.droplet/<profile>.profile
   #    location= - AWS location (e.g. us-east etc.)
   #    acl= - Canned ACL
-  #    storageclass - Storage Class to use.
+  #    storageclass= - Storage Class to use.
   #    bucket= - Bucket to store objects in.
   #    chunksize= - Size of Volume Chunks (default = 10 Mb)
-  #    iothreads= - Number of IO-threads to use for upload (use blocking uploads if not defined.)
-  #    ioslots= - Number of IO-slots per IO-thread (default 10)
+  #    iothreads= - Number of IO-threads to use for upload (use blocking uploads if not defined)
+  #    ioslots= - Number of IO-slots per IO-thread (0-255, default 10)
+  #    retries= - Number of retires if a write fails (0-255, default = 0, which means unlimited retries)
   #    mmap - Use mmap to allocate Chunk memory instead of malloc().
   #
   Device Options = "profile=/etc/bareos/bareos-sd.d/.droplet/droplet.profile,bucket=backup-bareos,iothreads=3,ioslots=3,chunksize=100M"
