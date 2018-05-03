@@ -36,6 +36,7 @@
 #include "filed/estimate.h"
 #include "filed/heartbeat.h"
 #include "filed/fileset.h"
+#include "filed/socket_server.h"
 #include "filed/verify.h"
 #include "findlib/enable_priv.h"
 #include "findlib/shadowing.h"

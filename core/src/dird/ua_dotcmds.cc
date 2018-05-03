@@ -36,10 +36,13 @@
 #include "include/bareos.h"
 #include "dird.h"
 #include "dird/job.h"
+#include "dird/sd_cmds.h"
+#include "dird/fd_cmds.h"
 #include "cats/bvfs.h"
 #include "findlib/find.h"
 #include "dird/ua_db.h"
 #include "dird/ua_select.h"
+#include "dird/storage.h"
 #include "lib/edit.h"
 
 /* Imported variables */
