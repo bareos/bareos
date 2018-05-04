@@ -318,8 +318,8 @@ bool BareosDbMysql::ValidateConnection(void)
             mysql_threadid, mysql_thread_id(db_handle_));
 
       if (mysql_thread_id(db_handle_) != mysql_threadid) {
-         mySqlQuery(db_handle_, "SET wait_timeout=691200");
-         mySqlQuery(db_handle_, "SET interactive_timeout=691200");
+         mysql_query(db_handle_, "SET wait_timeout=691200");
+         mysql_query(db_handle_, "SET interactive_timeout=691200");
       }
 
       retval = true;
@@ -428,7 +428,7 @@ bool BareosDbMysql::SqlQueryWithHandler(const char *query, DB_RESULT_HANDLER *re
    DbLock(this);
 
 retry_query:
-   status = mySqlQuery(db_handle_, query);
+   status = mysql_query(db_handle_, query);
 
    switch (status) {
    case 0:
@@ -457,8 +457,8 @@ retry_query:
                 * See if the threadid changed e.g. new connection to the DB.
                 */
                if (mysql_thread_id(db_handle_) != mysql_threadid) {
-                  mySqlQuery(db_handle_, "SET wait_timeout=691200");
-                  mySqlQuery(db_handle_, "SET interactive_timeout=691200");
+                  mysql_query(db_handle_, "SET wait_timeout=691200");
+                  mysql_query(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -478,12 +478,12 @@ retry_query:
 
    if (result_handler != NULL) {
       if ((result_ = mysql_use_result(db_handle_)) != NULL) {
-         num_fields_ = mySqlNumFields(result_);
+         num_fields_ = mysql_num_fields(result_);
 
          /*
           * We *must* fetch all rows
           */
-         while ((row = mySqlFetchRow(result_)) != NULL) {
+         while ((row = mysql_fetch_row(result_)) != NULL) {
             if (send) {
                /* the result handler returns 1 when it has
                 *  seen all the data it wants.  However, we
@@ -523,7 +523,7 @@ retry_query:
    field_number_ = -1;
 
    if (result_) {
-      mySqlFreeResult(result_);
+      mysql_free_result(result_);
       result_ = NULL;
    }
 
@@ -532,25 +532,25 @@ retry_query:
     * If multiple SQL statements have to be used, they can produce multiple results,
     * each of them needs handling.
     */
-   status = mySqlQuery(db_handle_, query);
+   status = mysql_query(db_handle_, query);
    switch (status) {
    case 0:
       Dmsg0(500, "we have a result\n");
       if (flags & QF_STORE_RESULT) {
          result_ = mysql_store_result(db_handle_);
          if (result_ != NULL) {
-            num_fields_ = mySqlNumFields(result_);
+            num_fields_ = mysql_num_fields(result_);
             Dmsg1(500, "we have %d fields\n", num_fields_);
-            num_rows_ = mySqlNumRows(result_);
+            num_rows_ = mysql_num_rows(result_);
             Dmsg1(500, "we have %d rows\n", num_rows_);
          } else {
             num_fields_ = 0;
-            num_rows_ = mySqlAffectedRows(db_handle_);
+            num_rows_ = mysql_affected_rows(db_handle_);
             Dmsg1(500, "we have %d rows\n", num_rows_);
          }
       } else {
          num_fields_ = 0;
-         num_rows_ = mySqlAffectedRows(db_handle_);
+         num_rows_ = mysql_affected_rows(db_handle_);
          Dmsg1(500, "we have %d rows\n", num_rows_);
       }
       break;
@@ -578,8 +578,8 @@ retry_query:
                 * See if the threadid changed e.g. new connection to the DB.
                 */
                if (mysql_thread_id(db_handle_) != mysql_threadid) {
-                  mySqlQuery(db_handle_, "SET wait_timeout=691200");
-                  mySqlQuery(db_handle_, "SET interactive_timeout=691200");
+                  mysql_query(db_handle_, "SET wait_timeout=691200");
+                  mysql_query(db_handle_, "SET interactive_timeout=691200");
                }
 
                retry = false;
@@ -603,7 +603,7 @@ void BareosDbMysql::SqlFreeResult(void)
 {
    DbLock(this);
    if (result_) {
-      mySqlFreeResult(result_);
+      mysql_free_result(result_);
       result_ = NULL;
    }
    if (fields_) {
@@ -619,7 +619,7 @@ SQL_ROW BareosDbMysql::SqlFetchRow(void)
    if (!result_) {
       return NULL;
    } else {
-      return mySqlFetchRow(result_);
+      return mysql_fetch_row(result_);
    }
 }
 
@@ -630,12 +630,12 @@ const char *BareosDbMysql::sql_strerror(void)
 
 void BareosDbMysql::SqlDataSeek(int row)
 {
-   return mySqlDataSeek(result_, row);
+   return mysql_data_seek(result_, row);
 }
 
 int BareosDbMysql::SqlAffectedRows(void)
 {
-   return mySqlAffectedRows(db_handle_);
+   return mysql_affected_rows(db_handle_);
 }
 
 uint64_t BareosDbMysql::SqlInsertAutokeyRecord(const char *query, const char *table_name)
@@ -643,11 +643,11 @@ uint64_t BareosDbMysql::SqlInsertAutokeyRecord(const char *query, const char *ta
    /*
     * First execute the insert query and then retrieve the currval.
     */
-   if (mySqlQuery(db_handle_, query) != 0) {
+   if (mysql_query(db_handle_, query) != 0) {
       return 0;
    }
 
-   num_rows_ = mySqlAffectedRows(db_handle_);
+   num_rows_ = mysql_affected_rows(db_handle_);
    if (num_rows_ != 1) {
       return 0;
    }
@@ -673,7 +673,7 @@ SQL_FIELD *BareosDbMysql::SqlFetchField(void)
 
       for (i = 0; i < num_fields_; i++) {
          Dmsg1(500, "filling field %d\n", i);
-         if ((field = mySqlFetchField(result_)) != NULL) {
+         if ((field = mysql_fetch_field(result_)) != NULL) {
             fields_[i].name = field->name;
             fields_[i].max_length = field->max_length;
             fields_[i].type = field->type;
