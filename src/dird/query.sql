@@ -34,7 +34,7 @@ SELECT DISTINCT Job.JobId,StartTime AS JobStartTime,VolumeName,Client.Name AS Cl
 # 3
 :List last 20 Full Backups for a Client
 *Enter Client name:
-SELECT DISTINCT Job.JobId,Client.Name AS Client,Starttime,JobFiles,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS GB
+SELECT DISTINCT Job.JobId,Client.Name AS Client,Starttime,JobFiles,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS GB
  FROM Client,Job,JobMedia,Media
  WHERE Client.Name='%1'
  AND Client.ClientId=Job.ClientId
@@ -47,14 +47,14 @@ SELECT DISTINCT Job.JobId,Client.Name AS Client,Starttime,JobFiles,ROUND(JobByte
 :List all backups for a Client after a specified time
 *Enter Client Name:
 *Enter time in YYYY-MM-DD HH:MM:SS format:
-SELECT DISTINCT Job.JobId,Client.Name AS Client,Level,StartTime,JobFiles,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS GB,Count(VolumeName) AS Volumes
+SELECT DISTINCT Job.JobId,Client.Name AS Client,Level,StartTime,JobFiles,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS GB,Count(VolumeName) AS Volumes
  FROM Client,Job,JobMedia,Media
  WHERE Client.Name='%1'
  AND Client.ClientId=Job.ClientId
  AND JobStatus IN ('T', 'W')
  AND JobMedia.JobId=Job.JobId AND JobMedia.MediaId=Media.MediaId
  AND Job.StartTime >= '%2'
- GROUP BY Job.JobId,Client.Name,Level,StartTime,JobFiles,JobBytes
+ GROUP BY Job.JobId,Client.Name,Level,StartTime,JobFiles,Job.JobBytes
  ORDER BY Job.StartTime;
 
 # 5
@@ -62,13 +62,13 @@ SELECT DISTINCT Job.JobId,Client.Name AS Client,Level,StartTime,JobFiles,ROUND(J
 *Enter Client Name:
 SELECT DISTINCT Job.JobId AS JobId,Client.Name AS Client,
    FileSet.FileSet AS FileSet,Level,StartTime,
-   JobFiles,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS GB,Count(VolumeName) AS Volumes
+   JobFiles,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS GB,Count(VolumeName) AS Volumes
  FROM Client,Job,JobMedia,Media,FileSet
  WHERE Client.Name='%1'
  AND Client.ClientId=Job.ClientId AND Job.Type='B'
  AND Job.JobStatus IN ('T','W') AND Job.FileSetId=FileSet.FileSetId
  AND JobMedia.JobId=Job.JobId AND JobMedia.MediaId=Media.MediaId
- GROUP BY Job.JobId,Client.Name,FileSet.FileSet,Level,StartTime,JobFiles,JobBytes
+ GROUP BY Job.JobId,Client.Name,FileSet.FileSet,Level,StartTime,JobFiles,Job.JobBytes
  ORDER BY Job.StartTime;
 
 # 6
@@ -153,7 +153,7 @@ SELECT COUNT(*) AS Jobs,SUM(JobFiles) AS Files,ROUND(SUM(JobBytes/1024.0/1024.0/
 
 # 11
 :List total files/bytes by Volume
-SELECT COUNT(*) AS Jobs,SUM(JobFiles) AS Files,ROUND(SUM(JobBytes/1024.0/1024.0/1024.0),3) AS GB, VolumeName
+SELECT COUNT(*) AS Jobs,SUM(JobFiles) AS Files,ROUND(SUM(Job.JobBytes/1024.0/1024.0/1024.0),3) AS GB, VolumeName
  FROM Job,JobMedia,Media
  WHERE JobMedia.JobId=Job.JobId
  AND JobMedia.MediaId=Media.MediaId
@@ -221,31 +221,31 @@ SELECT VolumeName,VolStatus,Storage.Name AS Location,
 # 18
 :List Volumes by Volume:
 SELECT VolumeName, Job.JobId AS JobID, Job.Name AS JobName, Job.StartTime AS
-Start, JobFiles AS Files,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS GB
+Start, JobFiles AS Files,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS GB
  FROM Job,JobMedia,Media
  WHERE JobMedia.JobId=Job.JobId
  AND JobMedia.MediaId=Media.MediaId
- GROUP by VolumeName, Job.JobID, Job.Name, JobBytes, JobFiles, Job.StartTime
+ GROUP by VolumeName, Job.JobID, Job.Name, Job.JobBytes, JobFiles, Job.StartTime
  ORDER by VolumeName;
 
 # 19
 :List Volumes by Jobs:
 SELECT Job.Name AS JobName, Job.JobId AS JobID, VolumeName, Job.StartTime AS
-Start, JobFiles AS Files,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS GB
+Start, JobFiles AS Files,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS GB
  FROM Job,JobMedia,Media
  WHERE JobMedia.JobId=Job.JobId
  AND JobMedia.MediaId=Media.MediaId
- GROUP by VolumeName, Job.JobID, Job.Name, JobBytes, JobFiles, Job.StartTime
+ GROUP by VolumeName, Job.JobID, Job.Name, Job.JobBytes, JobFiles, Job.StartTime
  ORDER by JobName, Start;
 
 # 20
 :List Volumes for a jobname:
 *Enter Job name:
 SELECT Job.Name AS JobName, Job.JobId AS JobID, VolumeName, Job.StartTime AS
-Start, JobFiles AS Files,ROUND(JobBytes/1024.0/1024.0/1024.0,3) AS Bytes
+Start, JobFiles AS Files,ROUND(Job.JobBytes/1024.0/1024.0/1024.0,3) AS Bytes
  FROM Job,JobMedia,Media
  WHERE Job.Name='%1'
  AND JobMedia.JobId=Job.JobId
  AND JobMedia.MediaId=Media.MediaId
- GROUP by VolumeName, Job.JobID, Job.Name, JobBytes, JobFiles, Job.StartTime
+ GROUP by VolumeName, Job.JobID, Job.Name, Job.JobBytes, JobFiles, Job.StartTime
  ORDER by JobName, Start;
